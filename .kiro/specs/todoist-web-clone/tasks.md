@@ -204,7 +204,7 @@ Full-stack implementation of a Todoist web clone using React + TypeScript (front
     - **Property 1: Date parser round-trip**
     - **Validates: Requirements 13.8, 13.9**
 
-- [ ] 13. Recurring tasks engine
+- [x] 13. Recurring tasks engine
   - [x] 13.1 Implement Recurrence_Engine
     - Support: every N days, every N weeks on weekdays, every N months on day, every N years on month+day (N: 1-999)
     - Compute next date strictly after current due date
@@ -212,23 +212,23 @@ Full-stack implementation of a Todoist web clone using React + TypeScript (front
     - Clamp to last day of month when target day doesn't exist
     - _Requirements: 14.1, 14.2, 14.3, 14.4, 14.5, 14.6, 14.7, 14.8, 14.9_
 
-  - [ ] 13.2 Write property test for recurrence strict monotonicity
+  - [x] 13.2 Write property test for recurrence strict monotonicity
     - **Property 3: Recurrence sequence strict monotonicity**
     - **Validates: Requirements 14.2, 14.9**
 
-  - [ ] 13.3 Write property test for recurrence weekday correctness
+  - [x] 13.3 Write property test for recurrence weekday correctness
     - **Property 4: Recurrence weekday correctness**
     - **Validates: Requirements 14.4**
 
-  - [ ] 13.4 Write property test for recurrence N-day arithmetic
+  - [x] 13.4 Write property test for recurrence N-day arithmetic
     - **Property 5: Recurrence N-day arithmetic**
     - **Validates: Requirements 14.5**
 
-  - [ ] 13.5 Write property test for recurrence time preservation
+  - [x] 13.5 Write property test for recurrence time preservation
     - **Property 6: Recurrence time preservation**
     - **Validates: Requirements 14.6**
 
-  - [ ] 13.6 Write property test for recurrence month-end clamping
+  - [x] 13.6 Write property test for recurrence month-end clamping
     - **Property 7: Recurrence month-end clamping**
     - **Validates: Requirements 14.7**
 
