@@ -187,8 +187,8 @@ Full-stack implementation of a Todoist web clone using React + TypeScript (front
 - [x] 11. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 12. Natural-language date parsing
-  - [ ] 12.1 Implement Date_Parser using PEG grammar (peggy)
+- [x] 12. Natural-language date parsing
+  - [x] 12.1 Implement Date_Parser using PEG grammar (peggy)
     - Support absolute formats: YYYY-MM-DD, MM/DD/YYYY, DD MMM YYYY, MMM DD, MMM DD YYYY, DD MMM
     - Support relative: today, tomorrow, yesterday, next <weekday>, in N days/weeks/months
     - Support time: HH:MM, H:MM am/pm, Ham/pm
@@ -196,11 +196,11 @@ Full-stack implementation of a Todoist web clone using React + TypeScript (front
     - Return error with unrecognized substring on parse failure
     - _Requirements: 13.1, 13.2, 13.3, 13.4, 13.5, 13.6, 13.7_
 
-  - [ ] 12.2 Implement Date_Printer (canonical string formatter)
+  - [x] 12.2 Implement Date_Printer (canonical string formatter)
     - Format any structured DueDate back to canonical natural-language string
     - _Requirements: 13.8_
 
-  - [ ] 12.3 Write property test for date parser round-trip
+  - [x] 12.3 Write property test for date parser round-trip
     - **Property 1: Date parser round-trip**
     - **Validates: Requirements 13.8, 13.9**
 
