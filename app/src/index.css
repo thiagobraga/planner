@@ -1,0 +1,27 @@
+@import "tailwindcss";
+
+@theme {
+  --color-cream: #f5f0e8;
+  --color-ink: #2c2c2c;
+  --color-ink-light: #6b6b6b;
+  --color-dot: #d4cfc7;
+  --color-accent: #c0392b;
+  --color-accent-light: #e74c3c;
+  --color-sidebar-bg: #ebe6de;
+}
+
+@utility font-journal {
+  font-family: "Lora", serif;
+}
+
+/* Dotted paper background — 24px grid, offset 12px to center dots in cells */
+body {
+  background-color: var(--color-cream);
+  background-image: radial-gradient(circle, var(--color-dot) 1px, transparent 1px);
+  background-size: 24px 24px;
+  background-position: 12px 12px;
+  font-family: "Lora", serif;
+  font-size: 14px;
+  line-height: 24px;
+  color: var(--color-ink);
+}

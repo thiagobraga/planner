@@ -1,0 +1,1 @@
+{"root":["./src/App.tsx","./src/main.tsx","./src/api/queryClient.ts","./src/components/AppShell.tsx","./src/components/Sidebar.tsx","./src/components/TaskItem.tsx","./src/pages/InboxPage.tsx","./src/pages/TodayPage.tsx","./src/pages/UpcomingPage.tsx","./src/stores/authStore.ts","./src/stores/taskStore.ts","./src/utils/socket.ts"],"version":"5.9.3"}
