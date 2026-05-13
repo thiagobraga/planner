@@ -396,12 +396,12 @@ Full-stack implementation of a Todoist web clone using React + TypeScript (front
     - Update within 2 seconds of backend changes
     - _Requirements: 15.1, 15.2, 15.3, 15.7_
 
-  - [ ] 28.2 Implement optimistic updates with revert on failure
+  - [x] 28.2 Implement optimistic updates with revert on failure
     - Reflect changes in UI within 100ms
     - Revert to pre-mutation state within 2000ms on API error
     - _Requirements: 28.2, 28.3_
 
-  - [ ] 28.3 Write property test for optimistic update revert
+  - [x] 28.3 Write property test for optimistic update revert
     - **Property 27: Optimistic update revert on API failure**
     - **Validates: Requirements 28.2, 28.3**
 
@@ -411,7 +411,7 @@ Full-stack implementation of a Todoist web clone using React + TypeScript (front
     - _Requirements: 27.6, 27.7_
 
 - [ ] 29. Keyboard shortcuts and accessibility
-  - [ ] 29.1 Implement ShortcutHandler with all keyboard shortcuts
+  - [x] 29.1 Implement ShortcutHandler with all keyboard shortcuts
     - q: quick-add, /: search, ?: help panel
     - Enter: edit selected task, Delete: confirm deletion
     - g+i: Inbox, g+t: Today, g+u: Upcoming (within 1 second)
