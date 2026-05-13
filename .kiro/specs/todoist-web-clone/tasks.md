@@ -316,19 +316,19 @@ Full-stack implementation of a Todoist web clone using React + TypeScript (front
     - Delete: author or task owner can delete
     - _Requirements: 19.1, 19.2, 19.3, 19.4_
 
-- [ ] 20. Shared projects and collaboration
-  - [ ] 20.1 Implement project sharing and invitation flow
+- [x] 20. Shared projects and collaboration
+  - [x] 20.1 Implement project sharing and invitation flow
     - Share: create pending invitation, send email with link
     - Accept: add user as collaborator with read/create/update/complete access (not delete project or remove collaborators)
     - Task assignment: validate assignee is collaborator/owner
     - Remove collaborator: revoke access within 5 seconds, unassign their tasks
     - _Requirements: 20.1, 20.2, 20.3, 20.4, 20.5_
 
-  - [ ] 20.2 Write property test for authorization enforcement
+  - [x] 20.2 Write property test for authorization enforcement
     - **Property 26: Authorization enforcement**
     - **Validates: Requirements 26.3, 5.5**
 
-- [ ] 21. Checkpoint - Ensure all tests pass
+- [x] 21. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 - [x] 22. Activity history
