@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document describes the technical design for a full-featured Todoist web clone. The system is a real-time collaborative task management application with natural-language date parsing, a filter query language, recurring tasks, karma tracking, and offline-capable optimistic UI.
+This document describes the technical design for a full-featured Todoist web clone. The system is a real-time collaborative task management application with natural-language date parsing, a filter query language, recurring tasks, and offline-capable optimistic UI. A gamification layer is intentionally deferred and will be designed separately.
 
 The architecture follows a client-server model: a React SPA communicates with a Node.js/Express API server backed by PostgreSQL and Redis. Real-time sync uses WebSockets. The system is designed for horizontal scalability at the API layer and eventual consistency for real-time features.
 
@@ -110,7 +110,6 @@ graph LR
 | `DateInput`        | Natural-language date input with preview                     |
 | `FilterBar`        | Filter query input with syntax highlighting                  |
 | `SearchOverlay`    | Global search with grouped results                           |
-| `KarmaWidget`      | Productivity score and streak display                        |
 | `PreferencesPanel` | User settings: timezone, theme, week start                   |
 | `ShortcutHandler`  | Global keyboard shortcut listener                            |
 | `SyncManager`      | WebSocket connection, reconnection, queue replay             |
@@ -129,7 +128,6 @@ graph LR
 | `ReminderService`   | CRUD /reminders                                                                                                        | Reminder scheduling and delivery                        |
 | `CommentService`    | CRUD /tasks/:id/comments                                                                                               | Task comment management                                 |
 | `SyncService`       | WebSocket namespace /sync                                                                                              | Real-time event fan-out                                 |
-| `KarmaService`      | GET /karma                                                                                                             | Karma score and streak computation                      |
 | `ActivityService`   | GET /activity?project_id=                                                                                              | Activity log retrieval                                  |
 | `PreferenceService` | GET/PATCH /preferences                                                                                                 | User preference management                              |
 
@@ -195,7 +193,6 @@ POST   /api/v1/tasks/:id/reminders    { datetime }
 DELETE /api/v1/reminders/:id
 
 GET    /api/v1/activity?project_id=&cursor=
-GET    /api/v1/karma
 GET    /api/v1/preferences
 PATCH  /api/v1/preferences            { timeZone?, weekStart?, theme? }
 ```
@@ -211,7 +208,6 @@ erDiagram
     User ||--o{ Filter : owns
     User ||--o{ Session : has
     User ||--|| Preferences : has
-    User ||--|| KarmaStats : has
 
     Project ||--o{ Section : contains
     Project ||--o{ Task : contains
@@ -374,25 +370,6 @@ erDiagram
 | before_data | JSONB       | NULLABLE                   |
 | after_data  | JSONB       | NULLABLE                   |
 | created_at  | TIMESTAMPTZ | NOT NULL DEFAULT NOW()     |
-
-#### karma_stats
-| Column           | Type        | Constraints            |
-|------------------|-------------|------------------------|
-| user_id          | UUID        | PK, FK → users.id      |
-| score            | INTEGER     | NOT NULL DEFAULT 0     |
-| current_streak   | INTEGER     | NOT NULL DEFAULT 0     |
-| longest_streak   | INTEGER     | NOT NULL DEFAULT 0     |
-| last_active_date | DATE        | NULLABLE               |
-| updated_at       | TIMESTAMPTZ | NOT NULL DEFAULT NOW() |
-
-#### karma_events
-| Column     | Type        | Constraints             |
-|------------|-------------|-------------------------|
-| id         | UUID        | PK                      |
-| user_id    | UUID        | FK → users.id, NOT NULL |
-| task_id    | UUID        | FK → tasks.id, NOT NULL |
-| points     | INTEGER     | NOT NULL                |
-| created_at | TIMESTAMPTZ | NOT NULL DEFAULT NOW()  |
 
 #### password_reset_tokens
 | Column     | Type         | Constraints             |
@@ -625,18 +602,6 @@ interface RecurrenceRule {
 
 **Validates: Requirements 17.1, 17.2, 17.3**
 
-### Property 24: Karma increment/decrement round-trip
-
-*For any* task with priority P, completing the task SHALL increment karma by the amount mapped to P, and subsequently uncompleting the same task SHALL decrement karma by the same amount, returning the score to its pre-completion value.
-
-**Validates: Requirements 23.1, 23.4**
-
-### Property 25: Streak computation correctness
-
-*For any* sequence of active days for a user, the current streak SHALL equal the length of the longest uninterrupted suffix of consecutive days ending on the current local date (0 if today is not active).
-
-**Validates: Requirements 23.3**
-
 ### Property 26: Authorization enforcement
 
 *For any* entity (task, project, section, label, filter, comment) not owned by and not in a project shared with the requesting user, any read, update, or delete request SHALL be rejected with a not-accessible error.
@@ -728,7 +693,6 @@ Properties to implement as PBT:
 | 20-21: View correctness        | View query logic              | Generate task sets with various dates/priorities  |
 | 22: Filter evaluation          | Filter_Service evaluator      | Generate FilterExprs and task sets                |
 | 23: Search correctness         | Search_Service                | Generate entity sets and query strings            |
-| 24-25: Karma/streak            | Karma_Service                 | Generate completion/uncompletion sequences        |
 | 26: Authorization              | Auth middleware               | Generate entity access attempts                   |
 | 27: Optimistic revert          | Frontend store                | Generate mutations and simulate failures          |
 | 28: Section deletion           | Project_Service               | Generate sections with tasks                      |
@@ -754,7 +718,7 @@ Focus areas:
 
 ### End-to-End Tests
 
-- Registration → login → create project → create task → complete task → verify karma
+- Registration → login → create project → create task → complete task
 - Share project → accept invitation → assign task → verify sync
 - Offline edit → reconnect → verify sync
 - Filter creation → evaluation → verify results

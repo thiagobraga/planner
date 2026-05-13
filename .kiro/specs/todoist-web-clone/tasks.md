@@ -8,7 +8,7 @@ Full-stack implementation of a Todoist web clone using React + TypeScript (front
 
 - [x] 1. Database schema and backend project setup
   - [x] 1.1 Set up PostgreSQL database schema with all 16 tables, indexes, and constraints
-    - Create migration files for: users, preferences, sessions, projects, collaborators, sections, tasks, task_labels, labels, filters, comments, reminders, activity_events, karma_stats, karma_events, password_reset_tokens, project_invitations
+    - Create migration files for: users, preferences, sessions, projects, collaborators, sections, tasks, task_labels, labels, filters, comments, reminders, activity_events, password_reset_tokens, project_invitations
     - Add all indexes defined in design (idx_tasks_user_project, idx_tasks_due_date, idx_tasks_search, etc.)
     - _Requirements: 1.1, 1.6, 10.8, 4.1_
 
@@ -83,7 +83,7 @@ Full-stack implementation of a Todoist web clone using React + TypeScript (front
     - Non-recurring: set is_completed=true, completed_at=now
     - Recurring: compute next due date via Recurrence_Engine, keep is_completed=false
     - Completion cascades to all subtasks
-    - Record history entry; trigger karma update within 5 seconds
+    - Record history entry
     - Reopen: clear completed_at, set is_completed=false
     - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 6.6_
 
@@ -339,21 +339,9 @@ Full-stack implementation of a Todoist web clone using React + TypeScript (front
     - Retain events 90+ days
     - _Requirements: 22.1, 22.2, 22.3_
 
-- [ ] 23. Karma and productivity stats
-  - [ ] 23.1 Implement karma scoring and streak tracking
-    - Increment karma on task completion (amount by priority: p1 highest, p4 lowest)
-    - Decrement on uncomplete by same amount
-    - Track active days, compute current streak (consecutive days ending today)
-    - Expose endpoint: score, current streak, longest streak
-    - _Requirements: 23.1, 23.2, 23.3, 23.4, 23.5_
-
-  - [ ] 23.2 Write property test for karma increment/decrement round-trip
-    - **Property 24: Karma increment/decrement round-trip**
-    - **Validates: Requirements 23.1, 23.4**
-
-  - [ ] 23.3 Write property test for streak computation
-    - **Property 25: Streak computation correctness**
-    - **Validates: Requirements 23.3**
+- [ ] 23. Gamification (Deferred)
+  - Deliberately deferred; will be specified in a separate document.
+  - Implementations must leave a stable hook on Task completion (e.g., a `task_completed` event in the activity log) so a future gamification subsystem can subscribe without changes to the Task_Service.
 
 - [ ] 24. User preferences
   - [ ] 24.1 Implement preferences endpoints (GET/PATCH /preferences)
@@ -474,8 +462,8 @@ Full-stack implementation of a Todoist web clone using React + TypeScript (front
     { "id": 12, "tasks": ["14.4", "14.5", "16.1"] },
     { "id": 13, "tasks": ["16.2", "16.3", "17.1"] },
     { "id": 14, "tasks": ["16.4", "16.5", "17.2", "18.1", "19.1"] },
-    { "id": 15, "tasks": ["20.1", "22.1", "23.1", "24.1"] },
-    { "id": 16, "tasks": ["20.2", "23.2", "23.3", "25.1"] },
+    { "id": 15, "tasks": ["20.1", "22.1", "24.1"] },
+    { "id": 16, "tasks": ["20.2", "25.1"] },
     { "id": 17, "tasks": ["27.1", "27.2", "27.3", "27.4", "27.5", "27.6"] },
     { "id": 18, "tasks": ["28.1", "28.2", "28.4"] },
     { "id": 19, "tasks": ["28.3", "29.1", "29.2", "30.1"] }

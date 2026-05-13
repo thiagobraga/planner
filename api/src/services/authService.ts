@@ -88,11 +88,6 @@ export async function register(input: RegisterInput): Promise<AuthResult> {
       [userId]
     );
 
-    await client.query(
-      `INSERT INTO karma_stats (user_id) VALUES ($1)`,
-      [userId]
-    );
-
     await client.query("COMMIT");
   } catch (err) {
     await client.query("ROLLBACK");

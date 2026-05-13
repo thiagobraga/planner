@@ -2,7 +2,7 @@
 
 ## Introduction
 
-This document describes the requirements for a web-based clone of Todoist, a task management application. Users can register accounts, capture tasks with titles, descriptions, natural-language due dates, priorities, labels, and subtasks, organize them into nested projects and sections, create recurring tasks, view them through Inbox, Today, Upcoming, and custom filter views, search across tasks, projects, and labels, receive reminders, attach comments to tasks, collaborate on shared projects with task assignment, review an append-only activity history, track productivity via a karma score and streaks, configure time zone, week start, and theme preferences, and synchronize changes across open sessions in real time. The application targets modern desktop and mobile web browsers only. Out of scope for this specification: native mobile apps, desktop apps, email integrations, third-party integrations (Slack, Calendar, Zapier), and paid subscription tiers.
+This document describes the requirements for a web-based clone of Todoist, a task management application. Users can register accounts, capture tasks with titles, descriptions, natural-language due dates, priorities, labels, and subtasks, organize them into nested projects and sections, create recurring tasks, view them through Inbox, Today, Upcoming, and custom filter views, search across tasks, projects, and labels, receive reminders, attach comments to tasks, collaborate on shared projects with task assignment, review an append-only activity history, configure time zone, week start, and theme preferences, and synchronize changes across open sessions in real time. The application targets modern desktop and mobile web browsers only. A gamification layer is intentionally left out of this specification and will be defined separately. Out of scope for this specification: native mobile apps, desktop apps, email integrations, third-party integrations (Slack, Calendar, Zapier), and paid subscription tiers.
 
 ## Glossary
 
@@ -17,7 +17,6 @@ This document describes the requirements for a web-based clone of Todoist, a tas
 - **Reminder_Service**: The subsystem of the API_Server responsible for scheduling and delivering Reminders.
 - **Sync_Service**: The subsystem of the API_Server responsible for pushing state changes to connected Web_Client sessions.
 - **Search_Service**: The subsystem of the API_Server responsible for returning entities matching a free-text query.
-- **Karma_Service**: The subsystem of the API_Server that computes a productivity score and streaks for each User based on Task completions.
 - **Date_Parser**: The component that converts a natural-language date string (e.g., "tomorrow 5pm", "every Monday") into a structured Due_Date value.
 - **Date_Printer**: The component that formats a structured Due_Date value back into a canonical natural-language string.
 - **Recurrence_Engine**: The component that, given a Task with a Recurrence_Rule, computes the next occurrence strictly after a given date.
@@ -125,7 +124,6 @@ This document describes the requirements for a web-based clone of Todoist, a tas
 3. WHEN a User submits a task reopen request for a completed Task owned by or shared with the User, THE Task_Service SHALL clear the completed_at timestamp and set is_completed to false.
 4. WHEN a Task is marked complete, THE Task_Service SHALL also mark all of its Subtasks as complete.
 5. WHEN a User submits a task completion request, THE Task_Service SHALL record a history entry containing the Task id, the User id, and the completion timestamp.
-6. WHEN a Task's completion state transitions from false to true, THE Karma_Service SHALL update the User's karma score within 5 seconds.
 
 ### Requirement 7: Task Deletion
 
@@ -333,17 +331,9 @@ This document describes the requirements for a web-based clone of Todoist, a tas
 2. WHEN an authenticated User requests the Activity_Log for a Project they own or collaborate on, THE API_Server SHALL return events for that Project ordered by timestamp descending, paginated at 50 events per page; IF the User neither owns nor collaborates on the Project, THEN THE API_Server SHALL reject the request with an error code indicating the Project is not accessible.
 3. THE API_Server SHALL retain Activity_Log events for at least 90 days from the event timestamp.
 
-### Requirement 23: Karma and Productivity Stats
+### Requirement 23: Gamification (Deferred)
 
-**User Story:** As a User, I want a productivity score and streak, so that I can stay motivated.
-
-#### Acceptance Criteria
-
-1. WHEN a User completes a Task whose Priority is `p`, THE Karma_Service SHALL increment the User's karma score by a fixed non-negative amount determined by `p`, where `p1` grants the largest increment and `p4` grants the smallest.
-2. WHEN a User completes at least one Task on a given local date, THE Karma_Service SHALL record that date as an active day for the User.
-3. WHEN a User has an uninterrupted sequence of active days ending on the current local date, THE Karma_Service SHALL report that length as the User's current streak.
-4. IF a User uncompletes a Task whose completion previously increased their karma score, THEN THE Karma_Service SHALL decrement the karma score by the same amount that was added for that completion.
-5. THE Karma_Service SHALL expose an endpoint returning the current karma score, current streak length, and longest streak length for the authenticated User.
+A gamification layer (e.g., scoring, streaks, achievements) will be specified separately. Implementations should leave a stable hook on Task completion events for a future gamification subsystem to subscribe to, but no behavior is required in this version.
 
 ### Requirement 24: Keyboard Shortcuts
 
