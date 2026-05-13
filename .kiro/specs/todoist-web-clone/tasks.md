@@ -349,15 +349,15 @@ Full-stack implementation of a Todoist web clone using React + TypeScript (front
     - Reject invalid timezone with error
     - _Requirements: 25.1, 25.2, 25.3, 25.4_
 
-- [ ] 25. Real-time synchronization
-  - [ ] 25.1 Implement WebSocket sync service with Socket.IO
+- [x] 25. Real-time synchronization
+  - [x] 25.1 Implement WebSocket sync service with Socket.IO
     - Push change events to all user's other sessions within 2 seconds
     - Push to all collaborators' sessions for shared project changes
     - On reconnection: deliver all missed events during disconnection
     - Client updates local state without page reload
     - _Requirements: 21.1, 21.2, 21.3, 21.4_
 
-- [ ] 26. Checkpoint - Ensure all tests pass
+- [x] 26. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 27. Frontend core UI implementation

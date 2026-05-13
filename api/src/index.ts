@@ -1,7 +1,10 @@
 import express, { type Express } from "express";
+import { createServer } from "http";
 import routes from "./routes/index.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import { notFound } from "./middleware/notFound.js";
+import { connectRedis } from "./db/redis.js";
+import { attachSyncServer } from "./services/syncService.js";
 
 const app: Express = express();
 const port = process.env.PORT || 4000;
@@ -30,8 +33,24 @@ app.use(notFound);
 // Error handler
 app.use(errorHandler);
 
-app.listen(port, () => {
-  console.log(`Backend listening on port ${port}`);
-});
+const httpServer = createServer(app);
+
+async function start() {
+  try {
+    await connectRedis();
+    await attachSyncServer(httpServer);
+  } catch (err) {
+    console.warn("Sync/Redis startup failed; continuing without real-time sync:", err);
+  }
+
+  httpServer.listen(port, () => {
+    console.log(`Backend listening on port ${port}`);
+  });
+}
+
+if (process.env.NODE_ENV !== "test") {
+  void start();
+}
 
 export default app;
+export { httpServer };
