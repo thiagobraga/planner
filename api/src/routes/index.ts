@@ -4,6 +4,7 @@ import taskRoutes from "./tasks.js";
 import labelRoutes from "./labels.js";
 import projectRoutes from "./projects.js";
 import sectionRoutes from "./sections.js";
+import viewRoutes from "./views.js";
 
 const router: RouterType = Router();
 
@@ -15,6 +16,7 @@ router.use("/auth", authRoutes);
 router.use("/tasks", taskRoutes);
 router.use("/labels", labelRoutes);
 router.use("/projects", projectRoutes);
+router.use("/views", viewRoutes);
 router.use("/", sectionRoutes);
 
 export default router;

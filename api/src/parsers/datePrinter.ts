@@ -1,7 +1,6 @@
 import type { DueDate, RecurrenceRule } from './dateParser.js';
 
 const WEEKDAY_NAMES = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-const MONTH_NAMES = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'];
 
 function ordinalSuffix(n: number): string {
   const mod100 = n % 100;

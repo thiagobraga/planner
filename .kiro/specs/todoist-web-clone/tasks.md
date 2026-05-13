@@ -232,8 +232,8 @@ Full-stack implementation of a Todoist web clone using React + TypeScript (front
     - **Property 7: Recurrence month-end clamping**
     - **Validates: Requirements 14.7**
 
-- [ ] 14. Built-in views (Inbox, Today, Upcoming)
-  - [ ] 14.1 Implement Today view endpoint
+- [x] 14. Built-in views (Inbox, Today, Upcoming)
+  - [x] 14.1 Implement Today view endpoint
     - Return incomplete tasks with due_date <= user's current local date
     - Exclude archived projects
     - Group into overdue and today
@@ -241,21 +241,21 @@ Full-stack implementation of a Todoist web clone using React + TypeScript (front
     - Use user's configured timezone
     - _Requirements: 15.2, 15.5, 15.6_
 
-  - [ ] 14.2 Implement Upcoming view endpoint
+  - [x] 14.2 Implement Upcoming view endpoint
     - Accept date range N (7-30 days), reject outside range
     - Return incomplete tasks within range, exclude archived projects
     - Group by day, order by priority then order_value
     - _Requirements: 15.3, 15.4, 15.5_
 
-  - [ ] 14.3 Implement Inbox view endpoint
+  - [x] 14.3 Implement Inbox view endpoint
     - Return non-completed tasks in user's Inbox project, ordered by order_value ascending
     - _Requirements: 15.1_
 
-  - [ ] 14.4 Write property test for Today view correctness
+  - [x] 14.4 Write property test for Today view correctness
     - **Property 20: Today view correctness**
     - **Validates: Requirements 15.2, 15.5, 15.6**
 
-  - [ ] 14.5 Write property test for Upcoming view correctness
+  - [x] 14.5 Write property test for Upcoming view correctness
     - **Property 21: Upcoming view correctness**
     - **Validates: Requirements 15.3, 15.4, 15.5**
 
