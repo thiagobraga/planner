@@ -5,6 +5,7 @@ import labelRoutes from "./labels.js";
 import projectRoutes from "./projects.js";
 import sectionRoutes from "./sections.js";
 import viewRoutes from "./views.js";
+import filterRoutes from "./filters.js";
 
 const router: RouterType = Router();
 
@@ -17,6 +18,7 @@ router.use("/tasks", taskRoutes);
 router.use("/labels", labelRoutes);
 router.use("/projects", projectRoutes);
 router.use("/views", viewRoutes);
+router.use("/filters", filterRoutes);
 router.use("/", sectionRoutes);
 
 export default router;

@@ -262,27 +262,27 @@ Full-stack implementation of a Todoist web clone using React + TypeScript (front
 - [x] 15. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 16. Filter system
-  - [ ] 16.1 Implement Filter_Parser using PEG grammar (peggy)
+- [x] 16. Filter system
+  - [x] 16.1 Implement Filter_Parser using PEG grammar (peggy)
     - Support operators: & (and), | (or), ! (not), parentheses
     - Support operands: #project, @label, p1-p4, today, overdue, no date, due:/due before:/due after:, assigned to:, free-text
     - Return parse error with position of first unexpected token
     - _Requirements: 16.2, 16.3, 16.4, 16.5_
 
-  - [ ] 16.2 Implement Filter_Printer (canonical query string formatter)
+  - [x] 16.2 Implement Filter_Printer (canonical query string formatter)
     - Format any structured FilterExpr back to canonical query string
     - _Requirements: 16.6_
 
-  - [ ] 16.3 Implement filter CRUD and evaluation endpoints
+  - [x] 16.3 Implement filter CRUD and evaluation endpoints
     - Create/update: validate name (1-120 chars), validate query via parser
     - GET /filters/:id/results: evaluate filter against user's tasks
     - _Requirements: 16.1, 16.8_
 
-  - [ ] 16.4 Write property test for filter parser round-trip
+  - [x] 16.4 Write property test for filter parser round-trip
     - **Property 2: Filter parser round-trip**
     - **Validates: Requirements 16.6, 16.7**
 
-  - [ ] 16.5 Write property test for filter evaluation correctness
+  - [x] 16.5 Write property test for filter evaluation correctness
     - **Property 22: Filter evaluation correctness**
     - **Validates: Requirements 16.8**
 
