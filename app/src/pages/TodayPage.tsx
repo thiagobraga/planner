@@ -1,30 +1,36 @@
-import { TaskItem } from '../components/TaskItem';
+import { useState } from 'react';
+import { TaskList } from '../components/TaskList';
+import type { Task } from '../components/TaskItem';
 
-const overdueTasks = [
-  { id: '1', title: 'Submit expense report', priority: 1, dueDate: 'yesterday' },
+const SEED: Task[] = [
+  { id: 't1', title: 'Morning standup', priority: 2, dueDate: 'today', isCompleted: false, orderValue: 1 },
+  { id: 't2', title: 'Code review for auth service', priority: 1, dueDate: 'today', isCompleted: false, orderValue: 2 },
+  { id: 't3', title: 'Update project README', priority: 4, dueDate: 'today', isCompleted: true, orderValue: 3 },
 ];
 
-const todayTasks = [
-  { id: '2', title: 'Morning standup', priority: 2, dueDate: '9:00 am' },
-  { id: '3', title: 'Code review for auth module', priority: 2, dueDate: '2:00 pm' },
-  { id: '4', title: 'Prepare presentation slides', priority: 3 },
+const OVERDUE_SEED: Task[] = [
+  { id: 'ov1', title: 'Submit expense report', priority: 1, dueDate: 'yesterday', isCompleted: false, orderValue: 0 },
 ];
 
 export function TodayPage() {
-  const today = new Date().toLocaleDateString('en-US', {
-    weekday: 'long',
-    month: 'long',
-    day: 'numeric',
-  });
+  const [overdue, setOverdue] = useState<Task[]>(OVERDUE_SEED);
+  const [today, setToday] = useState<Task[]>(SEED);
+  const [selectedId, setSelectedId] = useState<string>();
+
+  const handleToggle = (id: string) => {
+    setOverdue((prev) => prev.map((t) => (t.id === id ? { ...t, isCompleted: !t.isCompleted } : t)));
+    setToday((prev) => prev.map((t) => (t.id === id ? { ...t, isCompleted: !t.isCompleted } : t)));
+  };
+
+  const dateLabel = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 
   return (
-    <div style={{ maxWidth: '600px' }}>
+    <div style={{ maxWidth: '640px' }}>
       <h1
         style={{
           fontFamily: '"Lora", serif',
-          fontSize: '24px',
-          lineHeight: '48px',
-          height: '48px',
+          fontSize: '22px',
+          lineHeight: '24px',
           fontWeight: 600,
           color: 'var(--color-ink)',
           margin: 0,
@@ -36,57 +42,59 @@ export function TodayPage() {
         style={{
           fontSize: '13px',
           lineHeight: '24px',
-          height: '24px',
           color: 'var(--color-ink-light)',
           margin: 0,
+          fontStyle: 'italic',
         }}
       >
-        {today}
+        {dateLabel}
       </p>
 
-      {/* Overdue section */}
-      {overdueTasks.length > 0 && (
-        <div style={{ marginTop: '24px' }}>
-          <h2
+      {overdue.length > 0 && (
+        <>
+          <div style={{ height: '24px' }} />
+          <div
             style={{
-              fontSize: '10px',
-              lineHeight: '24px',
-              height: '24px',
-              letterSpacing: '0.1em',
+              fontSize: '11px',
+              letterSpacing: '0.08em',
               textTransform: 'uppercase',
               color: 'var(--color-accent)',
-              margin: 0,
+              marginBottom: '8px',
               fontWeight: 500,
             }}
           >
             Overdue
-          </h2>
-          {overdueTasks.map((task) => (
-            <TaskItem key={task.id} title={task.title} priority={task.priority} dueDate={task.dueDate} />
-          ))}
-        </div>
+          </div>
+          <TaskList
+            tasks={overdue}
+            selectedTaskId={selectedId}
+            onTaskClick={(id) => setSelectedId(id === selectedId ? undefined : id)}
+            onTaskToggle={handleToggle}
+            onReorder={setOverdue}
+          />
+        </>
       )}
 
-      {/* Today section */}
-      <div style={{ marginTop: '24px' }}>
-        <h2
-          style={{
-            fontSize: '10px',
-            lineHeight: '24px',
-            height: '24px',
-            letterSpacing: '0.1em',
-            textTransform: 'uppercase',
-            color: 'var(--color-ink-light)',
-            margin: 0,
-            fontWeight: 500,
-          }}
-        >
-          Today
-        </h2>
-        {todayTasks.map((task) => (
-          <TaskItem key={task.id} title={task.title} priority={task.priority} dueDate={task.dueDate} />
-        ))}
+      <div style={{ height: '24px' }} />
+      <div
+        style={{
+          fontSize: '11px',
+          letterSpacing: '0.08em',
+          textTransform: 'uppercase',
+          color: 'var(--color-ink-light)',
+          marginBottom: '8px',
+          fontWeight: 500,
+        }}
+      >
+        Today
       </div>
+      <TaskList
+        tasks={today}
+        selectedTaskId={selectedId}
+        onTaskClick={(id) => setSelectedId(id === selectedId ? undefined : id)}
+        onTaskToggle={handleToggle}
+        onReorder={setToday}
+      />
     </div>
   );
 }

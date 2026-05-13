@@ -25,3 +25,51 @@ body {
   line-height: 24px;
   color: var(--color-ink);
 }
+
+/* Task item row */
+.task-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 4px;
+  border-radius: 4px;
+  transition: background 100ms;
+}
+.task-item:hover {
+  background: rgba(212, 207, 199, 0.4);
+}
+.task-item--selected {
+  background: rgba(212, 207, 199, 0.6);
+}
+.task-item:hover .drag-handle {
+  opacity: 0.5 !important;
+}
+
+/* Mobile sidebar drawer */
+@media (max-width: 767px) {
+  .sidebar-drawer {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100%;
+    z-index: 50;
+    transform: translateX(-100%);
+    transition: transform 200ms ease;
+  }
+  .sidebar-drawer--open {
+    transform: translateX(0);
+  }
+  .sidebar-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 49;
+    background: rgba(44, 44, 44, 0.3);
+    display: none;
+  }
+  .sidebar-overlay--visible {
+    display: block;
+  }
+  .mobile-menu-btn {
+    display: block !important;
+  }
+}

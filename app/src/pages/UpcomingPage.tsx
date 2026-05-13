@@ -1,40 +1,65 @@
-import { TaskItem } from '../components/TaskItem';
+import { useState } from 'react';
+import { TaskList } from '../components/TaskList';
+import type { Task } from '../components/TaskItem';
 
 function getUpcomingDays(count: number) {
   const days = [];
-  const today = new Date();
+  const base = new Date();
   for (let i = 1; i <= count; i++) {
-    const d = new Date(today);
-    d.setDate(today.getDate() + i);
+    const d = new Date(base);
+    d.setDate(base.getDate() + i);
     days.push({
-      date: d,
-      label: d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
+      key: d.toISOString().slice(0, 10),
+      label: d.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' }),
     });
   }
   return days;
 }
 
-const mockByDay: Record<number, { id: string; title: string; priority: number }[]> = {
-  1: [{ id: '1', title: 'Team sync', priority: 2 }],
-  2: [
-    { id: '2', title: 'Deploy v0.2', priority: 1 },
-    { id: '3', title: 'Write changelog', priority: 3 },
-  ],
-  4: [{ id: '4', title: 'Dentist appointment', priority: 4 }],
-  7: [{ id: '5', title: 'Weekly review', priority: 2 }],
+const makeSeed = (): Record<string, Task[]> => {
+  const days = getUpcomingDays(7);
+  const result: Record<string, Task[]> = {};
+  if (days[0]) {
+    result[days[0].key] = [
+      { id: 'up1', title: 'Team sync', priority: 2, dueDate: days[0].key, isCompleted: false, orderValue: 1 },
+    ];
+  }
+  if (days[1]) {
+    result[days[1].key] = [
+      { id: 'up2', title: 'Deploy v0.2', priority: 1, dueDate: days[1].key, isCompleted: false, orderValue: 1 },
+      { id: 'up3', title: 'Write changelog', priority: 3, dueDate: days[1].key, isCompleted: false, orderValue: 2 },
+    ];
+  }
+  if (days[6]) {
+    result[days[6].key] = [
+      { id: 'up4', title: 'Weekly review', priority: 2, dueDate: days[6].key, isCompleted: false, orderValue: 1 },
+    ];
+  }
+  return result;
 };
 
 export function UpcomingPage() {
   const days = getUpcomingDays(7);
+  const [tasksByDay, setTasksByDay] = useState<Record<string, Task[]>>(makeSeed);
+  const [selectedId, setSelectedId] = useState<string>();
+
+  const handleToggle = (id: string) => {
+    setTasksByDay((prev) => {
+      const next = { ...prev };
+      for (const key of Object.keys(next)) {
+        next[key] = next[key].map((t) => (t.id === id ? { ...t, isCompleted: !t.isCompleted } : t));
+      }
+      return next;
+    });
+  };
 
   return (
-    <div style={{ maxWidth: '600px' }}>
+    <div style={{ maxWidth: '640px' }}>
       <h1
         style={{
           fontFamily: '"Lora", serif',
-          fontSize: '24px',
-          lineHeight: '48px',
-          height: '48px',
+          fontSize: '22px',
+          lineHeight: '24px',
           fontWeight: 600,
           color: 'var(--color-ink)',
           margin: 0,
@@ -46,55 +71,58 @@ export function UpcomingPage() {
         style={{
           fontSize: '13px',
           lineHeight: '24px',
-          height: '24px',
           color: 'var(--color-ink-light)',
           margin: 0,
+          fontStyle: 'italic',
         }}
       >
         Next 7 days
       </p>
 
-      <div style={{ marginTop: '24px' }}>
-        {days.map((day, idx) => {
-          const tasks = mockByDay[idx + 1] || [];
-          return (
-            <div key={idx}>
-              <h2
+      <div style={{ height: '24px' }} />
+
+      {days.map((day) => {
+        const tasks = tasksByDay[day.key] ?? [];
+        return (
+          <div key={day.key} style={{ marginBottom: '20px' }}>
+            <div
+              style={{
+                fontSize: '11px',
+                letterSpacing: '0.08em',
+                textTransform: 'uppercase',
+                color: 'var(--color-ink-light)',
+                fontWeight: 500,
+                marginBottom: '6px',
+                lineHeight: '24px',
+              }}
+            >
+              {day.label}
+            </div>
+            {tasks.length > 0 ? (
+              <TaskList
+                tasks={tasks}
+                selectedTaskId={selectedId}
+                onTaskClick={(id) => setSelectedId(id === selectedId ? undefined : id)}
+                onTaskToggle={handleToggle}
+                onReorder={(reordered) => setTasksByDay((prev) => ({ ...prev, [day.key]: reordered }))}
+              />
+            ) : (
+              <div
                 style={{
-                  fontSize: '10px',
-                  lineHeight: '24px',
                   height: '24px',
-                  letterSpacing: '0.1em',
-                  textTransform: 'uppercase',
+                  lineHeight: '24px',
+                  fontSize: '12px',
                   color: 'var(--color-ink-light)',
-                  margin: 0,
-                  fontWeight: 500,
+                  opacity: 0.4,
+                  fontStyle: 'italic',
                 }}
               >
-                {day.label}
-              </h2>
-              {tasks.length > 0 ? (
-                tasks.map((task) => (
-                  <TaskItem key={task.id} title={task.title} priority={task.priority} />
-                ))
-              ) : (
-                <div
-                  style={{
-                    height: '24px',
-                    lineHeight: '24px',
-                    fontSize: '12px',
-                    color: 'var(--color-ink-light)',
-                    opacity: 0.4,
-                    fontStyle: 'italic',
-                  }}
-                >
-                  —
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
+                —
+              </div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }

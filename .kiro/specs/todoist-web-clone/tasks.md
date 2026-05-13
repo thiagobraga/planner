@@ -360,32 +360,32 @@ Full-stack implementation of a Todoist web clone using React + TypeScript (front
 - [x] 26. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 27. Frontend core UI implementation
-  - [ ] 27.1 Implement Sidebar with project tree, labels, and filters navigation
+- [x] 27. Frontend core UI implementation
+  - [x] 27.1 Implement Sidebar with project tree, labels, and filters navigation
     - Collapsible drawer on mobile (<768px)
     - Project tree with nesting
     - _Requirements: 27.2, 27.3_
 
-  - [ ] 27.2 Implement TaskList and TaskItem components with drag-and-drop
+  - [x] 27.2 Implement TaskList and TaskItem components with drag-and-drop
     - Render tasks with checkbox, title, due date, priority, labels
     - Drag-and-drop reordering
     - _Requirements: 9.1, 9.2, 9.3_
 
-  - [ ] 27.3 Implement TaskDetail editor panel
+  - [x] 27.3 Implement TaskDetail editor panel
     - Full task editor: all fields, subtasks, comments
     - _Requirements: 5.1, 5.2, 8.1_
 
-  - [ ] 27.4 Implement QuickAdd dialog with NLP date parsing
+  - [x] 27.4 Implement QuickAdd dialog with NLP date parsing
     - Open with `q` shortcut, submit with Enter, close with Escape
     - Natural-language date input with preview
     - _Requirements: 24.1, 24.2, 24.3, 13.1_
 
-  - [ ] 27.5 Implement SearchOverlay component
+  - [x] 27.5 Implement SearchOverlay component
     - Open with `/` shortcut
     - Grouped results (Tasks, Projects, Labels)
     - _Requirements: 24.4, 17.1, 17.2_
 
-  - [ ] 27.6 Implement FilterBar with syntax highlighting
+  - [x] 27.6 Implement FilterBar with syntax highlighting
     - Filter query input with live validation
     - _Requirements: 16.1, 16.3_
 
