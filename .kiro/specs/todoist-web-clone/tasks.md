@@ -286,8 +286,8 @@ Full-stack implementation of a Todoist web clone using React + TypeScript (front
     - **Property 22: Filter evaluation correctness**
     - **Validates: Requirements 16.8**
 
-- [ ] 17. Search
-  - [ ] 17.1 Implement search endpoint (GET /search)
+- [x] 17. Search
+  - [x] 17.1 Implement search endpoint (GET /search)
     - Full-text search using pg_trgm across tasks, projects, labels
     - Case-insensitive substring matching
     - Group results by type (Tasks, Projects, Labels)
@@ -295,7 +295,7 @@ Full-stack implementation of a Todoist web clone using React + TypeScript (front
     - Accept 2-200 chars (empty result for <2, error for >200)
     - _Requirements: 17.1, 17.2, 17.3, 17.4, 17.5_
 
-  - [ ] 17.2 Write property test for search correctness
+  - [x] 17.2 Write property test for search correctness
     - **Property 23: Search correctness**
     - **Validates: Requirements 17.1, 17.2, 17.3**
 
