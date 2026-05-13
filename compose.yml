@@ -1,0 +1,55 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-todoist}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-todoist}
+      POSTGRES_DB: ${POSTGRES_DB:-todoist}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-todoist}"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: .docker/api/Dockerfile
+    ports:
+      - "4000:4000"
+    environment:
+      PORT: 4000
+      DATABASE_URL: postgres://${POSTGRES_USER:-todoist}:${POSTGRES_PASSWORD:-todoist}@postgres:5432/${POSTGRES_DB:-todoist}
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5173}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  app:
+    build:
+      context: .
+      dockerfile: .docker/app/Dockerfile
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./app/src:/app/app/src
+      - ./app/index.html:/app/app/index.html
+    depends_on:
+      - api
+
+volumes:
+  pgdata:
