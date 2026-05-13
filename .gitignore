@@ -1,0 +1,36 @@
+# Dependencies
+node_modules/
+dist/
+build/
+.next/
+out/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# IDE
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# OS
+Thumbs.db
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Cache
+.pnpm-store/
+.turbo/
+.eslintcache
+
+# Database
+postgres_data/
+redis_data/
