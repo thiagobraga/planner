@@ -259,7 +259,7 @@ Full-stack implementation of a Todoist web clone using React + TypeScript (front
     - **Property 21: Upcoming view correctness**
     - **Validates: Requirements 15.3, 15.4, 15.5**
 
-- [ ] 15. Checkpoint - Ensure all tests pass
+- [x] 15. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 16. Filter system
