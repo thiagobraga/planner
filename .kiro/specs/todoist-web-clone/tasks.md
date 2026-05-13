@@ -299,8 +299,8 @@ Full-stack implementation of a Todoist web clone using React + TypeScript (front
     - **Property 23: Search correctness**
     - **Validates: Requirements 17.1, 17.2, 17.3**
 
-- [ ] 18. Reminders
-  - [ ] 18.1 Implement reminder CRUD and scheduling
+- [x] 18. Reminders
+  - [x] 18.1 Implement reminder CRUD and scheduling
     - Auto-schedule reminder when task has due date with time component
     - Manual reminder creation with specific datetime (reject past datetimes)
     - Cancel reminders on task completion/deletion
@@ -309,8 +309,8 @@ Full-stack implementation of a Todoist web clone using React + TypeScript (front
     - Suppress if user notifications disabled
     - _Requirements: 18.1, 18.2, 18.3, 18.4, 18.5, 18.6, 18.7, 18.8_
 
-- [ ] 19. Task comments
-  - [ ] 19.1 Implement comment CRUD endpoints
+- [x] 19. Task comments
+  - [x] 19.1 Implement comment CRUD endpoints
     - Create: validate body (1-15000 chars), task access check
     - Update: only author can edit, set updated_at
     - Delete: author or task owner can delete
@@ -331,8 +331,8 @@ Full-stack implementation of a Todoist web clone using React + TypeScript (front
 - [ ] 21. Checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 22. Activity history
-  - [ ] 22.1 Implement activity log recording and retrieval
+- [x] 22. Activity history
+  - [x] 22.1 Implement activity log recording and retrieval
     - Append events on task/project/section create/update/complete/uncomplete/delete
     - Store actor, event type, entity id, timestamp, before/after data
     - GET /activity: paginated (50/page), descending timestamp, project access check
@@ -343,8 +343,8 @@ Full-stack implementation of a Todoist web clone using React + TypeScript (front
   - Deliberately deferred; will be specified in a separate document.
   - Implementations must leave a stable hook on Task completion (e.g., a `task_completed` event in the activity log) so a future gamification subsystem can subscribe without changes to the Task_Service.
 
-- [ ] 24. User preferences
-  - [ ] 24.1 Implement preferences endpoints (GET/PATCH /preferences)
+- [x] 24. User preferences
+  - [x] 24.1 Implement preferences endpoints (GET/PATCH /preferences)
     - Validate timezone (IANA), week_start (sunday/monday), theme (light/dark/system)
     - Reject invalid timezone with error
     - _Requirements: 25.1, 25.2, 25.3, 25.4_

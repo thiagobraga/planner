@@ -7,6 +7,10 @@ import sectionRoutes from "./sections.js";
 import viewRoutes from "./views.js";
 import filterRoutes from "./filters.js";
 import searchRoutes from "./search.js";
+import reminderRoutes, { taskReminderRouter } from "./reminders.js";
+import commentRoutes, { taskCommentRouter } from "./comments.js";
+import preferencesRoutes from "./preferences.js";
+import activityRoutes from "./activity.js";
 
 const router: RouterType = Router();
 
@@ -21,6 +25,12 @@ router.use("/projects", projectRoutes);
 router.use("/views", viewRoutes);
 router.use("/filters", filterRoutes);
 router.use("/search", searchRoutes);
+router.use("/reminders", reminderRoutes);
+router.use("/tasks/:taskId/reminders", taskReminderRouter);
+router.use("/comments", commentRoutes);
+router.use("/tasks/:taskId/comments", taskCommentRouter);
+router.use("/preferences", preferencesRoutes);
+router.use("/activity", activityRoutes);
 router.use("/", sectionRoutes);
 
 export default router;
