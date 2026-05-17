@@ -2,6 +2,10 @@ import { useRef, useEffect } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
+let _pendingCol: number | null = null;
+export function setPendingColumn(col: number | null): void { _pendingCol = col; }
+function consumePendingColumn(): number | null { const c = _pendingCol; _pendingCol = null; return c; }
+
 export interface Task {
   id: string;
   title: string;
@@ -88,11 +92,12 @@ export function TaskItem({
   const committedRef = useRef(false);
 
   useEffect(() => {
-    if (isEditing) {
-      editRef.current?.focus();
-      // place cursor at end
-      const len = editRef.current?.value.length ?? 0;
-      editRef.current?.setSelectionRange(len, len);
+    if (isEditing && editRef.current) {
+      editRef.current.focus();
+      const pending = consumePendingColumn();
+      const len = editRef.current.value.length;
+      const col = pending !== null ? Math.min(pending, len) : len;
+      editRef.current.setSelectionRange(col, col);
     }
   }, [isEditing]);
 
@@ -154,14 +159,16 @@ export function TaskItem({
       requestAnimationFrame(() => editRef.current?.focus());
     } else if (e.key === 'ArrowDown') {
       e.preventDefault();
+      const col = e.currentTarget.selectionStart ?? 0;
       committedRef.current = true;
       onEditCommit?.(task.id, e.currentTarget.value);
-      setTimeout(() => focusAdjacent(task.id, 'down'), 0);
+      onNavigate?.(task.id, 'down', col);
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
+      const col = e.currentTarget.selectionStart ?? 0;
       committedRef.current = true;
       onEditCommit?.(task.id, e.currentTarget.value);
-      setTimeout(() => focusAdjacent(task.id, 'up'), 0);
+      onNavigate?.(task.id, 'up', col);
     }
   };
 
