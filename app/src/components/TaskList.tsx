@@ -13,17 +13,37 @@ import {
   verticalListSortingStrategy,
   arrayMove,
 } from '@dnd-kit/sortable';
-import { TaskItem, type Task } from './TaskItem';
+import { TaskItem, type Task, type TaskItemProps } from './TaskItem';
 
-interface TaskListProps {
+type TaskCallbacks = Pick<
+  TaskItemProps,
+  'onStartEdit' | 'onEditCommit' | 'onEditCancel' | 'onDelete' | 'onAddBelow' | 'onIndent' | 'onNavigate'
+>;
+
+interface TaskListProps extends TaskCallbacks {
   tasks: Task[];
   selectedTaskId?: string;
+  editingId?: string;
   onTaskClick?: (id: string) => void;
   onTaskToggle?: (id: string) => void;
   onReorder?: (tasks: Task[]) => void;
 }
 
-export function TaskList({ tasks, selectedTaskId, onTaskClick, onTaskToggle, onReorder }: TaskListProps) {
+export function TaskList({
+  tasks,
+  selectedTaskId,
+  editingId,
+  onTaskClick,
+  onTaskToggle,
+  onReorder,
+  onStartEdit,
+  onEditCommit,
+  onEditCancel,
+  onDelete,
+  onAddBelow,
+  onIndent,
+  onNavigate,
+}: TaskListProps) {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
@@ -38,19 +58,7 @@ export function TaskList({ tasks, selectedTaskId, onTaskClick, onTaskToggle, onR
   };
 
   if (tasks.length === 0) {
-    return (
-      <div
-        style={{
-          padding: '24px 0',
-          fontSize: '13px',
-          color: 'var(--color-ink-light)',
-          fontStyle: 'italic',
-          lineHeight: '24px',
-        }}
-      >
-        No tasks here yet.
-      </div>
-    );
+    return null;
   }
 
   return (
@@ -59,15 +67,23 @@ export function TaskList({ tasks, selectedTaskId, onTaskClick, onTaskToggle, onR
         <div
           role="list"
           aria-label="task list"
-          style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}
+          style={{ display: 'flex', flexDirection: 'column', gap: '0' }}
         >
           {tasks.map((task) => (
             <div key={task.id} role="listitem">
               <TaskItem
                 task={task}
                 isSelected={task.id === selectedTaskId}
+                isEditing={task.id === editingId}
                 onToggle={onTaskToggle}
                 onClick={onTaskClick}
+                onStartEdit={onStartEdit}
+                onEditCommit={onEditCommit}
+                onEditCancel={onEditCancel}
+                onDelete={onDelete}
+                onAddBelow={onAddBelow}
+                onIndent={onIndent}
+                onNavigate={onNavigate}
               />
             </div>
           ))}
