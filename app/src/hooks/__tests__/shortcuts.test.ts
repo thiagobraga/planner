@@ -30,9 +30,14 @@ describe('shortcuts matcher', () => {
     expect(action).toBe('help:open');
   });
 
-  it('Enter and Delete fire even while text input is focused (context=always)', () => {
-    expect(matchKey(DEFAULT_BINDINGS, createMatcherState(), ev('Enter', { isTextInputFocused: true })).action).toBe('task:editSelected');
-    expect(matchKey(DEFAULT_BINDINGS, createMatcherState(), ev('Delete', { isTextInputFocused: true })).action).toBe('task:confirmDelete');
+  it('Enter and Delete fire when no text input focused (context=global)', () => {
+    expect(matchKey(DEFAULT_BINDINGS, createMatcherState(), ev('Enter')).action).toBe('task:editSelected');
+    expect(matchKey(DEFAULT_BINDINGS, createMatcherState(), ev('Delete')).action).toBe('task:confirmDelete');
+  });
+
+  it('Enter and Delete are suppressed while text input is focused', () => {
+    expect(matchKey(DEFAULT_BINDINGS, createMatcherState(), ev('Enter', { isTextInputFocused: true })).action).toBeNull();
+    expect(matchKey(DEFAULT_BINDINGS, createMatcherState(), ev('Delete', { isTextInputFocused: true })).action).toBeNull();
   });
 
   it('Escape closes dialogs', () => {
