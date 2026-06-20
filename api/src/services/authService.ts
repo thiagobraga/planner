@@ -109,16 +109,17 @@ export async function register(input: RegisterInput): Promise<AuthResult> {
 }
 
 export async function login(email: string, password: string): Promise<AuthResult> {
-  // Check rate limit
+  // Check rate limit (best-effort — skip if Redis unavailable)
   const rateLimitKey = `login_attempts:${email.toLowerCase()}`;
-  const attempts = await redisClient.get(rateLimitKey);
-
-  if (attempts && parseInt(attempts, 10) > LOGIN_RATE_LIMIT_MAX) {
-    throw new AppError({
-      code: "RATE_LIMITED",
-      message: "Too many failed login attempts. Please try again later.",
-      statusCode: 429,
-    });
+  if (redisClient.isReady) {
+    const attempts = await redisClient.get(rateLimitKey);
+    if (attempts && parseInt(attempts, 10) > LOGIN_RATE_LIMIT_MAX) {
+      throw new AppError({
+        code: "RATE_LIMITED",
+        message: "Too many failed login attempts. Please try again later.",
+        statusCode: 429,
+      });
+    }
   }
 
   // Look up user
@@ -149,7 +150,7 @@ export async function login(email: string, password: string): Promise<AuthResult
     });
   }
 
-  await redisClient.del(rateLimitKey);
+  if (redisClient.isReady) await redisClient.del(rateLimitKey).catch(() => {});
 
   const sessionId = uuidv4();
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
@@ -176,6 +177,7 @@ export async function login(email: string, password: string): Promise<AuthResult
 }
 
 async function incrementFailedAttempts(key: string): Promise<void> {
+  if (!redisClient.isReady) return;
   const current = await redisClient.incr(key);
   if (current === 1) {
     await redisClient.expire(key, LOGIN_RATE_LIMIT_WINDOW);

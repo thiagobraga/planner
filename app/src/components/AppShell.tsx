@@ -1,17 +1,32 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { Sidebar } from './Sidebar';
 import { QuickAdd } from './QuickAdd';
 import { SearchOverlay } from './SearchOverlay';
 import { matchKey, createMatcherState, DEFAULT_BINDINGS } from '../hooks/shortcuts';
 import type { MatcherState } from '../hooks/shortcuts';
+import { useSync } from '../hooks/useSync';
 
 export function AppShell() {
   const navigate = useNavigate();
+  const qc = useQueryClient();
+
+  useSync(useCallback((event) => {
+    if (event.entityType === 'task') qc.invalidateQueries();
+  }, [qc]));
   const [quickAddOpen, setQuickAddOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => window.innerWidth < 640);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 639px)');
+    const handler = (e: MediaQueryListEvent) => setSidebarCollapsed(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
   const matcherStateRef = useRef<MatcherState>(createMatcherState());
 
   const isTextInputFocused = useCallback(() => {
@@ -73,39 +88,43 @@ export function AppShell() {
 
   return (
     <div style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
-      {/* Mobile menu button */}
-      <button
-        type="button"
-        aria-label="Open navigation"
-        onClick={() => setSidebarOpen(true)}
-        style={{
-          display: 'none',
-          position: 'fixed',
-          top: '12px',
-          left: '12px',
-          zIndex: 60,
-          background: 'var(--color-cream)',
-          border: '1px solid var(--color-dot)',
-          borderRadius: '4px',
-          padding: '4px 8px',
-          fontSize: '16px',
-          cursor: 'pointer',
-        }}
-        className="mobile-menu-btn"
-      >
-        ☰
-      </button>
+      {/* Mobile menu button — only shown below collapsed breakpoint (≥640px uses collapsed sidebar) */}
+      {!sidebarCollapsed && (
+        <button
+          type="button"
+          aria-label="Open navigation"
+          onClick={() => setSidebarOpen(true)}
+          style={{
+            display: 'none',
+            position: 'fixed',
+            top: '12px',
+            left: '12px',
+            zIndex: 60,
+            background: 'var(--color-cream)',
+            border: '1px solid var(--color-dot)',
+            borderRadius: '4px',
+            padding: '4px 8px',
+            fontSize: '16px',
+            cursor: 'pointer',
+          }}
+          className="mobile-menu-btn"
+        >
+          ☰
+        </button>
+      )}
 
       <Sidebar
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
+        collapsed={sidebarCollapsed}
       />
 
       <main
+        className="main-content"
         style={{
           flex: 1,
           overflowY: 'auto',
-          padding: '32px 32px 64px',
+          padding: '24px',
         }}
       >
         <Outlet />

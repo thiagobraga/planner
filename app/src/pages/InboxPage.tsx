@@ -207,7 +207,7 @@ export function InboxPage() {
 
   return (
     <div
-      style={{ maxWidth: '640px', cursor: 'text' }}
+      style={{ maxWidth: '648px', cursor: 'text' }}
       onClick={(e) => {
         if ((e.target as HTMLElement).closest('input, button, [role="button"]')) return;
         inputRef.current?.focus();

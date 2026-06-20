@@ -47,7 +47,7 @@ function formatTask(row: TaskRow) {
   };
 }
 
-async function getUserTimezone(userId: string): Promise<string> {
+export async function getUserTimezone(userId: string): Promise<string> {
   const result = await pool.query(
     `SELECT time_zone FROM preferences WHERE user_id = $1`,
     [userId],

@@ -1,6 +1,8 @@
 import { v4 as uuidv4 } from "uuid";
 import pool from "../db/pool.js";
 import { AppError } from "../utils/AppError.js";
+import { buildEvent, publishEvent } from "./syncService.js";
+import { addDaysISO } from "./viewService.js";
 
 interface TaskRow {
   id: string;
@@ -81,11 +83,8 @@ export async function completeTask(taskId: string, userId: string) {
 
     // Recurring task: compute next due date instead of completing
     if (task.recurrence_rule) {
-      // Stub: add 1 day to current due_date
       const nextDueDate = task.due_date
-        ? new Date(new Date(task.due_date).getTime() + 24 * 60 * 60 * 1000)
-            .toISOString()
-            .split("T")[0]
+        ? addDaysISO(task.due_date, 1)
         : null;
 
       await client.query(
@@ -105,7 +104,9 @@ export async function completeTask(taskId: string, userId: string) {
       await client.query("COMMIT");
 
       const updated = await pool.query("SELECT * FROM tasks WHERE id = $1", [taskId]);
-      return formatTask(updated.rows[0] as TaskRow);
+      const formatted = formatTask(updated.rows[0] as TaskRow);
+      publishEvent(buildEvent({ entityType: "task", eventType: "updated", entityId: formatted.id, userId, projectId: formatted.projectId, payload: formatted })).catch((err) => console.error("[sync] publish failed", err));
+      return formatted;
     }
 
     // Non-recurring: mark complete
@@ -140,7 +141,9 @@ export async function completeTask(taskId: string, userId: string) {
     await client.query("COMMIT");
 
     const updated = await pool.query("SELECT * FROM tasks WHERE id = $1", [taskId]);
-    return formatTask(updated.rows[0] as TaskRow);
+    const formatted = formatTask(updated.rows[0] as TaskRow);
+    publishEvent(buildEvent({ entityType: "task", eventType: "completed", entityId: formatted.id, userId, projectId: formatted.projectId, payload: formatted })).catch((err) => console.error("[sync] publish failed", err));
+    return formatted;
   } catch (err) {
     await client.query("ROLLBACK");
     throw err;
@@ -253,7 +256,9 @@ export async function createTask(userId: string, input: CreateTaskInput) {
     ]
   );
 
-  return formatTask(result.rows[0] as TaskRow);
+  const task = formatTask(result.rows[0] as TaskRow);
+  publishEvent(buildEvent({ entityType: "task", eventType: "created", entityId: task.id, userId, projectId: task.projectId, payload: task })).catch((err) => console.error("[sync] publish failed", err));
+  return task;
 }
 
 export interface UpdateTaskInput {
@@ -415,7 +420,9 @@ export async function updateTask(taskId: string, userId: string, input: UpdateTa
   const query = `UPDATE tasks SET ${setClauses.join(", ")} WHERE id = $${paramIndex} RETURNING *`;
 
   const result = await pool.query(query, values);
-  return formatTask(result.rows[0] as TaskRow);
+  const formatted = formatTask(result.rows[0] as TaskRow);
+  publishEvent(buildEvent({ entityType: "task", eventType: "updated", entityId: formatted.id, userId, projectId: formatted.projectId, payload: formatted })).catch((err) => console.error("[sync] publish failed", err));
+  return formatted;
 }
 
 async function detectCycle(taskId: string, proposedParentId: string): Promise<void> {
@@ -465,7 +472,9 @@ export async function reopenTask(taskId: string, userId: string) {
     await client.query("COMMIT");
 
     const updated = await pool.query("SELECT * FROM tasks WHERE id = $1", [taskId]);
-    return formatTask(updated.rows[0] as TaskRow);
+    const formatted = formatTask(updated.rows[0] as TaskRow);
+    publishEvent(buildEvent({ entityType: "task", eventType: "uncompleted", entityId: formatted.id, userId, projectId: formatted.projectId, payload: formatted })).catch((err) => console.error("[sync] publish failed", err));
+    return formatted;
   } catch (err) {
     await client.query("ROLLBACK");
     throw err;
@@ -577,6 +586,7 @@ export async function deleteTask(taskId: string, userId: string): Promise<{ succ
     );
 
     await client.query("COMMIT");
+    publishEvent(buildEvent({ entityType: "task", eventType: "deleted", entityId: taskId, userId, projectId: task.project_id })).catch((err) => console.error("[sync] publish failed", err));
   } catch (err) {
     await client.query("ROLLBACK");
     throw err;

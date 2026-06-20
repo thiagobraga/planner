@@ -2,13 +2,13 @@ services:
   postgres:
     image: postgres:16-alpine
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-todoist}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-todoist}
-      POSTGRES_DB: ${POSTGRES_DB:-todoist}
+      POSTGRES_USER: ${POSTGRES_USER:-planner}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-planner}
+      POSTGRES_DB: ${POSTGRES_DB:-planner}
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-todoist}"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-planner}"]
       interval: 5s
       timeout: 3s
       retries: 5
@@ -26,30 +26,56 @@ services:
       context: .
       dockerfile: .docker/api/Dockerfile
     ports:
-      - "4000:4000"
+      - "4040:4000"
+    networks: [default, proxy]
     environment:
       PORT: 4000
-      DATABASE_URL: postgres://${POSTGRES_USER:-todoist}:${POSTGRES_PASSWORD:-todoist}@postgres:5432/${POSTGRES_DB:-todoist}
+      DATABASE_URL: postgres://${POSTGRES_USER:-planner}:${POSTGRES_PASSWORD:-planner}@postgres:5432/${POSTGRES_DB:-planner}
       REDIS_URL: redis://redis:6379
       JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
-      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:5173}
+      CORS_ORIGIN: ${CORS_ORIGIN:-https://planner.local}
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
+    labels:
+      traefik.enable: true
+      traefik.http.routers.planner-api-router.rule: Host(`planner.local`) && PathPrefix(`/api`)
+      traefik.http.routers.planner-api-router.entrypoints: websecure
+      traefik.http.routers.planner-api-router.tls: true
+      traefik.http.routers.planner-api-router.priority: 100
+      traefik.http.services.planner-api-service.loadbalancer.server.port: 4000
+      traefik.http.routers.planner-socketio-router.rule: Host(`planner.local`) && PathPrefix(`/socket.io`)
+      traefik.http.routers.planner-socketio-router.entrypoints: websecure
+      traefik.http.routers.planner-socketio-router.tls: true
+      traefik.http.routers.planner-socketio-router.priority: 200
+      traefik.http.routers.planner-socketio-router.service: planner-api-service
 
   app:
     build:
       context: .
       dockerfile: .docker/app/Dockerfile
     ports:
-      - "5173:5173"
+      - "50173:5173"
+    networks: [default, proxy]
+    environment:
+      VITE_API_URL: http://api:4000
     volumes:
       - ./app/src:/app/app/src
       - ./app/index.html:/app/app/index.html
     depends_on:
       - api
+    labels:
+      traefik.enable: true
+      traefik.http.routers.planner-app-router.rule: Host(`planner.local`)
+      traefik.http.routers.planner-app-router.entrypoints: websecure
+      traefik.http.routers.planner-app-router.tls: true
+      traefik.http.services.planner-app-service.loadbalancer.server.port: 5173
 
 volumes:
   pgdata:
+
+networks:
+  proxy:
+    external: true

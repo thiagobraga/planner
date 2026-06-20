@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { TaskList } from '../components/TaskList';
 import type { Task } from '../components/TaskItem';
+import { getPhrase } from '../utils/phrases';
 
 function getUpcomingDays(count: number) {
   const days = [];
@@ -10,7 +11,7 @@ function getUpcomingDays(count: number) {
     d.setDate(base.getDate() + i);
     days.push({
       key: d.toISOString().slice(0, 10),
-      label: d.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' }),
+      label: `${d.toLocaleDateString('en-US', { month: 'short' }).toUpperCase()} ${d.getDate()} ${d.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase()}`,
     });
   }
   return days;
@@ -40,6 +41,7 @@ const makeSeed = (): Record<string, Task[]> => {
 
 export function UpcomingPage() {
   const days = getUpcomingDays(7);
+  const phrase = useMemo(() => getPhrase('upcoming'), []);
   const [tasksByDay, setTasksByDay] = useState<Record<string, Task[]>>(makeSeed);
   const [selectedId, setSelectedId] = useState<string>();
 
@@ -54,11 +56,11 @@ export function UpcomingPage() {
   };
 
   return (
-    <div style={{ maxWidth: '640px' }}>
+    <div style={{ maxWidth: '648px' }}>
       <h1
         style={{
           fontFamily: '"Lora", serif',
-          fontSize: '22px',
+          fontSize: '18px',
           lineHeight: '24px',
           fontWeight: 600,
           color: 'var(--color-ink)',
@@ -72,11 +74,11 @@ export function UpcomingPage() {
           fontSize: '13px',
           lineHeight: '24px',
           color: 'var(--color-ink-light)',
+          opacity: 0.6,
           margin: 0,
-          fontStyle: 'italic',
         }}
       >
-        Next 7 days
+        {phrase}
       </p>
 
       <div style={{ height: '24px' }} />
@@ -84,7 +86,7 @@ export function UpcomingPage() {
       {days.map((day) => {
         const tasks = tasksByDay[day.key] ?? [];
         return (
-          <div key={day.key} style={{ marginBottom: '20px' }}>
+          <div key={day.key} style={{ marginTop: '24px' }}>
             <div
               style={{
                 fontSize: '11px',
@@ -92,7 +94,6 @@ export function UpcomingPage() {
                 textTransform: 'uppercase',
                 color: 'var(--color-ink-light)',
                 fontWeight: 500,
-                marginBottom: '6px',
                 lineHeight: '24px',
               }}
             >

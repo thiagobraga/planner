@@ -40,7 +40,7 @@ async function start() {
     await connectRedis();
     await attachSyncServer(httpServer);
   } catch (err) {
-    console.warn("Sync/Redis startup failed; continuing without real-time sync:", err);
+    console.error("⚠️  SYNC DISABLED: Redis/Socket.IO startup failed. Real-time updates will not work.", err);
   }
 
   httpServer.listen(port, () => {

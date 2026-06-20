@@ -2,7 +2,7 @@
 
 @theme {
   --color-cream: #f5f0e8;
-  --color-ink: #2c2c2c;
+  --color-ink: #44443d;
   --color-ink-light: #6b6b6b;
   --color-dot: #d4cfc7;
   --color-accent: #c0392b;
@@ -24,16 +24,62 @@ body {
   font-size: 14px;
   line-height: 24px;
   color: var(--color-ink);
+  margin: 0;
+  padding: 0;
+}
+
+h1, h2, h3, h4, h5, h6, p, ul, ol, li, dl, dt, dd, blockquote, figure, figcaption, pre, code, form, input, button, select, textarea {
+  margin: 0;
+  padding: 0;
+  line-height: 24px;
+}
+
+/* Thin, quiet scrollbars for app scroll surfaces */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(107, 107, 107, 0.35) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: rgba(107, 107, 107, 0.28);
+  border-radius: 999px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(44, 44, 44, 0.38);
+}
+
+*::-webkit-scrollbar-button {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+.main-content,
+.sidebar-drawer,
+aside[aria-label="Navigation"] {
+  scrollbar-gutter: stable;
 }
 
 /* Task item row */
 .task-item {
+  position: relative;
   display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 6px 4px;
+  align-items: flex-start;
+  gap: 0;
+  min-height: 24px;
   border-radius: 4px;
-  transition: background 100ms;
+  cursor: pointer;
+  transition: opacity 150ms;
 }
 .task-item:hover {
   background: rgba(212, 207, 199, 0.4);
@@ -45,8 +91,63 @@ body {
   opacity: 0.5 !important;
 }
 
-/* Mobile sidebar drawer */
-@media (max-width: 767px) {
+.task-add-input::placeholder {
+  color: var(--color-ink-light);
+  opacity: 0.6;
+}
+
+/* Smooth caret blink for task input */
+/* @keyframes caret-blink {
+  0%, 15% { caret-color: transparent; }
+  15%, 85% { caret-color: var(--color-ink); }
+  85%, 100% { caret-color: transparent; }
+}
+.task-input {
+  caret-color: var(--color-ink);
+  animation: caret-blink 1.4s step-end infinite;
+} */
+
+/* Focus indicators — keyboard navigation */
+:focus-visible {
+  outline: 2px solid var(--color-ink);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+.task-item:focus-visible {
+  outline: 2px solid var(--color-ink);
+  outline-offset: -2px;
+  border-radius: 4px;
+}
+button:focus-visible {
+  outline: 2px solid var(--color-ink);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* Collapsed sidebar icon links */
+.sidebar-icon-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  color: var(--color-ink);
+  text-decoration: none;
+  opacity: 0.5;
+  transition: opacity 150ms ease, background-color 150ms ease;
+}
+.sidebar-icon-link:hover {
+  opacity: 1;
+  background-color: rgba(212, 207, 199, 0.5);
+}
+.sidebar-icon-link--active {
+  opacity: 1;
+  background-color: rgba(212, 207, 199, 0.5);
+}
+
+/* Mobile sidebar drawer — below 640px the collapsed sidebar is shown instead, no drawer needed */
+@media (max-width: 639px) {
   .sidebar-drawer {
     position: fixed;
     top: 0;

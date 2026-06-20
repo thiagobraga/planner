@@ -1,12 +1,8 @@
-# Todoist Web Clone
-
-Full-stack implementation of a Todoist clone with React, Node.js/Express, PostgreSQL, and real-time synchronization.
-
-## Tech Stack
-
-- **Frontend**: React + TypeScript, Zustand, React Query
-- **Backend**: Node.js + Express, PostgreSQL, Redis
-- **Infrastructure**: Docker, Docker Compose
+<div align="center">
+  <img src="app/public/images/bulletjournal-planner.png" alt="Planner" width="120" />
+  <h1>Planner</h1>
+  <p>Beautiful and easy to use Bullet Journal todo list management.</p>
+</div>
 
 ## Getting Started
 
@@ -31,3 +27,22 @@ See [design documentation](.kiro/specs/todoist-web-clone/design.md) for detailed
 ## Implementation Plan
 
 The project is organized by task waves as defined in [tasks.md](.kiro/specs/todoist-web-clone/tasks.md).
+
+## Stack
+
+| Resource | Status |
+|----------|--------|
+| [React](https://react.dev) | `^18.3.1` |
+| [TypeScript](https://www.typescriptlang.org) | `^5.6.0` |
+| [Express.js](https://expressjs.com) | `^4.21.0` |
+| [PostgreSQL](https://www.postgresql.org) | `^8.13.0` |
+| [Vite](https://vite.dev) | `^5.4.0` |
+| [Vitest](https://vitest.dev) | `^2.1.0` |
+| [Tailwind CSS](https://tailwindcss.com) | `^4.3.0` |
+| [Zustand](https://zustand.docs.pmnd.rs) | `^5.0.0` |
+| [TanStack Query](https://tanstack.com/query) | `^5.56.0` |
+| [Docker](https://www.docker.com) | Yes |
+| [Docker Compose](https://docs.docker.com/compose/) | Yes |
+| Entrypoint | No |
+| Image | `node:22-alpine` |
+| AI Agents | `AGENTS`, `CLAUDE`, `GEMINI` |

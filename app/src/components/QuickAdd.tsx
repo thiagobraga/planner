@@ -240,10 +240,11 @@ export function QuickAdd({ isOpen, onClose, onSubmit }: QuickAddProps) {
           {/* Footer */}
           <div
             style={{
-              marginTop: '16px',
+              marginTop: '12px',
               display: 'flex',
               justifyContent: 'space-between',
               alignItems: 'center',
+              height: '24px',
             }}
           >
             <span style={{ fontSize: '11px', color: 'var(--color-ink-light)' }}>

@@ -105,7 +105,7 @@ export function TaskItem({
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : task.isCompleted ? 0.35 : 1,
-    paddingLeft: `${(task.indent ?? 0) * 20}px`,
+    paddingLeft: `${(task.indent ?? 0) * 24}px`,
   };
 
   const handleCheckClick = (e: React.MouseEvent) => {

@@ -97,12 +97,14 @@ export function SearchOverlay({
       <div key={title}>
         <div
           style={{
-            padding: '8px 20px 4px',
+            padding: '0 20px',
+            height: '24px',
             fontSize: '10px',
             letterSpacing: '0.1em',
             textTransform: 'uppercase',
             color: 'var(--color-ink-light)',
             fontWeight: 500,
+            lineHeight: '24px',
           }}
         >
           {title}
@@ -120,19 +122,20 @@ export function SearchOverlay({
                 }
               }}
               style={{
-                padding: '6px 20px',
+                padding: '0 20px',
+                height: '48px',
                 cursor: 'pointer',
                 background: isActive ? 'var(--color-dot)' : 'transparent',
                 display: 'flex',
                 flexDirection: 'column',
-                gap: '2px',
+                justifyContent: 'center',
               }}
             >
-              <span style={{ fontSize: '14px', color: 'var(--color-ink)', lineHeight: '20px' }}>
+              <span style={{ fontSize: '14px', color: 'var(--color-ink)', lineHeight: '24px' }}>
                 {item.title}
               </span>
               {item.subtitle && (
-                <span style={{ fontSize: '11px', color: 'var(--color-ink-light)', fontStyle: 'italic' }}>
+                <span style={{ fontSize: '11px', color: 'var(--color-ink-light)', fontStyle: 'italic', lineHeight: '24px' }}>
                   {item.subtitle}
                 </span>
               )}

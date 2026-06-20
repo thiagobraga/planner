@@ -41,7 +41,12 @@ export function getIO(): IOServer | null {
 }
 
 export async function publishEvent(event: SyncEvent): Promise<void> {
-  await redisPubClient.publish(SYNC_CHANNEL, JSON.stringify(event));
+  try {
+    await redisPubClient.publish(SYNC_CHANNEL, JSON.stringify(event));
+  } catch (err) {
+    console.error("[sync] publishEvent failed:", err);
+    throw err;
+  }
 }
 
 // Used by service layer to emit changes without depending on the IO server directly.
@@ -95,8 +100,11 @@ export async function attachSyncServer(httpServer: HTTPServer): Promise<IOServer
     next();
   });
 
+  console.log("[sync] Socket.IO attached to HTTP server");
+
   io.on("connection", async (socket: Socket) => {
     const userId = (socket.data as { userId: string }).userId;
+    console.log(`[sync] socket connected user=${userId} id=${socket.id}`);
     socket.join(userRoom(userId));
 
     const projectIds = await loadUserProjectIds(userId);
@@ -127,6 +135,8 @@ export async function attachSyncServer(httpServer: HTTPServer): Promise<IOServer
       io.to(projectRoom(event.projectId)).emit("sync", event);
     }
   });
+
+  console.log("[sync] Redis subscription ready");
 
   ioInstance = io;
   return io;

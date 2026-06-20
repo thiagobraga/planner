@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router-dom';
+import { ChevronRight, Repeat2, type LucideIcon } from 'lucide-react';
 
 interface Project {
   id: string;
@@ -11,14 +12,40 @@ interface SidebarProps {
   isOpen?: boolean;
   onClose?: () => void;
   projects?: Project[];
+  collapsed?: boolean;
 }
 
 const DEFAULT_PROJECTS: Project[] = [];
 
-const NAV_ITEMS = [
-  { to: '/inbox', label: 'Inbox', icon: '⬚' },
-  { to: '/today', label: 'Today', icon: '◎' },
-  { to: '/upcoming', label: 'Upcoming', icon: '▷' },
+
+export const BjTask = ({ size = 15 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.2">
+    <circle cx="7.5" cy="7.5" r="1.5" fill="currentColor" />
+  </svg>
+);
+
+export const MonthlyIcon = ({ size = 15 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 15 15" fill="none" aria-hidden="true">
+    <circle cx="3" cy="4" r="1" fill="currentColor" />
+    <circle cx="3" cy="7.5" r="1" fill="currentColor" />
+    <circle cx="3" cy="11" r="1" fill="currentColor" />
+    <path d="M6 4H12" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+    <path d="M6 7.5H12" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+    <path d="M6 11H12" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+  </svg>
+);
+
+const PlannerIcon = ({ size = 16 }: { size?: number }) => (
+  <img src="/images/bulletjournal-planner-16x16.png" width={size} height={size} alt="" style={{ display: 'block', flexShrink: 0 }} />
+);
+
+type NavItem = { to: string; label: string; Icon: LucideIcon | React.ComponentType<{ size?: number }> };
+
+const NAV_ITEMS: NavItem[] = [
+  { to: '/today', label: 'Daily', Icon: BjTask },
+  { to: '/inbox', label: 'Inbox', Icon: ChevronRight },
+  { to: '/monthly', label: 'Monthly', Icon: MonthlyIcon },
+  { to: '/habits', label: 'Habits', Icon: Repeat2 },
 ];
 
 function ProjectNode({ project, depth = 0 }: { project: Project; depth?: number }) {
@@ -64,12 +91,50 @@ function ProjectNode({ project, depth = 0 }: { project: Project; depth?: number 
   );
 }
 
-export function Sidebar({ isOpen, onClose, projects = DEFAULT_PROJECTS }: SidebarProps) {
+export function Sidebar({ isOpen, onClose, projects = DEFAULT_PROJECTS, collapsed = false }: SidebarProps) {
+  if (collapsed) {
+    return (
+      <aside
+        style={{
+          width: '48px',
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          borderRight: '1px solid var(--color-dot)',
+          backgroundColor: 'var(--color-sidebar-bg)',
+          padding: '24px 0',
+          flexShrink: 0,
+          overflowY: 'auto',
+        }}
+        aria-label="Navigation"
+      >
+        {/* Logo mark */}
+        <div style={{ marginBottom: '24px' }} title="Planner">
+          <PlannerIcon size={16} />
+        </div>
+
+        <nav aria-label="Main navigation" style={{ display: 'flex', flexDirection: 'column', gap: '2px', width: '100%', alignItems: 'center' }}>
+          {NAV_ITEMS.map((entry) => (
+            <NavLink
+              key={entry.to}
+              to={entry.to}
+              title={entry.label}
+              className={({ isActive }) => (isActive ? 'sidebar-icon-link sidebar-icon-link--active' : 'sidebar-icon-link')}
+            >
+              <entry.Icon size={16} strokeWidth={1.5} />
+            </NavLink>
+          ))}
+        </nav>
+      </aside>
+    );
+  }
+
   const sidebarContent = (
     <aside
       className={`sidebar-drawer ${isOpen !== false ? 'sidebar-drawer--open' : ''}`}
       style={{
-        width: '240px',
+        width: '180px',
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
@@ -83,55 +148,76 @@ export function Sidebar({ isOpen, onClose, projects = DEFAULT_PROJECTS }: Sideba
       aria-label="Navigation"
     >
       {/* Logo */}
-      <h1
+      <div
         style={{
-          fontFamily: '"Lora", serif',
-          fontSize: '20px',
-          lineHeight: '24px',
-          height: '24px',
-          fontWeight: 600,
-          color: 'var(--color-ink)',
           margin: '0 0 24px 12px',
-          padding: 0,
         }}
       >
-        planner
-      </h1>
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{ flexShrink: 0 }}><PlannerIcon size={14} /></div>
+            <h1
+              style={{
+                fontFamily: '"Lora", serif',
+                fontSize: '18px',
+                lineHeight: '24px',
+                fontWeight: 600,
+                color: 'var(--color-ink)',
+                margin: 0,
+                padding: 0,
+              }}
+            >
+              Planner
+            </h1>
+          </div>
+          <p
+            style={{
+              fontSize: '13px',
+              lineHeight: '24px',
+              color: 'var(--color-ink-light)',
+              margin: 0,
+              padding: 0,
+              opacity: 0.6,
+            }}
+          >
+            Bulletjournal online
+          </p>
+        </div>
+      </div>
 
       {/* Main nav */}
       <nav aria-label="Main navigation">
-        {NAV_ITEMS.map((item) => (
+        {NAV_ITEMS.map((entry) => (
           <NavLink
-            key={item.to}
-            to={item.to}
+            key={entry.to}
+            to={entry.to}
             className={({ isActive }) =>
               `flex items-center no-underline ${isActive ? 'font-medium' : 'opacity-60 hover:opacity-100'}`
             }
             style={({ isActive }) => ({
-              height: '32px',
-              lineHeight: '32px',
+              height: '24px',
+              lineHeight: '24px',
               padding: '0 12px',
               fontSize: '14px',
               color: 'var(--color-ink)',
               backgroundColor: isActive ? 'rgba(212,207,199,0.5)' : 'transparent',
               display: 'flex',
               alignItems: 'center',
-              gap: '10px',
+              gap: '7px',
               textDecoration: 'none',
               borderRadius: '4px',
-              marginBottom: '2px',
             })}
           >
-            <span style={{ width: '16px', textAlign: 'center', fontSize: '12px', opacity: 0.6 }}>
-              {item.icon}
+            <span style={{ width: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0.6 }}>
+              <entry.Icon size={15} strokeWidth={1.5} />
             </span>
-            <span>{item.label}</span>
+            <span>{entry.label}</span>
           </NavLink>
         ))}
       </nav>
 
       {/* Projects */}
-      <div style={{ marginTop: '28px', flex: 1 }}>
+      <div style={{ marginTop: '24px', flex: 1 }}>
         <div
           style={{
             fontSize: '10px',
@@ -141,7 +227,6 @@ export function Sidebar({ isOpen, onClose, projects = DEFAULT_PROJECTS }: Sideba
             color: 'var(--color-ink-light)',
             fontWeight: 500,
             padding: '0 12px',
-            marginBottom: '4px',
           }}
         >
           Projects
