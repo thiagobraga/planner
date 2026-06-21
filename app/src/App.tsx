@@ -5,6 +5,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { AppShell } from './components/AppShell';
 import { LoginPage } from './pages/LoginPage';
 import { InboxPage } from './pages/InboxPage';
+import { ProjectsPage } from './pages/ProjectsPage';
 import { TodayPage } from './pages/TodayPage';
 import { HabitsPage } from './pages/HabitsPage';
 import { MonthlyPage } from './pages/MonthlyPage';
@@ -27,7 +28,7 @@ function AppRoutes() {
           <Route path="/monthly" element={<MonthlyPage />} />
           <Route path="/habits" element={<HabitsPage />} />
           <Route path="/styleguide" element={<StyleguidePage />} />
-          <Route path="/project/:id" element={<InboxPage />} />
+          <Route path="/project/:id" element={<ProjectsPage />} />
         </Route>
       </Routes>
     </BrowserRouter>
