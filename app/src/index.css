@@ -157,6 +157,22 @@ button:focus-visible {
   padding: 24px 4px 24px 12px;
 }
 
+/* Project rows — reveal row actions on hover */
+.project-row {
+  border-radius: 4px;
+
+  &:hover {
+    background: rgba(212, 207, 199, 0.4);
+  }
+}
+.project-row__action {
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+.project-row:hover .project-row__action {
+  opacity: 0.7;
+}
+
 /* Mobile sidebar drawer — below 640px the collapsed sidebar is shown instead, no drawer needed */
 @media (max-width: 639px) {
   .sidebar-drawer {

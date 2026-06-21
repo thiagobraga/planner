@@ -1,22 +1,12 @@
 import { NavLink } from 'react-router-dom';
 import { ChevronRight, Repeat2, type LucideIcon } from 'lucide-react';
-
-interface Project {
-  id: string;
-  name: string;
-  color?: string;
-  children?: Project[];
-}
+import { ProjectTreeNav } from './ProjectTreeNav';
 
 interface SidebarProps {
   isOpen?: boolean;
   onClose?: () => void;
-  projects?: Project[];
   collapsed?: boolean;
 }
-
-const DEFAULT_PROJECTS: Project[] = [];
-
 
 export const BjTask = ({ size = 15 }: { size?: number }) => (
   <svg width={size} height={size} viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.2">
@@ -48,50 +38,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: '/habits', label: 'Habits', Icon: Repeat2 },
 ];
 
-function ProjectNode({ project, depth = 0 }: { project: Project; depth?: number }) {
-  return (
-    <>
-      <NavLink
-        to={`/project/${project.id}`}
-        className={({ isActive }) =>
-          `flex items-center no-underline rounded ${isActive ? 'font-medium' : 'opacity-60 hover:opacity-100'}`
-        }
-        style={({ isActive }) => ({
-          height: '24px',
-          lineHeight: '24px',
-          paddingLeft: `${12 + depth * 16}px`,
-          paddingRight: '12px',
-          fontSize: '13px',
-          color: 'var(--color-ink)',
-          backgroundColor: isActive ? 'rgba(212,207,199,0.5)' : 'transparent',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          textDecoration: 'none',
-          borderRadius: '4px',
-        })}
-      >
-        <span
-          style={{
-            width: '8px',
-            height: '8px',
-            borderRadius: '50%',
-            background: project.color ?? 'var(--color-ink-light)',
-            flexShrink: 0,
-          }}
-        />
-        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {project.name}
-        </span>
-      </NavLink>
-      {project.children?.map((child) => (
-        <ProjectNode key={child.id} project={child} depth={depth + 1} />
-      ))}
-    </>
-  );
-}
-
-export function Sidebar({ isOpen, onClose, projects = DEFAULT_PROJECTS, collapsed = false }: SidebarProps) {
+export function Sidebar({ isOpen, onClose, collapsed = false }: SidebarProps) {
   if (collapsed) {
     return (
       <aside
@@ -216,37 +163,7 @@ export function Sidebar({ isOpen, onClose, projects = DEFAULT_PROJECTS, collapse
       </nav>
 
       {/* Projects */}
-      <div style={{ marginTop: '24px', flex: 1 }}>
-        <div
-          style={{
-            fontSize: '10px',
-            lineHeight: '24px',
-            letterSpacing: '0.1em',
-            textTransform: 'uppercase',
-            color: 'var(--color-ink-light)',
-            fontWeight: 500,
-            padding: '0 12px',
-          }}
-        >
-          Projects
-        </div>
-        {projects.length === 0 ? (
-          <div
-            style={{
-              fontSize: '12px',
-              lineHeight: '24px',
-              color: 'var(--color-ink-light)',
-              padding: '0 12px',
-              fontStyle: 'italic',
-              opacity: 0.6,
-            }}
-          >
-            No projects yet
-          </div>
-        ) : (
-          projects.map((p) => <ProjectNode key={p.id} project={p} />)
-        )}
-      </div>
+      <ProjectTreeNav />
 
       {/* Footer shortcuts hint */}
       <div

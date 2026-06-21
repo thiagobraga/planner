@@ -13,7 +13,12 @@ export function AppShell() {
   const qc = useQueryClient();
 
   useSync(useCallback((event) => {
-    if (event.entityType === 'task') qc.invalidateQueries();
+    if (event.entityType === 'task') {
+      qc.invalidateQueries();
+    } else if (event.entityType === 'project') {
+      qc.invalidateQueries({ queryKey: ['projects'] });
+      qc.invalidateQueries({ queryKey: ['project'] });
+    }
   }, [qc]));
   const [quickAddOpen, setQuickAddOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
