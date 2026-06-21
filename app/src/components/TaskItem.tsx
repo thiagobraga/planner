@@ -224,7 +224,7 @@ export function TaskItem({
         style={{
           width: '24px',
           textAlign: 'center',
-          fontSize: task.isCompleted ? '22px' : '10px',
+          fontSize: task.isCompleted ? '26px' : '10px',
           lineHeight: '24px',
           overflow: 'hidden',
           color: priorityColors[task.priority],
