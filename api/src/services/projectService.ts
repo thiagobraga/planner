@@ -2,6 +2,18 @@ import { v4 as uuidv4 } from "uuid";
 import pool from "../db/pool.js";
 import { AppError } from "../utils/AppError.js";
 import { validate, type ValidationError } from "../utils/validate.js";
+import { buildEvent, publishEvent } from "./syncService.js";
+
+function publishProjectEvent(
+  eventType: "created" | "updated" | "deleted",
+  entityId: string,
+  userId: string,
+  payload?: unknown,
+) {
+  publishEvent(
+    buildEvent({ entityType: "project", eventType, entityId, userId, projectId: entityId, payload }),
+  ).catch((err) => console.error("[sync] publish failed", err));
+}
 
 const SUPPORTED_COLORS = [
   "berry_red",
@@ -86,6 +98,21 @@ async function getProjectDepth(projectId: string): Promise<number> {
   return (result.rows[0]?.max_depth ?? 1) as number;
 }
 
+// True if candidateId equals targetId or is one of its descendants — used to block
+// reparenting cycles (a project cannot be moved under itself or its own subtree).
+async function isSelfOrDescendant(candidateId: string, targetId: string): Promise<boolean> {
+  const result = await pool.query(
+    `WITH RECURSIVE subtree AS (
+       SELECT id FROM projects WHERE id = $1
+       UNION ALL
+       SELECT p.id FROM projects p INNER JOIN subtree s ON p.parent_id = s.id
+     )
+     SELECT 1 FROM subtree WHERE id = $2 LIMIT 1`,
+    [targetId, candidateId],
+  );
+  return result.rows.length > 0;
+}
+
 export async function listProjects(userId: string) {
   const result = await pool.query(
     `SELECT p.* FROM projects p
@@ -153,12 +180,16 @@ export async function createProject(userId: string, input: CreateProjectInput) {
     [id, userId, input.parentId ?? null, input.name, input.color]
   );
 
-  return formatProject(result.rows[0] as ProjectRow);
+  const created = formatProject(result.rows[0] as ProjectRow);
+  publishProjectEvent("created", created.id, userId, created);
+  return created;
 }
 
 export interface UpdateProjectInput {
   name?: string;
   color?: string;
+  parentId?: string | null;
+  orderValue?: number;
 }
 
 export async function updateProject(projectId: string, userId: string, input: UpdateProjectInput) {
@@ -219,6 +250,41 @@ export async function updateProject(projectId: string, userId: string, input: Up
     values.push(input.color);
   }
 
+  if (input.parentId !== undefined) {
+    if (input.parentId !== null) {
+      if (input.parentId === projectId) {
+        throw new AppError({
+          code: "VALIDATION_ERROR",
+          message: "A project cannot be its own parent",
+          statusCode: 400,
+        });
+      }
+      await verifyProjectOwnership(input.parentId, userId);
+      if (await isSelfOrDescendant(input.parentId, projectId)) {
+        throw new AppError({
+          code: "VALIDATION_ERROR",
+          message: "Cannot move a project under its own descendant",
+          statusCode: 400,
+        });
+      }
+      const parentDepth = await getProjectDepth(input.parentId);
+      if (parentDepth >= 4) {
+        throw new AppError({
+          code: "MAX_DEPTH_EXCEEDED",
+          message: "Maximum project nesting depth of 4 exceeded",
+          statusCode: 400,
+        });
+      }
+    }
+    setClauses.push(`parent_id = $${paramIndex++}`);
+    values.push(input.parentId);
+  }
+
+  if (input.orderValue !== undefined) {
+    setClauses.push(`order_value = $${paramIndex++}`);
+    values.push(input.orderValue);
+  }
+
   if (setClauses.length === 0) {
     return formatProject(project);
   }
@@ -229,7 +295,9 @@ export async function updateProject(projectId: string, userId: string, input: Up
   const query = `UPDATE projects SET ${setClauses.join(", ")} WHERE id = $${paramIndex} RETURNING *`;
   const result = await pool.query(query, values);
 
-  return formatProject(result.rows[0] as ProjectRow);
+  const updated = formatProject(result.rows[0] as ProjectRow);
+  publishProjectEvent("updated", updated.id, userId, updated);
+  return updated;
 }
 
 export async function deleteProject(projectId: string, userId: string): Promise<{ success: true }> {
@@ -264,6 +332,7 @@ export async function deleteProject(projectId: string, userId: string): Promise<
     client.release();
   }
 
+  publishProjectEvent("deleted", projectId, userId);
   return { success: true };
 }
 
@@ -283,5 +352,7 @@ export async function archiveProject(projectId: string, userId: string) {
     [projectId]
   );
 
-  return formatProject(result.rows[0] as ProjectRow);
+  const archived = formatProject(result.rows[0] as ProjectRow);
+  publishProjectEvent("updated", archived.id, userId, archived);
+  return archived;
 }
