@@ -39,6 +39,77 @@ async function seed() {
       [projectId, userId]
     );
 
+    // Example projects + tasks so the Projects page has content out of the box.
+    const exampleProjects: Array<{
+      name: string;
+      color: string;
+      parentName?: string;
+      tasks: Array<{ title: string; priority?: number }>;
+    }> = [
+      {
+        name: "Work",
+        color: "blue",
+        tasks: [
+          { title: "Review quarterly roadmap", priority: 2 },
+          { title: "Reply to the design feedback thread", priority: 3 },
+          { title: "Prepare standup notes" },
+        ],
+      },
+      {
+        name: "Website Redesign",
+        color: "sky_blue",
+        parentName: "Work",
+        tasks: [
+          { title: "Audit current landing page", priority: 2 },
+          { title: "Draft new hero section copy", priority: 3 },
+        ],
+      },
+      {
+        name: "Personal",
+        color: "green",
+        tasks: [
+          { title: "Book dentist appointment", priority: 1 },
+          { title: "Plan weekend trip" },
+        ],
+      },
+      {
+        name: "Reading List",
+        color: "violet",
+        tasks: [
+          { title: "Finish 'The Pragmatic Programmer'" },
+          { title: "Start 'Thinking, Fast and Slow'" },
+        ],
+      },
+    ];
+
+    const projectIdByName = new Map<string, string>();
+    let projectOrder = 1;
+    for (const proj of exampleProjects) {
+      const id = uuidv4();
+      projectIdByName.set(proj.name, id);
+      await client.query(
+        `INSERT INTO projects (id, user_id, parent_id, name, color, order_value)
+         VALUES ($1, $2, $3, $4, $5, $6)`,
+        [
+          id,
+          userId,
+          proj.parentName ? projectIdByName.get(proj.parentName) ?? null : null,
+          proj.name,
+          proj.color,
+          projectOrder++,
+        ]
+      );
+
+      let taskOrder = 1;
+      for (const task of proj.tasks) {
+        await client.query(
+          `INSERT INTO tasks (id, user_id, project_id, title, priority, order_value)
+           VALUES ($1, $2, $3, $4, $5, $6)`,
+          [uuidv4(), userId, id, task.title, task.priority ?? 4, taskOrder++]
+        );
+      }
+    }
+
     await client.query(
       `INSERT INTO preferences (user_id) VALUES ($1)`,
       [userId]
