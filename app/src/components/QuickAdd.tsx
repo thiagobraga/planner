@@ -248,7 +248,7 @@ export function QuickAdd({ isOpen, onClose, onSubmit }: QuickAddProps) {
             }}
           >
             <span style={{ fontSize: '11px', color: 'var(--color-ink-light)' }}>
-              <kbd style={{ padding: '1px 5px', background: 'var(--color-dot)', borderRadius: '3px', fontSize: '10px' }}>Esc</kbd>
+              <kbd>Esc</kbd>
               {' '}to close
             </span>
             <button

@@ -202,17 +202,7 @@ export function AppShell() {
                       {key.split(' ').map((k, i) => (
                         <span key={i}>
                           {i > 0 && <span style={{ margin: '0 4px', color: 'var(--color-ink-light)' }}>then</span>}
-                          <kbd
-                            style={{
-                              padding: '2px 6px',
-                              background: 'var(--color-dot)',
-                              borderRadius: '3px',
-                              fontSize: '11px',
-                              fontFamily: 'monospace',
-                            }}
-                          >
-                            {k}
-                          </kbd>
+                          <kbd>{k}</kbd>
                         </span>
                       ))}
                     </td>

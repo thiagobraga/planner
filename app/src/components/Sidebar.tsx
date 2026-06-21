@@ -140,7 +140,6 @@ export function Sidebar({ isOpen, onClose, projects = DEFAULT_PROJECTS, collapse
         flexDirection: 'column',
         borderRight: '1px solid var(--color-dot)',
         backgroundColor: 'var(--color-sidebar-bg)',
-        padding: '24px 12px',
         position: 'relative',
         overflowY: 'auto',
         flexShrink: 0,
@@ -273,20 +272,7 @@ export function Sidebar({ isOpen, onClose, projects = DEFAULT_PROJECTS, collapse
             ['?', 'shortcuts'],
           ].map(([key, desc]) => (
             <div key={key} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <kbd
-                style={{
-                  padding: '1px 5px',
-                  background: 'var(--color-cream)',
-                  border: '1px solid var(--color-dot)',
-                  borderRadius: '3px',
-                  fontSize: '10px',
-                  fontFamily: 'monospace',
-                  minWidth: '18px',
-                  textAlign: 'center',
-                }}
-              >
-                {key}
-              </kbd>
+              <kbd>{key}</kbd>
               <span style={{ opacity: 0.7, fontSize: '11px' }}>{desc}</span>
             </div>
           ))}
