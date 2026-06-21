@@ -188,3 +188,38 @@ export async function getInboxView(userId: string) {
     projectId: inboxId,
   };
 }
+
+export async function getProjectView(userId: string, projectId: string) {
+  const projectResult = await pool.query(
+    `SELECT id, name, color, is_inbox FROM projects
+     WHERE id = $1
+       AND (user_id = $2 OR id IN (SELECT project_id FROM collaborators WHERE user_id = $2))`,
+    [projectId, userId],
+  );
+
+  const project = projectResult.rows[0] as
+    | { id: string; name: string; color: string; is_inbox: boolean }
+    | undefined;
+  if (!project) {
+    throw new AppError({ code: "NOT_FOUND", message: "Project not found", statusCode: 404 });
+  }
+
+  const result = await pool.query(
+    `SELECT * FROM tasks
+     WHERE project_id = $1
+       AND is_completed = false
+     ORDER BY order_value ASC`,
+    [projectId],
+  );
+
+  return {
+    project: {
+      id: project.id,
+      name: project.name,
+      color: project.color,
+      isInbox: project.is_inbox,
+    },
+    tasks: (result.rows as TaskRow[]).map(formatTask),
+    projectId,
+  };
+}
