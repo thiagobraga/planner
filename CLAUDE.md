@@ -29,6 +29,15 @@ docker-compose up -d
 
 Copy `.env.example` → `.env` before first run. Required vars: `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `JWT_SECRET`, `CORS_ORIGIN`.
 
+### Dev hosts (Traefik on the `proxy` network)
+
+Add to `/etc/hosts`: `planner.local`, `api.planner.local`, `db.planner.local`.
+
+- `https://planner.local` — app (also serves `/api` and `/socket.io`)
+- `https://api.planner.local` — API directly (e.g. `/api/v1/...`)
+- `https://db.planner.local` — pgAdmin (desktop mode, no master password). The Planner
+  database is auto-registered; connect with DB password `planner`.
+
 ## Architecture
 
 ### Data flow for any mutation

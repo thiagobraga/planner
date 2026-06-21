@@ -1,0 +1,14 @@
+{
+  "Servers": {
+    "1": {
+      "Name": "Planner",
+      "Group": "Servers",
+      "Host": "postgres",
+      "Port": 5432,
+      "MaintenanceDB": "planner",
+      "Username": "planner",
+      "SSLMode": "prefer",
+      "Comment": "Dev database (auto-registered). Password: planner"
+    }
+  }
+}
