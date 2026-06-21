@@ -5,32 +5,36 @@ build migration isolated near the end, infra last. Commit per feature/fix/group 
 Commits); do not push.
 
 ## M1 — Quick Fixes & CSS Polish (low risk, fast wins)
-- [ ] Verify recurring tasks repeat correctly on Daily/Today (bug fixed in aa73b0b); add a
-      timezone/DST edge-case test in api taskService.sync test if missing
-- [ ] "Add task…" placeholder uses same light tone as completed tasks (var(--color-ink-light))
-- [ ] Enlarge the completed-task "x" mark slightly
-- [ ] `.sidebar-drawer` padding: 24px 4px 24px 12px
-- [ ] Extract a single `kbd` CSS class (padding: 0 5px) in index.css; replace 3 inline kbd styles
+- [x] Verify recurring tasks repeat correctly on Daily/Today (fixed in aa73b0b; sync test passes)
+- [x] "Add task…" placeholder uses same light tone as completed tasks (opacity 0.35)
+- [x] Enlarge the completed-task "x" mark slightly (22px → 26px)
+- [x] `.sidebar-drawer` padding: 24px 4px 24px 12px
+- [x] Extract a single `kbd` CSS class (padding: 0 5px) in index.css; replace 3 inline kbd styles
       (AppShell.tsx, Sidebar.tsx, QuickAdd.tsx)
-- [ ] Move body dotted-grid background rules from `body` → `.main-content` (index.css)
-- [ ] Modernize index.css: native CSS nesting, group tokens, remove dead rules
+- [x] Move body dotted-grid background rules from `body` → `.main-content` (index.css)
+- [x] Modernize index.css: native CSS nesting, group tokens, remove dead rules
 
 ## M2 — Projects Page (feature; backend already done, frontend only)
-- [ ] api/client.ts: add fetchProjects + apiCreateProject/Update/Delete/Archive (mirror task fns)
-- [ ] stores/projectStore.ts: Zustand store (tree: id, name, color, parentId, children, order)
-- [ ] AppShell: load projects on mount, pass to Sidebar (replace DEFAULT_PROJECTS=[])
-- [ ] hooks/useSync: handle "project" entity events (invalidate/update store)
-- [ ] pages/ProjectsPage.tsx: same layout as Daily/Inbox, filtered to project's tasks; wire
-      /project/:id route in App.tsx (replace InboxPage stand-in)
-- [ ] Sidebar project actions: add (easy), rename, delete-with-confirmation, reorder (dnd-kit),
-      nest/un-nest; protect Inbox (no rename/delete)
-- [ ] Persist reorder/nest/rename/delete to API; optimistic update + sync
-- [ ] Seed example projects + tasks (api/src/db/seed.ts)
+- [x] api: add GET /views/project/:id; extend updateProject (parentId/orderValue + cycle guard);
+      publish project sync events
+- [x] api/client.ts: add fetchProjects + apiCreateProject/Update/Delete/Archive + color palette
+- [x] stores/projectStore.ts: Zustand store + buildProjectTree
+- [x] AppShell: invalidate projects/project queries on "project" sync events
+- [x] pages/ProjectsPage.tsx: same layout as Daily/Inbox, filtered to project's tasks; route wired
+- [x] Sidebar/ProjectTreeNav: add (inline), rename (double-click), delete-with-confirmation,
+      add sub-project, dnd-kit reorder + nest (depth projection); Inbox excluded
+- [x] Persist reorder/nest/rename/delete to API; optimistic cache updates
+- [x] Seed example projects + tasks (api/src/db/seed.ts)
+- [ ] Manual end-to-end verification in browser (needs running stack: postgres/redis/api/app)
 
-## M3 — Build Tooling: Vite → Webpack (breaking; isolate; do after M1–M2 committed)
-- [ ] Add webpack + dev-server config: babel/ts-loader, css/postcss-loader with Tailwind v4,
+## M3 — Build Tooling: Vite → Webpack (BLOCKED — needs decision)
+> Blocker: the pnpm store was upgraded to v11 but node_modules are linked from the v10 store.
+> Adding the webpack toolchain (~15 dev deps) requires a full monorepo `pnpm install` to migrate
+> the store. Also needs browser verification (running stack). Paused for user direction.
+- [ ] Add webpack + dev-server config: babel-loader, css/postcss-loader with @tailwindcss/postcss,
       asset handling, /api + /socket.io proxy (parity with vite.config.ts)
-- [ ] Dev-only: HMR + sourcemaps; prod: minified, no sourcemaps
+- [ ] Dev-only: HMR (react-refresh) + sourcemaps; prod: minified, no sourcemaps
+- [ ] Move vitest config to vitest.config.ts (keep vite as a vitest dependency)
 - [ ] Update app package.json scripts (dev/build/preview)
 - [ ] Update .docker/app/Dockerfile if needed
 - [ ] Verify HMR, Tailwind, sync, routing all work end-to-end
