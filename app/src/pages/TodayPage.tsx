@@ -91,7 +91,7 @@ export function TodayPage() {
       const byDate = new Map<string, Task[]>();
 
       for (const t of [...overdueTasks, ...todayTasks]) {
-        if (t.dueDate) {
+        if (t.dueDate && /^\d{4}-\d{2}-\d{2}$/.test(t.dueDate)) {
           const bucket = byDate.get(t.dueDate) ?? [];
           bucket.push(t);
           byDate.set(t.dueDate, bucket);
@@ -104,6 +104,7 @@ export function TodayPage() {
       // Build sections by date
       const sections: DaySection[] = [];
       for (const date of sortedDates) {
+        if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) continue;
         const tasks = byDate.get(date) || [];
         sections.push({
           key: date,
@@ -125,7 +126,7 @@ export function TodayPage() {
       const byDate = new Map<string, Task[]>();
 
       for (const t of [...overdueTasks, ...todayTasks]) {
-        if (t.dueDate) {
+        if (t.dueDate && /^\d{4}-\d{2}-\d{2}$/.test(t.dueDate)) {
           const bucket = byDate.get(t.dueDate) ?? [];
           bucket.push(t);
           byDate.set(t.dueDate, bucket);
@@ -138,6 +139,7 @@ export function TodayPage() {
       // Build sections by date
       const sections: DaySection[] = [];
       for (const date of sortedDates) {
+        if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) continue;
         const tasks = byDate.get(date) || [];
         sections.push({
           key: date,
