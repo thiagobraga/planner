@@ -126,24 +126,20 @@ export function TodayPage() {
   useEffect(() => {
     fetchTodayTasks().then(({ today, overdue }) => {
       const apiTasks = [...overdue, ...today].map(apiToTask).sort((a, b) => a.orderValue - b.orderValue);
-      setSections((prev) =>
-        prev.map((s) => {
-          if (s.key !== todayKey) return s;
-          return replaceApiTasks(s, apiTasks);
-        })
-      );
+      setSections((prev) => {
+        const todaySection = prev.find((s) => s.key === todayKey) || { key: todayKey, label: todayLabel, tasks: [] };
+        return [replaceApiTasks(todaySection, apiTasks)];
+      });
     }).catch(() => { /* offline — localStorage shown */ });
   }, []);
 
   const replaceTodayFromApi = useCallback(() => {
     fetchTodayTasks().then(({ today, overdue }) => {
       const apiTasks = [...overdue, ...today].map(apiToTask).sort((a, b) => a.orderValue - b.orderValue);
-      setSections((prev) =>
-        prev.map((s) => {
-          if (s.key !== todayKey) return s;
-          return replaceApiTasks(s, apiTasks);
-        })
-      );
+      setSections((prev) => {
+        const todaySection = prev.find((s) => s.key === todayKey) || { key: todayKey, label: todayLabel, tasks: [] };
+        return [replaceApiTasks(todaySection, apiTasks)];
+      });
     }).catch(() => {});
   }, []);
 
