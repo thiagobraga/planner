@@ -18,8 +18,6 @@ interface DaySection {
   tasks: Task[];
 }
 
-const LS_KEY = 'planner_daily_v1';
-
 function dateKey(d: Date): string {
   const year = d.getFullYear();
   const month = String(d.getMonth() + 1).padStart(2, '0');
@@ -50,46 +48,6 @@ function mergeTasks(a: Task[], b: Task[]): Task[] {
   return Array.from(merged.values()).sort((x, y) => x.orderValue - y.orderValue);
 }
 
-function ensureToday(sections: DaySection[]): DaySection[] {
-  const today: DaySection = { key: todayKey, label: todayLabel, tasks: [] };
-  const byKey = new Map<string, DaySection>();
-
-  for (const section of sections) {
-    const isTodaySection = section.key === todayKey || section.label === todayLabel;
-    if (isTodaySection) {
-      today.tasks = mergeTasks(today.tasks, section.tasks);
-      continue;
-    }
-
-    const existing = byKey.get(section.key);
-    byKey.set(
-      section.key,
-      existing
-        ? { ...existing, tasks: mergeTasks(existing.tasks, section.tasks) }
-        : section,
-    );
-  }
-
-  return [today, ...Array.from(byKey.values())];
-}
-
-function loadSections(): DaySection[] {
-  try {
-    const raw = localStorage.getItem(LS_KEY);
-    if (!raw) return ensureToday([]);
-    return ensureToday(JSON.parse(raw) as DaySection[]);
-  } catch {
-    return ensureToday([]);
-  }
-}
-
-function saveSections(sections: DaySection[]) {
-  try {
-    localStorage.setItem(LS_KEY, JSON.stringify(sections));
-  } catch {
-    // quota exceeded — ignore
-  }
-}
 
 function apiToTask(t: ApiTask): Task {
   return {
@@ -117,16 +75,11 @@ function tempId() { return `temp-daily-${++tempCounter}`; }
 
 export function TodayPage() {
   const phrase = useMemo(() => getPhrase('daily'), []);
-  const [sections, setSections] = useState<DaySection[]>(loadSections);
+  const [sections, setSections] = useState<DaySection[]>([]);
   const [selectedId, setSelectedId] = useState<string>();
   const [editingId, setEditingId] = useState<string>();
   const [input, setInput] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
-
-  // Persist to localStorage whenever sections change
-  useEffect(() => {
-    saveSections(sections);
-  }, [sections]);
 
   // Replace today's tasks from API on mount (localStorage shown instantly while this loads)
   useEffect(() => {
@@ -214,11 +167,7 @@ export function TodayPage() {
   }, [replaceTodayFromApi]));
 
   const updateSections = useCallback((updater: (prev: DaySection[]) => DaySection[]) => {
-    setSections((prev) => {
-      const next = updater(prev);
-      saveSections(next);
-      return next;
-    });
+    setSections(updater);
   }, []);
 
   const handleToggle = useCallback((id: string) => {
