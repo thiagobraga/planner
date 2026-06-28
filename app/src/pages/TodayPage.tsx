@@ -125,13 +125,14 @@ export function TodayPage() {
 
   // Replace today's tasks from API on mount (localStorage shown instantly while this loads)
   useEffect(() => {
-    fetchTodayTasks().then(({ today, overdue }) => {
-      const overdueTasks = overdue.map(apiToTask);
-      const todayTasks = today.map(apiToTask);
+    fetchTodayTasks().then((response) => {
+      const overdueTasks = (response.overdue || []).map(apiToTask);
+      const todayTasks = (response.today || []).map(apiToTask);
 
-      // Group overdue by date
+      // Group ALL tasks (overdue + today) by date
       const byDate = new Map<string, Task[]>();
-      for (const t of overdueTasks) {
+
+      for (const t of [...overdueTasks, ...todayTasks]) {
         if (t.dueDate) {
           const bucket = byDate.get(t.dueDate) ?? [];
           bucket.push(t);
@@ -139,35 +140,33 @@ export function TodayPage() {
         }
       }
 
-      // Build sections: overdue dates first, then today
+      // Sort dates chronologically
+      const sortedDates = Array.from(byDate.keys()).sort();
+
+      // Build sections by date
       const sections: DaySection[] = [];
-      for (const [date, tasks] of byDate) {
+      for (const date of sortedDates) {
+        const tasks = byDate.get(date) || [];
         sections.push({
           key: date,
           label: dayLabel(new Date(`${date}T00:00:00Z`)),
           tasks: tasks.sort((a, b) => a.orderValue - b.orderValue),
         });
       }
-
-      const todaySection = {
-        key: todayKey,
-        label: todayLabel,
-        tasks: todayTasks.sort((a, b) => a.orderValue - b.orderValue),
-      };
-      sections.push(todaySection);
 
       setSections(sections);
     }).catch(() => { /* offline — localStorage shown */ });
   }, []);
 
   const replaceTodayFromApi = useCallback(() => {
-    fetchTodayTasks().then(({ today, overdue }) => {
-      const overdueTasks = overdue.map(apiToTask);
-      const todayTasks = today.map(apiToTask);
+    fetchTodayTasks().then((response) => {
+      const overdueTasks = (response.overdue || []).map(apiToTask);
+      const todayTasks = (response.today || []).map(apiToTask);
 
-      // Group overdue by date
+      // Group ALL tasks (overdue + today) by date
       const byDate = new Map<string, Task[]>();
-      for (const t of overdueTasks) {
+
+      for (const t of [...overdueTasks, ...todayTasks]) {
         if (t.dueDate) {
           const bucket = byDate.get(t.dueDate) ?? [];
           bucket.push(t);
@@ -175,22 +174,19 @@ export function TodayPage() {
         }
       }
 
-      // Build sections: overdue dates first, then today
+      // Sort dates chronologically
+      const sortedDates = Array.from(byDate.keys()).sort();
+
+      // Build sections by date
       const sections: DaySection[] = [];
-      for (const [date, tasks] of byDate) {
+      for (const date of sortedDates) {
+        const tasks = byDate.get(date) || [];
         sections.push({
           key: date,
           label: dayLabel(new Date(`${date}T00:00:00Z`)),
           tasks: tasks.sort((a, b) => a.orderValue - b.orderValue),
         });
       }
-
-      const todaySection = {
-        key: todayKey,
-        label: todayLabel,
-        tasks: todayTasks.sort((a, b) => a.orderValue - b.orderValue),
-      };
-      sections.push(todaySection);
 
       setSections(sections);
     }).catch(() => {});
