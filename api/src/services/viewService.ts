@@ -90,11 +90,10 @@ export async function getTodayView(userId: string, now: Date = new Date()): Prom
     `SELECT t.* FROM tasks t
      JOIN projects p ON p.id = t.project_id
      WHERE t.user_id = $1
-       AND t.is_completed = false
        AND t.due_date IS NOT NULL
        AND t.due_date <= $2::date
        AND p.is_archived = false
-     ORDER BY t.priority ASC, t.order_value ASC`,
+     ORDER BY t.is_completed ASC, t.priority ASC, t.order_value ASC`,
     [userId, todayDate],
   );
 
