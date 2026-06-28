@@ -94,6 +94,7 @@ function apiToTask(t: ApiTask): Task {
     isCompleted: t.isCompleted,
     orderValue: t.orderValue,
     indent: t.depth ?? 0,
+    dueDate: t.dueDate,
   };
 }
 
