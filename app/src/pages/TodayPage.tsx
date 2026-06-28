@@ -28,10 +28,15 @@ function dateKey(d: Date): string {
 }
 
 function dayLabel(d: Date): string {
-  const month = d.toLocaleDateString('en-US', { month: 'short' });
-  const day = d.getDate();
-  const weekday = d.toLocaleDateString('en-US', { weekday: 'short' });
+  const month = d.toLocaleDateString('en-US', { month: 'short' }).toUpperCase();
+  const day = String(d.getDate()).padStart(2, '0');
+  const weekday = d.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase();
   return `${month} ${day} ${weekday}`;
+}
+
+function dateFromISO(iso: string): Date {
+  const [y, m, d] = iso.split('-').map(Number);
+  return new Date(y, m - 1, d);
 }
 
 const todayKey = dateKey(new Date());
@@ -149,7 +154,7 @@ export function TodayPage() {
         const tasks = byDate.get(date) || [];
         sections.push({
           key: date,
-          label: dayLabel(new Date(`${date}T00:00:00Z`)),
+          label: dayLabel(dateFromISO(date)),
           tasks: tasks.sort((a, b) => a.orderValue - b.orderValue),
         });
       }
@@ -183,7 +188,7 @@ export function TodayPage() {
         const tasks = byDate.get(date) || [];
         sections.push({
           key: date,
-          label: dayLabel(new Date(`${date}T00:00:00Z`)),
+          label: dayLabel(dateFromISO(date)),
           tasks: tasks.sort((a, b) => a.orderValue - b.orderValue),
         });
       }
