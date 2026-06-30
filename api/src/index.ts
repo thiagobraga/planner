@@ -1,4 +1,5 @@
 import express, { type Express } from "express";
+import helmet from "helmet";
 import { createServer } from "http";
 import routes from "./routes/index.js";
 import { errorHandler } from "./middleware/errorHandler.js";
@@ -8,13 +9,23 @@ import { attachSyncServer } from "./services/syncService.js";
 
 const app: Express = express();
 const port = process.env.PORT || 4000;
+const corsOrigin = process.env.CORS_ORIGIN;
+
+if (!corsOrigin) {
+  console.warn("⚠️  CORS_ORIGIN not set. Set it in environment variables.");
+}
+
+// Security middleware
+app.use(helmet());
 
 // Middleware
 app.use(express.json());
 
 // CORS
 app.use((_req, res, next) => {
-  res.setHeader("Access-Control-Allow-Origin", process.env.CORS_ORIGIN || "*");
+  if (corsOrigin) {
+    res.setHeader("Access-Control-Allow-Origin", corsOrigin);
+  }
   res.setHeader("Access-Control-Allow-Methods", "GET,POST,PATCH,DELETE,OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type,Authorization");
   if (_req.method === "OPTIONS") {
