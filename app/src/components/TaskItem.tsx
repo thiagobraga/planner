@@ -25,6 +25,7 @@ export interface TaskItemProps {
   task: Task;
   isSelected?: boolean;
   isEditing?: boolean;
+  hideDueDate?: boolean;
   onToggle?: (id: string) => void;
   onClick?: (id: string) => void;
   onStartEdit?: (id: string) => void;
@@ -74,6 +75,7 @@ export function TaskItem({
   task,
   isSelected,
   isEditing,
+  hideDueDate,
   onToggle,
   onClick,
   onStartEdit,
@@ -287,7 +289,7 @@ export function TaskItem({
               {task.title}
             </span>
 
-            {task.dueDate && (
+            {task.dueDate && !hideDueDate && (
               <span
                 style={{
                   fontSize: '12px',

@@ -24,6 +24,7 @@ interface TaskListProps extends TaskCallbacks {
   tasks: Task[];
   selectedTaskId?: string;
   editingId?: string;
+  hideDueDate?: boolean;
   onTaskClick?: (id: string) => void;
   onTaskToggle?: (id: string) => void;
   onReorder?: (tasks: Task[]) => void;
@@ -33,6 +34,7 @@ export function TaskList({
   tasks,
   selectedTaskId,
   editingId,
+  hideDueDate,
   onTaskClick,
   onTaskToggle,
   onReorder,
@@ -75,6 +77,7 @@ export function TaskList({
                 task={task}
                 isSelected={task.id === selectedTaskId}
                 isEditing={task.id === editingId}
+                hideDueDate={hideDueDate}
                 onToggle={onTaskToggle}
                 onClick={onTaskClick}
                 onStartEdit={onStartEdit}

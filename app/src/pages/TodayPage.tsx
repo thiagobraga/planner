@@ -38,16 +38,6 @@ function dateFromISO(iso: string): Date {
 }
 
 const todayKey = dateKey(new Date());
-const todayLabel = dayLabel(new Date());
-
-function mergeTasks(a: Task[], b: Task[]): Task[] {
-  const merged = new Map<string, Task>();
-  for (const task of [...a, ...b]) {
-    merged.set(task.id, task);
-  }
-  return Array.from(merged.values()).sort((x, y) => x.orderValue - y.orderValue);
-}
-
 
 function apiToTask(t: ApiTask): Task {
   return {
@@ -57,17 +47,29 @@ function apiToTask(t: ApiTask): Task {
     isCompleted: t.isCompleted,
     orderValue: t.orderValue,
     indent: t.depth ?? 0,
-    dueDate: t.dueDate,
+    dueDate: t.dueDate ? t.dueDate.slice(0, 10) : undefined,
   };
 }
 
-function replaceApiTasks(section: DaySection, apiTasks: Task[]): DaySection {
-  const apiIds = new Set(apiTasks.map((t) => t.id));
-  const localOnlyTasks = section.tasks.filter((t) => {
-    if (apiIds.has(t.id)) return false;
-    return t.id.startsWith('temp-') || t.isCompleted;
-  });
-  return { ...section, tasks: [...apiTasks, ...localOnlyTasks] };
+function buildSections(overdueTasks: Task[], todayTasks: Task[]): DaySection[] {
+  const byDate = new Map<string, Task[]>();
+
+  for (const t of [...overdueTasks, ...todayTasks]) {
+    const key = t.dueDate && /^\d{4}-\d{2}-\d{2}$/.test(t.dueDate) ? t.dueDate : todayKey;
+    const bucket = byDate.get(key) ?? [];
+    bucket.push(t);
+    byDate.set(key, bucket);
+  }
+
+  // Always include today even if empty (for the add-task form)
+  if (!byDate.has(todayKey)) byDate.set(todayKey, []);
+
+  const sortedDates = Array.from(byDate.keys()).sort().reverse();
+  return sortedDates.map((date) => ({
+    key: date,
+    label: dayLabel(dateFromISO(date)),
+    tasks: (byDate.get(date) ?? []).sort((a, b) => a.orderValue - b.orderValue),
+  }));
 }
 
 let tempCounter = 0;
@@ -81,74 +83,21 @@ export function TodayPage() {
   const [input, setInput] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Replace today's tasks from API on mount (localStorage shown instantly while this loads)
   useEffect(() => {
     fetchTodayTasks().then((response) => {
       const overdueTasks = (response.overdue || []).map(apiToTask);
       const todayTasks = (response.today || []).map(apiToTask);
-
-      // Group ALL tasks (overdue + today) by date
-      const byDate = new Map<string, Task[]>();
-
-      for (const t of [...overdueTasks, ...todayTasks]) {
-        if (t.dueDate && /^\d{4}-\d{2}-\d{2}$/.test(t.dueDate)) {
-          const bucket = byDate.get(t.dueDate) ?? [];
-          bucket.push(t);
-          byDate.set(t.dueDate, bucket);
-        }
-      }
-
-      // Sort dates chronologically
-      const sortedDates = Array.from(byDate.keys()).sort();
-
-      // Build sections by date
-      const sections: DaySection[] = [];
-      for (const date of sortedDates) {
-        if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) continue;
-        const tasks = byDate.get(date) || [];
-        sections.push({
-          key: date,
-          label: dayLabel(dateFromISO(date)),
-          tasks: tasks.sort((a, b) => a.orderValue - b.orderValue),
-        });
-      }
-
-      setSections(sections);
-    }).catch(() => { /* offline — localStorage shown */ });
+      setSections(buildSections(overdueTasks, todayTasks));
+    }).catch(() => {
+      setSections(buildSections([], []));
+    });
   }, []);
 
   const replaceTodayFromApi = useCallback(() => {
     fetchTodayTasks().then((response) => {
       const overdueTasks = (response.overdue || []).map(apiToTask);
       const todayTasks = (response.today || []).map(apiToTask);
-
-      // Group ALL tasks (overdue + today) by date
-      const byDate = new Map<string, Task[]>();
-
-      for (const t of [...overdueTasks, ...todayTasks]) {
-        if (t.dueDate && /^\d{4}-\d{2}-\d{2}$/.test(t.dueDate)) {
-          const bucket = byDate.get(t.dueDate) ?? [];
-          bucket.push(t);
-          byDate.set(t.dueDate, bucket);
-        }
-      }
-
-      // Sort dates chronologically
-      const sortedDates = Array.from(byDate.keys()).sort();
-
-      // Build sections by date
-      const sections: DaySection[] = [];
-      for (const date of sortedDates) {
-        if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) continue;
-        const tasks = byDate.get(date) || [];
-        sections.push({
-          key: date,
-          label: dayLabel(dateFromISO(date)),
-          tasks: tasks.sort((a, b) => a.orderValue - b.orderValue),
-        });
-      }
-
-      setSections(sections);
+      setSections(buildSections(overdueTasks, todayTasks));
     }).catch(() => {});
   }, []);
 
@@ -390,6 +339,7 @@ export function TodayPage() {
               tasks={section.tasks}
               selectedTaskId={selectedId}
               editingId={editingId}
+              hideDueDate
               onTaskClick={(id) => setSelectedId(id === selectedId ? undefined : id)}
               onTaskToggle={handleToggle}
               onReorder={handleReorder(section.key)}

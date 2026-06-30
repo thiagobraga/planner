@@ -109,11 +109,11 @@ describe('Cross-tab sync: bidirectional simulation', () => {
     const tab2Handler = vi.fn();
 
     renderHook(() => useSync(tab1Handler));
-    const tab1HandlerFn = capturedSyncHandler;
+    const tab1HandlerFn = capturedSyncHandler!;
 
     capturedSyncHandler = null;
     renderHook(() => useSync(tab2Handler));
-    const tab2HandlerFn = capturedSyncHandler;
+    const tab2HandlerFn = capturedSyncHandler!;
 
     const createEvent = makeEvent({
       entityType: 'task',
@@ -121,7 +121,7 @@ describe('Cross-tab sync: bidirectional simulation', () => {
       entityId: 'new-task',
     });
 
-    act(() => { tab2HandlerFn?.(createEvent); });
+    act(() => { tab2HandlerFn(createEvent); });
 
     expect(tab2Handler).toHaveBeenCalledWith(createEvent);
     expect(tab2Handler.mock.calls[0][0].eventType).toBe('created');
@@ -132,11 +132,11 @@ describe('Cross-tab sync: bidirectional simulation', () => {
     const tab2Handler = vi.fn();
 
     renderHook(() => useSync(tab1Handler));
-    const tab1HandlerFn = capturedSyncHandler;
+    const tab1HandlerFn = capturedSyncHandler!;
 
     capturedSyncHandler = null;
     renderHook(() => useSync(tab2Handler));
-    const tab2HandlerFn = capturedSyncHandler;
+    const tab2HandlerFn = capturedSyncHandler!;
 
     const createEvent = makeEvent({
       entityType: 'task',
@@ -144,7 +144,7 @@ describe('Cross-tab sync: bidirectional simulation', () => {
       entityId: 'new-task-from-tab2',
     });
 
-    act(() => { tab1HandlerFn?.(createEvent); });
+    act(() => { tab1HandlerFn(createEvent); });
 
     expect(tab1Handler).toHaveBeenCalledWith(createEvent);
   });
@@ -152,7 +152,7 @@ describe('Cross-tab sync: bidirectional simulation', () => {
   it('Tab 1 delete → Tab 2 receives event', () => {
     const tab2Handler = vi.fn();
     renderHook(() => useSync(tab2Handler));
-    const tab2HandlerFn = capturedSyncHandler;
+    const tab2HandlerFn = capturedSyncHandler!;
 
     const deleteEvent = makeEvent({
       entityType: 'task',
@@ -160,7 +160,7 @@ describe('Cross-tab sync: bidirectional simulation', () => {
       entityId: 'to-delete',
     });
 
-    act(() => { tab2HandlerFn?.(deleteEvent); });
+    act(() => { tab2HandlerFn(deleteEvent); });
 
     expect(tab2Handler).toHaveBeenCalledWith(deleteEvent);
   });
@@ -168,7 +168,7 @@ describe('Cross-tab sync: bidirectional simulation', () => {
   it('Tab 1 complete → Tab 2 receives event', () => {
     const tab2Handler = vi.fn();
     renderHook(() => useSync(tab2Handler));
-    const tab2HandlerFn = capturedSyncHandler;
+    const tab2HandlerFn = capturedSyncHandler!;
 
     const completeEvent = makeEvent({
       entityType: 'task',
@@ -176,7 +176,7 @@ describe('Cross-tab sync: bidirectional simulation', () => {
       entityId: 'to-complete',
     });
 
-    act(() => { tab2HandlerFn?.(completeEvent); });
+    act(() => { tab2HandlerFn(completeEvent); });
 
     expect(tab2Handler).toHaveBeenCalledWith(completeEvent);
   });
@@ -184,7 +184,7 @@ describe('Cross-tab sync: bidirectional simulation', () => {
   it('Tab 1 reopen → Tab 2 receives event', () => {
     const tab2Handler = vi.fn();
     renderHook(() => useSync(tab2Handler));
-    const tab2HandlerFn = capturedSyncHandler;
+    const tab2HandlerFn = capturedSyncHandler!;
 
     const reopenEvent = makeEvent({
       entityType: 'task',
@@ -192,7 +192,7 @@ describe('Cross-tab sync: bidirectional simulation', () => {
       entityId: 'to-reopen',
     });
 
-    act(() => { tab2HandlerFn?.(reopenEvent); });
+    act(() => { tab2HandlerFn(reopenEvent); });
 
     expect(tab2Handler).toHaveBeenCalledWith(reopenEvent);
   });
@@ -200,7 +200,7 @@ describe('Cross-tab sync: bidirectional simulation', () => {
   it('Tab 1 edit → Tab 2 receives event', () => {
     const tab2Handler = vi.fn();
     renderHook(() => useSync(tab2Handler));
-    const tab2HandlerFn = capturedSyncHandler;
+    const tab2HandlerFn = capturedSyncHandler!;
 
     const editEvent = makeEvent({
       entityType: 'task',
@@ -209,7 +209,7 @@ describe('Cross-tab sync: bidirectional simulation', () => {
       payload: { title: 'Updated Title' },
     });
 
-    act(() => { tab2HandlerFn?.(editEvent); });
+    act(() => { tab2HandlerFn(editEvent); });
 
     expect(tab2Handler).toHaveBeenCalledWith(editEvent);
     expect(editEvent.payload).toEqual({ title: 'Updated Title' });

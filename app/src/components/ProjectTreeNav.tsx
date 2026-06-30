@@ -347,7 +347,7 @@ function SortableProjectRow({
         opacity: isDragging ? 0.5 : 1,
         display: 'flex',
         alignItems: 'center',
-        gap: '6px',
+        gap: '7px',
         height: '24px',
         paddingLeft: `${12 + depth * INDENT}px`,
         paddingRight: '8px',
@@ -360,15 +360,25 @@ function SortableProjectRow({
         {...attributes}
         {...listeners}
         style={{
-          width: '8px',
-          height: '8px',
-          borderRadius: '50%',
-          background: projectColorHex(item.colorName),
+          width: '16px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
           flexShrink: 0,
           cursor: 'grab',
         }}
         aria-label="Drag to reorder"
-      />
+      >
+        <span style={{
+          width: '8px',
+          height: '8px',
+          borderRadius: '50%',
+          background: projectColorHex(item.colorName),
+          filter: 'saturate(0.55)',
+          flexShrink: 0,
+          display: 'block',
+        }} />
+      </span>
       {isEditing ? (
         <input
           autoFocus
@@ -406,6 +416,7 @@ function SortableProjectRow({
               fontFamily: '"Lora", serif',
               fontSize: '13px',
               color: 'var(--color-ink)',
+              opacity: 0.6,
               overflow: 'hidden',
               textOverflow: 'ellipsis',
               whiteSpace: 'nowrap',
