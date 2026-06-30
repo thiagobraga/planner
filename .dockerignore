@@ -1,0 +1,22 @@
+# Folders
+.antigravitycli
+.claude
+.impeccable
+.specs
+.vscode
+dist
+docs
+node_modules
+
+# Files
+.claudeignore
+.dockerignore
+.env.example
+.gitignore
+.vibeyardignore
+AGENTS.md
+CLAUDE.md
+DESIGN.md
+eslint.config.js
+GEMINI.md
+README.md

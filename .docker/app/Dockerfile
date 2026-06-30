@@ -1,16 +1,19 @@
-# Stage 1: Install deps
-FROM node:22-alpine
-
-RUN corepack enable && corepack prepare pnpm@11.1.1 --activate
-
+FROM node:22-alpine AS base
 WORKDIR /app
-
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.base.json ./
-COPY app/package.json app/
-RUN pnpm install --frozen-lockfile --filter app
-
-COPY app app
-
 EXPOSE 5173
+RUN npm install -g npm@latest \
+  && npm cache clean --force
 
-CMD ["pnpm", "--filter", "app", "dev", "--host"]
+FROM base AS development
+COPY --chown=node:node --chmod=755 .docker/app/entrypoint.sh /entrypoint.sh
+COPY --chown=node:node app ./
+RUN chown node:node /app
+USER node
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["npm", "run", "dev"]
+
+FROM base AS production
+COPY --chown=node:node app ./
+RUN npm ci \
+  && npm run build
+CMD ["npm", "run", "preview"]

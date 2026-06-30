@@ -1,56 +1,28 @@
 services:
-  postgres:
-    image: postgres:16-alpine
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER:-planner}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-planner}
-      POSTGRES_DB: ${POSTGRES_DB:-planner}
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-planner}"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
-
-  redis:
-    image: redis:7-alpine
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
-
-  # Dev-only database admin UI, reachable at db.planner.local. Logs in without a
-  # master password (desktop mode) and auto-registers the Planner server.
-  pgadmin:
-    image: dpage/pgadmin4:latest
-    environment:
-      PGADMIN_DEFAULT_EMAIL: admin@planner.local
-      PGADMIN_DEFAULT_PASSWORD: admin
-      PGADMIN_CONFIG_SERVER_MODE: "False"
-      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
-    volumes:
-      - pgadmin:/var/lib/pgadmin
-      - ./.docker/pgadmin/servers.json:/pgadmin4/servers.json:ro
+  app:
+    build:
+      context: .
+      dockerfile: .docker/app/Dockerfile
+      target: development
+    container_name: planner-app
     networks: [default, proxy]
-    depends_on:
-      postgres:
-        condition: service_healthy
+    volumes: [./app:/app]
+    depends_on: [api]
     labels:
       traefik.enable: true
-      traefik.http.routers.planner-pgadmin-router.rule: Host(`db.planner.local`)
-      traefik.http.routers.planner-pgadmin-router.entrypoints: websecure
-      traefik.http.routers.planner-pgadmin-router.tls: true
-      traefik.http.services.planner-pgadmin-service.loadbalancer.server.port: 80
+      traefik.http.routers.planner-app-router.rule: Host(`planner.local`)
+      traefik.http.routers.planner-app-router.entrypoints: websecure
+      traefik.http.routers.planner-app-router.tls: true
+      traefik.http.services.planner-app-service.loadbalancer.server.port: 5173
 
   api:
     build:
       context: .
       dockerfile: .docker/api/Dockerfile
-    ports:
-      - "4040:4000"
+      target: development
+    container_name: planner-api
     networks: [default, proxy]
+    volumes: [./api:/app]
     environment:
       PORT: 4000
       DATABASE_URL: postgres://${POSTGRES_USER:-planner}:${POSTGRES_PASSWORD:-planner}@postgres:5432/${POSTGRES_DB:-planner}
@@ -80,26 +52,63 @@ services:
       traefik.http.routers.planner-api-host-router.tls: true
       traefik.http.routers.planner-api-host-router.service: planner-api-service
 
-  app:
-    build:
-      context: .
-      dockerfile: .docker/app/Dockerfile
-    ports:
-      - "50173:5173"
-    networks: [default, proxy]
+  postgres:
+    container_name: planner-postgres
+    image: postgres:16-alpine
     environment:
-      VITE_API_URL: http://api:4000
+      POSTGRES_USER: ${POSTGRES_USER:-planner}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-planner}
+      POSTGRES_DB: ${POSTGRES_DB:-planner}
     volumes:
-      - ./app/src:/app/app/src
-      - ./app/index.html:/app/app/index.html
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-planner}"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # Dev-only database admin UI, reachable at db.planner.local. Logs in without a
+  # master password (desktop mode) and auto-registers the Planner server.
+  pgadmin:
+    container_name: planner-pgadmin
+    image: dpage/pgadmin4:latest
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@planner.example.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
+      PGADMIN_CONFIG_PROXY_X_FOR_COUNT: 1
+      PGADMIN_CONFIG_PROXY_X_PROTO_COUNT: 1
+      PGADMIN_CONFIG_PROXY_X_HOST_COUNT: 1
+      PGADMIN_CONFIG_PREFERRED_URL_SCHEME: '"https"'
+    volumes:
+      - pgadmin:/var/lib/pgadmin
+      - ./.docker/pgadmin/servers.json:/pgadmin4/servers.json:ro
+    networks: [default, proxy]
     depends_on:
-      - api
+      postgres:
+        condition: service_healthy
     labels:
       traefik.enable: true
-      traefik.http.routers.planner-app-router.rule: Host(`planner.local`)
-      traefik.http.routers.planner-app-router.entrypoints: websecure
-      traefik.http.routers.planner-app-router.tls: true
-      traefik.http.services.planner-app-service.loadbalancer.server.port: 5173
+      traefik.http.routers.planner-pgadmin-router.rule: Host(`db.planner.local`)
+      traefik.http.routers.planner-pgadmin-router.entrypoints: websecure
+      traefik.http.routers.planner-pgadmin-router.tls: true
+      traefik.http.routers.planner-pgadmin-router.service: planner-pgadmin-service
+      traefik.http.routers.planner-pgadmin-router.middlewares: pgadmin-proto@docker
+      traefik.http.services.planner-pgadmin-service.loadbalancer.server.port: 80
+      traefik.http.middlewares.pgadmin-proto.headers.customRequestHeaders.X-Forwarded-Proto: https
+
+  redis:
+    container_name: planner-redis
+    image: redis:7-alpine
+    command: redis-server /etc/redis/redis.conf
+    volumes:
+      - ./.docker/redis/redis.conf:/etc/redis/redis.conf:ro
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
 
 volumes:
   pgdata:
