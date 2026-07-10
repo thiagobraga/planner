@@ -77,7 +77,6 @@ describe("getTodayView", () => {
 
     const sql = mockQuery.mock.calls[1][0] as string;
     expect(sql).toMatch(/is_archived = false/);
-    expect(sql).toMatch(/is_completed = false/);
     expect(sql).toMatch(/ORDER BY t\.priority ASC, t\.order_value ASC/);
   });
 
@@ -130,26 +129,25 @@ describe("getUpcomingView", () => {
 });
 
 describe("getInboxView", () => {
-  it("returns inbox tasks ordered by order_value ascending", async () => {
-    mockQuery
-      .mockResolvedValueOnce({ rows: [{ id: "inbox-1" }] })
-      .mockResolvedValueOnce({
-        rows: [
-          taskRow({ id: "t1", order_value: 0 }),
-          taskRow({ id: "t2", order_value: 1000 }),
-        ],
-      });
+  it("returns accessible tasks ordered by completion, priority, then creation time", async () => {
+    mockQuery.mockResolvedValueOnce({
+      rows: [
+        taskRow({ id: "done", project_id: "p-2", is_completed: true, priority: 4, created_at: "2024-06-02T00:00:00Z" }),
+        taskRow({ id: "open", project_id: "p-1", is_completed: false, priority: 1, created_at: "2024-06-01T00:00:00Z" }),
+      ],
+    });
 
     const view = await getInboxView(userId);
-    expect(view.projectId).toBe("inbox-1");
-    expect(view.tasks.map((t) => t.id)).toEqual(["t1", "t2"]);
+    expect(view.projectId).toBeNull();
+    expect(view.tasks.map((t) => t.id)).toEqual(["done", "open"]);
 
-    const sql = mockQuery.mock.calls[1][0] as string;
-    expect(sql).toMatch(/ORDER BY order_value ASC/);
-    expect(sql).toMatch(/is_completed = false/);
+    const sql = mockQuery.mock.calls[0][0] as string;
+    expect(sql).toMatch(/JOIN projects p ON p\.id = t\.project_id/);
+    expect(sql).toMatch(/is_archived = false/);
+    expect(sql).toMatch(/ORDER BY t\.is_completed ASC, t\.priority ASC, t\.created_at ASC/);
   });
 
-  it("returns empty when user has no Inbox project", async () => {
+  it("returns empty when there are no accessible tasks", async () => {
     mockQuery.mockResolvedValueOnce({ rows: [] });
     const view = await getInboxView(userId);
     expect(view).toEqual({ tasks: [], projectId: null });

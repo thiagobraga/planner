@@ -93,7 +93,7 @@ export async function getTodayView(userId: string, now: Date = new Date()): Prom
        AND t.due_date IS NOT NULL
        AND t.due_date <= $2::date
        AND p.is_archived = false
-     ORDER BY t.is_completed ASC, t.priority ASC, t.order_value ASC`,
+     ORDER BY t.priority ASC, t.order_value ASC, t.created_at ASC`,
     [userId, todayDate],
   );
 
@@ -141,7 +141,7 @@ export async function getUpcomingView(userId: string, days: number, now: Date = 
        AND t.due_date >= $2::date
        AND t.due_date <= $3::date
        AND p.is_archived = false
-     ORDER BY t.due_date ASC, t.priority ASC, t.order_value ASC`,
+     ORDER BY t.due_date ASC, t.priority ASC, t.order_value ASC, t.created_at ASC`,
     [userId, start, end],
   );
 
@@ -163,28 +163,18 @@ export async function getUpcomingView(userId: string, days: number, now: Date = 
 }
 
 export async function getInboxView(userId: string) {
-  const inboxResult = await pool.query(
-    `SELECT id FROM projects WHERE user_id = $1 AND is_inbox = true`,
-    [userId],
-  );
-
-  const inboxId = inboxResult.rows[0]?.id as string | undefined;
-  if (!inboxId) {
-    return { tasks: [], projectId: null };
-  }
-
   const result = await pool.query(
-    `SELECT * FROM tasks
-     WHERE user_id = $1
-       AND project_id = $2
-       AND is_completed = false
-     ORDER BY order_value ASC`,
-    [userId, inboxId],
+    `SELECT t.* FROM tasks t
+     JOIN projects p ON p.id = t.project_id
+     WHERE (t.user_id = $1 OR t.project_id IN (SELECT project_id FROM collaborators WHERE user_id = $1))
+       AND p.is_archived = false
+     ORDER BY t.is_completed ASC, t.priority ASC, t.created_at ASC`,
+    [userId],
   );
 
   return {
     tasks: (result.rows as TaskRow[]).map(formatTask),
-    projectId: inboxId,
+    projectId: null,
   };
 }
 
@@ -207,7 +197,7 @@ export async function getProjectView(userId: string, projectId: string) {
     `SELECT * FROM tasks
      WHERE project_id = $1
        AND is_completed = false
-     ORDER BY order_value ASC`,
+     ORDER BY order_value ASC, created_at ASC`,
     [projectId],
   );
 
