@@ -154,12 +154,12 @@ export function Sidebar({ isOpen, onClose, collapsed = false, onOpenHelp }: Side
           <NavLink
             to="/settings"
             className={({ isActive }) =>
-              `flex items-center no-underline h-6 leading-6 px-3 text-sm text-ink gap-[7px] rounded ${
+              `flex items-center no-underline h-6 leading-6 px-3 text-sm text-ink gap-[7px] rounded m-0 p-0 ${
                 isActive ? 'font-medium bg-dot/50' : 'opacity-60 hover:opacity-100 bg-transparent'
               }`
             }
           >
-            <span className="w-4 flex items-center justify-center opacity-60">
+            <span className="w-4 flex items-center justify-center flex-shrink-0 opacity-60">
               <Settings size={15} strokeWidth={1.5} />
             </span>
             <span>Settings</span>
@@ -168,9 +168,9 @@ export function Sidebar({ isOpen, onClose, collapsed = false, onOpenHelp }: Side
           <button
             type="button"
             onClick={onOpenHelp}
-            className="flex items-center no-underline h-6 leading-6 px-3 text-sm text-ink gap-[7px] rounded opacity-60 hover:opacity-100 bg-transparent border-0 cursor-pointer text-left"
+            className="flex items-center h-6 leading-6 px-3 text-sm text-ink gap-[7px] rounded opacity-60 hover:opacity-100 bg-transparent border-0 cursor-pointer text-left m-0 p-0 font-inherit"
           >
-            <span className="w-4 flex items-center justify-center opacity-60">
+            <span className="w-4 flex items-center justify-center flex-shrink-0 opacity-60">
               <HelpCircle size={15} strokeWidth={1.5} />
             </span>
             <span>Help</span>
@@ -181,9 +181,9 @@ export function Sidebar({ isOpen, onClose, collapsed = false, onOpenHelp }: Side
           <button
             type="button"
             onClick={handleLogout}
-            className="flex items-center no-underline h-6 leading-6 px-3 text-sm text-ink gap-[7px] rounded opacity-60 hover:opacity-100 bg-transparent border-0 cursor-pointer text-left"
+            className="flex items-center h-6 leading-6 px-3 text-sm text-ink gap-[7px] rounded opacity-60 hover:opacity-100 bg-transparent border-0 cursor-pointer text-left m-0 p-0 font-inherit"
           >
-            <span className="w-4 flex items-center justify-center opacity-60">
+            <span className="w-4 flex items-center justify-center flex-shrink-0 opacity-60">
               <LogOut size={15} strokeWidth={1.5} />
             </span>
             <span>Logout</span>

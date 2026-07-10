@@ -13,9 +13,10 @@ import { ensureFontLoaded } from '../utils/fontLoader';
 export function AppShell() {
   const navigate = useNavigate();
   const qc = useQueryClient();
-  const { data: preferences } = useQuery({
+  const { data: preferences, isLoading: preferencesLoading } = useQuery({
     queryKey: ['preferences'],
     queryFn: fetchPreferences,
+    retry: 2,
   });
 
   useSync(useCallback((event) => {

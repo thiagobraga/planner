@@ -12,8 +12,8 @@ export function SettingsPage() {
 
   const updateMutation = useMutation({
     mutationFn: (patch: { font: 'lora' | 'patrick' }) => apiUpdatePreferences(patch),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['preferences'] });
+    onSuccess: (data) => {
+      qc.setQueryData(['preferences'], data);
     },
   });
 
@@ -37,7 +37,7 @@ export function SettingsPage() {
       <p className="text-[13px] leading-6 text-ink-light opacity-60 m-0">Configure your preferences</p>
       <div className="h-6" />
 
-      <div className="border-b border-dot pb-6 mb-6">
+      <div className="pb-6">
         <h2 className="text-sm font-semibold text-ink mb-4">Font</h2>
         <div className="flex flex-col gap-3">
           <label className="flex items-center gap-2 cursor-pointer">
@@ -50,7 +50,7 @@ export function SettingsPage() {
               disabled={updateMutation.isPending}
               className="w-4 h-4 cursor-pointer"
             />
-            <span className="text-sm text-ink font-journal">Lora (default)</span>
+            <span className="text-sm text-ink">Lora (default)</span>
           </label>
           <label className="flex items-center gap-2 cursor-pointer">
             <input
@@ -62,7 +62,7 @@ export function SettingsPage() {
               disabled={updateMutation.isPending}
               className="w-4 h-4 cursor-pointer"
             />
-            <span className="text-sm text-ink font-patrick">Patrick Hand (handwritten)</span>
+            <span className={`text-sm text-ink ${preferences?.font === 'patrick' ? 'font-patrick' : ''}`}>Patrick Hand (handwritten)</span>
           </label>
         </div>
         {updateMutation.error && (
