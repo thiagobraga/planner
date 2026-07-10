@@ -112,12 +112,15 @@ function validateFilter(input: string): string | null {
   return null;
 }
 
-const tokenColors: Record<TokenType, string> = {
-  keyword: 'var(--color-accent)',
-  operator: '#8b7355',
-  string: '#2e7d32',
-  error: '#b71c1c',
-  text: 'var(--color-ink)',
+// Syntax-highlight colors for query tokens. These are one-off tokenizer colors,
+// not part of the design-system palette, so they are expressed as Tailwind
+// arbitrary-value classes rather than theme tokens.
+const tokenClassNames: Record<TokenType, string> = {
+  keyword: 'text-accent',
+  operator: 'text-[#8b7355]',
+  string: 'text-[#2e7d32]',
+  error: 'text-[#b71c1c]',
+  text: 'text-ink',
 };
 
 interface FilterBarProps {
@@ -162,46 +165,20 @@ export function FilterBar({ value: externalValue, onChange, onApply }: FilterBar
   };
 
   return (
-    <div
-      style={{
-        position: 'relative',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '4px',
-      }}
-    >
+    <div className="relative flex flex-col gap-1">
       <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          padding: '6px 12px',
-          border: `1px solid ${error ? 'var(--color-accent)' : isFocused ? 'var(--color-ink)' : 'var(--color-dot)'}`,
-          borderRadius: '4px',
-          background: 'var(--color-cream)',
-          transition: 'border-color 120ms',
-        }}
+        className={`flex items-center gap-2 py-1.5 px-3 border rounded bg-cream transition-[border-color] duration-[120ms] ${error ? 'border-accent' : isFocused ? 'border-ink' : 'border-dot'}`}
       >
         {/* Filter icon */}
-        <span style={{ fontSize: '12px', color: 'var(--color-ink-light)', flexShrink: 0 }}>⊟</span>
+        <span className="text-xs text-ink-light shrink-0">⊟</span>
 
         {/* Syntax-highlighted overlay */}
         <div
           aria-hidden="true"
-          style={{
-            position: 'absolute',
-            left: '36px',
-            top: '7px',
-            fontSize: '13px',
-            lineHeight: '22px',
-            fontFamily: '"Lora", serif',
-            pointerEvents: 'none',
-            whiteSpace: 'pre',
-            display: isFocused || value ? 'flex' : 'none',
-          }}
+          className={`absolute left-9 top-[7px] text-[13px] leading-[22px] pointer-events-none whitespace-pre ${isFocused || value ? 'flex' : 'hidden'}`}
         >
           {tokens.map((tok, i) => (
-            <span key={i} style={{ color: tokenColors[tok.type] }}>
+            <span key={i} className={tokenClassNames[tok.type]}>
               {tok.text}
             </span>
           ))}
@@ -220,19 +197,7 @@ export function FilterBar({ value: externalValue, onChange, onApply }: FilterBar
           aria-label="Filter tasks"
           aria-invalid={!!error}
           aria-describedby={error ? 'filter-error' : undefined}
-          style={{
-            flex: 1,
-            fontSize: '13px',
-            lineHeight: '22px',
-            fontFamily: '"Lora", serif',
-            border: 'none',
-            outline: 'none',
-            background: 'transparent',
-            padding: 0,
-            caretColor: 'var(--color-ink)',
-            // Make text transparent so only the overlay is visible when tokens exist
-            color: isFocused && value ? 'transparent' : 'var(--color-ink)',
-          }}
+          className={`flex-1 text-[13px] leading-[22px] border-0 outline-none bg-transparent p-0 caret-ink ${isFocused && value ? 'text-transparent' : 'text-ink'}`}
         />
 
         {value && (
@@ -240,16 +205,7 @@ export function FilterBar({ value: externalValue, onChange, onApply }: FilterBar
             type="button"
             onClick={handleClear}
             aria-label="Clear filter"
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: 'var(--color-ink-light)',
-              cursor: 'pointer',
-              fontSize: '14px',
-              lineHeight: 1,
-              padding: '0 2px',
-              flexShrink: 0,
-            }}
+            className="bg-transparent border-0 text-ink-light cursor-pointer text-sm leading-none px-0.5 shrink-0"
           >
             ×
           </button>
@@ -261,12 +217,7 @@ export function FilterBar({ value: externalValue, onChange, onApply }: FilterBar
         <div
           id="filter-error"
           role="alert"
-          style={{
-            fontSize: '11px',
-            color: 'var(--color-accent)',
-            paddingLeft: '12px',
-            lineHeight: '16px',
-          }}
+          className="text-[11px] text-accent pl-3 leading-4"
         >
           {error}
         </div>

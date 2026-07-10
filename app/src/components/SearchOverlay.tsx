@@ -95,18 +95,7 @@ export function SearchOverlay({
     if (items.length === 0) return null;
     return (
       <div key={title}>
-        <div
-          style={{
-            padding: '0 20px',
-            height: '24px',
-            fontSize: '10px',
-            letterSpacing: '0.1em',
-            textTransform: 'uppercase',
-            color: 'var(--color-ink-light)',
-            fontWeight: 500,
-            lineHeight: '24px',
-          }}
-        >
+        <div className="px-5 h-6 text-[10px] tracking-[0.1em] uppercase text-ink-light font-medium leading-6">
           {title}
         </div>
         {items.map((item, localIdx) => {
@@ -121,21 +110,13 @@ export function SearchOverlay({
                   onClose();
                 }
               }}
-              style={{
-                padding: '0 20px',
-                height: '48px',
-                cursor: 'pointer',
-                background: isActive ? 'var(--color-dot)' : 'transparent',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'center',
-              }}
+              className={`px-5 h-12 cursor-pointer flex flex-col justify-center ${isActive ? 'bg-dot' : 'bg-transparent'}`}
             >
-              <span style={{ fontSize: '14px', color: 'var(--color-ink)', lineHeight: '24px' }}>
+              <span className="text-sm text-ink leading-6">
                 {item.title}
               </span>
               {item.subtitle && (
-                <span style={{ fontSize: '11px', color: 'var(--color-ink-light)', fontStyle: 'italic', lineHeight: '24px' }}>
+                <span className="text-[11px] text-ink-light italic leading-6">
                   {item.subtitle}
                 </span>
               )}
@@ -152,43 +133,12 @@ export function SearchOverlay({
       aria-modal="true"
       aria-label="Search"
       onClick={(e) => e.target === e.currentTarget && onClose()}
-      style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 100,
-        background: 'rgba(44, 44, 44, 0.3)',
-        backdropFilter: 'blur(2px)',
-        display: 'flex',
-        alignItems: 'flex-start',
-        justifyContent: 'center',
-        paddingTop: '80px',
-      }}
+      className="fixed inset-0 z-[100] bg-[rgba(44,44,44,0.3)] backdrop-blur-[2px] flex items-start justify-center pt-20"
     >
-      <div
-        style={{
-          background: 'var(--color-cream)',
-          borderRadius: '6px',
-          border: '1px solid var(--color-dot)',
-          width: '560px',
-          maxWidth: 'calc(100vw - 48px)',
-          boxShadow: '0 8px 32px rgba(44,44,44,0.15)',
-          overflow: 'hidden',
-          maxHeight: '60vh',
-          display: 'flex',
-          flexDirection: 'column',
-        }}
-      >
+      <div className="bg-cream rounded-md border border-dot w-[560px] max-w-[calc(100vw-48px)] shadow-[0_8px_32px_rgba(44,44,44,0.15)] overflow-hidden max-h-[60vh] flex flex-col">
         {/* Search input */}
-        <div
-          style={{
-            padding: '14px 20px',
-            borderBottom: '1px solid var(--color-dot)',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '10px',
-          }}
-        >
-          <span style={{ fontSize: '16px', color: 'var(--color-ink-light)' }}>⌕</span>
+        <div className="px-5 py-3.5 border-b border-dot flex items-center gap-2.5">
+          <span className="text-base text-ink-light">⌕</span>
           <input
             ref={inputRef}
             type="search"
@@ -200,30 +150,13 @@ export function SearchOverlay({
             role="combobox"
             aria-expanded={results.length > 0}
             aria-autocomplete="list"
-            style={{
-              flex: 1,
-              fontSize: '15px',
-              lineHeight: '24px',
-              fontFamily: '"Lora", serif',
-              color: 'var(--color-ink)',
-              background: 'transparent',
-              border: 'none',
-              outline: 'none',
-              padding: 0,
-            }}
+            className="flex-1 text-[15px] leading-6 text-ink bg-transparent border-0 outline-none p-0"
           />
           <button
             type="button"
             onClick={onClose}
             aria-label="Close search"
-            style={{
-              background: 'transparent',
-              border: 'none',
-              color: 'var(--color-ink-light)',
-              cursor: 'pointer',
-              fontSize: '18px',
-              lineHeight: 1,
-            }}
+            className="bg-transparent border-0 text-ink-light cursor-pointer text-lg leading-none"
           >
             ×
           </button>
@@ -233,28 +166,14 @@ export function SearchOverlay({
         <div
           role="listbox"
           aria-label="search results"
-          style={{ overflowY: 'auto', flex: 1 }}
+          className="overflow-y-auto flex-1"
         >
           {query.length < 2 ? (
-            <div
-              style={{
-                padding: '24px 20px',
-                fontSize: '13px',
-                color: 'var(--color-ink-light)',
-                fontStyle: 'italic',
-              }}
-            >
+            <div className="px-5 py-6 text-[13px] text-ink-light italic">
               Type at least 2 characters to search…
             </div>
           ) : results.length === 0 ? (
-            <div
-              style={{
-                padding: '24px 20px',
-                fontSize: '13px',
-                color: 'var(--color-ink-light)',
-                fontStyle: 'italic',
-              }}
-            >
+            <div className="px-5 py-6 text-[13px] text-ink-light italic">
               No results for "{query}"
             </div>
           ) : (
@@ -268,16 +187,7 @@ export function SearchOverlay({
 
         {/* Footer hint */}
         {results.length > 0 && (
-          <div
-            style={{
-              padding: '8px 20px',
-              borderTop: '1px solid var(--color-dot)',
-              fontSize: '11px',
-              color: 'var(--color-ink-light)',
-              display: 'flex',
-              gap: '12px',
-            }}
-          >
+          <div className="px-5 py-2 border-t border-dot text-[11px] text-ink-light flex gap-3">
             <span>↑↓ navigate</span>
             <span>↵ select</span>
             <span>Esc close</span>
