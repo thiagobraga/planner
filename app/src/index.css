@@ -17,6 +17,10 @@
   font-family: "Lora", serif;
 }
 
+@utility font-patrick {
+  font-family: "Patrick Hand", cursive;
+}
+
 body {
   background-color: var(--color-cream);
   font-family: "Lora", serif;
@@ -121,6 +125,10 @@ aside[aria-label="Navigation"] {
 .task-add-input::placeholder {
   color: var(--color-ink-light);
   opacity: 0.35;
+}
+
+.task-add-input:focus-visible {
+  outline: none;
 }
 
 /* Focus indicators — keyboard navigation */

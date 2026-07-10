@@ -9,6 +9,7 @@ import { ProjectsPage } from './pages/ProjectsPage';
 import { TodayPage } from './pages/TodayPage';
 import { HabitsPage } from './pages/HabitsPage';
 import { MonthlyPage } from './pages/MonthlyPage';
+import { SettingsPage } from './pages/SettingsPage';
 import { StyleguidePage } from './pages/StyleguidePage';
 
 function AppRoutes() {
@@ -27,6 +28,7 @@ function AppRoutes() {
           <Route path="/today" element={<TodayPage />} />
           <Route path="/monthly" element={<MonthlyPage />} />
           <Route path="/habits" element={<HabitsPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
           <Route path="/styleguide" element={<StyleguidePage />} />
           <Route path="/project/:id" element={<ProjectsPage />} />
         </Route>

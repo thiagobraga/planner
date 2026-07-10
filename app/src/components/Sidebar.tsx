@@ -1,11 +1,13 @@
-import { NavLink } from 'react-router-dom';
-import { ChevronRight, Repeat2, type LucideIcon } from 'lucide-react';
+import { NavLink, useNavigate } from 'react-router-dom';
+import { ChevronRight, Repeat2, Settings, HelpCircle, LogOut, type LucideIcon } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 import { ProjectTreeNav } from './ProjectTreeNav';
 
 interface SidebarProps {
   isOpen?: boolean;
   onClose?: () => void;
   collapsed?: boolean;
+  onOpenHelp?: () => void;
 }
 
 export const BjTask = ({ size = 15 }: { size?: number }) => (
@@ -38,7 +40,14 @@ const NAV_ITEMS: NavItem[] = [
   { to: '/habits', label: 'Habits', Icon: Repeat2 },
 ];
 
-export function Sidebar({ isOpen, onClose, collapsed = false }: SidebarProps) {
+export function Sidebar({ isOpen, onClose, collapsed = false, onOpenHelp }: SidebarProps) {
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
   if (collapsed) {
     return (
       <aside
@@ -62,6 +71,36 @@ export function Sidebar({ isOpen, onClose, collapsed = false }: SidebarProps) {
             </NavLink>
           ))}
         </nav>
+
+        <div className="mt-auto flex flex-col gap-0.5 w-full items-center pb-6">
+          <NavLink
+            to="/settings"
+            title="Settings"
+            className={({ isActive }) => (isActive ? 'sidebar-icon-link sidebar-icon-link--active' : 'sidebar-icon-link')}
+          >
+            <Settings size={16} strokeWidth={1.5} />
+          </NavLink>
+
+          <button
+            type="button"
+            onClick={onOpenHelp}
+            title="Help"
+            className="sidebar-icon-link"
+          >
+            <HelpCircle size={16} strokeWidth={1.5} />
+          </button>
+
+          <div className="w-8 h-px bg-dot opacity-30 my-1"></div>
+
+          <button
+            type="button"
+            onClick={handleLogout}
+            title="Logout"
+            className="sidebar-icon-link"
+          >
+            <LogOut size={16} strokeWidth={1.5} />
+          </button>
+        </div>
       </aside>
     );
   }
@@ -109,19 +148,46 @@ export function Sidebar({ isOpen, onClose, collapsed = false }: SidebarProps) {
       {/* Projects */}
       <ProjectTreeNav />
 
-      {/* Footer shortcuts hint */}
-      <div className="border-t border-dot pt-4 mt-4">
-        <div className="text-[11px] text-ink-light px-3 flex flex-col gap-1">
-          {[
-            ['q', 'quick add'],
-            ['/', 'search'],
-            ['?', 'shortcuts'],
-          ].map(([key, desc]) => (
-            <div key={key} className="flex items-center gap-1.5">
-              <kbd>{key}</kbd>
-              <span className="opacity-70 text-[11px]">{desc}</span>
-            </div>
-          ))}
+      {/* Footer utilities */}
+      <div className="mt-auto border-t border-dot pt-4">
+        <div className="flex flex-col gap-1">
+          <NavLink
+            to="/settings"
+            className={({ isActive }) =>
+              `flex items-center no-underline h-6 leading-6 px-3 text-sm text-ink gap-[7px] rounded ${
+                isActive ? 'font-medium bg-dot/50' : 'opacity-60 hover:opacity-100 bg-transparent'
+              }`
+            }
+          >
+            <span className="w-4 flex items-center justify-center opacity-60">
+              <Settings size={15} strokeWidth={1.5} />
+            </span>
+            <span>Settings</span>
+          </NavLink>
+
+          <button
+            type="button"
+            onClick={onOpenHelp}
+            className="flex items-center no-underline h-6 leading-6 px-3 text-sm text-ink gap-[7px] rounded opacity-60 hover:opacity-100 bg-transparent border-0 cursor-pointer text-left"
+          >
+            <span className="w-4 flex items-center justify-center opacity-60">
+              <HelpCircle size={15} strokeWidth={1.5} />
+            </span>
+            <span>Help</span>
+          </button>
+
+          <div className="border-t border-dot my-2 mx-3"></div>
+
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="flex items-center no-underline h-6 leading-6 px-3 text-sm text-ink gap-[7px] rounded opacity-60 hover:opacity-100 bg-transparent border-0 cursor-pointer text-left"
+          >
+            <span className="w-4 flex items-center justify-center opacity-60">
+              <LogOut size={15} strokeWidth={1.5} />
+            </span>
+            <span>Logout</span>
+          </button>
         </div>
       </div>
     </aside>
