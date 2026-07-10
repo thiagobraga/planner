@@ -1,0 +1,1 @@
+ALTER TABLE preferences ADD COLUMN font VARCHAR(20) NOT NULL DEFAULT 'lora';
