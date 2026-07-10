@@ -29,6 +29,8 @@ services:
       REDIS_URL: redis://redis:6379
       JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
       CORS_ORIGIN: ${CORS_ORIGIN:-https://planner.local}
+    ulimits:
+      nofile: 65536
     depends_on:
       postgres:
         condition: service_healthy
