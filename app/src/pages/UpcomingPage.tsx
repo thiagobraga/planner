@@ -60,47 +60,21 @@ export function UpcomingPage() {
   }, []);
 
   return (
-    <div style={{ maxWidth: '648px' }}>
-      <h1
-        style={{
-          fontFamily: '"Lora", serif',
-          fontSize: '18px',
-          lineHeight: '24px',
-          fontWeight: 600,
-          color: 'var(--color-ink)',
-          margin: 0,
-        }}
-      >
+    <div className="max-w-162">
+      <h1 className="text-[18px] leading-6 font-semibold text-ink m-0">
         Upcoming
       </h1>
-      <p
-        style={{
-          fontSize: '13px',
-          lineHeight: '24px',
-          color: 'var(--color-ink-light)',
-          opacity: 0.6,
-          margin: 0,
-        }}
-      >
+      <p className="text-[13px] leading-6 text-ink-light opacity-60 m-0">
         {phrase}
       </p>
 
-      <div style={{ height: '24px' }} />
+      <div className="h-6" />
 
       {days.map((day) => {
         const tasks = tasksByDay[day.key] ?? [];
         return (
-          <div key={day.key} style={{ marginTop: '24px' }}>
-            <div
-              style={{
-                fontSize: '11px',
-                letterSpacing: '0.08em',
-                textTransform: 'uppercase',
-                color: 'var(--color-ink-light)',
-                fontWeight: 500,
-                lineHeight: '24px',
-              }}
-            >
+          <div key={day.key} className="mt-6">
+            <div className="text-[11px] tracking-[0.08em] uppercase text-ink-light font-medium leading-6">
               {day.label}
             </div>
             {tasks.length > 0 ? (
@@ -112,16 +86,7 @@ export function UpcomingPage() {
                 onReorder={(reordered) => setTasksByDay((prev) => ({ ...prev, [day.key]: reordered }))}
               />
             ) : (
-              <div
-                style={{
-                  height: '24px',
-                  lineHeight: '24px',
-                  fontSize: '12px',
-                  color: 'var(--color-ink-light)',
-                  opacity: 0.4,
-                  fontStyle: 'italic',
-                }}
-              >
+              <div className="h-6 leading-6 text-[12px] text-ink-light opacity-40 italic">
                 —
               </div>
             )}

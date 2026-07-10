@@ -297,52 +297,24 @@ export function TodayPage() {
 
   return (
     <div
-      style={{ maxWidth: '648px', cursor: 'text' }}
+      className="max-w-162 cursor-text"
       onClick={(e) => {
         if ((e.target as HTMLElement).closest('input, button, [role="button"]')) return;
         inputRef.current?.focus();
       }}
     >
-      <h1
-        style={{
-          fontFamily: '"Lora", serif',
-          fontSize: '18px',
-          lineHeight: '24px',
-          fontWeight: 600,
-          color: 'var(--color-ink)',
-          margin: 0,
-        }}
-      >
+      <h1 className="text-[18px] leading-6 font-semibold text-ink m-0">
         Daily
       </h1>
-      <p
-        style={{
-          fontSize: '13px',
-          lineHeight: '24px',
-          color: 'var(--color-ink-light)',
-          opacity: 0.6,
-          margin: 0,
-        }}
-      >
+      <p className="text-[13px] leading-6 text-ink-light opacity-60 m-0">
         {phrase}
       </p>
 
       {sections.map((section) => {
         const isToday = section.key === todayKey;
         return (
-          <div key={section.key} style={{ marginTop: '24px' }}>
-            <div
-              style={{
-                fontSize: '11px',
-                letterSpacing: '0.08em',
-                textTransform: 'uppercase',
-                color: 'var(--color-ink-light)',
-                lineHeight: '24px',
-                height: '24px',
-                margin: 0,
-                fontWeight: 500,
-              }}
-            >
+          <div key={section.key} className="mt-6">
+            <div className="text-[11px] tracking-[0.08em] uppercase text-ink-light leading-6 h-6 m-0 font-medium">
               {section.label}
             </div>
 
@@ -365,20 +337,9 @@ export function TodayPage() {
             {isToday && (
               <form
                 onSubmit={handleAddToday}
-                style={{ display: 'flex', alignItems: 'center', height: '24px' }}
+                className="flex items-center h-6"
               >
-                <span
-                  style={{
-                    width: '24px',
-                    textAlign: 'center',
-                    fontSize: '10px',
-                    lineHeight: '24px',
-                    color: 'var(--color-ink)',
-                    opacity: 0.25,
-                    userSelect: 'none',
-                    flexShrink: 0,
-                  }}
-                >
+                <span className="w-6 text-center text-[10px] leading-6 text-ink opacity-25 select-none shrink-0">
                   •
                 </span>
                 <input
@@ -387,19 +348,8 @@ export function TodayPage() {
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   placeholder="Add task…"
-                  className="task-input task-add-input"
+                  className="task-input task-add-input flex-1 text-[14px] leading-6 text-ink bg-transparent border-none outline-none p-0"
                   spellCheck={false}
-                  style={{
-                    flex: 1,
-                    fontSize: '14px',
-                    lineHeight: '24px',
-                    fontFamily: '"Lora", serif',
-                    color: 'var(--color-ink)',
-                    background: 'transparent',
-                    border: 'none',
-                    outline: 'none',
-                    padding: 0,
-                  }}
                 />
               </form>
             )}
