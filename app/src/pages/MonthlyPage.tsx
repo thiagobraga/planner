@@ -6,32 +6,15 @@ export function MonthlyPage() {
   const phrase = useMemo(() => getPhrase('monthly'), []);
 
   return (
-    <div style={{ maxWidth: '648px' }}>
-      <h1
-        style={{
-          fontFamily: '"Lora", serif',
-          fontSize: '18px',
-          lineHeight: '24px',
-          fontWeight: 600,
-          color: 'var(--color-ink)',
-          margin: 0,
-        }}
-      >
+    <div className="max-w-162">
+      <h1 className="text-[18px] leading-6 font-semibold text-ink m-0">
         Monthly
       </h1>
-      <p
-        style={{
-          fontSize: '13px',
-          lineHeight: '24px',
-          color: 'var(--color-ink-light)',
-          opacity: 0.6,
-          margin: 0,
-        }}
-      >
+      <p className="text-[13px] leading-6 text-ink-light opacity-60 m-0">
         {phrase}
       </p>
 
-      <div style={{ height: '24px' }} />
+      <div className="h-6" />
 
       <MonthlyRows />
     </div>

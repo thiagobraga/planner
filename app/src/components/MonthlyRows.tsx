@@ -28,22 +28,14 @@ export function MonthlyRows() {
   });
 
   return (
-    <div style={{ fontFamily: '"Lora", serif', color: 'var(--color-ink)' }}>
+    <div className="text-ink">
       {/* Year Selector */}
-      <div style={{ display: 'flex', gap: '24px', height: '24px', lineHeight: '24px' }}>
+      <div className="flex gap-6 h-6 leading-6">
         {YEARS.map((y) => (
           <span
             key={y}
             onClick={() => setSelectedYear(y)}
-            style={{
-              cursor: 'pointer',
-              fontSize: '11px',
-              letterSpacing: '-0.01em',
-              textTransform: 'uppercase',
-              fontWeight: y === selectedYear ? 600 : 500,
-              color: y === selectedYear ? 'var(--color-ink)' : 'var(--color-ink-light)',
-              opacity: y === selectedYear ? 1 : 0.6,
-            }}
+            className={`cursor-pointer text-[11px] tracking-[-0.01em] uppercase ${y === selectedYear ? 'font-semibold text-ink' : 'font-medium text-ink-light opacity-60'}`}
           >
             {y}
           </span>
@@ -51,20 +43,12 @@ export function MonthlyRows() {
       </div>
 
       {/* Month Selector */}
-      <div style={{ display: 'flex', gap: '16px', height: '48px', lineHeight: '24px', flexWrap: 'wrap', alignItems: 'flex-start' }}>
+      <div className="flex gap-4 h-12 leading-6 flex-wrap items-start">
         {MONTHS.map((m, idx) => (
           <span
             key={m}
             onClick={() => setSelectedMonth(idx)}
-            style={{
-              cursor: 'pointer',
-              fontSize: '11px',
-              letterSpacing: '-0.01em',
-              textTransform: 'uppercase',
-              fontWeight: idx === selectedMonth ? 600 : 500,
-              color: idx === selectedMonth ? 'var(--color-ink)' : 'var(--color-ink-light)',
-              opacity: idx === selectedMonth ? 1 : 0.6,
-            }}
+            className={`cursor-pointer text-[11px] tracking-[-0.01em] uppercase ${idx === selectedMonth ? 'font-semibold text-ink' : 'font-medium text-ink-light opacity-60'}`}
           >
             {m}
           </span>
@@ -72,53 +56,26 @@ export function MonthlyRows() {
       </div>
 
       {/* Days */}
-      <div style={{ display: 'flex', flexDirection: 'column' }}>
+      <div className="flex flex-col">
         {days.map((d) => (
           <div key={d.day}>
             {d.startsWeekRule && (
               <div
-                style={{
-                  height: '24px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  marginTop: d.day === firstSunday ? '-10px' : 0,
-                }}
+                className={`h-6 flex items-center ${d.day === firstSunday ? '-mt-[10px]' : ''}`}
               >
                 <div
-                  style={{
-                    width: `calc(100% - ${WRITING_AREA_START}px)`,
-                    marginLeft: `${WRITING_AREA_START}px`,
-                    borderTop: '1px solid var(--color-dot)',
-                    marginTop: '-1px',
-                  }}
+                  className="w-[calc(100%-64px)] ml-16 border-t border-dot -mt-px"
                 />
               </div>
             )}
             <div
-              style={{
-                display: 'flex',
-                gap: '0px',
-                height: '24px',
-                lineHeight: '24px',
-                fontSize: '11px',
-                letterSpacing: '-0.01em',
-                textTransform: 'uppercase',
-                color: 'var(--color-ink-light)',
-                fontWeight: 400,
-              }}
+              className="flex h-6 leading-6 text-[11px] tracking-[-0.01em] uppercase text-ink-light font-normal"
             >
-              <span style={{ width: `${DAY_LABEL_WIDTH}px`, fontVariantNumeric: 'tabular-nums' }}>
+              <span className="w-6 tabular-nums">
                 {d.day.toString().padStart(2, '0')}
               </span>
-              <span style={{ width: `${WEEKDAY_LABEL_WIDTH}px` }}>{d.dayOfWeek}</span>
-              <div
-                style={{
-                  width: '12px',
-                  height: '24px',
-                  borderLeft: '1px solid var(--color-dot)',
-                  opacity: 0.8,
-                }}
-              />
+              <span className="w-10">{d.dayOfWeek}</span>
+              <div className="w-3 h-6 border-l border-dot opacity-80" />
             </div>
           </div>
         ))}
