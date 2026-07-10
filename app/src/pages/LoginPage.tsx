@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 
 const PlannerIcon64 = () => (
-  <img src="/images/bulletjournal-planner.png" width={64} height={64} alt="" style={{ display: 'block', margin: '0 auto' }} />
+  <img src="/images/bulletjournal-planner.png" width={64} height={64} alt="" className="block mx-auto" />
 );
 
 export function LoginPage() {
@@ -31,64 +31,23 @@ export function LoginPage() {
     }
   };
 
-  const inputStyle: React.CSSProperties = {
-    display: 'block',
-    width: '100%',
-    boxSizing: 'border-box',
-    padding: '12px 12px',
-    fontSize: '14px',
-    fontFamily: '"Lora", serif',
-    color: 'var(--color-ink)',
-    background: 'var(--color-cream)',
-    border: '1px solid var(--color-dot)',
-    borderRadius: '4px',
-    outline: 'none',
-    lineHeight: '24px',
-    height: '48px',
-  };
+  const inputClassName = "block w-full box-border p-3 text-sm text-ink bg-cream border border-dot rounded outline-none leading-6 h-12";
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        height: '100vh',
-        background: 'transparent',
-      }}
-    >
-      <div style={{ width: '320px' }}>
+    <div className="flex items-center justify-center h-screen">
+      <div className="w-80">
         {/* Logo */}
-        <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+        <div className="text-center mb-6">
           <PlannerIcon64 />
-          <h1
-            style={{
-              fontFamily: '"Lora", serif',
-              fontSize: '18px',
-              lineHeight: '24px',
-              fontWeight: 600,
-              color: 'var(--color-ink)',
-              margin: '8px 0 0',
-              padding: 0,
-            }}
-          >
+          <h1 className="text-lg leading-6 font-semibold text-ink mt-2">
             Planner
           </h1>
-          <p
-            style={{
-              fontSize: '13px',
-              lineHeight: '24px',
-              color: 'var(--color-ink-light)',
-              opacity: 0.6,
-              margin: 0,
-              padding: 0,
-            }}
-          >
+          <p className="text-[13px] leading-6 text-ink-light opacity-60">
             Bulletjournal online
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <form onSubmit={handleSubmit} className="flex flex-col gap-3">
           {mode === 'register' && (
             <input
               type="text"
@@ -96,7 +55,7 @@ export function LoginPage() {
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
               required
-              style={inputStyle}
+              className={inputClassName}
               autoFocus
             />
           )}
@@ -106,7 +65,7 @@ export function LoginPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            style={inputStyle}
+            className={inputClassName}
             autoFocus={mode === 'login'}
           />
           <input
@@ -115,44 +74,32 @@ export function LoginPage() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            style={inputStyle}
+            className={inputClassName}
           />
 
           {error && (
-            <p style={{ fontSize: '13px', color: 'var(--color-accent)', margin: 0 }}>{error}</p>
+            <p className="text-[13px] text-accent">{error}</p>
           )}
 
           <button
             type="submit"
             disabled={loading}
-            style={{
-              height: '48px',
-              padding: '0 12px',
-              fontSize: '14px',
-              fontFamily: '"Lora", serif',
-              fontWeight: 600,
-              color: 'var(--color-cream)',
-              background: 'var(--color-ink)',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: loading ? 'not-allowed' : 'pointer',
-              opacity: loading ? 0.6 : 1,
-            }}
+            className={`h-12 px-3 text-sm font-semibold text-cream bg-ink border-none rounded ${loading ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
           >
             {loading ? '…' : mode === 'login' ? 'Sign in' : 'Create account'}
           </button>
         </form>
 
-        <p style={{ fontSize: '11px', color: 'var(--color-ink-light)', textAlign: 'center', marginTop: '16px', fontStyle: 'italic', opacity: 0.7 }}>
+        <p className="text-[11px] text-ink-light text-center mt-4 italic opacity-70">
           Dev account: dev@planner.local / password123
         </p>
 
-        <p style={{ fontSize: '12px', color: 'var(--color-ink-light)', textAlign: 'center', marginTop: '12px' }}>
+        <p className="text-xs text-ink-light text-center mt-3">
           {mode === 'login' ? (
             <>No account?{' '}
               <button
                 onClick={() => setMode('register')}
-                style={{ background: 'none', border: 'none', color: 'var(--color-ink)', cursor: 'pointer', fontSize: '12px', textDecoration: 'underline' }}
+                className="bg-transparent border-none text-ink cursor-pointer text-xs underline"
               >
                 Register
               </button>
@@ -161,7 +108,7 @@ export function LoginPage() {
             <>Already have one?{' '}
               <button
                 onClick={() => setMode('login')}
-                style={{ background: 'none', border: 'none', color: 'var(--color-ink)', cursor: 'pointer', fontSize: '12px', textDecoration: 'underline' }}
+                className="bg-transparent border-none text-ink cursor-pointer text-xs underline"
               >
                 Sign in
               </button>

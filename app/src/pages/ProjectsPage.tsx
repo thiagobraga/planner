@@ -205,28 +205,17 @@ export function ProjectsPage() {
   }, [tasks]);
   return (
     <div
-      style={{ maxWidth: '648px', cursor: 'text' }}
+      className="max-w-162 cursor-text"
       onClick={(e) => {
         if ((e.target as HTMLElement).closest('input, button, [role="button"]')) return;
         inputRef.current?.focus();
       }}
     >
-      <h1
-        style={{
-          fontFamily: '"Lora", serif',
-          fontSize: '18px',
-          lineHeight: '24px',
-          height: '24px',
-          fontWeight: 600,
-          color: 'var(--color-ink)',
-          margin: 0,
-          padding: 0,
-        }}
-      >
+      <h1 className="text-lg leading-6 h-6 font-semibold text-ink">
         {data?.project.name ?? 'Project'}
       </h1>
 
-      <div style={{ height: '24px' }} />
+      <div className="h-6" />
 
       <TaskList
         tasks={tasks}
@@ -246,20 +235,9 @@ export function ProjectsPage() {
 
       <form
         onSubmit={handleAddAtEnd}
-        style={{ display: 'flex', alignItems: 'center', height: '24px' }}
+        className="flex items-center h-6"
       >
-        <span
-          style={{
-            width: '24px',
-            textAlign: 'center',
-            fontSize: '10px',
-            lineHeight: '24px',
-            color: 'var(--color-ink)',
-            opacity: 0.25,
-            userSelect: 'none',
-            flexShrink: 0,
-          }}
-        >
+        <span className="w-6 text-center text-[10px] leading-6 text-ink opacity-25 select-none shrink-0">
           •
         </span>
         <input
@@ -268,7 +246,7 @@ export function ProjectsPage() {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder="Add task…"
-          className="task-input task-add-input"
+          className="task-input task-add-input flex-1 text-sm leading-6 text-ink bg-transparent border-none outline-none p-0"
           spellCheck={false}
           onKeyDown={(e) => {
             if (e.key === 'ArrowUp') {
@@ -283,17 +261,6 @@ export function ProjectsPage() {
                 return prev;
               });
             }
-          }}
-          style={{
-            flex: 1,
-            fontSize: '14px',
-            lineHeight: '24px',
-            fontFamily: '"Lora", serif',
-            color: 'var(--color-ink)',
-            background: 'transparent',
-            border: 'none',
-            outline: 'none',
-            padding: 0,
           }}
         />
       </form>

@@ -134,6 +134,8 @@ function HabitBlock({ habit }: { habit: Habit }) {
     });
   };
 
+  // Capsule Rule: border-radius depends on neighboring cells' completion state at render time —
+  // must stay as inline style.
   const cellShape = (iso: string, col: number, row: number, completed: boolean) => {
     if (!completed) return { borderRadius: '50%' };
     const leftIso = col > 0 ? cells[row * 7 + col - 1].iso : null;
@@ -146,119 +148,53 @@ function HabitBlock({ habit }: { habit: Habit }) {
   };
 
   return (
-    <section style={{ marginTop: '48px' }}>
+    <section className="mt-12">
       {/* Habit header line */}
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: '14px' }}>
-        <h2
-          style={{
-            fontFamily: '"Lora", serif',
-            fontSize: '16px',
-            lineHeight: '24px',
-            fontWeight: 600,
-            color: 'var(--color-ink)',
-            margin: 0,
-          }}
-        >
+      <div className="flex items-baseline gap-[14px]">
+        <h2 className="text-base leading-6 font-semibold text-ink">
           {habit.name}
         </h2>
         {habit.note && (
-          <span
-            style={{
-              fontSize: '12px',
-              color: 'var(--color-ink-light)',
-              fontStyle: 'italic',
-            }}
-          >
+          <span className="text-xs text-ink-light italic">
             {habit.note}
           </span>
         )}
       </div>
 
       {/* Chain count + stats */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'flex-end',
-          gap: '24px',
-          marginTop: '24px',
-          marginBottom: '24px',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+      <div className="flex items-end gap-6 mt-6 mb-6">
+        <div className="flex items-baseline gap-2">
           <span
-            style={{
-              fontFamily: '"Lora", serif',
-              fontSize: '48px',
-              lineHeight: '48px',
-              fontWeight: 600,
-              color: chain > 0 ? 'var(--color-ink)' : 'var(--color-ink-light)',
-              letterSpacing: '-0.02em',
-            }}
+            className={`text-[48px] leading-[48px] font-semibold tracking-[-0.02em] ${chain > 0 ? 'text-ink' : 'text-ink-light'}`}
           >
             {chain}
           </span>
-          <span
-            style={{
-              fontSize: '11px',
-              letterSpacing: '0.1em',
-              textTransform: 'uppercase',
-              color: 'var(--color-ink-light)',
-              fontWeight: 500,
-            }}
-          >
+          <span className="text-[11px] tracking-widest uppercase text-ink-light font-medium">
             day{chain === 1 ? '' : 's'} unbroken
           </span>
         </div>
 
-        <div
-          style={{
-            flex: 1,
-            display: 'flex',
-            gap: '20px',
-            justifyContent: 'flex-end',
-            fontSize: '12px',
-            color: 'var(--color-ink-light)',
-            paddingBottom: '4px',
-          }}
-        >
+        <div className="flex-1 flex gap-5 justify-end text-xs text-ink-light pb-1">
           <span>
-            longest <span style={{ color: 'var(--color-ink)', fontWeight: 500 }}>{longest}</span>
+            longest <span className="text-ink font-medium">{longest}</span>
           </span>
           <span>
-            last 30 days <span style={{ color: 'var(--color-ink)', fontWeight: 500 }}>{rate}%</span>
+            last 30 days <span className="text-ink font-medium">{rate}%</span>
           </span>
         </div>
       </div>
 
       {/* Day labels */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: `repeat(7, ${CELL}px)`,
-          columnGap: `${GAP}px`,
-          marginBottom: '6px',
-          fontSize: '10px',
-          color: 'var(--color-ink-light)',
-          letterSpacing: '0.05em',
-        }}
-      >
+      <div className="grid [grid-template-columns:repeat(7,16px)] gap-x-[6px] mb-[6px] text-[10px] text-ink-light tracking-wider">
         {DAY_LABELS.map((d, i) => (
-          <span key={i} style={{ textAlign: 'center', opacity: 0.7 }}>
+          <span key={i} className="text-center opacity-70">
             {d}
           </span>
         ))}
       </div>
 
       {/* Grid */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: `repeat(7, ${CELL}px)`,
-          gridAutoRows: `${CELL}px`,
-          columnGap: `${GAP}px`,
-          rowGap: `${GAP}px`,
-        }}
-      >
+      <div className="grid [grid-template-columns:repeat(7,16px)] [grid-auto-rows:16px] gap-[6px]">
         {cells.map(({ iso, col, row, future }) => {
           const completed = !future && isDone(iso);
           const isToday = iso === todayISO;
@@ -275,20 +211,14 @@ function HabitBlock({ habit }: { habit: Habit }) {
               onClick={() => toggle(iso, future)}
               aria-label={`${iso}${completed ? ' completed' : ' not completed'}${isToday ? ' (today)' : ''}`}
               aria-pressed={completed}
-              style={{
-                width: `${CELL}px`,
-                height: `${CELL}px`,
-                padding: 0,
-                border: isToday
-                  ? `1.5px solid var(--color-ink)`
+              className={`w-4 h-4 p-0 cursor-pointer ${
+                isToday
+                  ? '[border:1.5px_solid_var(--color-ink)] bg-transparent'
                   : completed
-                  ? 'none'
-                  : `1px solid var(--color-dot)`,
-                background: completed ? 'var(--color-ink)' : 'transparent',
-                cursor: 'pointer',
-                ...shape,
-                transition: 'background 120ms ease-out, border-radius 120ms ease-out',
-              }}
+                  ? 'border-none bg-ink'
+                  : 'border border-dot bg-transparent'
+              }`}
+              style={{ ...shape, transition: 'background 120ms ease-out, border-radius 120ms ease-out' }}
             />
           );
         })}
@@ -300,28 +230,11 @@ function HabitBlock({ habit }: { habit: Habit }) {
 export function HabitsPage() {
   const phrase = useMemo(() => getPhrase('habits'), []);
   return (
-    <div style={{ maxWidth: '648px' }}>
-      <h1
-        style={{
-          fontFamily: '"Lora", serif',
-          fontSize: '18px',
-          lineHeight: '24px',
-          fontWeight: 600,
-          color: 'var(--color-ink)',
-          margin: 0,
-        }}
-      >
+    <div className="max-w-162">
+      <h1 className="text-lg leading-6 font-semibold text-ink">
         Habits
       </h1>
-      <p
-        style={{
-          fontSize: '13px',
-          lineHeight: '24px',
-          color: 'var(--color-ink-light)',
-          opacity: 0.6,
-          margin: 0,
-        }}
-      >
+      <p className="text-[13px] leading-6 text-ink-light opacity-60">
         {phrase}
       </p>
 
