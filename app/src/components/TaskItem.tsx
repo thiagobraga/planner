@@ -1,4 +1,4 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, memo } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
@@ -19,6 +19,7 @@ export interface Task {
   orderValue: number;
   labels?: string[];
   indent?: number;
+  createdAt?: string;
 }
 
 export interface TaskItemProps {
@@ -71,7 +72,7 @@ function focusAdjacent(currentId: string, dir: 'up' | 'down') {
   }
 }
 
-export function TaskItem({
+export const TaskItem = memo(function TaskItem({
   task,
   isSelected,
   isEditing,
@@ -326,4 +327,4 @@ export function TaskItem({
       </span>
     </div>
   );
-}
+});

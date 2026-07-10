@@ -78,6 +78,7 @@ export interface ApiTask {
   isCompleted: boolean;
   orderValue: number;
   depth?: number;
+  createdAt?: string;
 }
 
 export interface Preferences {
@@ -88,7 +89,7 @@ export interface Preferences {
   notificationsEnabled: boolean;
 }
 
-export async function fetchInboxTasks(): Promise<{ tasks: ApiTask[]; projectId: string }> {
+export async function fetchInboxTasks(): Promise<{ tasks: ApiTask[]; projectId: string | null }> {
   return request('/views/inbox');
 }
 

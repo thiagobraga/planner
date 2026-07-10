@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import { TaskList } from '../components/TaskList';
 import type { Task } from '../components/TaskItem';
 import { getPhrase } from '../utils/phrases';
@@ -45,7 +45,11 @@ export function UpcomingPage() {
   const [tasksByDay, setTasksByDay] = useState<Record<string, Task[]>>(makeSeed);
   const [selectedId, setSelectedId] = useState<string>();
 
-  const handleToggle = (id: string) => {
+  const handleTaskClick = useCallback((id: string) => {
+    setSelectedId((prev) => prev === id ? undefined : id);
+  }, []);
+
+  const handleToggle = useCallback((id: string) => {
     setTasksByDay((prev) => {
       const next = { ...prev };
       for (const key of Object.keys(next)) {
@@ -53,7 +57,7 @@ export function UpcomingPage() {
       }
       return next;
     });
-  };
+  }, []);
 
   return (
     <div style={{ maxWidth: '648px' }}>
@@ -103,7 +107,7 @@ export function UpcomingPage() {
               <TaskList
                 tasks={tasks}
                 selectedTaskId={selectedId}
-                onTaskClick={(id) => setSelectedId(id === selectedId ? undefined : id)}
+                onTaskClick={handleTaskClick}
                 onTaskToggle={handleToggle}
                 onReorder={(reordered) => setTasksByDay((prev) => ({ ...prev, [day.key]: reordered }))}
               />

@@ -14,6 +14,7 @@ import {
 import { clearToken } from '../api/client';
 import { useAuth } from '../contexts/AuthContext';
 import { getPhrase } from '../utils/phrases';
+import { useSync } from '../hooks/useSync';
 
 function apiToTask(t: ApiTask): Task {
   return {
@@ -26,6 +27,7 @@ function apiToTask(t: ApiTask): Task {
     isCompleted: t.isCompleted,
     orderValue: t.orderValue,
     indent: t.depth ?? 0,
+    createdAt: t.createdAt,
   };
 }
 
@@ -41,6 +43,8 @@ export function InboxPage() {
   const [selectedId, setSelectedId] = useState<string | undefined>();
   const [editingId, setEditingId] = useState<string | undefined>();
   const inputRef = useRef<HTMLInputElement>(null);
+  const tasksRef = useRef(tasks);
+  tasksRef.current = tasks;
 
   useEffect(() => {
     inputRef.current?.focus();
@@ -68,6 +72,11 @@ export function InboxPage() {
 
   const invalidate = useCallback(() => qc.invalidateQueries({ queryKey: ['inbox'] }), [qc]);
 
+  useSync(useCallback((event) => {
+    if (event.entityType !== 'task') return;
+    invalidate();
+  }, [invalidate]));
+
   const handleAddAtEnd = (e: React.FormEvent) => {
     e.preventDefault();
     const trimmed = input.trim();
@@ -87,6 +96,10 @@ export function InboxPage() {
         invalidate();
       });
   };
+
+  const handleTaskClick = useCallback((id: string) => {
+    setSelectedId((prev) => prev === id ? undefined : id);
+  }, []);
 
   const handleAddBelow = useCallback((afterId: string) => {
     const tid = tempId();
@@ -196,14 +209,17 @@ export function InboxPage() {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleToggle = useCallback((id: string) => {
+    const prevTasks = tasksRef.current;
+    const task = prevTasks.find((t) => t.id === id);
+
     setTasks((prev) =>
       prev.map((t) => (t.id === id ? { ...t, isCompleted: !t.isCompleted } : t)),
     );
-    if (!id.startsWith('temp-')) {
-      const task = tasks.find((t) => t.id === id);
-      if (task) apiToggleTask(id, !task.isCompleted).catch(() => invalidate());
+
+    if (task && !id.startsWith('temp-')) {
+      apiToggleTask(id, !task.isCompleted).catch(() => invalidate());
     }
-  }, [tasks]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [invalidate]);
 
   return (
     <div
@@ -248,7 +264,7 @@ export function InboxPage() {
         tasks={tasks}
         selectedTaskId={selectedId}
         editingId={editingId}
-        onTaskClick={(id) => setSelectedId(id === selectedId ? undefined : id)}
+        onTaskClick={handleTaskClick}
         onTaskToggle={handleToggle}
         onReorder={setTasks}
         onStartEdit={handleStartEdit}

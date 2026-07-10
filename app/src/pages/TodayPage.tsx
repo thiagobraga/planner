@@ -48,6 +48,7 @@ function apiToTask(t: ApiTask): Task {
     orderValue: t.orderValue,
     indent: t.depth ?? 0,
     dueDate: t.dueDate ? t.dueDate.slice(0, 10) : undefined,
+    createdAt: t.createdAt,
   };
 }
 
@@ -68,7 +69,7 @@ function buildSections(overdueTasks: Task[], todayTasks: Task[]): DaySection[] {
   return sortedDates.map((date) => ({
     key: date,
     label: dayLabel(dateFromISO(date)),
-    tasks: (byDate.get(date) ?? []).sort((a, b) => a.orderValue - b.orderValue),
+    tasks: (byDate.get(date) ?? []).sort((a, b) => a.orderValue - b.orderValue || (a.createdAt ?? '').localeCompare(b.createdAt ?? '')),
   }));
 }
 
@@ -82,6 +83,8 @@ export function TodayPage() {
   const [editingId, setEditingId] = useState<string>();
   const [input, setInput] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
+  const sectionsRef = useRef(sections);
+  sectionsRef.current = sections;
 
   useEffect(() => {
     fetchTodayTasks().then((response) => {
@@ -107,21 +110,26 @@ export function TodayPage() {
       setSections((prev) =>
         prev.map((s) => ({ ...s, tasks: s.tasks.filter((t) => t.id !== event.entityId) }))
       );
-    } else {
-      // Remove task from all sections (it may have moved to a different day)
-      // then refetch today's tasks
+    } else if (event.payload) {
+      const updated = apiToTask(event.payload as ApiTask);
       setSections((prev) =>
-        prev.map((s) => ({ ...s, tasks: s.tasks.filter((t) => t.id !== event.entityId) }))
+        prev.map((s) => ({
+          ...s,
+          tasks: s.tasks.map((t) => (t.id === event.entityId ? updated : t)),
+        }))
       );
-      replaceTodayFromApi();
     }
-  }, [replaceTodayFromApi]));
+  }, []));
 
   const updateSections = useCallback((updater: (prev: DaySection[]) => DaySection[]) => {
     setSections(updater);
   }, []);
 
   const handleToggle = useCallback((id: string) => {
+    const prevSections = sectionsRef.current;
+    const task = prevSections.flatMap((s) => s.tasks).find((t) => t.id === id);
+    const wasCompleted = task?.isCompleted ?? false;
+
     updateSections((prev) =>
       prev.map((s) => ({
         ...s,
@@ -130,21 +138,20 @@ export function TodayPage() {
         ),
       }))
     );
-    const task = sections.flatMap((s) => s.tasks).find((t) => t.id === id);
-    if (task && !id.startsWith('temp-')) {
-      apiToggleTask(id, !task.isCompleted).catch(() => {
-        // revert
+
+    if (!id.startsWith('temp-')) {
+      apiToggleTask(id, !wasCompleted).catch(() => {
         updateSections((prev) =>
           prev.map((s) => ({
             ...s,
             tasks: s.tasks.map((t) =>
-              t.id === id ? { ...t, isCompleted: task.isCompleted } : t
+              t.id === id ? { ...t, isCompleted: wasCompleted } : t
             ),
           }))
         );
       });
     }
-  }, [sections, updateSections]);
+  }, [updateSections]);
 
   const handleReorder = useCallback((key: string) => (reordered: Task[]) => {
     updateSections((prev) => prev.map((s) => (s.key === key ? { ...s, tasks: reordered } : s)));
@@ -208,6 +215,10 @@ export function TodayPage() {
     setSelectedId(undefined);
     if (!id.startsWith('temp-')) apiDeleteTask(id).catch(() => replaceTodayFromApi());
   }, [replaceTodayFromApi, updateSections]);
+
+  const handleTaskClick = useCallback((id: string) => {
+    setSelectedId((prev) => prev === id ? undefined : id);
+  }, []);
 
   const handleAddBelow = useCallback((afterId: string) => {
     const tid = tempId();
@@ -340,7 +351,7 @@ export function TodayPage() {
               selectedTaskId={selectedId}
               editingId={editingId}
               hideDueDate
-              onTaskClick={(id) => setSelectedId(id === selectedId ? undefined : id)}
+              onTaskClick={handleTaskClick}
               onTaskToggle={handleToggle}
               onReorder={handleReorder(section.key)}
               onStartEdit={handleStartEdit}
