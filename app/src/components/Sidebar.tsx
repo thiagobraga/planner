@@ -126,21 +126,21 @@ export function Sidebar({ isOpen, onClose, collapsed = false, onOpenHelp }: Side
       </div>
 
       {/* Main nav */}
-      <nav aria-label="Main navigation">
+      <nav aria-label="Main navigation" className="flex flex-col">
         {NAV_ITEMS.map((entry) => (
           <NavLink
             key={entry.to}
             to={entry.to}
             className={({ isActive }) =>
-              `flex items-center no-underline h-6 leading-6 px-3 text-sm text-ink gap-[7px] rounded ${
+              `flex items-center no-underline h-6 px-3 text-sm text-ink gap-[7px] rounded leading-none ${
                 isActive ? 'font-medium bg-dot/50' : 'opacity-60 hover:opacity-100 bg-transparent'
               }`
             }
           >
-            <span className="w-4 flex items-center justify-center opacity-60">
+            <span className="w-4 h-4 flex items-center justify-center flex-shrink-0 opacity-60">
               <entry.Icon size={15} strokeWidth={1.5} />
             </span>
-            <span>{entry.label}</span>
+            <span className="leading-none">{entry.label}</span>
           </NavLink>
         ))}
       </nav>
@@ -150,30 +150,30 @@ export function Sidebar({ isOpen, onClose, collapsed = false, onOpenHelp }: Side
 
       {/* Footer utilities */}
       <div className="mt-auto border-t border-dot pt-4">
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col">
           <NavLink
             to="/settings"
             className={({ isActive }) =>
-              `flex items-center no-underline h-6 leading-6 px-3 text-sm text-ink gap-[7px] rounded m-0 p-0 ${
+              `flex items-center no-underline h-6 px-3 text-sm text-ink gap-[7px] rounded m-0 p-0 leading-none ${
                 isActive ? 'font-medium bg-dot/50' : 'opacity-60 hover:opacity-100 bg-transparent'
               }`
             }
           >
-            <span className="w-4 flex items-center justify-center flex-shrink-0 opacity-60">
+            <span className="w-4 h-4 flex items-center justify-center flex-shrink-0 opacity-60">
               <Settings size={15} strokeWidth={1.5} />
             </span>
-            <span>Settings</span>
+            <span className="leading-none">Settings</span>
           </NavLink>
 
           <button
             type="button"
             onClick={onOpenHelp}
-            className="flex items-center h-6 leading-6 px-3 text-sm text-ink gap-[7px] rounded opacity-60 hover:opacity-100 bg-transparent border-0 cursor-pointer text-left m-0 p-0 font-inherit"
+            className="flex items-center h-6 px-3 text-sm text-ink gap-[7px] rounded opacity-60 hover:opacity-100 bg-transparent border-0 cursor-pointer text-left m-0 p-0 font-inherit leading-none"
           >
-            <span className="w-4 flex items-center justify-center flex-shrink-0 opacity-60">
+            <span className="w-4 h-4 flex items-center justify-center flex-shrink-0 opacity-60">
               <HelpCircle size={15} strokeWidth={1.5} />
             </span>
-            <span>Help</span>
+            <span className="leading-none">Help</span>
           </button>
 
           <div className="border-t border-dot my-2 mx-3"></div>
@@ -181,12 +181,12 @@ export function Sidebar({ isOpen, onClose, collapsed = false, onOpenHelp }: Side
           <button
             type="button"
             onClick={handleLogout}
-            className="flex items-center h-6 leading-6 px-3 text-sm text-ink gap-[7px] rounded opacity-60 hover:opacity-100 bg-transparent border-0 cursor-pointer text-left m-0 p-0 font-inherit"
+            className="flex items-center h-6 px-3 text-sm text-ink gap-[7px] rounded opacity-60 hover:opacity-100 bg-transparent border-0 cursor-pointer text-left m-0 p-0 font-inherit leading-none"
           >
-            <span className="w-4 flex items-center justify-center flex-shrink-0 opacity-60">
+            <span className="w-4 h-4 flex items-center justify-center flex-shrink-0 opacity-60">
               <LogOut size={15} strokeWidth={1.5} />
             </span>
-            <span>Logout</span>
+            <span className="leading-none">Logout</span>
           </button>
         </div>
       </div>
