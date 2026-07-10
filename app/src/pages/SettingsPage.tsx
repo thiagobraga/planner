@@ -40,7 +40,7 @@ export function SettingsPage() {
       <div className="pb-6">
         <h2 className="text-sm font-semibold text-ink mb-4">Font</h2>
         <div className="flex flex-col gap-3">
-          <label className="flex items-center gap-2 cursor-pointer">
+          <label className="flex items-center gap-2 cursor-pointer opacity-100">
             <input
               type="radio"
               name="font"
@@ -52,7 +52,7 @@ export function SettingsPage() {
             />
             <span className="text-sm text-ink">Lora (default)</span>
           </label>
-          <label className="flex items-center gap-2 cursor-pointer">
+          <label className="flex items-center gap-2 cursor-pointer opacity-100">
             <input
               type="radio"
               name="font"
@@ -65,9 +65,6 @@ export function SettingsPage() {
             <span className={`text-sm text-ink ${preferences?.font === 'patrick' ? 'font-patrick' : ''}`}>Patrick Hand (handwritten)</span>
           </label>
         </div>
-        {updateMutation.error && (
-          <p className="text-[13px] text-accent mt-2">Error saving settings</p>
-        )}
       </div>
     </div>
   );
