@@ -150,11 +150,11 @@ export function Sidebar({ isOpen, onClose, collapsed = false, onOpenHelp }: Side
 
       {/* Footer utilities */}
       <div className="mt-auto border-t border-dot pt-4">
-        <div className="flex flex-col">
+        <nav aria-label="Settings" className="flex flex-col">
           <NavLink
             to="/settings"
             className={({ isActive }) =>
-              `flex items-center no-underline h-6 px-3 text-sm text-ink gap-[7px] rounded m-0 p-0 leading-none ${
+              `flex items-center no-underline h-6 px-3 text-sm text-ink gap-[7px] rounded leading-none ${
                 isActive ? 'font-medium bg-dot/50' : 'opacity-60 hover:opacity-100 bg-transparent'
               }`
             }
@@ -168,7 +168,7 @@ export function Sidebar({ isOpen, onClose, collapsed = false, onOpenHelp }: Side
           <button
             type="button"
             onClick={onOpenHelp}
-            className="flex items-center h-6 px-3 text-sm text-ink gap-[7px] rounded opacity-60 hover:opacity-100 bg-transparent border-0 cursor-pointer text-left m-0 p-0 font-inherit leading-none"
+            className="flex items-center no-underline h-6 px-3 text-sm text-ink gap-[7px] rounded opacity-60 hover:opacity-100 bg-transparent border-0 cursor-pointer leading-none"
           >
             <span className="w-4 h-4 flex items-center justify-center flex-shrink-0 opacity-60">
               <HelpCircle size={15} strokeWidth={1.5} />
@@ -176,19 +176,19 @@ export function Sidebar({ isOpen, onClose, collapsed = false, onOpenHelp }: Side
             <span className="leading-none">Help</span>
           </button>
 
-          <div className="border-t border-dot my-2 mx-3"></div>
+          <div className="border-t border-dot my-0 mx-0"></div>
 
           <button
             type="button"
             onClick={handleLogout}
-            className="flex items-center h-6 px-3 text-sm text-ink gap-[7px] rounded opacity-60 hover:opacity-100 bg-transparent border-0 cursor-pointer text-left m-0 p-0 font-inherit leading-none"
+            className="flex items-center no-underline h-6 px-3 text-sm text-ink gap-[7px] rounded opacity-60 hover:opacity-100 bg-transparent border-0 cursor-pointer leading-none"
           >
             <span className="w-4 h-4 flex items-center justify-center flex-shrink-0 opacity-60">
               <LogOut size={15} strokeWidth={1.5} />
             </span>
             <span className="leading-none">Logout</span>
           </button>
-        </div>
+        </nav>
       </div>
     </aside>
   );
