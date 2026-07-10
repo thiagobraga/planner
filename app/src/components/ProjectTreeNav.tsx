@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback, type CSSProperties } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
@@ -192,25 +192,9 @@ export function ProjectTreeNav() {
   };
 
   return (
-    <div style={{ marginTop: '24px', flex: 1 }}>
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '0 12px',
-        }}
-      >
-        <span
-          style={{
-            fontSize: '10px',
-            lineHeight: '24px',
-            letterSpacing: '0.1em',
-            textTransform: 'uppercase',
-            color: 'var(--color-ink-light)',
-            fontWeight: 500,
-          }}
-        >
+    <div className="mt-6 flex-1">
+      <div className="flex items-center justify-between px-3">
+        <span className="text-[10px] leading-6 tracking-[0.1em] uppercase text-ink-light font-medium">
           Projects
         </span>
         <button
@@ -218,15 +202,7 @@ export function ProjectTreeNav() {
           aria-label="Add project"
           title="Add project"
           onClick={() => { setAdding(true); setNewName(''); }}
-          style={{
-            background: 'none',
-            border: 'none',
-            cursor: 'pointer',
-            color: 'var(--color-ink-light)',
-            display: 'flex',
-            alignItems: 'center',
-            padding: 0,
-          }}
+          className="bg-transparent border-0 cursor-pointer text-ink-light flex items-center p-0"
         >
           <Plus size={14} strokeWidth={1.5} />
         </button>
@@ -274,32 +250,12 @@ export function ProjectTreeNav() {
             if (e.key === 'Escape') setAdding(false);
           }}
           placeholder="Project name…"
-          style={{
-            width: 'calc(100% - 24px)',
-            margin: '0 12px',
-            height: '24px',
-            fontSize: '13px',
-            fontFamily: '"Lora", serif',
-            color: 'var(--color-ink)',
-            background: 'transparent',
-            border: 'none',
-            borderBottom: '1px solid var(--color-dot)',
-            outline: 'none',
-          }}
+          className="w-[calc(100%-24px)] mx-3 h-6 text-[13px] text-ink bg-transparent border-0 border-b border-dot outline-none"
         />
       )}
 
       {flat.length === 0 && !adding && (
-        <div
-          style={{
-            fontSize: '12px',
-            lineHeight: '24px',
-            color: 'var(--color-ink-light)',
-            padding: '0 12px',
-            fontStyle: 'italic',
-            opacity: 0.6,
-          }}
-        >
+        <div className="text-xs leading-6 text-ink-light px-3 italic opacity-60">
           No projects yet
         </div>
       )}
@@ -345,39 +301,20 @@ function SortableProjectRow({
         transform: CSS.Translate.toString(transform),
         transition,
         opacity: isDragging ? 0.5 : 1,
-        display: 'flex',
-        alignItems: 'center',
-        gap: '7px',
-        height: '24px',
         paddingLeft: `${12 + depth * INDENT}px`,
-        paddingRight: '8px',
-        fontSize: '13px',
-        color: 'var(--color-ink)',
       }}
-      className="project-row"
+      className="project-row flex items-center gap-[7px] h-6 pr-2 text-[13px] text-ink"
     >
       <span
         {...attributes}
         {...listeners}
-        style={{
-          width: '16px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          flexShrink: 0,
-          cursor: 'grab',
-        }}
+        className="w-4 flex items-center justify-center shrink-0 cursor-grab"
         aria-label="Drag to reorder"
       >
-        <span style={{
-          width: '8px',
-          height: '8px',
-          borderRadius: '50%',
-          background: projectColorHex(item.colorName),
-          filter: 'saturate(0.55)',
-          flexShrink: 0,
-          display: 'block',
-        }} />
+        <span
+          className="w-2 h-2 rounded-full shrink-0 block [filter:saturate(0.55)]"
+          style={{ background: projectColorHex(item.colorName) }}
+        />
       </span>
       {isEditing ? (
         <input
@@ -389,17 +326,7 @@ function SortableProjectRow({
             if (e.key === 'Enter') onCommitRename();
             if (e.key === 'Escape') onCancelRename();
           }}
-          style={{
-            flex: 1,
-            height: '20px',
-            fontSize: '13px',
-            fontFamily: '"Lora", serif',
-            color: 'var(--color-ink)',
-            background: 'transparent',
-            border: 'none',
-            borderBottom: '1px solid var(--color-dot)',
-            outline: 'none',
-          }}
+          className="flex-1 h-5 text-[13px] text-ink bg-transparent border-0 border-b border-dot outline-none"
         />
       ) : (
         <>
@@ -407,41 +334,25 @@ function SortableProjectRow({
             type="button"
             onClick={onNavigate}
             onDoubleClick={onStartRename}
-            style={{
-              flex: 1,
-              textAlign: 'left',
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              fontFamily: '"Lora", serif',
-              fontSize: '13px',
-              color: 'var(--color-ink)',
-              opacity: 0.6,
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-              padding: 0,
-            }}
+            className="flex-1 text-left bg-transparent border-0 cursor-pointer text-[13px] text-ink opacity-60 truncate p-0"
           >
             {item.name}
           </button>
           <button
             type="button"
-            className="project-row__action"
+            className="project-row__action bg-transparent border-0 cursor-pointer text-ink-light text-sm leading-none py-0 px-0.5 shrink-0"
             aria-label={`Add sub-project to ${item.name}`}
             title="Add sub-project"
             onClick={onAddSub}
-            style={actionBtnStyle}
           >
             +
           </button>
           <button
             type="button"
-            className="project-row__action"
+            className="project-row__action bg-transparent border-0 cursor-pointer text-ink-light text-sm leading-none py-0 px-0.5 shrink-0"
             aria-label={`Delete ${item.name}`}
             title="Delete project"
             onClick={onDelete}
-            style={actionBtnStyle}
           >
             ×
           </button>
@@ -450,14 +361,3 @@ function SortableProjectRow({
     </div>
   );
 }
-
-const actionBtnStyle: CSSProperties = {
-  background: 'none',
-  border: 'none',
-  cursor: 'pointer',
-  color: 'var(--color-ink-light)',
-  fontSize: '14px',
-  lineHeight: 1,
-  padding: '0 2px',
-  flexShrink: 0,
-};

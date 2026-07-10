@@ -92,27 +92,14 @@ export function AppShell() {
   }, [isTextInputFocused, handleAction]);
 
   return (
-    <div style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
+    <div className="flex h-screen overflow-hidden">
       {/* Mobile menu button — only shown below collapsed breakpoint (≥640px uses collapsed sidebar) */}
       {!sidebarCollapsed && (
         <button
           type="button"
           aria-label="Open navigation"
           onClick={() => setSidebarOpen(true)}
-          style={{
-            display: 'none',
-            position: 'fixed',
-            top: '12px',
-            left: '12px',
-            zIndex: 60,
-            background: 'var(--color-cream)',
-            border: '1px solid var(--color-dot)',
-            borderRadius: '4px',
-            padding: '4px 8px',
-            fontSize: '16px',
-            cursor: 'pointer',
-          }}
-          className="mobile-menu-btn"
+          className="mobile-menu-btn hidden fixed top-3 left-3 z-[60] bg-cream border border-dot rounded py-1 px-2 text-base cursor-pointer"
         >
           ☰
         </button>
@@ -125,12 +112,7 @@ export function AppShell() {
       />
 
       <main
-        className="main-content"
-        style={{
-          flex: 1,
-          overflowY: 'auto',
-          padding: '24px',
-        }}
+        className="main-content flex-1 overflow-y-auto p-6"
       >
         <Outlet />
       </main>
@@ -156,40 +138,16 @@ export function AppShell() {
           aria-modal="true"
           aria-label="Keyboard shortcuts"
           onClick={() => setHelpOpen(false)}
-          style={{
-            position: 'fixed',
-            inset: 0,
-            zIndex: 100,
-            background: 'rgba(44, 44, 44, 0.3)',
-            backdropFilter: 'blur(2px)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
+          className="fixed inset-0 z-[100] bg-[rgba(44,44,44,0.3)] backdrop-blur-[2px] flex items-center justify-center"
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            style={{
-              background: 'var(--color-cream)',
-              border: '1px solid var(--color-dot)',
-              borderRadius: '6px',
-              padding: '24px 32px',
-              minWidth: '320px',
-              boxShadow: '0 8px 32px rgba(44,44,44,0.15)',
-            }}
+            className="bg-cream border border-dot rounded-md py-6 px-8 min-w-[320px] shadow-[0_8px_32px_rgba(44,44,44,0.15)]"
           >
-            <h2
-              style={{
-                fontFamily: '"Lora", serif',
-                fontSize: '16px',
-                fontWeight: 600,
-                color: 'var(--color-ink)',
-                margin: '0 0 16px',
-              }}
-            >
+            <h2 className="text-base font-semibold text-ink mb-4">
               Keyboard Shortcuts
             </h2>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+            <table className="w-full border-collapse text-[13px]">
               <tbody>
                 {[
                   ['q', 'Quick add task'],
@@ -203,33 +161,24 @@ export function AppShell() {
                   ['Esc', 'Close dialog'],
                 ].map(([key, desc]) => (
                   <tr key={key}>
-                    <td style={{ padding: '4px 0', width: '80px' }}>
+                    <td className="py-1 px-0 w-20">
                       {key.split(' ').map((k, i) => (
                         <span key={i}>
-                          {i > 0 && <span style={{ margin: '0 4px', color: 'var(--color-ink-light)' }}>then</span>}
+                          {i > 0 && <span className="mx-1 text-ink-light">then</span>}
                           <kbd>{k}</kbd>
                         </span>
                       ))}
                     </td>
-                    <td style={{ padding: '4px 0 4px 12px', color: 'var(--color-ink)' }}>{desc}</td>
+                    <td className="py-1 pl-3 text-ink">{desc}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
-            <div style={{ marginTop: '16px', textAlign: 'right' }}>
+            <div className="mt-4 text-right">
               <button
                 type="button"
                 onClick={() => setHelpOpen(false)}
-                style={{
-                  padding: '4px 16px',
-                  background: 'var(--color-ink)',
-                  color: 'var(--color-cream)',
-                  border: 'none',
-                  borderRadius: '4px',
-                  fontSize: '13px',
-                  cursor: 'pointer',
-                  fontFamily: '"Lora", serif',
-                }}
+                className="py-1 px-4 bg-ink text-cream border-0 rounded text-[13px] cursor-pointer"
               >
                 Close
               </button>
