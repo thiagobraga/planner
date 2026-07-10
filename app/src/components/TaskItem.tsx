@@ -38,11 +38,11 @@ export interface TaskItemProps {
   onNavigate?: (id: string, dir: 'up' | 'down', col: number) => void;
 }
 
-const priorityColors: Record<number, string> = {
-  1: 'var(--color-accent)',
-  2: '#e67e22',
-  3: '#3498db',
-  4: 'var(--color-ink)',
+const priorityClasses: Record<number, string> = {
+  1: 'text-accent',
+  2: 'text-priority-2',
+  3: 'text-priority-3',
+  4: 'text-ink',
 };
 
 function formatDueDate(value: string): string {
@@ -104,10 +104,10 @@ export const TaskItem = memo(function TaskItem({
     }
   }, [isEditing]);
 
+  // Only dnd-kit runtime values + computed indent remain inline.
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    opacity: isDragging ? 0.5 : task.isCompleted ? 0.35 : 1,
     paddingLeft: `${(task.indent ?? 0) * 24}px`,
   };
 
@@ -187,7 +187,7 @@ export const TaskItem = memo(function TaskItem({
       ref={setNodeRef}
       style={style}
       data-task-id={task.id}
-      className={`task-item group ${isSelected ? 'task-item--selected' : ''} ${isEditing ? 'task-item--editing' : ''}`}
+      className={`task-item group ${isSelected ? 'task-item--selected' : ''} ${isEditing ? 'task-item--editing' : ''} ${isDragging ? 'opacity-50' : task.isCompleted ? 'opacity-[0.35]' : ''}`}
       aria-label={task.title}
       aria-selected={isSelected}
       onClick={isEditing ? undefined : () => onClick?.(task.id)}
@@ -199,21 +199,8 @@ export const TaskItem = memo(function TaskItem({
       <span
         {...attributes}
         {...listeners}
-        className="drag-handle"
+        className="drag-handle absolute left-[-18px] w-4 cursor-grab flex items-center justify-center opacity-0 text-ink-light text-[10px] select-none"
         aria-label="drag to reorder"
-        style={{
-          position: 'absolute',
-          left: '-18px',
-          width: '16px',
-          cursor: 'grab',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          opacity: 0,
-          color: 'var(--color-ink-light)',
-          fontSize: '10px',
-          userSelect: 'none',
-        }}
       >
         ⠿
       </span>
@@ -224,83 +211,33 @@ export const TaskItem = memo(function TaskItem({
         aria-label={task.isCompleted ? `Reopen: ${task.title}` : `Complete: ${task.title}`}
         aria-pressed={task.isCompleted}
         onClick={(e) => { e.stopPropagation(); handleCheckClick(e); }}
-        style={{
-          width: '24px',
-          textAlign: 'center',
-          fontSize: task.isCompleted ? '26px' : '10px',
-          lineHeight: '24px',
-          overflow: 'hidden',
-          color: priorityColors[task.priority],
-          fontWeight: task.isCompleted ? 700 : 400,
-          userSelect: 'none',
-          flexShrink: 0,
-          cursor: 'pointer',
-          background: 'none',
-          border: 'none',
-          padding: 0,
-        }}
+        className={`w-6 text-center ${task.isCompleted ? 'text-[26px] font-bold' : 'text-[10px] font-normal'} leading-6 overflow-hidden ${priorityClasses[task.priority]} select-none shrink-0 cursor-pointer bg-transparent border-0 p-0`}
       >
         {task.isCompleted ? '×' : '•'}
       </button>
 
       {/* Title area */}
-      <span
-        style={{
-          flex: 1,
-          display: 'flex',
-          flexWrap: 'wrap',
-          alignItems: 'baseline',
-          lineHeight: '24px',
-          minWidth: 0,
-        }}
-      >
+      <span className="flex-1 flex flex-wrap items-baseline leading-6 min-w-0">
         {isEditing ? (
           <input
             ref={editRef}
             type="text"
             defaultValue={task.title}
-            className="task-input"
+            className="task-input flex-1 w-full text-sm leading-6 text-ink bg-transparent border-0 outline-none p-0"
             spellCheck={false}
-            style={{
-              flex: 1,
-              width: '100%',
-              fontSize: '14px',
-              lineHeight: '24px',
-              fontFamily: '"Lora", serif',
-              color: 'var(--color-ink)',
-              background: 'transparent',
-              border: 'none',
-              outline: 'none',
-              padding: 0,
-            }}
             onKeyDown={handleEditKeyDown}
             onBlur={handleEditBlur}
           />
         ) : (
           <>
             <span
-              style={{
-                fontSize: '14px',
-                lineHeight: '24px',
-                textDecoration: task.isCompleted ? 'line-through' : 'none',
-                color: task.isCompleted ? 'var(--color-ink-light)' : 'var(--color-ink)',
-                wordBreak: 'break-word',
-              }}
+              className={`text-sm leading-6 break-words ${task.isCompleted ? 'line-through text-ink-light' : 'text-ink'}`}
             >
               {task.title}
             </span>
 
             {task.dueDate && !hideDueDate && (
-              <span
-                style={{
-                  fontSize: '12px',
-                  lineHeight: '24px',
-                  color: 'var(--color-ink-light)',
-                  fontStyle: 'italic',
-                  marginLeft: '6px',
-                  whiteSpace: 'nowrap',
-                }}
-              >
+              <span className="text-xs leading-6 text-ink-light italic ml-1.5 whitespace-nowrap">
                 {formatDueDate(task.dueDate)}
               </span>
             )}
@@ -308,16 +245,7 @@ export const TaskItem = memo(function TaskItem({
             {task.labels?.map((label) => (
               <span
                 key={label}
-                style={{
-                  fontSize: '10px',
-                  lineHeight: '24px',
-                  padding: '0 6px',
-                  borderRadius: '8px',
-                  background: 'var(--color-dot)',
-                  color: 'var(--color-ink)',
-                  marginLeft: '4px',
-                  whiteSpace: 'nowrap',
-                }}
+                className="text-[10px] leading-6 px-1.5 rounded-[8px] bg-dot text-ink ml-1 whitespace-nowrap"
               >
                 @{label}
               </span>

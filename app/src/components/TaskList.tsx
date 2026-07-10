@@ -69,7 +69,7 @@ export function TaskList({
         <div
           role="list"
           aria-label="task list"
-          style={{ display: 'flex', flexDirection: 'column', gap: '0' }}
+          className="flex flex-col gap-0"
         >
           {tasks.map((task) => (
             <div key={task.id} role="listitem">
