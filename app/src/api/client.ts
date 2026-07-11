@@ -78,6 +78,7 @@ export interface ApiTask {
   isCompleted: boolean;
   orderValue: number;
   depth?: number;
+  type: 'task' | 'note';
   createdAt?: string;
 }
 
@@ -87,7 +88,10 @@ export interface Preferences {
   weekStart: 'sunday' | 'monday';
   theme: 'light' | 'dark' | 'system';
   notificationsEnabled: boolean;
-  font: 'lora' | 'patrick';
+  font: 'lora' | 'klee' | 'playpen' | 'hubballi';
+  showDots: boolean;
+  background: 'beige' | 'white';
+  smallCaps: boolean;
 }
 
 export async function fetchInboxTasks(): Promise<{ tasks: ApiTask[]; projectId: string | null }> {
@@ -100,6 +104,14 @@ export async function fetchTodayTasks(): Promise<{ overdue: ApiTask[]; today: Ap
 
 export async function fetchUpcomingTasks(): Promise<Array<{ date: string; tasks: ApiTask[] }>> {
   return request('/views/upcoming');
+}
+
+export async function fetchMonthNotes(year: number, month: number): Promise<{
+  notesByDate: Record<string, ApiTask[]>;
+  year: number;
+  month: number;
+}> {
+  return request(`/views/month?year=${year}&month=${month}`);
 }
 
 export async function fetchPreferences(): Promise<Preferences> {
@@ -120,6 +132,7 @@ export async function apiCreateTask(input: {
   dueDate?: string;
   parentTaskId?: string;
   depth?: number;
+  type?: 'task' | 'note';
 }): Promise<ApiTask> {
   return request<ApiTask>('/tasks', {
     method: 'POST',
@@ -129,7 +142,7 @@ export async function apiCreateTask(input: {
 
 export async function apiUpdateTask(
   id: string,
-  updates: Partial<Pick<ApiTask, 'title' | 'priority' | 'dueDate' | 'depth'>>,
+  updates: Partial<Pick<ApiTask, 'title' | 'priority' | 'dueDate' | 'depth' | 'type'>>,
 ): Promise<ApiTask> {
   return request<ApiTask>(`/tasks/${id}`, {
     method: 'PATCH',

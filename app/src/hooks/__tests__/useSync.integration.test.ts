@@ -80,6 +80,14 @@ describe('SyncEvent: entity type filtering', () => {
     act(() => { capturedSyncHandler?.(event); });
     expect(handler).toHaveBeenCalledWith(event);
   });
+
+  it('delivers preferences events to handler', () => {
+    const handler = vi.fn();
+    renderHook(() => useSync(handler));
+    const event = makeEvent({ entityType: 'preferences' });
+    act(() => { capturedSyncHandler?.(event); });
+    expect(handler).toHaveBeenCalledWith(event);
+  });
 });
 
 describe('SyncEvent: event type coverage', () => {

@@ -17,7 +17,7 @@ import { TaskItem, type Task, type TaskItemProps } from './TaskItem';
 
 type TaskCallbacks = Pick<
   TaskItemProps,
-  'onStartEdit' | 'onEditCommit' | 'onEditCancel' | 'onDelete' | 'onAddBelow' | 'onIndent' | 'onNavigate'
+  'onStartEdit' | 'onEditCommit' | 'onEditCancel' | 'onDelete' | 'onAddBelow' | 'onIndent' | 'onNavigate' | 'onConvertType'
 >;
 
 interface TaskListProps extends TaskCallbacks {
@@ -45,6 +45,7 @@ export function TaskList({
   onAddBelow,
   onIndent,
   onNavigate,
+  onConvertType,
 }: TaskListProps) {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -87,6 +88,7 @@ export function TaskList({
                 onAddBelow={onAddBelow}
                 onIndent={onIndent}
                 onNavigate={onNavigate}
+                onConvertType={onConvertType}
               />
             </div>
           ))}
