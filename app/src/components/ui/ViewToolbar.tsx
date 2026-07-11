@@ -40,7 +40,7 @@ export function ViewToolbar({
   const setMove = (v: boolean) => (onMoveCompletedChange ? onMoveCompletedChange(v) : setMoveState(v));
 
   return (
-    <div className={`flex flex-wrap items-center gap-4 ${className}`}>
+    <div className={`flex flex-wrap items-center gap-2.5 ${className}`}>
       <Button variant="secondary" leftIcon={<SlidersHorizontal />} onClick={onFilter}>
         Filter
       </Button>
