@@ -1,5 +1,6 @@
 import pool from "../db/pool.js";
 import { AppError } from "../utils/AppError.js";
+import { buildEvent, publishEvent } from "./syncService.js";
 
 interface PreferencesRow {
   user_id: string;
@@ -8,6 +9,9 @@ interface PreferencesRow {
   theme: string;
   notifications_enabled: boolean;
   font: string;
+  show_dots: boolean;
+  background: string;
+  small_caps: boolean;
 }
 
 function formatPreferences(row: PreferencesRow) {
@@ -18,12 +22,16 @@ function formatPreferences(row: PreferencesRow) {
     theme: row.theme,
     notificationsEnabled: row.notifications_enabled,
     font: row.font,
+    showDots: row.show_dots,
+    background: row.background,
+    smallCaps: row.small_caps,
   };
 }
 
 const VALID_WEEK_STARTS = ["sunday", "monday"] as const;
 const VALID_THEMES = ["light", "dark", "system"] as const;
-const VALID_FONTS = ["lora", "patrick"] as const;
+const VALID_FONTS = ["lora", "klee", "playpen", "hubballi"] as const;
+const VALID_BACKGROUNDS = ["beige", "white"] as const;
 
 function isValidIanaTimezone(tz: string): boolean {
   try {
@@ -40,6 +48,9 @@ export interface UpdatePreferencesInput {
   theme?: string;
   notificationsEnabled?: boolean;
   font?: string;
+  showDots?: boolean;
+  background?: string;
+  smallCaps?: boolean;
 }
 
 export function validatePreferences(input: UpdatePreferencesInput): UpdatePreferencesInput {
@@ -64,7 +75,19 @@ export function validatePreferences(input: UpdatePreferencesInput): UpdatePrefer
   }
 
   if (input.font !== undefined && !VALID_FONTS.includes(input.font as (typeof VALID_FONTS)[number])) {
-    errors.push({ field: "font", message: "font must be 'lora' or 'patrick'" });
+    errors.push({ field: "font", message: "font must be one of: lora, klee, playpen, hubballi" });
+  }
+
+  if (input.showDots !== undefined && typeof input.showDots !== "boolean") {
+    errors.push({ field: "showDots", message: "showDots must be a boolean" });
+  }
+
+  if (input.background !== undefined && !VALID_BACKGROUNDS.includes(input.background as (typeof VALID_BACKGROUNDS)[number])) {
+    errors.push({ field: "background", message: "background must be one of: beige, white" });
+  }
+
+  if (input.smallCaps !== undefined && typeof input.smallCaps !== "boolean") {
+    errors.push({ field: "smallCaps", message: "smallCaps must be a boolean" });
   }
 
   if (errors.length > 0) {
@@ -123,6 +146,18 @@ export async function updatePreferences(userId: string, input: UpdatePreferences
     setClauses.push(`font = $${paramIndex++}`);
     values.push(input.font);
   }
+  if (input.showDots !== undefined) {
+    setClauses.push(`show_dots = $${paramIndex++}`);
+    values.push(input.showDots);
+  }
+  if (input.background !== undefined) {
+    setClauses.push(`background = $${paramIndex++}`);
+    values.push(input.background);
+  }
+  if (input.smallCaps !== undefined) {
+    setClauses.push(`small_caps = $${paramIndex++}`);
+    values.push(input.smallCaps);
+  }
 
   if (setClauses.length === 0) {
     return getPreferences(userId);
@@ -142,5 +177,16 @@ export async function updatePreferences(userId: string, input: UpdatePreferences
     });
   }
 
-  return formatPreferences(result.rows[0] as PreferencesRow);
+  const preferences = formatPreferences(result.rows[0] as PreferencesRow);
+  publishEvent(
+    buildEvent({
+      entityType: "preferences",
+      eventType: "updated",
+      entityId: userId,
+      userId,
+      payload: preferences,
+    }),
+  ).catch((err) => console.error("[sync] publish failed", err));
+
+  return preferences;
 }

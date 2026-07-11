@@ -2,6 +2,8 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { AppError } from "../../utils/AppError.js";
 
 const mockQuery = vi.fn();
+const mockBuildEvent = vi.fn((input: unknown) => ({ id: "sync-1", emittedAt: "2026-07-11T00:00:00.000Z", ...(input as object) }));
+const mockPublishEvent = vi.fn();
 
 vi.mock("../../db/pool.js", () => ({
   default: {
@@ -9,10 +11,18 @@ vi.mock("../../db/pool.js", () => ({
   },
 }));
 
+vi.mock("../syncService.js", () => ({
+  buildEvent: (input: unknown) => mockBuildEvent(input),
+  publishEvent: (event: unknown) => mockPublishEvent(event),
+}));
+
 import { getPreferences, updatePreferences, validatePreferences } from "../preferencesService.js";
 
 beforeEach(() => {
   mockQuery.mockReset();
+  mockBuildEvent.mockClear();
+  mockPublishEvent.mockReset();
+  mockPublishEvent.mockResolvedValue(undefined);
 });
 
 const prefsRow = {
@@ -21,6 +31,9 @@ const prefsRow = {
   week_start: "sunday",
   theme: "system",
   notifications_enabled: true,
+  font: "lora",
+  show_dots: true,
+  background: "beige",
 };
 
 describe("validatePreferences", () => {
@@ -93,11 +106,34 @@ describe("updatePreferences", () => {
     expect(sql).not.toMatch(/time_zone/);
   });
 
+  it("publishes a user-scoped preferences sync event after update", async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [{ ...prefsRow, background: "white" }] });
+
+    const p = await updatePreferences("u1", { background: "white" });
+
+    expect(p.background).toBe("white");
+    expect(mockBuildEvent).toHaveBeenCalledWith({
+      entityType: "preferences",
+      eventType: "updated",
+      entityId: "u1",
+      userId: "u1",
+      payload: p,
+    });
+    expect(mockPublishEvent).toHaveBeenCalledWith(expect.objectContaining({
+      entityType: "preferences",
+      eventType: "updated",
+      entityId: "u1",
+      userId: "u1",
+      payload: p,
+    }));
+  });
+
   it("returns existing prefs when input is empty", async () => {
     mockQuery.mockResolvedValueOnce({ rows: [prefsRow] });
     const p = await updatePreferences("u1", {});
     expect(p.theme).toBe("system");
     expect(mockQuery.mock.calls[0][0]).toMatch(/SELECT/);
+    expect(mockPublishEvent).not.toHaveBeenCalled();
   });
 
   it("rejects invalid input before db call", async () => {

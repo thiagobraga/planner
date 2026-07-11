@@ -1,0 +1,1 @@
+ALTER TABLE preferences ADD COLUMN small_caps BOOLEAN NOT NULL DEFAULT false;
