@@ -164,7 +164,7 @@ export function StyleguidePage() {
 
         {/* 2 — Buttons */}
         <Card n={2} title="Buttons" span>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-x-4 gap-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-x-4 gap-y-3">
             {([
               { label: 'Primary', variant: 'primary' as const },
               { label: 'Secondary', variant: 'secondary' as const },
