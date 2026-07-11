@@ -1,6 +1,6 @@
 import { Router, type Request, type Response, type NextFunction } from "express";
 import { authMiddleware } from "../middleware/auth.js";
-import { getTodayView, getUpcomingView, getInboxView, getProjectView } from "../services/viewService.js";
+import { getTodayView, getUpcomingView, getInboxView, getProjectView, getMonthView } from "../services/viewService.js";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -17,6 +17,17 @@ router.get("/upcoming", authMiddleware, async (req: Request, res: Response, next
   try {
     const days = parseInt(String(req.query.days ?? "7"), 10);
     const view = await getUpcomingView(req.userId!, days);
+    res.json(view);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get("/month", authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const year = parseInt(String(req.query.year ?? ""), 10);
+    const month = parseInt(String(req.query.month ?? ""), 10);
+    const view = await getMonthView(req.userId!, year, month);
     res.json(view);
   } catch (err) {
     next(err);

@@ -9,7 +9,7 @@ vi.mock("../../db/pool.js", () => ({
   },
 }));
 
-import { getTodayView, getUpcomingView, getInboxView, localDateInTimezone, addDaysISO } from "../viewService.js";
+import { getTodayView, getUpcomingView, getInboxView, getMonthView, localDateInTimezone, addDaysISO } from "../viewService.js";
 
 const userId = "user-1";
 
@@ -32,6 +32,7 @@ function taskRow(overrides: Record<string, unknown> = {}) {
     completed_at: null,
     order_value: 0,
     depth: 0,
+    type: "task",
     created_at: "2024-06-01T00:00:00Z",
     updated_at: "2024-06-01T00:00:00Z",
     ...overrides,
@@ -128,8 +129,60 @@ describe("getUpcomingView", () => {
   });
 });
 
+describe("getMonthView", () => {
+  it("rejects invalid year or month", async () => {
+    await expect(getMonthView(userId, 2024, 0)).rejects.toBeInstanceOf(AppError);
+    await expect(getMonthView(userId, 2024, 13)).rejects.toBeInstanceOf(AppError);
+    await expect(getMonthView(userId, 1.5, 6)).rejects.toBeInstanceOf(AppError);
+  });
+
+  it("groups note rows and saved descriptions by due date", async () => {
+    mockQuery.mockResolvedValueOnce({
+      rows: [
+        taskRow({ id: "n1", type: "note", due_date: "2024-06-05" }),
+        taskRow({ id: "n2", type: "note", due_date: "2024-06-05" }),
+        taskRow({ id: "d1", type: "task", description: "Saved note", due_date: "2024-06-05" }),
+        taskRow({ id: "n3", type: "note", due_date: "2024-06-20" }),
+      ],
+    });
+
+    const view = await getMonthView(userId, 2024, 6);
+
+    expect(view.notesByDate["2024-06-05"].map((t) => t.id)).toEqual(["n1", "n2", "d1"]);
+    expect(view.notesByDate["2024-06-20"].map((t) => t.id)).toEqual(["n3"]);
+
+    const sql = mockQuery.mock.calls[0][0] as string;
+    expect(sql).toMatch(/t\.type = 'note'/);
+    expect(sql).toMatch(/t\.description/);
+    expect(sql).toMatch(/is_archived = false/);
+  });
+
+  it("excludes notes from adjacent months via the query date range", async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+
+    await getMonthView(userId, 2024, 6);
+
+    const params = mockQuery.mock.calls[0][1] as string[];
+    expect(params).toEqual([userId, "2024-06-01", "2024-06-30"]);
+  });
+
+  it("computes the correct last day of the month, including leap February and December", async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+    await getMonthView(userId, 2024, 2); // leap year
+    expect((mockQuery.mock.calls[0][1] as string[])[2]).toBe("2024-02-29");
+
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+    await getMonthView(userId, 2023, 2); // non-leap year
+    expect((mockQuery.mock.calls[1][1] as string[])[2]).toBe("2023-02-28");
+
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+    await getMonthView(userId, 2024, 12);
+    expect((mockQuery.mock.calls[2][1] as string[])[2]).toBe("2024-12-31");
+  });
+});
+
 describe("getInboxView", () => {
-  it("returns accessible tasks ordered by completion, priority, then creation time", async () => {
+  it("returns inbox tasks ordered by completion, priority, then creation time", async () => {
     mockQuery.mockResolvedValueOnce({
       rows: [
         taskRow({ id: "done", project_id: "p-2", is_completed: true, priority: 4, created_at: "2024-06-02T00:00:00Z" }),
@@ -143,6 +196,7 @@ describe("getInboxView", () => {
 
     const sql = mockQuery.mock.calls[0][0] as string;
     expect(sql).toMatch(/JOIN projects p ON p\.id = t\.project_id/);
+    expect(sql).toMatch(/p\.is_inbox = true/);
     expect(sql).toMatch(/is_archived = false/);
     expect(sql).toMatch(/ORDER BY t\.is_completed ASC, t\.priority ASC, t\.created_at ASC/);
   });

@@ -11,7 +11,7 @@ interface TaskRow {
   title: string;
   description: string | null;
   priority: number;
-  due_date: string | null;
+  due_date: string | Date | null;
   due_time: string | null;
   due_timezone: string | null;
   recurrence_rule: object | null;
@@ -19,6 +19,7 @@ interface TaskRow {
   completed_at: string | null;
   order_value: number;
   depth: number;
+  type: string;
   created_at: string;
   updated_at: string;
 }
@@ -42,6 +43,7 @@ function formatTask(row: TaskRow) {
     completedAt: row.completed_at,
     orderValue: row.order_value,
     depth: row.depth,
+    type: row.type,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -74,6 +76,10 @@ export function addDaysISO(date: string, days: number): string {
   const dt = new Date(Date.UTC(y, m - 1, d));
   dt.setUTCDate(dt.getUTCDate() + days);
   return dt.toISOString().slice(0, 10);
+}
+
+function toDateKey(value: string | Date): string {
+  return value instanceof Date ? value.toISOString().slice(0, 10) : String(value).slice(0, 10);
 }
 
 export interface TodayView {
@@ -153,7 +159,7 @@ export async function getUpcomingView(userId: string, days: number, now: Date = 
   for (const row of result.rows as TaskRow[]) {
     const t = formatTask(row);
     if (t.dueDate) {
-      const bucket = grouped.get(t.dueDate);
+      const bucket = grouped.get(toDateKey(t.dueDate));
       if (bucket) bucket.push(t);
     }
   }
@@ -162,11 +168,67 @@ export async function getUpcomingView(userId: string, days: number, now: Date = 
   return { days: daysArray, start, end };
 }
 
+export interface MonthView {
+  notesByDate: Record<string, ReturnType<typeof formatTask>[]>;
+  year: number;
+  month: number;
+}
+
+export async function getMonthView(userId: string, year: number, month: number): Promise<MonthView> {
+  if (!Number.isInteger(year) || year < 1970 || year > 9999) {
+    throw new AppError({
+      code: "VALIDATION_ERROR",
+      message: "Validation failed",
+      statusCode: 400,
+      details: [{ field: "year", message: "year must be a valid integer year" }],
+    });
+  }
+  if (!Number.isInteger(month) || month < 1 || month > 12) {
+    throw new AppError({
+      code: "VALIDATION_ERROR",
+      message: "Validation failed",
+      statusCode: 400,
+      details: [{ field: "month", message: "month must be an integer between 1 and 12" }],
+    });
+  }
+
+  const start = `${year}-${String(month).padStart(2, "0")}-01`;
+  const daysInMonth = new Date(year, month, 0).getDate();
+  const end = `${year}-${String(month).padStart(2, "0")}-${String(daysInMonth).padStart(2, "0")}`;
+
+  const result = await pool.query(
+    `SELECT t.* FROM tasks t
+     JOIN projects p ON p.id = t.project_id
+     WHERE t.user_id = $1
+       AND (
+         t.type = 'note'
+         OR NULLIF(BTRIM(COALESCE(t.description, '')), '') IS NOT NULL
+       )
+       AND t.due_date >= $2::date
+       AND t.due_date <= $3::date
+       AND p.is_archived = false
+     ORDER BY t.due_date ASC, t.order_value ASC, t.created_at ASC`,
+    [userId, start, end],
+  );
+
+  const notesByDate: Record<string, ReturnType<typeof formatTask>[]> = {};
+  for (const row of result.rows as TaskRow[]) {
+    if (!row.due_date) continue;
+    // pg returns DATE columns as JS Date objects; normalize to YYYY-MM-DD
+    // so the key matches the string dates the frontend requests by.
+    const dateKey = toDateKey(row.due_date);
+    (notesByDate[dateKey] ??= []).push(formatTask(row));
+  }
+
+  return { notesByDate, year, month };
+}
+
 export async function getInboxView(userId: string) {
   const result = await pool.query(
     `SELECT t.* FROM tasks t
      JOIN projects p ON p.id = t.project_id
-     WHERE (t.user_id = $1 OR t.project_id IN (SELECT project_id FROM collaborators WHERE user_id = $1))
+     WHERE t.user_id = $1
+       AND p.is_inbox = true
        AND p.is_archived = false
      ORDER BY t.is_completed ASC, t.priority ASC, t.created_at ASC`,
     [userId],
