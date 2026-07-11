@@ -20,14 +20,15 @@ describe('useSync', () => {
   it('subscribes handler to sync event on mount', () => {
     const handler = vi.fn();
     renderHook(() => useSync(handler));
-    expect(mockOn).toHaveBeenCalledWith('sync', handler);
+    expect(mockOn).toHaveBeenCalledWith('sync', expect.any(Function));
   });
 
   it('unsubscribes handler on unmount', () => {
     const handler = vi.fn();
     const { unmount } = renderHook(() => useSync(handler));
+    const registeredHandler = mockOn.mock.calls[0][1];
     unmount();
-    expect(mockOff).toHaveBeenCalledWith('sync', handler);
+    expect(mockOff).toHaveBeenCalledWith('sync', registeredHandler);
   });
 
   it('receives created event', () => {
@@ -114,7 +115,7 @@ describe('useSync', () => {
     const handler = vi.fn();
     renderHook(() => useSync(handler));
     const handlerFn = mockOn.mock.calls[0][1] as (e: SyncEvent) => void;
-    const entityTypes: SyncEvent['entityType'][] = ['task', 'project', 'section', 'label', 'comment', 'reminder'];
+    const entityTypes: SyncEvent['entityType'][] = ['task', 'project', 'section', 'label', 'comment', 'reminder', 'preferences'];
     for (const entityType of entityTypes) {
       const event: SyncEvent = {
         id: `${entityType}-1`,
@@ -137,9 +138,10 @@ describe('useSync', () => {
     });
     expect(mockOn).toHaveBeenCalledTimes(1);
     expect(mockOff).toHaveBeenCalledTimes(0);
+    const firstRegisteredHandler = mockOn.mock.calls[0][1];
 
     rerender({ handler: handler2 });
-    expect(mockOff).toHaveBeenCalledWith('sync', handler1);
-    expect(mockOn).toHaveBeenCalledWith('sync', handler2);
+    expect(mockOff).toHaveBeenCalledWith('sync', firstRegisteredHandler);
+    expect(mockOn).toHaveBeenLastCalledWith('sync', expect.any(Function));
   });
 });
