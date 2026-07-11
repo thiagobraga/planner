@@ -1,4 +1,4 @@
-import { useMemo, useState, useCallback } from 'react';
+import { Fragment, useMemo, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
@@ -24,9 +24,68 @@ import {
   projectColorHex,
   type ApiProject,
 } from '../api/client';
+import { ConfirmModal } from './ConfirmModal';
 
-const INDENT = 16;
+const INDENT = 22;
 const MAX_DEPTH = 4; // backend enforces nesting depth of 4
+const DEPTH_PADDING_CLASSES = ['pl-3', 'pl-[22px]', 'pl-[44px]', 'pl-[66px]', 'pl-[88px]'] as const;
+// Indentation for the new-subproject input: parent depth → parent base + INDENT (22 px).
+// depth-0 parent: pl-3 (12) + 22 = 34 px, depth-1: 22+22=44, depth-2: 44+22=66, …
+const SUB_INPUT_PADDING_CLASSES = ['pl-[34px]', 'pl-[44px]', 'pl-[66px]', 'pl-[88px]', 'pl-[110px]'] as const;
+
+const COLOR_SHADE_FAMILIES: Record<string, readonly string[]> = {
+  red: ['red', 'berry_red', 'salmon', 'magenta'],
+  berry_red: ['berry_red', 'red', 'magenta', 'salmon'],
+  salmon: ['salmon', 'orange', 'taupe', 'red'],
+  magenta: ['magenta', 'berry_red', 'lavender', 'violet'],
+  blue: ['blue', 'sky_blue', 'light_blue', 'teal'],
+  sky_blue: ['sky_blue', 'light_blue', 'blue', 'teal'],
+  light_blue: ['light_blue', 'sky_blue', 'blue', 'teal'],
+  teal: ['teal', 'mint_green', 'sky_blue', 'blue'],
+  green: ['green', 'lime_green', 'mint_green', 'olive_green'],
+  lime_green: ['lime_green', 'green', 'olive_green', 'mint_green'],
+  mint_green: ['mint_green', 'teal', 'lime_green', 'green'],
+  olive_green: ['olive_green', 'lime_green', 'green', 'taupe'],
+  orange: ['orange', 'yellow', 'salmon', 'taupe'],
+  yellow: ['yellow', 'orange', 'taupe', 'olive_green'],
+  taupe: ['taupe', 'grey', 'olive_green', 'yellow'],
+  grape: ['grape', 'violet', 'lavender', 'blue'],
+  violet: ['violet', 'lavender', 'grape', 'magenta'],
+  lavender: ['lavender', 'violet', 'magenta', 'grape'],
+  charcoal: ['charcoal', 'grey', 'taupe', 'light_blue'],
+  grey: ['grey', 'charcoal', 'taupe', 'light_blue'],
+};
+
+function getHierarchicalColor(
+  projectId: string,
+  parentId: string | null,
+  projects: ApiProject[],
+  pendingParentUpdates: Map<string, string | null> = new Map(),
+): string {
+  const getParentId = (id: string) => {
+    return pendingParentUpdates.has(id)
+      ? pendingParentUpdates.get(id)!
+      : (projects.find((p) => p.id === id)?.parentId ?? null);
+  };
+
+  const getOriginalColor = (id: string) => {
+    return projects.find((p) => p.id === id)?.color ?? 'blue';
+  };
+
+  let depth = 0;
+  let currParentId = parentId;
+  let lastId = projectId;
+
+  while (currParentId) {
+    depth++;
+    lastId = currParentId;
+    currParentId = getParentId(currParentId);
+  }
+
+  const rootColor = getOriginalColor(lastId);
+  const family = COLOR_SHADE_FAMILIES[rootColor] || [rootColor];
+  return family[depth % family.length];
+}
 
 interface FlatProject {
   id: string;
@@ -111,6 +170,9 @@ export function ProjectTreeNav() {
   const [draft, setDraft] = useState('');
   const [adding, setAdding] = useState(false);
   const [newName, setNewName] = useState('');
+  const [subAddingParentId, setSubAddingParentId] = useState<string | null>(null);
+  const [subNewName, setSubNewName] = useState('');
+  const [deletingProject, setDeletingProject] = useState<{ id: string; name: string } | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -134,13 +196,41 @@ export function ProjectTreeNav() {
   const handleCreate = (name: string, parentId: string | null) => {
     const trimmed = name.trim();
     if (!trimmed) return;
-    apiCreateProject({ name: trimmed, color: nextColor(), parentId })
+    let color = nextColor();
+    if (parentId) {
+      color = getHierarchicalColor('temp-id', parentId, projects);
+    }
+    apiCreateProject({ name: trimmed, color, parentId })
       .then((created) => setProjectsCache((prev) => [...prev, created]))
       .catch(() => qc.invalidateQueries({ queryKey: ['projects'] }));
   };
 
+  const handleCommitNewProject = () => {
+    if (!adding) return;
+    setAdding(false);
+    handleCreate(newName, null);
+    setNewName('');
+  };
+
+  const handleStartSubProject = (parentId: string) => {
+    setAdding(false);
+    setNewName('');
+    setEditingId(null);
+    setSubAddingParentId(parentId);
+    setSubNewName('');
+  };
+
+  const handleCommitSubProject = () => {
+    if (!subAddingParentId) return;
+    const parentId = subAddingParentId;
+    setSubAddingParentId(null);
+    handleCreate(subNewName, parentId);
+    setSubNewName('');
+  };
+
   const handleRename = (id: string, name: string) => {
     const trimmed = name.trim();
+    if (editingId !== id) return;
     setEditingId(null);
     if (!trimmed) return;
     setProjectsCache((prev) => prev.map((p) => (p.id === id ? { ...p, name: trimmed } : p)));
@@ -148,11 +238,7 @@ export function ProjectTreeNav() {
   };
 
   const handleDelete = (id: string, name: string) => {
-    if (!window.confirm(`Delete project "${name}" and all its tasks? This cannot be undone.`)) return;
-    setProjectsCache((prev) => prev.filter((p) => p.id !== id));
-    apiDeleteProject(id)
-      .then(() => navigate('/today'))
-      .catch(() => qc.invalidateQueries({ queryKey: ['projects'] }));
+    setDeletingProject({ id, name });
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -169,24 +255,45 @@ export function ProjectTreeNav() {
       item.id === event.active.id ? { ...item, parentId: proj.parentId } : item,
     );
 
-    // Reassign order by global position; persist anything whose parent/order changed.
+    // Reassign order by global position; persist anything whose parent/order/color changed.
     const orderById = new Map(reordered.map((item, idx) => [item.id, idx]));
-    const changed: Array<{ id: string; parentId: string | null; orderValue: number }> = [];
+    const changed: Array<{ id: string; parentId: string | null; orderValue: number; color?: string }> = [];
+
+    const pendingParentUpdates = new Map<string, string | null>();
+    pendingParentUpdates.set(event.active.id as string, proj.parentId);
+
+    const descendants = new Set<string>();
+    const findDescendants = (parentId: string) => {
+      for (const p of projects) {
+        if (p.parentId === parentId) {
+          descendants.add(p.id);
+          findDescendants(p.id);
+        }
+      }
+    };
+    findDescendants(event.active.id as string);
+
     setProjectsCache((prev) =>
       prev.map((p) => {
         if (!orderById.has(p.id)) return p;
         const orderValue = orderById.get(p.id)!;
         const parentId = p.id === event.active.id ? proj.parentId : p.parentId;
-        if (p.orderValue !== orderValue || p.parentId !== parentId) {
-          changed.push({ id: p.id, parentId, orderValue });
+
+        let color = p.color;
+        if (p.id === event.active.id || descendants.has(p.id)) {
+          color = getHierarchicalColor(p.id, parentId, prev, pendingParentUpdates);
         }
-        return { ...p, orderValue, parentId };
+
+        if (p.orderValue !== orderValue || p.parentId !== parentId || p.color !== color) {
+          changed.push({ id: p.id, parentId, orderValue, color });
+        }
+        return { ...p, orderValue, parentId, color };
       }),
     );
 
     Promise.all(
       changed.map((c) =>
-        apiUpdateProject(c.id, { parentId: c.parentId, orderValue: c.orderValue }),
+        apiUpdateProject(c.id, { parentId: c.parentId, orderValue: c.orderValue, color: c.color }),
       ),
     ).catch(() => qc.invalidateQueries({ queryKey: ['projects'] }));
   };
@@ -221,37 +328,59 @@ export function ProjectTreeNav() {
       >
         <SortableContext items={flat.map((f) => f.id)} strategy={verticalListSortingStrategy}>
           {flat.map((item) => (
-            <SortableProjectRow
-              key={item.id}
-              item={item}
-              depth={activeId === item.id && projection ? projection.depth : item.depth}
-              isEditing={editingId === item.id}
-              draft={draft}
-              onNavigate={() => navigate(`/project/${item.id}`)}
-              onStartRename={() => { setEditingId(item.id); setDraft(item.name); }}
-              onDraftChange={setDraft}
-              onCommitRename={() => handleRename(item.id, draft)}
-              onCancelRename={() => setEditingId(null)}
-              onAddSub={() => handleCreate(window.prompt('New sub-project name')?.trim() ?? '', item.id)}
-              onDelete={() => handleDelete(item.id, item.name)}
-            />
+            <Fragment key={item.id}>
+              <SortableProjectRow
+                item={item}
+                depth={activeId === item.id && projection ? projection.depth : item.depth}
+                isEditing={editingId === item.id}
+                draft={draft}
+                onNavigate={() => navigate(`/project/${item.id}`)}
+                onStartRename={() => { setEditingId(item.id); setDraft(item.name); }}
+                onDraftChange={setDraft}
+                onCommitRename={() => handleRename(item.id, draft)}
+                onCancelRename={() => setEditingId(null)}
+                onAddSub={() => handleStartSubProject(item.id)}
+                onDelete={() => handleDelete(item.id, item.name)}
+              />
+              {subAddingParentId === item.id && (
+                <div className={`flex items-center h-6 pr-2 ${SUB_INPUT_PADDING_CLASSES[Math.min(item.depth, SUB_INPUT_PADDING_CLASSES.length - 1)]}`}>
+                  <input
+                    autoFocus
+                    value={subNewName}
+                    onChange={(e) => setSubNewName(e.target.value)}
+                    onBlur={handleCommitSubProject}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleCommitSubProject();
+                      if (e.key === 'Escape') {
+                        setSubAddingParentId(null);
+                        setSubNewName('');
+                      }
+                    }}
+                    placeholder="Project name…"
+                    className="flex-1 min-w-0 h-6 text-[13px] leading-6 text-ink bg-transparent border-0 border-b border-dot outline-none px-0 focus:outline-none focus-visible:outline-none focus-visible:ring-0"
+                  />
+                </div>
+              )}
+            </Fragment>
           ))}
         </SortableContext>
       </DndContext>
 
       {adding && (
-        <input
-          autoFocus
-          value={newName}
-          onChange={(e) => setNewName(e.target.value)}
-          onBlur={() => { handleCreate(newName, null); setAdding(false); }}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') { handleCreate(newName, null); setAdding(false); }
-            if (e.key === 'Escape') setAdding(false);
-          }}
-          placeholder="Project name…"
-          className="w-[calc(100%-24px)] mx-3 h-6 text-[13px] text-ink bg-transparent border-0 border-b border-dot outline-none"
-        />
+        <div className="px-3">
+          <input
+            autoFocus
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+            onBlur={handleCommitNewProject}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') handleCommitNewProject();
+              if (e.key === 'Escape') setAdding(false);
+            }}
+            placeholder="Project name…"
+            className="w-full h-6 text-[13px] leading-6 text-ink bg-transparent border-0 border-b border-dot outline-none px-0 focus:outline-none focus-visible:outline-none focus-visible:ring-0"
+          />
+        </div>
       )}
 
       {flat.length === 0 && !adding && (
@@ -259,6 +388,24 @@ export function ProjectTreeNav() {
           No projects yet
         </div>
       )}
+
+      <ConfirmModal
+        isOpen={deletingProject !== null}
+        title="Delete Project"
+        message={`Delete project "${deletingProject?.name}" and all its tasks? This cannot be undone.`}
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        onConfirm={() => {
+          if (deletingProject) {
+            setProjectsCache((prev) => prev.filter((p) => p.id !== deletingProject.id));
+            apiDeleteProject(deletingProject.id)
+              .then(() => navigate('/daily'))
+              .catch(() => qc.invalidateQueries({ queryKey: ['projects'] }));
+            setDeletingProject(null);
+          }
+        }}
+        onCancel={() => setDeletingProject(null)}
+      />
     </div>
   );
 }
@@ -293,6 +440,7 @@ function SortableProjectRow({
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: item.id,
   });
+  const depthClass = DEPTH_PADDING_CLASSES[Math.min(depth, DEPTH_PADDING_CLASSES.length - 1)];
 
   return (
     <div
@@ -301,9 +449,8 @@ function SortableProjectRow({
         transform: CSS.Translate.toString(transform),
         transition,
         opacity: isDragging ? 0.5 : 1,
-        paddingLeft: `${12 + depth * INDENT}px`,
       }}
-      className="project-row flex items-center gap-[7px] h-6 pr-2 text-[13px] text-ink"
+      className={`project-row flex items-center gap-[7px] h-6 pr-2 text-[13px] text-ink ${depthClass}`}
     >
       <span
         {...attributes}
