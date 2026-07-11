@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 
 const PlannerIcon64 = () => (
@@ -7,6 +8,7 @@ const PlannerIcon64 = () => (
 
 export function LoginPage() {
   const { login, register } = useAuth();
+  const navigate = useNavigate();
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [email, setEmail] = useState('dev@planner.local');
   const [password, setPassword] = useState('password123');
@@ -24,6 +26,7 @@ export function LoginPage() {
       } else {
         await register(email, password, displayName);
       }
+      navigate('/daily', { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong');
     } finally {

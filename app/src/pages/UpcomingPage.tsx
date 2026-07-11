@@ -22,18 +22,18 @@ const makeSeed = (): Record<string, Task[]> => {
   const result: Record<string, Task[]> = {};
   if (days[0]) {
     result[days[0].key] = [
-      { id: 'up1', title: 'Team sync', priority: 2, dueDate: days[0].key, isCompleted: false, orderValue: 1 },
+      { id: 'up1', title: 'Team sync', priority: 2, dueDate: days[0].key, isCompleted: false, orderValue: 1, type: 'task' },
     ];
   }
   if (days[1]) {
     result[days[1].key] = [
-      { id: 'up2', title: 'Deploy v0.2', priority: 1, dueDate: days[1].key, isCompleted: false, orderValue: 1 },
-      { id: 'up3', title: 'Write changelog', priority: 3, dueDate: days[1].key, isCompleted: false, orderValue: 2 },
+      { id: 'up2', title: 'Deploy v0.2', priority: 1, dueDate: days[1].key, isCompleted: false, orderValue: 1, type: 'task' },
+      { id: 'up3', title: 'Write changelog', priority: 3, dueDate: days[1].key, isCompleted: false, orderValue: 2, type: 'task' },
     ];
   }
   if (days[6]) {
     result[days[6].key] = [
-      { id: 'up4', title: 'Weekly review', priority: 2, dueDate: days[6].key, isCompleted: false, orderValue: 1 },
+      { id: 'up4', title: 'Weekly review', priority: 2, dueDate: days[6].key, isCompleted: false, orderValue: 1, type: 'task' },
     ];
   }
   return result;
@@ -61,12 +61,14 @@ export function UpcomingPage() {
 
   return (
     <div className="max-w-162">
-      <h1 className="text-[18px] leading-6 font-semibold text-ink m-0">
-        Upcoming
-      </h1>
-      <p className="text-[13px] leading-6 text-ink-light opacity-60 m-0">
-        {phrase}
-      </p>
+      <header className="sticky-page-header">
+        <h1 className="text-[18px] leading-6 font-semibold text-ink m-0">
+          Upcoming
+        </h1>
+        <p className="text-[13px] leading-6 text-ink-light opacity-60 m-0">
+          {phrase}
+        </p>
+      </header>
 
       <div className="h-6" />
 

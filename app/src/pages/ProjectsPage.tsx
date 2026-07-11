@@ -26,6 +26,7 @@ function apiToTask(t: ApiTask): Task {
     isCompleted: t.isCompleted,
     orderValue: t.orderValue,
     indent: t.depth ?? 0,
+    type: t.type,
   };
 }
 
@@ -80,7 +81,7 @@ export function ProjectsPage() {
     setInput('');
     setTasks((prev) => [
       ...prev,
-      { id: tid, title: trimmed, priority: 4, isCompleted: false, orderValue: prev.length + 1 },
+      { id: tid, title: trimmed, priority: 4, isCompleted: false, orderValue: prev.length + 1, type: 'task' },
     ]);
     apiCreateTask({ title: trimmed, priority: 4, projectId: id })
       .then((created) => {
@@ -104,6 +105,7 @@ export function ProjectsPage() {
         isCompleted: false,
         orderValue: 0,
         indent: prev[idx]?.indent,
+        type: 'task',
       });
       return next.map((t, i) => ({ ...t, orderValue: i + 1 }));
     });

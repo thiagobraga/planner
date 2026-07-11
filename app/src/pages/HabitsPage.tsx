@@ -231,12 +231,14 @@ export function HabitsPage() {
   const phrase = useMemo(() => getPhrase('habits'), []);
   return (
     <div className="max-w-162">
-      <h1 className="text-lg leading-6 font-semibold text-ink">
-        Habits
-      </h1>
-      <p className="text-[13px] leading-6 text-ink-light opacity-60">
-        {phrase}
-      </p>
+      <header className="sticky-page-header">
+        <h1 className="text-lg leading-6 font-semibold text-ink">
+          Habits
+        </h1>
+        <p className="text-[13px] leading-6 text-ink-light opacity-60">
+          {phrase}
+        </p>
+      </header>
 
       {HABITS.map((h) => (
         <HabitBlock key={h.id} habit={h} />
