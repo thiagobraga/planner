@@ -42,6 +42,7 @@ const mockTaskRow = {
   completed_at: null,
   order_value: 0,
   depth: 0,
+  type: "task",
   created_at: new Date().toISOString(),
   updated_at: new Date().toISOString(),
 };
@@ -79,6 +80,30 @@ describe("taskService: sync event emission", () => {
       expect(event.userId).toBe(userId);
       expect(event.projectId).toBe(projectId);
     });
+
+    it("defaults type to 'task' when not provided, and propagates it in the sync payload", async () => {
+      (pool.query as ReturnType<typeof vi.fn>)
+        .mockResolvedValueOnce({ rows: [{ id: projectId }] })
+        .mockResolvedValueOnce({ rows: [mockTaskRow] });
+
+      await createTask(userId, { title: "New Task", projectId });
+
+      const call = (redisPubClient.publish as ReturnType<typeof vi.fn>).mock.calls[0];
+      const event = JSON.parse(call[1] as string);
+      expect(event.payload.type).toBe("task");
+    });
+
+    it("propagates type: 'note' in the sync payload when creating a note", async () => {
+      (pool.query as ReturnType<typeof vi.fn>)
+        .mockResolvedValueOnce({ rows: [{ id: projectId }] })
+        .mockResolvedValueOnce({ rows: [{ ...mockTaskRow, type: "note" }] });
+
+      await createTask(userId, { title: "New Note", projectId, type: "note" });
+
+      const call = (redisPubClient.publish as ReturnType<typeof vi.fn>).mock.calls[0];
+      const event = JSON.parse(call[1] as string);
+      expect(event.payload.type).toBe("note");
+    });
   });
 
   describe("updateTask", () => {
@@ -96,6 +121,18 @@ describe("taskService: sync event emission", () => {
       expect(event.entityType).toBe("task");
       expect(event.eventType).toBe("updated");
       expect(event.entityId).toBe(taskId);
+    });
+
+    it("propagates type change to 'note' in the sync payload", async () => {
+      (pool.query as ReturnType<typeof vi.fn>)
+        .mockResolvedValueOnce({ rows: [mockTaskRow] })
+        .mockResolvedValueOnce({ rows: [{ ...mockTaskRow, type: "note" }] });
+
+      await updateTask(taskId, userId, { type: "note" });
+
+      const call = (redisPubClient.publish as ReturnType<typeof vi.fn>).mock.calls[0];
+      const event = JSON.parse(call[1] as string);
+      expect(event.payload.type).toBe("note");
     });
 
     it("does not emit event when no fields change", async () => {

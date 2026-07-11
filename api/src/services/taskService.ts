@@ -22,6 +22,7 @@ interface TaskRow {
   completed_at: string | null;
   order_value: number;
   depth: number;
+  type: string;
   created_at: string;
   updated_at: string;
 }
@@ -45,6 +46,7 @@ function formatTask(row: TaskRow) {
     completedAt: row.completed_at,
     orderValue: row.order_value,
     depth: row.depth,
+    type: row.type,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -161,6 +163,7 @@ export interface CreateTaskInput {
   parentTaskId?: string | null;
   labelIds?: string[];
   dueDate?: string | null;
+  type?: "task" | "note";
 }
 
 export async function createTask(userId: string, input: CreateTaskInput) {
@@ -184,6 +187,16 @@ export async function createTask(userId: string, input: CreateTaskInput) {
         details: [{ field: "priority", message: "Priority must be an integer between 1 and 4" }],
       });
     }
+  }
+
+  // Validate type
+  if (input.type !== undefined && input.type !== "task" && input.type !== "note") {
+    throw new AppError({
+      code: "VALIDATION_ERROR",
+      message: "Validation failed",
+      statusCode: 400,
+      details: [{ field: "type", message: "type must be 'task' or 'note'" }],
+    });
   }
 
   let projectId = input.projectId;
@@ -237,10 +250,11 @@ export async function createTask(userId: string, input: CreateTaskInput) {
 
   const id = uuidv4();
   const priority = input.priority ?? 4;
+  const type = input.type ?? "task";
 
   const result = await pool.query(
-    `INSERT INTO tasks (id, user_id, project_id, section_id, parent_task_id, title, description, priority, due_date, depth)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+    `INSERT INTO tasks (id, user_id, project_id, section_id, parent_task_id, title, description, priority, due_date, depth, type)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
      RETURNING *`,
     [
       id,
@@ -253,6 +267,7 @@ export async function createTask(userId: string, input: CreateTaskInput) {
       priority,
       input.dueDate ?? null,
       depth,
+      type,
     ]
   );
 
@@ -270,6 +285,7 @@ export interface UpdateTaskInput {
   parentTaskId?: string | null;
   dueDate?: string | null;
   labelIds?: string[];
+  type?: "task" | "note";
 }
 
 export async function updateTask(taskId: string, userId: string, input: UpdateTaskInput) {
@@ -295,6 +311,16 @@ export async function updateTask(taskId: string, userId: string, input: UpdateTa
         details: [{ field: "priority", message: "Priority must be an integer between 1 and 4" }],
       });
     }
+  }
+
+  // Validate type if provided
+  if (input.type !== undefined && input.type !== "task" && input.type !== "note") {
+    throw new AppError({
+      code: "VALIDATION_ERROR",
+      message: "Validation failed",
+      statusCode: 400,
+      details: [{ field: "type", message: "type must be 'task' or 'note'" }],
+    });
   }
 
   const task = await verifyTaskAccess(taskId, userId);
@@ -372,6 +398,11 @@ export async function updateTask(taskId: string, userId: string, input: UpdateTa
   if (input.priority !== undefined) {
     setClauses.push(`priority = $${paramIndex++}`);
     values.push(input.priority);
+  }
+
+  if (input.type !== undefined) {
+    setClauses.push(`type = $${paramIndex++}`);
+    values.push(input.type);
   }
 
   if (input.projectId !== undefined && input.parentTaskId === undefined) {

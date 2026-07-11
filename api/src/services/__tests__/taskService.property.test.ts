@@ -56,6 +56,7 @@ function makeTaskRow(overrides: Record<string, unknown> = {}) {
     completed_at: null,
     order_value: 0,
     depth: 0,
+    type: "task",
     created_at: "2024-01-01T00:00:00Z",
     updated_at: "2024-01-01T00:00:00Z",
     ...overrides,
@@ -191,6 +192,47 @@ describe("Property 9: Task priority validation", () => {
         }
       ),
       { numRuns: 100 }
+    );
+  });
+});
+
+describe("Task type validation", () => {
+  it("accepts 'task' and 'note', defaulting to 'task' when omitted", async () => {
+    mockQuery
+      .mockResolvedValueOnce({ rows: [{ id: projectId }] }) // inbox
+      .mockResolvedValueOnce({ rows: [{ id: projectId }] }) // project access
+      .mockResolvedValueOnce({ rows: [makeTaskRow({ type: "task" })] }); // insert
+
+    const result = await createTask(userId, { title: "Valid" });
+    expect(result.type).toBe("task");
+
+    mockQuery
+      .mockResolvedValueOnce({ rows: [{ id: projectId }] })
+      .mockResolvedValueOnce({ rows: [{ id: projectId }] })
+      .mockResolvedValueOnce({ rows: [makeTaskRow({ type: "note" })] });
+
+    const note = await createTask(userId, { title: "Valid", type: "note" });
+    expect(note.type).toBe("note");
+  });
+
+  it("rejects any type value other than 'task' or 'note'", async () => {
+    await fc.assert(
+      fc.asyncProperty(
+        fc.string().filter((s) => s !== "task" && s !== "note"),
+        async (type) => {
+          try {
+            await createTask(userId, { title: "Valid", type: type as "task" | "note" });
+            expect.fail("should throw");
+          } catch (err) {
+            const e = err as AppError;
+            expect(e.code).toBe("VALIDATION_ERROR");
+            expect(e.details).toEqual(
+              expect.arrayContaining([expect.objectContaining({ field: "type" })])
+            );
+          }
+        }
+      ),
+      { numRuns: 50 }
     );
   });
 });
