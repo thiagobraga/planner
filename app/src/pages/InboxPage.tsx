@@ -27,6 +27,7 @@ function apiToTask(t: ApiTask): Task {
     isCompleted: t.isCompleted,
     orderValue: t.orderValue,
     indent: t.depth ?? 0,
+    type: t.type,
     createdAt: t.createdAt,
   };
 }
@@ -85,7 +86,7 @@ export function InboxPage() {
     setInput('');
     setTasks((prev) => [
       ...prev,
-      { id: tid, title: trimmed, priority: 4, isCompleted: false, orderValue: prev.length + 1 },
+      { id: tid, title: trimmed, priority: 4, isCompleted: false, orderValue: prev.length + 1, type: 'task' },
     ]);
     apiCreateTask({ title: trimmed, priority: 4 })
       .then((created) => {
@@ -113,6 +114,7 @@ export function InboxPage() {
         isCompleted: false,
         orderValue: 0,
         indent: prev[idx]?.indent,
+        type: 'task',
       });
       return next.map((t, i) => ({ ...t, orderValue: i + 1 }));
     });
@@ -229,13 +231,15 @@ export function InboxPage() {
         inputRef.current?.focus();
       }}
     >
-      <h1 className="text-[18px] leading-6 h-6 font-semibold text-ink m-0 p-0">
-        Inbox
-      </h1>
+      <header className="sticky-page-header">
+        <h1 className="text-[18px] leading-6 h-6 font-semibold text-ink m-0 p-0">
+          Inbox
+        </h1>
 
-      <p className="text-[13px] leading-6 h-6 text-ink-light opacity-60 m-0 p-0">
-        {phrase}
-      </p>
+        <p className="text-[13px] leading-6 h-6 text-ink-light opacity-60 m-0 p-0">
+          {phrase}
+        </p>
+      </header>
 
       <div className="h-6" />
 
