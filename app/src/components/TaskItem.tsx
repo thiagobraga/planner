@@ -19,6 +19,7 @@ export interface Task {
   orderValue: number;
   labels?: string[];
   indent?: number;
+  type: 'task' | 'note';
   createdAt?: string;
 }
 
@@ -36,6 +37,7 @@ export interface TaskItemProps {
   onAddBelow?: (id: string) => void;
   onIndent?: (id: string, dir: 1 | -1) => void;
   onNavigate?: (id: string, dir: 'up' | 'down', col: number) => void;
+  onConvertType?: (id: string, type: 'task' | 'note') => void;
 }
 
 const priorityClasses: Record<number, string> = {
@@ -86,6 +88,7 @@ export const TaskItem = memo(function TaskItem({
   onAddBelow,
   onIndent,
   onNavigate,
+  onConvertType,
 }: TaskItemProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: task.id,
@@ -156,6 +159,16 @@ export const TaskItem = memo(function TaskItem({
       e.preventDefault();
       committedRef.current = true;
       onDelete?.(task.id);
+    } else if (e.key === '-' && e.currentTarget.value === '' && task.type !== 'note') {
+      e.preventDefault();
+      onConvertType?.(task.id, 'note');
+    } else if (
+      (e.key === '[' || e.key === ']' || e.key === '*') &&
+      e.currentTarget.value === '' &&
+      task.type === 'note'
+    ) {
+      e.preventDefault();
+      onConvertType?.(task.id, 'task');
     } else if (e.key === 'Tab') {
       e.preventDefault();
       onIndent?.(task.id, e.shiftKey ? -1 : 1);
@@ -206,18 +219,37 @@ export const TaskItem = memo(function TaskItem({
       </span>
 
       {/* Toggle button */}
-      <button
-        type="button"
-        aria-label={task.isCompleted ? `Reopen: ${task.title}` : `Complete: ${task.title}`}
-        aria-pressed={task.isCompleted}
-        onClick={(e) => { e.stopPropagation(); handleCheckClick(e); }}
-        className={`w-6 text-center ${task.isCompleted ? 'text-[26px] font-bold' : 'text-[10px] font-normal'} leading-6 overflow-hidden ${priorityClasses[task.priority]} select-none shrink-0 cursor-pointer bg-transparent border-0 p-0`}
-      >
-        {task.isCompleted ? '×' : '•'}
-      </button>
+      {task.type === 'note' ? (
+        <span
+          aria-hidden="true"
+          className="w-6 text-center text-[10px] font-normal leading-6 overflow-hidden text-ink select-none shrink-0"
+        >
+          -
+        </span>
+      ) : (
+        <button
+          type="button"
+          aria-label={task.isCompleted ? `Reopen: ${task.title}` : `Complete: ${task.title}`}
+          aria-pressed={task.isCompleted}
+          onClick={(e) => { e.stopPropagation(); handleCheckClick(e); }}
+          style={task.isCompleted ? {
+            fontSize: 'var(--icon-check-size, 26px)',
+            transform: 'translateY(var(--icon-check-offset, 0px))',
+            lineHeight: 'var(--task-line-height, 24px)',
+          } : {
+            fontSize: 'var(--icon-dot-size, 10px)',
+            transform: 'translateY(var(--icon-dot-offset, 0px))',
+            lineHeight: 'var(--task-line-height, 24px)',
+          }}
+          className={`w-6 text-center ${task.isCompleted ? 'font-bold' : 'font-normal'} overflow-hidden ${priorityClasses[task.priority]} select-none shrink-0 cursor-pointer bg-transparent border-0 p-0`}
+        >
+          {task.isCompleted ? '×' : '•'}
+        </button>
+
+      )}
 
       {/* Title area */}
-      <span className="flex-1 flex flex-wrap items-baseline leading-6 min-w-0">
+      <span style={{ lineHeight: 'var(--task-line-height, 24px)' }} className="flex-1 flex flex-wrap items-baseline min-w-0">
         {isEditing ? (
           <input
             ref={editRef}
@@ -231,7 +263,8 @@ export const TaskItem = memo(function TaskItem({
         ) : (
           <>
             <span
-              className={`text-sm leading-6 break-words ${task.isCompleted ? 'line-through text-ink-light' : 'text-ink'}`}
+              style={{ lineHeight: 'var(--task-line-height, 24px)' }}
+              className={`text-sm break-words ${task.isCompleted ? 'line-through text-ink-light' : 'text-ink'}`}
             >
               {task.title}
             </span>
