@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Plus, Calendar, Trash2, Search } from 'lucide-react';
 import { BjTask, MonthlyIcon } from '../components/Sidebar';
+import { SidebarNavItem } from '../components/SidebarNavItem';
 import { ChevronRight, Repeat2 } from 'lucide-react';
 import { MonthlyCalendarSpecimen } from '../components/MonthlyCalendarSpecimen';
 import { Button } from '../components/ui/Button';
@@ -73,6 +74,27 @@ const MOTION = [
   { ms: '300ms', label: 'Smooth' },
 ];
 
+const PRIMARY_COLORS = [
+  { name: 'Cream Paper', var: '--color-cream', hex: '#f5f0e8' },
+  { name: 'Sidebar Cream', var: '--color-sidebar-bg', hex: '#ebe6de' },
+  { name: 'Dot Grid', var: '--color-dot', hex: '#d4cfc7' },
+  { name: 'Border', var: '--color-border', hex: '#e5e1d8' },
+  { name: 'Ink', var: '--color-ink', hex: '#44443d' },
+];
+
+const SECONDARY_COLORS = [
+  { name: 'Warm Brick Red', var: '--color-accent', hex: '#c9483b' },
+  { name: 'Felt-Tip Red', var: '--color-accent-light', hex: '#e76052' },
+  { name: 'Orange', var: '--color-priority-2', hex: '#e39133' },
+  { name: 'Annotation Blue', var: '--color-priority-3', hex: '#4d8fd6' },
+  { name: 'Soft Moss', var: '--color-moss', hex: '#8ca46a' },
+];
+
+const INK_COLORS = [
+  { name: 'Ink', var: '--color-ink', hex: '#44443d' },
+  { name: 'Ink Light', var: '--color-ink-light', hex: '#8b867e' },
+];
+
 export function StyleguidePage() {
   // Habit chain grid — 4 weeks × 7 days, capsule-fusing borders.
   const today = useMemo(() => {
@@ -134,7 +156,7 @@ export function StyleguidePage() {
 
   const [radioChoice, setRadioChoice] = useState('a');
   const [toggleOn, setToggleOn] = useState(true);
-  const [checkOn, setCheckOn] = useState(true);
+  const [checkOn, setCheckOn] = useState(false);
 
   return (
     <div className="max-w-5xl pb-24 text-ink">
@@ -151,10 +173,10 @@ export function StyleguidePage() {
         <Card n={1} title="Interface Typography" span>
           <div className="divide-y divide-border">
             {TYPE_SCALE.map(({ label, spec, className }) => (
-              <div key={label} className="py-3 grid grid-cols-[130px_1fr] gap-4 items-center">
+              <div key={label} className="py-3 grid grid-cols-[180px_1fr] gap-6 items-center">
                 <div className="flex flex-col">
                   <span className="text-[11px] font-semibold text-ink uppercase tracking-[0.1em]">{label}</span>
-                  <span className="text-[10px] text-ink-light font-mono mt-0.5">{spec}</span>
+                  <span className="text-[10px] text-ink-light font-mono mt-0.5 whitespace-nowrap">{spec}</span>
                 </div>
                 <span className={`text-ink overflow-hidden ${className}`}>Aa</span>
               </div>
@@ -221,8 +243,8 @@ export function StyleguidePage() {
             <div className="flex flex-col gap-4">
               <Field label="Checkbox">
                 <div className="flex flex-col gap-2">
-                  <Checkbox checked={checkOn} onChange={(e) => setCheckOn(e.target.checked)} label="Completed" />
-                  <Checkbox checked readOnly label="Completed (checked)" />
+                  <Checkbox checked readOnly label="Checked" />
+                  <Checkbox checked={checkOn} onChange={(e) => setCheckOn(e.target.checked)} label="Unchecked" />
                 </div>
               </Field>
               <Field label="Radio">
@@ -284,17 +306,12 @@ export function StyleguidePage() {
             </div>
             <nav className="flex flex-col">
               {NAV.map(({ label, Icon, active }) => (
-                <span
+                <SidebarNavItem
                   key={label}
-                  className={`flex items-center h-6 px-3 gap-[7px] rounded text-sm leading-none ${
-                    active ? 'font-medium bg-dot/50 text-ink' : 'opacity-60 text-ink'
-                  }`}
-                >
-                  <span className="w-4 flex items-center justify-center opacity-60">
-                    <Icon size={15} strokeWidth={1.5} />
-                  </span>
-                  {label}
-                </span>
+                  label={label}
+                  icon={<Icon size={15} strokeWidth={1.5} />}
+                  active={active}
+                />
               ))}
             </nav>
             <div className="text-[10px] text-ink-light uppercase tracking-[0.1em] mt-3 mb-1 px-3">Projects</div>
@@ -432,6 +449,71 @@ export function StyleguidePage() {
                   </div>
                 ))}
               </div>
+            </div>
+          </div>
+        </Card>
+
+        {/* 11 — Color Palette */}
+        <Card n={11} title="Color Palette" span>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div>
+              <h3 className="text-[10px] text-ink-light uppercase tracking-[0.1em] font-semibold mb-4">Primary Palette</h3>
+              <p className="text-[11px] text-ink-light mb-4">Base neutral and structural colors — calm, readable foundations for content.</p>
+              <div className="flex flex-col gap-4">
+                {PRIMARY_COLORS.map(({ name, var: varName, hex }) => (
+                  <div key={varName} className="flex items-start gap-3">
+                    <span
+                      className="w-10 h-10 rounded-[6px] border border-border flex-shrink-0"
+                      style={{ backgroundColor: hex }}
+                      title={varName}
+                    />
+                    <div className="flex flex-col gap-0.5">
+                      <span className="text-sm text-ink font-medium">{name}</span>
+                      <span className="text-[10px] text-ink-light font-mono">{varName}</span>
+                      <span className="text-[10px] text-ink-light font-mono">{hex}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div>
+              <h3 className="text-[10px] text-ink-light uppercase tracking-[0.1em] font-semibold mb-4">Secondary Palette</h3>
+              <p className="text-[11px] text-ink-light mb-4">Accent and semantic colors — for emphasis, priority, and status signals.</p>
+              <div className="flex flex-col gap-4">
+                {SECONDARY_COLORS.map(({ name, var: varName, hex }) => (
+                  <div key={varName} className="flex items-start gap-3">
+                    <span
+                      className="w-10 h-10 rounded-[6px] border border-border flex-shrink-0"
+                      style={{ backgroundColor: hex }}
+                      title={varName}
+                    />
+                    <div className="flex flex-col gap-0.5">
+                      <span className="text-sm text-ink font-medium">{name}</span>
+                      <span className="text-[10px] text-ink-light font-mono">{varName}</span>
+                      <span className="text-[10px] text-ink-light font-mono">{hex}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+          <div className="mt-6 pt-6 border-t border-border">
+            <h3 className="text-[10px] text-ink-light uppercase tracking-[0.1em] font-semibold mb-4">Text & Foreground</h3>
+            <div className="flex flex-col gap-4 sm:flex-row">
+              {INK_COLORS.map(({ name, var: varName, hex }) => (
+                <div key={varName} className="flex-1 flex items-start gap-3 sm:flex-col sm:items-center sm:text-center">
+                  <span
+                    className="w-10 h-10 rounded-[6px] border border-border flex-shrink-0 sm:flex-shrink"
+                    style={{ backgroundColor: hex }}
+                    title={varName}
+                  />
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-sm text-ink font-medium">{name}</span>
+                    <span className="text-[10px] text-ink-light font-mono">{varName}</span>
+                    <span className="text-[10px] text-ink-light font-mono">{hex}</span>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </Card>

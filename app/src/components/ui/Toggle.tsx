@@ -34,7 +34,7 @@ export function Toggle({ checked, onChange, disabled = false, label, id, classNa
           }`}
         />
       </button>
-      {label && <span className="text-sm text-ink leading-none">{label}</span>}
+      {label && <span className="flex-1 text-sm text-ink leading-6 text-left">{label}</span>}
     </label>
   );
 }
