@@ -26,22 +26,98 @@
   --shadow-medium: 0 4px 12px rgba(68, 68, 61, 0.1);
   --shadow-overlay: 0 8px 32px rgba(44, 44, 44, 0.15);
 
-  /* Motion durations (used via arbitrary values, e.g. duration-[var(--motion-fast)]) */
   --motion-fast: 150ms;
   --motion-default: 200ms;
   --motion-smooth: 300ms;
+
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
 }
 
 @utility font-journal {
   font-family: "Lora", serif;
+  font-weight: var(--fw-normal);
+  --fw-normal: 400;
+  --fw-medium: 500;
+  --fw-semibold: 600;
+  --fw-bold: 700;
+  /* Tailwind font-weight utilities read these; override per-font so they cascade */
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* Icon glyph tuning — keeps × and • optically centred in their 24px cell */
+  --icon-check-size: 26px;
+  --icon-check-offset: 0px;
+  --icon-dot-size: 10px;
+  --icon-dot-offset: 0px;
+  /* Task row line-height — Lora cap-height is generous; 24px baseline fits well */
+  --task-line-height: 24px;
 }
 
 @utility font-klee {
   font-family: "Klee One", cursive;
+  font-weight: var(--fw-semibold);
+  --fw-normal: 400;
+  --fw-medium: 400;
+  --fw-semibold: 600;
+  --fw-bold: 600;
+  --font-weight-normal: 400;
+  --font-weight-medium: 400;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 600;
+
+  /* Klee One has a tall x-height; × glyph needs to shrink slightly */
+  --icon-check-size: 22px;
+  --icon-check-offset: 1px;
+  --icon-dot-size: 11px;
+  --icon-dot-offset: 0px;
+  --task-line-height: 24px;
 }
 
 @utility font-playpen {
-  font-family: "Playpen Sans Hebrew", cursive;
+  font-family: "Playpen Sans", cursive;
+  font-weight: var(--fw-normal);
+  --fw-normal: 300;
+  --fw-medium: 400;
+  --fw-semibold: 500;
+  --fw-bold: 700;
+  --font-weight-normal: 300;
+  --font-weight-medium: 400;
+  --font-weight-semibold: 500;
+  --font-weight-bold: 700;
+
+  /* Playpen Sans renders large; shrink the check icon and lift it slightly */
+  --icon-check-size: 20px;
+  --icon-check-offset: 2px;
+  --icon-dot-size: 10px;
+  --icon-dot-offset: 1px;
+  /* Playpen has generous line-spacing; bump row height to keep grid snap */
+  --task-line-height: 24px;
+}
+
+@utility font-hubballi {
+  font-family: "Hubballi", cursive;
+  font-weight: var(--fw-normal);
+  --fw-normal: 400;
+  --fw-medium: 400;
+  --fw-semibold: 600;
+  --fw-bold: 600;
+  --font-weight-normal: 400;
+  --font-weight-medium: 400;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 600;
+
+  /* Hubballi is a condensed script with a low cap-height; × needs to be larger */
+  --icon-check-size: 28px;
+  --icon-check-offset: -1px;
+  --icon-dot-size: 12px;
+  --icon-dot-offset: -1px;
+  --task-line-height: 24px;
 }
 
 @utility small-caps {
@@ -118,6 +194,31 @@ aside[aria-label="Navigation"] {
   background-image: radial-gradient(circle, var(--color-dot) 1px, transparent 1px);
   background-size: var(--dot-grid) var(--dot-grid);
   background-position: calc(var(--dot-grid)/2) calc(var(--dot-grid)/2);
+  background-attachment: local;
+}
+
+.sticky-page-header {
+  position: sticky;
+  top: -24px;
+  z-index: 10;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: fit-content;
+  max-width: 100%;
+  padding-top: 24px;
+  margin-top: -24px;
+  background-color: var(--planner-page-bg);
+}
+
+.monthly-current-day-label {
+  color: var(--color-moss);
+  background: transparent;
+}
+
+/* Monthly strip buttons — hover uses the theme-aware token */
+.monthly-strip button:not([aria-current="date"]):hover {
+  background-color: var(--planner-monthly-strip-hover) !important;
 }
 
 /* Task item row */
@@ -158,6 +259,25 @@ aside[aria-label="Navigation"] {
   outline: none;
 }
 
+/* Native select dropdown styling */
+select {
+  option {
+    background-color: var(--color-cream);
+    color: var(--color-ink);
+    padding: 6px 0;
+  }
+
+  option:checked {
+    background: linear-gradient(var(--color-accent-light), var(--color-accent-light));
+    background-color: var(--color-accent-light);
+    color: var(--color-cream);
+  }
+
+  option:disabled {
+    color: var(--color-ink-light);
+  }
+}
+
 /* Focus indicators — keyboard navigation */
 :focus-visible {
   outline: 2px solid var(--color-ink);
@@ -168,6 +288,11 @@ button:focus-visible {
   outline: 2px solid var(--color-ink);
   outline-offset: 2px;
   border-radius: 2px;
+}
+input:focus-visible,
+textarea:focus-visible {
+  outline: none;
+  box-shadow: none;
 }
 
 /* Collapsed sidebar icon links */
@@ -193,27 +318,9 @@ button:focus-visible {
   background-color: rgba(212, 207, 199, 0.5);
 }
 
-/* Full-width footer actions in the expanded sidebar */
-.sidebar-footer-action {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  width: 100%;
-  min-height: 24px;
-  padding: 0 12px;
-  box-sizing: border-box;
-  color: var(--color-ink);
-  border: 0;
-  border-radius: 4px;
-  text-align: left;
-  text-decoration: none;
-  appearance: none;
-  -webkit-appearance: none;
-}
-
 /* Sidebar drawer */
 .sidebar-drawer {
-  padding: 24px 4px 24px 12px;
+  padding: 24px 12px;
 }
 
 /* Project rows — reveal row actions on hover */
@@ -234,6 +341,10 @@ button:focus-visible {
 
 /* Mobile sidebar drawer — below 640px the collapsed sidebar is shown instead, no drawer needed */
 @media (max-width: 639px) {
+  .main-content {
+    padding: 24px 12px 24px 24px;
+  }
+
   .sidebar-drawer {
     position: fixed;
     top: 0;
