@@ -74,6 +74,7 @@ services:
   pgadmin:
     container_name: planner-pgadmin
     image: dpage/pgadmin4:latest
+    profiles: [debug]
     environment:
       PGADMIN_DEFAULT_EMAIL: admin@planner.example.com
       PGADMIN_DEFAULT_PASSWORD: admin
