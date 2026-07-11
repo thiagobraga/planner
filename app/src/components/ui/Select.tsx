@@ -14,7 +14,7 @@ export function Select({ error = false, className = '', children, ...rest }: Sel
       className={`relative flex items-center h-10 rounded-[8px] border bg-cream ${borderClass} transition-colors duration-[var(--motion-fast)] ${className}`}
     >
       <select
-        className="peer flex-1 min-w-0 h-full pl-3 pr-9 bg-transparent border-0 outline-none appearance-none text-sm text-ink cursor-pointer"
+        className="peer flex-1 min-w-0 h-full px-3 pr-9 py-2 bg-transparent border-0 outline-none appearance-none text-sm text-ink cursor-pointer"
         {...rest}
       >
         {children}

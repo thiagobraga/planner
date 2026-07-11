@@ -40,7 +40,7 @@ export function ViewToolbar({
   const setMove = (v: boolean) => (onMoveCompletedChange ? onMoveCompletedChange(v) : setMoveState(v));
 
   return (
-    <div className={`flex flex-wrap items-center gap-2.5 ${className}`}>
+    <div className={`flex flex-wrap items-center gap-2.5 pr-1 ${className}`}>
       <Button variant="secondary" leftIcon={<SlidersHorizontal />} onClick={onFilter}>
         Filter
       </Button>
@@ -57,7 +57,7 @@ export function ViewToolbar({
       />
 
       {/* Segmented List / Kanban toggle */}
-      <div className="ml-auto inline-flex items-center rounded-[8px] border border-border overflow-hidden">
+      <div className="ml-auto inline-flex items-center rounded-[8px] border border-border overflow-hidden mr-2.5">
         {([
           { mode: 'list' as const, label: 'List', Icon: List },
           { mode: 'kanban' as const, label: 'Kanban', Icon: LayoutGrid },
@@ -80,7 +80,7 @@ export function ViewToolbar({
       <button
         type="button"
         aria-label="More options"
-        className="inline-flex items-center justify-center w-9 h-9 rounded-[8px] text-ink-light hover:bg-dot/30 transition-colors duration-[var(--motion-fast)]"
+        className="inline-flex items-center justify-center w-9 h-9 rounded-[8px] text-ink-light hover:bg-dot/30 transition-colors duration-[var(--motion-fast)] mr-1"
       >
         <MoreHorizontal size={18} strokeWidth={1.5} />
       </button>

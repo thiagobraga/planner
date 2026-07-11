@@ -8,8 +8,8 @@ export interface CheckboxProps extends Omit<InputHTMLAttributes<HTMLInputElement
 // 16px box, 4px radius, 1px border. Checked = ink fill with a cream check glyph.
 export function Checkbox({ label, className = '', checked, ...rest }: CheckboxProps) {
   return (
-    <label className={`inline-flex items-center gap-2 cursor-pointer select-none ${className}`}>
-      <span className="relative inline-flex items-center justify-center shrink-0 w-4 h-4">
+    <label className={`inline-flex items-start gap-3 cursor-pointer select-none ${className}`}>
+      <span className="relative inline-flex items-center justify-center shrink-0 w-4 h-4 mt-0.5">
         <input type="checkbox" checked={checked} className="peer sr-only" {...rest} />
         <span
           className={`w-4 h-4 rounded-[4px] border transition-colors duration-[var(--motion-fast)] ${
@@ -20,7 +20,7 @@ export function Checkbox({ label, className = '', checked, ...rest }: CheckboxPr
           <Check size={11} strokeWidth={3} className="absolute text-cream pointer-events-none" />
         )}
       </span>
-      {label && <span className="text-sm text-ink leading-none">{label}</span>}
+      {label && <span className="flex-1 text-sm text-ink leading-6 text-left">{label}</span>}
     </label>
   );
 }
