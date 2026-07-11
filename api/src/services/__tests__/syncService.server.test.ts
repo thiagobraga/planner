@@ -53,7 +53,7 @@ import jwt from "jsonwebtoken";
 describe("syncService: Socket.IO server", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockSocket.data = {};
+    mockSocket.data = {} as { userId: string };
     mockSocket.handshake.auth = {};
     mockSocket.join.mockClear();
     mockSocket.on.mockClear();
