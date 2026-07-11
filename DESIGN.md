@@ -4,13 +4,15 @@ description: Editorial planner that reads like a paper journal.
 colors:
   cream: "#f5f0e8"
   sidebar-bg: "#ebe6de"
-  ink: "#2c2c2c"
-  ink-light: "#6b6b6b"
+  ink: "#44443d"
+  ink-light: "#8b867e"
   dot: "#d4cfc7"
-  accent: "#c0392b"
-  accent-light: "#e74c3c"
-  priority-2: "#e67e22"
-  priority-3: "#3498db"
+  border: "#e5e1d8"
+  accent: "#c9483b"
+  accent-light: "#e76052"
+  priority-2: "#e39133"
+  priority-3: "#4d8fd6"
+  moss: "#8ca46a"
 typography:
   display:
     fontFamily: "Lora, Georgia, serif"
@@ -50,11 +52,21 @@ typography:
     fontWeight: 400
     lineHeight: "16px"
 rounded:
-  xs: "3px"
-  sm: "4px"
-  md: "6px"
+  xs: "4px"
+  sm: "6px"
+  md: "8px"
+  lg: "12px"
+  xl: "16px"
   pill: "8px"
   full: "50%"
+shadow:
+  subtle: "0 1px 2px rgba(68,68,61,0.06), 0 1px 3px rgba(68,68,61,0.08)"
+  medium: "0 4px 12px rgba(68,68,61,0.10)"
+  overlay: "0 8px 32px rgba(44,44,44,0.15)"
+motion:
+  fast: "150ms"
+  default: "200ms"
+  smooth: "300ms"
 spacing:
   xs: "4px"
   sm: "8px"
@@ -131,19 +143,21 @@ The system explicitly rejects the visual idioms of its category: Todoist's satur
 A short palette of warm, slightly aged neutrals with one brick-red anchor; everything tilts toward yellow-red hue. No greys, no blue-grey, no pure black or white.
 
 ### Primary
-- **Warm Brick Red** (`#c0392b`, `oklch(50% 0.18 30)`): The single accent. Reserved for state that needs the eye to stop: overdue indicators, P1 priority bullets, error glyphs, the active caret. Decorative use is forbidden.
-- **Felt-Tip Red** (`#e74c3c`, `oklch(60% 0.20 30)`): A lifted variant of the brick red. Available for hover or emphasis on the primary, but currently appears as the P2-adjacent option; treat as situational, not free-to-use.
+- **Warm Brick Red** (`#c9483b`): The single accent. Reserved for state that needs the eye to stop: overdue indicators, P1 priority bullets, error glyphs, the active caret. Decorative use is forbidden.
+- **Felt-Tip Red** (`#e76052`): A lifted variant of the brick red. Available for hover or emphasis on the primary, but currently appears as the P2-adjacent option; treat as situational, not free-to-use.
 
 ### Neutral
-- **Cream Paper** (`#f5f0e8`, `oklch(95% 0.012 70)`): The page itself. Body background, overlay panel surface, input field surface. Never `#fff`.
-- **Sidebar Cream** (`#ebe6de`, `oklch(91% 0.012 70)`): A half-step deeper than Cream Paper, used for sidebars, toolbars, and tonal layering. The only secondary surface.
-- **Dot Grey** (`#d4cfc7`, `oklch(84% 0.012 70)`): Borders, dividers, chip backgrounds, drag-handle resting color, the printed dot grid. The workhorse neutral; appears more often than any other color.
-- **Ink** (`#2c2c2c`, `oklch(28% 0.005 60)`): All primary text. The "ink" of the journal. Never `#000`.
-- **Ink Light** (`#6b6b6b`, `oklch(48% 0.005 60)`): Secondary text, captions, italics, due-date labels, empty-state copy, kbd hints.
+- **Cream Paper** (`#f5f0e8`): The page itself. Body background, overlay panel surface, input field surface. Never `#fff`.
+- **Sidebar Cream** (`#ebe6de`): A half-step deeper than Cream Paper, used for sidebars, toolbars, and tonal layering. The only secondary surface.
+- **Dot Grey** (`#d4cfc7`): Chip backgrounds, drag-handle resting color, the printed dot grid, tonal fills. The workhorse neutral.
+- **Border** (`#e5e1d8`): The default hairline for card, panel, input, and divider strokes. A touch lighter/warmer than Dot Grey so 1px edges read as paper creases, not lines.
+- **Ink** (`#44443d`): All primary text. The "ink" of the journal. Never `#000`.
+- **Ink Light** (`#8b867e`): Secondary text, captions, italics, due-date labels, empty-state copy, kbd hints.
 
 ### Tertiary (priority data only)
-- **Pencil Orange** (`#e67e22`): P2 priority bullets only.
-- **Annotation Blue** (`#3498db`): P3 priority bullets only.
+- **Pencil Orange** (`#e39133`): P2 priority bullets only.
+- **Annotation Blue** (`#4d8fd6`): P3 priority bullets only.
+- **Soft Moss** (`#8ca46a`): Success / "Done" status only (completed status pills, positive confirmations). Like the tertiary priority colors, it is not a free-to-use accent.
 
 ### Named Rules
 
@@ -180,24 +194,29 @@ A short palette of warm, slightly aged neutrals with one brick-red anchor; every
 
 ## 4. Elevation
 
-Flat. There are no resting shadows in the system. Depth is carried by three mechanisms, in order of frequency: (1) tint, by stepping a surface one notch deeper than its parent (Sidebar Cream against Cream Paper, Dot Grey against Sidebar Cream); (2) hairline stroke (1px Dot Grey) between sections; (3) the printed dot grid showing through, which signals "this is the page surface, not a card."
+Mostly flat. Depth is carried first by three quiet mechanisms: (1) tint, by stepping a surface one notch deeper than its parent (Sidebar Cream against Cream Paper, Dot Grey against Sidebar Cream); (2) hairline stroke (1px Border) between sections; (3) the printed dot grid showing through, which signals "this is the page surface, not a card." Shadows are a **last resort**, used sparingly and softly when a card, panel, or modal genuinely needs to lift off the page.
 
 ### Shadow Vocabulary
-- **Overlay drop** (`box-shadow: 0 8px 32px rgba(44,44,44,0.15)`): The only shadow in the system. Used exclusively on modal overlays (search, keyboard-shortcuts dialog) and only when they are floating over a dimmed page. The shadow is large, soft, and warm-tinted; it reads like the panel is a sheet of paper resting on the journal, not a glassmorphic chip floating in space.
+- **Subtle** (`0 1px 2px rgba(68,68,61,0.06), 0 1px 3px rgba(68,68,61,0.08)`): The lightest lift. For cards and grouped panels that should read as a distinct sheet on the page without shouting. Pair with a 1px Border, never replace it.
+- **Medium** (`0 4px 12px rgba(68,68,61,0.10)`): For popovers, menus, and raised cards that float above sibling content.
+- **Overlay drop** (`0 8px 32px rgba(44,44,44,0.15)`): For modal overlays (search, keyboard-shortcuts dialog) floating over a dimmed page. Large, soft, warm-tinted; reads like a sheet of paper resting on the journal, not a glassmorphic chip.
 
 ### Named Rules
 
-**The Flat-By-Default Rule.** Surfaces are flat at rest. No card shadows, no resting elevation, no soft drop-shadows on hovers. If a surface needs to read as "above" another, deepen its tint or add a 1px Dot Grey border, don't shadow it.
+**The Quiet-Shadow Rule.** Shadows stay soft, warm-tinted, and low-alpha — Subtle, Medium, or Overlay only, no custom values. Tint and 1px Border remain the primary depth signals; a shadow supplements them, it does not replace the border. No hard, cool, or high-contrast drop shadows; no glassmorphism.
 
 **The Page-Shows-Through Rule.** Cards, containers, and panels that sit on the body background must NOT cover the dot grid with an opaque fill except when explicitly elevated (overlays). The grid showing through is the system's primary signal that the surface is "the page."
 
 ## 5. Components
 
 ### Buttons
-- **Shape:** Lightly rounded (4px, `rounded.sm`).
-- **Primary:** Ink fill (`#2c2c2c`) on Cream Paper text, Lora 14px, padding `4px 16px`. Used sparingly: dialog confirms, destructive confirms.
-- **Default action affordance:** Most "buttons" in the system are actually serif text links or low-emphasis inline triggers; the heavy primary button is reserved for moments that need closure.
-- **Hover / Focus:** No transform, no shadow. State conveyed through a 150ms opacity or background tint change.
+- **Shape:** 40px tall, 8px corner radius (`rounded.md`). A left icon sits 8px before the label.
+- **Primary:** Ink fill (`#44443d`), Cream Paper text, Lora 14px. Reserved for the main confirming action; one per view.
+- **Secondary:** Transparent fill, 1px Border, Ink text. The default medium-emphasis action.
+- **Tertiary (ghost):** No fill, no border; Ink text, hover reveals a Dot Grey tint. For low-emphasis inline actions.
+- **Destructive:** Transparent fill, 1px Warm Brick Red border, Brick Red text (and icon). For delete / clear-data actions.
+- **Disabled:** Dot Grey tint fill, Ink at ~40% opacity, `cursor: not-allowed`. Applies to any variant.
+- **Hover / Focus:** No transform. State conveyed through a 150ms opacity or background-tint change; a Subtle shadow is permitted on raised primary buttons but is not required.
 
 ### Task Row (signature)
 - **Layout:** A 24px-tall horizontal row. Drag handle (hidden until row-hover), bullet (24px column), serif title (14px), italic due date, label chips.
@@ -217,10 +236,22 @@ Flat. There are no resting shadows in the system. Depth is carried by three mech
 - **No bordered chip variants.** Filter chips and label chips both use this single style.
 
 ### Inputs / Fields
-- **Style:** 1px Dot Grey border, 4px radius, Cream Paper background, Lora 13–14px, Ink text.
+- **Style:** 1px Border, 8px radius, Cream Paper background, Lora 13–14px, Ink text, 40px tall. A leading icon (e.g. search `⌕`) sits 8px before the value.
 - **Focus:** Border darkens to Ink. No glow, no ring.
-- **Error:** Border to Warm Brick Red. No background tint, no icon.
+- **Error:** Border to Warm Brick Red, plus Brick Red help text below. No background tint, no icon.
+- **Help text:** Ink Light caption below the field; swaps to Brick Red in the error state.
+- **Select:** Same shell as a text input with a trailing chevron. A styled native `<select>`, not a bespoke popup.
 - **Caret animation:** The active task-input gets a 1.2s caret-blink keyframe (`caret-color` transitions Ink → transparent), reinforcing "you're writing in this journal."
+
+### Checkbox, Radio, Toggle
+- **Checkbox:** A real 16px box, 4px radius, 1px Border. Checked = Ink fill with a Cream check glyph. Used for multi-select settings and task-list options ("Show completed"), not for the signature task-row bullet.
+- **Radio:** A 16px circle, 1px Border. Selected = Ink ring with a small Ink center dot.
+- **Toggle:** A pill switch (`role="switch"`). Off = Dot Grey track, Cream knob; On = Ink track, Cream knob. 150ms ease. For binary on/off preferences.
+- These wrap a real underlying `<input>` for accessibility; they are the sanctioned custom controls (the "no custom controls for flavor" rule still bars one-off inventions beyond this set).
+
+### Status Pills
+- **Style:** Pill (8px radius), Lora 11–12px, tinted background + matching text. One per status.
+- **Values:** Open (Dot Grey tint), In progress (Annotation Blue tint), Done (Soft Moss tint), Blocked (Warm Brick Red tint). Distinct from priority bullets and label chips.
 
 ### Overlay Panel (modals)
 - **Surface:** Cream Paper, 6px radius, 1px Dot Grey border, padding `24px 32px`.
@@ -257,12 +288,12 @@ Flat. There are no resting shadows in the system. Depth is carried by three mech
 - **Don't** use `#fff` or `#000`. Every neutral is tinted warm. Body is Cream Paper, text is Ink.
 - **Don't** introduce a sans-serif. No Inter, no system-ui stack, no SF Pro. Lora carries every glyph.
 - **Don't** use Warm Brick Red as a decorative trim, a hover background on a benign control, or a hero band. It is a state color, not a brand color.
-- **Don't** drop a card shadow on a resting surface. No `box-shadow` outside the single overlay-drop value.
+- **Don't** invent custom shadow values or use hard/cool drop shadows. Shadows are limited to the Subtle, Medium, and Overlay tokens, kept soft and warm, and always supplement (never replace) tint and the 1px Border.
 - **Don't** use Pencil Orange or Annotation Blue outside priority bullets. They are not free accent colors.
 - **Don't** cover the dot grid with opaque card fills on the body surface. The page must read through.
 - **Don't** apply `border-left` or `border-right` greater than 1px as a colored stripe on rows, cards, or callouts. Side-stripe borders are forbidden.
 - **Don't** use `background-clip: text` with a gradient on any heading or numeric readout. The Numeric style is solid Ink.
 - **Don't** reach for a modal first. Inline progressive disclosure (task detail panel, quick-add inline) is the default; modals are for search, shortcuts, and confirmations only.
-- **Don't** invent custom scrollbars, custom checkboxes, or custom form controls "for flavor." The system already departs from category convention through type and surface; controls should be quiet.
+- **Don't** invent custom form controls "for flavor" beyond the sanctioned set (Button, Input, Select, Checkbox, Radio, Toggle, Chip, Status Pill). The system already departs from category convention through type and surface; controls should be quiet.
 - **Don't** add bounce, elastic, or spring motion. Transitions are 120–200ms, ease-out, no overshoot.
 - **Don't** swap the dotted-paper body background for a flat fill. The grid is the page; without it, the metaphor breaks.
