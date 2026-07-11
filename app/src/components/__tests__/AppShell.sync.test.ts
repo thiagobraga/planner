@@ -18,11 +18,27 @@ vi.mock('../../utils/socket', () => ({
 
 import { useSync } from '../../hooks/useSync';
 
-// Mirrors the AppShell callback: invalidate all queries on any task sync event
-function useAppShellSync(invalidate: () => void) {
+// Mirrors the AppShell callback for sync events handled at the shell level.
+function useAppShellSync({
+  invalidateProjects,
+  invalidatePreferences,
+  setPreferences,
+}: {
+  invalidateProjects: () => void;
+  invalidatePreferences: () => void;
+  setPreferences: (payload: unknown) => void;
+}) {
   useSync(useCallback((event: SyncEvent) => {
-    if (event.entityType === 'task') invalidate();
-  }, [invalidate]));
+    if (event.entityType === 'project') {
+      invalidateProjects();
+    } else if (event.entityType === 'preferences') {
+      if (event.payload && typeof event.payload === 'object') {
+        setPreferences(event.payload);
+      } else {
+        invalidatePreferences();
+      }
+    }
+  }, [invalidateProjects, invalidatePreferences, setPreferences]));
 }
 
 function makeEvent(overrides: Partial<SyncEvent> = {}): SyncEvent {
@@ -37,36 +53,79 @@ function makeEvent(overrides: Partial<SyncEvent> = {}): SyncEvent {
   };
 }
 
-describe('AppShell: task sync event → invalidateQueries', () => {
+describe('AppShell: sync event invalidation', () => {
   let mockInvalidate: ReturnType<typeof vi.fn>;
+  let mockInvalidatePreferences: ReturnType<typeof vi.fn>;
+  let mockSetPreferences: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     capturedSyncHandler = null;
     mockInvalidate = vi.fn();
+    mockInvalidatePreferences = vi.fn();
+    mockSetPreferences = vi.fn();
   });
 
-  it('calls invalidate when a task sync event fires', () => {
-    renderHook(() => useAppShellSync(mockInvalidate));
+  it('does not invalidate when a task sync event fires', () => {
+    renderHook(() => useAppShellSync({
+      invalidateProjects: mockInvalidate,
+      invalidatePreferences: mockInvalidatePreferences,
+      setPreferences: mockSetPreferences,
+    }));
     act(() => { capturedSyncHandler?.(makeEvent()); });
-    expect(mockInvalidate).toHaveBeenCalledTimes(1);
+    expect(mockInvalidate).not.toHaveBeenCalled();
+    expect(mockInvalidatePreferences).not.toHaveBeenCalled();
+    expect(mockSetPreferences).not.toHaveBeenCalled();
   });
 
-  it('calls invalidate for all task event types', () => {
-    renderHook(() => useAppShellSync(mockInvalidate));
+  it('does not invalidate for all task event types', () => {
+    renderHook(() => useAppShellSync({
+      invalidateProjects: mockInvalidate,
+      invalidatePreferences: mockInvalidatePreferences,
+      setPreferences: mockSetPreferences,
+    }));
     const types: SyncEvent['eventType'][] = ['created', 'updated', 'deleted', 'completed', 'uncompleted'];
     for (const eventType of types) {
       act(() => { capturedSyncHandler?.(makeEvent({ eventType })); });
     }
-    expect(mockInvalidate).toHaveBeenCalledTimes(types.length);
+    expect(mockInvalidate).not.toHaveBeenCalled();
   });
 
-  it('does not invalidate for non-task entity types', () => {
-    renderHook(() => useAppShellSync(mockInvalidate));
+  it('invalidates for project entity types', () => {
+    renderHook(() => useAppShellSync({
+      invalidateProjects: mockInvalidate,
+      invalidatePreferences: mockInvalidatePreferences,
+      setPreferences: mockSetPreferences,
+    }));
     act(() => {
       capturedSyncHandler?.(makeEvent({ entityType: 'project' }));
-      capturedSyncHandler?.(makeEvent({ entityType: 'label' }));
-      capturedSyncHandler?.(makeEvent({ entityType: 'comment' }));
     });
-    expect(mockInvalidate).not.toHaveBeenCalled();
+    expect(mockInvalidate).toHaveBeenCalledTimes(1);
+  });
+
+  it('sets preferences from preferences sync payload', () => {
+    renderHook(() => useAppShellSync({
+      invalidateProjects: mockInvalidate,
+      invalidatePreferences: mockInvalidatePreferences,
+      setPreferences: mockSetPreferences,
+    }));
+    const payload = { font: 'klee', showDots: false, background: 'white' };
+    act(() => {
+      capturedSyncHandler?.(makeEvent({ entityType: 'preferences', eventType: 'updated', entityId: 'user-1', payload }));
+    });
+    expect(mockSetPreferences).toHaveBeenCalledWith(payload);
+    expect(mockInvalidatePreferences).not.toHaveBeenCalled();
+  });
+
+  it('invalidates preferences when preferences sync has no payload', () => {
+    renderHook(() => useAppShellSync({
+      invalidateProjects: mockInvalidate,
+      invalidatePreferences: mockInvalidatePreferences,
+      setPreferences: mockSetPreferences,
+    }));
+    act(() => {
+      capturedSyncHandler?.(makeEvent({ entityType: 'preferences', eventType: 'updated', entityId: 'user-1' }));
+    });
+    expect(mockInvalidatePreferences).toHaveBeenCalledTimes(1);
+    expect(mockSetPreferences).not.toHaveBeenCalled();
   });
 });

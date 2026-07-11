@@ -1,14 +1,22 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, type CSSProperties } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Sidebar } from './Sidebar';
 import { QuickAdd } from './QuickAdd';
 import { SearchOverlay } from './SearchOverlay';
+import { Button } from './ui/Button';
 import { matchKey, createMatcherState, DEFAULT_BINDINGS } from '../hooks/shortcuts';
 import type { MatcherState } from '../hooks/shortcuts';
 import { useSync } from '../hooks/useSync';
-import { fetchPreferences } from '../api/client';
-import { ensureFontLoaded } from '../utils/fontLoader';
+import { fetchPreferences, type Preferences } from '../api/client';
+import { ensureFontLoaded, type FontOption } from '../utils/fontLoader';
+
+const FONT_CLASSES: Record<FontOption, string> = {
+  lora: 'font-journal',
+  klee: 'font-klee',
+  playpen: 'font-playpen',
+  hubballi: 'font-hubballi',
+};
 
 export function AppShell() {
   const navigate = useNavigate();
@@ -20,11 +28,15 @@ export function AppShell() {
   });
 
   useSync(useCallback((event) => {
-    if (event.entityType === 'task') {
-      qc.invalidateQueries();
-    } else if (event.entityType === 'project') {
+    if (event.entityType === 'project') {
       qc.invalidateQueries({ queryKey: ['projects'] });
       qc.invalidateQueries({ queryKey: ['project'] });
+    } else if (event.entityType === 'preferences') {
+      if (event.payload && typeof event.payload === 'object') {
+        qc.setQueryData<Preferences>(['preferences'], event.payload as Preferences);
+      } else {
+        qc.invalidateQueries({ queryKey: ['preferences'] });
+      }
     }
   }, [qc]));
   const [quickAddOpen, setQuickAddOpen] = useState(false);
@@ -32,6 +44,22 @@ export function AppShell() {
   const [helpOpen, setHelpOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => window.innerWidth < 640);
+  const isWhiteBackground = preferences?.background === 'white';
+  const pageBackground = isWhiteBackground ? '#ffffff' : 'var(--color-cream)';
+  const shellThemeStyle = {
+    backgroundColor: pageBackground,
+    '--planner-page-bg': pageBackground,
+    '--planner-sidebar-bg': isWhiteBackground ? '#f1f1f1' : 'var(--color-sidebar-bg)',
+    '--planner-card-bg': isWhiteBackground ? '#fafafa' : '#f0ebe0',
+    '--planner-control-bg': isWhiteBackground ? '#ffffff' : 'rgba(245, 240, 232, 0.2)',
+    '--planner-control-bg-hover': isWhiteBackground ? '#f5f5f5' : 'rgba(245, 240, 232, 0.35)',
+    /* Monthly-specific tokens */
+    '--planner-monthly-ledger-bg': isWhiteBackground ? 'rgba(255,255,255,0.24)' : 'rgba(245, 240, 232, 0.24)',
+    '--planner-monthly-strip-selected': isWhiteBackground ? 'rgba(255,255,255,0.92)' : 'rgba(245, 240, 232, 0.90)',
+    '--planner-monthly-strip-idle': isWhiteBackground ? 'rgba(255,255,255,0.55)' : 'rgba(245, 240, 232, 0.55)',
+    '--planner-monthly-strip-hover': isWhiteBackground ? 'rgba(255,255,255,0.78)' : 'rgba(245, 240, 232, 0.75)',
+    '--planner-monthly-weekend': isWhiteBackground ? 'rgba(220,220,220,0.22)' : 'rgba(245, 230, 198, 0.38)',
+  } as CSSProperties;
 
   useEffect(() => {
     if (preferences?.font) {
@@ -75,8 +103,8 @@ export function AppShell() {
         case 'navigate:inbox':
           navigate('/inbox');
           break;
-        case 'navigate:today':
-          navigate('/today');
+        case 'navigate:daily':
+          navigate('/daily');
           break;
         case 'navigate:upcoming':
           navigate('/upcoming');
@@ -105,7 +133,10 @@ export function AppShell() {
   }, [isTextInputFocused, handleAction]);
 
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div
+      className={`flex h-screen overflow-hidden ${FONT_CLASSES[preferences?.font ?? 'lora']}${preferences?.smallCaps ? ' small-caps' : ''}`}
+      style={shellThemeStyle}
+    >
       {/* Mobile menu button — only shown below collapsed breakpoint (≥640px uses collapsed sidebar) */}
       {!sidebarCollapsed && (
         <button
@@ -126,7 +157,14 @@ export function AppShell() {
       />
 
       <main
-        className={`main-content flex-1 overflow-y-auto p-6 ${preferences?.font === 'patrick' ? 'font-patrick' : 'font-journal'}`}
+        className="main-content flex-1 overflow-y-auto p-6"
+        style={{
+          backgroundColor: pageBackground,
+          backgroundImage: preferences?.showDots === false ? 'none' : 'radial-gradient(circle, var(--color-dot) 1px, transparent 1px)',
+          backgroundSize: preferences?.showDots === false ? undefined : 'var(--dot-grid) var(--dot-grid)',
+          backgroundPosition: preferences?.showDots === false ? undefined : 'calc(var(--dot-grid)/2) calc(var(--dot-grid)/2)',
+          backgroundRepeat: 'repeat',
+        }}
       >
         <Outlet />
       </main>
@@ -189,13 +227,9 @@ export function AppShell() {
               </tbody>
             </table>
             <div className="mt-4 text-right">
-              <button
-                type="button"
-                onClick={() => setHelpOpen(false)}
-                className="py-1 px-4 bg-ink text-cream border-0 rounded text-[13px] cursor-pointer"
-              >
+              <Button variant="primary" onClick={() => setHelpOpen(false)}>
                 Close
-              </button>
+              </Button>
             </div>
           </div>
         </div>

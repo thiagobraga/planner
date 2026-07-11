@@ -2,6 +2,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { ChevronRight, Repeat2, Settings, HelpCircle, LogOut, type LucideIcon } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { ProjectTreeNav } from './ProjectTreeNav';
+import { SidebarNavItem } from './SidebarNavItem';
 
 interface SidebarProps {
   isOpen?: boolean;
@@ -27,6 +28,15 @@ export const MonthlyIcon = ({ size = 15 }: { size?: number }) => (
   </svg>
 );
 
+export const StyleguideIcon = ({ size = 15 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 15 15" fill="none" aria-hidden="true">
+    <rect x="2" y="2" width="11" height="11" rx="1.5" stroke="currentColor" strokeWidth="1.2" />
+    <path d="M4 5.5H11" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+    <path d="M4 8H11" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+    <path d="M4 10.5H8.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+  </svg>
+);
+
 const PlannerIcon = ({ size = 16 }: { size?: number }) => (
   <img src="/images/bulletjournal-planner-16x16.png" width={size} height={size} alt="" className="block shrink-0" />
 );
@@ -34,7 +44,7 @@ const PlannerIcon = ({ size = 16 }: { size?: number }) => (
 type NavItem = { to: string; label: string; Icon: LucideIcon | React.ComponentType<{ size?: number }> };
 
 const NAV_ITEMS: NavItem[] = [
-  { to: '/today', label: 'Daily', Icon: BjTask },
+  { to: '/daily', label: 'Daily', Icon: BjTask },
   { to: '/inbox', label: 'Inbox', Icon: ChevronRight },
   { to: '/monthly', label: 'Monthly', Icon: MonthlyIcon },
   { to: '/habits', label: 'Habits', Icon: Repeat2 },
@@ -51,7 +61,7 @@ export function Sidebar({ isOpen, onClose, collapsed = false, onOpenHelp }: Side
   if (collapsed) {
     return (
       <aside
-        className="w-12 h-full flex flex-col items-center border-r border-dot bg-sidebar-bg py-6 shrink-0 overflow-y-auto"
+        className="w-12 h-full flex flex-col items-center border-r border-dot bg-[var(--planner-sidebar-bg)] py-6 shrink-0 overflow-y-auto"
         aria-label="Navigation"
       >
         {/* Logo mark */}
@@ -81,6 +91,14 @@ export function Sidebar({ isOpen, onClose, collapsed = false, onOpenHelp }: Side
             <Settings size={16} strokeWidth={1.5} />
           </NavLink>
 
+          <NavLink
+            to="/styleguide"
+            title="Styleguide"
+            className={({ isActive }) => (isActive ? 'sidebar-icon-link sidebar-icon-link--active' : 'sidebar-icon-link')}
+          >
+            <StyleguideIcon size={16} />
+          </NavLink>
+
           <button
             type="button"
             onClick={onOpenHelp}
@@ -107,7 +125,7 @@ export function Sidebar({ isOpen, onClose, collapsed = false, onOpenHelp }: Side
 
   const sidebarContent = (
     <aside
-      className={`sidebar-drawer ${isOpen !== false ? 'sidebar-drawer--open' : ''} w-[180px] h-full flex flex-col border-r border-dot bg-sidebar-bg relative overflow-y-auto shrink-0`}
+      className={`sidebar-drawer ${isOpen !== false ? 'sidebar-drawer--open' : ''} w-[220px] h-full flex flex-col border-r border-dot bg-[var(--planner-sidebar-bg)] relative overflow-y-auto shrink-0`}
       aria-label="Navigation"
     >
       {/* Logo */}
@@ -128,20 +146,12 @@ export function Sidebar({ isOpen, onClose, collapsed = false, onOpenHelp }: Side
       {/* Main nav */}
       <nav aria-label="Main navigation" className="flex flex-col">
         {NAV_ITEMS.map((entry) => (
-          <NavLink
+          <SidebarNavItem
             key={entry.to}
             to={entry.to}
-            className={({ isActive }) =>
-              `flex items-center no-underline h-6 px-3 text-sm text-ink gap-[7px] rounded leading-none ${
-                isActive ? 'font-medium bg-dot/50' : 'opacity-60 hover:opacity-100 bg-transparent'
-              }`
-            }
-          >
-            <span className="w-4 h-4 flex items-center justify-center flex-shrink-0 opacity-60">
-              <entry.Icon size={15} strokeWidth={1.5} />
-            </span>
-            <span className="leading-none">{entry.label}</span>
-          </NavLink>
+            label={entry.label}
+            icon={<entry.Icon size={15} strokeWidth={1.5} />}
+          />
         ))}
       </nav>
 
@@ -149,45 +159,15 @@ export function Sidebar({ isOpen, onClose, collapsed = false, onOpenHelp }: Side
       <ProjectTreeNav />
 
       {/* Footer utilities */}
-      <div className="mt-auto border-t border-dot pt-4">
+      <div className="mt-auto pt-4">
         <nav aria-label="Settings" className="flex flex-col">
-          <NavLink
-            to="/settings"
-            className={({ isActive }) =>
-              `flex items-center no-underline h-6 px-3 text-sm text-ink gap-[7px] rounded leading-none ${
-                isActive ? 'font-medium bg-dot/50' : 'opacity-60 hover:opacity-100 bg-transparent'
-              }`
-            }
-          >
-            <span className="w-4 h-4 flex items-center justify-center flex-shrink-0 opacity-60">
-              <Settings size={15} strokeWidth={1.5} />
-            </span>
-            <span className="leading-none">Settings</span>
-          </NavLink>
+          <SidebarNavItem to="/settings" label="Settings" icon={<Settings size={15} strokeWidth={1.5} />} />
+          <SidebarNavItem to="/styleguide" label="Styleguide" icon={<StyleguideIcon size={15} />} />
+          <SidebarNavItem label="Help" icon={<HelpCircle size={15} strokeWidth={1.5} />} onClick={onOpenHelp} />
 
-          <button
-            type="button"
-            onClick={onOpenHelp}
-            className="flex items-center no-underline h-6 px-3 text-sm text-ink gap-[7px] rounded opacity-60 hover:opacity-100 bg-transparent border-0 cursor-pointer leading-none"
-          >
-            <span className="w-4 h-4 flex items-center justify-center flex-shrink-0 opacity-60">
-              <HelpCircle size={15} strokeWidth={1.5} />
-            </span>
-            <span className="leading-none">Help</span>
-          </button>
+          <div className="border-t border-dot my-3 mx-0"></div>
 
-          <div className="border-t border-dot my-0 mx-0"></div>
-
-          <button
-            type="button"
-            onClick={handleLogout}
-            className="flex items-center no-underline h-6 px-3 text-sm text-ink gap-[7px] rounded opacity-60 hover:opacity-100 bg-transparent border-0 cursor-pointer leading-none"
-          >
-            <span className="w-4 h-4 flex items-center justify-center flex-shrink-0 opacity-60">
-              <LogOut size={15} strokeWidth={1.5} />
-            </span>
-            <span className="leading-none">Logout</span>
-          </button>
+          <SidebarNavItem label="Logout" icon={<LogOut size={15} strokeWidth={1.5} />} onClick={handleLogout} />
         </nav>
       </div>
     </aside>
