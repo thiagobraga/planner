@@ -214,6 +214,9 @@ export function StyleguidePage() {
               <Field label="Error state">
                 <Input error defaultValue="Invalid value" errorText="Check the information." />
               </Field>
+              <Field label="Help text">
+                <Input placeholder="Add a note..." helpText="Tip: use @ for mentions and # for projects." />
+              </Field>
             </div>
             <div className="flex flex-col gap-4">
               <Field label="Checkbox">
@@ -233,9 +236,6 @@ export function StyleguidePage() {
                   <Toggle checked={toggleOn} onChange={setToggleOn} label="On / off" />
                   <Toggle checked={false} disabled label="Disabled" />
                 </div>
-              </Field>
-              <Field label="Help text">
-                <Input placeholder="Add a note..." helpText="Tip: use @ for mentions and # for projects." />
               </Field>
             </div>
           </div>
