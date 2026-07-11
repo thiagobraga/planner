@@ -52,11 +52,11 @@ describe('shortcuts matcher', () => {
     expect(a2).toBe('navigate:inbox');
   });
 
-  it('g+t navigates to today', () => {
+  it('g+t navigates to daily', () => {
     const s0 = createMatcherState();
     const { nextState: s1 } = matchKey(DEFAULT_BINDINGS, s0, ev('g', { timestamp: 0 }));
     const { action } = matchKey(DEFAULT_BINDINGS, s1, ev('t', { timestamp: 100 }));
-    expect(action).toBe('navigate:today');
+    expect(action).toBe('navigate:daily');
   });
 
   it('g+u navigates to upcoming', () => {
