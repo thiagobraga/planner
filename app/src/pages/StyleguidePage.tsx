@@ -1,76 +1,450 @@
-import { ChevronRight, Repeat2 } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { Plus, Calendar, Trash2, Search } from 'lucide-react';
 import { BjTask, MonthlyIcon } from '../components/Sidebar';
+import { ChevronRight, Repeat2 } from 'lucide-react';
 import { MonthlyCalendarSpecimen } from '../components/MonthlyCalendarSpecimen';
-import { MonthlyRows } from '../components/MonthlyRows';
+import { Button } from '../components/ui/Button';
+import { Input } from '../components/ui/Input';
+import { Select } from '../components/ui/Select';
+import { Checkbox } from '../components/ui/Checkbox';
+import { Radio } from '../components/ui/Radio';
+import { Toggle } from '../components/ui/Toggle';
+import { Chip, ProjectChip } from '../components/ui/Chip';
+import { StatusPill } from '../components/ui/StatusPill';
+import { PriorityDot } from '../components/ui/PriorityDot';
+import { ViewToolbar } from '../components/ui/ViewToolbar';
+import { TaskRowSpecimen } from '../components/ui/TaskRowSpecimen';
 
-const ICONS = [
-  { label: 'Daily', Icon: BjTask },
-  { label: 'Inbox', Icon: ChevronRight },
-  { label: 'Monthly', Icon: MonthlyIcon },
-  { label: 'Habits', Icon: Repeat2 },
-];
-
-function Section({
+// ── Card wrapper ──────────────────────────────────────────────────────────────
+function Card({
+  n,
   title,
+  span = false,
   children,
 }: {
+  n: number;
   title: string;
+  span?: boolean;
   children: React.ReactNode;
 }) {
   return (
-    <section className="mt-8">
-      <h2 className="text-base leading-6 font-semibold text-ink">
-        {title}
+    <section
+      className={`border border-border rounded-[8px] bg-cream/40 shadow-subtle p-5 ${
+        span ? 'lg:col-span-2' : ''
+      }`}
+    >
+      <h2 className="text-[11px] font-semibold text-ink uppercase tracking-[0.1em] mb-4">
+        <span className="text-ink-light">{n}.</span> {title}
       </h2>
-      <div className="h-3" />
       {children}
     </section>
   );
 }
 
+const TYPE_SCALE = [
+  { label: 'Display', spec: 'Lora 600 · 48px / 56px', className: 'text-[48px] leading-[56px] font-semibold' },
+  { label: 'Heading', spec: 'Lora 600 · 22px / 28px', className: 'text-[22px] leading-[28px] font-semibold' },
+  { label: 'Body', spec: 'Lora 400 · 16px / 24px', className: 'text-[16px] leading-6' },
+  { label: 'Caption', spec: 'Lora 400 · 12px / 18px', className: 'text-[12px] leading-[18px] text-ink-light' },
+  { label: 'Label', spec: 'Lora 500 · 11px / 16px', className: 'text-[11px] leading-4 font-medium uppercase tracking-[0.1em]' },
+  { label: 'Mono', spec: 'Monospace · 12px / 16px', className: 'text-[12px] leading-4 font-mono' },
+];
+
+const PROJECTS = [
+  { name: 'dev', color: 'green' },
+  { name: 'planner', color: 'lime_green' },
+  { name: 'health', color: 'yellow' },
+  { name: 'senac', color: 'orange' },
+  { name: 'sociopata', color: 'red' },
+];
+
+const NAV = [
+  { label: 'Daily', Icon: BjTask, active: true },
+  { label: 'Inbox', Icon: ChevronRight, active: false },
+  { label: 'Monthly', Icon: MonthlyIcon, active: false },
+  { label: 'Habits', Icon: Repeat2, active: false },
+];
+
+const SPACING = [4, 8, 16, 24, 32, 48];
+const RADII = [4, 6, 8, 12, 16];
+const MOTION = [
+  { ms: '150ms', label: 'Fast' },
+  { ms: '200ms', label: 'Default' },
+  { ms: '300ms', label: 'Smooth' },
+];
+
 export function StyleguidePage() {
+  // Habit chain grid — 4 weeks × 7 days, capsule-fusing borders.
+  const today = useMemo(() => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }, []);
+
+  const [completedDays, setCompletedDays] = useState<Set<string>>(() => {
+    const s = new Set<string>();
+    const iso = (offset: number) => {
+      const d = new Date(today);
+      d.setDate(d.getDate() - offset);
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    };
+    [1, 2, 3, 5, 6].forEach((o) => s.add(iso(o)));
+    return s;
+  });
+
+  const habitCells = useMemo(() => {
+    const todayCol = (today.getDay() + 6) % 7;
+    const lastSunday = new Date(today);
+    lastSunday.setDate(today.getDate() + (6 - todayCol));
+    const total = 4 * 7;
+    const out: { iso: string; col: number; row: number; future: boolean }[] = [];
+    for (let i = 0; i < total; i++) {
+      const date = new Date(lastSunday);
+      date.setDate(lastSunday.getDate() - (total - 1 - i));
+      out.push({
+        iso: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`,
+        col: i % 7,
+        row: Math.floor(i / 7),
+        future: date.getTime() > today.getTime(),
+      });
+    }
+    return out;
+  }, [today]);
+
+  const todayIso = useMemo(
+    () => `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`,
+    [today],
+  );
+
+  const toggleHabitCell = (iso: string) =>
+    setCompletedDays((prev) => {
+      const next = new Set(prev);
+      next.has(iso) ? next.delete(iso) : next.add(iso);
+      return next;
+    });
+
+  const cellShape = (col: number, row: number, completed: boolean) => {
+    if (!completed) return { borderRadius: '50%' };
+    const left = col > 0 && completedDays.has(habitCells[row * 7 + col - 1].iso);
+    const right = col < 6 && completedDays.has(habitCells[row * 7 + col + 1].iso);
+    const l = left ? '0' : '50%';
+    const r = right ? '0' : '50%';
+    return { borderRadius: `${l} ${r} ${r} ${l}` };
+  };
+
+  const [radioChoice, setRadioChoice] = useState('a');
+  const [toggleOn, setToggleOn] = useState(true);
+  const [checkOn, setCheckOn] = useState(true);
+
   return (
-    <div className="max-w-190">
-      <h1 className="text-lg leading-6 font-semibold text-ink">
-        Styleguide
-      </h1>
-      <p className="text-[13px] leading-6 text-ink-light opacity-60">
-        UI Kit
+    <div className="max-w-5xl pb-24 text-ink">
+      <h1 className="text-lg leading-6 font-semibold text-ink">Styleguide Web</h1>
+      <p className="text-[13px] leading-6 text-ink-light opacity-70">
+        Interface library for the Planner ecosystem
+      </p>
+      <p className="text-[13px] leading-6 text-ink-light opacity-70 mb-6">
+        Components, patterns, and tokens to build consistent, calm, productive experiences.
       </p>
 
-      <Section title="Navigation Icons">
-        <div className="grid grid-cols-4 gap-3">
-          {ICONS.map(({ label, Icon }) => (
-            <div key={label}>
-              <div className="h-6 flex items-center gap-[10px] text-ink text-sm leading-6">
-                <span className="w-4 flex items-center justify-center opacity-60">
-                  <Icon size={15} strokeWidth={1.5} />
-                </span>
-                <span>{label}</span>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+        {/* 1 — Interface Typography */}
+        <Card n={1} title="Interface Typography" span>
+          <div className="divide-y divide-border">
+            {TYPE_SCALE.map(({ label, spec, className }) => (
+              <div key={label} className="py-3 grid grid-cols-[130px_1fr] gap-4 items-center">
+                <div className="flex flex-col">
+                  <span className="text-[11px] font-semibold text-ink uppercase tracking-[0.1em]">{label}</span>
+                  <span className="text-[10px] text-ink-light font-mono mt-0.5">{spec}</span>
+                </div>
+                <span className={`text-ink overflow-hidden ${className}`}>Aa</span>
               </div>
-              <div className="mt-2 w-8 h-8 flex items-center justify-center text-ink opacity-[0.72]">
-                <Icon size={16} strokeWidth={1.5} />
+            ))}
+          </div>
+        </Card>
+
+        {/* 2 — Buttons */}
+        <Card n={2} title="Buttons" span>
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-x-4 gap-y-3">
+            {([
+              { label: 'Primary', variant: 'primary' as const },
+              { label: 'Secondary', variant: 'secondary' as const },
+              { label: 'Tertiary', variant: 'tertiary' as const },
+              { label: 'Destructive', variant: 'destructive' as const },
+            ]).map(({ label, variant }) => (
+              <div key={label} className="flex flex-col gap-3">
+                <span className="text-[10px] text-ink-light uppercase tracking-[0.1em] text-center">{label}</span>
+                <Button variant={variant}>{label === 'Destructive' ? 'Delete' : label}</Button>
+                <Button variant={variant} leftIcon={variant === 'destructive' ? <Trash2 /> : <Plus />}>
+                  {variant === 'destructive' ? 'Delete' : 'New item'}
+                </Button>
+                <Button variant={variant} leftIcon={variant === 'destructive' ? <Trash2 /> : <Calendar />}>
+                  {variant === 'destructive' ? 'Clear data' : 'Add date'}
+                </Button>
+              </div>
+            ))}
+            <div className="flex flex-col gap-3">
+              <span className="text-[10px] text-ink-light uppercase tracking-[0.1em] text-center">Disabled</span>
+              <Button variant="secondary" disabled>Disabled</Button>
+              <Button variant="secondary" leftIcon={<Plus />} disabled>New item</Button>
+              <Button variant="secondary" leftIcon={<Calendar />} disabled>Add date</Button>
+            </div>
+          </div>
+          <p className="mt-4 text-[11px] leading-5 text-ink-light">
+            Default height: 40px · Radius: 8px · Icons left with 8px spacing.
+          </p>
+        </Card>
+
+        {/* 3 — Fields & Controls */}
+        <Card n={3} title="Fields & Controls">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <div className="flex flex-col gap-4">
+              <Field label="Text">
+                <Input placeholder="Type something..." />
+              </Field>
+              <Field label="Search">
+                <Input icon={<Search />} type="search" placeholder="Search tasks..." />
+              </Field>
+              <Field label="Select">
+                <Select defaultValue="">
+                  <option value="" disabled>Select option</option>
+                  <option value="1">Option one</option>
+                  <option value="2">Option two</option>
+                </Select>
+              </Field>
+              <Field label="Error state">
+                <Input error defaultValue="Invalid value" errorText="Check the information." />
+              </Field>
+              <Field label="Help text">
+                <Input placeholder="Add a note..." helpText="Tip: use @ for mentions and # for projects." />
+              </Field>
+            </div>
+            <div className="flex flex-col gap-4">
+              <Field label="Checkbox">
+                <div className="flex flex-col gap-2">
+                  <Checkbox checked={checkOn} onChange={(e) => setCheckOn(e.target.checked)} label="Completed" />
+                  <Checkbox checked readOnly label="Completed (checked)" />
+                </div>
+              </Field>
+              <Field label="Radio">
+                <div className="flex flex-col gap-2">
+                  <Radio name="sg-radio" checked={radioChoice === 'a'} onChange={() => setRadioChoice('a')} label="Selected option" />
+                  <Radio name="sg-radio" checked={radioChoice === 'b'} onChange={() => setRadioChoice('b')} label="Another option" />
+                </div>
+              </Field>
+              <Field label="Toggle">
+                <div className="flex items-center gap-6">
+                  <Toggle checked={toggleOn} onChange={setToggleOn} label="On / off" />
+                  <Toggle checked={false} disabled label="Disabled" />
+                </div>
+              </Field>
+            </div>
+          </div>
+        </Card>
+
+        {/* 4 — Chips & Tags */}
+        <Card n={4} title="Chips & Tags">
+          <div className="flex flex-col gap-4">
+            <div>
+              <span className="text-[10px] text-ink-light uppercase tracking-[0.1em] block mb-2">Project chips</span>
+              <div className="flex flex-wrap gap-2 items-center">
+                {PROJECTS.map((p) => (
+                  <ProjectChip key={p.name} name={p.name} color={p.color} />
+                ))}
+                <Chip className="text-ink-light">＋ New</Chip>
               </div>
             </div>
-          ))}
-        </div>
-      </Section>
+            <div>
+              <span className="text-[10px] text-ink-light uppercase tracking-[0.1em] block mb-2">Status</span>
+              <div className="flex flex-wrap gap-2 items-center">
+                <StatusPill status="open" />
+                <StatusPill status="in_progress" />
+                <StatusPill status="done" />
+                <StatusPill status="blocked" />
+              </div>
+            </div>
+            <div>
+              <span className="text-[10px] text-ink-light uppercase tracking-[0.1em] block mb-2">Priorities</span>
+              <div className="flex flex-wrap gap-4 items-center">
+                <PriorityDot priority={1} showLabel />
+                <PriorityDot priority={2} showLabel />
+                <PriorityDot priority={3} showLabel />
+                <PriorityDot priority={4} showLabel />
+                <PriorityDot showLabel />
+              </div>
+            </div>
+          </div>
+        </Card>
 
-      <Section title="Monthly Calendar">
-        <p className="text-[13px] leading-6 text-ink-light opacity-75 mb-3">
-          May 2026 specimen
-        </p>
-        <MonthlyCalendarSpecimen />
-      </Section>
+        {/* 5 — Navigation */}
+        <Card n={5} title="Navigation">
+          <div className="w-[200px] bg-sidebar-bg border border-border rounded-[8px] p-3">
+            <div className="mb-3">
+              <div className="text-base leading-6 font-semibold text-ink">Planner</div>
+              <div className="text-[11px] leading-5 text-ink-light opacity-60">Bulletjournal online</div>
+            </div>
+            <nav className="flex flex-col">
+              {NAV.map(({ label, Icon, active }) => (
+                <span
+                  key={label}
+                  className={`flex items-center h-6 px-3 gap-[7px] rounded text-sm leading-none ${
+                    active ? 'font-medium bg-dot/50 text-ink' : 'opacity-60 text-ink'
+                  }`}
+                >
+                  <span className="w-4 flex items-center justify-center opacity-60">
+                    <Icon size={15} strokeWidth={1.5} />
+                  </span>
+                  {label}
+                </span>
+              ))}
+            </nav>
+            <div className="text-[10px] text-ink-light uppercase tracking-[0.1em] mt-3 mb-1 px-3">Projects</div>
+            <div className="flex flex-col gap-1 px-3">
+              {PROJECTS.map((p) => (
+                <ProjectChip key={p.name} name={p.name} color={p.color} className="bg-transparent px-0" />
+              ))}
+            </div>
+          </div>
+        </Card>
 
-      <Section title="Monthly Rows">
-        <p className="text-[13px] leading-6 text-ink-light opacity-75 mb-3">
-          Row-based monthly view with week dividers
-        </p>
-        <div className="p-4 border border-dot rounded">
-          <MonthlyRows />
-        </div>
-      </Section>
+        {/* 6 — Toolbar / View Options */}
+        <Card n={6} title="Toolbar / View Options" span>
+          <ViewToolbar />
+        </Card>
+
+        {/* 7 — Task Rows */}
+        <Card n={7} title="Task Rows" span>
+          <div className="flex flex-col gap-1">
+            <TaskRowSpecimen priority={1} title="Review quarterly editorial plan" tags={['editorial', 'planner']} date="Jul 10" flagged />
+            <TaskRowSpecimen priority={2} title="Draft weekly entry in Lora serif" tags={['writing']} date="Jul 12" />
+            <TaskRowSpecimen priority={3} title="Implement interactive habit grid" tags={['dev']} date="Jun 17" selected />
+            <TaskRowSpecimen priority={4} title="Configure cross-out styles for tests" tags={['dev']} date="Jun 09" completed />
+          </div>
+        </Card>
+
+        {/* 8 — Calendar & Monthly */}
+        <Card n={8} title="Calendar & Monthly">
+          <MonthlyCalendarSpecimen compact />
+        </Card>
+
+        {/* 9 — Habit Chain */}
+        <Card n={9} title="Habit Chain">
+          <div className="flex flex-col gap-4">
+            <div className="grid [grid-template-columns:repeat(7,16px)] gap-x-[6px] text-[10px] text-ink-light tracking-wider">
+              {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((d, i) => (
+                <span key={i} className="text-center opacity-70 w-4 font-semibold">{d}</span>
+              ))}
+            </div>
+            <div className="grid [grid-template-columns:repeat(7,16px)] [grid-auto-rows:16px] gap-[6px]">
+              {habitCells.map(({ iso, col, row, future }) => {
+                if (future) return <span key={iso} aria-hidden className="w-4 h-4" />;
+                const completed = completedDays.has(iso);
+                const isToday = iso === todayIso;
+                return (
+                  <button
+                    key={iso}
+                    type="button"
+                    onClick={() => toggleHabitCell(iso)}
+                    aria-label={`${iso}${completed ? ' completed' : ''}`}
+                    className={`w-4 h-4 p-0 cursor-pointer ${
+                      isToday ? '[border:1.5px_solid_var(--color-ink)] bg-transparent' : completed ? 'border-none bg-ink' : 'border border-border bg-transparent'
+                    }`}
+                    style={{ ...cellShape(col, row, completed), transition: 'background 120ms ease-out, border-radius 120ms ease-out' }}
+                  />
+                );
+              })}
+            </div>
+            <div className="text-xs text-ink-light leading-5 flex flex-col gap-1 mt-1">
+              <div className="flex items-center gap-2">
+                <span className="w-4 h-4 border border-border rounded-full inline-block" />
+                <span>Empty cell (incomplete)</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="w-4 h-4 bg-ink rounded-full inline-block" />
+                <span>Isolated completed day</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="flex gap-[6px]">
+                  <span className="w-4 h-4 bg-ink rounded-l-full inline-block" />
+                  <span className="w-4 h-4 bg-ink rounded-r-full inline-block" />
+                </div>
+                <span>Consecutive days (fused capsule)</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="w-4 h-4 [border:1.5px_solid_var(--color-ink)] rounded-full inline-block" />
+                <span>Today indicator</span>
+              </div>
+            </div>
+          </div>
+        </Card>
+
+        {/* 10 — Essential Tokens */}
+        <Card n={10} title="Essential Tokens" span>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div>
+              <span className="text-[10px] text-ink-light uppercase tracking-[0.1em] block mb-3">Spacing</span>
+              <div className="flex items-end gap-2">
+                {SPACING.map((s) => (
+                  <div key={s} className="flex flex-col items-center gap-1">
+                    <span className="rounded-full bg-dot" style={{ width: s, height: s }} />
+                    <span className="text-[9px] text-ink-light font-mono">{s}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div>
+              <span className="text-[10px] text-ink-light uppercase tracking-[0.1em] block mb-3">Radius</span>
+              <div className="flex items-end gap-2">
+                {RADII.map((r) => (
+                  <div key={r} className="flex flex-col items-center gap-1">
+                    <span className="w-7 h-7 border border-border bg-dot/40" style={{ borderRadius: r }} />
+                    <span className="text-[9px] text-ink-light font-mono">{r}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div>
+              <span className="text-[10px] text-ink-light uppercase tracking-[0.1em] block mb-3">Borders</span>
+              <div className="flex flex-col gap-2">
+                <span className="w-full border-t border-border" />
+                <span className="text-[10px] text-ink-light font-mono">1px · #E5E1D8</span>
+              </div>
+            </div>
+            <div>
+              <span className="text-[10px] text-ink-light uppercase tracking-[0.1em] block mb-3">Shadows</span>
+              <div className="flex gap-3">
+                <div className="flex flex-col items-center gap-1">
+                  <span className="w-10 h-10 rounded-[6px] bg-cream border border-border shadow-subtle" />
+                  <span className="text-[9px] text-ink-light">Subtle</span>
+                </div>
+                <div className="flex flex-col items-center gap-1">
+                  <span className="w-10 h-10 rounded-[6px] bg-cream border border-border shadow-medium" />
+                  <span className="text-[9px] text-ink-light">Medium</span>
+                </div>
+              </div>
+            </div>
+            <div className="sm:col-span-2 lg:col-span-4">
+              <span className="text-[10px] text-ink-light uppercase tracking-[0.1em] block mb-3">Motion</span>
+              <div className="flex flex-wrap gap-6">
+                {MOTION.map(({ ms, label }) => (
+                  <div key={ms} className="flex items-center gap-2">
+                    <span className="text-sm text-ink">{ms}</span>
+                    <span className="text-xs text-ink-light">{label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <label className="text-[10px] text-ink-light uppercase tracking-[0.1em] block mb-1.5">{label}</label>
+      {children}
     </div>
   );
 }

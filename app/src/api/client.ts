@@ -87,6 +87,7 @@ export interface Preferences {
   weekStart: 'sunday' | 'monday';
   theme: 'light' | 'dark' | 'system';
   notificationsEnabled: boolean;
+  font: 'lora' | 'patrick';
 }
 
 export async function fetchInboxTasks(): Promise<{ tasks: ApiTask[]; projectId: string | null }> {
@@ -103,6 +104,13 @@ export async function fetchUpcomingTasks(): Promise<Array<{ date: string; tasks:
 
 export async function fetchPreferences(): Promise<Preferences> {
   return request<Preferences>('/preferences');
+}
+
+export async function apiUpdatePreferences(patch: Partial<Preferences>): Promise<Preferences> {
+  return request<Preferences>('/preferences', {
+    method: 'PATCH',
+    body: JSON.stringify(patch),
+  });
 }
 
 export async function apiCreateTask(input: {

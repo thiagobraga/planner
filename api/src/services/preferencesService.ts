@@ -7,6 +7,7 @@ interface PreferencesRow {
   week_start: string;
   theme: string;
   notifications_enabled: boolean;
+  font: string;
 }
 
 function formatPreferences(row: PreferencesRow) {
@@ -16,11 +17,13 @@ function formatPreferences(row: PreferencesRow) {
     weekStart: row.week_start,
     theme: row.theme,
     notificationsEnabled: row.notifications_enabled,
+    font: row.font,
   };
 }
 
 const VALID_WEEK_STARTS = ["sunday", "monday"] as const;
 const VALID_THEMES = ["light", "dark", "system"] as const;
+const VALID_FONTS = ["lora", "patrick"] as const;
 
 function isValidIanaTimezone(tz: string): boolean {
   try {
@@ -36,6 +39,7 @@ export interface UpdatePreferencesInput {
   weekStart?: string;
   theme?: string;
   notificationsEnabled?: boolean;
+  font?: string;
 }
 
 export function validatePreferences(input: UpdatePreferencesInput): UpdatePreferencesInput {
@@ -57,6 +61,10 @@ export function validatePreferences(input: UpdatePreferencesInput): UpdatePrefer
 
   if (input.notificationsEnabled !== undefined && typeof input.notificationsEnabled !== "boolean") {
     errors.push({ field: "notificationsEnabled", message: "notificationsEnabled must be a boolean" });
+  }
+
+  if (input.font !== undefined && !VALID_FONTS.includes(input.font as (typeof VALID_FONTS)[number])) {
+    errors.push({ field: "font", message: "font must be 'lora' or 'patrick'" });
   }
 
   if (errors.length > 0) {
@@ -110,6 +118,10 @@ export async function updatePreferences(userId: string, input: UpdatePreferences
   if (input.notificationsEnabled !== undefined) {
     setClauses.push(`notifications_enabled = $${paramIndex++}`);
     values.push(input.notificationsEnabled);
+  }
+  if (input.font !== undefined) {
+    setClauses.push(`font = $${paramIndex++}`);
+    values.push(input.font);
   }
 
   if (setClauses.length === 0) {

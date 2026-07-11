@@ -1,16 +1,23 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Sidebar } from './Sidebar';
 import { QuickAdd } from './QuickAdd';
 import { SearchOverlay } from './SearchOverlay';
 import { matchKey, createMatcherState, DEFAULT_BINDINGS } from '../hooks/shortcuts';
 import type { MatcherState } from '../hooks/shortcuts';
 import { useSync } from '../hooks/useSync';
+import { fetchPreferences } from '../api/client';
+import { ensureFontLoaded } from '../utils/fontLoader';
 
 export function AppShell() {
   const navigate = useNavigate();
   const qc = useQueryClient();
+  const { data: preferences, isLoading: preferencesLoading } = useQuery({
+    queryKey: ['preferences'],
+    queryFn: fetchPreferences,
+    retry: 2,
+  });
 
   useSync(useCallback((event) => {
     if (event.entityType === 'task') {
@@ -25,6 +32,12 @@ export function AppShell() {
   const [helpOpen, setHelpOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => window.innerWidth < 640);
+
+  useEffect(() => {
+    if (preferences?.font) {
+      ensureFontLoaded(preferences.font);
+    }
+  }, [preferences?.font]);
 
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 639px)');
@@ -109,10 +122,11 @@ export function AppShell() {
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
         collapsed={sidebarCollapsed}
+        onOpenHelp={() => setHelpOpen(true)}
       />
 
       <main
-        className="main-content flex-1 overflow-y-auto p-6"
+        className={`main-content flex-1 overflow-y-auto p-6 ${preferences?.font === 'patrick' ? 'font-patrick' : 'font-journal'}`}
       >
         <Outlet />
       </main>
