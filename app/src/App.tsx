@@ -6,7 +6,7 @@ import { AppShell } from './components/AppShell';
 import { LoginPage } from './pages/LoginPage';
 import { InboxPage } from './pages/InboxPage';
 import { ProjectsPage } from './pages/ProjectsPage';
-import { TodayPage } from './pages/TodayPage';
+import { DailyPage } from './pages/DailyPage';
 import { HabitsPage } from './pages/HabitsPage';
 import { MonthlyPage } from './pages/MonthlyPage';
 import { SettingsPage } from './pages/SettingsPage';
@@ -15,17 +15,15 @@ import { StyleguidePage } from './pages/StyleguidePage';
 function AppRoutes() {
   const { isAuthenticated } = useAuth();
 
-  if (!isAuthenticated) {
-    return <LoginPage />;
-  }
-
   return (
     <BrowserRouter>
       <Routes>
-        <Route element={<AppShell />}>
-          <Route path="/" element={<Navigate to="/today" replace />} />
+        <Route path="/login" element={isAuthenticated ? <Navigate to="/daily" replace /> : <LoginPage />} />
+        <Route element={isAuthenticated ? <AppShell /> : <Navigate to="/login" replace />}>
+          <Route path="/" element={<Navigate to="/daily" replace />} />
+          <Route path="/today" element={<Navigate to="/daily" replace />} />
+          <Route path="/daily" element={<DailyPage />} />
           <Route path="/inbox" element={<InboxPage />} />
-          <Route path="/today" element={<TodayPage />} />
           <Route path="/monthly" element={<MonthlyPage />} />
           <Route path="/habits" element={<HabitsPage />} />
           <Route path="/settings" element={<SettingsPage />} />
