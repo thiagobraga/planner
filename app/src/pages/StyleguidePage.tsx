@@ -354,13 +354,6 @@ export function StyleguidePage() {
                       alwaysOpen
                     />
                   </div>
-                  <CustomSelect
-                    placeholder="Select a timezone..."
-                    options={Array.from({ length: 20 }, (_, i) => ({
-                      value: String(i),
-                      label: `Timezone Option ${i + 1}`,
-                    }))}
-                  />
                 </div>
               </Field>
               <Field label="Error state">
