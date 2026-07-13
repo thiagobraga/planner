@@ -324,14 +324,39 @@ export function StyleguidePage() {
                 <Input icon={<Search />} type="search" placeholder="Search tasks..." />
               </Field>
               <Field label="Select">
-                <CustomSelect
-                  options={[
-                    { value: '1', label: 'Select option' },
-                    { value: '2', label: 'Another option' },
-                  ]}
-                  value="1"
-                  onChange={setCustomSelectValue}
-                />
+                <div className="flex flex-col gap-3">
+                  <CustomSelect
+                    options={[
+                      { value: '1', label: 'Select option' },
+                      { value: '2', label: 'Another option' },
+                    ]}
+                    value={customSelectValue}
+                    onChange={setCustomSelectValue}
+                  />
+                  <CustomSelect
+                    options={[
+                      { value: '1', label: 'Available option' },
+                      { value: '2', label: 'Disabled option', disabled: true },
+                    ]}
+                    value="1"
+                  />
+                  <CustomSelect
+                    options={[{ value: '1', label: 'Disabled' }]}
+                    disabled
+                  />
+                  <CustomSelect
+                    options={[{ value: '1', label: 'Invalid choice' }]}
+                    value="1"
+                    error
+                  />
+                  <CustomSelect
+                    placeholder="Select a timezone..."
+                    options={Array.from({ length: 20 }, (_, i) => ({
+                      value: String(i),
+                      label: `Timezone Option ${i + 1}`,
+                    }))}
+                  />
+                </div>
               </Field>
               <Field label="Error state">
                 <Input error defaultValue="Invalid value" errorText="Check the information." />
