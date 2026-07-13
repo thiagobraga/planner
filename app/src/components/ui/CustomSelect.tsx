@@ -215,14 +215,11 @@ export function CustomSelect({
         aria-controls={isOpen ? `${id}-listbox` : undefined}
         className={buttonClasses}
       >
-        <input
-          type="text"
-          readOnly
-          tabIndex={-1}
-          className={`flex-1 p-0 min-w-0 bg-transparent border-0 outline-none text-sm cursor-pointer ${selectedOption ? 'text-ink' : 'text-ink-light opacity-50'}`}
-          value={selectedOption ? selectedOption.label : ''}
-          placeholder={placeholder}
-        />
+        <span
+          className={`flex-1 min-w-0 text-left truncate text-sm ${selectedOption ? 'text-ink' : 'text-ink-light opacity-50'}`}
+        >
+          {selectedOption ? selectedOption.label : placeholder}
+        </span>
         <ChevronDown size={16} className={error ? 'text-accent' : 'text-ink-light'} />
       </div>
 
