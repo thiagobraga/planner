@@ -42,7 +42,7 @@ export function CustomSelect({
     if (alwaysOpen) setIsOpen(true);
   }, [alwaysOpen]);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
-  const triggerRef = useRef<HTMLButtonElement>(null);
+  const triggerRef = useRef<HTMLDivElement>(null);
   const floatingRef = useRef<HTMLDivElement>(null);
   const listboxRef = useRef<HTMLUListElement>(null);
 
@@ -202,13 +202,14 @@ export function CustomSelect({
         </label>
       )}
 
-      <button
+      <div
         ref={triggerRef}
-        type="button"
+        role="button"
+        tabIndex={disabled ? -1 : 0}
         id={id}
-        disabled={disabled}
+        aria-disabled={disabled}
         onClick={toggleOpen}
-        onKeyDown={handleKeyDown}
+        onKeyDown={handleKeyDown as any}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
         aria-controls={isOpen ? `${id}-listbox` : undefined}
@@ -223,7 +224,7 @@ export function CustomSelect({
           placeholder={placeholder}
         />
         <ChevronDown size={16} className={error ? 'text-accent' : 'text-ink-light'} />
-      </button>
+      </div>
 
       {error && errorText && (
         <span className="text-[13px] text-accent mt-0.5">{errorText}</span>
