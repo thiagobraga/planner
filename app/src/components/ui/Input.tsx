@@ -30,7 +30,7 @@ export function Input({
           </span>
         )}
         <input
-          className="flex-1 min-w-0 bg-transparent border-0 outline-none text-sm text-ink placeholder:text-ink-light placeholder:opacity-50"
+          className="flex-1 p-0 min-w-0 bg-transparent border-0 outline-none text-sm text-ink placeholder:text-ink-light placeholder:opacity-50"
           {...rest}
         />
       </div>
