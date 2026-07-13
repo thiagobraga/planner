@@ -37,6 +37,10 @@ export function CustomSelect({
   alwaysOpen = false,
 }: CustomSelectProps) {
   const [isOpen, setIsOpen] = useState(alwaysOpen);
+  
+  useEffect(() => {
+    if (alwaysOpen) setIsOpen(true);
+  }, [alwaysOpen]);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const floatingRef = useRef<HTMLDivElement>(null);
@@ -233,7 +237,7 @@ export function CustomSelect({
                 const isSelected = option.value === value;
                 const isHighlighted = index === highlightedIndex;
 
-                let itemClass = `flex items-center h-8 px-3 text-[14px] font-journal cursor-pointer select-none `;
+                let itemClass = `flex items-center h-10 px-3 text-sm cursor-pointer select-none `;
                 if (option.disabled) {
                   itemClass += `opacity-40 cursor-not-allowed text-ink-light `;
                 } else if (isSelected) {
@@ -282,7 +286,7 @@ export function CustomSelect({
                 const isSelected = option.value === value;
                 const isHighlighted = index === highlightedIndex;
 
-                let itemClass = `flex items-center h-8 px-3 text-[14px] font-journal cursor-pointer select-none `;
+                let itemClass = `flex items-center h-10 px-3 text-sm cursor-pointer select-none `;
                 if (option.disabled) {
                   itemClass += `opacity-40 cursor-not-allowed text-ink-light `;
                 } else if (isSelected) {
