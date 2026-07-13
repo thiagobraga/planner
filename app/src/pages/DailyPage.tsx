@@ -3,13 +3,17 @@ import { useSync } from '../hooks/useSync';
 import { TaskList } from '../components/TaskList';
 import type { Task } from '../components/TaskItem';
 import { getPhrase } from '../utils/phrases';
+import { Checkbox } from '../components/ui/Checkbox';
 import {
   apiCreateTask,
   apiToggleTask,
   apiUpdateTask,
   apiDeleteTask,
   fetchTodayTasks,
+  fetchHabits,
+  apiToggleHabitCompletion,
   type ApiTask,
+  type ApiHabit,
 } from '../api/client';
 
 interface DaySection {
@@ -80,6 +84,7 @@ function tempId() { return `temp-daily-${++tempCounter}`; }
 export function DailyPage() {
   const phrase = useMemo(() => getPhrase('daily'), []);
   const [sections, setSections] = useState<DaySection[]>([]);
+  const [habits, setHabits] = useState<ApiHabit[]>([]);
   const [selectedId, setSelectedId] = useState<string>();
   const [editingId, setEditingId] = useState<string>();
   const [input, setInput] = useState('');
@@ -97,6 +102,25 @@ export function DailyPage() {
     });
   }, []);
 
+  useEffect(() => {
+    fetchHabits().then(setHabits).catch(() => setHabits([]));
+  }, []);
+
+  const handleHabitToggle = useCallback((id: string, isCompleted: boolean) => {
+    setHabits((prev) =>
+      prev.map((h) => {
+        if (h.id !== id) return h;
+        const completions = isCompleted
+          ? [...h.completions, todayKey]
+          : h.completions.filter((c) => c !== todayKey);
+        return { ...h, completions };
+      })
+    );
+    apiToggleHabitCompletion(id, todayKey, isCompleted).catch(() => {
+      fetchHabits().then(setHabits).catch(() => {});
+    });
+  }, []);
+
   const replaceTodayFromApi = useCallback(() => {
     fetchTodayTasks().then((response) => {
       const overdueTasks = (response.overdue || []).map(apiToTask);
@@ -106,6 +130,10 @@ export function DailyPage() {
   }, []);
 
   useSync(useCallback((event) => {
+    if (event.entityType === 'habit' || event.entityType === 'habit_completion') {
+      fetchHabits().then(setHabits).catch(() => {});
+      return;
+    }
     if (event.entityType !== 'task') return;
     if (event.eventType === 'deleted') {
       setSections((prev) =>
@@ -384,6 +412,30 @@ export function DailyPage() {
           {phrase}
         </p>
       </header>
+
+      {habits.length > 0 && (
+        <div className="mt-6">
+          <div className="text-[11px] tracking-[0.08em] uppercase text-ink-light leading-6 h-6 m-0 font-medium">
+            Habits
+          </div>
+          {habits.map((habit) => {
+            const done = habit.completions.includes(todayKey);
+            return (
+              <div key={habit.id} className="flex items-center h-6 pl-1">
+                <Checkbox
+                  checked={done}
+                  onChange={() => handleHabitToggle(habit.id, !done)}
+                  label={
+                    <span className={done ? 'text-ink-light line-through' : undefined}>
+                      {habit.name}
+                    </span>
+                  }
+                />
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {sections.map((section) => {
         const isToday = section.key === todayKey;
