@@ -1,18 +1,11 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { MoreHorizontal } from 'lucide-react';
 import { ContextMenu } from '../ui/ContextMenu';
 import { MonthStrip } from '../MonthStrip';
 import { fmtISO } from './HabitGrid';
 
-const LOOKBACK_WEEKS = 26;
 const CELL_W = 28;
 const DAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
-
-function addDays(d: Date, n: number) {
-  const x = new Date(d);
-  x.setDate(x.getDate() + n);
-  return x;
-}
 
 export interface TimelineHabit {
   id: string;
@@ -25,7 +18,7 @@ export interface TimelineHabit {
 export interface HabitTimelineProps {
   habits: TimelineHabit[];
   today: Date;
-  // Increment to smooth-scroll the timeline back to today (e.g. from a header button).
+  // Increment to jump the timeline back to the current month (e.g. from a header button).
   todaySignal?: number;
   onToggle: (habitId: string, isoDate: string, isCompleted: boolean) => void;
   onEdit: (habitId: string) => void;
@@ -36,14 +29,13 @@ interface DayCell {
   iso: string;
   letter: string;
   dayOfMonth: number;
-  monthKey: string; // YYYY-MM
+  future: boolean;
 }
 
-// Horizontal habit tracker: one row per habit, one column per day.
-// Done days render as filled dots in the habit color; consecutive done days
-// are joined by a connector line. Scrolls horizontally, pinned habit column.
+// Horizontal habit tracker for one month: one row per habit, one column per day.
+// Done days render as colored dots; consecutive done days are joined by a
+// connector line. Month is picked via the shared MonthStrip navigator.
 export function HabitTimeline({ habits, today, todaySignal, onToggle, onEdit, onDelete }: HabitTimelineProps) {
-  const scrollRef = useRef<HTMLDivElement>(null);
   const [menu, setMenu] = useState<{ habitId: string; x: number; y: number } | null>(null);
   const [selected, setSelected] = useState(() => ({
     year: today.getFullYear(),
@@ -51,59 +43,23 @@ export function HabitTimeline({ habits, today, todaySignal, onToggle, onEdit, on
   }));
 
   const days = useMemo<DayCell[]>(() => {
-    const total = LOOKBACK_WEEKS * 7;
-    const out: DayCell[] = [];
-    for (let i = total - 1; i >= 0; i--) {
-      const date = addDays(today, -i);
-      out.push({
+    const daysInMonth = new Date(selected.year, selected.month + 1, 0).getDate();
+    return Array.from({ length: daysInMonth }, (_, i) => {
+      const date = new Date(selected.year, selected.month, i + 1);
+      return {
         iso: fmtISO(date),
         letter: DAY_LETTERS[date.getDay()],
-        dayOfMonth: date.getDate(),
-        monthKey: fmtISO(date).slice(0, 7),
-      });
-    }
-    return out;
-  }, [today]);
-
-  // First day-column index of each month present in the range
-  const monthFirstIndex = useMemo(() => {
-    const seen = new Map<string, number>();
-    days.forEach((d, i) => {
-      if (!seen.has(d.monthKey)) seen.set(d.monthKey, i);
+        dayOfMonth: i + 1,
+        future: date.getTime() > today.getTime(),
+      };
     });
-    return seen;
-  }, [days]);
+  }, [selected, today]);
 
   const todayISO = fmtISO(today);
-
-  const scrollToIndex = (index: number) => {
-    scrollRef.current?.scrollTo({ left: index * CELL_W, behavior: 'smooth' });
-  };
-  const scrollToEnd = (smooth = true) => {
-    const el = scrollRef.current;
-    if (el) el.scrollTo({ left: el.scrollWidth, behavior: smooth ? 'smooth' : 'auto' });
-  };
-
-  const handleMonthChange = (year: number, month: number) => {
-    setSelected({ year, month });
-    const key = `${year}-${String(month + 1).padStart(2, '0')}`;
-    const index = monthFirstIndex.get(key);
-    if (index !== undefined) {
-      scrollToIndex(index);
-    } else if (key > todayISO.slice(0, 7)) {
-      scrollToEnd();
-    } else {
-      scrollToIndex(0);
-    }
-  };
-
-  // Start at today (right end)
-  useEffect(() => scrollToEnd(false), []);
 
   useEffect(() => {
     if (todaySignal) {
       setSelected({ year: today.getFullYear(), month: today.getMonth() });
-      scrollToEnd();
     }
   }, [todaySignal, today]);
 
@@ -113,12 +69,12 @@ export function HabitTimeline({ habits, today, todaySignal, onToggle, onEdit, on
       <MonthStrip
         year={selected.year}
         month={selected.month}
-        onChange={handleMonthChange}
+        onChange={(year, month) => setSelected({ year, month })}
         className="mt-6"
       />
 
       {/* Timeline table */}
-      <div ref={scrollRef} className="mt-6 overflow-x-auto border-t border-border">
+      <div className="mt-6 overflow-x-auto border-t border-border">
         <div className="inline-block min-w-full">
           {/* Header row */}
           <div className="flex border-b border-border">
@@ -130,7 +86,7 @@ export function HabitTimeline({ habits, today, todaySignal, onToggle, onEdit, on
             {days.map((d) => (
               <div
                 key={d.iso}
-                className="shrink-0 flex flex-col items-center justify-end gap-1 pb-2 pt-3"
+                className={`shrink-0 flex flex-col items-center justify-end gap-1 pb-2 pt-3 ${d.future ? 'opacity-40' : ''}`}
                 style={{ width: CELL_W }}
               >
                 <span className="text-[10px] leading-none text-ink-light opacity-70">{d.letter}</span>
@@ -171,9 +127,20 @@ export function HabitTimeline({ habits, today, todaySignal, onToggle, onEdit, on
               </div>
 
               {days.map((d, i) => {
+                if (d.future) {
+                  return (
+                    <span
+                      key={d.iso}
+                      aria-hidden="true"
+                      className="shrink-0 h-14"
+                      style={{ width: CELL_W }}
+                    />
+                  );
+                }
                 const done = habit.completions.has(d.iso);
                 const prevDone = i > 0 && done && habit.completions.has(days[i - 1].iso);
-                const nextDone = i < days.length - 1 && done && habit.completions.has(days[i + 1].iso);
+                const nextDone =
+                  i < days.length - 1 && done && !days[i + 1].future && habit.completions.has(days[i + 1].iso);
                 return (
                   <button
                     key={d.iso}
