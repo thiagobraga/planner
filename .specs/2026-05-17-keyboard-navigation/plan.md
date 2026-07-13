@@ -38,7 +38,7 @@
 - Modify: `app/src/components/TaskItem.tsx:20-32`
 - Modify: `app/src/components/TaskList.tsx:18-21`
 
-- [ ] **Step 1: Add prop to `TaskItemProps`**
+- **Step 1: Add prop to `TaskItemProps`**
 
 In `TaskItem.tsx`, add to the `TaskItemProps` interface after `onIndent`:
 
@@ -46,7 +46,7 @@ In `TaskItem.tsx`, add to the `TaskItemProps` interface after `onIndent`:
 onNavigate?: (id: string, dir: 'up' | 'down', col: number) => void;
 ```
 
-- [ ] **Step 2: Add to destructure in `TaskItem` function signature**
+- **Step 2: Add to destructure in `TaskItem` function signature**
 
 After `onIndent,` in the destructure:
 
@@ -54,7 +54,7 @@ After `onIndent,` in the destructure:
 onNavigate,
 ```
 
-- [ ] **Step 3: Add to `TaskCallbacks` pick in `TaskList.tsx`**
+- **Step 3: Add to `TaskCallbacks` pick in `TaskList.tsx`**
 
 Change:
 ```ts
@@ -71,25 +71,25 @@ type TaskCallbacks = Pick<
 >;
 ```
 
-- [ ] **Step 4: Pass `onNavigate` through in `TaskList` JSX**
+- **Step 4: Pass `onNavigate` through in `TaskList` JSX**
 
 In the `<TaskItem>` render inside `TaskList`, add:
 ```tsx
 onNavigate={onNavigate}
 ```
 
-- [ ] **Step 5: Add `onNavigate` to `TaskList` destructure**
+- **Step 5: Add `onNavigate` to `TaskList` destructure**
 
 In `TaskList` function params, add `onNavigate,` alongside the other callbacks.
 
-- [ ] **Step 6: Verify TypeScript compiles**
+- **Step 6: Verify TypeScript compiles**
 
 ```bash
 cd /p/projects/planner/app && npx tsc --noEmit
 ```
 Expected: 0 errors (onNavigate is optional so no call sites need updating yet)
 
-- [ ] **Step 7: Commit**
+- **Step 7: Commit**
 
 ```bash
 git add app/src/components/TaskItem.tsx app/src/components/TaskList.tsx
@@ -103,7 +103,7 @@ git commit -m "feat: add onNavigate prop to TaskItem and TaskList"
 **Files:**
 - Modify: `app/src/components/TaskItem.tsx`
 
-- [ ] **Step 1: Add module-level pending column state**
+- **Step 1: Add module-level pending column state**
 
 After the imports at the top of `TaskItem.tsx`, before the `Task` interface, add:
 
@@ -113,7 +113,7 @@ export function setPendingColumn(col: number | null): void { _pendingCol = col; 
 function consumePendingColumn(): number | null { const c = _pendingCol; _pendingCol = null; return c; }
 ```
 
-- [ ] **Step 2: Update `useEffect([isEditing])` to consume pending column**
+- **Step 2: Update `useEffect([isEditing])` to consume pending column**
 
 Replace lines 88–95:
 ```ts
@@ -139,7 +139,7 @@ useEffect(() => {
 }, [isEditing]);
 ```
 
-- [ ] **Step 3: Update `handleEditKeyDown` ArrowUp/Down cases**
+- **Step 3: Update `handleEditKeyDown` ArrowUp/Down cases**
 
 Replace lines 153–163:
 ```ts
@@ -174,14 +174,14 @@ With:
 
 Note: `focusAdjacent` function can remain — it's still used by the non-editing row key handler. No need to delete it.
 
-- [ ] **Step 4: Verify TypeScript compiles**
+- **Step 4: Verify TypeScript compiles**
 
 ```bash
 cd /p/projects/planner/app && npx tsc --noEmit
 ```
 Expected: 0 errors
 
-- [ ] **Step 5: Commit**
+- **Step 5: Commit**
 
 ```bash
 git add app/src/components/TaskItem.tsx
@@ -195,7 +195,7 @@ git commit -m "feat: column-preserving cursor on task edit navigation"
 **Files:**
 - Modify: `app/src/pages/InboxPage.tsx`
 
-- [ ] **Step 1: Import `setPendingColumn`**
+- **Step 1: Import `setPendingColumn`**
 
 Add to the import from `../components/TaskItem`:
 ```ts
@@ -212,7 +212,7 @@ import { setPendingColumn } from '../components/TaskItem';
 import type { Task } from '../components/TaskItem';
 ```
 
-- [ ] **Step 2: Add `handleNavigate` function**
+- **Step 2: Add `handleNavigate` function**
 
 Add after `handleIndent` (around line 172), before `handleToggle`:
 
@@ -244,14 +244,14 @@ const handleNavigate = useCallback((id: string, dir: 'up' | 'down', col: number)
 }, []); // eslint-disable-line react-hooks/exhaustive-deps
 ```
 
-- [ ] **Step 3: Pass `onNavigate` to `TaskList`**
+- **Step 3: Pass `onNavigate` to `TaskList`**
 
 In the `<TaskList>` JSX (around line 223), add:
 ```tsx
 onNavigate={handleNavigate}
 ```
 
-- [ ] **Step 4: Update add-task input ArrowUp handler**
+- **Step 4: Update add-task input ArrowUp handler**
 
 Replace the existing `onKeyDown` on the add-task `<input>` (lines 264–269):
 ```tsx
@@ -281,14 +281,14 @@ onKeyDown={(e) => {
 }}
 ```
 
-- [ ] **Step 5: Verify TypeScript compiles**
+- **Step 5: Verify TypeScript compiles**
 
 ```bash
 cd /p/projects/planner/app && npx tsc --noEmit
 ```
 Expected: 0 errors
 
-- [ ] **Step 6: Commit**
+- **Step 6: Commit**
 
 ```bash
 git add app/src/pages/InboxPage.tsx
