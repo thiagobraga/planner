@@ -247,3 +247,49 @@ export interface ProjectView {
 export async function fetchProjectView(id: string): Promise<ProjectView> {
   return request<ProjectView>(`/views/project/${id}`);
 }
+
+// ── Habits ───────────────────────────────────────────────────────────────────
+
+export interface ApiHabit {
+  id: string;
+  name: string;
+  note?: string;
+  orderValue: number;
+  completions: string[]; // ISO dates (YYYY-MM-DD), last 12 weeks
+}
+
+export async function fetchHabits(): Promise<ApiHabit[]> {
+  return request('/habits');
+}
+
+export async function apiCreateHabit(input: { name: string; note?: string }): Promise<ApiHabit> {
+  return request<ApiHabit>('/habits', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+}
+
+export async function apiUpdateHabit(
+  id: string,
+  updates: { name?: string; note?: string | null; orderValue?: number },
+): Promise<ApiHabit> {
+  return request<ApiHabit>(`/habits/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(updates),
+  });
+}
+
+export async function apiDeleteHabit(id: string): Promise<void> {
+  await request<unknown>(`/habits/${id}`, { method: 'DELETE' });
+}
+
+export async function apiToggleHabitCompletion(
+  id: string,
+  date: string,
+  isCompleted: boolean,
+): Promise<{ habitId: string; date: string; isCompleted: boolean }> {
+  return request(`/habits/${id}/completions`, {
+    method: 'PUT',
+    body: JSON.stringify({ date, isCompleted }),
+  });
+}
