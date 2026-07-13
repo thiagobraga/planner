@@ -31,9 +31,8 @@ function Card({
 }) {
   return (
     <section
-      className={`border border-border rounded-[8px] bg-cream/40 shadow-subtle p-5 ${
-        span ? 'lg:col-span-2' : ''
-      }`}
+      className={`border border-border rounded-[8px] bg-cream/40 shadow-subtle p-5 ${span ? 'lg:col-span-2' : ''
+        }`}
     >
       <h2 className="text-[11px] font-semibold text-ink uppercase tracking-[0.1em] mb-4">
         {title}
@@ -192,7 +191,7 @@ export function StyleguidePage() {
 
   return (
     <div className="max-w-5xl pb-24 text-ink">
-      <h1 className="text-lg leading-6 font-semibold text-ink">Styleguide Web</h1>
+      <h1 className="text-lg leading-6 font-semibold text-ink">Styleguide</h1>
       <p className="text-[13px] leading-6 text-ink-light opacity-70">
         Interface library for the Planner ecosystem
       </p>
@@ -327,18 +326,12 @@ export function StyleguidePage() {
                 <div className="flex flex-col gap-3">
                   <CustomSelect
                     options={[
-                      { value: '1', label: 'Select option' },
-                      { value: '2', label: 'Another option' },
+                      { value: '1', label: 'Another option' },
+                      { value: '2', label: 'Available option' },
+                      { value: '3', label: 'Disabled option', disabled: true },
                     ]}
                     value={customSelectValue}
                     onChange={setCustomSelectValue}
-                  />
-                  <CustomSelect
-                    options={[
-                      { value: '1', label: 'Available option' },
-                      { value: '2', label: 'Disabled option', disabled: true },
-                    ]}
-                    value="1"
                   />
                   <CustomSelect
                     options={[{ value: '1', label: 'Disabled' }]}
@@ -499,9 +492,8 @@ export function StyleguidePage() {
                     type="button"
                     onClick={() => toggleHabitCell(iso)}
                     aria-label={`${iso}${completed ? ' completed' : ''}`}
-                    className={`w-4 h-4 p-0 cursor-pointer ${
-                      isToday ? '[border:1.5px_solid_var(--color-ink)] bg-transparent' : completed ? 'border-none bg-ink' : 'border border-border bg-transparent'
-                    }`}
+                    className={`w-4 h-4 p-0 cursor-pointer ${isToday ? '[border:1.5px_solid_var(--color-ink)] bg-transparent' : completed ? 'border-none bg-ink' : 'border border-border bg-transparent'
+                      }`}
                     style={{ ...cellShape(col, row, completed), transition: 'background 120ms ease-out, border-radius 120ms ease-out' }}
                   />
                 );
@@ -590,8 +582,8 @@ export function StyleguidePage() {
           </div>
         </Card>
 
-        
-        
+
+
         {/* 13 — Context Menu */}
         <Card title="Context Menu">
           <div className="flex flex-col gap-4">
