@@ -178,7 +178,7 @@ export function CustomSelect({
   const buttonClasses = `
     flex items-center justify-between w-full h-10 px-3
     text-[14px] leading-6 font-journal
-    bg-cream border rounded-md
+    bg-cream border rounded-[8px]
     transition-colors duration-150
     ${disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer hover:border-ink/40'}
     ${error ? 'border-accent text-accent' : 'border-border text-ink'}
