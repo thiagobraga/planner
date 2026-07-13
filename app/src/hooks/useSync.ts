@@ -3,7 +3,7 @@ import { getSocket } from '../utils/socket';
 
 export interface SyncEvent {
   id: string;
-  entityType: 'task' | 'project' | 'section' | 'label' | 'comment' | 'reminder' | 'preferences';
+  entityType: 'task' | 'project' | 'section' | 'label' | 'comment' | 'reminder' | 'preferences' | 'habit' | 'habit_completion';
   eventType: 'created' | 'updated' | 'deleted' | 'completed' | 'uncompleted';
   entityId: string;
   userId: string;
