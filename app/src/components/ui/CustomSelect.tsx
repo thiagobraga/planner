@@ -231,7 +231,7 @@ export function CustomSelect({
       )}
 
       {isOpen && (alwaysOpen ? (
-        <div className="absolute z-10 py-1 bg-cream border border-border rounded-md shadow-medium left-0 right-0 top-full mt-1">
+        <div className="absolute z-10 p-1 bg-cream border border-border rounded-md shadow-medium left-0 right-0 top-full mt-1">
           <ul
               id={`${id}-listbox`}
               role="listbox"
@@ -243,7 +243,7 @@ export function CustomSelect({
                 const isSelected = option.value === value;
                 const isHighlighted = index === highlightedIndex;
 
-                let itemClass = `flex items-center h-10 px-3 text-sm cursor-pointer select-none `;
+                let itemClass = `flex items-center py-1.5 px-2 rounded-[4px] text-sm cursor-pointer select-none `;
                 if (option.disabled) {
                   itemClass += `opacity-40 cursor-not-allowed text-ink-light `;
                 } else if (isSelected) {
@@ -274,7 +274,7 @@ export function CustomSelect({
         createPortal(
           <div
             ref={floatingRef}
-            className="fixed z-50 py-1 bg-cream border border-border rounded-md shadow-medium"
+            className="fixed z-50 p-1 bg-cream border border-border rounded-md shadow-medium"
             style={{
               top,
               left,
@@ -292,7 +292,7 @@ export function CustomSelect({
                 const isSelected = option.value === value;
                 const isHighlighted = index === highlightedIndex;
 
-                let itemClass = `flex items-center h-10 px-3 text-sm cursor-pointer select-none `;
+                let itemClass = `flex items-center py-1.5 px-2 rounded-[4px] text-sm cursor-pointer select-none `;
                 if (option.disabled) {
                   itemClass += `opacity-40 cursor-not-allowed text-ink-light `;
                 } else if (isSelected) {
