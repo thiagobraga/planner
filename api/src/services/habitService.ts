@@ -2,8 +2,6 @@ import pool from "../db/pool.js";
 import { AppError } from "../utils/AppError.js";
 import { buildEvent, publishEvent } from "./syncService.js";
 
-const LOOKBACK_DAYS = 12 * 7;
-
 interface HabitRow {
   id: string;
   user_id: string;
@@ -66,8 +64,8 @@ export async function listHabits(userId: string): Promise<Habit[]> {
   const completionsResult = await pool.query(
     `SELECT habit_id, to_char(completed_date, 'YYYY-MM-DD') AS iso
      FROM habit_completions
-     WHERE habit_id = ANY($1) AND completed_date >= CURRENT_DATE - $2::int`,
-    [rows.map((r) => r.id), LOOKBACK_DAYS],
+     WHERE habit_id = ANY($1)`,
+    [rows.map((r) => r.id)],
   );
 
   const byHabit = new Map<string, string[]>();
