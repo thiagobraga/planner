@@ -40,12 +40,16 @@ export function SidebarNavItem({ label, icon, to, onClick, active = false }: Sid
   }
 
   return (
-    <button
-      type="button"
-      onClick={onClick}
+    <a
+      href="#"
+      role="button"
+      onClick={(e) => {
+        e.preventDefault();
+        onClick();
+      }}
       className={`${BASE_CLASS} w-full appearance-none bg-transparent border-0 cursor-pointer text-left focus:outline-none focus-visible:outline-none focus-visible:ring-0 ${stateClass}`}
     >
       {content}
-    </button>
+    </a>
   );
 }
