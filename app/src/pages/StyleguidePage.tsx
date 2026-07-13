@@ -206,7 +206,7 @@ export function StyleguidePage() {
             <div>
               <h3 className="text-[10px] text-ink-light uppercase tracking-[0.1em] font-semibold mb-4">Primary Palette</h3>
               <p className="text-[11px] text-ink-light mb-4">Base neutral and structural colors — calm, readable foundations for content.</p>
-              <div className="flex flex-col gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 gap-4">
                 {PRIMARY_COLORS.map(({ name, var: varName, hex }) => (
                   <div key={varName} className="flex items-start gap-3">
                     <span
@@ -215,9 +215,9 @@ export function StyleguidePage() {
                       title={varName}
                     />
                     <div className="flex flex-col gap-0.5">
-                      <span className="text-sm text-ink font-medium">{name}</span>
-                      <span className="text-[10px] text-ink-light font-mono">{varName}</span>
-                      <span className="text-[10px] text-ink-light font-mono">{hex}</span>
+                      <span className="text-sm text-ink font-medium leading-none mb-1">{name}</span>
+                      <span className="text-[10px] text-ink-light font-mono leading-none">{varName}</span>
+                      <span className="text-[10px] text-ink-light font-mono leading-none">{hex}</span>
                     </div>
                   </div>
                 ))}
@@ -226,7 +226,7 @@ export function StyleguidePage() {
             <div>
               <h3 className="text-[10px] text-ink-light uppercase tracking-[0.1em] font-semibold mb-4">Secondary Palette</h3>
               <p className="text-[11px] text-ink-light mb-4">Accent and semantic colors — for emphasis, priority, and status signals.</p>
-              <div className="flex flex-col gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 gap-4">
                 {SECONDARY_COLORS.map(({ name, var: varName, hex }) => (
                   <div key={varName} className="flex items-start gap-3">
                     <span
@@ -235,9 +235,9 @@ export function StyleguidePage() {
                       title={varName}
                     />
                     <div className="flex flex-col gap-0.5">
-                      <span className="text-sm text-ink font-medium">{name}</span>
-                      <span className="text-[10px] text-ink-light font-mono">{varName}</span>
-                      <span className="text-[10px] text-ink-light font-mono">{hex}</span>
+                      <span className="text-sm text-ink font-medium leading-none mb-1">{name}</span>
+                      <span className="text-[10px] text-ink-light font-mono leading-none">{varName}</span>
+                      <span className="text-[10px] text-ink-light font-mono leading-none">{hex}</span>
                     </div>
                   </div>
                 ))}
@@ -246,18 +246,18 @@ export function StyleguidePage() {
           </div>
           <div className="mt-6 pt-6 border-t border-border">
             <h3 className="text-[10px] text-ink-light uppercase tracking-[0.1em] font-semibold mb-4">Text & Foreground</h3>
-            <div className="flex flex-col gap-4 sm:flex-row">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               {INK_COLORS.map(({ name, var: varName, hex }) => (
-                <div key={varName} className="flex-1 flex items-start gap-3 sm:flex-col sm:items-center sm:text-center">
+                <div key={varName} className="flex items-start gap-3 sm:flex-col sm:items-center sm:text-center">
                   <span
                     className="w-10 h-10 rounded-[6px] border border-border flex-shrink-0 sm:flex-shrink"
                     style={{ backgroundColor: hex }}
                     title={varName}
                   />
                   <div className="flex flex-col gap-0.5">
-                    <span className="text-sm text-ink font-medium">{name}</span>
-                    <span className="text-[10px] text-ink-light font-mono">{varName}</span>
-                    <span className="text-[10px] text-ink-light font-mono">{hex}</span>
+                    <span className="text-sm text-ink font-medium leading-none mb-1">{name}</span>
+                    <span className="text-[10px] text-ink-light font-mono leading-none">{varName}</span>
+                    <span className="text-[10px] text-ink-light font-mono leading-none">{hex}</span>
                   </div>
                 </div>
               ))}
