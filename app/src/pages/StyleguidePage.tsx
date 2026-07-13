@@ -349,6 +349,18 @@ export function StyleguidePage() {
                     value="1"
                     error
                   />
+                  <div className="pb-[180px]">
+                    <CustomSelect
+                      placeholder="Select an option..."
+                      options={[
+                        { value: '1', label: 'Option 1' },
+                        { value: '2', label: 'Option 2' },
+                        { value: '3', label: 'Option 3' },
+                        { value: '4', label: 'Option 4' },
+                      ]}
+                      alwaysOpen
+                    />
+                  </div>
                   <CustomSelect
                     placeholder="Select a timezone..."
                     options={Array.from({ length: 20 }, (_, i) => ({
