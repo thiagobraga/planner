@@ -67,15 +67,15 @@ export function HabitBlock({
   const rate = thirtyDayRate(completions, today);
 
   return (
-    <section className="mt-12">
+    <section className="habit-block mt-12">
       {/* Habit header line */}
-      <div className="flex items-baseline gap-[14px]">
-        <h2 className="text-base leading-6 font-semibold text-ink">{name}</h2>
-        {note && <span className="text-xs text-ink-light italic">{note}</span>}
+      <div className="habit-block-header flex items-baseline gap-[14px]">
+        <h2 className="habit-block-title text-base leading-6 font-semibold text-ink">{name}</h2>
+        {note && <span className="habit-block-note text-xs text-ink-light italic">{note}</span>}
         <button
           type="button"
           aria-label={`Options for ${name}`}
-          className="ml-auto self-center p-1 rounded-[4px] text-ink-light hover:text-ink hover:bg-dot/30 cursor-pointer transition-colors duration-75"
+          className="habit-block-options ml-auto self-center p-1 rounded-[4px] text-ink-light hover:text-ink hover:bg-dot/30 cursor-pointer transition-colors duration-75"
           onClick={(e) => {
             const rect = e.currentTarget.getBoundingClientRect();
             setMenuPosition({ x: rect.left, y: rect.bottom + 4 });
@@ -98,19 +98,19 @@ export function HabitBlock({
       )}
 
       {/* Chain count + stats */}
-      <div className="flex items-end gap-6 mt-6 mb-6">
-        <div className="flex items-baseline gap-2">
+      <div className="habit-block-stats flex items-end gap-6 mt-6 mb-6">
+        <div className="habit-block-stats-chain flex items-baseline gap-2">
           <span
-            className={`text-[48px] leading-[48px] font-semibold tracking-[-0.02em] ${chain > 0 ? 'text-ink' : 'text-ink-light'}`}
+            className={`habit-block-stats-chain-value text-[48px] leading-[48px] font-semibold tracking-[-0.02em] ${chain > 0 ? 'text-ink' : 'text-ink-light'}`}
           >
             {chain}
           </span>
-          <span className="text-[11px] tracking-widest uppercase text-ink-light font-medium">
+          <span className="habit-block-stats-chain-label text-[11px] tracking-widest uppercase text-ink-light font-medium">
             day{chain === 1 ? '' : 's'} unbroken
           </span>
         </div>
 
-        <div className="flex-1 flex gap-5 justify-end text-xs text-ink-light pb-1">
+        <div className="habit-block-stats-meta flex-1 flex gap-5 justify-end text-xs text-ink-light pb-1">
           <span>
             longest <span className="text-ink font-medium">{longest}</span>
           </span>

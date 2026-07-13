@@ -13,7 +13,7 @@ export interface ToggleProps {
 export function Toggle({ checked, onChange, disabled = false, label, id, className = '' }: ToggleProps) {
   return (
     <label
-      className={`inline-flex items-center gap-2 select-none ${
+      className={`ui-toggle inline-flex items-center gap-2 select-none ${
         disabled ? 'cursor-not-allowed opacity-40' : 'cursor-pointer'
       } ${className}`}
     >
@@ -24,17 +24,17 @@ export function Toggle({ checked, onChange, disabled = false, label, id, classNa
         aria-checked={checked}
         disabled={disabled}
         onClick={() => onChange?.(!checked)}
-        className={`relative inline-flex items-center w-9 h-5 rounded-full border border-transparent transition-colors duration-[var(--motion-fast)] ${
+        className={`ui-toggle-switch relative inline-flex items-center w-9 h-5 rounded-full border border-transparent transition-colors duration-[var(--motion-fast)] ${
           checked ? 'bg-ink' : 'bg-dot'
         } ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'}`}
       >
         <span
-          className={`inline-block w-4 h-4 rounded-full bg-cream transition-transform duration-[var(--motion-fast)] ${
+          className={`ui-toggle-knob inline-block w-4 h-4 rounded-full bg-cream transition-transform duration-[var(--motion-fast)] ${
             checked ? 'translate-x-[18px]' : 'translate-x-[2px]'
           }`}
         />
       </button>
-      {label && <span className="flex-1 text-sm text-ink leading-6 text-left">{label}</span>}
+      {label && <span className="ui-toggle-label flex-1 text-sm text-ink leading-6 text-left">{label}</span>}
     </label>
   );
 }

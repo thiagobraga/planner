@@ -57,21 +57,21 @@ export function HabitGrid({ completions, today, onToggle }: HabitGridProps) {
   };
 
   return (
-    <div>
+    <div className="habit-grid">
       {/* Day labels */}
-      <div className="grid [grid-template-columns:repeat(7,16px)] gap-x-[6px] mb-[6px] text-[10px] text-ink-light tracking-wider">
+      <div className="habit-grid-labels grid [grid-template-columns:repeat(7,16px)] gap-x-[6px] mb-[6px] text-[10px] text-ink-light tracking-wider">
         {DAY_LABELS.map((d, i) => (
-          <span key={i} className="text-center opacity-70">
+          <span key={i} className="habit-grid-labels-day text-center opacity-70">
             {d}
           </span>
         ))}
       </div>
 
       {/* Grid */}
-      <div className="grid [grid-template-columns:repeat(7,16px)] [grid-auto-rows:16px] gap-[6px]">
+      <div className="habit-grid-cells grid [grid-template-columns:repeat(7,16px)] [grid-auto-rows:16px] gap-[6px]">
         {cells.map(({ iso, col, row, future }) => {
           if (future) {
-            return <span key={iso} aria-hidden="true" />;
+            return <span key={iso} aria-hidden="true" className="habit-grid-cell-future" />;
           }
 
           const completed = completions.has(iso);
@@ -85,7 +85,7 @@ export function HabitGrid({ completions, today, onToggle }: HabitGridProps) {
               onClick={() => onToggle(iso, !completed)}
               aria-label={`${iso}${completed ? ' completed' : ' not completed'}${isToday ? ' (today)' : ''}`}
               aria-pressed={completed}
-              className={`w-4 h-4 p-0 cursor-pointer ${
+              className={`habit-grid-cell w-4 h-4 p-0 cursor-pointer ${
                 isToday
                   ? '[border:1.5px_solid_var(--color-ink)] bg-transparent'
                   : completed

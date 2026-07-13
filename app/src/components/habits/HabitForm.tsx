@@ -31,8 +31,8 @@ export function HabitForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="mt-6 p-6 border border-border rounded-[8px] bg-cream">
-      <div className="flex flex-col gap-4">
+    <form onSubmit={handleSubmit} className="habit-form mt-6 p-6 border border-border rounded-[8px] bg-cream">
+      <div className="habit-form-fields flex flex-col gap-4">
         <Input
           placeholder="Habit name"
           value={name}
@@ -46,7 +46,7 @@ export function HabitForm({
           onChange={(e) => setNote(e.target.value)}
         />
       </div>
-      <div className="flex gap-2 justify-end mt-6">
+      <div className="habit-form-actions flex gap-2 justify-end mt-6">
         <Button variant="tertiary" onClick={onCancel}>
           Cancel
         </Button>

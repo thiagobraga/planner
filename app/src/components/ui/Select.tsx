@@ -11,10 +11,10 @@ export function Select({ error = false, className = '', children, ...rest }: Sel
 
   return (
     <div
-      className={`relative flex items-center h-10 rounded-[8px] border bg-cream ${borderClass} transition-colors duration-[var(--motion-fast)] ${className}`}
+      className={`ui-select relative flex items-center h-10 rounded-[8px] border bg-cream ${borderClass} transition-colors duration-[var(--motion-fast)] ${className}`}
     >
       <select
-        className="peer flex-1 min-w-0 h-full px-3 pr-9 py-2 bg-transparent border-0 outline-none appearance-none text-sm text-ink cursor-pointer"
+        className="ui-select-field peer flex-1 min-w-0 h-full px-3 pr-9 py-2 bg-transparent border-0 outline-none appearance-none text-sm text-ink cursor-pointer"
         {...rest}
       >
         {children}
@@ -22,7 +22,7 @@ export function Select({ error = false, className = '', children, ...rest }: Sel
       <ChevronDown
         size={16}
         strokeWidth={1.5}
-        className="pointer-events-none absolute right-3 text-ink-light"
+        className="ui-select-chevron pointer-events-none absolute right-3 text-ink-light"
       />
     </div>
   );
