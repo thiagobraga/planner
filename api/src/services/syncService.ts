@@ -7,7 +7,7 @@ import { redisPubClient, redisSubClient } from "../db/redis.js";
 const JWT_SECRET = process.env.JWT_SECRET || "dev-secret-change-me";
 const SYNC_CHANNEL = "sync";
 
-export type SyncEntityType = "task" | "project" | "section" | "label" | "comment" | "reminder" | "preferences";
+export type SyncEntityType = "task" | "project" | "section" | "label" | "comment" | "reminder" | "preferences" | "habit" | "habit_completion";
 export type SyncEventType = "created" | "updated" | "deleted" | "completed" | "uncompleted";
 
 export interface SyncEvent {

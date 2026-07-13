@@ -10,6 +10,7 @@ import searchRoutes from "./search.js";
 import reminderRoutes, { taskReminderRouter } from "./reminders.js";
 import commentRoutes, { taskCommentRouter } from "./comments.js";
 import preferencesRoutes from "./preferences.js";
+import habitRoutes from "./habits.js";
 import activityRoutes from "./activity.js";
 import collaborationRoutes, { projectCollabRouter } from "./collaboration.js";
 
@@ -31,6 +32,7 @@ router.use("/tasks/:taskId/reminders", taskReminderRouter);
 router.use("/comments", commentRoutes);
 router.use("/tasks/:taskId/comments", taskCommentRouter);
 router.use("/preferences", preferencesRoutes);
+router.use("/habits", habitRoutes);
 router.use("/activity", activityRoutes);
 router.use("/", collaborationRoutes);
 router.use("/projects/:id", projectCollabRouter);
