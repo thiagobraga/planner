@@ -20,6 +20,7 @@ export interface CustomSelectProps {
   errorText?: string;
   className?: string;
   id?: string;
+  alwaysOpen?: boolean;
 }
 
 export function CustomSelect({
@@ -33,8 +34,9 @@ export function CustomSelect({
   errorText,
   className = '',
   id,
+  alwaysOpen = false,
 }: CustomSelectProps) {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(alwaysOpen);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const floatingRef = useRef<HTMLDivElement>(null);
@@ -60,13 +62,14 @@ export function CustomSelect({
     if (!isOpen) return;
 
     function handleMouseDown(e: MouseEvent) {
+      if (alwaysOpen) return;
       if (
         floatingRef.current &&
         !floatingRef.current.contains(e.target as Node) &&
         triggerRef.current &&
         !triggerRef.current.contains(e.target as Node)
       ) {
-        setIsOpen(false);
+        if (!alwaysOpen) setIsOpen(false);
       }
     }
 
@@ -96,15 +99,17 @@ export function CustomSelect({
   }, [highlightedIndex, isOpen]);
 
   const toggleOpen = () => {
-    if (disabled) return;
+    if (disabled || alwaysOpen) return;
     setIsOpen(!isOpen);
   };
 
   const handleSelect = (option: SelectOption) => {
     if (option.disabled) return;
     onChange?.(option.value);
-    setIsOpen(false);
-    triggerRef.current?.focus();
+    if (!alwaysOpen) {
+      setIsOpen(false);
+      triggerRef.current?.focus();
+    }
   };
 
   const handleKeyDown = (e: KeyboardEvent) => {
@@ -121,7 +126,7 @@ export function CustomSelect({
     switch (e.key) {
       case 'Escape':
         e.preventDefault();
-        setIsOpen(false);
+        if (!alwaysOpen) setIsOpen(false);
         triggerRef.current?.focus();
         break;
       case 'Enter':
@@ -177,12 +182,11 @@ export function CustomSelect({
 
   const buttonClasses = `
     flex items-center justify-between w-full h-10 px-3
-    text-[14px] leading-6 font-journal
-    bg-cream border rounded-[8px]
-    transition-colors duration-150
-    ${disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer hover:border-ink/40'}
-    ${error ? 'border-accent text-accent' : 'border-border text-ink'}
-    focus-visible:outline focus-visible:outline-2 focus-visible:outline-ink focus-visible:-outline-offset-2
+    text-sm text-left bg-cream border rounded-[8px]
+    transition-colors duration-[var(--motion-fast)]
+    ${disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}
+    ${error ? 'border-accent text-accent' : 'border-border focus:border-ink'}
+    outline-none
     ${className}
   `;
 
@@ -216,7 +220,47 @@ export function CustomSelect({
         <span className="text-[13px] text-accent mt-0.5">{errorText}</span>
       )}
 
-      {isOpen &&
+      {isOpen && (alwaysOpen ? (
+        <div className="absolute z-10 py-1 bg-cream border border-border rounded-md shadow-medium left-0 right-0 top-full mt-1">
+          <ul
+              id={`${id}-listbox`}
+              role="listbox"
+              ref={listboxRef}
+              className="max-h-[240px] overflow-y-auto"
+              tabIndex={-1}
+            >
+              {options.map((option, index) => {
+                const isSelected = option.value === value;
+                const isHighlighted = index === highlightedIndex;
+
+                let itemClass = `flex items-center h-8 px-3 text-[14px] font-journal cursor-pointer select-none `;
+                if (option.disabled) {
+                  itemClass += `opacity-40 cursor-not-allowed text-ink-light `;
+                } else if (isSelected) {
+                  itemClass += `bg-[#d4cfc7]/60 text-ink `;
+                } else if (isHighlighted) {
+                  itemClass += `bg-[#d4cfc7]/40 text-ink `;
+                } else {
+                  itemClass += `text-ink hover:bg-[#d4cfc7]/40 `;
+                }
+
+                return (
+                  <li
+                    key={option.value}
+                    role="option"
+                    aria-selected={isSelected}
+                    aria-disabled={option.disabled}
+                    className={itemClass}
+                    onClick={() => handleSelect(option)}
+                    onMouseEnter={() => !option.disabled && setHighlightedIndex(index)}
+                  >
+                    {option.label}
+                  </li>
+                );
+              })}
+            </ul>
+        </div>
+      ) : (
         createPortal(
           <div
             ref={floatingRef}
@@ -266,7 +310,8 @@ export function CustomSelect({
             </ul>
           </div>,
           document.body
-        )}
+        )
+      ))}
     </div>
   );
 }
