@@ -185,7 +185,7 @@ export function CustomSelect({
   };
 
   const buttonClasses = `
-    flex items-center justify-between w-full h-10 px-3
+    flex items-center gap-2 w-full h-10 px-3
     text-sm text-left bg-cream border rounded-[8px]
     transition-colors duration-[var(--motion-fast)]
     ${disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}
@@ -214,9 +214,14 @@ export function CustomSelect({
         aria-controls={isOpen ? `${id}-listbox` : undefined}
         className={buttonClasses}
       >
-        <span className={selectedOption ? 'text-ink' : 'text-ink-light opacity-50'}>
-          {selectedOption ? selectedOption.label : placeholder}
-        </span>
+        <input
+          type="text"
+          readOnly
+          tabIndex={-1}
+          className={`flex-1 min-w-0 bg-transparent border-0 outline-none text-sm cursor-pointer ${selectedOption ? 'text-ink' : 'text-ink-light opacity-50'}`}
+          value={selectedOption ? selectedOption.label : ''}
+          placeholder={placeholder}
+        />
         <ChevronDown size={16} className={error ? 'text-accent' : 'text-ink-light'} />
       </button>
 
