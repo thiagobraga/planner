@@ -15,6 +15,9 @@ import { StatusPill } from '../components/ui/StatusPill';
 import { PriorityDot } from '../components/ui/PriorityDot';
 import { ViewToolbar } from '../components/ui/ViewToolbar';
 import { TaskRowSpecimen } from '../components/ui/TaskRowSpecimen';
+import { CustomSelect } from '../components/ui/CustomSelect';
+import { ContextMenu, ContextMenuItem } from '../components/ui/ContextMenu';
+import { Briefcase, Calendar as CalendarIcon, Tag, ArrowUp, ArrowDown } from 'lucide-react';
 
 // ── Card wrapper ──────────────────────────────────────────────────────────────
 function Card({
@@ -157,6 +160,37 @@ export function StyleguidePage() {
   const [radioChoice, setRadioChoice] = useState('a');
   const [toggleOn, setToggleOn] = useState(true);
   const [checkOn, setCheckOn] = useState(false);
+
+  // CustomSelect state
+  const [customSelectValue, setCustomSelectValue] = useState('2');
+
+  // ContextMenu state
+  const [contextMenuPos, setContextMenuPos] = useState<{ x: number; y: number } | null>(null);
+
+  const contextMenuItems: ContextMenuItem[] = useMemo(() => [
+    { type: 'item', label: 'Date', disabled: true, icon: <CalendarIcon size={14} /> },
+    { type: 'item', label: 'Priority', disabled: true, icon: <Tag size={14} /> },
+    {
+      type: 'item',
+      label: 'Project',
+      icon: <Briefcase size={14} />,
+      submenu: [
+        { type: 'item', label: 'No project', onClick: () => console.log('No project') },
+        { type: 'separator' },
+        ...PROJECTS.map(p => ({
+          type: 'item' as const,
+          label: p.name,
+          icon: <span className="w-2 h-2 rounded-full" style={{ backgroundColor: `var(--color-${p.color})` }} />,
+          onClick: () => console.log(`Selected ${p.name}`)
+        }))
+      ]
+    },
+    { type: 'separator' },
+    { type: 'item', label: 'Add above', icon: <ArrowUp size={14} /> },
+    { type: 'item', label: 'Add below', icon: <ArrowDown size={14} /> },
+    { type: 'separator' },
+    { type: 'item', label: 'Delete', destructive: true, icon: <Trash2 size={14} /> }
+  ], []);
 
   return (
     <div className="max-w-5xl pb-24 text-ink">
@@ -515,6 +549,79 @@ export function StyleguidePage() {
                 </div>
               ))}
             </div>
+          </div>
+        </Card>
+        {/* 12 — Custom Select */}
+        <Card n={12} title="Custom Select">
+          <div className="flex flex-col gap-5">
+            <Field label="Default / Selected">
+              <CustomSelect
+                options={[
+                  { value: '1', label: 'Option 1' },
+                  { value: '2', label: 'Option 2 (Selected)' },
+                  { value: '3', label: 'Option 3' },
+                ]}
+                value={customSelectValue}
+                onChange={setCustomSelectValue}
+              />
+            </Field>
+            <Field label="Disabled option">
+              <CustomSelect
+                options={[
+                  { value: '1', label: 'Available option' },
+                  { value: '2', label: 'Disabled option', disabled: true },
+                ]}
+                value="1"
+              />
+            </Field>
+            <Field label="Disabled component">
+              <CustomSelect
+                options={[{ value: '1', label: 'Disabled' }]}
+                disabled
+              />
+            </Field>
+            <Field label="Error state">
+              <CustomSelect
+                options={[{ value: '1', label: 'Invalid choice' }]}
+                value="1"
+                error
+                errorText="This selection is invalid."
+              />
+            </Field>
+            <Field label="Many options (Scroll)">
+              <CustomSelect
+                placeholder="Select a timezone..."
+                options={Array.from({ length: 20 }, (_, i) => ({
+                  value: String(i),
+                  label: `Timezone Option ${i + 1}`,
+                }))}
+              />
+            </Field>
+          </div>
+        </Card>
+
+        {/* 13 — Context Menu */}
+        <Card n={13} title="Context Menu">
+          <div className="flex flex-col gap-4">
+            <p className="text-[13px] text-ink-light leading-5">
+              Right-click the area below to test the context menu, or view the static specimens.
+            </p>
+            <div
+              className="h-32 border-2 border-dashed border-border rounded-md flex items-center justify-center bg-[#d4cfc7]/20 text-ink-light text-sm select-none"
+              onContextMenu={(e) => {
+                e.preventDefault();
+                setContextMenuPos({ x: e.clientX, y: e.clientY });
+              }}
+            >
+              Right-click me
+            </div>
+            {contextMenuPos && (
+              <ContextMenu
+                items={contextMenuItems}
+                position={contextMenuPos}
+                onClose={() => setContextMenuPos(null)}
+              />
+            )}
           </div>
         </Card>
       </div>
