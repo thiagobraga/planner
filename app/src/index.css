@@ -124,20 +124,22 @@
   font-variant-caps: small-caps;
 }
 
-body {
-  background-color: var(--color-cream);
-  font-family: "Lora", serif;
-  font-size: 14px;
-  line-height: var(--dot-grid);
-  color: var(--color-ink);
-  margin: 0;
-  padding: 0;
-}
+@layer base {
+  body {
+    background-color: var(--color-cream);
+    font-family: "Lora", serif;
+    font-size: 14px;
+    line-height: var(--dot-grid);
+    color: var(--color-ink);
+    margin: 0;
+    padding: 0;
+  }
 
-h1, h2, h3, h4, h5, h6, p, ul, ol, li, dl, dt, dd, blockquote, figure, figcaption, pre, code, form, input, button, select, textarea {
-  margin: 0;
-  padding: 0;
-  line-height: var(--dot-grid);
+  h1, h2, h3, h4, h5, h6, p, ul, ol, li, dl, dt, dd, blockquote, figure, figcaption, pre, code, form, input, button, select, textarea {
+    margin: 0;
+    padding: 0;
+    line-height: var(--dot-grid);
+  }
 }
 
 /* Keyboard hint chips */
