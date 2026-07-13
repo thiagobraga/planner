@@ -74,11 +74,11 @@ export function HabitTimeline({ habits, today, todaySignal, onToggle, onEdit, on
       />
 
       {/* Timeline table */}
-      <div className="mt-6 overflow-x-auto border-t border-border">
+      <div className="mt-6 overflow-x-auto">
         <div className="inline-block min-w-full">
           {/* Header row */}
-          <div className="flex border-b border-border">
-            <div className="sticky left-0 z-10 shrink-0 w-32 bg-cream flex items-end pb-2 pr-3 border-r border-border">
+          <div className="flex">
+            <div className="sticky left-0 z-10 shrink-0 w-32 flex items-end pb-2 pr-3">
               <span className="text-[10px] tracking-[0.08em] uppercase text-ink-light font-medium">
                 Habit
               </span>
@@ -103,8 +103,8 @@ export function HabitTimeline({ habits, today, todaySignal, onToggle, onEdit, on
 
           {/* Habit rows */}
           {habits.map((habit) => (
-            <div key={habit.id} className="flex border-b border-border group">
-              <div className="sticky left-0 z-10 shrink-0 w-32 bg-cream flex items-center gap-2 pr-2 border-r border-border h-14">
+            <div key={habit.id} className="flex group">
+              <div className="sticky left-0 z-10 shrink-0 w-32 flex items-center gap-2 pr-2 h-14">
                 <span
                   className="w-2 h-2 rounded-full shrink-0"
                   style={{ background: habit.color }}
