@@ -70,10 +70,10 @@ export function TaskList({
         <div
           role="list"
           aria-label="task list"
-          className="flex flex-col gap-0"
+          className="task-list flex flex-col gap-0"
         >
           {tasks.map((task) => (
-            <div key={task.id} role="listitem">
+            <div key={task.id} role="listitem" className="task-list-item">
               <TaskItem
                 task={task}
                 isSelected={task.id === selectedTaskId}

@@ -134,7 +134,7 @@ export function AppShell() {
 
   return (
     <div
-      className={`flex h-screen overflow-hidden ${FONT_CLASSES[preferences?.font ?? 'lora']}${preferences?.smallCaps ? ' small-caps' : ''}`}
+      className={`app-shell flex h-screen overflow-hidden ${FONT_CLASSES[preferences?.font ?? 'lora']}${preferences?.smallCaps ? ' small-caps' : ''}`}
       style={shellThemeStyle}
     >
       {/* Mobile menu button — only shown below collapsed breakpoint (≥640px uses collapsed sidebar) */}
@@ -143,7 +143,7 @@ export function AppShell() {
           type="button"
           aria-label="Open navigation"
           onClick={() => setSidebarOpen(true)}
-          className="mobile-menu-btn hidden fixed top-3 left-3 z-[60] bg-cream border border-dot rounded py-1 px-2 text-base cursor-pointer"
+          className="app-shell-mobile-menu-btn mobile-menu-btn hidden fixed top-3 left-3 z-[60] bg-cream border border-dot rounded py-1 px-2 text-base cursor-pointer"
         >
           ☰
         </button>
@@ -157,7 +157,7 @@ export function AppShell() {
       />
 
       <main
-        className="main-content flex-1 overflow-y-auto p-6"
+        className="app-shell-main-content main-content flex-1 overflow-y-auto p-6"
         style={{
           backgroundColor: pageBackground,
           backgroundImage: preferences?.showDots === false ? 'none' : 'radial-gradient(circle, var(--color-dot) 1px, transparent 1px)',
@@ -190,16 +190,16 @@ export function AppShell() {
           aria-modal="true"
           aria-label="Keyboard shortcuts"
           onClick={() => setHelpOpen(false)}
-          className="fixed inset-0 z-[100] bg-[rgba(44,44,44,0.3)] backdrop-blur-[2px] flex items-center justify-center"
+          className="app-shell-help-dialog fixed inset-0 z-[100] bg-[rgba(44,44,44,0.3)] backdrop-blur-[2px] flex items-center justify-center"
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="bg-cream border border-dot rounded-md py-6 px-8 min-w-[320px] shadow-[0_8px_32px_rgba(44,44,44,0.15)]"
+            className="app-shell-help-dialog-content bg-cream border border-dot rounded-md py-6 px-8 min-w-[320px] shadow-[0_8px_32px_rgba(44,44,44,0.15)]"
           >
-            <h2 className="text-base font-semibold text-ink mb-4">
+            <h2 className="app-shell-help-title text-base font-semibold text-ink mb-4">
               Keyboard Shortcuts
             </h2>
-            <table className="w-full border-collapse text-[13px]">
+            <table className="app-shell-help-shortcuts w-full border-collapse text-[13px]">
               <tbody>
                 {[
                   ['q', 'Quick add task'],
@@ -226,7 +226,7 @@ export function AppShell() {
                 ))}
               </tbody>
             </table>
-            <div className="mt-4 text-right">
+            <div className="app-shell-help-footer mt-4 text-right">
               <Button variant="primary" onClick={() => setHelpOpen(false)}>
                 Close
               </Button>

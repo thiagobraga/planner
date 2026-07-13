@@ -61,15 +61,15 @@ export function Sidebar({ isOpen, onClose, collapsed = false, onOpenHelp }: Side
   if (collapsed) {
     return (
       <aside
-        className="w-12 h-full flex flex-col items-center border-r border-dot bg-[var(--planner-sidebar-bg)] py-6 shrink-0 overflow-y-auto"
+        className="sidebar sidebar-collapsed w-12 h-full flex flex-col items-center border-r border-dot bg-[var(--planner-sidebar-bg)] py-6 shrink-0 overflow-y-auto"
         aria-label="Navigation"
       >
         {/* Logo mark */}
-        <div className="mb-6" title="Planner">
+        <div className="sidebar-logo mb-6" title="Planner">
           <PlannerIcon size={16} />
         </div>
 
-        <nav aria-label="Main navigation" className="flex flex-col gap-0.5 w-full items-center">
+        <nav aria-label="Main navigation" className="sidebar-nav flex flex-col gap-0.5 w-full items-center">
           {NAV_ITEMS.map((entry) => (
             <NavLink
               key={entry.to}
