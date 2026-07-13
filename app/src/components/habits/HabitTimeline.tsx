@@ -64,7 +64,7 @@ export function HabitTimeline({ habits, today, todaySignal, onToggle, onEdit, on
   }, [todaySignal, today]);
 
   return (
-    <div>
+    <div className="habit-timeline">
       {/* Month navigator (shared with Monthly page) */}
       <MonthStrip
         year={selected.year}
@@ -74,24 +74,24 @@ export function HabitTimeline({ habits, today, todaySignal, onToggle, onEdit, on
       />
 
       {/* Timeline table */}
-      <div className="mt-6 overflow-x-auto">
-        <div className="inline-block min-w-full">
+      <div className="habit-timeline-table mt-6 overflow-x-auto">
+        <div className="habit-timeline-table-inner inline-block min-w-full">
           {/* Header row */}
-          <div className="flex">
-            <div className="sticky left-0 z-10 shrink-0 w-32 flex items-end pb-2 pr-3">
-              <span className="text-[10px] tracking-[0.08em] uppercase text-ink-light font-medium">
+          <div className="habit-timeline-header flex">
+            <div className="habit-timeline-header-label sticky left-0 z-10 shrink-0 w-32 flex items-end pb-2 pr-3">
+              <span className="habit-timeline-header-text text-[10px] tracking-[0.08em] uppercase text-ink-light font-medium">
                 Habit
               </span>
             </div>
             {days.map((d) => (
               <div
                 key={d.iso}
-                className={`shrink-0 flex flex-col items-center justify-end gap-1 pb-2 pt-3 ${d.future ? 'opacity-40' : ''}`}
+                className={`habit-timeline-header-day shrink-0 flex flex-col items-center justify-end gap-1 pb-2 pt-3 ${d.future ? 'opacity-40' : ''}`}
                 style={{ width: CELL_W }}
               >
-                <span className="text-[10px] leading-none text-ink-light opacity-70">{d.letter}</span>
+                <span className="habit-timeline-header-day-letter text-[10px] leading-none text-ink-light opacity-70">{d.letter}</span>
                 <span
-                  className={`text-[10px] leading-none ${
+                  className={`habit-timeline-header-day-number text-[10px] leading-none ${
                     d.iso === todayISO ? 'text-ink font-semibold' : 'text-ink-light'
                   }`}
                 >
@@ -103,20 +103,20 @@ export function HabitTimeline({ habits, today, todaySignal, onToggle, onEdit, on
 
           {/* Habit rows */}
           {habits.map((habit) => (
-            <div key={habit.id} className="flex group">
-              <div className="sticky left-0 z-10 shrink-0 w-32 flex items-center gap-2 pr-2 h-14">
+            <div key={habit.id} className="habit-timeline-row flex group">
+              <div className="habit-timeline-row-label sticky left-0 z-10 shrink-0 w-32 flex items-center gap-2 pr-2 h-14">
                 <span
-                  className="w-2 h-2 rounded-full shrink-0"
+                  className="habit-timeline-row-color-dot w-2 h-2 rounded-full shrink-0"
                   style={{ background: habit.color }}
                   aria-hidden="true"
                 />
-                <span className="flex-1 min-w-0 truncate text-sm text-ink" title={habit.note}>
+                <span className="habit-timeline-row-name flex-1 min-w-0 truncate text-sm text-ink" title={habit.note}>
                   {habit.name}
                 </span>
                 <button
                   type="button"
                   aria-label={`Options for ${habit.name}`}
-                  className="shrink-0 p-1 rounded-[4px] text-ink-light opacity-0 group-hover:opacity-100 focus:opacity-100 hover:text-ink hover:bg-dot/30 cursor-pointer transition-opacity duration-75"
+                  className="habit-timeline-row-options shrink-0 p-1 rounded-[4px] text-ink-light opacity-0 group-hover:opacity-100 focus:opacity-100 hover:text-ink hover:bg-dot/30 cursor-pointer transition-opacity duration-75"
                   onClick={(e) => {
                     const rect = e.currentTarget.getBoundingClientRect();
                     setMenu({ habitId: habit.id, x: rect.left, y: rect.bottom + 4 });
@@ -132,7 +132,7 @@ export function HabitTimeline({ habits, today, todaySignal, onToggle, onEdit, on
                     <span
                       key={d.iso}
                       aria-hidden="true"
-                      className="shrink-0 h-14"
+                      className="habit-timeline-day-placeholder shrink-0 h-14"
                       style={{ width: CELL_W }}
                     />
                   );
@@ -148,28 +148,28 @@ export function HabitTimeline({ habits, today, todaySignal, onToggle, onEdit, on
                     onClick={() => onToggle(habit.id, d.iso, !done)}
                     aria-label={`${habit.name} ${d.iso}${done ? ' completed' : ' not completed'}`}
                     aria-pressed={done}
-                    className="relative shrink-0 h-14 p-0 bg-transparent border-none cursor-pointer"
+                    className="habit-timeline-day-cell relative shrink-0 h-14 p-0 bg-transparent border-none cursor-pointer"
                     style={{ width: CELL_W }}
                   >
                     {/* connector halves */}
                     {prevDone && (
                       <span
                         aria-hidden="true"
-                        className="absolute top-1/2 -translate-y-1/2 left-0 h-[2px]"
+                        className="habit-timeline-day-connector-prev absolute top-1/2 -translate-y-1/2 left-0 h-[2px]"
                         style={{ width: CELL_W / 2, background: habit.color }}
                       />
                     )}
                     {nextDone && (
                       <span
                         aria-hidden="true"
-                        className="absolute top-1/2 -translate-y-1/2 right-0 h-[2px]"
+                        className="habit-timeline-day-connector-next absolute top-1/2 -translate-y-1/2 right-0 h-[2px]"
                         style={{ width: CELL_W / 2, background: habit.color }}
                       />
                     )}
                     {/* dot */}
                     <span
                       aria-hidden="true"
-                      className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full"
+                      className="habit-timeline-day-dot absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full"
                       style={
                         done
                           ? { width: 8, height: 8, background: habit.color }
@@ -185,12 +185,12 @@ export function HabitTimeline({ habits, today, todaySignal, onToggle, onEdit, on
       </div>
 
       {/* Legend */}
-      <div className="flex items-center justify-center gap-6 mt-4 text-xs text-ink-light">
-        <span className="inline-flex items-center gap-2">
-          <span className="w-[5px] h-[5px] rounded-full bg-dot inline-block" /> Not done
+      <div className="habit-timeline-legend flex items-center justify-center gap-6 mt-4 text-xs text-ink-light">
+        <span className="habit-timeline-legend-item inline-flex items-center gap-2">
+          <span className="habit-timeline-legend-dot-not-done w-[5px] h-[5px] rounded-full bg-dot inline-block" /> Not done
         </span>
-        <span className="inline-flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-ink inline-block" /> Done
+        <span className="habit-timeline-legend-item inline-flex items-center gap-2">
+          <span className="habit-timeline-legend-dot-done w-2 h-2 rounded-full bg-ink inline-block" /> Done
         </span>
       </div>
 

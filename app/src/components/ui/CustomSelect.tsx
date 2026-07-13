@@ -195,9 +195,9 @@ export function CustomSelect({
   `;
 
   return (
-    <div className="flex flex-col gap-1.5 w-full relative">
+    <div className="ui-custom-select flex flex-col gap-1.5 w-full relative">
       {label && (
-        <label htmlFor={id} className="text-[13px] font-medium text-ink-light">
+        <label htmlFor={id} className="ui-custom-select-label text-[13px] font-medium text-ink-light">
           {label}
         </label>
       )}
@@ -213,14 +213,14 @@ export function CustomSelect({
         aria-haspopup="listbox"
         aria-expanded={isOpen}
         aria-controls={isOpen ? `${id}-listbox` : undefined}
-        className={buttonClasses}
+        className={`ui-custom-select-trigger ${buttonClasses}`}
       >
         <span
-          className={`flex-1 min-w-0 text-left truncate text-sm ${selectedOption ? 'text-ink' : 'text-ink-light opacity-50'}`}
+          className={`ui-custom-select-value flex-1 min-w-0 text-left truncate text-sm ${selectedOption ? 'text-ink' : 'text-ink-light opacity-50'}`}
         >
           {selectedOption ? selectedOption.label : placeholder}
         </span>
-        <ChevronDown size={16} className={error ? 'text-accent' : 'text-ink-light'} />
+        <ChevronDown size={16} className={`ui-custom-select-chevron ${error ? 'text-accent' : 'text-ink-light'}`} />
       </div>
 
       {error && errorText && (
@@ -228,19 +228,19 @@ export function CustomSelect({
       )}
 
       {isOpen && (alwaysOpen ? (
-        <div className="absolute z-10 p-1 bg-cream border border-border rounded-md shadow-medium left-0 right-0 top-full mt-1">
+        <div className="ui-custom-select-dropdown absolute z-10 p-1 bg-cream border border-border rounded-md shadow-medium left-0 right-0 top-full mt-1">
           <ul
               id={`${id}-listbox`}
               role="listbox"
               ref={listboxRef}
-              className="max-h-[240px] overflow-y-auto"
+              className="ui-custom-select-options max-h-[240px] overflow-y-auto"
               tabIndex={-1}
             >
               {options.map((option, index) => {
                 const isSelected = option.value === value;
                 const isHighlighted = index === highlightedIndex;
 
-                let itemClass = `flex items-center h-10 px-2 rounded-[4px] text-sm cursor-pointer select-none `;
+                let itemClass = `ui-custom-select-option flex items-center h-10 px-2 rounded-[4px] text-sm cursor-pointer select-none `;
                 if (option.disabled) {
                   itemClass += `opacity-40 cursor-not-allowed text-ink-light [text-shadow:0_1px_0_rgba(255,255,255,0.7)] `;
                 } else if (isSelected) {
@@ -271,7 +271,7 @@ export function CustomSelect({
         createPortal(
           <div
             ref={floatingRef}
-            className="fixed z-50 p-1 bg-cream border border-border rounded-md shadow-medium"
+            className="ui-custom-select-dropdown fixed z-50 p-1 bg-cream border border-border rounded-md shadow-medium"
             style={{
               top,
               left,
@@ -282,14 +282,14 @@ export function CustomSelect({
               id={`${id}-listbox`}
               role="listbox"
               ref={listboxRef}
-              className="max-h-[240px] overflow-y-auto"
+              className="ui-custom-select-options max-h-[240px] overflow-y-auto"
               tabIndex={-1}
             >
               {options.map((option, index) => {
                 const isSelected = option.value === value;
                 const isHighlighted = index === highlightedIndex;
 
-                let itemClass = `flex items-center h-10 px-2 rounded-[4px] text-sm cursor-pointer select-none `;
+                let itemClass = `ui-custom-select-option flex items-center h-10 px-2 rounded-[4px] text-sm cursor-pointer select-none `;
                 if (option.disabled) {
                   itemClass += `opacity-40 cursor-not-allowed text-ink-light [text-shadow:0_1px_0_rgba(255,255,255,0.7)] `;
                 } else if (isSelected) {

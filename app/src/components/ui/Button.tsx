@@ -31,9 +31,9 @@ export function Button({
   ...rest
 }: ButtonProps) {
   return (
-    <button type={type} className={`${base} ${variants[variant]} ${className}`} {...rest}>
+    <button type={type} className={`ui-button ${base} ${variants[variant]} ${className}`} {...rest}>
       {leftIcon && (
-        <span className="flex items-center justify-center shrink-0 [&_svg]:w-4 [&_svg]:h-4">
+        <span className="ui-button-icon flex items-center justify-center shrink-0 [&_svg]:w-4 [&_svg]:h-4">
           {leftIcon}
         </span>
       )}

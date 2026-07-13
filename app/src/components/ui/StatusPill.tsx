@@ -17,7 +17,7 @@ export function StatusPill({ status, className = '' }: StatusPillProps) {
   const { label, className: tone } = STATUS[status];
   return (
     <span
-      className={`inline-flex items-center text-[11px] leading-6 px-2 rounded-[8px] whitespace-nowrap ${tone} ${className}`}
+      className={`ui-status-pill inline-flex items-center text-[11px] leading-6 px-2 rounded-[8px] whitespace-nowrap ${tone} ${className}`}
     >
       {label}
     </span>

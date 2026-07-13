@@ -70,7 +70,7 @@ function ContextMenuRoot({ items, position, onClose }: ContextMenuRootProps) {
       ref={rootRef}
       tabIndex={-1}
       onKeyDown={handleKeyDown}
-      className="fixed inset-0 z-50 pointer-events-none"
+      className="ui-context-menu-root fixed inset-0 z-50 pointer-events-none"
       style={{ outline: 'none' }} // Remove focus outline on the wrapper
     >
       <MenuPanel
@@ -227,7 +227,7 @@ function MenuPanel({
         ref={panelRef}
         tabIndex={-1}
         onKeyDown={handleKeyDown}
-        className="fixed z-50 py-1 bg-cream border border-border rounded-md shadow-medium pointer-events-auto min-w-[180px]"
+        className="ui-context-menu-panel fixed z-50 py-1 bg-cream border border-border rounded-md shadow-medium pointer-events-auto min-w-[180px]"
         style={{ top: coords.top, left: coords.left, outline: 'none' }}
         role="menu"
       >
@@ -237,7 +237,7 @@ function MenuPanel({
               <div
                 key={`sep-${index}`}
                 role="separator"
-                className="h-[1px] bg-border my-1 mx-3"
+                className="ui-context-menu-separator h-[1px] bg-border my-1 mx-3"
               />
             );
           }
@@ -263,11 +263,11 @@ function MenuPanel({
               data-index={index}
               role="menuitem"
               aria-disabled={item.disabled}
-              className={itemClass}
+              className={`ui-context-menu-item ${itemClass}`}
               onClick={(e) => {
                 e.stopPropagation();
                 if (item.disabled) return;
-                
+
                 if (item.submenu) {
                   setActivePath([...activePath.slice(0, level), index]);
                 } else {
@@ -288,12 +288,12 @@ function MenuPanel({
                 }
               }}
             >
-              <div className="flex items-center gap-2">
-                {item.icon && <span className="flex-shrink-0">{item.icon}</span>}
-                <span className="truncate">{item.label}</span>
+              <div className="ui-context-menu-item-content flex items-center gap-2">
+                {item.icon && <span className="ui-context-menu-item-icon flex-shrink-0">{item.icon}</span>}
+                <span className="ui-context-menu-item-label truncate">{item.label}</span>
               </div>
               {item.submenu && (
-                <ChevronRight size={14} className="text-ink-light ml-2" />
+                <ChevronRight size={14} className="ui-context-menu-item-chevron text-ink-light ml-2" />
               )}
             </div>
           );

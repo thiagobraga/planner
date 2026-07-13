@@ -114,10 +114,10 @@ export function HabitsPage() {
   const editingHabit = habits.find((h) => h.id === editingId);
 
   return (
-    <div className={view === 'timeline' ? 'max-w-none' : 'max-w-162'}>
+    <div className={`habits-page ${view === 'timeline' ? 'max-w-none' : 'max-w-162'}`}>
       <header className="sticky-page-header">
-        <div className="flex items-start gap-4">
-          <div className="flex-1 min-w-0">
+        <div className="habits-page-header-content flex items-start gap-4">
+          <div className="habits-page-header-title flex-1 min-w-0">
             <h1 className="text-lg leading-6 font-semibold text-ink">
               Habits
             </h1>
@@ -133,7 +133,7 @@ export function HabitsPage() {
           )}
 
           {/* Segmented Timeline / List toggle */}
-          <div className="inline-flex items-center rounded-[8px] border border-border overflow-hidden">
+          <div className="habits-page-view-toggle inline-flex items-center rounded-[8px] border border-border overflow-hidden">
             {([
               { mode: 'timeline' as const, label: 'Timeline view', Icon: LayoutGrid },
               { mode: 'list' as const, label: 'List view', Icon: List },
@@ -144,7 +144,7 @@ export function HabitsPage() {
                 aria-label={label}
                 aria-pressed={view === mode}
                 onClick={() => setView(mode)}
-                className={`inline-flex items-center justify-center h-9 w-10 transition-colors duration-[var(--motion-fast)] ${
+                className={`habits-page-view-toggle-button inline-flex items-center justify-center h-9 w-10 transition-colors duration-[var(--motion-fast)] ${
                   i > 0 ? 'border-l border-border' : ''
                 } ${view === mode ? 'bg-dot/60 text-ink' : 'bg-transparent text-ink-light hover:bg-dot/30'}`}
               >
@@ -167,7 +167,7 @@ export function HabitsPage() {
           />
 
           {editingHabit && (
-            <div className="max-w-162">
+            <div className="habits-page-edit-form-container max-w-162">
               <HabitForm
                 key={editingHabit.id}
                 initialValues={{ name: editingHabit.name, note: editingHabit.note }}
@@ -203,7 +203,7 @@ export function HabitsPage() {
         )
       )}
 
-      <div className="mt-12 max-w-162">
+      <div className="habits-page-new-habit-container mt-12 max-w-162">
         {creating ? (
           <HabitForm
             submitLabel="Create"

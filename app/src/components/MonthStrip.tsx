@@ -91,14 +91,14 @@ export function MonthStrip({ year: selectedYear, month: selectedMonth, onChange,
         type="button"
         aria-label="Previous month"
         onClick={() => selectMonth(shiftMonth(selectedYear, selectedMonth, -1), -1)}
-        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-transparent bg-dot/20 text-ink-light transition-colors duration-[var(--motion-fast)] hover:bg-dot/35 hover:text-ink"
+        className="month-strip-nav-prev flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-transparent bg-dot/20 text-ink-light transition-colors duration-[var(--motion-fast)] hover:bg-dot/35 hover:text-ink"
       >
         <ChevronLeft size={16} strokeWidth={1.8} />
       </button>
 
       <div className="monthly-strip-viewport w-[232px] shrink-0 overflow-hidden sm:w-[552px]">
         <div
-          className="grid grid-cols-[repeat(5,72px)] gap-2 sm:grid-cols-[repeat(13,72px)]"
+          className="month-strip-track grid grid-cols-[repeat(5,72px)] gap-2 sm:grid-cols-[repeat(13,72px)]"
           style={stripTrackStyle}
           onTransitionEnd={(event) => {
             if (event.propertyName === 'transform') {
@@ -119,7 +119,7 @@ export function MonthStrip({ year: selectedYear, month: selectedMonth, onChange,
                 key={`${year}-${month}`}
                 onClick={() => selectMonth({ year, month }, offset)}
                 aria-current={isSelected ? 'date' : undefined}
-                className={`${mobileVisibility} h-[72px] w-[72px] min-w-0 flex-col items-center justify-center rounded-[7px] border px-2 text-center transition-colors duration-[var(--motion-fast)] ${
+                className={`month-strip-card ${mobileVisibility} h-[72px] w-[72px] min-w-0 flex-col items-center justify-center rounded-[7px] border px-2 text-center transition-colors duration-[var(--motion-fast)] ${
                   isSelected
                     ? 'border-ink text-ink'
                     : 'border-border/80 text-ink-light hover:border-dot hover:text-ink'
@@ -129,10 +129,10 @@ export function MonthStrip({ year: selectedYear, month: selectedMonth, onChange,
                   : { backgroundColor: 'var(--planner-monthly-strip-idle)' }
                 }
               >
-                <span className="text-[10px] leading-4 tracking-[0.08em] sm:text-[10px]">
+                <span className="month-strip-card-year text-[10px] leading-4 tracking-[0.08em] sm:text-[10px]">
                   {yearLabel}
                 </span>
-                <span className={`mt-0.5 text-[13px] leading-5 tracking-[0.08em] sm:text-[12px] sm:tracking-[0.1em] ${isSelected ? 'font-semibold' : 'font-medium'}`}>
+                <span className={`month-strip-card-month mt-0.5 text-[13px] leading-5 tracking-[0.08em] sm:text-[12px] sm:tracking-[0.1em] ${isSelected ? 'font-semibold' : 'font-medium'}`}>
                   {MONTHS[month]}
                 </span>
               </button>
@@ -145,7 +145,7 @@ export function MonthStrip({ year: selectedYear, month: selectedMonth, onChange,
         type="button"
         aria-label="Next month"
         onClick={() => selectMonth(shiftMonth(selectedYear, selectedMonth, 1), 1)}
-        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-transparent bg-dot/20 text-ink-light transition-colors duration-[var(--motion-fast)] hover:bg-dot/35 hover:text-ink"
+        className="month-strip-nav-next flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-transparent bg-dot/20 text-ink-light transition-colors duration-[var(--motion-fast)] hover:bg-dot/35 hover:text-ink"
       >
         <ChevronRight size={16} strokeWidth={1.8} />
       </button>
