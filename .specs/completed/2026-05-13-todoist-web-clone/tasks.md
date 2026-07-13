@@ -389,8 +389,8 @@ Full-stack implementation of a Todoist web clone using React + TypeScript (front
     - Filter query input with live validation
     - _Requirements: 16.1, 16.3_
 
-- [>] 28. Frontend views and state management
-  - [>] 28.1 Implement Inbox, Today, and Upcoming views
+- [<] 28. Frontend views and state management
+  - [<] 28.1 Implement Inbox, Today, and Upcoming views
     - Connect to backend endpoints
     - Proper grouping and ordering
     - Update within 2 seconds of backend changes
@@ -405,30 +405,30 @@ Full-stack implementation of a Todoist web clone using React + TypeScript (front
     - **Property 27: Optimistic update revert on API failure**
     - **Validates: Requirements 28.2, 28.3**
 
-  - [>] 28.4 Implement offline support with queue and replay
+  - [<] 28.4 Implement offline support with queue and replay
     - Display offline indicator within 5 seconds of connectivity loss
     - Queue edits in IndexedDB, replay in order on reconnection
     - _Requirements: 27.6, 27.7_
 
-- [>] 29. Keyboard shortcuts and accessibility
+- [<] 29. Keyboard shortcuts and accessibility
   - [x] 29.1 Implement ShortcutHandler with all keyboard shortcuts
     - q: quick-add, /: search, ?: help panel
     - Enter: edit selected task, Delete: confirm deletion
     - g+i: Inbox, g+t: Today, g+u: Upcoming (within 1 second)
     - _Requirements: 24.1-24.10_
 
-  - [>] 29.2 Implement accessibility (WAI-ARIA 1.2 compliance)
+  - [<] 29.2 Implement accessibility (WAI-ARIA 1.2 compliance)
     - Keyboard focus indicators on all interactive elements
     - Semantic roles and labels for navigation, lists, buttons, dialogs
     - _Requirements: 27.5_
 
-- [>] 30. Performance and responsive design
-  - [>] 30.1 Implement responsive layouts (320px-2560px)
+- [<] 30. Performance and responsive design
+  - [<] 30.1 Implement responsive layouts (320px-2560px)
     - Single-column below 768px, multi-column at/above 768px
     - Today view renders within 1000ms with 200 tasks
     - _Requirements: 27.1, 27.2, 27.4, 28.1_
 
-- [>] 31. Final checkpoint - Ensure all tests pass
+- [<] 31. Final checkpoint - Ensure all tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 ## Notes
