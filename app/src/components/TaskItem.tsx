@@ -212,7 +212,7 @@ export const TaskItem = memo(function TaskItem({
       <span
         {...attributes}
         {...listeners}
-        className="drag-handle absolute left-[-18px] w-4 cursor-grab flex items-center justify-center opacity-0 text-ink-light text-[10px] select-none"
+        className="task-item-drag-handle drag-handle absolute left-[-18px] w-4 cursor-grab flex items-center justify-center opacity-0 text-ink-light text-[10px] select-none"
         aria-label="drag to reorder"
       >
         ⠿
@@ -222,7 +222,7 @@ export const TaskItem = memo(function TaskItem({
       {task.type === 'note' ? (
         <span
           aria-hidden="true"
-          className="w-6 text-center text-[10px] font-normal leading-6 overflow-hidden text-ink select-none shrink-0"
+          className="task-item-note-indicator w-6 text-center text-[10px] font-normal leading-6 overflow-hidden text-ink select-none shrink-0"
         >
           -
         </span>
@@ -241,7 +241,7 @@ export const TaskItem = memo(function TaskItem({
             transform: 'translateY(var(--icon-dot-offset, 0px))',
             lineHeight: 'var(--task-line-height, 24px)',
           }}
-          className={`w-6 text-center ${task.isCompleted ? 'font-bold' : 'font-normal'} overflow-hidden ${priorityClasses[task.priority]} select-none shrink-0 cursor-pointer bg-transparent border-0 p-0`}
+          className={`task-item-toggle w-6 text-center ${task.isCompleted ? 'font-bold' : 'font-normal'} overflow-hidden ${priorityClasses[task.priority]} select-none shrink-0 cursor-pointer bg-transparent border-0 p-0`}
         >
           {task.isCompleted ? '×' : '•'}
         </button>
@@ -249,13 +249,13 @@ export const TaskItem = memo(function TaskItem({
       )}
 
       {/* Title area */}
-      <span style={{ lineHeight: 'var(--task-line-height, 24px)' }} className="flex-1 flex flex-wrap items-baseline min-w-0">
+      <span style={{ lineHeight: 'var(--task-line-height, 24px)' }} className="task-item-title-area flex-1 flex flex-wrap items-baseline min-w-0">
         {isEditing ? (
           <input
             ref={editRef}
             type="text"
             defaultValue={task.title}
-            className="task-input flex-1 w-full text-sm leading-6 text-ink bg-transparent border-0 outline-none p-0"
+            className="task-item-title-input task-input flex-1 w-full text-sm leading-6 text-ink bg-transparent border-0 outline-none p-0"
             spellCheck={false}
             onKeyDown={handleEditKeyDown}
             onBlur={handleEditBlur}
@@ -264,13 +264,13 @@ export const TaskItem = memo(function TaskItem({
           <>
             <span
               style={{ lineHeight: 'var(--task-line-height, 24px)' }}
-              className={`text-sm break-words ${task.isCompleted ? 'line-through text-ink-light' : 'text-ink'}`}
+              className={`task-item-title-text text-sm break-words ${task.isCompleted ? 'line-through text-ink-light' : 'text-ink'}`}
             >
               {task.title}
             </span>
 
             {task.dueDate && !hideDueDate && (
-              <span className="text-xs leading-6 text-ink-light italic ml-1.5 whitespace-nowrap">
+              <span className="task-item-due-date text-xs leading-6 text-ink-light italic ml-1.5 whitespace-nowrap">
                 {formatDueDate(task.dueDate)}
               </span>
             )}
@@ -278,7 +278,7 @@ export const TaskItem = memo(function TaskItem({
             {task.labels?.map((label) => (
               <span
                 key={label}
-                className="text-[10px] leading-6 px-1.5 rounded-[8px] bg-dot text-ink ml-1 whitespace-nowrap"
+                className="task-item-label text-[10px] leading-6 px-1.5 rounded-[8px] bg-dot text-ink ml-1 whitespace-nowrap"
               >
                 @{label}
               </span>
