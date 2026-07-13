@@ -99,25 +99,33 @@ export function Sidebar({ isOpen, onClose, collapsed = false, onOpenHelp }: Side
             <StyleguideIcon size={16} />
           </NavLink>
 
-          <button
-            type="button"
-            onClick={onOpenHelp}
+          <a
+            href="#"
+            role="button"
+            onClick={(e) => {
+              e.preventDefault();
+              onOpenHelp?.();
+            }}
             title="Help"
             className="sidebar-icon-link"
           >
             <HelpCircle size={16} strokeWidth={1.5} />
-          </button>
+          </a>
 
           <div className="w-8 h-px bg-dot opacity-30 my-1"></div>
 
-          <button
-            type="button"
-            onClick={handleLogout}
+          <a
+            href="#"
+            role="button"
+            onClick={(e) => {
+              e.preventDefault();
+              handleLogout();
+            }}
             title="Logout"
             className="sidebar-icon-link"
           >
             <LogOut size={16} strokeWidth={1.5} />
-          </button>
+          </a>
         </div>
       </aside>
     );
