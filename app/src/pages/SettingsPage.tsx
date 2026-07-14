@@ -23,12 +23,12 @@ const FONT_OPTIONS: Array<{
     {
       value: 'playpen',
       label: 'Playpen Sans',
-      previewClass: 'font-playpen text-[18px] sm:text-[20px]',
+      previewClass: 'font-playpen text-[14px] sm:text-[16px] leading-none',
     },
     {
       value: 'hubballi',
       label: 'Hubballi',
-      previewClass: 'font-hubballi text-[24px] sm:text-[26px]',
+      previewClass: 'font-hubballi text-[14px] sm:text-[16px] leading-none',
     },
   ];
 
@@ -176,7 +176,7 @@ export function SettingsPage() {
         >
           <div className="flex flex-col gap-12">
             <div>
-              <h3 className="text-[10px] leading-6 tracking-[0.1em] uppercase text-ink-light font-medium">Typography</h3>
+              <h3 className="text-[10px] leading-5 tracking-[0.12em] uppercase text-ink-light font-medium">Typography</h3>
               <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3 md:gap-8" role="radiogroup" aria-label="Font">
                 {FONT_OPTIONS.map(({ value, label, previewClass }) => {
                   const selected = font === value;
