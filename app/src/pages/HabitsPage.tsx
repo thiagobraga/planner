@@ -115,8 +115,8 @@ export function HabitsPage() {
 
   return (
     <div className={`habits-page ${view === 'timeline' ? 'max-w-none' : 'max-w-162'}`}>
-      <header className="sticky-page-header">
-        <div className="habits-page-header-content flex items-start gap-4">
+      <header className="sticky-page-header w-full" style={{ width: '100%' }}>
+        <div className="habits-page-header-content flex w-full items-start gap-4">
           <div className="habits-page-header-title flex-1 min-w-0">
             <h1 className="text-lg leading-6 font-semibold text-ink">
               Habits
@@ -203,7 +203,7 @@ export function HabitsPage() {
         )
       )}
 
-      <div className="habits-page-new-habit-container mt-12 max-w-162">
+      <div className={`habits-page-new-habit-container ${view === 'timeline' && !creating ? 'mt-0 w-48' : 'mt-6 max-w-162'}`}>
         {creating ? (
           <HabitForm
             submitLabel="Create"
@@ -211,11 +211,27 @@ export function HabitsPage() {
             onCancel={() => setCreating(false)}
           />
         ) : (
-          <Button variant="tertiary" leftIcon={<Plus />} onClick={() => setCreating(true)}>
+          <Button
+            variant="tertiary"
+            leftIcon={<Plus />}
+            onClick={() => setCreating(true)}
+            className={view === 'timeline' ? 'h-6 w-full justify-start rounded-[4px] px-0' : ''}
+          >
             New habit
           </Button>
         )}
       </div>
+
+      {view === 'timeline' && (
+        <div className="habit-timeline-legend mt-6 flex items-center justify-center gap-6 text-xs text-ink-light">
+          <span className="habit-timeline-legend-item inline-flex items-center gap-2">
+            <span className="habit-timeline-legend-dot-not-done inline-block h-[5px] w-[5px] rounded-full bg-dot" /> Not done
+          </span>
+          <span className="habit-timeline-legend-item inline-flex items-center gap-2">
+            <span className="habit-timeline-legend-dot-done inline-block h-2 w-2 rounded-full bg-ink" /> Done
+          </span>
+        </div>
+      )}
     </div>
   );
 }
