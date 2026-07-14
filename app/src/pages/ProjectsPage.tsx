@@ -14,6 +14,7 @@ import {
   type ApiTask,
 } from '../api/client';
 import { useAuth } from '../contexts/AuthContext';
+import { applyIndent } from '../utils/taskTree';
 
 function apiToTask(t: ApiTask): Task {
   return {
@@ -163,16 +164,14 @@ export function ProjectsPage() {
     if (!taskId.startsWith('temp-')) apiDeleteTask(taskId).catch(() => invalidate());
   }, []);
   const handleIndent = useCallback((taskId: string, dir: 1 | -1) => {
-    setTasks((prev) =>
-      prev.map((t) => {
-        if (t.id !== taskId) return t;
-        const newIndent = Math.max(0, Math.min(4, (t.indent ?? 0) + dir));
-        if (!taskId.startsWith('temp-')) {
-          apiUpdateTask(taskId, { depth: newIndent }).catch(() => invalidate());
-        }
-        return { ...t, indent: newIndent };
-      }),
-    );
+    setTasks((prev) => {
+      const { tasks: next, parentTaskId, changed } = applyIndent(prev, taskId, dir);
+      if (!changed) return prev;
+      if (!taskId.startsWith('temp-')) {
+        apiUpdateTask(taskId, { parentTaskId }).catch(() => invalidate());
+      }
+      return next;
+    });
   }, []);
   const handleNavigate = useCallback((taskId: string, dir: 'up' | 'down', col: number) => {
     setTasks((prev) => {

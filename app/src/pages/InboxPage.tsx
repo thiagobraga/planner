@@ -14,6 +14,7 @@ import {
 import { clearToken } from '../api/client';
 import { useAuth } from '../contexts/AuthContext';
 import { getPhrase } from '../utils/phrases';
+import { applyIndent } from '../utils/taskTree';
 import { useSync } from '../hooks/useSync';
 
 function apiToTask(t: ApiTask): Task {
@@ -175,16 +176,14 @@ export function InboxPage() {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleIndent = useCallback((id: string, dir: 1 | -1) => {
-    setTasks((prev) =>
-      prev.map((t) => {
-        if (t.id !== id) return t;
-        const newIndent = Math.max(0, Math.min(4, (t.indent ?? 0) + dir));
-        if (!id.startsWith('temp-')) {
-          apiUpdateTask(id, { depth: newIndent }).catch(() => invalidate());
-        }
-        return { ...t, indent: newIndent };
-      }),
-    );
+    setTasks((prev) => {
+      const { tasks: next, parentTaskId, changed } = applyIndent(prev, id, dir);
+      if (!changed) return prev;
+      if (!id.startsWith('temp-')) {
+        apiUpdateTask(id, { parentTaskId }).catch(() => invalidate());
+      }
+      return next;
+    });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleNavigate = useCallback((id: string, dir: 'up' | 'down', col: number) => {
