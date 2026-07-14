@@ -86,7 +86,7 @@ export function MonthStrip({ year: selectedYear, month: selectedMonth, onChange,
   };
 
   return (
-    <div className={`monthly-strip flex items-center gap-3 sm:gap-4 ${className}`}>
+    <div className={`monthly-strip flex w-full min-w-0 items-center gap-3 sm:gap-4 ${className}`}>
       <StripNavigator
         direction="previous"
         aria-label="Previous month"
@@ -94,7 +94,7 @@ export function MonthStrip({ year: selectedYear, month: selectedMonth, onChange,
         className="month-strip-nav-prev"
       />
 
-      <div className="monthly-strip-viewport w-[232px] shrink-0 overflow-hidden sm:w-[552px]">
+      <div className="monthly-strip-viewport min-w-0 flex-1 overflow-hidden">
         <div
           className="month-strip-track grid grid-cols-[repeat(5,72px)] gap-2 sm:grid-cols-[repeat(13,72px)]"
           style={stripTrackStyle}
