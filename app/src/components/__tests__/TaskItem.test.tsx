@@ -23,7 +23,7 @@ const baseTask: Task = {
   type: 'task',
 };
 
-describe('TaskItem — task/note conversion', () => {
+describe('TaskItem - task/note conversion', () => {
   it('pressing "-" on an empty task input converts to note without committing', () => {
     const onConvertType = vi.fn();
     const onEditCommit = vi.fn();

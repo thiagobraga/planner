@@ -1,6 +1,6 @@
-# Cross-Tab Sync — Manual Test Checklist
+# Cross-Tab Sync - Manual Test Checklist
 
-**Setup:** Open two browser windows side-by-side, both logged in as the same user, both on `/inbox`. Watch the sync status dot (bottom-right, dev-only) — it must be green before testing.
+**Setup:** Open two browser windows side-by-side, both logged in as the same user, both on `/inbox`. Watch the sync status dot (bottom-right, dev-only) - it must be green before testing.
 
 All changes from Tab 1 must appear in Tab 2 within 2 seconds without any manual refresh.
 
@@ -35,7 +35,7 @@ All changes from Tab 1 must appear in Tab 2 within 2 seconds without any manual 
 
 ## Bidirectional check
 
-- [x] Repeat the **Create** and **Delete** steps with Tab 2 as the source — verify Tab 1 updates.
+- [x] Repeat the **Create** and **Delete** steps with Tab 2 as the source - verify Tab 1 updates.
 
 ---
 

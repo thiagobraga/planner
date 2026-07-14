@@ -19,11 +19,11 @@ pnpm -F app vitest run src/path/to/file.test.ts   # Single file
 
 ## Test Types in This Repo
 
-- `.test.ts` — standard unit/integration tests (Vitest)
-- `.property.test.ts` — fast-check property-based tests
-- `.sync.test.ts` — real-time sync tests (require Redis)
-- `.integration.test.ts` — integration tests (require DB/Redis)
-- `.server.test.ts` — server-level tests
+- `.test.ts` - standard unit/integration tests (Vitest)
+- `.property.test.ts` - fast-check property-based tests
+- `.sync.test.ts` - real-time sync tests (require Redis)
+- `.integration.test.ts` - integration tests (require DB/Redis)
+- `.server.test.ts` - server-level tests
 
 ## Workflow
 
@@ -44,7 +44,7 @@ pnpm -F app vitest run src/path/to/file.test.ts   # Single file
 ## Environment Notes
 
 - Integration/sync tests require `.env` with `POSTGRES_*`, `REDIS_URL`, `JWT_SECRET`
-- Property tests use fast-check — failures include shrunk counterexample
+- Property tests use fast-check - failures include shrunk counterexample
 - If env missing, report which vars are needed before diagnosing logic failures
 
 ## Output Format

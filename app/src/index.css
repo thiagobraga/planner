@@ -51,12 +51,12 @@
   --font-weight-semibold: 600;
   --font-weight-bold: 700;
 
-  /* Icon glyph tuning — keeps × and • optically centred in their 24px cell */
+  /* Icon glyph tuning - keeps × and • optically centred in their 24px cell */
   --icon-check-size: 26px;
   --icon-check-offset: 0px;
   --icon-dot-size: 10px;
   --icon-dot-offset: 0px;
-  /* Task row line-height — Lora cap-height is generous; 24px baseline fits well */
+  /* Task row line-height - Lora cap-height is generous; 24px baseline fits well */
   --task-line-height: 24px;
 }
 
@@ -214,7 +214,7 @@ aside[aria-label="Navigation"] {
   }
 }
 
-/* Monthly strip buttons — hover uses the theme-aware token */
+/* Monthly strip buttons - hover uses the theme-aware token */
 .monthly-strip button:not([aria-current="date"]):hover {
   background-color: var(--planner-monthly-strip-hover) !important;
 }
@@ -276,7 +276,7 @@ select {
   }
 }
 
-/* Focus indicators — keyboard navigation */
+/* Focus indicators - keyboard navigation */
 :focus-visible {
   outline: 2px solid var(--color-ink);
   outline-offset: 2px;
@@ -321,7 +321,7 @@ textarea:focus-visible {
   padding: 24px 12px;
 }
 
-/* Project rows — reveal row actions on hover */
+/* Project rows - reveal row actions on hover */
 .project-row {
   border-radius: 4px;
 
@@ -337,7 +337,7 @@ textarea:focus-visible {
   opacity: 0.7;
 }
 
-/* Mobile sidebar drawer — below 640px the collapsed sidebar is shown instead, no drawer needed */
+/* Mobile sidebar drawer - below 640px the collapsed sidebar is shown instead, no drawer needed */
 @media (max-width: 639px) {
   .main-content {
     padding: 24px 12px 24px 24px;

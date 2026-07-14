@@ -105,7 +105,7 @@ export function UpcomingPage() {
               />
             ) : (
               <div className="h-6 leading-6 text-[12px] text-ink-light opacity-40 italic">
-                —
+                -
               </div>
             )}
           </div>

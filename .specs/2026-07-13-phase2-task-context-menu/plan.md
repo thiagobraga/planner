@@ -1,4 +1,4 @@
-# Phase 2 — Task Context Menu & Task Operations
+# Phase 2 - Task Context Menu & Task Operations
 
 **Status:** Ready for implementation  
 **Dependencies:** Phase 1 (CustomSelect, ContextMenu components)  
@@ -13,6 +13,7 @@ Only Project, Add above/below, and Delete are functional in this phase. Date, Pr
 ## Current Architecture
 
 ### Task ordering:
+
 - Tasks have an `order_value INTEGER NOT NULL DEFAULT 0` column
 - `reorderTask` service uses gap-based ordering: positions are multiples of 1000
 - Daily view sorts by: `priority ASC, order_value ASC, created_at ASC`
@@ -20,16 +21,19 @@ Only Project, Add above/below, and Delete are functional in this phase. Date, Pr
 - The existing `reorderTask` works within project/section/parent scope, NOT within a day scope
 
 ### Project assignment:
-- `updateTask` already supports `projectId` in the input — the backend is ready
-- Frontend `apiUpdateTask` only sends `title | priority | dueDate | depth | type` — needs `projectId` added
+
+- `updateTask` already supports `projectId` in the input - the backend is ready
+- Frontend `apiUpdateTask` only sends `title | priority | dueDate | depth | type` - needs `projectId` added
 
 ### Task deletion:
+
 - `deleteTask` and `apiDeleteTask` already exist and work
 - DailyPage already has `handleDelete` that removes optimistically + calls API
 
 ### Add below:
+
 - DailyPage already has `handleAddBelow(afterId)` that creates a temp task and enters edit mode
-- But it doesn't persist `order_value` properly — just assigns sequential indices locally
+- But it doesn't persist `order_value` properly - just assigns sequential indices locally
 
 ## Proposed Changes
 
@@ -38,11 +42,13 @@ Only Project, Add above/below, and Delete are functional in this phase. Date, Pr
 #### [MODIFY] `app/src/components/TaskItem.tsx`
 
 Add `onContextMenu` handler:
+
 - Prevent native context menu (`e.preventDefault()`)
 - Call new `onRightClick?(id, position)` callback with `{ x: e.clientX, y: e.clientY }`
 - The parent component manages the context menu state
 
 Add `onRightClick` to `TaskItemProps`:
+
 ```typescript
 onRightClick?: (id: string, position: { x: number; y: number }) => void;
 ```
@@ -56,6 +62,7 @@ Pass `onRightClick` through to TaskItem.
 Major additions:
 
 1. **Context Menu State:**
+
 ```typescript
 const [contextMenu, setContextMenu] = useState<{
   taskId: string;
@@ -64,6 +71,7 @@ const [contextMenu, setContextMenu] = useState<{
 ```
 
 2. **Right-click handler:**
+
 ```typescript
 const handleRightClick = useCallback((id: string, position: { x: number; y: number }) => {
   setSelectedId(id);
@@ -74,11 +82,12 @@ const handleRightClick = useCallback((id: string, position: { x: number; y: numb
 3. **Context Menu rendering** using the ContextMenu component from Phase 1:
 
 Menu structure (exact order):
+
 ```
-Date          (disabled — no action)
-Priority      (disabled — no action)
+Date          (disabled - no action)
+Priority      (disabled - no action)
 Project  →    (submenu: list of projects + "No project")
-Tags          (disabled — no action)
+Tags          (disabled - no action)
 ──────────────
 Add above
 Add below
@@ -87,12 +96,14 @@ Delete        (destructive style)
 ```
 
 4. **Project submenu:**
+
 - Fetch projects list (reuse existing `fetchProjects` from API client)
 - Show each project with its color dot
 - Include "No project" / move-to-Inbox option
 - On select: call `apiUpdateTask(taskId, { projectId })` → update local state
 
 5. **Add above handler:**
+
 ```typescript
 const handleAddAbove = useCallback((beforeId: string) => {
   // Similar to handleAddBelow but inserts BEFORE the target task
@@ -112,7 +123,8 @@ const handleAddAbove = useCallback((beforeId: string) => {
 ```
 
 6. **Order persistence:**
-After creating a task via "Add above" or "Add below", the task needs a proper `order_value`. Current flow:
+   After creating a task via "Add above" or "Add below", the task needs a proper `order_value`. Current flow:
+
 - Optimistically assign sequential order values locally
 - On API create: the server assigns `order_value = 0` (default)
 - After create returns, call `reorderTask` to persist the position
@@ -124,6 +136,7 @@ Better approach: Extend `apiCreateTask` to accept an `orderValue` parameter, and
 #### [MODIFY] `app/src/api/client.ts`
 
 1. Add `projectId` to `apiUpdateTask` allowed fields:
+
 ```typescript
 export async function apiUpdateTask(
   id: string,
@@ -132,6 +145,7 @@ export async function apiUpdateTask(
 ```
 
 2. Add `orderValue` to `apiCreateTask` input:
+
 ```typescript
 export async function apiCreateTask(input: {
   title: string;
@@ -150,6 +164,7 @@ export async function apiCreateTask(input: {
 #### [MODIFY] `api/src/services/taskService.ts`
 
 In `createTask`, accept optional `orderValue` in `CreateTaskInput`:
+
 ```typescript
 export interface CreateTaskInput {
   // ... existing fields
@@ -174,18 +189,19 @@ This midpoint-insertion approach avoids expensive reorder calls and is dnd-frien
 ### Fetching Projects for Submenu
 
 Projects are already fetched and cached in the Sidebar component via `fetchProjects()`. To avoid duplicate fetches:
+
 - Import and use `fetchProjects` directly in DailyPage
 - Cache with a simple `useEffect` + `useState` or use React Query if available in the component
 
 ## Files Changed Summary
 
-| File | Action | Description |
-|------|--------|-------------|
-| `app/src/components/TaskItem.tsx` | MODIFY | Add `onRightClick` prop + `onContextMenu` handler |
-| `app/src/components/TaskList.tsx` | MODIFY | Pass `onRightClick` through |
-| `app/src/pages/DailyPage.tsx` | MODIFY | Context menu state, handlers, rendering, project assignment |
-| `app/src/api/client.ts` | MODIFY | Add `projectId` to updateTask, `orderValue` to createTask |
-| `api/src/services/taskService.ts` | MODIFY | Accept `orderValue` in createTask input |
+| File                              | Action | Description                                                 |
+| --------------------------------- | ------ | ----------------------------------------------------------- |
+| `app/src/components/TaskItem.tsx` | MODIFY | Add `onRightClick` prop + `onContextMenu` handler           |
+| `app/src/components/TaskList.tsx` | MODIFY | Pass `onRightClick` through                                 |
+| `app/src/pages/DailyPage.tsx`     | MODIFY | Context menu state, handlers, rendering, project assignment |
+| `app/src/api/client.ts`           | MODIFY | Add `projectId` to updateTask, `orderValue` to createTask   |
+| `api/src/services/taskService.ts` | MODIFY | Accept `orderValue` in createTask input                     |
 
 ## Reused Components & Patterns
 
@@ -200,13 +216,14 @@ Projects are already fetched and cached in the Sidebar component via `fetchProje
 - **Order value collisions**: When many tasks are inserted between the same two tasks, midpoint values will converge. Need a renumber strategy when gap < 2.
 - **Project assignment sync**: Changing a task's project should trigger a sync event. The backend already handles this in `updateTask` → `publishEvent`.
 - **Inbox fallback**: When removing a project from a task ("No project"), it should move to the user's Inbox project. The `createTask` service already defaults to Inbox, but `updateTask` with projectId=null is NOT currently supported. May need to handle this by explicitly passing the Inbox project ID.
-- **Context menu on completed tasks**: Should still work — users may want to delete completed tasks.
+- **Context menu on completed tasks**: Should still work - users may want to delete completed tasks.
 - **Overdue tasks**: Context menu should work on overdue-day sections too.
 
 ## Tests
 
 Create/update:
-- `app/src/components/__tests__/TaskItem.test.tsx` — test onRightClick fires on contextmenu event
+
+- `app/src/components/__tests__/TaskItem.test.tsx` - test onRightClick fires on contextmenu event
 - Test order_value calculation: midpoint between two values
 - Test add-above inserts at correct position
 - Test add-below inserts at correct position
@@ -214,9 +231,9 @@ Create/update:
 
 ## Verification
 
-1. `cd app && npx tsc --noEmit` — TypeScript compiles
-2. `pnpm lint` — no lint errors
-3. `pnpm test` — all tests pass
+1. `cd app && npx tsc --noEmit` - TypeScript compiles
+2. `pnpm lint` - no lint errors
+3. `pnpm test` - all tests pass
 4. Manual:
    - Right-click a task → menu appears at cursor position
    - Task becomes selected (highlighted)

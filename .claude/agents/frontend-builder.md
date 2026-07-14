@@ -21,47 +21,52 @@ Reference: `DESIGN.md` for full spec. Reference: `app/src/pages/StyleguidePage.t
 ## Architecture Patterns
 
 ### Data fetching
+
 ```typescript
 // React Query for server state
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { apiClient } from '../api/client'
-// staleTime: 60s, 1 retry — configured in app/src/api/queryClient.ts
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { apiClient } from '../api/client';
+// staleTime: 60s, 1 retry - configured in app/src/api/queryClient.ts
 ```
 
 ### Optimistic updates
+
 ```typescript
 // Use runOptimistic from app/src/stores/optimistic.ts
-import { runOptimistic } from '../stores/optimistic'
+import { runOptimistic } from '../stores/optimistic';
 // Pattern: runOptimistic(queryClient, queryKey, optimisticFn, mutationFn)
 ```
 
 ### Zustand task store
+
 ```typescript
 // For cross-component task cache
-import { useTaskStore } from '../stores/taskStore'
+import { useTaskStore } from '../stores/taskStore';
 // Actions: setTasks, addTask, updateTask, removeTask
 ```
 
 ### Auth
+
 ```typescript
-// Always use AuthContext — never read planner_token directly
-import { useAuth } from '../contexts/AuthContext'
+// Always use AuthContext - never read planner_token directly
+import { useAuth } from '../contexts/AuthContext';
 ```
 
 ### API calls
+
 ```typescript
-// Always use app/src/api/client.ts — handles auth headers + 401 auto-logout
-import { apiClient } from '../api/client'
+// Always use app/src/api/client.ts - handles auth headers + 401 auto-logout
+import { apiClient } from '../api/client';
 ```
 
 ## Key Existing Components (read before creating similar)
 
-- `app/src/components/TaskItem.tsx` — task row with keyboard nav
-- `app/src/components/AppShell.tsx` — layout shell, keyboard dispatch
-- `app/src/components/Sidebar.tsx` — nav sidebar
-- `app/src/components/QuickAdd.tsx` — quick add overlay
-- `app/src/pages/TodayPage.tsx` — page structure pattern
-- `app/src/pages/InboxPage.tsx` — page with keyboard navigation pattern
+- `app/src/components/TaskItem.tsx` - task row with keyboard nav
+- `app/src/components/AppShell.tsx` - layout shell, keyboard dispatch
+- `app/src/components/Sidebar.tsx` - nav sidebar
+- `app/src/components/QuickAdd.tsx` - quick add overlay
+- `app/src/pages/TodayPage.tsx` - page structure pattern
+- `app/src/pages/InboxPage.tsx` - page with keyboard navigation pattern
 
 ## Workflow
 
@@ -77,4 +82,4 @@ import { apiClient } from '../api/client'
 - Components: `app/src/components/ComponentName.tsx` (PascalCase)
 - Pages: `app/src/pages/PageNamePage.tsx`
 - Export: named export only (no default exports)
-- No inline styles — use Tailwind or CSS variables from `app/src/index.css`
+- No inline styles - use Tailwind or CSS variables from `app/src/index.css`

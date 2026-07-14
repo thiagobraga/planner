@@ -31,14 +31,17 @@ Frontend mutation
 ### Step 1: Verify publishEvent is called
 
 Grep for `publishEvent` calls in the service handling the mutation:
+
 ```bash
 grep -n "publishEvent" api/src/services/<service>.ts
 ```
+
 Check: is it called AFTER the DB write, BEFORE the response? Is it in the right code path (not skipped by early return)?
 
 ### Step 2: Check the SyncEvent shape
 
 Read `api/src/services/syncService.ts`. Verify:
+
 - Event has correct `type` field matching what `useSync` listens for
 - `resourceId` and `userId` are populated
 - `projectId` present when needed for project room broadcast
@@ -47,6 +50,7 @@ Read `api/src/services/syncService.ts`. Verify:
 ### Step 3: Check useSync subscription
 
 Read `app/src/hooks/useSync.ts`. Verify:
+
 - Listens on `"sync"` event name (exact string)
 - Event type filter matches what publishEvent sends
 - Callback invalidates correct React Query key OR calls correct Zustand action
@@ -55,6 +59,7 @@ Read `app/src/hooks/useSync.ts`. Verify:
 ### Step 4: Check socket authentication
 
 Read `app/src/utils/socket.ts` and `app/src/contexts/AuthContext.tsx`:
+
 - Token passed via `socket.auth` (not headers)
 - Token stored as `planner_token` in localStorage
 - Socket connects AFTER auth, disconnects on logout
@@ -72,20 +77,21 @@ grep REDIS .env
 ### Step 6: Check room join logic
 
 In `api/src/index.ts`, verify:
+
 - Socket joins `user:{userId}` room on connect
 - Socket joins `project:{projectId}` room when appropriate
 - Room names match exactly what `publishEvent` targets
 
 ## Common Break Points
 
-| Symptom | Likely cause |
-|---------|-------------|
-| No update on same device | `publishEvent` not called or wrong event type |
-| No update on other devices | Socket not joining `user:{userId}` room |
-| No update for collaborators | Socket not joining `project:{projectId}` room |
-| Intermittent updates | Race condition — publishEvent before DB commit |
-| Updates then stops | Socket disconnect on token expiry, no reconnect logic |
-| Never worked | Redis not running, wrong REDIS_URL, wrong room names |
+| Symptom                     | Likely cause                                          |
+| --------------------------- | ----------------------------------------------------- |
+| No update on same device    | `publishEvent` not called or wrong event type         |
+| No update on other devices  | Socket not joining `user:{userId}` room               |
+| No update for collaborators | Socket not joining `project:{projectId}` room         |
+| Intermittent updates        | Race condition - publishEvent before DB commit        |
+| Updates then stops          | Socket disconnect on token expiry, no reconnect logic |
+| Never worked                | Redis not running, wrong REDIS_URL, wrong room names  |
 
 ## Output Format
 

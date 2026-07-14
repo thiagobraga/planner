@@ -28,12 +28,11 @@ export const useProjectStore = create<ProjectState>((set) => ({
     set((state) => ({
       projects: state.projects.map((p) => (p.id === id ? { ...p, ...updates } : p)),
     })),
-  removeProject: (id) =>
-    set((state) => ({ projects: state.projects.filter((p) => p.id !== id) })),
+  removeProject: (id) => set((state) => ({ projects: state.projects.filter((p) => p.id !== id) })),
 }));
 
 // Build a nested, order-sorted tree from the flat project list. Inbox and
-// archived projects are excluded — Inbox has its own top-level nav item.
+// archived projects are excluded - Inbox has its own top-level nav item.
 export function buildProjectTree(projects: ApiProject[]): ProjectTreeNode[] {
   const visible = projects.filter((p) => !p.isArchived && !p.isInbox);
   const byId = new Map<string, ProjectTreeNode>();

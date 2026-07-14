@@ -7,7 +7,7 @@ description: Use when creating a database migration for Planner. Triggers: addin
 
 ## Overview
 
-Migrations are numbered SQL files in `api/src/db/migrations/`. They run once in order. No idempotency guards needed — the runner tracks applied migrations in `schema_migrations`.
+Migrations are numbered SQL files in `api/src/db/migrations/`. They run once in order. No idempotency guards needed - the runner tracks applied migrations in `schema_migrations`.
 
 ## Naming
 
@@ -32,6 +32,7 @@ CREATE INDEX idx_things_user ON things(user_id);
 ```
 
 **Common FK patterns:**
+
 - User-owned: `REFERENCES users(id) ON DELETE CASCADE`
 - Project-scoped: `REFERENCES projects(id) ON DELETE CASCADE`
 - Optional parent: `REFERENCES x(id) ON DELETE SET NULL`
@@ -63,6 +64,7 @@ Naming convention: `idx_{table}_{columns}`.
 ## Apply Migration
 
 Migrations auto-apply on API start. To apply manually:
+
 ```bash
 pnpm -F api tsx src/db/migrate.ts
 ```
@@ -71,21 +73,21 @@ Verify: check that `schema_migrations` table contains the new filename.
 
 ## Common Types
 
-| Use case | Type |
-|----------|------|
-| Primary key | `UUID DEFAULT uuid_generate_v4()` |
-| Short text | `VARCHAR(500)` |
-| Long text | `TEXT` |
-| Integer | `SMALLINT` / `INTEGER` |
-| Flag | `BOOLEAN NOT NULL DEFAULT false` |
-| Timestamp | `TIMESTAMPTZ NOT NULL DEFAULT NOW()` |
-| Date | `DATE` |
-| Structured | `JSONB` |
+| Use case    | Type                                 |
+| ----------- | ------------------------------------ |
+| Primary key | `UUID DEFAULT uuid_generate_v4()`    |
+| Short text  | `VARCHAR(500)`                       |
+| Long text   | `TEXT`                               |
+| Integer     | `SMALLINT` / `INTEGER`               |
+| Flag        | `BOOLEAN NOT NULL DEFAULT false`     |
+| Timestamp   | `TIMESTAMPTZ NOT NULL DEFAULT NOW()` |
+| Date        | `DATE`                               |
+| Structured  | `JSONB`                              |
 
 ## Don'ts
 
 - No `DROP TABLE` or `DROP COLUMN` without explicit user request
 - No `DELETE FROM` data tables in migrations
-- No `IF NOT EXISTS` on `CREATE TABLE` — migrations run once
+- No `IF NOT EXISTS` on `CREATE TABLE` - migrations run once
 - No data backfills inside migrations (do in a separate script)
-- Transactions wrap automatically — don't add `BEGIN`/`COMMIT`
+- Transactions wrap automatically - don't add `BEGIN`/`COMMIT`

@@ -1,8 +1,8 @@
-import { v4 as uuidv4 } from "uuid";
-import pool from "../db/pool.js";
-import { AppError } from "../utils/AppError.js";
-import { buildEvent, publishEvent } from "./syncService.js";
-import { addDaysISO } from "./viewService.js";
+import { v4 as uuidv4 } from 'uuid';
+import pool from '../db/pool.js';
+import { AppError } from '../utils/AppError.js';
+import { buildEvent, publishEvent } from './syncService.js';
+import { addDaysISO } from './viewService.js';
 
 interface TaskRow {
   id: string;
@@ -62,13 +62,13 @@ async function verifyTaskAccess(taskId: string, userId: string): Promise<TaskRow
            SELECT project_id FROM collaborators WHERE user_id = $2
          )
        )`,
-    [taskId, userId]
+    [taskId, userId],
   );
 
   if (result.rows.length === 0) {
     throw new AppError({
-      code: "NOT_FOUND",
-      message: "Task not found",
+      code: 'NOT_FOUND',
+      message: 'Task not found',
       statusCode: 404,
     });
   }
@@ -81,33 +81,40 @@ export async function completeTask(taskId: string, userId: string) {
 
   const client = await pool.connect();
   try {
-    await client.query("BEGIN");
+    await client.query('BEGIN');
 
     // Recurring task: compute next due date instead of completing
     if (task.recurrence_rule) {
-      const nextDueDate = task.due_date
-        ? addDaysISO(task.due_date, 1)
-        : null;
+      const nextDueDate = task.due_date ? addDaysISO(task.due_date, 1) : null;
 
       await client.query(
         `UPDATE tasks
          SET due_date = $1, updated_at = NOW()
          WHERE id = $2`,
-        [nextDueDate, taskId]
+        [nextDueDate, taskId],
       );
 
       // Record activity event
       await client.query(
         `INSERT INTO activity_events (user_id, project_id, entity_type, entity_id, event_type, after_data)
          VALUES ($1, $2, 'task', $3, 'task_completed', $4)`,
-        [userId, task.project_id, taskId, JSON.stringify({ recurring: true, nextDueDate })]
+        [userId, task.project_id, taskId, JSON.stringify({ recurring: true, nextDueDate })],
       );
 
-      await client.query("COMMIT");
+      await client.query('COMMIT');
 
-      const updated = await pool.query("SELECT * FROM tasks WHERE id = $1", [taskId]);
+      const updated = await pool.query('SELECT * FROM tasks WHERE id = $1', [taskId]);
       const formatted = formatTask(updated.rows[0] as TaskRow);
-      publishEvent(buildEvent({ entityType: "task", eventType: "updated", entityId: formatted.id, userId, projectId: formatted.projectId, payload: formatted })).catch((err) => console.error("[sync] publish failed", err));
+      publishEvent(
+        buildEvent({
+          entityType: 'task',
+          eventType: 'updated',
+          entityId: formatted.id,
+          userId,
+          projectId: formatted.projectId,
+          payload: formatted,
+        }),
+      ).catch((err) => console.error('[sync] publish failed', err));
       return formatted;
     }
 
@@ -116,7 +123,7 @@ export async function completeTask(taskId: string, userId: string) {
       `UPDATE tasks
        SET is_completed = true, completed_at = NOW(), updated_at = NOW()
        WHERE id = $1`,
-      [taskId]
+      [taskId],
     );
 
     // Cascade: mark all subtasks complete (recursive CTE)
@@ -130,24 +137,33 @@ export async function completeTask(taskId: string, userId: string) {
        UPDATE tasks
        SET is_completed = true, completed_at = NOW(), updated_at = NOW()
        WHERE id IN (SELECT id FROM descendants)`,
-      [taskId]
+      [taskId],
     );
 
     // Record activity event
     await client.query(
       `INSERT INTO activity_events (user_id, project_id, entity_type, entity_id, event_type)
        VALUES ($1, $2, 'task', $3, 'task_completed')`,
-      [userId, task.project_id, taskId]
+      [userId, task.project_id, taskId],
     );
 
-    await client.query("COMMIT");
+    await client.query('COMMIT');
 
-    const updated = await pool.query("SELECT * FROM tasks WHERE id = $1", [taskId]);
+    const updated = await pool.query('SELECT * FROM tasks WHERE id = $1', [taskId]);
     const formatted = formatTask(updated.rows[0] as TaskRow);
-    publishEvent(buildEvent({ entityType: "task", eventType: "completed", entityId: formatted.id, userId, projectId: formatted.projectId, payload: formatted })).catch((err) => console.error("[sync] publish failed", err));
+    publishEvent(
+      buildEvent({
+        entityType: 'task',
+        eventType: 'completed',
+        entityId: formatted.id,
+        userId,
+        projectId: formatted.projectId,
+        payload: formatted,
+      }),
+    ).catch((err) => console.error('[sync] publish failed', err));
     return formatted;
   } catch (err) {
-    await client.query("ROLLBACK");
+    await client.query('ROLLBACK');
     throw err;
   } finally {
     client.release();
@@ -163,17 +179,17 @@ export interface CreateTaskInput {
   parentTaskId?: string | null;
   labelIds?: string[];
   dueDate?: string | null;
-  type?: "task" | "note";
+  type?: 'task' | 'note';
 }
 
 export async function createTask(userId: string, input: CreateTaskInput) {
   // Validate title length (1-500 chars)
   if (!input.title || input.title.length === 0 || input.title.length > 500) {
     throw new AppError({
-      code: "VALIDATION_ERROR",
-      message: "Validation failed",
+      code: 'VALIDATION_ERROR',
+      message: 'Validation failed',
       statusCode: 400,
-      details: [{ field: "title", message: "Title must be between 1 and 500 characters" }],
+      details: [{ field: 'title', message: 'Title must be between 1 and 500 characters' }],
     });
   }
 
@@ -181,21 +197,21 @@ export async function createTask(userId: string, input: CreateTaskInput) {
   if (input.priority !== undefined) {
     if (!Number.isInteger(input.priority) || input.priority < 1 || input.priority > 4) {
       throw new AppError({
-        code: "VALIDATION_ERROR",
-        message: "Validation failed",
+        code: 'VALIDATION_ERROR',
+        message: 'Validation failed',
         statusCode: 400,
-        details: [{ field: "priority", message: "Priority must be an integer between 1 and 4" }],
+        details: [{ field: 'priority', message: 'Priority must be an integer between 1 and 4' }],
       });
     }
   }
 
   // Validate type
-  if (input.type !== undefined && input.type !== "task" && input.type !== "note") {
+  if (input.type !== undefined && input.type !== 'task' && input.type !== 'note') {
     throw new AppError({
-      code: "VALIDATION_ERROR",
-      message: "Validation failed",
+      code: 'VALIDATION_ERROR',
+      message: 'Validation failed',
       statusCode: 400,
-      details: [{ field: "type", message: "type must be 'task' or 'note'" }],
+      details: [{ field: 'type', message: "type must be 'task' or 'note'" }],
     });
   }
 
@@ -214,8 +230,8 @@ export async function createTask(userId: string, input: CreateTaskInput) {
 
     if (depth > 5) {
       throw new AppError({
-        code: "MAX_DEPTH_EXCEEDED",
-        message: "Maximum subtask nesting depth of 5 exceeded",
+        code: 'MAX_DEPTH_EXCEEDED',
+        message: 'Maximum subtask nesting depth of 5 exceeded',
         statusCode: 400,
       });
     }
@@ -225,7 +241,7 @@ export async function createTask(userId: string, input: CreateTaskInput) {
   if (!projectId) {
     const inboxResult = await pool.query(
       `SELECT id FROM projects WHERE user_id = $1 AND is_inbox = true`,
-      [userId]
+      [userId],
     );
     projectId = inboxResult.rows[0]?.id;
   }
@@ -236,21 +252,21 @@ export async function createTask(userId: string, input: CreateTaskInput) {
       `SELECT id FROM projects
        WHERE id = $1
          AND (user_id = $2 OR id IN (SELECT project_id FROM collaborators WHERE user_id = $2))`,
-      [projectId, userId]
+      [projectId, userId],
     );
     if (projectAccess.rows.length === 0) {
       throw new AppError({
-        code: "VALIDATION_ERROR",
-        message: "Project not accessible",
+        code: 'VALIDATION_ERROR',
+        message: 'Project not accessible',
         statusCode: 400,
-        details: [{ field: "projectId", message: "Project not accessible" }],
+        details: [{ field: 'projectId', message: 'Project not accessible' }],
       });
     }
   }
 
   const id = uuidv4();
   const priority = input.priority ?? 4;
-  const type = input.type ?? "task";
+  const type = input.type ?? 'task';
 
   const result = await pool.query(
     `INSERT INTO tasks (id, user_id, project_id, section_id, parent_task_id, title, description, priority, due_date, depth, type)
@@ -268,11 +284,20 @@ export async function createTask(userId: string, input: CreateTaskInput) {
       input.dueDate ?? null,
       depth,
       type,
-    ]
+    ],
   );
 
   const task = formatTask(result.rows[0] as TaskRow);
-  publishEvent(buildEvent({ entityType: "task", eventType: "created", entityId: task.id, userId, projectId: task.projectId, payload: task })).catch((err) => console.error("[sync] publish failed", err));
+  publishEvent(
+    buildEvent({
+      entityType: 'task',
+      eventType: 'created',
+      entityId: task.id,
+      userId,
+      projectId: task.projectId,
+      payload: task,
+    }),
+  ).catch((err) => console.error('[sync] publish failed', err));
   return task;
 }
 
@@ -285,7 +310,7 @@ export interface UpdateTaskInput {
   parentTaskId?: string | null;
   dueDate?: string | null;
   labelIds?: string[];
-  type?: "task" | "note";
+  type?: 'task' | 'note';
 }
 
 export async function updateTask(taskId: string, userId: string, input: UpdateTaskInput) {
@@ -293,10 +318,10 @@ export async function updateTask(taskId: string, userId: string, input: UpdateTa
   if (input.title !== undefined) {
     if (input.title.length === 0 || input.title.length > 500) {
       throw new AppError({
-        code: "VALIDATION_ERROR",
-        message: "Validation failed",
+        code: 'VALIDATION_ERROR',
+        message: 'Validation failed',
         statusCode: 400,
-        details: [{ field: "title", message: "Title must be between 1 and 500 characters" }],
+        details: [{ field: 'title', message: 'Title must be between 1 and 500 characters' }],
       });
     }
   }
@@ -305,21 +330,21 @@ export async function updateTask(taskId: string, userId: string, input: UpdateTa
   if (input.priority !== undefined) {
     if (!Number.isInteger(input.priority) || input.priority < 1 || input.priority > 4) {
       throw new AppError({
-        code: "VALIDATION_ERROR",
-        message: "Validation failed",
+        code: 'VALIDATION_ERROR',
+        message: 'Validation failed',
         statusCode: 400,
-        details: [{ field: "priority", message: "Priority must be an integer between 1 and 4" }],
+        details: [{ field: 'priority', message: 'Priority must be an integer between 1 and 4' }],
       });
     }
   }
 
   // Validate type if provided
-  if (input.type !== undefined && input.type !== "task" && input.type !== "note") {
+  if (input.type !== undefined && input.type !== 'task' && input.type !== 'note') {
     throw new AppError({
-      code: "VALIDATION_ERROR",
-      message: "Validation failed",
+      code: 'VALIDATION_ERROR',
+      message: 'Validation failed',
       statusCode: 400,
-      details: [{ field: "type", message: "type must be 'task' or 'note'" }],
+      details: [{ field: 'type', message: "type must be 'task' or 'note'" }],
     });
   }
 
@@ -334,7 +359,7 @@ export async function updateTask(taskId: string, userId: string, input: UpdateTa
   // Handle parentTaskId changes (depth enforcement + cycle detection)
   if (input.parentTaskId !== undefined) {
     if (input.parentTaskId === null) {
-      // Removing parent — promote to top level (depth 0)
+      // Removing parent - promote to top level (depth 0)
       setClauses.push(`parent_task_id = NULL`);
       setClauses.push(`depth = 0`);
       reparentDelta = 0 - task.depth;
@@ -348,8 +373,8 @@ export async function updateTask(taskId: string, userId: string, input: UpdateTa
       const newDepth = parentTask.depth + 1;
       if (newDepth > 5) {
         throw new AppError({
-          code: "MAX_DEPTH_EXCEEDED",
-          message: "Maximum subtask nesting depth of 5 exceeded",
+          code: 'MAX_DEPTH_EXCEEDED',
+          message: 'Maximum subtask nesting depth of 5 exceeded',
           statusCode: 400,
         });
       }
@@ -363,14 +388,14 @@ export async function updateTask(taskId: string, userId: string, input: UpdateTa
            INNER JOIN descendants d ON t.parent_task_id = d.id
          )
          SELECT MAX(depth) as max_depth FROM descendants`,
-        [taskId]
+        [taskId],
       );
       const maxDescendantDepth = maxDescendantDepthResult.rows[0]?.max_depth ?? task.depth;
       const depthDelta = maxDescendantDepth - task.depth;
       if (newDepth + depthDelta > 5) {
         throw new AppError({
-          code: "MAX_DEPTH_EXCEEDED",
-          message: "Maximum subtask nesting depth of 5 exceeded",
+          code: 'MAX_DEPTH_EXCEEDED',
+          message: 'Maximum subtask nesting depth of 5 exceeded',
           statusCode: 400,
         });
       }
@@ -416,14 +441,14 @@ export async function updateTask(taskId: string, userId: string, input: UpdateTa
       `SELECT id FROM projects
        WHERE id = $1
          AND (user_id = $2 OR id IN (SELECT project_id FROM collaborators WHERE user_id = $2))`,
-      [input.projectId, userId]
+      [input.projectId, userId],
     );
     if (projectAccess.rows.length === 0) {
       throw new AppError({
-        code: "VALIDATION_ERROR",
-        message: "Project not accessible",
+        code: 'VALIDATION_ERROR',
+        message: 'Project not accessible',
         statusCode: 400,
-        details: [{ field: "projectId", message: "Project not accessible" }],
+        details: [{ field: 'projectId', message: 'Project not accessible' }],
       });
     }
 
@@ -436,7 +461,11 @@ export async function updateTask(taskId: string, userId: string, input: UpdateTa
     }
   }
 
-  if (input.sectionId !== undefined && input.projectId === undefined && input.parentTaskId === undefined) {
+  if (
+    input.sectionId !== undefined &&
+    input.projectId === undefined &&
+    input.parentTaskId === undefined
+  ) {
     setClauses.push(`section_id = $${paramIndex++}`);
     values.push(input.sectionId);
   }
@@ -453,7 +482,7 @@ export async function updateTask(taskId: string, userId: string, input: UpdateTa
   setClauses.push(`updated_at = NOW()`);
 
   values.push(taskId);
-  const query = `UPDATE tasks SET ${setClauses.join(", ")} WHERE id = $${paramIndex} RETURNING *`;
+  const query = `UPDATE tasks SET ${setClauses.join(', ')} WHERE id = $${paramIndex} RETURNING *`;
 
   // When reparenting shifts the task's own depth, the entire descendant subtree
   // must shift by the same delta so relative nesting is preserved (Phase 6 rule 5).
@@ -463,7 +492,7 @@ export async function updateTask(taskId: string, userId: string, input: UpdateTa
   if (shiftsDescendants) {
     const client = await pool.connect();
     try {
-      await client.query("BEGIN");
+      await client.query('BEGIN');
       const result = await client.query(query, values);
       await client.query(
         `WITH RECURSIVE descendants AS (
@@ -474,12 +503,12 @@ export async function updateTask(taskId: string, userId: string, input: UpdateTa
          )
          UPDATE tasks SET depth = depth + $2, updated_at = NOW()
          WHERE id IN (SELECT id FROM descendants)`,
-        [taskId, reparentDelta]
+        [taskId, reparentDelta],
       );
-      await client.query("COMMIT");
+      await client.query('COMMIT');
       formatted = formatTask(result.rows[0] as TaskRow);
     } catch (err) {
-      await client.query("ROLLBACK");
+      await client.query('ROLLBACK');
       throw err;
     } finally {
       client.release();
@@ -489,7 +518,16 @@ export async function updateTask(taskId: string, userId: string, input: UpdateTa
     formatted = formatTask(result.rows[0] as TaskRow);
   }
 
-  publishEvent(buildEvent({ entityType: "task", eventType: "updated", entityId: formatted.id, userId, projectId: formatted.projectId, payload: formatted })).catch((err) => console.error("[sync] publish failed", err));
+  publishEvent(
+    buildEvent({
+      entityType: 'task',
+      eventType: 'updated',
+      entityId: formatted.id,
+      userId,
+      projectId: formatted.projectId,
+      payload: formatted,
+    }),
+  ).catch((err) => console.error('[sync] publish failed', err));
   return formatted;
 }
 
@@ -504,13 +542,13 @@ async function detectCycle(taskId: string, proposedParentId: string): Promise<vo
        INNER JOIN ancestor_chain a ON t.id = a.parent_task_id
      )
      SELECT id FROM ancestor_chain WHERE id = $2`,
-    [proposedParentId, taskId]
+    [proposedParentId, taskId],
   );
 
   if (ancestors.rows.length > 0) {
     throw new AppError({
-      code: "CYCLIC_REFERENCE",
-      message: "Setting this parent would create a cyclic reference",
+      code: 'CYCLIC_REFERENCE',
+      message: 'Setting this parent would create a cyclic reference',
       statusCode: 400,
     });
   }
@@ -521,30 +559,39 @@ export async function reopenTask(taskId: string, userId: string) {
 
   const client = await pool.connect();
   try {
-    await client.query("BEGIN");
+    await client.query('BEGIN');
 
     await client.query(
       `UPDATE tasks
        SET is_completed = false, completed_at = NULL, updated_at = NOW()
        WHERE id = $1`,
-      [taskId]
+      [taskId],
     );
 
     // Record activity event
     await client.query(
       `INSERT INTO activity_events (user_id, project_id, entity_type, entity_id, event_type)
        VALUES ($1, $2, 'task', $3, 'task_reopened')`,
-      [userId, task.project_id, taskId]
+      [userId, task.project_id, taskId],
     );
 
-    await client.query("COMMIT");
+    await client.query('COMMIT');
 
-    const updated = await pool.query("SELECT * FROM tasks WHERE id = $1", [taskId]);
+    const updated = await pool.query('SELECT * FROM tasks WHERE id = $1', [taskId]);
     const formatted = formatTask(updated.rows[0] as TaskRow);
-    publishEvent(buildEvent({ entityType: "task", eventType: "uncompleted", entityId: formatted.id, userId, projectId: formatted.projectId, payload: formatted })).catch((err) => console.error("[sync] publish failed", err));
+    publishEvent(
+      buildEvent({
+        entityType: 'task',
+        eventType: 'uncompleted',
+        entityId: formatted.id,
+        userId,
+        projectId: formatted.projectId,
+        payload: formatted,
+      }),
+    ).catch((err) => console.error('[sync] publish failed', err));
     return formatted;
   } catch (err) {
-    await client.query("ROLLBACK");
+    await client.query('ROLLBACK');
     throw err;
   } finally {
     client.release();
@@ -554,10 +601,10 @@ export async function reopenTask(taskId: string, userId: string) {
 export async function reorderTask(taskId: string, userId: string, position: number) {
   if (!Number.isInteger(position) || position < 0) {
     throw new AppError({
-      code: "VALIDATION_ERROR",
-      message: "Validation failed",
+      code: 'VALIDATION_ERROR',
+      message: 'Validation failed',
       statusCode: 400,
-      details: [{ field: "position", message: "Position must be a non-negative integer" }],
+      details: [{ field: 'position', message: 'Position must be a non-negative integer' }],
     });
   }
 
@@ -565,7 +612,7 @@ export async function reorderTask(taskId: string, userId: string, position: numb
 
   const client = await pool.connect();
   try {
-    await client.query("BEGIN");
+    await client.query('BEGIN');
 
     // Get sibling tasks (same project + section + parent) ordered by current order_value
     const siblingsResult = await client.query(
@@ -575,7 +622,7 @@ export async function reorderTask(taskId: string, userId: string, position: numb
          AND parent_task_id IS NOT DISTINCT FROM $3
          AND id != $4
        ORDER BY order_value ASC`,
-      [task.project_id, task.section_id, task.parent_task_id, taskId]
+      [task.project_id, task.section_id, task.parent_task_id, taskId],
     );
 
     const siblings = siblingsResult.rows as { id: string; order_value: number }[];
@@ -589,18 +636,18 @@ export async function reorderTask(taskId: string, userId: string, position: numb
     // Reassign order_values using gap-based ordering (multiply by 1000)
     for (let i = 0; i < siblings.length; i++) {
       const newOrderValue = i * 1000;
-      await client.query(
-        `UPDATE tasks SET order_value = $1, updated_at = NOW() WHERE id = $2`,
-        [newOrderValue, siblings[i].id]
-      );
+      await client.query(`UPDATE tasks SET order_value = $1, updated_at = NOW() WHERE id = $2`, [
+        newOrderValue,
+        siblings[i].id,
+      ]);
     }
 
-    await client.query("COMMIT");
+    await client.query('COMMIT');
 
-    const updated = await pool.query("SELECT * FROM tasks WHERE id = $1", [taskId]);
+    const updated = await pool.query('SELECT * FROM tasks WHERE id = $1', [taskId]);
     return formatTask(updated.rows[0] as TaskRow);
   } catch (err) {
-    await client.query("ROLLBACK");
+    await client.query('ROLLBACK');
     throw err;
   } finally {
     client.release();
@@ -612,7 +659,7 @@ export async function deleteTask(taskId: string, userId: string): Promise<{ succ
 
   const client = await pool.connect();
   try {
-    await client.query("BEGIN");
+    await client.query('BEGIN');
 
     // Collect all task IDs to delete (the task + all descendants via recursive CTE)
     const descendantsResult = await client.query(
@@ -623,40 +670,36 @@ export async function deleteTask(taskId: string, userId: string): Promise<{ succ
          INNER JOIN subtree s ON t.parent_task_id = s.id
        )
        SELECT id FROM subtree`,
-      [taskId]
+      [taskId],
     );
 
     const taskIds = descendantsResult.rows.map((r: { id: string }) => r.id);
 
     // Cancel all reminders for deleted tasks
-    await client.query(
-      `DELETE FROM reminders WHERE task_id = ANY($1)`,
-      [taskIds]
-    );
+    await client.query(`DELETE FROM reminders WHERE task_id = ANY($1)`, [taskIds]);
 
     // Delete all tasks (parent + subtasks)
-    await client.query(
-      `DELETE FROM tasks WHERE id = ANY($1)`,
-      [taskIds]
-    );
+    await client.query(`DELETE FROM tasks WHERE id = ANY($1)`, [taskIds]);
 
     // Append activity event
     await client.query(
       `INSERT INTO activity_events (id, user_id, project_id, entity_type, entity_id, event_type, before_data)
        VALUES ($1, $2, $3, 'task', $4, 'task_deleted', $5)`,
-      [
-        uuidv4(),
-        userId,
-        task.project_id,
-        taskId,
-        JSON.stringify({ title: task.title }),
-      ]
+      [uuidv4(), userId, task.project_id, taskId, JSON.stringify({ title: task.title })],
     );
 
-    await client.query("COMMIT");
-    publishEvent(buildEvent({ entityType: "task", eventType: "deleted", entityId: taskId, userId, projectId: task.project_id })).catch((err) => console.error("[sync] publish failed", err));
+    await client.query('COMMIT');
+    publishEvent(
+      buildEvent({
+        entityType: 'task',
+        eventType: 'deleted',
+        entityId: taskId,
+        userId,
+        projectId: task.project_id,
+      }),
+    ).catch((err) => console.error('[sync] publish failed', err));
   } catch (err) {
-    await client.query("ROLLBACK");
+    await client.query('ROLLBACK');
     throw err;
   } finally {
     client.release();

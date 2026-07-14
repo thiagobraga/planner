@@ -138,7 +138,7 @@ export function InboxPage() {
     }
     setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, title: trimmed } : t)));
     if (id.startsWith('temp-')) {
-      // was a new task — create it
+      // was a new task - create it
       apiCreateTask({ title: trimmed, priority: 4 })
         .then((created) => {
           setTasks((prev) => prev.map((t) => (t.id === id ? apiToTask(created) : t)));

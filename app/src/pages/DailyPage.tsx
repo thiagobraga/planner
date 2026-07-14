@@ -119,7 +119,7 @@ export function DailyPage() {
       })
     );
     apiToggleHabitCompletion(id, todayKey, isCompleted).catch(() => {
-      fetchHabits().then(setHabits).catch(() => {});
+      fetchHabits().then(setHabits).catch(() => { });
     });
   }, []);
 
@@ -128,12 +128,12 @@ export function DailyPage() {
       const overdueTasks = (response.overdue || []).map(apiToTask);
       const todayTasks = (response.today || []).map(apiToTask);
       setSections(buildSections(overdueTasks, todayTasks));
-    }).catch(() => {});
+    }).catch(() => { });
   }, []);
 
   useSync(useCallback((event) => {
     if (event.entityType === 'habit' || event.entityType === 'habit_completion') {
-      fetchHabits().then(setHabits).catch(() => {});
+      fetchHabits().then(setHabits).catch(() => { });
       return;
     }
     if (event.entityType !== 'task') return;
@@ -331,19 +331,19 @@ export function DailyPage() {
       prev.map((s) =>
         s.key === todayKey
           ? {
-              ...s,
-              tasks: [
-                ...s.tasks,
-                {
-                  id: tid,
-                  title: trimmed,
-                  priority: 4,
-                  isCompleted: false,
-                  orderValue: s.tasks.length + 1,
-                  type: 'task',
-                },
-              ],
-            }
+            ...s,
+            tasks: [
+              ...s.tasks,
+              {
+                id: tid,
+                title: trimmed,
+                priority: 4,
+                isCompleted: false,
+                orderValue: s.tasks.length + 1,
+                type: 'task',
+              },
+            ],
+          }
           : s
       )
     );
@@ -359,7 +359,7 @@ export function DailyPage() {
         }))
       );
     }).catch(() => {
-      // keep local version — it's in localStorage
+      // keep local version - it's in localStorage
     });
   };
 
@@ -379,20 +379,20 @@ export function DailyPage() {
       return withToday.map((s) =>
         s.key === todayKey
           ? {
-              ...s,
-              tasks: [
-                ...s.tasks,
-                {
-                  id: tid,
-                  title: '',
-                  priority: 4,
-                  dueDate: todayKey,
-                  isCompleted: false,
-                  orderValue: s.tasks.length + 1,
-                  type: 'note',
-                },
-              ],
-            }
+            ...s,
+            tasks: [
+              ...s.tasks,
+              {
+                id: tid,
+                title: '',
+                priority: 4,
+                dueDate: todayKey,
+                isCompleted: false,
+                orderValue: s.tasks.length + 1,
+                type: 'note',
+              },
+            ],
+          }
           : s
       );
     });

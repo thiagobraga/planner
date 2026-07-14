@@ -1,8 +1,8 @@
-# Phase 1 — Tasks
+# Phase 1 - Tasks
 
 ## Custom Select Component
 
-- [ ] Create `app/src/hooks/useFloatingPosition.ts` — shared viewport-aware positioning hook
+- [ ] Create `app/src/hooks/useFloatingPosition.ts` - shared viewport-aware positioning hook
   - [ ] Measure floating element dimensions after mount
   - [ ] Flip above/below when insufficient space
   - [ ] Shift horizontally when overflowing viewport edges
@@ -68,14 +68,14 @@
 
 - [ ] Modify `app/src/pages/StyleguidePage.tsx`
   - [ ] Import CustomSelect and ContextMenu
-  - [ ] Add Card 12 — Custom Select specimens:
+  - [ ] Add Card 12 - Custom Select specimens:
     - [ ] Closed state with placeholder
     - [ ] Open state (interactive)
     - [ ] Option selected
     - [ ] Disabled state
     - [ ] Error state with error text
     - [ ] Many options with scroll (15+ items)
-  - [ ] Add Card 13 — Context Menu specimens:
+  - [ ] Add Card 13 - Context Menu specimens:
     - [ ] Standard menu with common items
     - [ ] Menu with separators
     - [ ] Menu with disabled item
@@ -85,9 +85,9 @@
 
 ## Verification
 
-- [ ] `cd app && npx tsc --noEmit` — TypeScript compiles
-- [ ] `pnpm lint` — no lint errors
-- [ ] `pnpm -F app test` — existing tests pass
+- [ ] `cd app && npx tsc --noEmit` - TypeScript compiles
+- [ ] `pnpm lint` - no lint errors
+- [ ] `pnpm -F app test` - existing tests pass
 - [ ] Manual: visit `/styleguide`, verify new sections render and are interactive
 - [ ] Test keyboard-only navigation through both components
 - [ ] Test at 150% zoom / narrow viewport: menus reposition correctly
