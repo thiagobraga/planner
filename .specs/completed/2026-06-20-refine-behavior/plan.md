@@ -24,8 +24,6 @@ You are a skilled Web Developer and Design Expert. Let's think this project like
 
 ## Improvements
 
-- .sidebar-drawer
-  padding 24px 4px 24px 12px
 - for kbd's padding 0 5px
   <kbd style="padding: 0 5px;background...
 - Make CSS beautiful, modern, performatic, use new CSS nested elements

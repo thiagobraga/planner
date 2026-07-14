@@ -218,6 +218,15 @@ aside[aria-label="Navigation"] {
   background: transparent;
 }
 
+.habit-timeline-days-viewport {
+  scrollbar-width: none;
+  touch-action: pan-x;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 /* Monthly strip buttons — hover uses the theme-aware token */
 .monthly-strip button:not([aria-current="date"]):hover {
   background-color: var(--planner-monthly-strip-hover) !important;

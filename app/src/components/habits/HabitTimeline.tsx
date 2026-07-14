@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { MoreHorizontal } from 'lucide-react';
 import { ContextMenu } from '../ui/ContextMenu';
 import { MonthStrip } from '../MonthStrip';
+import { StripNavigator } from '../ui/StripNavigator';
 import { fmtISO } from './HabitGrid';
 
-const CELL_W = 28;
+const CELL_W = 24;
 const DAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
 export interface TimelineHabit {
@@ -41,6 +42,9 @@ export function HabitTimeline({ habits, today, todaySignal, onToggle, onEdit, on
     year: today.getFullYear(),
     month: today.getMonth(),
   }));
+  const daysViewportRef = useRef<HTMLDivElement>(null);
+  const [canPagePrevious, setCanPagePrevious] = useState(false);
+  const [canPageNext, setCanPageNext] = useState(false);
 
   const days = useMemo<DayCell[]>(() => {
     const daysInMonth = new Date(selected.year, selected.month + 1, 0).getDate();
@@ -63,6 +67,34 @@ export function HabitTimeline({ habits, today, todaySignal, onToggle, onEdit, on
     }
   }, [todaySignal, today]);
 
+  const updatePagingState = useCallback(() => {
+    const viewport = daysViewportRef.current;
+    if (!viewport) return;
+
+    setCanPagePrevious(viewport.scrollLeft > 1);
+    setCanPageNext(viewport.scrollLeft + viewport.clientWidth < viewport.scrollWidth - 1);
+  }, []);
+
+  useEffect(() => {
+    const viewport = daysViewportRef.current;
+    if (!viewport) return;
+
+    viewport.scrollTo({ left: 0 });
+    updatePagingState();
+
+    const resizeObserver = new ResizeObserver(updatePagingState);
+    resizeObserver.observe(viewport);
+    return () => resizeObserver.disconnect();
+  }, [days, updatePagingState]);
+
+  const pageDays = (direction: -1 | 1) => {
+    const viewport = daysViewportRef.current;
+    if (!viewport) return;
+
+    const visibleCells = Math.max(1, Math.floor(viewport.clientWidth / CELL_W));
+    viewport.scrollBy({ left: direction * visibleCells * CELL_W, behavior: 'smooth' });
+  };
+
   return (
     <div className="habit-timeline">
       {/* Month navigator (shared with Monthly page) */}
@@ -73,25 +105,58 @@ export function HabitTimeline({ habits, today, todaySignal, onToggle, onEdit, on
         className="mt-6"
       />
 
-      {/* Timeline table */}
-      <div className="habit-timeline-table mt-6 overflow-x-auto">
-        <div className="habit-timeline-table-inner inline-block min-w-full">
-          {/* Header row */}
-          <div className="habit-timeline-header flex">
-            <div className="habit-timeline-header-label sticky left-0 z-10 shrink-0 w-32 flex items-end pb-2 pr-3">
-              <span className="habit-timeline-header-text text-[10px] tracking-[0.08em] uppercase text-ink-light font-medium">
-                Habit
+      <div className="habit-timeline-table mt-6 flex min-w-0 items-start gap-2">
+        <div className="habit-timeline-labels w-48 shrink-0 min-w-0">
+          <div className="h-12" aria-hidden="true" />
+          {habits.map((habit) => (
+            <div key={habit.id} className="habit-timeline-row-label group flex h-6 min-w-0 items-center gap-2 pr-2">
+              <span
+                className="habit-timeline-row-color-dot h-2 w-2 shrink-0 rounded-full"
+                style={{ background: habit.color }}
+                aria-hidden="true"
+              />
+              <span className="habit-timeline-row-name min-w-0 flex-1 truncate text-sm leading-6 text-ink" title={habit.note}>
+                {habit.name}
               </span>
+              <button
+                type="button"
+                aria-label={`Options for ${habit.name}`}
+                className="habit-timeline-row-options flex h-6 w-6 shrink-0 items-center justify-center rounded-[4px] text-ink-light opacity-0 group-hover:opacity-100 focus:opacity-100 hover:text-ink hover:bg-dot/30 cursor-pointer transition-opacity duration-75"
+                onClick={(event) => {
+                  const rect = event.currentTarget.getBoundingClientRect();
+                  setMenu({ habitId: habit.id, x: rect.left, y: rect.bottom + 4 });
+                }}
+              >
+                <MoreHorizontal size={14} />
+              </button>
             </div>
+          ))}
+        </div>
+
+        <StripNavigator
+          direction="previous"
+          aria-label="Previous days"
+          disabled={!canPagePrevious}
+          onClick={() => pageDays(-1)}
+          className="habit-timeline-days-prev mt-1.5"
+        />
+
+        <div
+          ref={daysViewportRef}
+          onScroll={updatePagingState}
+          className="habit-timeline-days-viewport min-w-0 flex-1 overflow-x-auto overscroll-x-contain scroll-smooth"
+        >
+          <div className="habit-timeline-table-inner" style={{ width: days.length * CELL_W }}>
+            <div className="habit-timeline-header flex h-12">
             {days.map((d) => (
               <div
                 key={d.iso}
-                className={`habit-timeline-header-day shrink-0 flex flex-col items-center justify-end gap-1 pb-2 pt-3 ${d.future ? 'opacity-40' : ''}`}
+                className={`habit-timeline-header-day flex h-12 shrink-0 flex-col items-center justify-center ${d.future ? 'opacity-40' : ''}`}
                 style={{ width: CELL_W }}
               >
-                <span className="habit-timeline-header-day-letter text-[10px] leading-none text-ink-light opacity-70">{d.letter}</span>
+                <span className="habit-timeline-header-day-letter flex h-6 items-center text-[10px] leading-6 text-ink-light opacity-70">{d.letter}</span>
                 <span
-                  className={`habit-timeline-header-day-number text-[10px] leading-none ${
+                  className={`habit-timeline-header-day-number flex h-6 items-center text-[10px] leading-6 ${
                     d.iso === todayISO ? 'text-ink font-semibold' : 'text-ink-light'
                   }`}
                 >
@@ -101,38 +166,15 @@ export function HabitTimeline({ habits, today, todaySignal, onToggle, onEdit, on
             ))}
           </div>
 
-          {/* Habit rows */}
           {habits.map((habit) => (
-            <div key={habit.id} className="habit-timeline-row flex group">
-              <div className="habit-timeline-row-label sticky left-0 z-10 shrink-0 w-32 flex items-center gap-2 pr-2 h-14">
-                <span
-                  className="habit-timeline-row-color-dot w-2 h-2 rounded-full shrink-0"
-                  style={{ background: habit.color }}
-                  aria-hidden="true"
-                />
-                <span className="habit-timeline-row-name flex-1 min-w-0 truncate text-sm text-ink" title={habit.note}>
-                  {habit.name}
-                </span>
-                <button
-                  type="button"
-                  aria-label={`Options for ${habit.name}`}
-                  className="habit-timeline-row-options shrink-0 p-1 rounded-[4px] text-ink-light opacity-0 group-hover:opacity-100 focus:opacity-100 hover:text-ink hover:bg-dot/30 cursor-pointer transition-opacity duration-75"
-                  onClick={(e) => {
-                    const rect = e.currentTarget.getBoundingClientRect();
-                    setMenu({ habitId: habit.id, x: rect.left, y: rect.bottom + 4 });
-                  }}
-                >
-                  <MoreHorizontal size={14} />
-                </button>
-              </div>
-
+            <div key={habit.id} className="habit-timeline-row flex h-6">
               {days.map((d, i) => {
                 if (d.future) {
                   return (
                     <span
                       key={d.iso}
                       aria-hidden="true"
-                      className="habit-timeline-day-placeholder shrink-0 h-14"
+                      className="habit-timeline-day-placeholder h-6 shrink-0"
                       style={{ width: CELL_W }}
                     />
                   );
@@ -148,7 +190,7 @@ export function HabitTimeline({ habits, today, todaySignal, onToggle, onEdit, on
                     onClick={() => onToggle(habit.id, d.iso, !done)}
                     aria-label={`${habit.name} ${d.iso}${done ? ' completed' : ' not completed'}`}
                     aria-pressed={done}
-                    className="habit-timeline-day-cell relative shrink-0 h-14 p-0 bg-transparent border-none cursor-pointer"
+                    className="habit-timeline-day-cell relative h-6 shrink-0 p-0 bg-transparent border-none cursor-pointer"
                     style={{ width: CELL_W }}
                   >
                     {/* connector halves */}
@@ -181,17 +223,16 @@ export function HabitTimeline({ habits, today, todaySignal, onToggle, onEdit, on
               })}
             </div>
           ))}
+          </div>
         </div>
-      </div>
 
-      {/* Legend */}
-      <div className="habit-timeline-legend flex items-center justify-center gap-6 mt-4 text-xs text-ink-light">
-        <span className="habit-timeline-legend-item inline-flex items-center gap-2">
-          <span className="habit-timeline-legend-dot-not-done w-[5px] h-[5px] rounded-full bg-dot inline-block" /> Not done
-        </span>
-        <span className="habit-timeline-legend-item inline-flex items-center gap-2">
-          <span className="habit-timeline-legend-dot-done w-2 h-2 rounded-full bg-ink inline-block" /> Done
-        </span>
+        <StripNavigator
+          direction="next"
+          aria-label="Next days"
+          disabled={!canPageNext}
+          onClick={() => pageDays(1)}
+          className="habit-timeline-days-next mt-1.5"
+        />
       </div>
 
       {menu && (

@@ -1,5 +1,5 @@
 import { useEffect, useState, type CSSProperties } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { StripNavigator } from './ui/StripNavigator';
 
 const MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
 const MONTH_WINDOW = 3;
@@ -87,14 +87,12 @@ export function MonthStrip({ year: selectedYear, month: selectedMonth, onChange,
 
   return (
     <div className={`monthly-strip flex items-center gap-3 sm:gap-4 ${className}`}>
-      <button
-        type="button"
+      <StripNavigator
+        direction="previous"
         aria-label="Previous month"
         onClick={() => selectMonth(shiftMonth(selectedYear, selectedMonth, -1), -1)}
-        className="month-strip-nav-prev flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-transparent bg-dot/20 text-ink-light transition-colors duration-[var(--motion-fast)] hover:bg-dot/35 hover:text-ink"
-      >
-        <ChevronLeft size={16} strokeWidth={1.8} />
-      </button>
+        className="month-strip-nav-prev"
+      />
 
       <div className="monthly-strip-viewport w-[232px] shrink-0 overflow-hidden sm:w-[552px]">
         <div
@@ -141,14 +139,12 @@ export function MonthStrip({ year: selectedYear, month: selectedMonth, onChange,
         </div>
       </div>
 
-      <button
-        type="button"
+      <StripNavigator
+        direction="next"
         aria-label="Next month"
         onClick={() => selectMonth(shiftMonth(selectedYear, selectedMonth, 1), 1)}
-        className="month-strip-nav-next flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-transparent bg-dot/20 text-ink-light transition-colors duration-[var(--motion-fast)] hover:bg-dot/35 hover:text-ink"
-      >
-        <ChevronRight size={16} strokeWidth={1.8} />
-      </button>
+        className="month-strip-nav-next"
+      />
     </div>
   );
 }
