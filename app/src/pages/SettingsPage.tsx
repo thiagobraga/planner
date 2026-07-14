@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
-import { Check, PencilLine } from 'lucide-react';
+import { Check } from 'lucide-react';
 import { Toggle } from '../components/ui/Toggle';
 import { fetchPreferences, apiUpdatePreferences, type Preferences } from '../api/client';
 import { ensureFontLoaded, type FontOption } from '../utils/fontLoader';
@@ -13,22 +13,17 @@ const FONT_OPTIONS: Array<{
     {
       value: 'lora',
       label: 'Lora',
-      previewClass: 'font-journal text-[20px] sm:text-[24px]',
-    },
-    {
-      value: 'klee',
-      label: 'Klee One',
-      previewClass: 'font-klee text-[20px] sm:text-[24px]',
+      previewClass: 'font-journal text-[14px] sm:text-[16px]',
     },
     {
       value: 'playpen',
       label: 'Playpen Sans',
-      previewClass: 'font-playpen text-[18px] sm:text-[20px]',
+      previewClass: 'font-playpen text-[14px] sm:text-[16px] leading-none',
     },
     {
       value: 'hubballi',
       label: 'Hubballi',
-      previewClass: 'font-hubballi text-[24px] sm:text-[26px]',
+      previewClass: 'font-hubballi text-[14px] sm:text-[16px] leading-none',
     },
   ];
 
@@ -50,26 +45,19 @@ const BACKGROUND_OPTIONS: Array<{
   ];
 
 function SettingsCard({
-  icon,
   title,
   description,
   children,
 }: {
-  icon: ReactNode;
   title: string;
   description: string;
   children: ReactNode;
 }) {
   return (
     <section className="rounded-[8px] border border-border bg-[var(--planner-card-bg)] shadow-subtle !p-6">
-      <div className="flex items-start gap-4">
-        <span className="flex h-6 w-6 shrink-0 items-center justify-center text-ink" aria-hidden="true">
-          {icon}
-        </span>
-        <div className="min-w-0 flex-1">
-          <h2 className="text-lg leading-6 font-semibold text-ink">{title}</h2>
-          <p className="mt-1 text-[13px] leading-6 text-ink-light opacity-60">{description}</p>
-        </div>
+      <div className="min-w-0">
+        <h2 className="text-lg leading-6 font-semibold text-ink">{title}</h2>
+        <p className="mt-1 text-[13px] leading-6 text-ink-light opacity-60">{description}</p>
       </div>
       <div className="mt-7">{children}</div>
     </section>
@@ -89,7 +77,7 @@ function selectedBorder(selected: boolean) {
 function SelectionMark({ selected }: { selected: boolean }) {
   return (
     <span
-      className={`absolute right-3 top-3 flex h-5 w-5 items-center justify-center rounded-full border ${selected ? 'border-ink bg-ink text-cream' : 'border-ink-light bg-transparent'
+      className={`absolute left-3 top-1/2 flex h-5 w-5 -translate-y-1/2 items-center justify-center rounded-full border ${selected ? 'border-ink bg-ink text-cream' : 'border-ink-light bg-transparent'
         }`}
       aria-hidden="true"
     >
@@ -170,13 +158,12 @@ export function SettingsPage() {
 
       <div className="mt-12 flex flex-col gap-6">
         <SettingsCard
-          icon={<PencilLine size={24} strokeWidth={1.5} />}
           title="Appearance"
           description="Adjust how Planner looks and feels."
         >
           <div className="flex flex-col gap-12">
             <div>
-              <h3 className="text-[10px] leading-6 tracking-[0.1em] uppercase text-ink-light font-medium">Typography</h3>
+              <h3 className="text-[10px] leading-5 tracking-[0.12em] uppercase text-ink-light font-medium">Typography</h3>
               <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3 md:gap-8" role="radiogroup" aria-label="Font">
                 {FONT_OPTIONS.map(({ value, label, previewClass }) => {
                   const selected = font === value;
@@ -209,7 +196,7 @@ export function SettingsPage() {
 
             <div>
               <h3 className="text-[10px] leading-6 tracking-[0.1em] uppercase text-ink-light font-medium">Background</h3>
-              <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 sm:max-w-[520px]" role="radiogroup" aria-label="Background">
+              <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-3 md:gap-8" role="radiogroup" aria-label="Background">
                 {BACKGROUND_OPTIONS.map(({ value, label, previewClass }) => {
                   const selected = background === value;
                   return (
@@ -223,7 +210,7 @@ export function SettingsPage() {
                       className="group flex flex-col items-center gap-2 disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       <span
-                        className={`relative block h-24 w-full rounded-[6px] border transition-colors duration-[var(--motion-fast)] ${selectedBorder(selected)} ${previewClass} ${showDots
+                        className={`relative block h-[60px] w-full rounded-[6px] border transition-colors duration-[var(--motion-fast)] ${selectedBorder(selected)} ${previewClass} ${showDots
                           ? '[background-image:radial-gradient(circle,var(--color-dot)_1px,transparent_1px)] [background-size:var(--dot-grid)_var(--dot-grid)] [background-position:calc(var(--dot-grid)/2)_calc(var(--dot-grid)/2)]'
                           : ''
                           }`}
@@ -235,15 +222,16 @@ export function SettingsPage() {
                   );
                 })}
               </div>
+              <div className="mt-4">
+                <Toggle
+                  checked={showDots}
+                  onChange={handleDotsChange}
+                  disabled={disabled}
+                  label={<span className="text-sm leading-6 text-ink">Show background dots</span>}
+                  className="[&_button]:!p-0"
+                />
+              </div>
             </div>
-
-            <Toggle
-              checked={showDots}
-              onChange={handleDotsChange}
-              disabled={disabled}
-              label={<span className="text-sm leading-6 text-ink">Show background dots</span>}
-              className="[&_button]:!p-0"
-            />
           </div>
         </SettingsCard>
       </div>

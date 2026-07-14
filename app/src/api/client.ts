@@ -88,7 +88,7 @@ export interface Preferences {
   weekStart: 'sunday' | 'monday';
   theme: 'light' | 'dark' | 'system';
   notificationsEnabled: boolean;
-  font: 'lora' | 'klee' | 'playpen' | 'hubballi';
+  font: 'lora' | 'playpen' | 'hubballi';
   showDots: boolean;
   background: 'beige' | 'white';
   smallCaps: boolean;
@@ -142,7 +142,10 @@ export async function apiCreateTask(input: {
 
 export async function apiUpdateTask(
   id: string,
-  updates: Partial<Pick<ApiTask, 'title' | 'priority' | 'dueDate' | 'depth' | 'type'>>,
+  updates: Partial<Pick<ApiTask, 'title' | 'priority' | 'dueDate' | 'depth' | 'type'>> & {
+    // `null` promotes the task to the top level (unparent); backend derives depth.
+    parentTaskId?: string | null;
+  },
 ): Promise<ApiTask> {
   return request<ApiTask>(`/tasks/${id}`, {
     method: 'PATCH',

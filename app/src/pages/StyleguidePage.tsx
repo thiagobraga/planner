@@ -77,7 +77,7 @@ const MOTION = [
 const PRIMARY_COLORS = [
   { name: 'Cream Paper', var: '--color-cream', hex: '#f5f0e8' },
   { name: 'Sidebar Cream', var: '--color-sidebar-bg', hex: '#ebe6de' },
-  { name: 'Dot Grid', var: '--color-dot', hex: '#d4cfc7' },
+  { name: 'Dot Grid', var: '--color-dot', hex: '#d8d3cb' },
   { name: 'Border', var: '--color-border', hex: '#e5e1d8' },
   { name: 'Ink', var: '--color-ink', hex: '#44443d' },
 ];
@@ -204,19 +204,19 @@ export function StyleguidePage() {
         <Card title="Color Palette" span>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div>
-              <h3 className="text-[10px] text-ink-light uppercase tracking-[0.1em] font-semibold mb-4">Primary Palette</h3>
-              <p className="text-[11px] text-ink-light mb-4">Base neutral and structural colors — calm, readable foundations for content.</p>
+              <h3 className="text-[10px] text-ink-light uppercase tracking-[0.1em] font-semibold">Primary Palette</h3>
+              <p className="text-[11px] text-ink-light opacity-70 -mt-2 mb-4">Base neutral and structural colors — calm, readable foundations for content.</p>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 gap-4">
                 {PRIMARY_COLORS.map(({ name, var: varName, hex }) => (
                   <div key={varName} className="flex items-start gap-3">
                     <span
-                      className="w-10 h-10 rounded-[6px] border border-border flex-shrink-0"
+                      className="w-12 h-12 rounded-[6px] border border-border flex-shrink-0"
                       style={{ backgroundColor: hex }}
                       title={varName}
                     />
                     <div className="flex flex-col gap-0.5">
                       <span className="text-sm text-ink font-medium leading-none mb-1">{name}</span>
-                      <span className="text-[10px] text-ink-light font-mono leading-none">{varName}</span>
+                      <span className="text-[10px] text-ink-light font-mono leading-none mb-1">{varName}</span>
                       <span className="text-[10px] text-ink-light font-mono leading-none">{hex}</span>
                     </div>
                   </div>
@@ -224,19 +224,19 @@ export function StyleguidePage() {
               </div>
             </div>
             <div>
-              <h3 className="text-[10px] text-ink-light uppercase tracking-[0.1em] font-semibold mb-4">Secondary Palette</h3>
-              <p className="text-[11px] text-ink-light mb-4">Accent and semantic colors — for emphasis, priority, and status signals.</p>
+              <h3 className="text-[10px] text-ink-light uppercase tracking-[0.1em] font-semibold -mb-2">Secondary Palette</h3>
+              <p className="text-[11px] text-ink-light opacity-70 -mt-2 mb-4">Accent and semantic colors — for emphasis, priority, and status signals.</p>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 gap-4">
                 {SECONDARY_COLORS.map(({ name, var: varName, hex }) => (
                   <div key={varName} className="flex items-start gap-3">
                     <span
-                      className="w-10 h-10 rounded-[6px] border border-border flex-shrink-0"
+                      className="w-12 h-12 rounded-[6px] border border-border flex-shrink-0"
                       style={{ backgroundColor: hex }}
                       title={varName}
                     />
                     <div className="flex flex-col gap-0.5">
                       <span className="text-sm text-ink font-medium leading-none mb-1">{name}</span>
-                      <span className="text-[10px] text-ink-light font-mono leading-none">{varName}</span>
+                      <span className="text-[10px] text-ink-light font-mono leading-none mb-1">{varName}</span>
                       <span className="text-[10px] text-ink-light font-mono leading-none">{hex}</span>
                     </div>
                   </div>
@@ -244,7 +244,7 @@ export function StyleguidePage() {
               </div>
             </div>
           </div>
-          <div className="mt-6 pt-6 border-t border-border">
+          <div className="mt-6 pt-6">
             <h3 className="text-[10px] text-ink-light uppercase tracking-[0.1em] font-semibold mb-4">Text & Foreground</h3>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               {INK_COLORS.map(({ name, var: varName, hex }) => (
