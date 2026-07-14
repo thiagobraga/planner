@@ -8,7 +8,7 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   children: ReactNode;
 }
 
-// Height 40px, radius 8px, left icon + 8px gap — per brand guide "BOTÕES".
+// Height 40px, radius 8px, left icon + 8px gap - per brand guide "BOTÕES".
 const base =
   'inline-flex items-center justify-center gap-2 h-10 px-4 rounded-[8px] text-sm font-journal leading-none whitespace-nowrap select-none transition-[opacity,background-color,color] duration-[var(--motion-fast)] disabled:cursor-not-allowed';
 

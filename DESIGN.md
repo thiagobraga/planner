@@ -2,123 +2,123 @@
 name: Planner
 description: Editorial planner that reads like a paper journal.
 colors:
-  cream: "#f5f0e8"
-  sidebar-bg: "#ebe6de"
-  ink: "#44443d"
-  ink-light: "#8b867e"
-  dot: "#d4cfc7"
-  border: "#e5e1d8"
-  accent: "#c9483b"
-  accent-light: "#e76052"
-  priority-2: "#e39133"
-  priority-3: "#4d8fd6"
-  moss: "#8ca46a"
+  cream: '#f5f0e8'
+  sidebar-bg: '#ebe6de'
+  ink: '#44443d'
+  ink-light: '#8b867e'
+  dot: '#d4cfc7'
+  border: '#e5e1d8'
+  accent: '#c9483b'
+  accent-light: '#e76052'
+  priority-2: '#e39133'
+  priority-3: '#4d8fd6'
+  moss: '#8ca46a'
 typography:
   display:
-    fontFamily: "Lora, Georgia, serif"
-    fontSize: "18px"
+    fontFamily: 'Lora, Georgia, serif'
+    fontSize: '18px'
     fontWeight: 600
-    lineHeight: "24px"
+    lineHeight: '24px'
   headline:
-    fontFamily: "Lora, Georgia, serif"
-    fontSize: "16px"
+    fontFamily: 'Lora, Georgia, serif'
+    fontSize: '16px'
     fontWeight: 600
-    lineHeight: "24px"
+    lineHeight: '24px'
   numeric:
-    fontFamily: "Lora, Georgia, serif"
-    fontSize: "56px"
+    fontFamily: 'Lora, Georgia, serif'
+    fontSize: '56px'
     fontWeight: 600
-    lineHeight: "56px"
-    letterSpacing: "-0.02em"
+    lineHeight: '56px'
+    letterSpacing: '-0.02em'
   body:
-    fontFamily: "Lora, Georgia, serif"
-    fontSize: "14px"
+    fontFamily: 'Lora, Georgia, serif'
+    fontSize: '14px'
     fontWeight: 400
-    lineHeight: "24px"
+    lineHeight: '24px'
   caption:
-    fontFamily: "Lora, Georgia, serif"
-    fontSize: "12px"
+    fontFamily: 'Lora, Georgia, serif'
+    fontSize: '12px'
     fontWeight: 400
-    lineHeight: "24px"
+    lineHeight: '24px'
   label:
-    fontFamily: "Lora, Georgia, serif"
-    fontSize: "11px"
+    fontFamily: 'Lora, Georgia, serif'
+    fontSize: '11px'
     fontWeight: 500
-    lineHeight: "24px"
-    letterSpacing: "0.1em"
+    lineHeight: '24px'
+    letterSpacing: '0.1em'
   mono:
-    fontFamily: "ui-monospace, SFMono-Regular, monospace"
-    fontSize: "11px"
+    fontFamily: 'ui-monospace, SFMono-Regular, monospace'
+    fontSize: '11px'
     fontWeight: 400
-    lineHeight: "16px"
+    lineHeight: '16px'
 rounded:
-  xs: "4px"
-  sm: "6px"
-  md: "8px"
-  lg: "12px"
-  xl: "16px"
-  pill: "8px"
-  full: "50%"
+  xs: '4px'
+  sm: '6px'
+  md: '8px'
+  lg: '12px'
+  xl: '16px'
+  pill: '8px'
+  full: '50%'
 shadow:
-  subtle: "0 1px 2px rgba(68,68,61,0.06), 0 1px 3px rgba(68,68,61,0.08)"
-  medium: "0 4px 12px rgba(68,68,61,0.10)"
-  overlay: "0 8px 32px rgba(44,44,44,0.15)"
+  subtle: '0 1px 2px rgba(68,68,61,0.06), 0 1px 3px rgba(68,68,61,0.08)'
+  medium: '0 4px 12px rgba(68,68,61,0.10)'
+  overlay: '0 8px 32px rgba(44,44,44,0.15)'
 motion:
-  fast: "150ms"
-  default: "200ms"
-  smooth: "300ms"
+  fast: '150ms'
+  default: '200ms'
+  smooth: '300ms'
 spacing:
-  xs: "4px"
-  sm: "8px"
-  md: "12px"
-  lg: "16px"
-  xl: "24px"
-  xxl: "32px"
+  xs: '4px'
+  sm: '8px'
+  md: '12px'
+  lg: '16px'
+  xl: '24px'
+  xxl: '32px'
 components:
   button-primary:
-    backgroundColor: "{colors.ink}"
-    textColor: "{colors.cream}"
-    typography: "{typography.body}"
-    rounded: "{rounded.sm}"
-    padding: "4px 16px"
+    backgroundColor: '{colors.ink}'
+    textColor: '{colors.cream}'
+    typography: '{typography.body}'
+    rounded: '{rounded.sm}'
+    padding: '4px 16px'
   sidebar-link:
-    backgroundColor: "{colors.sidebar-bg}"
-    textColor: "{colors.ink}"
-    typography: "{typography.body}"
-    rounded: "{rounded.sm}"
-    padding: "0 12px"
-    height: "32px"
+    backgroundColor: '{colors.sidebar-bg}'
+    textColor: '{colors.ink}'
+    typography: '{typography.body}'
+    rounded: '{rounded.sm}'
+    padding: '0 12px'
+    height: '32px'
   sidebar-link-active:
-    backgroundColor: "{colors.dot}"
-    textColor: "{colors.ink}"
-    rounded: "{rounded.sm}"
+    backgroundColor: '{colors.dot}'
+    textColor: '{colors.ink}'
+    rounded: '{rounded.sm}'
   task-row:
-    backgroundColor: "{colors.cream}"
-    textColor: "{colors.ink}"
-    typography: "{typography.body}"
-    rounded: "{rounded.sm}"
-    height: "24px"
+    backgroundColor: '{colors.cream}'
+    textColor: '{colors.ink}'
+    typography: '{typography.body}'
+    rounded: '{rounded.sm}'
+    height: '24px'
   chip-label:
-    backgroundColor: "{colors.dot}"
-    textColor: "{colors.ink}"
-    typography: "{typography.label}"
-    rounded: "{rounded.pill}"
-    padding: "0 6px"
+    backgroundColor: '{colors.dot}'
+    textColor: '{colors.ink}'
+    typography: '{typography.label}'
+    rounded: '{rounded.pill}'
+    padding: '0 6px'
   input-text:
-    backgroundColor: "{colors.cream}"
-    textColor: "{colors.ink}"
-    typography: "{typography.body}"
-    rounded: "{rounded.sm}"
-    padding: "4px 8px"
+    backgroundColor: '{colors.cream}'
+    textColor: '{colors.ink}'
+    typography: '{typography.body}'
+    rounded: '{rounded.sm}'
+    padding: '4px 8px'
   overlay-panel:
-    backgroundColor: "{colors.cream}"
-    textColor: "{colors.ink}"
-    rounded: "{rounded.md}"
-    padding: "24px 32px"
+    backgroundColor: '{colors.cream}'
+    textColor: '{colors.ink}'
+    rounded: '{rounded.md}'
+    padding: '24px 32px'
   habit-dot:
-    backgroundColor: "{colors.ink}"
-    width: "16px"
-    height: "16px"
+    backgroundColor: '{colors.ink}'
+    width: '16px'
+    height: '16px'
 ---
 
 # Design System: Planner
@@ -132,6 +132,7 @@ Planner is a Moleskine page that happens to compute. The surface is warm cream s
 The system explicitly rejects the visual idioms of its category: Todoist's saturated red field, Things' iOS-default sans, Notion's neutral grey, Linear's terminal density, and the SaaS-cream-with-rounded-cards template that most planning apps default to. Density is moderate but not cramped; rhythm is set by the 24-pixel baseline grid, the same grid the body dot pattern is printed on. Depth is conveyed through tint and stroke, never shadow.
 
 **Key Characteristics:**
+
 - Cream paper surface (`#f5f0e8`) with a printed dot grid (`#d4cfc7`, 24px spacing) as the page texture
 - One serif (Lora) for everything; no display/body pairing
 - Tinted-warm neutrals only; the single brick-red accent appears on ≤10% of any screen
@@ -143,10 +144,12 @@ The system explicitly rejects the visual idioms of its category: Todoist's satur
 A short palette of warm, slightly aged neutrals with one brick-red anchor; everything tilts toward yellow-red hue. No greys, no blue-grey, no pure black or white.
 
 ### Primary
+
 - **Warm Brick Red** (`#c9483b`): The single accent. Reserved for state that needs the eye to stop: overdue indicators, P1 priority bullets, error glyphs, the active caret. Decorative use is forbidden.
 - **Felt-Tip Red** (`#e76052`): A lifted variant of the brick red. Available for hover or emphasis on the primary, but currently appears as the P2-adjacent option; treat as situational, not free-to-use.
 
 ### Neutral
+
 - **Cream Paper** (`#f5f0e8`): The page itself. Body background, overlay panel surface, input field surface. Never `#fff`.
 - **Sidebar Cream** (`#ebe6de`): A half-step deeper than Cream Paper, used for sidebars, toolbars, and tonal layering. The only secondary surface.
 - **Dot Grey** (`#d4cfc7`): Chip backgrounds, drag-handle resting color, the printed dot grid, tonal fills. The workhorse neutral.
@@ -155,6 +158,7 @@ A short palette of warm, slightly aged neutrals with one brick-red anchor; every
 - **Ink Light** (`#8b867e`): Secondary text, captions, italics, due-date labels, empty-state copy, kbd hints.
 
 ### Tertiary (priority data only)
+
 - **Pencil Orange** (`#e39133`): P2 priority bullets only.
 - **Annotation Blue** (`#4d8fd6`): P3 priority bullets only.
 - **Soft Moss** (`#8ca46a`): Success / "Done" status only (completed status pills, positive confirmations). Like the tertiary priority colors, it is not a free-to-use accent.
@@ -176,6 +180,7 @@ A short palette of warm, slightly aged neutrals with one brick-red anchor; every
 **Character:** One serif, used everywhere. Lora is a contemporary book-weight serif with calligraphic roots; it gives the interface the feel of handwritten ink without looking precious. The decision to use it on buttons, labels, and chips, places where most product UIs default to a clean sans, is what makes the system feel like a paper journal instead of a paper-themed app.
 
 ### Hierarchy
+
 - **Numeric** (Lora 600, 56px / 56px, `letter-spacing: -0.02em`): Reserved for hero numerical readouts. Used on the Habits page for the unbroken-chain count. Do not use for body figures, prices, or stats inside a card.
 - **Display** (Lora 600, 18px / 24px): Page titles. "MAY 13 WED", "Habits", "Inbox".
 - **Headline** (Lora 600, 16px / 24px): Section titles inside a page; secondary headings inside overlay panels.
@@ -197,19 +202,21 @@ A short palette of warm, slightly aged neutrals with one brick-red anchor; every
 Mostly flat. Depth is carried first by three quiet mechanisms: (1) tint, by stepping a surface one notch deeper than its parent (Sidebar Cream against Cream Paper, Dot Grey against Sidebar Cream); (2) hairline stroke (1px Border) between sections; (3) the printed dot grid showing through, which signals "this is the page surface, not a card." Shadows are a **last resort**, used sparingly and softly when a card, panel, or modal genuinely needs to lift off the page.
 
 ### Shadow Vocabulary
+
 - **Subtle** (`0 1px 2px rgba(68,68,61,0.06), 0 1px 3px rgba(68,68,61,0.08)`): The lightest lift. For cards and grouped panels that should read as a distinct sheet on the page without shouting. Pair with a 1px Border, never replace it.
 - **Medium** (`0 4px 12px rgba(68,68,61,0.10)`): For popovers, menus, and raised cards that float above sibling content.
 - **Overlay drop** (`0 8px 32px rgba(44,44,44,0.15)`): For modal overlays (search, keyboard-shortcuts dialog) floating over a dimmed page. Large, soft, warm-tinted; reads like a sheet of paper resting on the journal, not a glassmorphic chip.
 
 ### Named Rules
 
-**The Quiet-Shadow Rule.** Shadows stay soft, warm-tinted, and low-alpha — Subtle, Medium, or Overlay only, no custom values. Tint and 1px Border remain the primary depth signals; a shadow supplements them, it does not replace the border. No hard, cool, or high-contrast drop shadows; no glassmorphism.
+**The Quiet-Shadow Rule.** Shadows stay soft, warm-tinted, and low-alpha - Subtle, Medium, or Overlay only, no custom values. Tint and 1px Border remain the primary depth signals; a shadow supplements them, it does not replace the border. No hard, cool, or high-contrast drop shadows; no glassmorphism.
 
 **The Page-Shows-Through Rule.** Cards, containers, and panels that sit on the body background must NOT cover the dot grid with an opaque fill except when explicitly elevated (overlays). The grid showing through is the system's primary signal that the surface is "the page."
 
 ## 5. Components
 
 ### Buttons
+
 - **Shape:** 40px tall, 8px corner radius (`rounded.md`). A left icon sits 8px before the label.
 - **Primary:** Ink fill (`#44443d`), Cream Paper text, Lora 14px. Reserved for the main confirming action; one per view.
 - **Secondary:** Transparent fill, 1px Border, Ink text. The default medium-emphasis action.
@@ -219,6 +226,7 @@ Mostly flat. Depth is carried first by three quiet mechanisms: (1) tint, by step
 - **Hover / Focus:** No transform. State conveyed through a 150ms opacity or background-tint change; a Subtle shadow is permitted on raised primary buttons but is not required.
 
 ### Task Row (signature)
+
 - **Layout:** A 24px-tall horizontal row. Drag handle (hidden until row-hover), bullet (24px column), serif title (14px), italic due date, label chips.
 - **Bullet:** A single typographic glyph: `•` (priority color) when active, `×` (Ink) when completed. No checkbox box.
 - **Selected state:** `rgba(212,207,199,0.6)` background (Dot Grey at 60% alpha).
@@ -226,16 +234,19 @@ Mostly flat. Depth is carried first by three quiet mechanisms: (1) tint, by step
 - **Completed state:** Title gets `line-through` and opacity 0.35.
 
 ### Sidebar Link
+
 - **Shape:** 32px tall, 4px corner radius, padded `0 12px`.
 - **Default:** Transparent on Sidebar Cream, Ink text at 60% opacity.
 - **Hover:** Opacity rises to 100%.
 - **Active:** Background `rgba(212,207,199,0.5)` (Dot Grey at 50%), text at 100% with `font-weight: 500`. No bar, no stripe, no arrow.
 
 ### Chips (labels)
+
 - **Style:** Dot Grey background, Ink text, 8px pill radius, padding `0 6px`. 10–11px font.
 - **No bordered chip variants.** Filter chips and label chips both use this single style.
 
 ### Inputs / Fields
+
 - **Style:** 1px Border, 8px radius, Cream Paper background, Lora 13–14px, Ink text, 40px tall. A leading icon (e.g. search `⌕`) sits 8px before the value.
 - **Focus:** Border darkens to Ink. No glow, no ring.
 - **Error:** Border to Warm Brick Red, plus Brick Red help text below. No background tint, no icon.
@@ -244,22 +255,26 @@ Mostly flat. Depth is carried first by three quiet mechanisms: (1) tint, by step
 - **Caret animation:** The active task-input gets a 1.2s caret-blink keyframe (`caret-color` transitions Ink → transparent), reinforcing "you're writing in this journal."
 
 ### Checkbox, Radio, Toggle
+
 - **Checkbox:** A real 16px box, 4px radius, 1px Border. Checked = Ink fill with a Cream check glyph. Used for multi-select settings and task-list options ("Show completed"), not for the signature task-row bullet.
 - **Radio:** A 16px circle, 1px Border. Selected = Ink ring with a small Ink center dot.
 - **Toggle:** A pill switch (`role="switch"`). Off = Dot Grey track, Cream knob; On = Ink track, Cream knob. 150ms ease. For binary on/off preferences.
 - These wrap a real underlying `<input>` for accessibility; they are the sanctioned custom controls (the "no custom controls for flavor" rule still bars one-off inventions beyond this set).
 
 ### Status Pills
+
 - **Style:** Pill (8px radius), Lora 11–12px, tinted background + matching text. One per status.
 - **Values:** Open (Dot Grey tint), In progress (Annotation Blue tint), Done (Soft Moss tint), Blocked (Warm Brick Red tint). Distinct from priority bullets and label chips.
 
 ### Overlay Panel (modals)
+
 - **Surface:** Cream Paper, 6px radius, 1px Dot Grey border, padding `24px 32px`.
 - **Backdrop:** `rgba(44,44,44,0.3)` with a 2px backdrop-blur. The blur is intentional and minimal; not glassmorphism.
 - **Shadow:** The single overlay drop (see Elevation).
 - **Dismissal:** Click backdrop or Escape. No close X by default; if needed, it's a serif "Close" button, not an icon.
 
 ### Habit Dot Grid (signature)
+
 - **Cell:** 16×16px circle, 6px gap.
 - **Empty:** 1px Dot Grey border, transparent fill.
 - **Completed:** Ink fill, no border.
@@ -268,6 +283,7 @@ Mostly flat. Depth is carried first by three quiet mechanisms: (1) tint, by step
 - **Future:** Renders as empty grid space, no cell drawn.
 
 ### Navigation
+
 - **Top-level:** Three primary destinations (Inbox, Daily, Upcoming) plus secondary (Habits, Projects). All in the left sidebar; no top bar.
 - **Active state:** See Sidebar Link.
 - **Mobile:** Sidebar collapses to a 240px drawer that slides in from the left with a 200ms ease transition. Backdrop dims to `rgba(44,44,44,0.3)`.
@@ -275,6 +291,7 @@ Mostly flat. Depth is carried first by three quiet mechanisms: (1) tint, by step
 ## 6. Do's and Don'ts
 
 ### Do:
+
 - **Do** lay every vertical measurement onto the 24px (or 4px sub-step) grid. Row heights, line heights, label heights, paddings.
 - **Do** use Lora for every text element, including buttons and labels. One serif, everywhere.
 - **Do** let the dot grid show through. If a section sits on the body background, do not opaque-fill it.
@@ -285,6 +302,7 @@ Mostly flat. Depth is carried first by three quiet mechanisms: (1) tint, by step
 - **Do** style labels as UPPERCASE with `letter-spacing: 0.1em` at 11px. That treatment belongs to labels and nothing else.
 
 ### Don't:
+
 - **Don't** use `#fff` or `#000`. Every neutral is tinted warm. Body is Cream Paper, text is Ink.
 - **Don't** introduce a sans-serif. No Inter, no system-ui stack, no SF Pro. Lora carries every glyph.
 - **Don't** use Warm Brick Red as a decorative trim, a hover background on a benign control, or a hero band. It is a state color, not a brand color.

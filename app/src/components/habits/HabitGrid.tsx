@@ -45,7 +45,7 @@ export function HabitGrid({ completions, today, onToggle }: HabitGridProps) {
 
   const todayISO = fmtISO(today);
 
-  // Capsule Rule: border-radius depends on neighboring cells' completion state at render time —
+  // Capsule Rule: border-radius depends on neighboring cells' completion state at render time -
   // must stay as inline style.
   const cellShape = (col: number, row: number, completed: boolean) => {
     if (!completed) return { borderRadius: '50%' };
@@ -85,13 +85,12 @@ export function HabitGrid({ completions, today, onToggle }: HabitGridProps) {
               onClick={() => onToggle(iso, !completed)}
               aria-label={`${iso}${completed ? ' completed' : ' not completed'}${isToday ? ' (today)' : ''}`}
               aria-pressed={completed}
-              className={`habit-grid-cell w-4 h-4 p-0 cursor-pointer ${
-                isToday
+              className={`habit-grid-cell w-4 h-4 p-0 cursor-pointer ${isToday
                   ? '[border:1.5px_solid_var(--color-ink)] bg-transparent'
                   : completed
-                  ? 'border-none bg-ink'
-                  : 'border border-dot bg-transparent'
-              }`}
+                    ? 'border-none bg-ink'
+                    : 'border border-dot bg-transparent'
+                }`}
               style={{ ...shape, transition: 'background 120ms ease-out, border-radius 120ms ease-out' }}
             />
           );

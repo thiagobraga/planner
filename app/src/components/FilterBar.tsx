@@ -78,7 +78,7 @@ function tokenize(input: string): Token[] {
     }
     if (matched) continue;
 
-    // Unknown word — collect until space or operator
+    // Unknown word - collect until space or operator
     let j = i;
     while (j < s.length && !LOGIC_OPS.includes(s[j]) && !PARENS.includes(s[j]) && s[j] !== ' ') {
       j++;

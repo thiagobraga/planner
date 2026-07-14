@@ -1,4 +1,4 @@
-// Phase 6 — Tree-aware indentation helpers.
+// Phase 6 - Tree-aware indentation helpers.
 //
 // Tasks are rendered as a flat, visually-ordered array where each item carries
 // an `indent` level. The parent/child tree is implied by order + indent: an
@@ -83,7 +83,7 @@ export interface IndentResult<T> {
   tasks: T[];
   /** The new parent id to persist (`null` = top level). Only meaningful when `changed`. */
   parentTaskId: string | null;
-  /** False when the keypress was a no-op — callers should skip the API call. */
+  /** False when the keypress was a no-op - callers should skip the API call. */
   changed: boolean;
 }
 

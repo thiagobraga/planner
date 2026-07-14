@@ -1,4 +1,4 @@
-# Planner — Agent Onboarding
+# Planner - Agent Onboarding
 
 Task manager with a paper-journal aesthetic (warm cream, Lora serif, dotted grid). pnpm monorepo: `api/` (Express + PostgreSQL + Redis) and `app/` (React + Vite).
 
@@ -17,16 +17,16 @@ Required `.env` vars: `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `JWT_
 
 ## Commands
 
-| Command | What it does |
-|---------|-------------|
-| `pnpm dev:api` | API dev server (tsx watch, port 4000) |
-| `pnpm dev:app` | Vite dev server (port 5173) |
-| `pnpm build` | Build all packages |
-| `pnpm lint` | Lint all packages |
-| `pnpm test` | All tests (Vitest) |
-| `pnpm -F api test` | API tests only |
-| `pnpm -F app test` | App tests only |
-| `pnpm -F api vitest run src/path/to/file.test.ts` | Single test file |
+| Command                                           | What it does                          |
+| ------------------------------------------------- | ------------------------------------- |
+| `pnpm dev:api`                                    | API dev server (tsx watch, port 4000) |
+| `pnpm dev:app`                                    | Vite dev server (port 5173)           |
+| `pnpm build`                                      | Build all packages                    |
+| `pnpm lint`                                       | Lint all packages                     |
+| `pnpm test`                                       | All tests (Vitest)                    |
+| `pnpm -F api test`                                | API tests only                        |
+| `pnpm -F app test`                                | App tests only                        |
+| `pnpm -F api vitest run src/path/to/file.test.ts` | Single test file                      |
 
 ## Architecture
 
@@ -40,41 +40,41 @@ Required `.env` vars: `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `JWT_
 
 ### Backend (`api/src/`)
 
-- `index.ts` — Express + Socket.IO on same HTTP server; Socket.IO validates JWT on connect
-- `middleware/auth.ts` — validates Bearer JWT **and** checks DB session (sessions are revocable)
-- `middleware/errorHandler.ts` — `AppError` vs generic; returns `{ error: { code, message, details? } }`
-- `services/syncService.ts` — `publishEvent(event)` is the single broadcast entry point
-- `services/authService.ts` — register/login (Redis rate-limit: 10 attempts/15 min), 7-day JWT
-- `services/taskService.ts` — CRUD, completion, recurrence
-- `services/viewService.ts` — today/upcoming/inbox aggregations
-- `services/filterService.ts` — saved filter CRUD + evaluation via Peggy DSL parser
-- `db/pool.ts` — PostgreSQL pool (max 20); `db/redis.ts` — three clients (general, pub, sub)
-- `parsers/` — Peggy-based filter DSL and date parsers
-- `engines/recurrenceEngine.ts` — daily/weekly/monthly/yearly recurrence
+- `index.ts` - Express + Socket.IO on same HTTP server; Socket.IO validates JWT on connect
+- `middleware/auth.ts` - validates Bearer JWT **and** checks DB session (sessions are revocable)
+- `middleware/errorHandler.ts` - `AppError` vs generic; returns `{ error: { code, message, details? } }`
+- `services/syncService.ts` - `publishEvent(event)` is the single broadcast entry point
+- `services/authService.ts` - register/login (Redis rate-limit: 10 attempts/15 min), 7-day JWT
+- `services/taskService.ts` - CRUD, completion, recurrence
+- `services/viewService.ts` - today/upcoming/inbox aggregations
+- `services/filterService.ts` - saved filter CRUD + evaluation via Peggy DSL parser
+- `db/pool.ts` - PostgreSQL pool (max 20); `db/redis.ts` - three clients (general, pub, sub)
+- `parsers/` - Peggy-based filter DSL and date parsers
+- `engines/recurrenceEngine.ts` - daily/weekly/monthly/yearly recurrence
 
 All routes under `/api/v1/`. Route files: `auth`, `tasks`, `projects`, `labels`, `sections`, `views`, `filters`, `search`, `reminders`, `comments`, `preferences`, `activity`, `collaboration`.
 
 ### Frontend (`app/src/`)
 
-- `contexts/AuthContext.tsx` — auth source of truth; manages socket connect/disconnect lifecycle
-- `utils/socket.ts` — Socket.IO singleton; token passed via `socket.auth`; stored as `planner_token` in localStorage
-- `hooks/useSync.ts` — subscribes to `"sync"` events; handler receives `SyncEvent`
-- `hooks/shortcuts.ts` — pure chord-aware keyboard matcher; `DEFAULT_BINDINGS` for `q /  ? Enter Delete Escape g+i g+t g+u`
-- `api/client.ts` — Fetch wrapper; base `/api/v1`; auto-logout on 401
-- `api/queryClient.ts` — React Query config (staleTime 60s, 1 retry)
-- `stores/taskStore.ts` — Zustand store; `setTasks / addTask / updateTask / removeTask`
-- `stores/optimistic.ts` — optimistic helpers: `runOptimistic`, `applyOptimistic`, `revertOptimistic` (2s auto-revert)
+- `contexts/AuthContext.tsx` - auth source of truth; manages socket connect/disconnect lifecycle
+- `utils/socket.ts` - Socket.IO singleton; token passed via `socket.auth`; stored as `planner_token` in localStorage
+- `hooks/useSync.ts` - subscribes to `"sync"` events; handler receives `SyncEvent`
+- `hooks/shortcuts.ts` - pure chord-aware keyboard matcher; `DEFAULT_BINDINGS` for `q /  ? Enter Delete Escape g+i g+t g+u`
+- `api/client.ts` - Fetch wrapper; base `/api/v1`; auto-logout on 401
+- `api/queryClient.ts` - React Query config (staleTime 60s, 1 retry)
+- `stores/taskStore.ts` - Zustand store; `setTasks / addTask / updateTask / removeTask`
+- `stores/optimistic.ts` - optimistic helpers: `runOptimistic`, `applyOptimistic`, `revertOptimistic` (2s auto-revert)
 
 ### Pages & Routes
 
-| Route | Page | Purpose |
-|-------|------|---------|
-| `/today` (default) | `TodayPage` | Overdue + today sections |
-| `/inbox` | `InboxPage` | Unprocessed tasks; also `/project/:id` |
-| `/upcoming` | `UpcomingPage` | 7-day preview |
-| `/monthly` | `MonthlyPage` | Monthly calendar |
-| `/habits` | `HabitsPage` | Habit streaks (12-week grid) |
-| `/styleguide` | `StyleguidePage` | Design system reference |
+| Route              | Page             | Purpose                                |
+| ------------------ | ---------------- | -------------------------------------- |
+| `/today` (default) | `TodayPage`      | Overdue + today sections               |
+| `/inbox`           | `InboxPage`      | Unprocessed tasks; also `/project/:id` |
+| `/upcoming`        | `UpcomingPage`   | 7-day preview                          |
+| `/monthly`         | `MonthlyPage`    | Monthly calendar                       |
+| `/habits`          | `HabitsPage`     | Habit streaks (12-week grid)           |
+| `/styleguide`      | `StyleguidePage` | Design system reference                |
 
 `AppShell` wraps all routes: sidebar, keyboard dispatch, QuickAdd/Search dialogs.
 
@@ -83,7 +83,7 @@ All routes under `/api/v1/`. Route files: `auth`, `tasks`, `projects`, `labels`,
 ```
 api/src/index.ts                     Express + Socket.IO server entry
 api/src/middleware/auth.ts           JWT + session validation
-api/src/services/syncService.ts      publishEvent() — real-time broadcast
+api/src/services/syncService.ts      publishEvent() - real-time broadcast
 api/src/services/taskService.ts      Task CRUD + recurrence
 api/src/db/pool.ts                   PostgreSQL pool
 api/src/db/redis.ts                  Redis clients (pub/sub)
@@ -147,32 +147,32 @@ Event name: `"sync"`. Payload (`SyncEvent`):
 ```
 
 Rooms: `user:{userId}` (all sessions) and `project:{projectId}` (collaborators).  
-`publishEvent()` in `syncService.ts` is the sole entry point — call it from every mutation.
+`publishEvent()` in `syncService.ts` is the sole entry point - call it from every mutation.
 
 ## Database
 
 PostgreSQL 16. Pool max 20 connections. Migrations run at startup from `api/src/db/migrations/`.  
 Schema tables: `users`, `sessions`, `preferences`, `password_reset_tokens`, `projects`, `collaborators`, `project_invitations`, `sections`, `tasks`, `labels`, `task_labels`, `filters`, `comments`, `reminders`, `activity_events`.
 
-Redis: three clients from `db/redis.ts` — `redisClient` (general), `redisPubClient` (publish), `redisSubClient` (subscribe). Auth rate-limiting uses `redisClient`.
+Redis: three clients from `db/redis.ts` - `redisClient` (general), `redisPubClient` (publish), `redisSubClient` (subscribe). Auth rate-limiting uses `redisClient`.
 
 ## Frontend State
 
 Three layers, each with a distinct role:
 
-| Layer | Tool | Scope |
-|-------|------|-------|
-| Server cache | React Query (`queryClient.ts`) | API data, staleTime 60s |
-| Optimistic local | `stores/optimistic.ts` | Mutations before server confirm |
-| Global client | Zustand `taskStore.ts` | Cross-component task list |
+| Layer            | Tool                           | Scope                           |
+| ---------------- | ------------------------------ | ------------------------------- |
+| Server cache     | React Query (`queryClient.ts`) | API data, staleTime 60s         |
+| Optimistic local | `stores/optimistic.ts`         | Mutations before server confirm |
+| Global client    | Zustand `taskStore.ts`         | Cross-component task list       |
 
 Pattern for mutations: `runOptimistic({ apply, revert })` → fire API call → on error, auto-revert after 2s.
 
 ## Design System
 
-- **Font:** Lora serif only — no sans-serif anywhere
+- **Font:** Lora serif only - no sans-serif anywhere
 - **Palette:** warm cream/beige background (`#FAF7F2`), single brick-red accent (`#C0392B` family, ≤10% of screen)
-- **Elevation:** flat — tint + 1px border only; no `box-shadow` on cards (overlay drop-shadow only)
+- **Elevation:** flat - tint + 1px border only; no `box-shadow` on cards (overlay drop-shadow only)
 - **Rhythm:** 24px vertical baseline
 - **Never:** blue as primary color; `box-shadow` on cards
 
@@ -181,10 +181,10 @@ Full spec: `DESIGN.md`.
 ## Coding Conventions
 
 - TypeScript strict mode; no `any` without justification
-- Comments only for non-obvious WHY — never for WHAT
+- Comments only for non-obvious WHY - never for WHAT
 - No error handling for impossible cases; trust framework guarantees
 - Validate only at system boundaries (user input, external APIs)
 - Commits: Conventional Commits (`feat:`, `fix:`, `chore:`, etc.), many small per file/feature
-- No backwards-compat shims for removed code — delete cleanly
+- No backwards-compat shims for removed code - delete cleanly
 - Tests: Vitest; integration tests hit real DB (no mock-DB pattern)
 - Node ≥ 20 required

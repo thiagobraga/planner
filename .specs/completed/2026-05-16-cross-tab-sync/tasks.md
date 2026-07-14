@@ -4,7 +4,7 @@ Tasks created, updated, or deleted in one browser tab appear in all other open t
 
 ## Root cause
 
-`mergeTodayFromApi()` in TodayPage is additive — never removes tasks. Deletions from other tabs persist in local state. InboxPage is fine (react-query invalidation handles all event types).
+`mergeTodayFromApi()` in TodayPage is additive - never removes tasks. Deletions from other tabs persist in local state. InboxPage is fine (react-query invalidation handles all event types).
 
 ## Additional findings from Inbox regression
 
@@ -27,8 +27,8 @@ Current deployment config explicitly routes only `/api` to the API service in Tr
 - [x] Handle `publishEvent(...)` failures in task mutations with `.catch()` logging instead of `void`.
 - [x] Add an integration/manual test checklist for two browser tabs on `/inbox`: create, edit, complete, delete, and verify the second tab updates within 2 seconds.
 - [x] Add an automated test around `AppShell`/`useSync` proving a task `sync` event invalidates the `['inbox']` query and triggers a visible refetch.
-- [x] Verified: `AppShell` and `TodayPage` both call `useSync` intentionally — AppShell handles react-query invalidation, TodayPage handles local state. No duplication issue.
-- [x] Add a browser-visible sync status during development — green/red dot + "sync" label, bottom-right corner, dev-only.
+- [x] Verified: `AppShell` and `TodayPage` both call `useSync` intentionally - AppShell handles react-query invalidation, TodayPage handles local state. No duplication issue.
+- [x] Add a browser-visible sync status during development - green/red dot + "sync" label, bottom-right corner, dev-only.
 - [x] BroadcastChannel fallback: decided no. App requires server connectivity anyway; added complexity not worth it for this project.
 
 ## Expected flow
@@ -47,4 +47,4 @@ Tab 1: delete task
 
 ## Files
 
-- `app/src/pages/TodayPage.tsx` — fix merge → replace; handle deleted event type
+- `app/src/pages/TodayPage.tsx` - fix merge → replace; handle deleted event type

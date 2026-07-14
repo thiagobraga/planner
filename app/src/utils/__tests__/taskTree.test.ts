@@ -32,12 +32,12 @@ describe('computeIndent', () => {
   });
 
   it('Tab on the first child is a no-op (already deepest allowed)', () => {
-    // a(0) / b(1) — b cannot indent further under a
+    // a(0) / b(1) - b cannot indent further under a
     expect(computeIndent(list(['a', 0], ['b', 1]), 1, 1)).toBeNull();
   });
 
   it('Tab cannot skip levels: max is prev.indent + 1', () => {
-    // a(0) / b(1) / c(0) — c indents to 1, not 2
+    // a(0) / b(1) / c(0) - c indents to 1, not 2
     expect(computeIndent(list(['a', 0], ['b', 1], ['c', 0]), 2, 1)).toBe(1);
   });
 
@@ -61,7 +61,7 @@ describe('getParentCandidate', () => {
   });
 
   it('finds the nearest preceding task one level shallower', () => {
-    // a(0) / b(1) / c(0) — c indented to 1 → parent is a
+    // a(0) / b(1) / c(0) - c indented to 1 → parent is a
     expect(getParentCandidate(list(['a', 0], ['b', 1], ['c', 0]), 2, 1)).toBe('a');
   });
 
@@ -70,7 +70,7 @@ describe('getParentCandidate', () => {
   });
 
   it('finds a grandparent for Shift+Tab promotion', () => {
-    // a(0) / b(1) / c(2) — c promoted to 1 → parent is a (indent 0)
+    // a(0) / b(1) / c(2) - c promoted to 1 → parent is a (indent 0)
     expect(getParentCandidate(list(['a', 0], ['b', 1], ['c', 2]), 2, 1)).toBe('a');
   });
 });
@@ -108,7 +108,7 @@ describe('applyIndent', () => {
   });
 
   it('shifts the descendant subtree by the same delta', () => {
-    // a(0) / b(0) / c(1) / d(2) — Tab on b nests it under a; c,d follow
+    // a(0) / b(0) / c(1) / d(2) - Tab on b nests it under a; c,d follow
     const r = applyIndent(list(['a', 0], ['b', 0], ['c', 1], ['d', 2]), 'b', 1);
     expect(r.tasks.map((t) => t.indent)).toEqual([0, 1, 2, 3]);
   });

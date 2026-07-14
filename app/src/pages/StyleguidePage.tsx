@@ -96,7 +96,7 @@ const INK_COLORS = [
 ];
 
 export function StyleguidePage() {
-  // Habit chain grid — 4 weeks × 7 days, capsule-fusing borders.
+  // Habit chain grid - 4 weeks × 7 days, capsule-fusing borders.
   const today = useMemo(() => {
     const d = new Date();
     d.setHours(0, 0, 0, 0);
@@ -200,12 +200,12 @@ export function StyleguidePage() {
       </p>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-        {/* 11 — Color Palette */}
+        {/* 11 - Color Palette */}
         <Card title="Color Palette" span>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div>
               <h3 className="text-[10px] text-ink-light uppercase tracking-[0.1em] font-semibold">Primary Palette</h3>
-              <p className="text-[11px] text-ink-light opacity-70 -mt-2 mb-4">Base neutral and structural colors — calm, readable foundations for content.</p>
+              <p className="text-[11px] text-ink-light opacity-70 -mt-2 mb-4">Base neutral and structural colors - calm, readable foundations for content.</p>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 gap-4">
                 {PRIMARY_COLORS.map(({ name, var: varName, hex }) => (
                   <div key={varName} className="flex items-start gap-3">
@@ -225,7 +225,7 @@ export function StyleguidePage() {
             </div>
             <div>
               <h3 className="text-[10px] text-ink-light uppercase tracking-[0.1em] font-semibold -mb-2">Secondary Palette</h3>
-              <p className="text-[11px] text-ink-light opacity-70 -mt-2 mb-4">Accent and semantic colors — for emphasis, priority, and status signals.</p>
+              <p className="text-[11px] text-ink-light opacity-70 -mt-2 mb-4">Accent and semantic colors - for emphasis, priority, and status signals.</p>
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 gap-4">
                 {SECONDARY_COLORS.map(({ name, var: varName, hex }) => (
                   <div key={varName} className="flex items-start gap-3">
@@ -265,7 +265,7 @@ export function StyleguidePage() {
           </div>
         </Card>
 
-        {/* 1 — Interface Typography */}
+        {/* 1 - Interface Typography */}
         <Card title="Typography" span>
           <div className="divide-y divide-border">
             {TYPE_SCALE.map(({ label, spec, className }) => (
@@ -280,7 +280,7 @@ export function StyleguidePage() {
           </div>
         </Card>
 
-        {/* 2 — Buttons */}
+        {/* 2 - Buttons */}
         <Card title="Buttons" span>
           <div className="grid grid-cols-1 md:grid-cols-5 gap-x-4 gap-y-3">
             {([
@@ -312,7 +312,7 @@ export function StyleguidePage() {
           </p>
         </Card>
 
-        {/* 3 — Fields & Controls */}
+        {/* 3 - Fields & Controls */}
         <Card title="Forms">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <div className="flex flex-col gap-4">
@@ -386,7 +386,7 @@ export function StyleguidePage() {
           </div>
         </Card>
 
-        {/* 4 — Chips & Tags */}
+        {/* 4 - Chips & Tags */}
         <Card title="Chips & Tags">
           <div className="flex flex-col gap-4">
             <div>
@@ -420,7 +420,7 @@ export function StyleguidePage() {
           </div>
         </Card>
 
-        {/* 5 — Navigation */}
+        {/* 5 - Navigation */}
         <Card title="Navigation">
           <div className="w-[200px] bg-sidebar-bg border border-border rounded-[8px] p-3">
             <div className="mb-3">
@@ -446,12 +446,12 @@ export function StyleguidePage() {
           </div>
         </Card>
 
-        {/* 6 — Toolbar / View Options */}
+        {/* 6 - Toolbar / View Options */}
         <Card title="Toolbar / View Options" span>
           <ViewToolbar />
         </Card>
 
-        {/* 7 — Task Rows */}
+        {/* 7 - Task Rows */}
         <Card title="Task Rows" span>
           <div className="flex flex-col gap-1">
             <TaskRowSpecimen priority={1} title="Review quarterly editorial plan" tags={['editorial', 'planner']} date="Jul 10" flagged />
@@ -461,12 +461,12 @@ export function StyleguidePage() {
           </div>
         </Card>
 
-        {/* 8 — Calendar & Monthly */}
+        {/* 8 - Calendar & Monthly */}
         <Card title="Calendar & Monthly">
           <MonthlyCalendarSpecimen compact />
         </Card>
 
-        {/* 9 — Habit Chain */}
+        {/* 9 - Habit Chain */}
         <Card title="Habit Chain">
           <div className="flex flex-col gap-4">
             <div className="grid [grid-template-columns:repeat(7,16px)] gap-x-[6px] text-[10px] text-ink-light tracking-wider">
@@ -516,7 +516,7 @@ export function StyleguidePage() {
           </div>
         </Card>
 
-        {/* 10 — Essential Tokens */}
+        {/* 10 - Essential Tokens */}
         <Card title="Essential Tokens" span>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             <div>
@@ -577,7 +577,7 @@ export function StyleguidePage() {
 
 
 
-        {/* 13 — Context Menu */}
+        {/* 13 - Context Menu */}
         <Card title="Context Menu">
           <div className="flex flex-col gap-4">
             <p className="text-[13px] text-ink-light leading-5">

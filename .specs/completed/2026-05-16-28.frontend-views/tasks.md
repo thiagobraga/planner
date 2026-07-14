@@ -10,4 +10,4 @@ _Requirements: 15.1, 15.2, 15.3, 15.7_
 
 ## Notes
 
-Upcoming view was removed — replaced by Monthly. Inbox and Today are fully connected.
+Upcoming view was removed - replaced by Monthly. Inbox and Today are fully connected.

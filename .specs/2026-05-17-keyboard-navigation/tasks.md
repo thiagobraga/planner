@@ -1,4 +1,4 @@
-# Keyboard Navigation — Column-Preserving Up/Down Between Tasks
+# Keyboard Navigation - Column-Preserving Up/Down Between Tasks
 
 - [ ] 1. Add `onNavigate` prop to `TaskItem` and wire through `TaskList`
   - [ ] 1.1 Add prop to `TaskItemProps` interface
@@ -21,7 +21,7 @@
   - [ ] 3.4 Update add-task input ArrowUp handler
   - [ ] 3.5 Verify TypeScript compiles
 
-- [ ] 4. Verification — manual testing
+- [ ] 4. Verification - manual testing
   - [ ] 4.1 Down into next task at same column
   - [ ] 4.2 Up into previous task at same column
   - [ ] 4.3 ArrowDown from last task goes to add-task input

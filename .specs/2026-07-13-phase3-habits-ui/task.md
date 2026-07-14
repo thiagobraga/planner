@@ -1,4 +1,4 @@
-# Phase 3 — Habits UI
+# Phase 3 - Habits UI
 
 - [x] Create `app/src/components/habits/HabitGrid.tsx`
   - [x] Extract the 12-week grid rendering logic from `HabitsPage.tsx`

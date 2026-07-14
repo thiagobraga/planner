@@ -137,7 +137,7 @@ export function AppShell() {
       className={`app-shell flex h-screen overflow-hidden ${FONT_CLASSES[preferences?.font ?? 'lora']}${preferences?.smallCaps ? ' small-caps' : ''}`}
       style={shellThemeStyle}
     >
-      {/* Mobile menu button — only shown below collapsed breakpoint (≥640px uses collapsed sidebar) */}
+      {/* Mobile menu button - only shown below collapsed breakpoint (≥640px uses collapsed sidebar) */}
       {!sidebarCollapsed && (
         <button
           type="button"

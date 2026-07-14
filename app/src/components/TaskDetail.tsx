@@ -2,10 +2,10 @@ import { useState, useEffect, useRef } from 'react';
 import type { Task } from './TaskItem';
 
 const PRIORITIES = [
-  { value: 1, label: 'P1 — Critical' },
-  { value: 2, label: 'P2 — High' },
-  { value: 3, label: 'P3 — Medium' },
-  { value: 4, label: 'P4 — Normal' },
+  { value: 1, label: 'P1 - Critical' },
+  { value: 2, label: 'P2 - High' },
+  { value: 3, label: 'P3 - Medium' },
+  { value: 4, label: 'P4 - Normal' },
 ];
 
 // Tailwind classes for the selected-state border + background of each priority button.
@@ -196,11 +196,10 @@ export function TaskDetail({ task, onClose, onUpdate, onDelete }: TaskDetailProp
                 type="button"
                 onClick={() => handlePriorityChange(p.value)}
                 aria-pressed={priority === p.value}
-                className={`py-[3px] px-2.5 rounded border text-xs cursor-pointer transition-all duration-[120ms] ${
-                  priority === p.value
+                className={`py-[3px] px-2.5 rounded border text-xs cursor-pointer transition-all duration-[120ms] ${priority === p.value
                     ? `${priorityBtnSelectedClasses[p.value]} text-white`
                     : 'border-dot bg-transparent text-ink'
-                }`}
+                  }`}
               >
                 {p.label.split(' ')[0]}
               </button>

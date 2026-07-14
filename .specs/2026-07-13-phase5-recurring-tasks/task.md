@@ -1,4 +1,4 @@
-# Phase 5 — Recurring Tasks
+# Phase 5 - Recurring Tasks
 
 - [ ] Update `api/src/services/taskService.ts`
   - [ ] Modify `completeTask` logic to handle `recurrence_rule`

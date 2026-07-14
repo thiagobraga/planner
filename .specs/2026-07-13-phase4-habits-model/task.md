@@ -1,4 +1,4 @@
-# Phase 4 — Habits Model & Daily Integration
+# Phase 4 - Habits Model & Daily Integration
 
 - [x] Create `api/src/db/migrations/021_habits.sql`
   - [x] `habits` table (user_id, name, note, order_value, timestamps)

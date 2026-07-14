@@ -1,41 +1,48 @@
-import { v4 as uuidv4 } from "uuid";
-import pool from "../db/pool.js";
-import { AppError } from "../utils/AppError.js";
-import { validate, type ValidationError } from "../utils/validate.js";
-import { buildEvent, publishEvent } from "./syncService.js";
+import { v4 as uuidv4 } from 'uuid';
+import pool from '../db/pool.js';
+import { AppError } from '../utils/AppError.js';
+import { validate, type ValidationError } from '../utils/validate.js';
+import { buildEvent, publishEvent } from './syncService.js';
 
 function publishProjectEvent(
-  eventType: "created" | "updated" | "deleted",
+  eventType: 'created' | 'updated' | 'deleted',
   entityId: string,
   userId: string,
   payload?: unknown,
 ) {
   publishEvent(
-    buildEvent({ entityType: "project", eventType, entityId, userId, projectId: entityId, payload }),
-  ).catch((err) => console.error("[sync] publish failed", err));
+    buildEvent({
+      entityType: 'project',
+      eventType,
+      entityId,
+      userId,
+      projectId: entityId,
+      payload,
+    }),
+  ).catch((err) => console.error('[sync] publish failed', err));
 }
 
 const SUPPORTED_COLORS = [
-  "berry_red",
-  "red",
-  "orange",
-  "yellow",
-  "olive_green",
-  "lime_green",
-  "green",
-  "mint_green",
-  "teal",
-  "sky_blue",
-  "light_blue",
-  "blue",
-  "grape",
-  "violet",
-  "lavender",
-  "magenta",
-  "salmon",
-  "charcoal",
-  "grey",
-  "taupe",
+  'berry_red',
+  'red',
+  'orange',
+  'yellow',
+  'olive_green',
+  'lime_green',
+  'green',
+  'mint_green',
+  'teal',
+  'sky_blue',
+  'light_blue',
+  'blue',
+  'grape',
+  'violet',
+  'lavender',
+  'magenta',
+  'salmon',
+  'charcoal',
+  'grey',
+  'taupe',
 ] as const;
 
 interface ProjectRow {
@@ -67,15 +74,15 @@ function formatProject(row: ProjectRow) {
 }
 
 async function verifyProjectOwnership(projectId: string, userId: string): Promise<ProjectRow> {
-  const result = await pool.query(
-    `SELECT * FROM projects WHERE id = $1 AND user_id = $2`,
-    [projectId, userId]
-  );
+  const result = await pool.query(`SELECT * FROM projects WHERE id = $1 AND user_id = $2`, [
+    projectId,
+    userId,
+  ]);
 
   if (result.rows.length === 0) {
     throw new AppError({
-      code: "NOT_FOUND",
-      message: "Project not found",
+      code: 'NOT_FOUND',
+      message: 'Project not found',
       statusCode: 404,
     });
   }
@@ -93,12 +100,12 @@ async function getProjectDepth(projectId: string): Promise<number> {
        INNER JOIN ancestors a ON p.id = a.parent_id
      )
      SELECT MAX(depth) AS max_depth FROM ancestors`,
-    [projectId]
+    [projectId],
   );
   return (result.rows[0]?.max_depth ?? 1) as number;
 }
 
-// True if candidateId equals targetId or is one of its descendants — used to block
+// True if candidateId equals targetId or is one of its descendants - used to block
 // reparenting cycles (a project cannot be moved under itself or its own subtree).
 async function isSelfOrDescendant(candidateId: string, targetId: string): Promise<boolean> {
   const result = await pool.query(
@@ -119,7 +126,7 @@ export async function listProjects(userId: string) {
      WHERE p.user_id = $1
         OR p.id IN (SELECT project_id FROM collaborators WHERE user_id = $1)
      ORDER BY p.order_value ASC, p.created_at ASC`,
-    [userId]
+    [userId],
   );
 
   return result.rows.map((row) => formatProject(row as ProjectRow));
@@ -135,11 +142,14 @@ export async function createProject(userId: string, input: CreateProjectInput) {
   const errors: ValidationError[] = [];
 
   if (!input.name || input.name.length === 0 || input.name.length > 120) {
-    errors.push({ field: "name", message: "Name must be between 1 and 120 characters" });
+    errors.push({ field: 'name', message: 'Name must be between 1 and 120 characters' });
   }
 
-  if (!input.color || !SUPPORTED_COLORS.includes(input.color as typeof SUPPORTED_COLORS[number])) {
-    errors.push({ field: "color", message: "Color is not in the supported palette" });
+  if (
+    !input.color ||
+    !SUPPORTED_COLORS.includes(input.color as (typeof SUPPORTED_COLORS)[number])
+  ) {
+    errors.push({ field: 'color', message: 'Color is not in the supported palette' });
   }
 
   validate(errors);
@@ -147,15 +157,15 @@ export async function createProject(userId: string, input: CreateProjectInput) {
   // Check unique name per user
   const duplicateCheck = await pool.query(
     `SELECT id FROM projects WHERE user_id = $1 AND LOWER(name) = LOWER($2)`,
-    [userId, input.name]
+    [userId, input.name],
   );
 
   if (duplicateCheck.rows.length > 0) {
     throw new AppError({
-      code: "VALIDATION_ERROR",
-      message: "Validation failed",
+      code: 'VALIDATION_ERROR',
+      message: 'Validation failed',
       statusCode: 400,
-      details: [{ field: "name", message: "A project with this name already exists" }],
+      details: [{ field: 'name', message: 'A project with this name already exists' }],
     });
   }
 
@@ -165,8 +175,8 @@ export async function createProject(userId: string, input: CreateProjectInput) {
     const parentDepth = await getProjectDepth(input.parentId);
     if (parentDepth >= 4) {
       throw new AppError({
-        code: "MAX_DEPTH_EXCEEDED",
-        message: "Maximum project nesting depth of 4 exceeded",
+        code: 'MAX_DEPTH_EXCEEDED',
+        message: 'Maximum project nesting depth of 4 exceeded',
         statusCode: 400,
       });
     }
@@ -177,11 +187,11 @@ export async function createProject(userId: string, input: CreateProjectInput) {
     `INSERT INTO projects (id, user_id, parent_id, name, color)
      VALUES ($1, $2, $3, $4, $5)
      RETURNING *`,
-    [id, userId, input.parentId ?? null, input.name, input.color]
+    [id, userId, input.parentId ?? null, input.name, input.color],
   );
 
   const created = formatProject(result.rows[0] as ProjectRow);
-  publishProjectEvent("created", created.id, userId, created);
+  publishProjectEvent('created', created.id, userId, created);
   return created;
 }
 
@@ -197,8 +207,8 @@ export async function updateProject(projectId: string, userId: string, input: Up
 
   if (project.is_inbox && input.name !== undefined) {
     throw new AppError({
-      code: "INBOX_PROTECTED",
-      message: "Inbox project cannot be renamed",
+      code: 'INBOX_PROTECTED',
+      message: 'Inbox project cannot be renamed',
       statusCode: 400,
     });
   }
@@ -207,13 +217,13 @@ export async function updateProject(projectId: string, userId: string, input: Up
 
   if (input.name !== undefined) {
     if (input.name.length === 0 || input.name.length > 120) {
-      errors.push({ field: "name", message: "Name must be between 1 and 120 characters" });
+      errors.push({ field: 'name', message: 'Name must be between 1 and 120 characters' });
     }
   }
 
   if (input.color !== undefined) {
-    if (!SUPPORTED_COLORS.includes(input.color as typeof SUPPORTED_COLORS[number])) {
-      errors.push({ field: "color", message: "Color is not in the supported palette" });
+    if (!SUPPORTED_COLORS.includes(input.color as (typeof SUPPORTED_COLORS)[number])) {
+      errors.push({ field: 'color', message: 'Color is not in the supported palette' });
     }
   }
 
@@ -223,15 +233,15 @@ export async function updateProject(projectId: string, userId: string, input: Up
   if (input.name !== undefined) {
     const duplicateCheck = await pool.query(
       `SELECT id FROM projects WHERE user_id = $1 AND LOWER(name) = LOWER($2) AND id != $3`,
-      [userId, input.name, projectId]
+      [userId, input.name, projectId],
     );
 
     if (duplicateCheck.rows.length > 0) {
       throw new AppError({
-        code: "VALIDATION_ERROR",
-        message: "Validation failed",
+        code: 'VALIDATION_ERROR',
+        message: 'Validation failed',
         statusCode: 400,
-        details: [{ field: "name", message: "A project with this name already exists" }],
+        details: [{ field: 'name', message: 'A project with this name already exists' }],
       });
     }
   }
@@ -254,24 +264,24 @@ export async function updateProject(projectId: string, userId: string, input: Up
     if (input.parentId !== null) {
       if (input.parentId === projectId) {
         throw new AppError({
-          code: "VALIDATION_ERROR",
-          message: "A project cannot be its own parent",
+          code: 'VALIDATION_ERROR',
+          message: 'A project cannot be its own parent',
           statusCode: 400,
         });
       }
       await verifyProjectOwnership(input.parentId, userId);
       if (await isSelfOrDescendant(input.parentId, projectId)) {
         throw new AppError({
-          code: "VALIDATION_ERROR",
-          message: "Cannot move a project under its own descendant",
+          code: 'VALIDATION_ERROR',
+          message: 'Cannot move a project under its own descendant',
           statusCode: 400,
         });
       }
       const parentDepth = await getProjectDepth(input.parentId);
       if (parentDepth >= 4) {
         throw new AppError({
-          code: "MAX_DEPTH_EXCEEDED",
-          message: "Maximum project nesting depth of 4 exceeded",
+          code: 'MAX_DEPTH_EXCEEDED',
+          message: 'Maximum project nesting depth of 4 exceeded',
           statusCode: 400,
         });
       }
@@ -292,11 +302,11 @@ export async function updateProject(projectId: string, userId: string, input: Up
   setClauses.push(`updated_at = NOW()`);
   values.push(projectId);
 
-  const query = `UPDATE projects SET ${setClauses.join(", ")} WHERE id = $${paramIndex} RETURNING *`;
+  const query = `UPDATE projects SET ${setClauses.join(', ')} WHERE id = $${paramIndex} RETURNING *`;
   const result = await pool.query(query, values);
 
   const updated = formatProject(result.rows[0] as ProjectRow);
-  publishProjectEvent("updated", updated.id, userId, updated);
+  publishProjectEvent('updated', updated.id, userId, updated);
   return updated;
 }
 
@@ -305,15 +315,15 @@ export async function deleteProject(projectId: string, userId: string): Promise<
 
   if (project.is_inbox) {
     throw new AppError({
-      code: "INBOX_PROTECTED",
-      message: "Inbox project cannot be deleted",
+      code: 'INBOX_PROTECTED',
+      message: 'Inbox project cannot be deleted',
       statusCode: 400,
     });
   }
 
   const client = await pool.connect();
   try {
-    await client.query("BEGIN");
+    await client.query('BEGIN');
 
     // Cascade: delete tasks in this project (sections cascade via FK)
     await client.query(`DELETE FROM tasks WHERE project_id = $1`, [projectId]);
@@ -324,15 +334,15 @@ export async function deleteProject(projectId: string, userId: string): Promise<
     // Delete the project itself
     await client.query(`DELETE FROM projects WHERE id = $1`, [projectId]);
 
-    await client.query("COMMIT");
+    await client.query('COMMIT');
   } catch (err) {
-    await client.query("ROLLBACK");
+    await client.query('ROLLBACK');
     throw err;
   } finally {
     client.release();
   }
 
-  publishProjectEvent("deleted", projectId, userId);
+  publishProjectEvent('deleted', projectId, userId);
   return { success: true };
 }
 
@@ -341,18 +351,18 @@ export async function archiveProject(projectId: string, userId: string) {
 
   if (project.is_inbox) {
     throw new AppError({
-      code: "INBOX_PROTECTED",
-      message: "Inbox project cannot be archived",
+      code: 'INBOX_PROTECTED',
+      message: 'Inbox project cannot be archived',
       statusCode: 400,
     });
   }
 
   const result = await pool.query(
     `UPDATE projects SET is_archived = true, updated_at = NOW() WHERE id = $1 RETURNING *`,
-    [projectId]
+    [projectId],
   );
 
   const archived = formatProject(result.rows[0] as ProjectRow);
-  publishProjectEvent("updated", archived.id, userId, archived);
+  publishProjectEvent('updated', archived.id, userId, archived);
   return archived;
 }

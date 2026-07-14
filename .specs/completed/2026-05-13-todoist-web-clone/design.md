@@ -9,7 +9,7 @@ The architecture follows a client-server model: a React SPA communicates with a 
 ### Key Design Decisions
 
 | Decision           | Choice                                | Rationale                                                      |
-|--------------------|---------------------------------------|----------------------------------------------------------------|
+| ------------------ | ------------------------------------- | -------------------------------------------------------------- |
 | Frontend framework | React + TypeScript                    | Component model fits complex UI; large ecosystem               |
 | State management   | Zustand + React Query                 | Lightweight, supports optimistic updates natively              |
 | Backend runtime    | Node.js + Express                     | Same language as frontend; async I/O for WebSocket handling    |
@@ -100,7 +100,7 @@ graph LR
 ### Frontend Components
 
 | Component          | Responsibility                                               |
-|--------------------|--------------------------------------------------------------|
+| ------------------ | ------------------------------------------------------------ |
 | `AppShell`         | Layout: sidebar, main content, responsive breakpoints        |
 | `Sidebar`          | Project tree, navigation, labels, filters                    |
 | `TaskList`         | Renders task items with drag-and-drop ordering               |
@@ -118,7 +118,7 @@ graph LR
 ### Backend Services
 
 | Service             | Endpoints                                                                                                              | Responsibility                                          |
-|---------------------|------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------|
+| ------------------- | ---------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
 | `AuthService`       | POST /auth/register, POST /auth/login, POST /auth/logout, POST /auth/reset-password, POST /auth/reset-password/confirm | Registration, login, session management, password reset |
 | `TaskService`       | CRUD /tasks, POST /tasks/:id/complete, POST /tasks/:id/reopen, PATCH /tasks/:id/reorder                                | Task lifecycle, ordering, subtask management            |
 | `ProjectService`    | CRUD /projects, POST /projects/:id/archive, POST /projects/:id/share, CRUD /projects/:id/sections                      | Project and section management                          |
@@ -227,8 +227,9 @@ erDiagram
 ### Core Tables
 
 #### users
+
 | Column        | Type         | Constraints            |
-|---------------|--------------|------------------------|
+| ------------- | ------------ | ---------------------- |
 | id            | UUID         | PK                     |
 | email         | VARCHAR(255) | UNIQUE, NOT NULL       |
 | password_hash | VARCHAR(255) | NOT NULL               |
@@ -237,8 +238,9 @@ erDiagram
 | updated_at    | TIMESTAMPTZ  | NOT NULL DEFAULT NOW() |
 
 #### preferences
+
 | Column                | Type         | Constraints               |
-|-----------------------|--------------|---------------------------|
+| --------------------- | ------------ | ------------------------- |
 | user_id               | UUID         | PK, FK → users.id         |
 | time_zone             | VARCHAR(100) | NOT NULL DEFAULT 'UTC'    |
 | week_start            | VARCHAR(10)  | NOT NULL DEFAULT 'sunday' |
@@ -246,8 +248,9 @@ erDiagram
 | notifications_enabled | BOOLEAN      | NOT NULL DEFAULT true     |
 
 #### sessions
+
 | Column     | Type         | Constraints             |
-|------------|--------------|-------------------------|
+| ---------- | ------------ | ----------------------- |
 | id         | UUID         | PK                      |
 | user_id    | UUID         | FK → users.id, NOT NULL |
 | token_hash | VARCHAR(255) | UNIQUE, NOT NULL        |
@@ -255,8 +258,9 @@ erDiagram
 | created_at | TIMESTAMPTZ  | NOT NULL DEFAULT NOW()  |
 
 #### projects
+
 | Column      | Type         | Constraints                |
-|-------------|--------------|----------------------------|
+| ----------- | ------------ | -------------------------- |
 | id          | UUID         | PK                         |
 | user_id     | UUID         | FK → users.id, NOT NULL    |
 | parent_id   | UUID         | FK → projects.id, NULLABLE |
@@ -269,8 +273,9 @@ erDiagram
 | updated_at  | TIMESTAMPTZ  | NOT NULL DEFAULT NOW()     |
 
 #### collaborators
+
 | Column     | Type        | Constraints                |
-|------------|-------------|----------------------------|
+| ---------- | ----------- | -------------------------- |
 | id         | UUID        | PK                         |
 | project_id | UUID        | FK → projects.id, NOT NULL |
 | user_id    | UUID        | FK → users.id, NOT NULL    |
@@ -278,8 +283,9 @@ erDiagram
 | UNIQUE     |             | (project_id, user_id)      |
 
 #### sections
+
 | Column      | Type         | Constraints                |
-|-------------|--------------|----------------------------|
+| ----------- | ------------ | -------------------------- |
 | id          | UUID         | PK                         |
 | project_id  | UUID         | FK → projects.id, NOT NULL |
 | name        | VARCHAR(120) | NOT NULL                   |
@@ -288,8 +294,9 @@ erDiagram
 | updated_at  | TIMESTAMPTZ  | NOT NULL DEFAULT NOW()     |
 
 #### tasks
+
 | Column           | Type         | Constraints                     |
-|------------------|--------------|---------------------------------|
+| ---------------- | ------------ | ------------------------------- |
 | id               | UUID         | PK                              |
 | user_id          | UUID         | FK → users.id, NOT NULL         |
 | project_id       | UUID         | FK → projects.id, NOT NULL      |
@@ -311,15 +318,17 @@ erDiagram
 | updated_at       | TIMESTAMPTZ  | NOT NULL DEFAULT NOW()          |
 
 #### task_labels
+
 | Column      | Type | Constraints              |
-|-------------|------|--------------------------|
+| ----------- | ---- | ------------------------ |
 | task_id     | UUID | FK → tasks.id, NOT NULL  |
 | label_id    | UUID | FK → labels.id, NOT NULL |
 | PRIMARY KEY |      | (task_id, label_id)      |
 
 #### labels
+
 | Column     | Type        | Constraints             |
-|------------|-------------|-------------------------|
+| ---------- | ----------- | ----------------------- |
 | id         | UUID        | PK                      |
 | user_id    | UUID        | FK → users.id, NOT NULL |
 | name       | VARCHAR(60) | NOT NULL                |
@@ -329,8 +338,9 @@ erDiagram
 | UNIQUE     |             | (user_id, LOWER(name))  |
 
 #### filters
+
 | Column     | Type         | Constraints             |
-|------------|--------------|-------------------------|
+| ---------- | ------------ | ----------------------- |
 | id         | UUID         | PK                      |
 | user_id    | UUID         | FK → users.id, NOT NULL |
 | name       | VARCHAR(120) | NOT NULL                |
@@ -339,8 +349,9 @@ erDiagram
 | updated_at | TIMESTAMPTZ  | NOT NULL DEFAULT NOW()  |
 
 #### comments
+
 | Column     | Type        | Constraints                      |
-|------------|-------------|----------------------------------|
+| ---------- | ----------- | -------------------------------- |
 | id         | UUID        | PK                               |
 | task_id    | UUID        | FK → tasks.id, NOT NULL          |
 | user_id    | UUID        | FK → users.id, NOT NULL          |
@@ -349,8 +360,9 @@ erDiagram
 | updated_at | TIMESTAMPTZ | NULLABLE                         |
 
 #### reminders
+
 | Column     | Type        | Constraints             |
-|------------|-------------|-------------------------|
+| ---------- | ----------- | ----------------------- |
 | id         | UUID        | PK                      |
 | task_id    | UUID        | FK → tasks.id, NOT NULL |
 | user_id    | UUID        | FK → users.id, NOT NULL |
@@ -359,8 +371,9 @@ erDiagram
 | created_at | TIMESTAMPTZ | NOT NULL DEFAULT NOW()  |
 
 #### activity_events
+
 | Column      | Type        | Constraints                |
-|-------------|-------------|----------------------------|
+| ----------- | ----------- | -------------------------- |
 | id          | UUID        | PK                         |
 | user_id     | UUID        | FK → users.id, NOT NULL    |
 | project_id  | UUID        | FK → projects.id, NULLABLE |
@@ -372,8 +385,9 @@ erDiagram
 | created_at  | TIMESTAMPTZ | NOT NULL DEFAULT NOW()     |
 
 #### password_reset_tokens
+
 | Column     | Type         | Constraints             |
-|------------|--------------|-------------------------|
+| ---------- | ------------ | ----------------------- |
 | id         | UUID         | PK                      |
 | user_id    | UUID         | FK → users.id, NOT NULL |
 | token_hash | VARCHAR(255) | UNIQUE, NOT NULL        |
@@ -382,8 +396,9 @@ erDiagram
 | created_at | TIMESTAMPTZ  | NOT NULL DEFAULT NOW()  |
 
 #### project_invitations
+
 | Column      | Type         | Constraints                |
-|-------------|--------------|----------------------------|
+| ----------- | ------------ | -------------------------- |
 | id          | UUID         | PK                         |
 | project_id  | UUID         | FK → projects.id, NOT NULL |
 | email       | VARCHAR(255) | NOT NULL                   |
@@ -444,179 +459,178 @@ type FilterExpr =
 
 ```typescript
 interface DueDate {
-  date: string;          // YYYY-MM-DD
-  time?: string;         // HH:MM (24h)
-  timezone?: string;     // IANA timezone
+  date: string; // YYYY-MM-DD
+  time?: string; // HH:MM (24h)
+  timezone?: string; // IANA timezone
   recurrence?: RecurrenceRule;
 }
 
 interface RecurrenceRule {
   type: 'daily' | 'weekly' | 'monthly' | 'yearly';
-  interval: number;      // 1-999
-  weekdays?: number[];   // 0=Sun, 1=Mon, ..., 6=Sat
-  dayOfMonth?: number;   // 1-31
-  month?: number;        // 1-12
+  interval: number; // 1-999
+  weekdays?: number[]; // 0=Sun, 1=Mon, ..., 6=Sat
+  dayOfMonth?: number; // 1-31
+  month?: number; // 1-12
 }
 ```
 
-
 ## Correctness Properties
 
-*A property is a characteristic or behavior that should hold true across all valid executions of a system — essentially, a formal statement about what the system should do. Properties serve as the bridge between human-readable specifications and machine-verifiable correctness guarantees.*
+_A property is a characteristic or behavior that should hold true across all valid executions of a system - essentially, a formal statement about what the system should do. Properties serve as the bridge between human-readable specifications and machine-verifiable correctness guarantees._
 
 ### Property 1: Date parser round-trip
 
-*For any* structured DueDate value `d` produced by the Date_Parser, printing `d` with Date_Printer and then parsing the result with Date_Parser SHALL produce a DueDate equivalent to `d`.
+_For any_ structured DueDate value `d` produced by the Date_Parser, printing `d` with Date_Printer and then parsing the result with Date_Parser SHALL produce a DueDate equivalent to `d`.
 
 **Validates: Requirements 13.8, 13.9**
 
 ### Property 2: Filter parser round-trip
 
-*For any* structured FilterExpr `e` produced by the Filter_Parser, printing `e` with Filter_Printer and then parsing the result with Filter_Parser SHALL produce a FilterExpr equal to `e`.
+_For any_ structured FilterExpr `e` produced by the Filter_Parser, printing `e` with Filter_Printer and then parsing the result with Filter_Parser SHALL produce a FilterExpr equal to `e`.
 
 **Validates: Requirements 16.6, 16.7**
 
 ### Property 3: Recurrence sequence strict monotonicity
 
-*For any* RecurrenceRule `r` and starting date `s`, the sequence of dates produced by repeatedly applying the Recurrence_Engine starting from `s` SHALL be strictly monotonically increasing (each date strictly after the previous).
+_For any_ RecurrenceRule `r` and starting date `s`, the sequence of dates produced by repeatedly applying the Recurrence_Engine starting from `s` SHALL be strictly monotonically increasing (each date strictly after the previous).
 
 **Validates: Requirements 14.2, 14.9**
 
 ### Property 4: Recurrence weekday correctness
 
-*For any* RecurrenceRule of type "every <weekday>" and any starting date, the next computed date SHALL fall on the specified weekday and SHALL be strictly after the starting date.
+_For any_ RecurrenceRule of type "every <weekday>" and any starting date, the next computed date SHALL fall on the specified weekday and SHALL be strictly after the starting date.
 
 **Validates: Requirements 14.4**
 
 ### Property 5: Recurrence N-day arithmetic
 
-*For any* RecurrenceRule of type "every N days" where N is 1-999, and any starting date, the next computed date SHALL equal the starting date plus exactly N calendar days.
+_For any_ RecurrenceRule of type "every N days" where N is 1-999, and any starting date, the next computed date SHALL equal the starting date plus exactly N calendar days.
 
 **Validates: Requirements 14.5**
 
 ### Property 6: Recurrence time preservation
 
-*For any* recurring task with a time component in its DueDate, when the Recurrence_Engine computes the next occurrence, the time component SHALL be identical to the original.
+_For any_ recurring task with a time component in its DueDate, when the Recurrence_Engine computes the next occurrence, the time component SHALL be identical to the original.
 
 **Validates: Requirements 14.6**
 
 ### Property 7: Recurrence month-end clamping
 
-*For any* monthly RecurrenceRule targeting day D where D exceeds the number of days in the target month, the Recurrence_Engine SHALL use the last day of that month.
+_For any_ monthly RecurrenceRule targeting day D where D exceeds the number of days in the target month, the Recurrence_Engine SHALL use the last day of that month.
 
 **Validates: Requirements 14.7**
 
 ### Property 8: Task title validation
 
-*For any* string of length 1 to 500 characters, task creation SHALL succeed. *For any* string of length 0 or greater than 500 characters, task creation SHALL be rejected with a title-length error.
+_For any_ string of length 1 to 500 characters, task creation SHALL succeed. _For any_ string of length 0 or greater than 500 characters, task creation SHALL be rejected with a title-length error.
 
 **Validates: Requirements 4.1, 4.2, 5.1**
 
 ### Property 9: Task priority validation
 
-*For any* integer in the range 1 to 4, setting it as a task's priority SHALL succeed and store that value. *For any* integer outside the range 1 to 4, the request SHALL be rejected with a priority-invalid error.
+_For any_ integer in the range 1 to 4, setting it as a task's priority SHALL succeed and store that value. _For any_ integer outside the range 1 to 4, the request SHALL be rejected with a priority-invalid error.
 
 **Validates: Requirements 4.6, 4.7**
 
 ### Property 10: Subtask depth enforcement
 
-*For any* task hierarchy, creating or moving a subtask such that its depth would exceed 5 levels below the top-level task SHALL be rejected. Creating or moving a subtask to depth 5 or less SHALL succeed.
+_For any_ task hierarchy, creating or moving a subtask such that its depth would exceed 5 levels below the top-level task SHALL be rejected. Creating or moving a subtask to depth 5 or less SHALL succeed.
 
 **Validates: Requirements 8.2, 8.3**
 
 ### Property 11: Subtask cycle detection
 
-*For any* task update that would set a task's parent_task_id to itself or to any of its descendants, the Task_Service SHALL reject the request with a cyclic-reference error.
+_For any_ task update that would set a task's parent_task_id to itself or to any of its descendants, the Task_Service SHALL reject the request with a cyclic-reference error.
 
 **Validates: Requirements 8.4**
 
 ### Property 12: Parent completion cascades to all descendants
 
-*For any* task tree, when the root task is marked complete, all descendant subtasks SHALL also be marked complete (is_completed = true, completed_at set).
+_For any_ task tree, when the root task is marked complete, all descendant subtasks SHALL also be marked complete (is_completed = true, completed_at set).
 
 **Validates: Requirements 6.4**
 
 ### Property 13: Parent deletion cascades to all descendants
 
-*For any* task tree, when the root task is deleted, all descendant subtasks SHALL also be deleted.
+_For any_ task tree, when the root task is deleted, all descendant subtasks SHALL also be deleted.
 
 **Validates: Requirements 7.1, 8.6**
 
 ### Property 14: Moving parent moves all descendants
 
-*For any* task tree, when the root task is moved to a different project, all descendant subtasks SHALL be moved to the same project with their section_ids cleared.
+_For any_ task tree, when the root task is moved to a different project, all descendant subtasks SHALL be moved to the same project with their section_ids cleared.
 
 **Validates: Requirements 8.5**
 
 ### Property 15: Task ordering invariant
 
-*For any* set of tasks within a project or section, after a reorder operation placing a task at position P, querying the task list SHALL return tasks in ascending order_value with the moved task at position P and all other tasks maintaining their relative order.
+_For any_ set of tasks within a project or section, after a reorder operation placing a task at position P, querying the task list SHALL return tasks in ascending order_value with the moved task at position P and all other tasks maintaining their relative order.
 
 **Validates: Requirements 9.2, 9.3**
 
 ### Property 16: Project name and color validation
 
-*For any* project name of 1 to 120 characters that does not duplicate an existing project name for the same user, and a color from the supported palette, project creation SHALL succeed. *For any* name that is empty, exceeds 120 characters, or duplicates an existing name, creation SHALL be rejected.
+_For any_ project name of 1 to 120 characters that does not duplicate an existing project name for the same user, and a color from the supported palette, project creation SHALL succeed. _For any_ name that is empty, exceeds 120 characters, or duplicates an existing name, creation SHALL be rejected.
 
 **Validates: Requirements 10.1, 10.2, 10.3**
 
 ### Property 17: Archived project exclusion from views
 
-*For any* task belonging to an archived project, that task SHALL NOT appear in Today_View, Upcoming_View, or Filter evaluation results.
+_For any_ task belonging to an archived project, that task SHALL NOT appear in Today_View, Upcoming_View, or Filter evaluation results.
 
 **Validates: Requirements 10.5**
 
 ### Property 18: Project nesting depth enforcement
 
-*For any* project hierarchy, creating or moving a project such that its depth would exceed 4 levels SHALL be rejected.
+_For any_ project hierarchy, creating or moving a project such that its depth would exceed 4 levels SHALL be rejected.
 
 **Validates: Requirements 10.9**
 
 ### Property 19: Label name validation
 
-*For any* string of 1 to 60 characters containing only alphanumeric characters and underscores, and not matching (case-insensitive) an existing label name for the same user, label creation SHALL succeed. *For any* string that is empty, exceeds 60 characters, contains invalid characters, or duplicates an existing name, creation SHALL be rejected.
+_For any_ string of 1 to 60 characters containing only alphanumeric characters and underscores, and not matching (case-insensitive) an existing label name for the same user, label creation SHALL succeed. _For any_ string that is empty, exceeds 60 characters, contains invalid characters, or duplicates an existing name, creation SHALL be rejected.
 
 **Validates: Requirements 12.1, 12.2, 12.3**
 
 ### Property 20: Today view correctness
 
-*For any* set of tasks owned by or shared with a user, the Today_View SHALL return exactly the incomplete tasks whose due_date is on or before the user's current local date, excluding tasks in archived projects, ordered by priority ascending then order_value ascending.
+_For any_ set of tasks owned by or shared with a user, the Today_View SHALL return exactly the incomplete tasks whose due_date is on or before the user's current local date, excluding tasks in archived projects, ordered by priority ascending then order_value ascending.
 
 **Validates: Requirements 15.2, 15.5, 15.6**
 
 ### Property 21: Upcoming view correctness
 
-*For any* integer N in 7-30 and any set of tasks, the Upcoming_View SHALL return exactly the incomplete tasks whose due_date falls within the next N days from the user's current local date, excluding archived projects, grouped by day and ordered by priority ascending then order_value ascending within each group.
+_For any_ integer N in 7-30 and any set of tasks, the Upcoming_View SHALL return exactly the incomplete tasks whose due_date falls within the next N days from the user's current local date, excluding archived projects, grouped by day and ordered by priority ascending then order_value ascending within each group.
 
 **Validates: Requirements 15.3, 15.4, 15.5**
 
 ### Property 22: Filter evaluation correctness
 
-*For any* valid FilterExpr and any set of tasks owned by or shared with the user, evaluating the filter SHALL return exactly the tasks that satisfy the boolean expression (with correct semantics for each operand type).
+_For any_ valid FilterExpr and any set of tasks owned by or shared with the user, evaluating the filter SHALL return exactly the tasks that satisfy the boolean expression (with correct semantics for each operand type).
 
 **Validates: Requirements 16.8**
 
 ### Property 23: Search correctness
 
-*For any* query string of 2-200 characters and any set of entities, the Search_Service SHALL return all entities whose title, name, or description contains the query as a case-insensitive substring, grouped by type (Tasks, Projects, Labels), capped at 50 per type, ordered by most recently updated first.
+_For any_ query string of 2-200 characters and any set of entities, the Search_Service SHALL return all entities whose title, name, or description contains the query as a case-insensitive substring, grouped by type (Tasks, Projects, Labels), capped at 50 per type, ordered by most recently updated first.
 
 **Validates: Requirements 17.1, 17.2, 17.3**
 
 ### Property 26: Authorization enforcement
 
-*For any* entity (task, project, section, label, filter, comment) not owned by and not in a project shared with the requesting user, any read, update, or delete request SHALL be rejected with a not-accessible error.
+_For any_ entity (task, project, section, label, filter, comment) not owned by and not in a project shared with the requesting user, any read, update, or delete request SHALL be rejected with a not-accessible error.
 
 **Validates: Requirements 26.3, 5.5**
 
 ### Property 27: Optimistic update revert on API failure
 
-*For any* task mutation that is optimistically applied to the UI, if the API server returns an error, the Web_Client SHALL revert the UI to the exact pre-mutation state within 2000 milliseconds.
+_For any_ task mutation that is optimistically applied to the UI, if the API server returns an error, the Web_Client SHALL revert the UI to the exact pre-mutation state within 2000 milliseconds.
 
 **Validates: Requirements 28.2, 28.3**
 
 ### Property 28: Section deletion moves tasks to project
 
-*For any* section containing tasks, when the section is deleted, all tasks previously in that section SHALL have their section_id set to null and remain in the same project.
+_For any_ section containing tasks, when the section is deleted, all tasks previously in that section SHALL have their section_id set to null and remain in the same project.
 
 **Validates: Requirements 11.3**
 
@@ -639,12 +653,12 @@ interface RecurrenceRule {
 ### Error Code Categories
 
 | HTTP Status | Error Code Pattern             | Usage                                                  |
-|-------------|--------------------------------|--------------------------------------------------------|
-| 400         | VALIDATION_*                   | Input validation failures (multiple errors aggregated) |
+| ----------- | ------------------------------ | ------------------------------------------------------ |
+| 400         | VALIDATION\_\*                 | Input validation failures (multiple errors aggregated) |
 | 401         | AUTH_REQUIRED, SESSION_EXPIRED | Missing or expired token                               |
 | 403         | ACCESS_DENIED                  | Valid auth but insufficient permissions                |
 | 404         | NOT_FOUND                      | Entity doesn't exist or not accessible to user         |
-| 409         | CONFLICT_*                     | Duplicate email, duplicate label name, etc.            |
+| 409         | CONFLICT\_\*                   | Duplicate email, duplicate label name, etc.            |
 | 422         | PARSE_ERROR                    | Date or filter query parse failure                     |
 | 429         | RATE_LIMITED                   | Too many failed login attempts                         |
 | 500         | INTERNAL_ERROR                 | Unexpected server errors                               |
@@ -679,7 +693,7 @@ interface RecurrenceRule {
 Properties to implement as PBT:
 
 | Property                       | Target Component              | Generator Strategy                                |
-|--------------------------------|-------------------------------|---------------------------------------------------|
+| ------------------------------ | ----------------------------- | ------------------------------------------------- |
 | 1: Date parser round-trip      | Date_Parser, Date_Printer     | Generate random valid DueDate structures          |
 | 2: Filter parser round-trip    | Filter_Parser, Filter_Printer | Generate random valid FilterExpr ASTs             |
 | 3-7: Recurrence properties     | Recurrence_Engine             | Generate random RecurrenceRules and start dates   |
@@ -700,6 +714,7 @@ Properties to implement as PBT:
 ### Unit Tests (Example-Based)
 
 Focus areas:
+
 - Specific edge cases not covered by generators (empty strings, boundary values)
 - Authentication flows (login, logout, rate limiting)
 - Specific keyboard shortcut bindings
@@ -709,6 +724,7 @@ Focus areas:
 ### Integration Tests
 
 Focus areas:
+
 - Full request lifecycle (HTTP → service → DB → response)
 - WebSocket event delivery timing
 - Reminder scheduling and delivery
