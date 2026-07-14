@@ -369,10 +369,15 @@ describe("Property 11: Subtask cycle detection", () => {
     mockQuery.mockResolvedValueOnce({ rows: [] });
     // max descendant depth query
     mockQuery.mockResolvedValueOnce({ rows: [{ max_depth: null }] });
-    // update query
-    mockQuery.mockResolvedValueOnce({
-      rows: [makeTaskRow({ id: taskId, parent_task_id: newParentId, depth: 1 })],
-    });
+    // Reparent shifts depth (0 → 1), so it runs in a transaction that also
+    // cascades descendant depths: BEGIN, main UPDATE, descendant UPDATE, COMMIT.
+    mockClientQuery
+      .mockResolvedValueOnce({ rows: [] }) // BEGIN
+      .mockResolvedValueOnce({
+        rows: [makeTaskRow({ id: taskId, parent_task_id: newParentId, depth: 1 })],
+      }) // main UPDATE
+      .mockResolvedValueOnce({ rows: [] }) // descendant depth cascade
+      .mockResolvedValueOnce({ rows: [] }); // COMMIT
 
     const result = await updateTask(taskId, userId, { parentTaskId: newParentId });
     expect(result.parentTaskId).toBe(newParentId);

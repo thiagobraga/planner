@@ -142,6 +142,32 @@ describe("taskService: sync event emission", () => {
 
       expect(redisPubClient.publish).not.toHaveBeenCalled();
     });
+
+    it("cascades the depth delta to descendants when reparenting", async () => {
+      const parentRow = { ...mockTaskRow, id: "parent-1", depth: 1 };
+      // task depth 0 → newDepth = parent.depth + 1 = 2, so delta = 2
+      (pool.query as ReturnType<typeof vi.fn>)
+        .mockResolvedValueOnce({ rows: [mockTaskRow] })                 // verifyTaskAccess(task)
+        .mockResolvedValueOnce({ rows: [parentRow] })                   // verifyTaskAccess(parent)
+        .mockResolvedValueOnce({ rows: [] })                            // detectCycle
+        .mockResolvedValueOnce({ rows: [{ max_depth: 0 }] });           // maxDescendantDepth
+
+      const clientQuery = vi
+        .fn()
+        .mockResolvedValueOnce(undefined)                               // BEGIN
+        .mockResolvedValueOnce({ rows: [{ ...mockTaskRow, parent_task_id: "parent-1", depth: 2 }] }) // main UPDATE
+        .mockResolvedValueOnce(undefined)                               // descendant UPDATE
+        .mockResolvedValueOnce(undefined);                             // COMMIT
+      (pool.connect as ReturnType<typeof vi.fn>).mockReturnValue({ query: clientQuery, release: vi.fn() });
+
+      await updateTask(taskId, userId, { parentTaskId: "parent-1" });
+
+      const descendantCall = clientQuery.mock.calls.find(
+        (c) => typeof c[0] === "string" && c[0].includes("depth = depth +")
+      );
+      expect(descendantCall).toBeDefined();
+      expect(descendantCall![1]).toEqual([taskId, 2]);
+    });
   });
 
   describe("completeTask", () => {
