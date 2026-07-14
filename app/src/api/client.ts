@@ -88,7 +88,7 @@ export interface Preferences {
   weekStart: 'sunday' | 'monday';
   theme: 'light' | 'dark' | 'system';
   notificationsEnabled: boolean;
-  font: 'lora' | 'klee' | 'playpen' | 'hubballi';
+  font: 'lora' | 'playpen' | 'hubballi';
   showDots: boolean;
   background: 'beige' | 'white';
   smallCaps: boolean;

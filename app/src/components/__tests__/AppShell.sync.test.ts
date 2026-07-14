@@ -108,7 +108,7 @@ describe('AppShell: sync event invalidation', () => {
       invalidatePreferences: mockInvalidatePreferences,
       setPreferences: mockSetPreferences,
     }));
-    const payload = { font: 'klee', showDots: false, background: 'white' };
+    const payload = { font: 'lora', showDots: false, background: 'white' };
     act(() => {
       capturedSyncHandler?.(makeEvent({ entityType: 'preferences', eventType: 'updated', entityId: 'user-1', payload }));
     });

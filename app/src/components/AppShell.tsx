@@ -13,7 +13,6 @@ import { ensureFontLoaded, type FontOption } from '../utils/fontLoader';
 
 const FONT_CLASSES: Record<FontOption, string> = {
   lora: 'font-journal',
-  klee: 'font-klee',
   playpen: 'font-playpen',
   hubballi: 'font-hubballi',
 };
