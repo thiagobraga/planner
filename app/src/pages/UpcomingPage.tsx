@@ -2,6 +2,7 @@ import { useMemo, useState, useCallback } from 'react';
 import { TaskList } from '../components/TaskList';
 import type { Task } from '../components/TaskItem';
 import { getPhrase } from '../utils/phrases';
+import { applyIndent } from '../utils/taskTree';
 
 function getUpcomingDays(count: number) {
   const days = [];
@@ -59,6 +60,20 @@ export function UpcomingPage() {
     });
   }, []);
 
+  // Local-only: this page renders seed data with no API wiring, so indenting is
+  // purely visual within its day group.
+  const handleIndent = useCallback((id: string, dir: 1 | -1) => {
+    setTasksByDay((prev) => {
+      const next = { ...prev };
+      for (const key of Object.keys(next)) {
+        if (!next[key].some((t) => t.id === id)) continue;
+        const { tasks, changed } = applyIndent(next[key], id, dir);
+        if (changed) next[key] = tasks;
+      }
+      return next;
+    });
+  }, []);
+
   return (
     <div className="max-w-162">
       <header className="sticky-page-header">
@@ -85,6 +100,7 @@ export function UpcomingPage() {
                 selectedTaskId={selectedId}
                 onTaskClick={handleTaskClick}
                 onTaskToggle={handleToggle}
+                onIndent={handleIndent}
                 onReorder={(reordered) => setTasksByDay((prev) => ({ ...prev, [day.key]: reordered }))}
               />
             ) : (
