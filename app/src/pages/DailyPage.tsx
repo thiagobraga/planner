@@ -4,7 +4,6 @@ import { TaskList } from '../components/TaskList';
 import type { Task } from '../components/TaskItem';
 import { getPhrase } from '../utils/phrases';
 import { applyIndent } from '../utils/taskTree';
-import { Checkbox } from '../components/ui/Checkbox';
 import {
   apiCreateTask,
   apiToggleTask,
@@ -122,6 +121,61 @@ export function DailyPage() {
       fetchHabits().then(setHabits).catch(() => { });
     });
   }, []);
+
+  const renderHabitRow = useCallback((habit: ApiHabit) => {
+    const done = habit.completions.includes(todayKey);
+
+    return (
+      <div
+        key={habit.id}
+        className={`task-item group ${done ? 'opacity-[0.35]' : ''}`}
+        aria-label={habit.name}
+        role="button"
+        tabIndex={0}
+        onClick={() => handleHabitToggle(habit.id, !done)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            handleHabitToggle(habit.id, !done);
+          }
+        }}
+      >
+        <button
+          type="button"
+          aria-label={done ? `Reopen: ${habit.name}` : `Complete: ${habit.name}`}
+          aria-pressed={done}
+          onClick={(e) => {
+            e.stopPropagation();
+            handleHabitToggle(habit.id, !done);
+          }}
+          className="task-item-toggle w-6 text-center overflow-hidden text-ink select-none shrink-0 cursor-pointer bg-transparent border-0 p-0"
+          style={done ? {
+            fontSize: 'var(--icon-check-size, 26px)',
+            transform: 'translateY(var(--icon-check-offset, 0px))',
+            lineHeight: 'var(--task-line-height, 24px)',
+          } : {
+            fontSize: 'var(--icon-dot-size, 10px)',
+            transform: 'translateY(var(--icon-dot-offset, 0px))',
+            lineHeight: 'var(--task-line-height, 24px)',
+          }}
+        >
+          {done ? '×' : '•'}
+        </button>
+
+        <span
+          style={{ lineHeight: 'var(--task-line-height, 24px)' }}
+          className="task-item-title-area flex-1 flex flex-wrap items-baseline min-w-0"
+        >
+          <span
+            style={{ lineHeight: 'var(--task-line-height, 24px)' }}
+            className={`task-item-title-text text-sm break-words ${done ? 'line-through text-ink-light' : 'text-ink'}`}
+          >
+            {habit.name}
+          </span>
+        </span>
+      </div>
+    );
+  }, [handleHabitToggle]);
 
   const replaceTodayFromApi = useCallback(() => {
     fetchTodayTasks().then((response) => {
@@ -418,30 +472,6 @@ export function DailyPage() {
         </p>
       </header>
 
-      {habits.length > 0 && (
-        <div className="mt-6">
-          <div className="text-[11px] tracking-[0.08em] uppercase text-ink-light leading-6 h-6 m-0 font-medium">
-            Habits
-          </div>
-          {habits.map((habit) => {
-            const done = habit.completions.includes(todayKey);
-            return (
-              <div key={habit.id} className="flex items-center h-6 pl-1">
-                <Checkbox
-                  checked={done}
-                  onChange={() => handleHabitToggle(habit.id, !done)}
-                  label={
-                    <span className={done ? 'text-ink-light line-through' : undefined}>
-                      {habit.name}
-                    </span>
-                  }
-                />
-              </div>
-            );
-          })}
-        </div>
-      )}
-
       {sections.map((section) => {
         const isToday = section.key === todayKey;
         return (
@@ -449,6 +479,8 @@ export function DailyPage() {
             <div className="text-[11px] tracking-[0.08em] uppercase text-ink-light leading-6 h-6 m-0 font-medium">
               {section.label}
             </div>
+
+            {isToday && habits.map(renderHabitRow)}
 
             <TaskList
               tasks={section.tasks}
