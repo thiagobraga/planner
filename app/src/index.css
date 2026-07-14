@@ -60,26 +60,6 @@
   --task-line-height: 24px;
 }
 
-@utility font-klee {
-  font-family: "Klee One", cursive;
-  font-weight: var(--fw-semibold);
-  --fw-normal: 400;
-  --fw-medium: 400;
-  --fw-semibold: 600;
-  --fw-bold: 600;
-  --font-weight-normal: 400;
-  --font-weight-medium: 400;
-  --font-weight-semibold: 600;
-  --font-weight-bold: 600;
-
-  /* Klee One has a tall x-height; × glyph needs to shrink slightly */
-  --icon-check-size: 22px;
-  --icon-check-offset: 1px;
-  --icon-dot-size: 11px;
-  --icon-dot-offset: 0px;
-  --task-line-height: 24px;
-}
-
 @utility font-playpen {
   font-family: "Playpen Sans", cursive;
   font-size-adjust: 0.495;

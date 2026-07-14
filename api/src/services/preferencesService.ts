@@ -30,7 +30,7 @@ function formatPreferences(row: PreferencesRow) {
 
 const VALID_WEEK_STARTS = ["sunday", "monday"] as const;
 const VALID_THEMES = ["light", "dark", "system"] as const;
-const VALID_FONTS = ["lora", "klee", "playpen", "hubballi"] as const;
+const VALID_FONTS = ["lora", "playpen", "hubballi"] as const;
 const VALID_BACKGROUNDS = ["beige", "white"] as const;
 
 function isValidIanaTimezone(tz: string): boolean {
@@ -75,7 +75,7 @@ export function validatePreferences(input: UpdatePreferencesInput): UpdatePrefer
   }
 
   if (input.font !== undefined && !VALID_FONTS.includes(input.font as (typeof VALID_FONTS)[number])) {
-    errors.push({ field: "font", message: "font must be one of: lora, klee, playpen, hubballi" });
+    errors.push({ field: "font", message: "font must be one of: lora, playpen, hubballi" });
   }
 
   if (input.showDots !== undefined && typeof input.showDots !== "boolean") {
