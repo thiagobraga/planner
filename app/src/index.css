@@ -39,6 +39,7 @@
 
 @utility font-journal {
   font-family: "Lora", serif;
+  font-size-adjust: 0.5;
   font-weight: var(--fw-normal);
   --fw-normal: 400;
   --fw-medium: 500;
@@ -81,6 +82,7 @@
 
 @utility font-playpen {
   font-family: "Playpen Sans", cursive;
+  font-size-adjust: 0.495;
   font-weight: var(--fw-normal);
   --fw-normal: 300;
   --fw-medium: 400;
@@ -102,6 +104,8 @@
 
 @utility font-hubballi {
   font-family: "Hubballi", cursive;
+  /* Hubballi reads much smaller at the same CSS size, so compensate by x-height. */
+  font-size-adjust: 0.49;
   font-weight: var(--fw-normal);
   --fw-normal: 400;
   --fw-medium: 400;
