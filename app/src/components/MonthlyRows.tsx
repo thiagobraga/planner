@@ -105,12 +105,12 @@ export function MonthlyRows() {
             <div
               key={day.day}
               style={weekendStyle}
-              className="grid h-6 grid-cols-[30px_20px_minmax(0,1fr)] items-center border-b border-border/60 px-4 last:border-b-0"
+              className="grid h-6 grid-cols-[30px_20px_minmax(0,1fr)] items-center border-b border-border/60 last:border-b-0"
             >
-              <span className={`text-[11px] leading-6 tracking-[0.08em] text-ink-light tabular-nums ${day.isToday ? 'monthly-current-day-label font-[800]' : 'font-medium'}`}>
+              <span className={`text-center text-[10px] leading-6 tracking-[0.08em] text-ink-light tabular-nums ${day.isToday ? 'monthly-current-day-label font-[800]' : 'font-medium'}`}>
                 {String(day.day).padStart(2, '0')}
               </span>
-              <span className={`text-center text-[11px] leading-6 tracking-[0.08em] text-ink-light uppercase ${day.isToday ? 'monthly-current-day-label font-[800]' : 'font-medium'}`}>
+              <span className={`text-center text-[10px] leading-6 tracking-[0.08em] text-ink-light uppercase ${day.isToday ? 'monthly-current-day-label font-[800]' : 'font-medium'}`}>
                 {day.weekday}
               </span>
               <div className="min-w-0 border-l border-dot/30 pl-4">

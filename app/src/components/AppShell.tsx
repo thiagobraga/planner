@@ -13,7 +13,6 @@ import { ensureFontLoaded, type FontOption } from '../utils/fontLoader';
 
 const FONT_CLASSES: Record<FontOption, string> = {
   lora: 'font-journal',
-  klee: 'font-klee',
   playpen: 'font-playpen',
   hubballi: 'font-hubballi',
 };
@@ -48,9 +47,10 @@ export function AppShell() {
   const pageBackground = isWhiteBackground ? '#ffffff' : 'var(--color-cream)';
   const shellThemeStyle = {
     backgroundColor: pageBackground,
+    '--color-dot': isWhiteBackground ? '#e5e1d8' : '#d8d3cb',
     '--planner-page-bg': pageBackground,
     '--planner-sidebar-bg': isWhiteBackground ? '#f1f1f1' : 'var(--color-sidebar-bg)',
-    '--planner-card-bg': isWhiteBackground ? '#fafafa' : '#f0ebe0',
+    '--planner-card-bg': isWhiteBackground ? '#fafafa' : '#ebe6de',
     '--planner-control-bg': isWhiteBackground ? '#ffffff' : 'rgba(245, 240, 232, 0.2)',
     '--planner-control-bg-hover': isWhiteBackground ? '#f5f5f5' : 'rgba(245, 240, 232, 0.35)',
     /* Monthly-specific tokens */

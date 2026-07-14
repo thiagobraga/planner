@@ -328,13 +328,16 @@ export async function updateTask(taskId: string, userId: string, input: UpdateTa
   const setClauses: string[] = [];
   const values: unknown[] = [];
   let paramIndex = 1;
+  // Depth shift applied to the whole descendant subtree when the task is reparented.
+  let reparentDelta: number | undefined;
 
   // Handle parentTaskId changes (depth enforcement + cycle detection)
   if (input.parentTaskId !== undefined) {
     if (input.parentTaskId === null) {
-      // Removing parent — set depth to 0
+      // Removing parent — promote to top level (depth 0)
       setClauses.push(`parent_task_id = NULL`);
       setClauses.push(`depth = 0`);
+      reparentDelta = 0 - task.depth;
     } else {
       // Verify parent exists and user has access
       const parentTask = await verifyTaskAccess(input.parentTaskId, userId);
@@ -371,6 +374,8 @@ export async function updateTask(taskId: string, userId: string, input: UpdateTa
           statusCode: 400,
         });
       }
+
+      reparentDelta = newDepth - task.depth;
 
       setClauses.push(`parent_task_id = $${paramIndex++}`);
       values.push(input.parentTaskId);
@@ -450,8 +455,40 @@ export async function updateTask(taskId: string, userId: string, input: UpdateTa
   values.push(taskId);
   const query = `UPDATE tasks SET ${setClauses.join(", ")} WHERE id = $${paramIndex} RETURNING *`;
 
-  const result = await pool.query(query, values);
-  const formatted = formatTask(result.rows[0] as TaskRow);
+  // When reparenting shifts the task's own depth, the entire descendant subtree
+  // must shift by the same delta so relative nesting is preserved (Phase 6 rule 5).
+  const shiftsDescendants = reparentDelta !== undefined && reparentDelta !== 0;
+
+  let formatted;
+  if (shiftsDescendants) {
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      const result = await client.query(query, values);
+      await client.query(
+        `WITH RECURSIVE descendants AS (
+           SELECT id FROM tasks WHERE parent_task_id = $1
+           UNION ALL
+           SELECT t.id FROM tasks t
+           INNER JOIN descendants d ON t.parent_task_id = d.id
+         )
+         UPDATE tasks SET depth = depth + $2, updated_at = NOW()
+         WHERE id IN (SELECT id FROM descendants)`,
+        [taskId, reparentDelta]
+      );
+      await client.query("COMMIT");
+      formatted = formatTask(result.rows[0] as TaskRow);
+    } catch (err) {
+      await client.query("ROLLBACK");
+      throw err;
+    } finally {
+      client.release();
+    }
+  } else {
+    const result = await pool.query(query, values);
+    formatted = formatTask(result.rows[0] as TaskRow);
+  }
+
   publishEvent(buildEvent({ entityType: "task", eventType: "updated", entityId: formatted.id, userId, projectId: formatted.projectId, payload: formatted })).catch((err) => console.error("[sync] publish failed", err));
   return formatted;
 }

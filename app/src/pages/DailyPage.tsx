@@ -3,6 +3,7 @@ import { useSync } from '../hooks/useSync';
 import { TaskList } from '../components/TaskList';
 import type { Task } from '../components/TaskItem';
 import { getPhrase } from '../utils/phrases';
+import { applyIndent } from '../utils/taskTree';
 import { Checkbox } from '../components/ui/Checkbox';
 import {
   apiCreateTask,
@@ -51,6 +52,7 @@ function apiToTask(t: ApiTask): Task {
     isCompleted: t.isCompleted,
     orderValue: t.orderValue,
     indent: t.depth ?? 0,
+    projectId: t.projectId,
     dueDate: t.dueDate ? t.dueDate.slice(0, 10) : undefined,
     type: t.type,
     createdAt: t.createdAt,
@@ -303,15 +305,18 @@ export function DailyPage() {
 
   const handleIndent = useCallback((id: string, dir: 1 | -1) => {
     updateSections((prev) =>
-      prev.map((s) => ({
-        ...s,
-        tasks: s.tasks.map((t) => {
-          if (t.id !== id) return t;
-          const indent = Math.max(0, Math.min(4, (t.indent ?? 0) + dir));
-          if (!id.startsWith('temp-')) apiUpdateTask(id, { depth: indent }).catch(() => replaceTodayFromApi());
-          return { ...t, indent };
-        }),
-      }))
+      prev.map((s) => {
+        if (!s.tasks.some((t) => t.id === id)) return s;
+        // Cross-project view: only nest under a same-project preceding task.
+        const { tasks: next, parentTaskId, changed } = applyIndent(s.tasks, id, dir, {
+          sameProjectOnly: true,
+        });
+        if (!changed) return s;
+        if (!id.startsWith('temp-')) {
+          apiUpdateTask(id, { parentTaskId }).catch(() => replaceTodayFromApi());
+        }
+        return { ...s, tasks: next };
+      })
     );
   }, [replaceTodayFromApi, updateSections]);
 
