@@ -16,4 +16,5 @@ FROM base AS production
 COPY --chown=node:node api ./
 RUN npm ci \
   && npm run build
+USER node
 CMD ["node", "dist/index.js"]

@@ -51,23 +51,23 @@ Goal: ship a hardened baseline before exposing the app publicly, then layer CI/a
 
 ## Phase 3 - MEDIUM (defense-in-depth)
 
-- [ ] **Shorten JWT expiry + add refresh**
+- [x] **Shorten JWT expiry + add refresh**
   - `api/src/services/authService.ts:11` - set `JWT_EXPIRATION_SECONDS = 3600` (1h)
   - Add refresh-token rotation tied to `sessions` table; refresh endpoint reads refresh cookie, issues new session JWT
-- [ ] **Comment HTML sanitization**
+- [x] **Comment HTML sanitization**
   - `api/src/services/commentService.ts:77-86` - `sanitize-html` with allowlist before persist
   - Document frontend escaping requirement
-- [ ] **Validate socket event payload scope**
+- [x] **Validate socket event payload scope**
   - `api/src/services/syncService.ts:115-119` - assert payload `projectId` matches `socket.data.userId` accessible projects on every event, not just subscribe
-- [ ] **Password strength**
+- [x] **Password strength**
   - `api/src/services/authService.ts:227-250` - add `zxcvbn`, require score ≥ 3; min length 12
-- [ ] **Redis auth**
+- [x] **Redis auth**
   - `compose.yml` - `command: redis-server --requirepass ${REDIS_PASSWORD}`; pass through `REDIS_URL`
-- [ ] **Non-root containers**
+- [x] **Non-root containers**
   - `.docker/api/Dockerfile`, `.docker/app/Dockerfile` - add `app` user (uid 1000), `USER app` before CMD
-- [ ] **Schema-validate localStorage reads**
+- [~] **Schema-validate localStorage reads** (TodayPage was renamed to DailyPage; no localStorage reads found — N/A)
   - `app/src/pages/TodayPage.tsx:75` - Zod schema for `DaySection[]` before use
-- [ ] **Gate frontend console.log on DEV**
+- [x] **Gate frontend console.log on DEV**
   - `app/src/utils/socket.ts:13-16`, `app/src/components/AppShell.tsx:138` - wrap in `if (import.meta.env.DEV)`
 
 ---
