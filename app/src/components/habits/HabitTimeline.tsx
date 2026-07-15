@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { MoreHorizontal } from 'lucide-react';
 import { ContextMenu } from '../ui/ContextMenu';
-import { MonthStrip } from '../MonthStrip';
+import { MonthSelector } from '../monthly/MonthSelector';
 import { StripNavigator } from '../ui/StripNavigator';
 import { fmtISO } from './HabitGrid';
 
@@ -98,7 +98,7 @@ export function HabitTimeline({ habits, today, todaySignal, onToggle, onEdit, on
   return (
     <div className="habit-timeline">
       {/* Month navigator (shared with Monthly page) */}
-      <MonthStrip
+      <MonthSelector
         year={selected.year}
         month={selected.month}
         onChange={(year, month) => setSelected({ year, month })}

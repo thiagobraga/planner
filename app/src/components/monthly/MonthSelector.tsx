@@ -1,5 +1,5 @@
 import { useEffect, useState, type CSSProperties } from 'react';
-import { StripNavigator } from './ui/StripNavigator';
+import { StripNavigator } from '../ui/StripNavigator';
 
 const MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
 const MONTH_WINDOW = 3;
@@ -27,15 +27,14 @@ function buildMonthStrip(year: number, month: number): MonthTile[] {
   });
 }
 
-export interface MonthStripProps {
+export interface MonthSelectorProps {
   year: number;
   month: number; // 0-based
   onChange: (year: number, month: number) => void;
   className?: string;
 }
 
-// Animated month selector strip shared by the Monthly and Habits pages.
-export function MonthStrip({ year: selectedYear, month: selectedMonth, onChange, className = '' }: MonthStripProps) {
+export function MonthSelector({ year: selectedYear, month: selectedMonth, onChange, className = '' }: MonthSelectorProps) {
   const [isMobileStrip, setIsMobileStrip] = useState(() => window.innerWidth < 640);
   const [pendingMonth, setPendingMonth] = useState<MonthTile | null>(null);
   const [suppressStripTransition, setSuppressStripTransition] = useState(false);

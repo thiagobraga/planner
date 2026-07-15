@@ -3,7 +3,7 @@ import { Plus, Calendar, Trash2, Search } from 'lucide-react';
 import { BjTask, MonthlyIcon } from '../components/Sidebar';
 import { SidebarNavItem } from '../components/SidebarNavItem';
 import { ChevronRight, Repeat2 } from 'lucide-react';
-import { MonthlyCalendarSpecimen } from '../components/MonthlyCalendarSpecimen';
+import { MonthlyCalendarSpecimen } from '../components/monthly/MonthlyCalendarSpecimen';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Select } from '../components/ui/Select';
