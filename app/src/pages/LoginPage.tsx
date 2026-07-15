@@ -10,8 +10,8 @@ export function LoginPage() {
   const { login, register } = useAuth();
   const navigate = useNavigate();
   const [mode, setMode] = useState<'login' | 'register'>('login');
-  const [email, setEmail] = useState('dev@planner.local');
-  const [password, setPassword] = useState('password123');
+  const [email, setEmail] = useState(import.meta.env.DEV ? 'dev@planner.local' : '');
+  const [password, setPassword] = useState(import.meta.env.DEV ? 'password123' : '');
   const [displayName, setDisplayName] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -93,9 +93,11 @@ export function LoginPage() {
           </button>
         </form>
 
-        <p className="text-[11px] text-ink-light text-center mt-4 italic opacity-70">
-          Dev account: dev@planner.local / password123
-        </p>
+        {import.meta.env.DEV && (
+          <p className="text-[11px] text-ink-light text-center mt-4 italic opacity-70">
+            Dev account: dev@planner.local / password123
+          </p>
+        )}
 
         <p className="text-xs text-ink-light text-center mt-3">
           {mode === 'login' ? (

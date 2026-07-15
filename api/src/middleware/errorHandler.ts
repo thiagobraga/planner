@@ -1,5 +1,6 @@
 import type { Request, Response, NextFunction } from "express";
 import { AppError } from "../utils/AppError.js";
+import crypto from "node:crypto";
 
 export function errorHandler(
   err: Error,
@@ -7,6 +8,8 @@ export function errorHandler(
   res: Response,
   _next: NextFunction
 ): void {
+  const requestId = crypto.randomUUID();
+
   if (err instanceof AppError) {
     res.status(err.statusCode).json({
       error: {
@@ -18,11 +21,12 @@ export function errorHandler(
     return;
   }
 
-  console.error("Unhandled error:", err);
+  console.error(`[${requestId}] Unhandled error:`, err);
   res.status(500).json({
     error: {
       code: "INTERNAL_ERROR",
       message: "An unexpected error occurred",
+      requestId,
     },
   });
 }

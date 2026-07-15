@@ -8,21 +8,35 @@ interface JwtPayload {
   sessionId?: string;
 }
 
+const COOKIE_NAME = "planner_session";
+
+function extractToken(req: Request): string | null {
+  // Prefer cookie
+  const cookie = req.cookies?.[COOKIE_NAME];
+  if (cookie) return cookie;
+
+  // Fallback to Bearer header (legacy / socket.io handshake)
+  const authHeader = req.headers.authorization;
+  if (authHeader?.startsWith("Bearer ")) {
+    return authHeader.slice(7);
+  }
+
+  return null;
+}
+
 export async function authMiddleware(
   req: Request,
   res: Response,
   next: NextFunction
 ): Promise<void> {
-  const authHeader = req.headers.authorization;
+  const token = extractToken(req);
 
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+  if (!token) {
     res.status(401).json({
       error: { code: "UNAUTHORIZED", message: "Missing or invalid token" },
     });
     return;
   }
-
-  const token = authHeader.slice(7);
 
   let payload: JwtPayload;
   try {

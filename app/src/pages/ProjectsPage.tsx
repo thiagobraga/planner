@@ -10,7 +10,6 @@ import {
   apiUpdateTask,
   apiToggleTask,
   apiDeleteTask,
-  clearToken,
   type ApiTask,
 } from '../api/client';
 import { useAuth } from '../contexts/AuthContext';
@@ -64,7 +63,6 @@ export function ProjectsPage() {
   // If 401, log out
   useEffect(() => {
     if (error && (error as Error).message?.includes('401')) {
-      clearToken();
       logout();
     }
   }, [error, logout]);
