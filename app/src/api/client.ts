@@ -1,33 +1,26 @@
 const BASE = '/api/v1';
 
-export function getToken(): string | null {
-  return localStorage.getItem('planner_token');
-}
-
-export function setToken(token: string) {
-  localStorage.setItem('planner_token', token);
-}
-
-export function clearToken() {
-  localStorage.removeItem('planner_token');
-}
-
-export function hasToken(): boolean {
-  return !!getToken();
+function getCookie(name: string): string | undefined {
+  const match = document.cookie.match(new RegExp(`(?:^|;\\s*)${name}=([^;]*)`));
+  return match?.[1];
 }
 
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
-  const token = getToken();
+  const xsrfToken = getCookie('XSRF-TOKEN');
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(init.headers as Record<string, string> ?? {}),
+  };
+  if (xsrfToken) {
+    headers['X-XSRF-TOKEN'] = xsrfToken;
+  }
+
   const res = await fetch(`${BASE}${path}`, {
     ...init,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      ...(init.headers ?? {}),
-    },
+    headers,
+    credentials: 'include',
   });
   if (!res.ok) {
-    if (res.status === 401) clearToken();
     const body = await res.json().catch(() => ({}));
     throw new Error(body?.error?.message ?? `HTTP ${res.status}`);
   }
@@ -47,7 +40,6 @@ export async function apiRegister(email: string, password: string, displayName: 
     method: 'POST',
     body: JSON.stringify({ email, password, displayName }),
   });
-  setToken(data.token);
   return data.user;
 }
 
@@ -56,12 +48,11 @@ export async function apiLogin(email: string, password: string): Promise<AuthUse
     method: 'POST',
     body: JSON.stringify({ email, password }),
   });
-  setToken(data.token);
   return data.user;
 }
 
-export function apiLogout() {
-  clearToken();
+export async function apiLogout(): Promise<void> {
+  await request<{ success: boolean }>('/auth/logout', { method: 'POST' });
 }
 
 // ── Tasks ─────────────────────────────────────────────────────────────────────
@@ -143,7 +134,6 @@ export async function apiCreateTask(input: {
 export async function apiUpdateTask(
   id: string,
   updates: Partial<Pick<ApiTask, 'title' | 'priority' | 'dueDate' | 'depth' | 'type'>> & {
-    // `null` promotes the task to the top level (unparent); backend derives depth.
     parentTaskId?: string | null;
   },
 ): Promise<ApiTask> {
@@ -178,7 +168,6 @@ export interface ApiProject {
   updatedAt: string;
 }
 
-// Named palette accepted by the API, mapped to display hex values.
 export const PROJECT_COLORS: ReadonlyArray<{ name: string; hex: string }> = [
   { name: 'berry_red', hex: '#b8255f' },
   { name: 'red', hex: '#db4035' },

@@ -174,7 +174,7 @@ export function AppShell() {
         isOpen={quickAddOpen}
         onClose={() => setQuickAddOpen(false)}
         onSubmit={(title) => {
-          console.log('Quick add:', title);
+          if (import.meta.env.DEV) console.log('Quick add:', title);
         }}
       />
 
