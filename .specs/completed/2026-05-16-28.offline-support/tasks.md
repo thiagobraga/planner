@@ -1,3 +1,5 @@
+> **Superseded by `.specs/2026-07-14-pwa-support/`** — do not implement from this file. All requirements (27.6, 27.7) are preserved and fully implemented in the PWA support spec.
+
 # Offline Support
 
 Queue and replay edits when offline.
