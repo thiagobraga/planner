@@ -14,7 +14,7 @@ CMD ["npm", "run", "dev"]
 
 FROM base AS production
 COPY --chown=node:node api ./
-RUN npm ci \
+RUN npm install \
   && npm run build
 USER node
 CMD ["node", "dist/index.js"]
