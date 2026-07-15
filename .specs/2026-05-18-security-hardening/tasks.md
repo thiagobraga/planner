@@ -10,17 +10,17 @@ Goal: ship a hardened baseline before exposing the app publicly, then layer CI/a
 
 ## Phase 1 - CRITICAL (block deploy)
 
-- [ ] **Remove `.env` from git history**
+- [x] **Remove `.env` from git history**
   - `git rm --cached .env`, verify `.gitignore` covers it, force rotate any leaked secrets
   - Regenerate `POSTGRES_PASSWORD` + `JWT_SECRET`
-- [ ] **Fail-fast on missing `JWT_SECRET`**
+- [x] **Fail-fast on missing `JWT_SECRET`**
   - Files: `api/src/index.ts:17`, `api/src/middleware/auth.ts:5`, `api/src/services/authService.ts:10`, `api/src/services/syncService.ts:7`
   - Replace `process.env.JWT_SECRET ?? "dev-secret-change-me"` with a single `config.ts` export that throws on missing in non-test env
   - Also validate `DATABASE_URL` and `CORS_ORIGIN` at boot (`api/src/db/pool.ts:4`)
-- [ ] **Remove plaintext password reset token logging**
+- [x] **Remove plaintext password reset token logging**
   - `api/src/services/authService.ts:213` - delete `console.log("[PASSWORD RESET] Token for ...")`
   - Stub `sendPasswordResetEmail(email, rawToken)` (no-op for now) so the call site stays explicit
-- [ ] **Remove seed credential logging**
+- [x] **Remove seed credential logging**
   - `api/src/db/seed.ts:48` - drop `console.log("Seeded user: ... with password: ...")`
   - Read seed password from env var, do not hardcode
 
