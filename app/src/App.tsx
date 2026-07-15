@@ -16,7 +16,7 @@ function AppRoutes() {
   const { isAuthenticated } = useAuth();
 
   return (
-    <BrowserRouter>
+    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <Routes>
         <Route path="/login" element={isAuthenticated ? <Navigate to="/daily" replace /> : <LoginPage />} />
         <Route element={isAuthenticated ? <AppShell /> : <Navigate to="/login" replace />}>
