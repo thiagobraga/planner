@@ -37,8 +37,14 @@ export const StyleguideIcon = ({ size = 15 }: { size?: number }) => (
   </svg>
 );
 
-const PlannerIcon = ({ size = 16 }: { size?: number }) => (
-  <img src="/images/bulletjournal-planner-16x16.png" width={size} height={size} alt="" className="block shrink-0" />
+const PlannerIcon = ({ size = 16, collapsed = false }: { size?: number; collapsed?: boolean }) => (
+  <img
+    src="/images/bulletjournal-planner-42x42.png"
+    width={size}
+    height={size}
+    className={`block shrink-0 ${collapsed ? 'mt-1' : 'mt-0.5'}`}
+    alt="Icon of the app, a nice planner icon beside the app name."
+  />
 );
 
 type NavItem = { to: string; label: string; Icon: LucideIcon | React.ComponentType<{ size?: number }> };
@@ -66,7 +72,7 @@ export function Sidebar({ isOpen, onClose, collapsed = false, onOpenHelp }: Side
       >
         {/* Logo mark */}
         <div className="sidebar-logo mb-6" title="Planner">
-          <PlannerIcon size={16} />
+          <PlannerIcon size={16} collapsed />
         </div>
 
         <nav aria-label="Main navigation" className="sidebar-nav flex flex-col gap-0.5 w-full items-center">
@@ -138,16 +144,18 @@ export function Sidebar({ isOpen, onClose, collapsed = false, onOpenHelp }: Side
     >
       {/* Logo */}
       <div className="mb-6 ml-3">
-        <div>
-          <div className="flex items-center gap-2">
-            <div className="shrink-0"><PlannerIcon size={14} /></div>
-            <h1 className="text-lg leading-6 font-semibold text-ink m-0 p-0">
+        <div className="flex items-start gap-3">
+          <div className="shrink-0">
+            <PlannerIcon size={42} collapsed={false} />
+          </div>
+          <div>
+            <h1 className="text-lg leading-6 font-semibold text-ink m-0 p-0 h-6">
               Planner
             </h1>
+            <p className="text-[13px] leading-6 text-ink-light m-0 p-0 opacity-60 h-6">
+              Bulletjournal online
+            </p>
           </div>
-          <p className="text-[13px] leading-6 text-ink-light m-0 p-0 opacity-60">
-            Bulletjournal online
-          </p>
         </div>
       </div>
 
