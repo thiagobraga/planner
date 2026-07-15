@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useCallback, useEffect, type React
 import { apiLogin, apiRegister, apiLogout, type AuthUser } from '../api/client';
 import { queryClient } from '../api/queryClient';
 import { connectSocket, disconnectSocket } from '../utils/socket';
+import { useOfflineQueueReplay } from '../hooks/useOfflineQueueReplay';
 
 interface AuthContextValue {
   user: AuthUser | null;
@@ -28,6 +29,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [initializing, setInitializing] = useState(true);
+
+  useOfflineQueueReplay(isAuthenticated);
 
   // On mount, check if session cookie is valid
   useEffect(() => {

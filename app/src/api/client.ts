@@ -1,11 +1,61 @@
+import { isOnline, enqueueMutation, type QueuedMutationMethod } from '../utils/offlineQueue';
+
 const BASE = '/api/v1';
+
+const WRITE_METHODS: QueuedMutationMethod[] = ['POST', 'PATCH', 'PUT', 'DELETE'];
 
 function getCookie(name: string): string | undefined {
   const match = document.cookie.match(new RegExp(`(?:^|;\\s*)${name}=([^;]*)`));
   return match?.[1];
 }
 
+function extractIdFromPath(path: string): string | undefined {
+  // Routes here are always `/<collection>/<id>[/<action>]` (e.g. /tasks/:id,
+  // /tasks/:id/complete, /habits/:id/completions) - the id is always the
+  // second segment, never the last one (actions/sub-resources can follow it).
+  const segments = path.split('/').filter(Boolean);
+  return segments[1];
+}
+
+// Builds a same-shape stand-in for the REST response while offline, so
+// callers (and `runOptimistic()`'s 2000ms budget) get something to work with
+// immediately instead of waiting on a network call that will never resolve.
+// The queued mutation itself carries the real request; once it replays
+// successfully the normal publishEvent() -> Redis -> Socket.IO -> useSync
+// flow is what actually reconciles state - this synthetic value is only a
+// placeholder for the immediate call site, never a source of truth.
+function buildSyntheticResponse<T>(method: QueuedMutationMethod, path: string, init: RequestInit): T {
+  if (method === 'DELETE') {
+    return undefined as T;
+  }
+
+  const parsedBody = init.body ? JSON.parse(init.body as string) : {};
+
+  if (method === 'POST') {
+    // Creation calls (e.g. POST /tasks) have no id in the path - generate
+    // one. Action calls on an existing resource (e.g. POST /tasks/:id/complete)
+    // do have one embedded in the path - reuse it instead of minting a new,
+    // unrelated id that would desync from the record actually being acted on.
+    return { id: parsedBody.id ?? extractIdFromPath(path) ?? crypto.randomUUID(), ...parsedBody } as T;
+  }
+
+  // PATCH / PUT: echo the id embedded in the path plus whatever the caller
+  // sent, so e.g. apiUpdateTask('/tasks/:id', patch) gets { id, ...patch }.
+  const id = extractIdFromPath(path);
+  return { ...(id ? { id } : {}), ...parsedBody } as T;
+}
+
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
+  const method = (init.method ?? 'GET').toUpperCase() as QueuedMutationMethod;
+
+  // Auth endpoints are never queued: logging in/out/registering requires a
+  // real round trip and must fail loudly when offline, not resolve with a
+  // synthetic session. Everything else that mutates app data is deferred.
+  if (!path.startsWith('/auth/') && WRITE_METHODS.includes(method) && !isOnline()) {
+    await enqueueMutation({ method, path, body: (init.body as string) ?? '' });
+    return buildSyntheticResponse<T>(method, path, init);
+  }
+
   const xsrfToken = getCookie('XSRF-TOKEN');
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
@@ -26,6 +76,8 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   }
   return res.json() as Promise<T>;
 }
+
+export { request };
 
 // ── Auth ─────────────────────────────────────────────────────────────────────
 
