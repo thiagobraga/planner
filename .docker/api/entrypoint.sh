@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-npm ci
+npm install
 
 # Run migrations
 echo "Running database migrations..."

@@ -65,7 +65,7 @@ Goal: ship a hardened baseline before exposing the app publicly, then layer CI/a
   - `compose.yml` - `command: redis-server --requirepass ${REDIS_PASSWORD}`; pass through `REDIS_URL`
 - [x] **Non-root containers**
   - `.docker/api/Dockerfile`, `.docker/app/Dockerfile` - add `app` user (uid 1000), `USER app` before CMD
-- [~] **Schema-validate localStorage reads** (TodayPage was renamed to DailyPage; no localStorage reads found — N/A)
+- [x] **Schema-validate localStorage reads** (TodayPage was renamed to DailyPage; no localStorage reads found — N/A)
   - `app/src/pages/TodayPage.tsx:75` - Zod schema for `DaySection[]` before use
 - [x] **Gate frontend console.log on DEV**
   - `app/src/utils/socket.ts:13-16`, `app/src/components/AppShell.tsx:138` - wrap in `if (import.meta.env.DEV)`
