@@ -3,8 +3,7 @@ import { Server as IOServer, type Socket } from "socket.io";
 import jwt from "jsonwebtoken";
 import pool from "../db/pool.js";
 import { redisPubClient, redisSubClient } from "../db/redis.js";
-
-const JWT_SECRET = process.env.JWT_SECRET || "dev-secret-change-me";
+import { JWT_SECRET, CORS_ORIGIN } from "../config.js";
 const SYNC_CHANNEL = "sync";
 
 export type SyncEntityType = "task" | "project" | "section" | "label" | "comment" | "reminder" | "preferences" | "habit" | "habit_completion";
@@ -68,16 +67,40 @@ async function loadUserProjectIds(userId: string): Promise<string[]> {
   return result.rows.map((r: { project_id: string }) => r.project_id);
 }
 
+function parseCookies(cookieHeader: string | undefined): Record<string, string> {
+  if (!cookieHeader) return {};
+  return Object.fromEntries(
+    cookieHeader.split(";").map((pair) => {
+      const [key, ...rest] = pair.trim().split("=");
+      return [key, rest.join("=")];
+    }),
+  );
+}
+
+function extractJwtFromSocket(socket: Socket): string | null {
+  const cookieHeader = (socket.handshake.headers as Record<string, string | string[] | undefined> | undefined)?.cookie as string | undefined;
+  if (cookieHeader) {
+    const cookies = parseCookies(cookieHeader);
+    const token = cookies["planner_session"];
+    if (token) return token;
+  }
+
+  // Fallback to auth handshake (legacy / test mode)
+  const authToken = socket.handshake.auth?.token as string | undefined;
+  return authToken ?? null;
+}
+
 export async function attachSyncServer(httpServer: HTTPServer): Promise<IOServer> {
   const io = new IOServer(httpServer, {
     cors: {
-      origin: process.env.CORS_ORIGIN || "*",
+      origin: CORS_ORIGIN,
       methods: ["GET", "POST"],
+      credentials: true,
     },
   });
 
   io.use(async (socket: Socket, next) => {
-    const token = socket.handshake.auth?.token as string | undefined;
+    const token = extractJwtFromSocket(socket);
     if (!token) {
       next(new Error("UNAUTHORIZED"));
       return;
@@ -116,6 +139,22 @@ export async function attachSyncServer(httpServer: HTTPServer): Promise<IOServer
       if (typeof projectId === "string" && projectIds.includes(projectId)) {
         socket.join(projectRoom(projectId));
       }
+    });
+
+    socket.on("task:update", (event: { projectId?: string }) => {
+      if (event?.projectId && !projectIds.includes(event.projectId)) {
+        socket.disconnect();
+      }
+    });
+
+    socket.on("task:delete", (event: { projectId?: string }) => {
+      if (event?.projectId && !projectIds.includes(event.projectId)) {
+        socket.disconnect();
+      }
+    });
+
+    socket.on("comment:create", (event: { taskId: string }) => {
+      // No-op: project-scope validation happens server-side in the service
     });
   });
 

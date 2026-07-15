@@ -7,6 +7,7 @@ export function getSocket(): Socket {
     socket = io('/', {
       path: '/socket.io',
       autoConnect: false,
+      withCredentials: true,
     });
 
     if (import.meta.env.DEV) {
@@ -19,10 +20,8 @@ export function getSocket(): Socket {
   return socket;
 }
 
-export function connectSocket(token: string): void {
-  const s = getSocket();
-  s.auth = { token };
-  s.connect();
+export function connectSocket(): void {
+  getSocket().connect();
 }
 
 export function disconnectSocket(): void {

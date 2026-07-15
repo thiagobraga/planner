@@ -6,7 +6,7 @@ const BCRYPT_COST = 12;
 
 async function seed() {
   const email = "dev@planner.local";
-  const password = "password123";
+  const password = process.env.SEED_PASSWORD || "password123";
   const displayName = "Dev User";
 
   const existing = await pool.query(
@@ -116,7 +116,6 @@ async function seed() {
     );
 
     await client.query("COMMIT");
-    console.log(`Seeded user: ${email} with password: ${password}`);
   } catch (err) {
     await client.query("ROLLBACK");
     console.error("Seeding failed:", err);

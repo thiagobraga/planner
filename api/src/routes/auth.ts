@@ -5,11 +5,19 @@ import { authMiddleware } from "../middleware/auth.js";
 import pool from "../db/pool.js";
 
 const router: ReturnType<typeof Router> = Router();
+const COOKIE_NAME = "planner_session";
+const COOKIE_OPTIONS = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "strict" as const,
+  path: "/",
+};
 
 router.post("/register", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { email, password, displayName } = req.body;
     const result = await register({ email, password, displayName });
+    res.cookie(COOKIE_NAME, result.token, COOKIE_OPTIONS);
     res.status(201).json(result);
   } catch (err) {
     next(err);
@@ -30,6 +38,7 @@ router.post("/login", async (req: Request, res: Response, next: NextFunction) =>
     validate(errors);
 
     const result = await login(email, password);
+    res.cookie(COOKIE_NAME, result.token, COOKIE_OPTIONS);
     res.json(result);
   } catch (err) {
     next(err);
@@ -41,6 +50,7 @@ router.post("/logout", authMiddleware, async (req: Request, res: Response, next:
     if (req.sessionId) {
       await pool.query("DELETE FROM sessions WHERE id = $1", [req.sessionId]);
     }
+    res.clearCookie(COOKIE_NAME, { path: "/" });
     res.json({ success: true });
   } catch (err) {
     next(err);
@@ -69,6 +79,25 @@ router.post("/reset-password/confirm", async (req: Request, res: Response, next:
 
     const result = await confirmPasswordReset(token, newPassword);
     res.json(result);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get("/me", authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const result = await pool.query(
+      "SELECT id, email, display_name FROM users WHERE id = $1",
+      [req.userId],
+    );
+    if (result.rows.length === 0) {
+      res.status(401).json({
+        error: { code: "UNAUTHORIZED", message: "User not found" },
+      });
+      return;
+    }
+    const user = result.rows[0];
+    res.json({ user: { id: user.id, email: user.email, displayName: user.display_name } });
   } catch (err) {
     next(err);
   }

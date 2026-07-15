@@ -11,7 +11,6 @@ import {
   apiDeleteTask,
   type ApiTask,
 } from '../api/client';
-import { clearToken } from '../api/client';
 import { useAuth } from '../contexts/AuthContext';
 import { getPhrase } from '../utils/phrases';
 import { applyIndent } from '../utils/taskTree';
@@ -67,7 +66,6 @@ export function InboxPage() {
   // If 401, log out
   useEffect(() => {
     if (error && (error as Error).message?.includes('401')) {
-      clearToken();
       logout();
     }
   }, [error, logout]);

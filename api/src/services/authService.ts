@@ -2,13 +2,14 @@ import crypto from 'node:crypto';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
+import zxcvbn from 'zxcvbn';
 import pool from '../db/pool.js';
 import { redisClient } from '../db/redis.js';
 import { AppError } from '../utils/AppError.js';
 import { validate, type ValidationError } from '../utils/validate.js';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-me';
-const JWT_EXPIRATION_SECONDS = 7 * 24 * 60 * 60; // 7 days
+import { JWT_SECRET } from '../config.js';
+const JWT_EXPIRATION_SECONDS = 3600; // 1 hour
+const REFRESH_TOKEN_EXPIRATION_DAYS = 30;
 const BCRYPT_COST = 12;
 const LOGIN_RATE_LIMIT_MAX = 10;
 const LOGIN_RATE_LIMIT_WINDOW = 15 * 60; // 15 minutes in seconds
@@ -28,6 +29,25 @@ export interface RegisterInput {
   displayName: string;
 }
 
+function validatePassword(password: string): void {
+  if (password.length < 12) {
+    throw new AppError({
+      code: 'VALIDATION_ERROR',
+      message: 'Password must be at least 12 characters',
+      statusCode: 400,
+    });
+  }
+
+  const result = zxcvbn(password);
+  if (result.score < 3) {
+    throw new AppError({
+      code: 'WEAK_PASSWORD',
+      message: 'Password is too weak. Try a longer phrase with mixed characters.',
+      statusCode: 400,
+    });
+  }
+}
+
 export async function register(input: RegisterInput): Promise<AuthResult> {
   const errors: ValidationError[] = [];
 
@@ -35,8 +55,8 @@ export async function register(input: RegisterInput): Promise<AuthResult> {
     errors.push({ field: 'email', message: 'Email must be a valid RFC 5322 address' });
   }
 
-  if (!input.password || input.password.length < 8) {
-    errors.push({ field: 'password', message: 'Password must be at least 8 characters' });
+  if (!input.password) {
+    errors.push({ field: 'password', message: 'Password is required' });
   }
 
   if (!input.displayName || input.displayName.length < 1 || input.displayName.length > 50) {
@@ -44,6 +64,11 @@ export async function register(input: RegisterInput): Promise<AuthResult> {
   }
 
   validate(errors);
+
+  // Check password strength after field validation
+  if (input.password) {
+    validatePassword(input.password);
+  }
 
   // Check duplicate email
   const existing = await pool.query('SELECT id FROM users WHERE LOWER(email) = LOWER($1)', [
@@ -141,7 +166,7 @@ export async function login(email: string, password: string): Promise<AuthResult
   if (redisClient.isReady) await redisClient.del(rateLimitKey).catch(() => {});
 
   const sessionId = uuidv4();
-  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  const expiresAt = new Date(Date.now() + REFRESH_TOKEN_EXPIRATION_DAYS * 24 * 60 * 60 * 1000);
 
   await pool.query(
     'INSERT INTO sessions (id, user_id, token_hash, expires_at) VALUES ($1, $2, $3, $4)',
@@ -157,6 +182,62 @@ export async function login(email: string, password: string): Promise<AuthResult
       id: user.id,
       email: user.email,
       displayName: user.display_name,
+    },
+    token,
+  };
+}
+
+export async function refreshToken(sessionId: string): Promise<AuthResult> {
+  const result = await pool.query(
+    `SELECT s.id, s.user_id, u.email, u.display_name
+     FROM sessions s
+     JOIN users u ON u.id = s.user_id
+     WHERE s.id = $1 AND s.expires_at > NOW()`,
+    [sessionId],
+  );
+
+  if (result.rows.length === 0) {
+    throw new AppError({
+      code: 'SESSION_EXPIRED',
+      message: 'Session expired. Please log in again.',
+      statusCode: 401,
+    });
+  }
+
+  const row = result.rows[0];
+
+  // Rotate the session: delete old, create new
+  const newSessionId = uuidv4();
+  const expiresAt = new Date(Date.now() + REFRESH_TOKEN_EXPIRATION_DAYS * 24 * 60 * 60 * 1000);
+
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    await client.query('DELETE FROM sessions WHERE id = $1', [sessionId]);
+
+    await client.query(
+      'INSERT INTO sessions (id, user_id, token_hash, expires_at) VALUES ($1, $2, $3, $4)',
+      [newSessionId, row.user_id, newSessionId, expiresAt],
+    );
+
+    await client.query('COMMIT');
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
+  }
+
+  const token = jwt.sign({ userId: row.user_id, sessionId: newSessionId }, JWT_SECRET, {
+    expiresIn: JWT_EXPIRATION_SECONDS,
+  });
+
+  return {
+    user: {
+      id: row.user_id,
+      email: row.email,
+      displayName: row.display_name,
     },
     token,
   };
@@ -192,10 +273,13 @@ export async function requestPasswordReset(email: string): Promise<{ message: st
     [userId, tokenHash, expiresAt],
   );
 
-  // Stub: log instead of sending email
-  console.log(`[PASSWORD RESET] Token for ${email}: ${rawToken}`);
+  sendPasswordResetEmail(email, rawToken);
 
   return { message };
+}
+
+function sendPasswordResetEmail(_email: string, _rawToken: string): void {
+  // Stub: no-op until email service is integrated
 }
 
 export async function confirmPasswordReset(
@@ -203,10 +287,14 @@ export async function confirmPasswordReset(
   newPassword: string,
 ): Promise<{ success: true }> {
   const errors: ValidationError[] = [];
-  if (!newPassword || newPassword.length < 8) {
-    errors.push({ field: 'newPassword', message: 'Password must be at least 8 characters' });
+  if (!newPassword || newPassword.length < 12) {
+    errors.push({ field: 'newPassword', message: 'Password must be at least 12 characters' });
   }
   validate(errors);
+
+  if (newPassword) {
+    validatePassword(newPassword);
+  }
 
   const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
 

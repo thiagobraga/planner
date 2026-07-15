@@ -7,6 +7,8 @@ services:
     container_name: planner-app
     networks: [default, proxy]
     volumes: [./app:/app]
+    environment:
+      VITE_API_URL: http://api:4000
     depends_on: [api]
     labels:
       traefik.enable: true
@@ -26,7 +28,7 @@ services:
     environment:
       PORT: 4000
       DATABASE_URL: postgres://${POSTGRES_USER:-planner}:${POSTGRES_PASSWORD:-planner}@postgres:5432/${POSTGRES_DB:-planner}
-      REDIS_URL: redis://redis:6379
+      REDIS_URL: redis://:${REDIS_PASSWORD:-planner}@redis:6379
       JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
       CORS_ORIGIN: ${CORS_ORIGIN:-https://planner.local}
     ulimits:
@@ -104,11 +106,13 @@ services:
   redis:
     container_name: planner-redis
     image: redis:7-alpine
-    command: redis-server /etc/redis/redis.conf
+    command: redis-server /etc/redis/redis.conf --requirepass ${REDIS_PASSWORD:-planner}
     volumes:
       - ./.docker/redis/redis.conf:/etc/redis/redis.conf:ro
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-planner}
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-planner}", "ping"]
       interval: 5s
       timeout: 3s
       retries: 5
