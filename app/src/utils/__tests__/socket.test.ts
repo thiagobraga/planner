@@ -43,12 +43,13 @@ describe('socket utilities', () => {
       expect(socket1).toBe(socket2);
     });
 
-    it('configures socket with correct path and autoConnect false', async () => {
+    it('configures socket with correct path, autoConnect false, and credentials', async () => {
       const { getSocket } = await import('../socket');
       getSocket();
       expect(mockIo).toHaveBeenCalledWith('/', {
         path: '/socket.io',
         autoConnect: false,
+        withCredentials: true,
       });
     });
 
@@ -70,11 +71,10 @@ describe('socket utilities', () => {
   });
 
   describe('connectSocket', () => {
-    it('sets auth token and connects', async () => {
+    it('connects the socket', async () => {
       const { getSocket, connectSocket } = await import('../socket');
       const socket = getSocket();
-      connectSocket('test-token');
-      expect(socket.auth).toEqual({ token: 'test-token' });
+      connectSocket();
       expect(socket.connect).toHaveBeenCalledTimes(1);
     });
   });
@@ -83,7 +83,7 @@ describe('socket utilities', () => {
     it('disconnects the socket if it exists', async () => {
       const { getSocket, connectSocket, disconnectSocket } = await import('../socket');
       getSocket();
-      connectSocket('test-token');
+      connectSocket();
       disconnectSocket();
       expect(mockSocket.disconnect).toHaveBeenCalledTimes(1);
     });
