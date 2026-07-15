@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
-import { fetchMonthNotes, type ApiTask } from '../api/client';
-import { useSync } from '../hooks/useSync';
-import { MonthStrip } from './MonthStrip';
+import { fetchMonthNotes, type ApiTask } from '../../api/client';
+import { useSync } from '../../hooks/useSync';
+import { MonthSelector } from './MonthSelector';
 
 const WEEKDAYS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
@@ -82,7 +82,7 @@ export function MonthlyRows() {
 
   return (
     <div className="text-ink">
-      <MonthStrip
+      <MonthSelector
         year={selectedYear}
         month={selectedMonth}
         onChange={(year, month) => {

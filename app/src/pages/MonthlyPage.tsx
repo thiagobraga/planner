@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { MonthlyRows } from '../components/MonthlyRows';
+import { MonthlyRows } from '../components/monthly/MonthlyRows';
 import { getPhrase } from '../utils/phrases';
 
 export function MonthlyPage() {
