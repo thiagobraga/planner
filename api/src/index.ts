@@ -6,14 +6,9 @@ import { errorHandler } from "./middleware/errorHandler.js";
 import { notFound } from "./middleware/notFound.js";
 import { connectRedis } from "./db/redis.js";
 import { attachSyncServer } from "./services/syncService.js";
+import { PORT, CORS_ORIGIN } from "./config.js";
 
 const app: Express = express();
-const port = process.env.PORT || 4000;
-const corsOrigin = process.env.CORS_ORIGIN;
-
-if (!corsOrigin) {
-  console.warn("⚠️  CORS_ORIGIN not set. Set it in environment variables.");
-}
 
 // Security middleware
 app.use(helmet());
@@ -23,9 +18,7 @@ app.use(express.json());
 
 // CORS
 app.use((_req, res, next) => {
-  if (corsOrigin) {
-    res.setHeader("Access-Control-Allow-Origin", corsOrigin);
-  }
+  res.setHeader("Access-Control-Allow-Origin", CORS_ORIGIN);
   res.setHeader("Access-Control-Allow-Methods", "GET,POST,PATCH,DELETE,OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type,Authorization");
   if (_req.method === "OPTIONS") {
@@ -54,8 +47,8 @@ async function start() {
     console.error("⚠️  SYNC DISABLED: Redis/Socket.IO startup failed. Real-time updates will not work.", err);
   }
 
-  httpServer.listen(port, () => {
-    console.log(`Backend listening on port ${port}`);
+  httpServer.listen(PORT, () => {
+    console.log(`Backend listening on port ${PORT}`);
   });
 }
 

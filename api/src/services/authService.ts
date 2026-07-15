@@ -6,8 +6,7 @@ import pool from '../db/pool.js';
 import { redisClient } from '../db/redis.js';
 import { AppError } from '../utils/AppError.js';
 import { validate, type ValidationError } from '../utils/validate.js';
-
-const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-me';
+import { JWT_SECRET } from '../config.js';
 const JWT_EXPIRATION_SECONDS = 7 * 24 * 60 * 60; // 7 days
 const BCRYPT_COST = 12;
 const LOGIN_RATE_LIMIT_MAX = 10;
@@ -192,10 +191,13 @@ export async function requestPasswordReset(email: string): Promise<{ message: st
     [userId, tokenHash, expiresAt],
   );
 
-  // Stub: log instead of sending email
-  console.log(`[PASSWORD RESET] Token for ${email}: ${rawToken}`);
+  sendPasswordResetEmail(email, rawToken);
 
   return { message };
+}
+
+function sendPasswordResetEmail(_email: string, _rawToken: string): void {
+  // Stub: no-op until email service is integrated
 }
 
 export async function confirmPasswordReset(
