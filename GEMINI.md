@@ -5,17 +5,15 @@ This file provides guidance to Gemini CLI when working with code in this reposit
 ## Project
 
 Planner is a task manager with a paper-journal aesthetic (warm cream, Lora serif, dotted
-grid). pnpm monorepo: `api/` (Express + PostgreSQL + Redis) and `app/` (React + Vite).
-Real-time sync via Socket.IO backed by Redis Pub/Sub. Auth uses JWT (7-day expiry) with
-DB-side session revocation.
+grid). Two independent npm packages: `api/` (Express + PostgreSQL + Redis) and `app/`
+(React + Vite). Real-time sync via Socket.IO backed by Redis Pub/Sub. Auth uses JWT
+(7-day expiry) with DB-side session revocation.
 
 ## Setup
 
 ```bash
 cp .env.example .env          # fill in vars before first run
-pnpm install
-docker-compose up -d          # starts postgres + redis
-pnpm -F api db:migrate        # run migrations
+docker compose up -d          # installs deps, runs migrations, starts api + app + postgres + redis
 ```
 
 Required `.env` vars: `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `JWT_SECRET`,
@@ -24,22 +22,20 @@ Required `.env` vars: `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `JWT_
 ## Commands
 
 ```bash
-# Development
-pnpm dev:api          # API dev server (tsx watch, port 4000)
-pnpm dev:app          # Vite dev server (port 5173)
+# Development (full stack: api + app + Postgres + Redis)
+docker compose up -d
 
 # Build / lint
-pnpm build            # build all packages
-pnpm lint             # lint all packages
+docker compose exec api npm run build
+docker compose exec app npm run build
+docker compose exec api npm run lint
+docker compose exec app npm run lint
 
 # Tests
-pnpm test                                          # all tests (Vitest)
-pnpm -F api test                                   # API tests only
-pnpm -F app test                                   # App tests only
-pnpm -F api vitest run src/path/to/file.test.ts    # single test file
-
-# Docker (full stack)
-docker-compose up -d
+docker compose exec api npm test && docker compose exec app npm test     # all tests (Vitest)
+docker compose exec api npm test                                          # API tests only
+docker compose exec app npm test                                          # App tests only
+docker compose exec api npm exec vitest run src/path/to/file.test.ts     # single test file
 ```
 
 ## Architecture
@@ -112,14 +108,14 @@ Single allowed shadow (overlay panels only): `box-shadow: 0 8px 32px rgba(44,44,
 ## Testing
 
 ```bash
-pnpm test                                          # run everything
-pnpm -F api test                                   # backend only
-pnpm -F app test                                   # frontend only
-pnpm -F api vitest run src/services/__tests__/taskService.sync.test.ts
+docker compose exec api npm test && docker compose exec app npm test     # run everything
+docker compose exec api npm test                                          # backend only
+docker compose exec app npm test                                          # frontend only
+docker compose exec api npm exec vitest run src/services/__tests__/taskService.sync.test.ts
 ```
 
 Test files live alongside source (`__tests__/` subdirectories or `.test.ts` suffix).
-Sync-related tests require Redis running (use `docker-compose up -d redis`).
+Sync-related tests require Redis running (use `docker compose up -d redis`).
 
 ## Gemini CLI Notes
 

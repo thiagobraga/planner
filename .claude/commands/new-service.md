@@ -107,5 +107,5 @@ describe('$ARGUMENTSService', () => {
 After generating the files, verify with:
 
 ```bash
-pnpm -F api vitest run src/services/__tests__/$ARGUMENTSService.test.ts
+docker compose exec api npm exec vitest run src/services/__tests__/$ARGUMENTSService.test.ts
 ```

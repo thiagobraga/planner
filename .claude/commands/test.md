@@ -14,19 +14,19 @@ Interpret $ARGUMENTS as:
 **All tests:**
 
 ```bash
-cd /p/projects/planner && pnpm test
+cd /p/projects/planner && docker compose exec api npm test && docker compose exec app npm test
 ```
 
 **API only:**
 
 ```bash
-pnpm -F api test
+docker compose exec api npm test
 ```
 
 **App only:**
 
 ```bash
-pnpm -F app test
+docker compose exec app npm test
 ```
 
 **Single file - find then run:**
@@ -34,15 +34,15 @@ pnpm -F app test
 ```bash
 find /p/projects/planner -name "*$ARGUMENTS*.test.ts" -not -path "*/node_modules/*"
 # then run the matched path, e.g.:
-pnpm -F api vitest run src/services/__tests__/taskService.test.ts
-pnpm -F app vitest run src/hooks/__tests__/useSync.test.ts
+docker compose exec api npm exec vitest run src/services/__tests__/taskService.test.ts
+docker compose exec app npm exec vitest run src/hooks/__tests__/useSync.test.ts
 ```
 
 **Property tests only:**
 
 ```bash
 find /p/projects/planner -name "*.property.test.ts" -not -path "*/node_modules/*"
-pnpm -F api vitest run --reporter=verbose src/services/__tests__
+docker compose exec api npm exec vitest run --reporter=verbose src/services/__tests__
 ```
 
 **Integration/sync tests only:**
