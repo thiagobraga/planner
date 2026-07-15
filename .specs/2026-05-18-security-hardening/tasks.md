@@ -26,27 +26,27 @@ Goal: ship a hardened baseline before exposing the app publicly, then layer CI/a
 
 ## Phase 2 - HIGH (auth + transport)
 
-- [ ] **Migrate JWT to httpOnly cookie + CSRF**
+- [x] **Migrate JWT to httpOnly cookie + CSRF**
   - Backend: on `/auth/login` and `/auth/register`, set `Set-Cookie: planner_session=<jwt>; HttpOnly; Secure; SameSite=Strict; Path=/`
   - Add `cookie-parser`; read token from cookie in `api/src/middleware/auth.ts` (fallback to `Authorization: Bearer` only behind a flag for socket.io handshake)
   - Add CSRF: double-submit cookie. Issue `XSRF-TOKEN` (readable) + require `X-XSRF-TOKEN` header on all non-GET routes. Lib: `csrf-csrf` (modern) or hand-roll
   - Frontend: remove `localStorage.getItem/setItem('planner_token')` from `app/src/api/client.ts:4,8,12`; add `credentials: 'include'` to fetch; read `XSRF-TOKEN` cookie, send `X-XSRF-TOKEN` header
   - Socket.io: switch `auth: { token }` (`app/src/utils/socket.ts:22-26`) to cookie-based; verify on server in `api/src/services/syncService.ts:79-101`
   - Update `app/src/contexts/AuthContext` logout to call `/auth/logout` (server clears cookie) + `qc.clear()`
-- [ ] **Install + configure `helmet`**
+- [x] **Install + configure `helmet`**
   - `api/src/index.ts` - `app.use(helmet())`, enable HSTS in prod
-- [ ] **Restrictive CORS**
+- [x] **Restrictive CORS**
   - `api/src/index.ts:16-25` + `api/src/services/syncService.ts:72-77` - remove `"*"` default; require `CORS_ORIGIN` env; set `credentials: true`
-- [ ] **Content Security Policy**
+- [x] **Content Security Policy**
   - `app/index.html` - add `<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' https://fonts.googleapis.com 'unsafe-inline'; connect-src 'self' ws: wss:; img-src 'self' data:; font-src 'self' https://fonts.gstatic.com; object-src 'none'; base-uri 'self'; frame-ancestors 'none'">`
   - Tighten `'unsafe-inline'` once styles audited
-- [ ] **Global rate limiting**
+- [x] **Global rate limiting**
   - `express-rate-limit` in `api/src/index.ts` - global 100 req/min/IP
   - Per-route stricter limits: `/auth/register` (5/hr/IP), `/auth/password-reset` (3/hr/email), comments (30/min/user)
   - Keep existing redis-backed login limiter in `api/src/services/authService.ts:113-123`; add account lockout after 10 failures/24h
-- [ ] **Sanitize error responses**
+- [x] **Sanitize error responses**
   - `api/src/middleware/errorHandler.ts:21` - never return stack/SQL detail to client; log full error server-side only; return `{ error: "Internal error", requestId }`
-- [ ] **Remove dev credentials from LoginPage**
+- [x] **Remove dev credentials from LoginPage**
   - `app/src/pages/LoginPage.tsx:11-12,147` - gate behind `import.meta.env.DEV`, never ship in prod bundle
 
 ## Phase 3 - MEDIUM (defense-in-depth)

@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
-import { apiLogin, apiRegister, apiLogout, hasToken, getToken, type AuthUser } from '../api/client';
+import { apiLogin, apiRegister, apiLogout, type AuthUser } from '../api/client';
+import { queryClient } from '../api/queryClient';
 import { connectSocket, disconnectSocket } from '../utils/socket';
 
 interface AuthContextValue {
@@ -12,16 +13,36 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
+async function fetchCurrentUser(): Promise<AuthUser | null> {
+  try {
+    const res = await fetch('/api/v1/auth/me', { credentials: 'include' });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.user;
+  } catch {
+    return null;
+  }
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
-  // If token exists in storage, treat as authenticated until first API call proves otherwise
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(hasToken());
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [initializing, setInitializing] = useState(true);
 
-  // Connect socket when authenticated, disconnect on logout
+  // On mount, check if session cookie is valid
+  useEffect(() => {
+    fetchCurrentUser().then((u) => {
+      if (u) {
+        setUser(u);
+        setIsAuthenticated(true);
+      }
+      setInitializing(false);
+    });
+  }, []);
+
   useEffect(() => {
     if (isAuthenticated) {
-      const token = getToken();
-      if (token) connectSocket(token);
+      connectSocket();
     } else {
       disconnectSocket();
     }
@@ -40,10 +61,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const logout = useCallback(() => {
-    apiLogout();
-    setUser(null);
-    setIsAuthenticated(false);
+    apiLogout()
+      .catch(() => {})
+      .finally(() => {
+        setUser(null);
+        setIsAuthenticated(false);
+        queryClient.clear();
+      });
   }, []);
+
+  if (initializing) {
+    return <div className="flex items-center justify-center h-screen text-ink-light">Loading...</div>;
+  }
 
   return (
     <AuthContext.Provider value={{ user, isAuthenticated, login, register, logout }}>

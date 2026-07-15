@@ -1,5 +1,7 @@
 import express, { type Express } from "express";
 import helmet from "helmet";
+import cookieParser from "cookie-parser";
+import rateLimit from "express-rate-limit";
 import { createServer } from "http";
 import routes from "./routes/index.js";
 import { errorHandler } from "./middleware/errorHandler.js";
@@ -7,11 +9,36 @@ import { notFound } from "./middleware/notFound.js";
 import { connectRedis } from "./db/redis.js";
 import { attachSyncServer } from "./services/syncService.js";
 import { PORT, CORS_ORIGIN } from "./config.js";
+import { csrfProtection } from "./middleware/csrf.js";
 
 const app: Express = express();
 
 // Security middleware
-app.use(helmet());
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'"],
+      styleSrc: ["'self'", "https://fonts.googleapis.com", "'unsafe-inline'"],
+      connectSrc: ["'self'", "ws:", "wss:"],
+      imgSrc: ["'self'", "data:"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com"],
+      objectSrc: ["'none'"],
+      baseUri: ["'self'"],
+      frameAncestors: ["'none'"],
+    },
+  },
+}));
+app.use(cookieParser());
+
+// Global rate limit
+const globalLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+app.use(globalLimiter);
 
 // Middleware
 app.use(express.json());
@@ -20,13 +47,35 @@ app.use(express.json());
 app.use((_req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", CORS_ORIGIN);
   res.setHeader("Access-Control-Allow-Methods", "GET,POST,PATCH,DELETE,OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type,Authorization");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type,Authorization,X-XSRF-TOKEN");
+  res.setHeader("Access-Control-Allow-Credentials", "true");
   if (_req.method === "OPTIONS") {
     res.sendStatus(204);
     return;
   }
   next();
 });
+
+// CSRF protection (excludes GET/HEAD/OPTIONS)
+app.use("/api/v1", csrfProtection);
+
+// Per-route rate limiters
+const authRegisterLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const passwordResetLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 3,
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+app.use("/api/v1/auth/register", authRegisterLimiter);
+app.use("/api/v1/auth/reset-password", passwordResetLimiter);
 
 // Routes
 app.use("/api/v1", routes);
