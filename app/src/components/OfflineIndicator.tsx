@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { useOnlineStatus } from '../hooks/useOnlineStatus';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -9,12 +10,25 @@ import { useAuth } from '../contexts/AuthContext';
  * Must be rendered inside `AuthProvider` (it reads `useAuth()`), but should
  * still render unconditionally on both the login screen and the
  * authenticated app shell.
+ *
+ * Debounces the display: only shows after 500ms offline to avoid flashing
+ * during initial auth/socket connection.
  */
 export function OfflineIndicator() {
   const { isAuthenticated } = useAuth();
   const isOnline = useOnlineStatus(isAuthenticated);
+  const [showOffline, setShowOffline] = useState(false);
 
-  if (isOnline) return null;
+  useEffect(() => {
+    if (!isOnline) {
+      const timer = setTimeout(() => setShowOffline(true), 500);
+      return () => clearTimeout(timer);
+    } else {
+      setShowOffline(false);
+    }
+  }, [isOnline]);
+
+  if (!showOffline) return null;
 
   return (
     <div className="fixed inset-x-0 bottom-0 z-[110] flex justify-center px-4 py-6 sm:inset-x-auto sm:bottom-4 sm:right-4 sm:justify-end sm:px-0 sm:py-0 pointer-events-none">
