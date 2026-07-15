@@ -3,8 +3,7 @@ import { Server as IOServer, type Socket } from "socket.io";
 import jwt from "jsonwebtoken";
 import pool from "../db/pool.js";
 import { redisPubClient, redisSubClient } from "../db/redis.js";
-
-const JWT_SECRET = process.env.JWT_SECRET || "dev-secret-change-me";
+import { JWT_SECRET } from "../config.js";
 const SYNC_CHANNEL = "sync";
 
 export type SyncEntityType = "task" | "project" | "section" | "label" | "comment" | "reminder" | "preferences" | "habit" | "habit_completion";
