@@ -1,4 +1,5 @@
 import { v4 as uuidv4 } from "uuid";
+import sanitizeHtml from "sanitize-html";
 import pool from "../db/pool.js";
 import { AppError } from "../utils/AppError.js";
 
@@ -10,6 +11,11 @@ interface CommentRow {
   created_at: string;
   updated_at: string | null;
 }
+
+const SANITIZE_OPTIONS: sanitizeHtml.IOptions = {
+  allowedTags: [],
+  allowedAttributes: {},
+};
 
 function formatComment(row: CommentRow) {
   return {
@@ -31,7 +37,7 @@ function validateBody(body: unknown): string {
       details: [{ field: "body", message: "Comment body must be between 1 and 15000 characters" }],
     });
   }
-  return body;
+  return sanitizeHtml(body, SANITIZE_OPTIONS);
 }
 
 async function verifyTaskAccess(taskId: string, userId: string): Promise<{ user_id: string; project_id: string }> {

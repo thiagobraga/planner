@@ -10,6 +10,7 @@ import { connectRedis } from "./db/redis.js";
 import { attachSyncServer } from "./services/syncService.js";
 import { PORT, CORS_ORIGIN } from "./config.js";
 import { csrfProtection } from "./middleware/csrf.js";
+import authRoutes from "./routes/auth.js";
 
 const app: Express = express();
 
@@ -56,9 +57,6 @@ app.use((_req, res, next) => {
   next();
 });
 
-// CSRF protection (excludes GET/HEAD/OPTIONS)
-app.use("/api/v1", csrfProtection);
-
 // Per-route rate limiters
 const authRegisterLimiter = rateLimit({
   windowMs: 60 * 60 * 1000,
@@ -74,8 +72,23 @@ const passwordResetLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+// Auth routes before CSRF (login/register don't need CSRF token)
 app.use("/api/v1/auth/register", authRegisterLimiter);
 app.use("/api/v1/auth/reset-password", passwordResetLimiter);
+app.use("/api/v1/auth", authRoutes);
+
+// CSRF protection (excludes GET/HEAD/OPTIONS)
+app.use("/api/v1/tasks", csrfProtection);
+app.use("/api/v1/projects", csrfProtection);
+app.use("/api/v1/labels", csrfProtection);
+app.use("/api/v1/sections", csrfProtection);
+app.use("/api/v1/comments", csrfProtection);
+app.use("/api/v1/reminders", csrfProtection);
+app.use("/api/v1/habits", csrfProtection);
+app.use("/api/v1/filters", csrfProtection);
+app.use("/api/v1/preferences", csrfProtection);
+app.use("/api/v1/activity", csrfProtection);
+app.use("/api/v1/collaboration", csrfProtection);
 
 // Routes
 app.use("/api/v1", routes);

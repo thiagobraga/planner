@@ -16,4 +16,5 @@ FROM base AS production
 COPY --chown=node:node app ./
 RUN npm ci \
   && npm run build
+USER node
 CMD ["npm", "run", "preview"]

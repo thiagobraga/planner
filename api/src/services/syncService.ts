@@ -140,6 +140,22 @@ export async function attachSyncServer(httpServer: HTTPServer): Promise<IOServer
         socket.join(projectRoom(projectId));
       }
     });
+
+    socket.on("task:update", (event: { projectId?: string }) => {
+      if (event?.projectId && !projectIds.includes(event.projectId)) {
+        socket.disconnect();
+      }
+    });
+
+    socket.on("task:delete", (event: { projectId?: string }) => {
+      if (event?.projectId && !projectIds.includes(event.projectId)) {
+        socket.disconnect();
+      }
+    });
+
+    socket.on("comment:create", (event: { taskId: string }) => {
+      // No-op: project-scope validation happens server-side in the service
+    });
   });
 
   await redisSubClient.subscribe(SYNC_CHANNEL, (raw: string) => {
