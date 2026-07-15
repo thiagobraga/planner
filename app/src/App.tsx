@@ -41,8 +41,8 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <AppRoutes />
+        <OfflineIndicator />
       </AuthProvider>
-      <OfflineIndicator />
     </QueryClientProvider>
   );
 }
