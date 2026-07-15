@@ -13,7 +13,6 @@
   <img src="https://img.shields.io/badge/React-149ECA?style=flat-square&logo=react&logoColor=white" alt="React">
   <img src="https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript">
   <img src="https://img.shields.io/badge/Tailwind_CSS-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white" alt="Tailwind CSS">
-  <img src="https://img.shields.io/badge/pnpm-F69220?style=flat-square&logo=pnpm&logoColor=white" alt="pnpm">
   <img src="https://img.shields.io/badge/license-MIT-3DA639?style=flat-square" alt="MIT License">
 </p>
 
@@ -48,30 +47,21 @@ It supports daily planning, monthly organization, habit tracking, projects, tags
 ![Zustand](https://img.shields.io/badge/Zustand-000000?style=for-the-badge&logo=zustand&logoColor=white)
 ![TanStack Query](https://img.shields.io/badge/TanStack_Query-FF4154?style=for-the-badge&logo=react-query&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
-![pnpm](https://img.shields.io/badge/pnpm-F69220?style=for-the-badge&logo=pnpm&logoColor=white)
 
 ## Installation
 
 ### Requirements
 
 - Node.js 20 or newer
-- pnpm
 - Docker and Docker Compose
 
 ### Setup
 
 ```bash
-# Install dependencies
-pnpm install
+cp .env.example .env
 
-# Start services
-docker-compose up -d
-
-# Run migrations
-pnpm -F api db:migrate
-
-# Start development
-pnpm dev
+# Installs deps, runs migrations, starts api (4000) + app (5173) + Postgres + Redis
+docker compose up -d
 ```
 
 Open [http://localhost:5173](http://localhost:5173) in your browser.
@@ -98,9 +88,7 @@ planner/
 │   │   └── utils/
 │   └── package.json
 ├── docs/
-├── docker-compose.yml
-├── package.json
-└── pnpm-workspace.yaml
+└── compose.yml
 ```
 
 ## Architecture

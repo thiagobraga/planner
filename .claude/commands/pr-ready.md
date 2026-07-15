@@ -5,9 +5,8 @@ Execute these steps in order:
 ## Step 1 - Type-check
 
 ```bash
-cd /p/projects/planner
-pnpm -F api tsc --noEmit
-pnpm -F app tsc --noEmit
+docker compose exec api npm exec tsc --noEmit
+docker compose exec app npm exec tsc --noEmit
 ```
 
 Report: PASS or list of type errors with file:line.
@@ -15,7 +14,8 @@ Report: PASS or list of type errors with file:line.
 ## Step 2 - Lint
 
 ```bash
-pnpm lint
+docker compose exec api npm run lint
+docker compose exec app npm run lint
 ```
 
 Report: PASS or list of lint errors.
@@ -23,7 +23,8 @@ Report: PASS or list of lint errors.
 ## Step 3 - Unit tests
 
 ```bash
-pnpm test
+docker compose exec api npm test
+docker compose exec app npm test
 ```
 
 Report: PASS or failing test names with assertion errors quoted exactly.

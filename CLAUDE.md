@@ -4,27 +4,25 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-Planner is a task manager with a paper-journal aesthetic (warm cream, Lora serif, dotted grid). pnpm monorepo: `api/` (Express + PostgreSQL + Redis) and `app/` (React + Vite).
+Planner is a task manager with a paper-journal aesthetic (warm cream, Lora serif, dotted grid). Two independent npm packages: `api/` (Express + PostgreSQL + Redis) and `app/` (React + Vite).
 
 ## Commands
 
 ```bash
-# Development
-pnpm dev:api          # API dev server (tsx watch, port 4000)
-pnpm dev:app          # Vite dev server (port 5173)
+# Development (full stack: api + app + Postgres + Redis; installs deps and runs dev servers)
+docker compose up -d
 
 # Build / lint
-pnpm build            # Build all packages
-pnpm lint             # Lint all packages
+docker compose exec api npm run build
+docker compose exec app npm run build
+docker compose exec api npm run lint
+docker compose exec app npm run lint
 
 # Tests
-pnpm test                                         # All tests (Vitest)
-pnpm -F api test                                  # API tests only
-pnpm -F app test                                  # App tests only
-pnpm -F api vitest run src/path/to/file.test.ts   # Single test file
-
-# Docker (full stack)
-docker-compose up -d
+docker compose exec api npm test && docker compose exec app npm test        # All tests (Vitest)
+docker compose exec api npm test                                             # API tests only
+docker compose exec app npm test                                             # App tests only
+docker compose exec api npm exec vitest run src/path/to/file.test.ts        # Single test file
 ```
 
 Copy `.env.example` → `.env` before first run. Required vars: `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `JWT_SECRET`, `CORS_ORIGIN`.

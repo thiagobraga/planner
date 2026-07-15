@@ -66,7 +66,7 @@ Naming convention: `idx_{table}_{columns}`.
 Migrations auto-apply on API start. To apply manually:
 
 ```bash
-pnpm -F api tsx src/db/migrate.ts
+docker compose exec api npm exec tsx src/db/migrate.ts
 ```
 
 Verify: check that `schema_migrations` table contains the new filename.

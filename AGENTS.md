@@ -1,32 +1,29 @@
 # Planner - Agent Onboarding
 
-Task manager with a paper-journal aesthetic (warm cream, Lora serif, dotted grid). pnpm monorepo: `api/` (Express + PostgreSQL + Redis) and `app/` (React + Vite).
+Task manager with a paper-journal aesthetic (warm cream, Lora serif, dotted grid). Two independent npm packages: `api/` (Express + PostgreSQL + Redis) and `app/` (React + Vite).
 
 ## Quickstart
 
 ```bash
 cp .env.example .env          # fill POSTGRES_PASSWORD, JWT_SECRET, CORS_ORIGIN
-pnpm install
-pnpm dev:api                  # port 4000
-pnpm dev:app                  # port 5173
-# or full stack via Docker:
-docker compose up -d
+docker compose up -d          # installs deps, runs migrations, starts api (4000) + app (5173)
 ```
 
 Required `.env` vars: `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `JWT_SECRET`, `CORS_ORIGIN`.
 
 ## Commands
 
-| Command                                           | What it does                          |
-| ------------------------------------------------- | ------------------------------------- |
-| `pnpm dev:api`                                    | API dev server (tsx watch, port 4000) |
-| `pnpm dev:app`                                    | Vite dev server (port 5173)           |
-| `pnpm build`                                      | Build all packages                    |
-| `pnpm lint`                                       | Lint all packages                     |
-| `pnpm test`                                       | All tests (Vitest)                    |
-| `pnpm -F api test`                                | API tests only                        |
-| `pnpm -F app test`                                | App tests only                        |
-| `pnpm -F api vitest run src/path/to/file.test.ts` | Single test file                      |
+| Command                                                              | What it does                          |
+| ---------------------------------------------------------------------- | -------------------------------------- |
+| `docker compose up -d`                                                | Start api (4000) + app (5173) + Postgres + Redis |
+| `docker compose exec api npm run build`                               | Build API                             |
+| `docker compose exec app npm run build`                               | Build app                             |
+| `docker compose exec api npm run lint`                                | Lint API                              |
+| `docker compose exec app npm run lint`                                | Lint app                              |
+| `docker compose exec api npm test && docker compose exec app npm test` | All tests (Vitest)                    |
+| `docker compose exec api npm test`                                    | API tests only                        |
+| `docker compose exec app npm test`                                    | App tests only                        |
+| `docker compose exec api npm exec vitest run src/path/to/file.test.ts` | Single test file                      |
 
 ## Architecture
 

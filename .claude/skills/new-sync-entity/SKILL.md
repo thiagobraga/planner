@@ -115,7 +115,7 @@ interface SyncEvent {
 grep -rn "yourEntity" api/src/ app/src/
 
 # Run both test suites
-pnpm test
+docker compose exec api npm test && docker compose exec app npm test
 ```
 
 ## Common Mistakes
