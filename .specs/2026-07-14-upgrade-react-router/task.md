@@ -8,5 +8,5 @@
 - [x] Verify baseline: docker compose up, tsc, unit tests, browser at https://planner.local/
 - [~] Update deps: `react-router-dom` → `react-router@7`
 - [ ] Rename all imports `react-router-dom` → `react-router` across `app/src/`
-- [ ] Re-run full test suite (tsc + unit tests + browser check)
-- [ ] Commit each stage; final push & merge
+- [x] Re-run full test suite (tsc + unit tests + browser check)
+- [~] Final commit & push
