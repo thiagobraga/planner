@@ -12,6 +12,14 @@ export interface QueuedMutation {
   path: string;
   body: string;
   createdAt: number;
+  /**
+   * For a create-type mutation (POST with no id segment in its path), the
+   * client-minted id synthesized as the optimistic response's `id` (see
+   * `client.ts`'s `buildSyntheticResponse`). Once this mutation replays
+   * successfully and the real server id is known, `remapQueuedId` uses this
+   * to rewrite any not-yet-replayed queued mutation that referenced it.
+   */
+  clientEntityId?: string;
 }
 
 let dbPromise: Promise<IDBDatabase> | null = null;
@@ -55,6 +63,7 @@ export async function enqueueMutation(op: {
   method: QueuedMutationMethod;
   path: string;
   body: string;
+  clientEntityId?: string;
 }): Promise<string> {
   const id = crypto.randomUUID();
   const record: QueuedMutation = {
@@ -63,6 +72,7 @@ export async function enqueueMutation(op: {
     path: op.path,
     body: op.body,
     createdAt: Date.now(),
+    ...(op.clientEntityId ? { clientEntityId: op.clientEntityId } : {}),
   };
   await withStore('readwrite', (store) => store.add(record));
   return id;
@@ -77,6 +87,62 @@ export async function getQueuedMutations(): Promise<QueuedMutation[]> {
 /** Remove a mutation from the queue after it has successfully replayed. */
 export async function removeMutation(id: string): Promise<void> {
   await withStore('readwrite', (store) => store.delete(id));
+}
+
+// Path segments are always `/<collection>/<id>[/<action>]` - matches an id
+// that appears as its own path segment (bounded by `/` or end-of-string) so
+// a substring match inside an unrelated segment can never accidentally hit.
+function remapPathId(path: string, oldId: string, newId: string): string {
+  const segments = path.split('/');
+  return segments.map((segment) => (segment === oldId ? newId : segment)).join('/');
+}
+
+// Body field(s) that reference another entity's id and therefore need
+// remapping when that entity was itself an offline-created record. Currently
+// only `parentTaskId` (task-references-parent-task); extend here if other
+// cross-entity id references are added to queued mutation bodies.
+const BODY_ID_FIELDS = ['parentTaskId'] as const;
+
+function remapBodyId(body: string, oldId: string, newId: string): string {
+  if (!body || !body.includes(oldId)) {
+    return body;
+  }
+  let parsed: Record<string, unknown>;
+  try {
+    parsed = JSON.parse(body);
+  } catch {
+    return body;
+  }
+  let changed = false;
+  for (const field of BODY_ID_FIELDS) {
+    if (parsed[field] === oldId) {
+      parsed[field] = newId;
+      changed = true;
+    }
+  }
+  return changed ? JSON.stringify(parsed) : body;
+}
+
+/**
+ * Rewrites any not-yet-replayed queued mutation that references `oldId`
+ * (a client-minted id from an offline create) so it instead targets `newId`
+ * (the id the server actually assigned once that create replayed). Rewrites
+ * both the `path` (e.g. `/tasks/<oldId>/complete` -> `/tasks/<newId>/complete`)
+ * and known cross-entity id fields in the JSON `body` (e.g. `parentTaskId`).
+ *
+ * Updates records in place (rather than delete+re-add) so `createdAt`, and
+ * therefore FIFO replay order, is preserved.
+ */
+export async function remapQueuedId(oldId: string, newId: string): Promise<void> {
+  const mutations = await getQueuedMutations();
+  for (const mutation of mutations) {
+    const remappedPath = remapPathId(mutation.path, oldId, newId);
+    const remappedBody = remapBodyId(mutation.body, oldId, newId);
+    if (remappedPath !== mutation.path || remappedBody !== mutation.body) {
+      const updated: QueuedMutation = { ...mutation, path: remappedPath, body: remappedBody };
+      await withStore('readwrite', (store) => store.put(updated));
+    }
+  }
 }
 
 /**

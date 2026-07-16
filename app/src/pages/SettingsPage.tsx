@@ -111,7 +111,7 @@ export function SettingsPage() {
       }
     },
     onSuccess: (data) => {
-      qc.setQueryData(['preferences'], data);
+      qc.setQueryData<Preferences>(['preferences'], (prev) => (prev ? { ...prev, ...data } : data));
     },
   });
 

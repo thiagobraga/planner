@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { getSocket } from '../utils/socket';
-import { getQueuedMutations, removeMutation } from '../utils/offlineQueue';
+import { getQueuedMutations, removeMutation, remapQueuedId } from '../utils/offlineQueue';
 import { request } from '../api/client';
 
 /**
@@ -26,15 +26,35 @@ export function useOfflineQueueReplay(enabled: boolean): void {
     const socket = getSocket();
 
     const replay = async () => {
-      const mutations = await getQueuedMutations();
-      for (const mutation of mutations) {
+      let mutations = await getQueuedMutations();
+      for (let i = 0; i < mutations.length; i++) {
+        const mutation = mutations[i];
         try {
           const init: RequestInit = { method: mutation.method };
           if (mutation.body) {
             init.body = mutation.body;
           }
-          await request(mutation.path, init);
+          const response = await request(mutation.path, init);
           await removeMutation(mutation.id);
+
+          // A create-type mutation (POST with no id in its path) may have
+          // resolved offline with a client-minted synthetic id, which the
+          // app could have embedded into a dependent mutation queued right
+          // after it (e.g. completing or deleting the same record while
+          // still offline, queued as `/tasks/<clientId>/complete`). Now that
+          // this create has actually replayed, remap any remaining queued
+          // entries referencing the client id to the real server id before
+          // continuing, so they target a record the server actually knows
+          // about instead of 404ing and stalling the rest of the queue.
+          if (mutation.method === 'POST' && mutation.clientEntityId) {
+            const serverId = (response as { id?: string } | undefined)?.id;
+            if (serverId && serverId !== mutation.clientEntityId) {
+              await remapQueuedId(mutation.clientEntityId, serverId);
+              const refreshed = await getQueuedMutations();
+              const remainingIds = new Set(mutations.slice(i + 1).map((m) => m.id));
+              mutations = [...mutations.slice(0, i + 1), ...refreshed.filter((m) => remainingIds.has(m.id))];
+            }
+          }
         } catch {
           // Stop on first failure; leave this and later mutations queued.
           break;

@@ -35,7 +35,7 @@ export function OfflineIndicator() {
       <div
         role="status"
         aria-live="polite"
-        className="pointer-events-auto flex items-center gap-2 py-2 px-3.5 text-[13px] leading-5 text-accent bg-accent/12 border border-accent rounded-md"
+        className="pointer-events-auto flex items-center gap-2 py-2 px-3.5 text-[13px] leading-5 text-accent bg-accent/12 backdrop-blur-sm border border-accent rounded-md"
       >
         Offline. Changes sync automatically when you're back online.
       </div>
