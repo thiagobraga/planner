@@ -39,7 +39,7 @@ export const StyleguideIcon = ({ size = 15 }: { size?: number }) => (
 
 const PlannerIcon = ({ size = 16, collapsed = false }: { size?: number; collapsed?: boolean }) => (
   <img
-    src="/images/bulletjournal-planner-42x42.png"
+    src={collapsed ? "/images/bulletjournal-planner-16x16.png" : "/images/bulletjournal-planner-42x42.png"}
     width={size}
     height={size}
     className={`block shrink-0 ${collapsed ? 'mt-1' : 'mt-0.5'}`}
