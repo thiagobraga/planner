@@ -13,6 +13,7 @@ import { csrfProtection } from "./middleware/csrf.js";
 import authRoutes from "./routes/auth.js";
 
 const app: Express = express();
+app.set("trust proxy", 1);
 
 // Security middleware
 app.use(helmet({
