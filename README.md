@@ -26,14 +26,15 @@ It supports daily planning, monthly organization, habit tracking, projects, tags
 
 ## Features
 
-- Daily, Monthly and Habits views
-- Projects, tags and filters
-- Mark tasks as completed
-- Move completed tasks to the end
-- List and Kanban visualization
-- Minimal and distraction-free interface
-- Local-first task management
-- Responsive desktop interface
+- **Daily, Monthly, and Habits Views**: Flexible layouts to manage tasks, schedule events, and log habit completions.
+- **Projects, Tags, and Filters**: Rich hierarchical project trees and flexible classification rules.
+- **PWA (Progressive Web App) Support**: Fully installable on Desktop, iOS, and Android devices. Custom launch configurations and optimized asset precaching.
+- **Offline Mode & Local-First Flow**: Browse the app shell and cached data offline, and seamlessly queue writes (POST, PATCH, PUT, DELETE) inside an IndexedDB-backed mutation store.
+- **Background Sync & ID Remapping**: Automatically replays queued offline operations in strict FIFO order on reconnection. Automatically resolves client-minted temporary IDs with server-assigned IDs to prevent desyncing subsequent modifications.
+- **Debounced Connectivity Indicator**: Small, non-intrusive network status pill with a debounced delay to prevent flashing and a sleek glassmorphic blur style.
+- **Real-Time WebSockets**: Live synchronizations across tabs and devices via Socket.IO.
+- **List and Kanban Visualizations**: Multiple ways to visualize your workspace.
+- **Modern Routing Architecture**: Built on React Router v7 with declarative Splat path configuration.
 
 ## Tech Stack
 
