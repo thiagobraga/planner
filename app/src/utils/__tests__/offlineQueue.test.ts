@@ -88,6 +88,93 @@ describe('offlineQueue', () => {
     });
   });
 
+  describe('remapQueuedId', () => {
+    it('rewrites the old client id as a path segment in not-yet-replayed mutations', async () => {
+      const { enqueueMutation, remapQueuedId, getQueuedMutations } = await import('../offlineQueue');
+
+      const clientId = 'client-minted-uuid';
+      await enqueueMutation({ method: 'POST', path: `/tasks/${clientId}/complete`, body: '' });
+      await enqueueMutation({ method: 'DELETE', path: `/tasks/${clientId}`, body: '' });
+
+      await remapQueuedId(clientId, 'server-id-1');
+
+      const all = await getQueuedMutations();
+      const paths = all.map((m) => m.path);
+      expect(paths).toContain('/tasks/server-id-1/complete');
+      expect(paths).toContain('/tasks/server-id-1');
+    });
+
+    it('rewrites parentTaskId in a JSON body that references the old client id', async () => {
+      const { enqueueMutation, remapQueuedId, getQueuedMutations } = await import('../offlineQueue');
+
+      const clientId = 'client-parent-uuid';
+      await enqueueMutation({
+        method: 'POST',
+        path: '/tasks',
+        body: JSON.stringify({ title: 'subtask', parentTaskId: clientId }),
+      });
+
+      await remapQueuedId(clientId, 'server-parent-id');
+
+      const all = await getQueuedMutations();
+      expect(JSON.parse(all[0].body)).toMatchObject({ title: 'subtask', parentTaskId: 'server-parent-id' });
+    });
+
+    it('preserves createdAt (FIFO order) when rewriting entries', async () => {
+      const { enqueueMutation, remapQueuedId, getQueuedMutations } = await import('../offlineQueue');
+
+      const clientId = 'client-id-order';
+      const originalNow = Date.now;
+      let now = 5000;
+      vi.spyOn(Date, 'now').mockImplementation(() => now);
+
+      const firstId = await enqueueMutation({ method: 'POST', path: '/tasks', body: '{}' });
+      now = 6000;
+      await enqueueMutation({ method: 'POST', path: `/tasks/${clientId}/complete`, body: '' });
+
+      Date.now = originalNow;
+
+      await remapQueuedId(clientId, 'server-id-2');
+
+      const all = await getQueuedMutations();
+      expect(all.map((m) => m.id)).toEqual([firstId, all[1].id]);
+      expect(all[0].createdAt).toBe(5000);
+      expect(all[1].createdAt).toBe(6000);
+    });
+
+    it('leaves mutations unrelated to the old id untouched', async () => {
+      const { enqueueMutation, remapQueuedId, getQueuedMutations } = await import('../offlineQueue');
+
+      await enqueueMutation({ method: 'PATCH', path: '/tasks/unrelated-id', body: JSON.stringify({ title: 'x' }) });
+
+      await remapQueuedId('some-other-client-id', 'server-id-3');
+
+      const all = await getQueuedMutations();
+      expect(all[0].path).toBe('/tasks/unrelated-id');
+      expect(JSON.parse(all[0].body)).toEqual({ title: 'x' });
+    });
+  });
+
+  describe('enqueueMutation with clientEntityId', () => {
+    it('persists clientEntityId when provided for a create-type mutation', async () => {
+      const { enqueueMutation, getQueuedMutations } = await import('../offlineQueue');
+
+      await enqueueMutation({ method: 'POST', path: '/tasks', body: '{}', clientEntityId: 'client-abc' });
+
+      const all = await getQueuedMutations();
+      expect(all[0].clientEntityId).toBe('client-abc');
+    });
+
+    it('omits clientEntityId when not provided (non-create mutations)', async () => {
+      const { enqueueMutation, getQueuedMutations } = await import('../offlineQueue');
+
+      await enqueueMutation({ method: 'DELETE', path: '/tasks/1', body: '' });
+
+      const all = await getQueuedMutations();
+      expect(all[0].clientEntityId).toBeUndefined();
+    });
+  });
+
   describe('isOnline', () => {
     it('is true when navigator.onLine is true and the socket is connected', async () => {
       const { isOnline } = await import('../offlineQueue');
