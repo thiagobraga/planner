@@ -146,7 +146,7 @@ export function Sidebar({ isOpen, onClose, collapsed = false, onOpenHelp }: Side
       <div className="mb-6 ml-3">
         <div className="flex items-start gap-3">
           <div className="shrink-0">
-            <PlannerIcon width={28} height={38} className="mt-0.5" />
+            <PlannerIcon width={28} height={38} className="mt-1" />
           </div>
           <div>
             <h1 className="text-lg leading-6 font-semibold text-ink m-0 p-0 h-6">
@@ -181,7 +181,7 @@ export function Sidebar({ isOpen, onClose, collapsed = false, onOpenHelp }: Side
           <SidebarNavItem to="/styleguide" label="Styleguide" icon={<StyleguideIcon size={15} />} />
           <SidebarNavItem label="Help" icon={<HelpCircle size={15} strokeWidth={1.5} />} onClick={onOpenHelp} />
 
-          <div className="border-t border-dot my-3 mx-0"></div>
+          <div className="border-t border-dot my-4 mx-0"></div>
 
           <SidebarNavItem label="Logout" icon={<LogOut size={15} strokeWidth={1.5} />} onClick={handleLogout} />
         </nav>
