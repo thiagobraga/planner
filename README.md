@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="app/public/images/bulletjournal-planner.png" alt="Planner" width="96">
+  <img src="app/public/images/bulletjournal-planner-192x192.png" alt="Planner" width="96">
 </p>
 
 <h1 align="center">Planner</h1>
