@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="app/public/images/bulletjournal-planner.png" alt="Planner" width="96">
+  <img src="app/public/images/bulletjournal-planner-192x192.png" alt="Planner" width="96">
 </p>
 
 <h1 align="center">Planner</h1>
@@ -13,7 +13,6 @@
   <img src="https://img.shields.io/badge/React-149ECA?style=flat-square&logo=react&logoColor=white" alt="React">
   <img src="https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript">
   <img src="https://img.shields.io/badge/Tailwind_CSS-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white" alt="Tailwind CSS">
-  <img src="https://img.shields.io/badge/pnpm-F69220?style=flat-square&logo=pnpm&logoColor=white" alt="pnpm">
   <img src="https://img.shields.io/badge/license-MIT-3DA639?style=flat-square" alt="MIT License">
 </p>
 
@@ -27,14 +26,15 @@ It supports daily planning, monthly organization, habit tracking, projects, tags
 
 ## Features
 
-- Daily, Monthly and Habits views
-- Projects, tags and filters
-- Mark tasks as completed
-- Move completed tasks to the end
-- List and Kanban visualization
-- Minimal and distraction-free interface
-- Local-first task management
-- Responsive desktop interface
+- **Daily, Monthly, and Habits Views**: Flexible layouts to manage tasks, schedule events, and log habit completions.
+- **Projects, Tags, and Filters**: Rich hierarchical project trees and flexible classification rules.
+- **PWA (Progressive Web App) Support**: Fully installable on Desktop, iOS, and Android devices. Custom launch configurations and optimized asset precaching.
+- **Offline Mode & Local-First Flow**: Browse the app shell and cached data offline, and seamlessly queue writes (POST, PATCH, PUT, DELETE) inside an IndexedDB-backed mutation store.
+- **Background Sync & ID Remapping**: Automatically replays queued offline operations in strict FIFO order on reconnection. Automatically resolves client-minted temporary IDs with server-assigned IDs to prevent desyncing subsequent modifications.
+- **Debounced Connectivity Indicator**: Small, non-intrusive network status pill with a debounced delay to prevent flashing and a sleek glassmorphic blur style.
+- **Real-Time WebSockets**: Live synchronizations across tabs and devices via Socket.IO.
+- **List and Kanban Visualizations**: Multiple ways to visualize your workspace.
+- **Modern Routing Architecture**: Built on React Router v7 with declarative Splat path configuration.
 
 ## Tech Stack
 
@@ -48,30 +48,21 @@ It supports daily planning, monthly organization, habit tracking, projects, tags
 ![Zustand](https://img.shields.io/badge/Zustand-000000?style=for-the-badge&logo=zustand&logoColor=white)
 ![TanStack Query](https://img.shields.io/badge/TanStack_Query-FF4154?style=for-the-badge&logo=react-query&logoColor=white)
 ![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
-![pnpm](https://img.shields.io/badge/pnpm-F69220?style=for-the-badge&logo=pnpm&logoColor=white)
 
 ## Installation
 
 ### Requirements
 
 - Node.js 20 or newer
-- pnpm
 - Docker and Docker Compose
 
 ### Setup
 
 ```bash
-# Install dependencies
-pnpm install
+cp .env.example .env
 
-# Start services
-docker-compose up -d
-
-# Run migrations
-pnpm -F api db:migrate
-
-# Start development
-pnpm dev
+# Installs deps, runs migrations, starts api (4000) + app (5173) + Postgres + Redis
+docker compose up -d
 ```
 
 Open [http://localhost:5173](http://localhost:5173) in your browser.
@@ -98,9 +89,7 @@ planner/
 │   │   └── utils/
 │   └── package.json
 ├── docs/
-├── docker-compose.yml
-├── package.json
-└── pnpm-workspace.yaml
+└── compose.yml
 ```
 
 ## Architecture

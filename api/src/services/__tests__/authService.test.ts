@@ -18,10 +18,10 @@ vi.mock("../../db/pool.js", () => ({
 }));
 
 // Mock redis
-const mockRedisGet = vi.fn();
-const mockRedisIncr = vi.fn();
-const mockRedisExpire = vi.fn();
-const mockRedisDel = vi.fn();
+const mockRedisGet = vi.fn().mockResolvedValue(null);
+const mockRedisIncr = vi.fn().mockResolvedValue(0);
+const mockRedisExpire = vi.fn().mockResolvedValue(true);
+const mockRedisDel = vi.fn().mockResolvedValue(1);
 
 vi.mock("../../db/redis.js", () => ({
   redisClient: {
@@ -29,6 +29,7 @@ vi.mock("../../db/redis.js", () => ({
     incr: (...args: unknown[]) => mockRedisIncr(...args),
     expire: (...args: unknown[]) => mockRedisExpire(...args),
     del: (...args: unknown[]) => mockRedisDel(...args),
+    isReady: true,
   },
 }));
 

@@ -3,6 +3,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from './api/queryClient';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { AppShell } from './components/AppShell';
+import { OfflineIndicator } from './components/OfflineIndicator';
 import { LoginPage } from './pages/LoginPage';
 import { InboxPage } from './pages/InboxPage';
 import { ProjectsPage } from './pages/ProjectsPage';
@@ -40,6 +41,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <AppRoutes />
+        <OfflineIndicator />
       </AuthProvider>
     </QueryClientProvider>
   );

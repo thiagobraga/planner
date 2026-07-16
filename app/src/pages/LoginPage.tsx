@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router';
 import { useAuth } from '../contexts/AuthContext';
 
 const PlannerIcon64 = () => (
-  <img src="/images/bulletjournal-planner.png" width={64} height={64} alt="" className="block mx-auto" />
+  <img src="/images/bulletjournal-planner-64x64.png" width={64} height={64} alt="" className="block mx-auto" />
 );
 
 export function LoginPage() {
@@ -37,8 +37,8 @@ export function LoginPage() {
   const inputClassName = "block w-full box-border p-3 text-sm text-ink bg-cream border border-dot rounded outline-none leading-6 h-12";
 
   return (
-    <div className="flex items-center justify-center h-screen">
-      <div className="w-80">
+    <div className="flex min-h-dvh items-center justify-center px-4 py-6">
+      <div className="w-full max-w-80">
         {/* Logo */}
         <div className="text-center mb-6">
           <PlannerIcon64 />
