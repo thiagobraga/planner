@@ -6,7 +6,9 @@ services:
       target: development
     container_name: planner-app
     networks: [default, proxy]
-    volumes: [./app:/app]
+    volumes:
+      - ./app:/app
+      - ./eslint.config.js:/app/eslint.config.js:ro
     environment:
       VITE_API_URL: http://api:4000
     depends_on: [api]
@@ -24,7 +26,9 @@ services:
       target: development
     container_name: planner-api
     networks: [default, proxy]
-    volumes: [./api:/app]
+    volumes:
+      - ./api:/app
+      - ./eslint.config.js:/app/eslint.config.js:ro
     environment:
       PORT: 4000
       DATABASE_URL: postgres://${POSTGRES_USER:-planner}:${POSTGRES_PASSWORD:-planner}@postgres:5432/${POSTGRES_DB:-planner}
