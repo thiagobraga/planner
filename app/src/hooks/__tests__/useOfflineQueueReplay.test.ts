@@ -19,7 +19,7 @@ const mockRemapQueuedId = vi.fn(async (oldId: string, newId: string) => {
       .join('/'),
   }));
 });
-const mockRequest = vi.fn<(_path: string, _init?: RequestInit) => Promise<any>>(async () => ({}));
+const mockRequest = vi.fn<(_path: string, _init?: RequestInit) => Promise<unknown>>(async () => ({}));
 
 vi.mock('../../utils/socket', () => ({
   getSocket: () => ({ on: mockOn, off: mockOff }),
