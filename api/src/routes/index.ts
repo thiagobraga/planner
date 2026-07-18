@@ -11,6 +11,7 @@ import reminderRoutes, { taskReminderRouter } from "./reminders.js";
 import commentRoutes, { taskCommentRouter } from "./comments.js";
 import preferencesRoutes from "./preferences.js";
 import habitRoutes from "./habits.js";
+import habitGroupRoutes from "./habitGroups.js";
 import activityRoutes from "./activity.js";
 import collaborationRoutes, { projectCollabRouter } from "./collaboration.js";
 
@@ -33,6 +34,7 @@ router.use("/comments", commentRoutes);
 router.use("/tasks/:taskId/comments", taskCommentRouter);
 router.use("/preferences", preferencesRoutes);
 router.use("/habits", habitRoutes);
+router.use("/habit-groups", habitGroupRoutes);
 router.use("/activity", activityRoutes);
 router.use("/", collaborationRoutes);
 router.use("/projects/:id", projectCollabRouter);
