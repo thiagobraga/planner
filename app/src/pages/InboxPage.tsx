@@ -250,6 +250,7 @@ export function InboxPage() {
         tasks={tasks}
         selectedTaskId={selectedId}
         editingId={editingId}
+        italicDueDate={false}
         onTaskClick={handleTaskClick}
         onTaskToggle={handleToggle}
         onReorder={setTasks}

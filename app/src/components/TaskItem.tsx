@@ -28,6 +28,7 @@ export interface TaskItemProps {
   isSelected?: boolean;
   isEditing?: boolean;
   hideDueDate?: boolean;
+  italicDueDate?: boolean;
   onToggle?: (id: string) => void;
   onClick?: (id: string) => void;
   onStartEdit?: (id: string) => void;
@@ -79,6 +80,7 @@ export const TaskItem = memo(function TaskItem({
   isSelected,
   isEditing,
   hideDueDate,
+  italicDueDate = true,
   onToggle,
   onClick,
   onStartEdit,
@@ -270,7 +272,7 @@ export const TaskItem = memo(function TaskItem({
             </span>
 
             {task.dueDate && !hideDueDate && (
-              <span className="task-item-due-date text-xs leading-6 text-ink-light italic ml-1.5 whitespace-nowrap">
+              <span className={`task-item-due-date text-xs leading-6 text-ink-light ml-1.5 whitespace-nowrap ${italicDueDate ? 'italic' : ''}`}>
                 {formatDueDate(task.dueDate)}
               </span>
             )}
