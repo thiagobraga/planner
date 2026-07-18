@@ -40,11 +40,11 @@ function validateBody(body: unknown): string {
   return sanitizeHtml(body, SANITIZE_OPTIONS);
 }
 
-async function verifyTaskAccess(taskId: string, userId: string): Promise<{ user_id: string; project_id: string }> {
+async function verifyTaskAccess(taskId: string, userId: string): Promise<{ user_id: string; collection_id: string }> {
   const result = await pool.query(
-    `SELECT t.user_id, t.project_id FROM tasks t
+    `SELECT t.user_id, t.collection_id FROM tasks t
      WHERE t.id = $1
-       AND (t.user_id = $2 OR t.project_id IN (SELECT project_id FROM collaborators WHERE user_id = $2))`,
+       AND (t.user_id = $2 OR t.collection_id IN (SELECT collection_id FROM collaborators WHERE user_id = $2))`,
     [taskId, userId],
   );
 
@@ -56,7 +56,7 @@ async function verifyTaskAccess(taskId: string, userId: string): Promise<{ user_
     });
   }
 
-  return result.rows[0] as { user_id: string; project_id: string };
+  return result.rows[0] as { user_id: string; collection_id: string };
 }
 
 async function loadComment(commentId: string): Promise<CommentRow> {

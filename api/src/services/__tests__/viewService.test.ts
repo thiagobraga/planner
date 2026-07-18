@@ -17,7 +17,7 @@ function taskRow(overrides: Record<string, unknown> = {}) {
   return {
     id: "t-1",
     user_id: userId,
-    project_id: "p-1",
+    collection_id: "p-1",
     section_id: null,
     parent_task_id: null,
     assignee_user_id: null,
@@ -59,7 +59,7 @@ describe("viewService helpers", () => {
 });
 
 describe("getTodayView", () => {
-  it("groups overdue vs today and excludes archived projects", async () => {
+  it("groups overdue vs today and excludes archived collections", async () => {
     mockQuery
       .mockResolvedValueOnce({ rows: [{ time_zone: "UTC" }] }) // preferences
       .mockResolvedValueOnce({
@@ -185,17 +185,17 @@ describe("getInboxView", () => {
   it("returns inbox tasks ordered by completion, priority, then creation time", async () => {
     mockQuery.mockResolvedValueOnce({
       rows: [
-        taskRow({ id: "done", project_id: "p-2", is_completed: true, priority: 4, created_at: "2024-06-02T00:00:00Z" }),
-        taskRow({ id: "open", project_id: "p-1", is_completed: false, priority: 1, created_at: "2024-06-01T00:00:00Z" }),
+        taskRow({ id: "done", collection_id: "p-2", is_completed: true, priority: 4, created_at: "2024-06-02T00:00:00Z" }),
+        taskRow({ id: "open", collection_id: "p-1", is_completed: false, priority: 1, created_at: "2024-06-01T00:00:00Z" }),
       ],
     });
 
     const view = await getInboxView(userId);
-    expect(view.projectId).toBeNull();
+    expect(view.collectionId).toBeNull();
     expect(view.tasks.map((t) => t.id)).toEqual(["done", "open"]);
 
     const sql = mockQuery.mock.calls[0][0] as string;
-    expect(sql).toMatch(/JOIN projects p ON p\.id = t\.project_id/);
+    expect(sql).toMatch(/JOIN collections p ON p\.id = t\.collection_id/);
     expect(sql).toMatch(/p\.is_inbox = true/);
     expect(sql).toMatch(/is_archived = false/);
     expect(sql).toMatch(/ORDER BY t\.is_completed ASC, t\.priority ASC, t\.created_at ASC/);
@@ -204,6 +204,6 @@ describe("getInboxView", () => {
   it("returns empty when there are no accessible tasks", async () => {
     mockQuery.mockResolvedValueOnce({ rows: [] });
     const view = await getInboxView(userId);
-    expect(view).toEqual({ tasks: [], projectId: null });
+    expect(view).toEqual({ tasks: [], collectionId: null });
   });
 });

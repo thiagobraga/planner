@@ -67,7 +67,7 @@ const scenarios: NotAccessibleScenario[] = [
     run: (id, userId) => createReminder(id, userId, new Date(Date.now() + 3600_000).toISOString()),
     prime: primeAccessFail,
   },
-  { name: "listActivity (project scoped)", run: (id, userId) => listActivity(userId, { projectId: id }), prime: primeAccessFail },
+  { name: "listActivity (collection scoped)", run: (id, userId) => listActivity(userId, { collectionId: id }), prime: primeAccessFail },
   { name: "listCollaborators", run: (id, userId) => listCollaborators(id, userId), prime: primeAccessFail },
   { name: "removeCollaborator (non-owner)", run: (id, userId) => removeCollaborator(id, "some-collab", userId), prime: primeAccessFail },
   { name: "assignTask", run: (id, userId) => assignTask(id, "x", userId), prime: primeAccessFail },

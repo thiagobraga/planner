@@ -4,7 +4,7 @@ import { AppError } from "../utils/AppError.js";
 interface ActivityRow {
   id: string;
   user_id: string;
-  project_id: string | null;
+  collection_id: string | null;
   entity_type: string;
   entity_id: string;
   event_type: string;
@@ -17,7 +17,7 @@ function formatActivity(row: ActivityRow) {
   return {
     id: row.id,
     userId: row.user_id,
-    projectId: row.project_id,
+    collectionId: row.collection_id,
     entityType: row.entity_type,
     entityId: row.entity_id,
     eventType: row.event_type,
@@ -31,42 +31,42 @@ const PAGE_SIZE = 50;
 
 export interface ListActivityOptions {
   cursor?: string; // ISO timestamp; return events strictly before this
-  projectId?: string;
+  collectionId?: string;
 }
 
 export async function listActivity(userId: string, options: ListActivityOptions = {}) {
-  // If projectId specified, verify access
-  if (options.projectId) {
+  // If collectionId specified, verify access
+  if (options.collectionId) {
     const access = await pool.query(
-      `SELECT id FROM projects
+      `SELECT id FROM collections
        WHERE id = $1
-         AND (user_id = $2 OR id IN (SELECT project_id FROM collaborators WHERE user_id = $2))`,
-      [options.projectId, userId],
+         AND (user_id = $2 OR id IN (SELECT collection_id FROM collaborators WHERE user_id = $2))`,
+      [options.collectionId, userId],
     );
 
     if (access.rows.length === 0) {
       throw new AppError({
         code: "NOT_FOUND",
-        message: "Project not found",
+        message: "Collection not found",
         statusCode: 404,
       });
     }
   }
 
   const conditions: string[] = [
-    `(a.user_id = $1 OR a.project_id IN (
-       SELECT user_id_projects.id FROM projects user_id_projects
-       WHERE user_id_projects.user_id = $1
+    `(a.user_id = $1 OR a.collection_id IN (
+       SELECT user_id_collections.id FROM collections user_id_collections
+       WHERE user_id_collections.user_id = $1
        UNION
-       SELECT project_id FROM collaborators WHERE user_id = $1
+       SELECT collection_id FROM collaborators WHERE user_id = $1
      ))`,
   ];
   const values: unknown[] = [userId];
   let paramIndex = 2;
 
-  if (options.projectId) {
-    conditions.push(`a.project_id = $${paramIndex++}`);
-    values.push(options.projectId);
+  if (options.collectionId) {
+    conditions.push(`a.collection_id = $${paramIndex++}`);
+    values.push(options.collectionId);
   }
 
   if (options.cursor) {

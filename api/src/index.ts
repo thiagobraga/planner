@@ -80,7 +80,7 @@ app.use("/api/v1/auth", authRoutes);
 
 // CSRF protection (excludes GET/HEAD/OPTIONS)
 app.use("/api/v1/tasks", csrfProtection);
-app.use("/api/v1/projects", csrfProtection);
+app.use("/api/v1/collections", csrfProtection);
 app.use("/api/v1/labels", csrfProtection);
 app.use("/api/v1/sections", csrfProtection);
 app.use("/api/v1/comments", csrfProtection);

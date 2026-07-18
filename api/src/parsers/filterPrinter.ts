@@ -32,7 +32,7 @@ export function printFilter(e: FilterExpr): string {
       const innerStr = precedence(inner) < precedence(e) ? `(${printFilter(inner)})` : printFilter(inner);
       return `!${innerStr}`;
     }
-    case 'project':
+    case 'collection':
       return `#${e.name}`;
     case 'label':
       return `@${e.name}`;

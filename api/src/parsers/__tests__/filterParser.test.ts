@@ -3,8 +3,8 @@ import { parseFilter } from '../filterParser.js';
 
 describe('filterParser', () => {
   describe('operands', () => {
-    it('parses project', () => {
-      expect(parseFilter('#work')).toEqual({ type: 'project', name: 'work' });
+    it('parses collection', () => {
+      expect(parseFilter('#work')).toEqual({ type: 'collection', name: 'work' });
     });
 
     it('parses label', () => {
@@ -47,31 +47,31 @@ describe('filterParser', () => {
     it('parses and: a & b', () => {
       expect(parseFilter('#a & #b')).toEqual({
         type: 'and',
-        left: { type: 'project', name: 'a' },
-        right: { type: 'project', name: 'b' },
+        left: { type: 'collection', name: 'a' },
+        right: { type: 'collection', name: 'b' },
       });
     });
 
     it('parses or: a | b', () => {
       expect(parseFilter('#a | #b')).toEqual({
         type: 'or',
-        left: { type: 'project', name: 'a' },
-        right: { type: 'project', name: 'b' },
+        left: { type: 'collection', name: 'a' },
+        right: { type: 'collection', name: 'b' },
       });
     });
 
     it('parses not: !a', () => {
-      expect(parseFilter('!#a')).toEqual({ type: 'not', expr: { type: 'project', name: 'a' } });
+      expect(parseFilter('!#a')).toEqual({ type: 'not', expr: { type: 'collection', name: 'a' } });
     });
 
     it('and binds tighter than or: a | b & c', () => {
       expect(parseFilter('#a | #b & #c')).toEqual({
         type: 'or',
-        left: { type: 'project', name: 'a' },
+        left: { type: 'collection', name: 'a' },
         right: {
           type: 'and',
-          left: { type: 'project', name: 'b' },
-          right: { type: 'project', name: 'c' },
+          left: { type: 'collection', name: 'b' },
+          right: { type: 'collection', name: 'c' },
         },
       });
     });
@@ -81,10 +81,10 @@ describe('filterParser', () => {
         type: 'and',
         left: {
           type: 'or',
-          left: { type: 'project', name: 'a' },
-          right: { type: 'project', name: 'b' },
+          left: { type: 'collection', name: 'a' },
+          right: { type: 'collection', name: 'b' },
         },
-        right: { type: 'project', name: 'c' },
+        right: { type: 'collection', name: 'c' },
       });
     });
 
@@ -93,10 +93,10 @@ describe('filterParser', () => {
         type: 'and',
         left: {
           type: 'and',
-          left: { type: 'project', name: 'a' },
-          right: { type: 'project', name: 'b' },
+          left: { type: 'collection', name: 'a' },
+          right: { type: 'collection', name: 'b' },
         },
-        right: { type: 'project', name: 'c' },
+        right: { type: 'collection', name: 'c' },
       });
     });
   });

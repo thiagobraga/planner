@@ -29,7 +29,7 @@ Atom
   / Operand
 
 Operand
-  = Project
+  = Collection
   / Label
   / Priority
   / NoDate
@@ -41,8 +41,8 @@ Operand
   / AssignedTo
   / TextTerm
 
-Project
-  = "#" name:Identifier { return { type: 'project', name: name }; }
+Collection
+  = "#" name:Identifier { return { type: 'collection', name: name }; }
 
 Label
   = "@" name:Identifier { return { type: 'label', name: name }; }

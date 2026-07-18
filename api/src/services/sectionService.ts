@@ -4,7 +4,7 @@ import { AppError } from "../utils/AppError.js";
 
 interface SectionRow {
   id: string;
-  project_id: string;
+  collection_id: string;
   name: string;
   order_value: number;
   created_at: string;
@@ -14,7 +14,7 @@ interface SectionRow {
 function formatSection(row: SectionRow) {
   return {
     id: row.id,
-    projectId: row.project_id,
+    collectionId: row.collection_id,
     name: row.name,
     orderValue: row.order_value,
     createdAt: row.created_at,
@@ -22,18 +22,18 @@ function formatSection(row: SectionRow) {
   };
 }
 
-async function verifyProjectAccess(projectId: string, userId: string): Promise<void> {
+async function verifyCollectionAccess(collectionId: string, userId: string): Promise<void> {
   const result = await pool.query(
-    `SELECT id FROM projects
+    `SELECT id FROM collections
      WHERE id = $1
-       AND (user_id = $2 OR id IN (SELECT project_id FROM collaborators WHERE user_id = $2))`,
-    [projectId, userId]
+       AND (user_id = $2 OR id IN (SELECT collection_id FROM collaborators WHERE user_id = $2))`,
+    [collectionId, userId]
   );
 
   if (result.rows.length === 0) {
     throw new AppError({
       code: "NOT_FOUND",
-      message: "Project not found or not accessible",
+      message: "Collection not found or not accessible",
       statusCode: 404,
     });
   }
@@ -42,9 +42,9 @@ async function verifyProjectAccess(projectId: string, userId: string): Promise<v
 async function verifySectionAccess(sectionId: string, userId: string): Promise<SectionRow> {
   const result = await pool.query(
     `SELECT s.* FROM sections s
-     INNER JOIN projects p ON s.project_id = p.id
+     INNER JOIN collections p ON s.collection_id = p.id
      WHERE s.id = $1
-       AND (p.user_id = $2 OR p.id IN (SELECT project_id FROM collaborators WHERE user_id = $2))`,
+       AND (p.user_id = $2 OR p.id IN (SELECT collection_id FROM collaborators WHERE user_id = $2))`,
     [sectionId, userId]
   );
 
@@ -59,12 +59,12 @@ async function verifySectionAccess(sectionId: string, userId: string): Promise<S
   return result.rows[0] as SectionRow;
 }
 
-export async function listSections(projectId: string, userId: string) {
-  await verifyProjectAccess(projectId, userId);
+export async function listSections(collectionId: string, userId: string) {
+  await verifyCollectionAccess(collectionId, userId);
 
   const result = await pool.query(
-    `SELECT * FROM sections WHERE project_id = $1 ORDER BY order_value ASC`,
-    [projectId]
+    `SELECT * FROM sections WHERE collection_id = $1 ORDER BY order_value ASC`,
+    [collectionId]
   );
 
   return result.rows.map((row) => formatSection(row as SectionRow));
@@ -74,7 +74,7 @@ export interface CreateSectionInput {
   name: string;
 }
 
-export async function createSection(projectId: string, userId: string, input: CreateSectionInput) {
+export async function createSection(collectionId: string, userId: string, input: CreateSectionInput) {
   // Validate name (1-120 chars)
   if (!input.name || input.name.length === 0 || input.name.length > 120) {
     throw new AppError({
@@ -85,21 +85,21 @@ export async function createSection(projectId: string, userId: string, input: Cr
     });
   }
 
-  await verifyProjectAccess(projectId, userId);
+  await verifyCollectionAccess(collectionId, userId);
 
   // Get next order_value
   const maxOrder = await pool.query(
-    `SELECT COALESCE(MAX(order_value), -1) + 1 AS next_order FROM sections WHERE project_id = $1`,
-    [projectId]
+    `SELECT COALESCE(MAX(order_value), -1) + 1 AS next_order FROM sections WHERE collection_id = $1`,
+    [collectionId]
   );
   const orderValue = maxOrder.rows[0].next_order;
 
   const id = uuidv4();
   const result = await pool.query(
-    `INSERT INTO sections (id, project_id, name, order_value)
+    `INSERT INTO sections (id, collection_id, name, order_value)
      VALUES ($1, $2, $3, $4)
      RETURNING *`,
-    [id, projectId, input.name, orderValue]
+    [id, collectionId, input.name, orderValue]
   );
 
   return formatSection(result.rows[0] as SectionRow);
@@ -153,9 +153,9 @@ export async function updateSection(sectionId: string, userId: string, input: Up
     if (input.position !== undefined) {
       const siblingsResult = await client.query(
         `SELECT id, order_value FROM sections
-         WHERE project_id = $1 AND id != $2
+         WHERE collection_id = $1 AND id != $2
          ORDER BY order_value ASC`,
-        [section.project_id, sectionId]
+        [section.collection_id, sectionId]
       );
 
       const siblings = siblingsResult.rows as { id: string; order_value: number }[];
@@ -188,16 +188,16 @@ export async function deleteSection(sectionId: string, userId: string): Promise<
   // Verify section exists and user has access
   const section = await verifySectionAccess(sectionId, userId);
 
-  // Restrict deletion to project owner only
+  // Restrict deletion to collection owner only
   const ownerCheck = await pool.query(
-    `SELECT id FROM projects WHERE id = $1 AND user_id = $2`,
-    [section.project_id, userId]
+    `SELECT id FROM collections WHERE id = $1 AND user_id = $2`,
+    [section.collection_id, userId]
   );
 
   if (ownerCheck.rows.length === 0) {
     throw new AppError({
       code: "FORBIDDEN",
-      message: "Only the project owner can delete sections",
+      message: "Only the collection owner can delete sections",
       statusCode: 403,
     });
   }
@@ -206,7 +206,7 @@ export async function deleteSection(sectionId: string, userId: string): Promise<
   try {
     await client.query("BEGIN");
 
-    // Move all tasks in this section to parent project (section_id = null)
+    // Move all tasks in this section to parent collection (section_id = null)
     await client.query(
       `UPDATE tasks SET section_id = NULL, updated_at = NOW() WHERE section_id = $1`,
       [sectionId]

@@ -1,19 +1,19 @@
 import { Router, type Request, type Response, type NextFunction } from "express";
 import { authMiddleware } from "../middleware/auth.js";
 import {
-  listProjects,
-  createProject,
-  updateProject,
-  deleteProject,
-  archiveProject,
-} from "../services/projectService.js";
+  listCollections,
+  createCollection,
+  updateCollection,
+  deleteCollection,
+  archiveCollection,
+} from "../services/collectionService.js";
 
 const router: ReturnType<typeof Router> = Router();
 
 router.get("/", authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const projects = await listProjects(req.userId!);
-    res.json(projects);
+    const collections = await listCollections(req.userId!);
+    res.json(collections);
   } catch (err) {
     next(err);
   }
@@ -21,8 +21,8 @@ router.get("/", authMiddleware, async (req: Request, res: Response, next: NextFu
 
 router.post("/", authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const project = await createProject(req.userId!, req.body);
-    res.status(201).json(project);
+    const collection = await createCollection(req.userId!, req.body);
+    res.status(201).json(collection);
   } catch (err) {
     next(err);
   }
@@ -30,8 +30,8 @@ router.post("/", authMiddleware, async (req: Request, res: Response, next: NextF
 
 router.patch("/:id", authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const project = await updateProject(req.params.id as string, req.userId!, req.body);
-    res.json(project);
+    const collection = await updateCollection(req.params.id as string, req.userId!, req.body);
+    res.json(collection);
   } catch (err) {
     next(err);
   }
@@ -39,7 +39,7 @@ router.patch("/:id", authMiddleware, async (req: Request, res: Response, next: N
 
 router.delete("/:id", authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const result = await deleteProject(req.params.id as string, req.userId!);
+    const result = await deleteCollection(req.params.id as string, req.userId!);
     res.json(result);
   } catch (err) {
     next(err);
@@ -48,8 +48,8 @@ router.delete("/:id", authMiddleware, async (req: Request, res: Response, next: 
 
 router.post("/:id/archive", authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const project = await archiveProject(req.params.id as string, req.userId!);
-    res.json(project);
+    const collection = await archiveCollection(req.params.id as string, req.userId!);
+    res.json(collection);
   } catch (err) {
     next(err);
   }

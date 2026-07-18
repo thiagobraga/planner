@@ -19,7 +19,7 @@ function eventRow(i: number) {
   return {
     id: `e${i}`,
     user_id: "u1",
-    project_id: "p1",
+    collection_id: "p1",
     entity_type: "task",
     entity_id: "t1",
     event_type: "task_created",
@@ -50,19 +50,19 @@ describe("listActivity", () => {
     expect(result.events).toHaveLength(1);
   });
 
-  it("verifies project access before filtering by project_id", async () => {
+  it("verifies collection access before filtering by collection_id", async () => {
     mockQuery
-      .mockResolvedValueOnce({ rows: [{ id: "p1" }] }) // project access check
+      .mockResolvedValueOnce({ rows: [{ id: "p1" }] }) // collection access check
       .mockResolvedValueOnce({ rows: [eventRow(0)] });
 
-    await listActivity("u1", { projectId: "p1" });
-    expect(mockQuery.mock.calls[0][0]).toMatch(/FROM projects/);
-    expect(mockQuery.mock.calls[1][0]).toMatch(/a\.project_id = \$2/);
+    await listActivity("u1", { collectionId: "p1" });
+    expect(mockQuery.mock.calls[0][0]).toMatch(/FROM collections/);
+    expect(mockQuery.mock.calls[1][0]).toMatch(/a\.collection_id = \$2/);
   });
 
-  it("404s when project is not accessible", async () => {
+  it("404s when collection is not accessible", async () => {
     mockQuery.mockResolvedValueOnce({ rows: [] });
-    await expect(listActivity("u1", { projectId: "p1" })).rejects.toBeInstanceOf(AppError);
+    await expect(listActivity("u1", { collectionId: "p1" })).rejects.toBeInstanceOf(AppError);
   });
 
   it("applies cursor as a strict upper-bound on created_at", async () => {

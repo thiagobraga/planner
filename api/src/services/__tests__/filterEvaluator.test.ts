@@ -7,7 +7,7 @@ function task(overrides: Partial<EvalTask> = {}): EvalTask {
     id: 't1',
     title: 'Test',
     description: null,
-    projectName: 'work',
+    collectionName: 'work',
     labelNames: [],
     priority: 4,
     dueDate: null,
@@ -20,9 +20,9 @@ function task(overrides: Partial<EvalTask> = {}): EvalTask {
 const ctx: EvalContext = { today: '2024-06-15', currentUser: 'me-id' };
 
 describe('filterEvaluator', () => {
-  it('project matches by name', () => {
-    const e: FilterExpr = { type: 'project', name: 'work' };
-    expect(evaluateFilter(e, [task({ projectName: 'work' }), task({ projectName: 'home' })], ctx)).toHaveLength(1);
+  it('collection matches by name', () => {
+    const e: FilterExpr = { type: 'collection', name: 'work' };
+    expect(evaluateFilter(e, [task({ collectionName: 'work' }), task({ collectionName: 'home' })], ctx)).toHaveLength(1);
   });
 
   it('label matches if task has the label', () => {

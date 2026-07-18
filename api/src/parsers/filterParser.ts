@@ -7,7 +7,7 @@ export type FilterExpr =
   | { type: 'and'; left: FilterExpr; right: FilterExpr }
   | { type: 'or'; left: FilterExpr; right: FilterExpr }
   | { type: 'not'; expr: FilterExpr }
-  | { type: 'project'; name: string }
+  | { type: 'collection'; name: string }
   | { type: 'label'; name: string }
   | { type: 'priority'; level: 1 | 2 | 3 | 4 }
   | { type: 'today' }

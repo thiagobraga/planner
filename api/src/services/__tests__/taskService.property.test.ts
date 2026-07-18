@@ -35,13 +35,13 @@ vi.mock('uuid', () => ({
 import { createTask, updateTask, completeTask, deleteTask } from '../taskService.js';
 
 const userId = 'user-1';
-const projectId = 'project-1';
+const collectionId = 'collection-1';
 
 function makeTaskRow(overrides: Record<string, unknown> = {}) {
   return {
     id: 'task-1',
     user_id: userId,
-    project_id: projectId,
+    collection_id: collectionId,
     section_id: null,
     parent_task_id: null,
     assignee_user_id: null,
@@ -77,10 +77,10 @@ describe('Property 8: Task title validation', () => {
       fc.asyncProperty(
         fc.string({ minLength: 1, maxLength: 500 }).filter((s) => s.length >= 1),
         async (title) => {
-          // Mock: inbox lookup + project access + insert
+          // Mock: inbox lookup + collection access + insert
           mockQuery
-            .mockResolvedValueOnce({ rows: [{ id: projectId }] }) // inbox
-            .mockResolvedValueOnce({ rows: [{ id: projectId }] }) // project access
+            .mockResolvedValueOnce({ rows: [{ id: collectionId }] }) // inbox
+            .mockResolvedValueOnce({ rows: [{ id: collectionId }] }) // collection access
             .mockResolvedValueOnce({ rows: [makeTaskRow({ title })] }); // insert
 
           const result = await createTask(userId, { title });
@@ -136,8 +136,8 @@ describe('Property 9: Task priority validation', () => {
     await fc.assert(
       fc.asyncProperty(fc.integer({ min: 1, max: 4 }), async (priority) => {
         mockQuery
-          .mockResolvedValueOnce({ rows: [{ id: projectId }] }) // inbox
-          .mockResolvedValueOnce({ rows: [{ id: projectId }] }) // project access
+          .mockResolvedValueOnce({ rows: [{ id: collectionId }] }) // inbox
+          .mockResolvedValueOnce({ rows: [{ id: collectionId }] }) // collection access
           .mockResolvedValueOnce({ rows: [makeTaskRow({ priority })] }); // insert
 
         const result = await createTask(userId, { title: 'Valid', priority });
@@ -193,16 +193,16 @@ describe('Property 9: Task priority validation', () => {
 describe('Task type validation', () => {
   it("accepts 'task' and 'note', defaulting to 'task' when omitted", async () => {
     mockQuery
-      .mockResolvedValueOnce({ rows: [{ id: projectId }] }) // inbox
-      .mockResolvedValueOnce({ rows: [{ id: projectId }] }) // project access
+      .mockResolvedValueOnce({ rows: [{ id: collectionId }] }) // inbox
+      .mockResolvedValueOnce({ rows: [{ id: collectionId }] }) // collection access
       .mockResolvedValueOnce({ rows: [makeTaskRow({ type: 'task' })] }); // insert
 
     const result = await createTask(userId, { title: 'Valid' });
     expect(result.type).toBe('task');
 
     mockQuery
-      .mockResolvedValueOnce({ rows: [{ id: projectId }] })
-      .mockResolvedValueOnce({ rows: [{ id: projectId }] })
+      .mockResolvedValueOnce({ rows: [{ id: collectionId }] })
+      .mockResolvedValueOnce({ rows: [{ id: collectionId }] })
       .mockResolvedValueOnce({ rows: [makeTaskRow({ type: 'note' })] });
 
     const note = await createTask(userId, { title: 'Valid', type: 'note' });
@@ -261,10 +261,10 @@ describe('Property 10: Subtask depth enforcement', () => {
         // Mock verifyTaskAccess for parent
         mockQuery
           .mockResolvedValueOnce({
-            rows: [makeTaskRow({ id: 'parent-1', depth: parentDepth, project_id: projectId })],
+            rows: [makeTaskRow({ id: 'parent-1', depth: parentDepth, collection_id: collectionId })],
           })
-          // project access check
-          .mockResolvedValueOnce({ rows: [{ id: projectId }] })
+          // collection access check
+          .mockResolvedValueOnce({ rows: [{ id: collectionId }] })
           // insert returning
           .mockResolvedValueOnce({
             rows: [makeTaskRow({ depth: parentDepth + 1, parent_task_id: 'parent-1' })],
@@ -461,27 +461,27 @@ describe('Property 13: Parent deletion cascades to all descendants', () => {
 // **Validates: Requirements 8.5**
 
 describe('Property 14: Moving parent moves all descendants', () => {
-  it('moving task to new project updates project_id and clears section_id', async () => {
+  it('moving task to new collection updates collection_id and clears section_id', async () => {
     await fc.assert(
-      fc.asyncProperty(fc.uuid(), async (newProjectId) => {
+      fc.asyncProperty(fc.uuid(), async (newCollectionId) => {
         vi.clearAllMocks();
 
         const taskId = 'task-move';
-        const oldProjectId = 'old-project';
+        const oldCollectionId = 'old-collection';
 
         // verifyTaskAccess for the task
         mockQuery.mockResolvedValueOnce({
-          rows: [makeTaskRow({ id: taskId, project_id: oldProjectId, section_id: 'section-1' })],
+          rows: [makeTaskRow({ id: taskId, collection_id: oldCollectionId, section_id: 'section-1' })],
         });
-        // project access check for new project
-        mockQuery.mockResolvedValueOnce({ rows: [{ id: newProjectId }] });
+        // collection access check for new collection
+        mockQuery.mockResolvedValueOnce({ rows: [{ id: newCollectionId }] });
         // update query
         mockQuery.mockResolvedValueOnce({
-          rows: [makeTaskRow({ id: taskId, project_id: newProjectId, section_id: null })],
+          rows: [makeTaskRow({ id: taskId, collection_id: newCollectionId, section_id: null })],
         });
 
-        const result = await updateTask(taskId, userId, { projectId: newProjectId });
-        expect(result.projectId).toBe(newProjectId);
+        const result = await updateTask(taskId, userId, { collectionId: newCollectionId });
+        expect(result.collectionId).toBe(newCollectionId);
         expect(result.sectionId).toBeNull();
       }),
       { numRuns: 100 },
