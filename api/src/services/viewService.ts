@@ -258,8 +258,7 @@ export async function getCollectionView(userId: string, collectionId: string) {
   const result = await pool.query(
     `SELECT * FROM tasks
      WHERE collection_id = $1
-       AND is_completed = false
-     ORDER BY order_value ASC, created_at ASC`,
+     ORDER BY is_completed ASC, order_value ASC, created_at ASC`,
     [collectionId],
   );
 

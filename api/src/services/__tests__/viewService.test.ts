@@ -9,7 +9,7 @@ vi.mock("../../db/pool.js", () => ({
   },
 }));
 
-import { getTodayView, getUpcomingView, getInboxView, getMonthView, localDateInTimezone, addDaysISO } from "../viewService.js";
+import { getTodayView, getUpcomingView, getInboxView, getMonthView, getCollectionView, localDateInTimezone, addDaysISO } from "../viewService.js";
 
 const userId = "user-1";
 
@@ -205,5 +205,36 @@ describe("getInboxView", () => {
     mockQuery.mockResolvedValueOnce({ rows: [] });
     const view = await getInboxView(userId);
     expect(view).toEqual({ tasks: [], collectionId: null });
+  });
+});
+
+describe("getCollectionView", () => {
+  it("returns completed tasks on collection pages and sorts them after open tasks", async () => {
+    mockQuery
+      .mockResolvedValueOnce({
+        rows: [{ id: "c-1", name: "Work", color: "green", is_inbox: false }],
+      })
+      .mockResolvedValueOnce({
+        rows: [
+          taskRow({ id: "open", is_completed: false, order_value: 1, created_at: "2024-06-01T00:00:00Z" }),
+          taskRow({ id: "done", is_completed: true, order_value: 0, created_at: "2024-06-02T00:00:00Z" }),
+        ],
+      });
+
+    const view = await getCollectionView(userId, "c-1");
+
+    expect(view.collection).toEqual({
+      id: "c-1",
+      name: "Work",
+      color: "green",
+      isInbox: false,
+    });
+    expect(view.collectionId).toBe("c-1");
+    expect(view.tasks.map((t) => t.id)).toEqual(["open", "done"]);
+
+    const sql = mockQuery.mock.calls[1][0] as string;
+    expect(sql).toMatch(/FROM tasks/);
+    expect(sql).toMatch(/ORDER BY is_completed ASC, order_value ASC, created_at ASC/);
+    expect(sql).not.toMatch(/is_completed = false/);
   });
 });
