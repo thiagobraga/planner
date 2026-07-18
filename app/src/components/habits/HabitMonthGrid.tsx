@@ -101,14 +101,14 @@ export function HabitMonthGrid({
               {prevLinked && (
                 <span
                   aria-hidden="true"
-                  className="habit-month-grid-connector-prev absolute top-1/2 left-0 h-[2px] -translate-y-1/2"
+                  className="habit-month-grid-connector-prev absolute top-1/2 left-0 h-px -translate-y-1/2"
                   style={{ width: CELL / 2, background: 'var(--color-ink-lighter)' }}
                 />
               )}
               {nextLinked && (
                 <span
                   aria-hidden="true"
-                  className="habit-month-grid-connector-next absolute top-1/2 right-0 h-[2px] -translate-y-1/2"
+                  className="habit-month-grid-connector-next absolute top-1/2 right-0 h-px -translate-y-1/2"
                   style={{ width: CELL / 2, background: 'var(--color-ink-lighter)' }}
                 />
               )}

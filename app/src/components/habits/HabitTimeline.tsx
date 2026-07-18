@@ -45,6 +45,7 @@ interface DayCell {
   letter: string;
   dayOfMonth: number;
   future: boolean;
+  isWeekend: boolean;
 }
 
 // Horizontal habit tracker for one month: one row per habit, one column per day.
@@ -77,16 +78,28 @@ export function HabitTimeline({
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     return Array.from({ length: daysInMonth }, (_, i) => {
       const date = new Date(year, month, i + 1);
+      const dow = date.getDay();
       return {
         iso: fmtISO(date),
-        letter: DAY_LETTERS[date.getDay()],
+        letter: DAY_LETTERS[dow],
         dayOfMonth: i + 1,
         future: date.getTime() > today.getTime(),
+        isWeekend: dow === 0 || dow === 6,
       };
     });
   }, [year, month, today]);
 
   const todayISO = fmtISO(today);
+
+  // Weekend/today tint always applies; future columns additionally dim so every
+  // future day - weekend or not - fades by the same uniform amount.
+  const dayColClass = useCallback(
+    (d: DayCell) =>
+      `${d.isWeekend ? 'habit-timeline-weekend-col' : ''} ${d.iso === todayISO ? 'habit-timeline-today-col' : ''} ${
+        d.future ? 'opacity-40' : ''
+      }`,
+    [todayISO],
+  );
 
   const rows = useMemo<TimelineRow[]>(() => {
     const out: TimelineRow[] = [];
@@ -328,9 +341,9 @@ export function HabitTimeline({
               {days.map((d) => (
                 <div
                   key={d.iso}
-                  className={`habit-timeline-header-day flex h-12 shrink-0 flex-col items-center justify-center snap-start ${
-                    d.future ? 'opacity-40' : ''
-                  }`}
+                  className={`habit-timeline-header-day flex h-12 shrink-0 flex-col items-center justify-center snap-start ${dayColClass(
+                    d,
+                  )}`}
                   style={{ width: CELL_W }}
                 >
                   <span className="habit-timeline-header-day-letter block h-6 w-full text-center text-[10px] leading-[24px] text-ink-light opacity-70">
@@ -348,9 +361,20 @@ export function HabitTimeline({
             </div>
 
             {rows.map((row) => {
-              // Non-habit rows still occupy a band so both columns stay in step.
+              // Non-habit rows still occupy a band so both columns stay in step,
+              // and keep the weekend/today column shading unbroken top to bottom.
               if (row.kind !== 'habit') {
-                return <div key={row.key} className="h-6" aria-hidden="true" />;
+                return (
+                  <div key={row.key} className="flex h-6" aria-hidden="true">
+                    {days.map((d) => (
+                      <span
+                        key={d.iso}
+                        className={`h-6 shrink-0 ${dayColClass(d)}`}
+                        style={{ width: CELL_W }}
+                      />
+                    ))}
+                  </div>
+                );
               }
 
               const { node } = row;
@@ -362,7 +386,7 @@ export function HabitTimeline({
                         <span
                           key={d.iso}
                           aria-hidden="true"
-                          className="habit-timeline-day-placeholder h-6 shrink-0"
+                          className={`habit-timeline-day-placeholder h-6 shrink-0 ${dayColClass(d)}`}
                           style={{ width: CELL_W }}
                         />
                       );
@@ -386,20 +410,22 @@ export function HabitTimeline({
                         onClick={() => onToggleDay(node, d.iso)}
                         aria-label={`${node.name} ${d.iso}`}
                         {...dotAriaProps(state)}
-                        className="habit-timeline-day-cell group relative h-6 shrink-0 cursor-pointer border-none bg-transparent p-0"
+                        className={`habit-timeline-day-cell group relative h-6 shrink-0 cursor-pointer border-none bg-transparent p-0 ${dayColClass(
+                          d,
+                        )}`}
                         style={{ width: CELL_W }}
                       >
                         {prevLinked && (
                           <span
                             aria-hidden="true"
-                            className="habit-timeline-day-connector-prev absolute top-1/2 left-0 h-[2px] -translate-y-1/2"
+                            className="habit-timeline-day-connector-prev absolute top-1/2 left-0 h-px -translate-y-1/2"
                             style={{ width: CELL_W / 2, background: 'var(--color-ink-lighter)' }}
                           />
                         )}
                         {nextLinked && (
                           <span
                             aria-hidden="true"
-                            className="habit-timeline-day-connector-next absolute top-1/2 right-0 h-[2px] -translate-y-1/2"
+                            className="habit-timeline-day-connector-next absolute top-1/2 right-0 h-px -translate-y-1/2"
                             style={{ width: CELL_W / 2, background: 'var(--color-ink-lighter)' }}
                           />
                         )}

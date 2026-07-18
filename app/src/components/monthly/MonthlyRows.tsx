@@ -72,11 +72,14 @@ export function MonthlyRows() {
     const day = index + 1;
     const dayOfWeekIndex = new Date(selectedYear, selectedMonth, day).getDay();
 
+    const isFuture = new Date(selectedYear, selectedMonth, day).getTime() > new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+
     return {
       day,
       weekday: WEEKDAYS[dayOfWeekIndex],
       isWeekend: dayOfWeekIndex === 0 || dayOfWeekIndex === 6,
       isToday: dateKey(selectedYear, selectedMonth, day) === todayKey,
+      isFuture,
     };
   });
 
@@ -93,27 +96,33 @@ export function MonthlyRows() {
       />
 
       <div
-        className="monthly-ledger overflow-hidden rounded-[3px] border border-border/80"
+        className="monthly-ledger overflow-hidden rounded-[3px]"
         style={{ backgroundColor: 'var(--planner-monthly-ledger-bg)' }}
       >
         {days.map((day) => {
           const key = dateKey(selectedYear, selectedMonth, day.day);
           const notes = notesByDate[key] ?? [];
-          const weekendStyle = day.isWeekend ? { backgroundColor: 'var(--planner-monthly-weekend)' } : undefined;
+          const rowStyle = day.isToday
+            ? { backgroundColor: 'color-mix(in srgb, var(--color-ink-lighter) 15%, transparent)' }
+            : day.isWeekend
+              ? { backgroundColor: 'var(--planner-monthly-weekend)' }
+              : undefined;
 
           return (
             <div
               key={day.day}
-              style={weekendStyle}
-              className="grid h-6 grid-cols-[30px_20px_minmax(0,1fr)] items-center border-b border-border/60 last:border-b-0"
+              style={rowStyle}
+              className={`grid h-6 grid-cols-[24px_24px_minmax(0,1fr)] items-center border-b border-dotted border-dot/50 last:border-b-0 ${
+                day.isFuture ? 'opacity-40' : ''
+              }`}
             >
-              <span className={`text-center text-[10px] leading-6 tracking-[0.08em] text-ink-light tabular-nums ${day.isToday ? 'monthly-current-day-label font-[800]' : 'font-medium'}`}>
-                {String(day.day).padStart(2, '0')}
+              <span className={`text-right text-[10px] leading-6 tracking-[0.08em] text-ink-light tabular-nums ${day.isToday ? 'monthly-current-day-label font-[800]' : 'font-medium'}`}>
+                {day.day}
               </span>
               <span className={`text-center text-[10px] leading-6 tracking-[0.08em] text-ink-light uppercase ${day.isToday ? 'monthly-current-day-label font-[800]' : 'font-medium'}`}>
                 {day.weekday}
               </span>
-              <div className="min-w-0 border-l border-dot/30 pl-4">
+              <div className="min-w-0 pl-4">
                 {notes.length > 0 ? (
                   <span className="block min-w-0 truncate text-[13px] leading-6 text-ink normal-case tracking-normal">
                     {notes.join(' · ')}

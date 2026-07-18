@@ -214,6 +214,18 @@ kbd {
   }
 }
 
+.habit-timeline-header {
+  border-bottom: 1px solid color-mix(in srgb, var(--color-ink-lighter) 50%, transparent);
+}
+
+.habit-timeline-weekend-col {
+  background-color: var(--planner-monthly-weekend);
+}
+
+.habit-timeline-today-col {
+  background-color: color-mix(in srgb, var(--color-ink-lighter) 15%, transparent);
+}
+
 /* Monthly strip buttons - hover uses the theme-aware token */
 .monthly-strip button:not([aria-current="date"]):hover {
   background-color: var(--planner-monthly-strip-hover) !important;
