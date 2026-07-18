@@ -5,22 +5,12 @@ import type { Task } from '../components/TaskItem';
 import { getPhrase } from '../utils/phrases';
 import { applyIndent, getParentCandidate } from '../utils/taskTree';
 import {
-  buildHabitTree,
-  dayState,
-  habitsToToggle,
-  parentToggleTarget,
-  type HabitNode,
-} from '../utils/habitTree';
-import {
   apiCreateTask,
   apiToggleTask,
   apiUpdateTask,
   apiDeleteTask,
   fetchTodayTasks,
-  fetchHabits,
-  apiToggleHabitCompletion,
   type ApiTask,
-  type ApiHabit,
 } from '../api/client';
 
 interface DaySection {
@@ -92,7 +82,6 @@ function tempId() { return `temp-daily-${++tempCounter}`; }
 export function DailyPage() {
   const phrase = useMemo(() => getPhrase('daily'), []);
   const [sections, setSections] = useState<DaySection[]>([]);
-  const [habits, setHabits] = useState<ApiHabit[]>([]);
   const [selectedId, setSelectedId] = useState<string>();
   const [editingId, setEditingId] = useState<string>();
   const [input, setInput] = useState('');
@@ -110,91 +99,6 @@ export function DailyPage() {
     });
   }, []);
 
-  useEffect(() => {
-    fetchHabits().then(setHabits).catch(() => setHabits([]));
-  }, []);
-
-  // Only leaf habits store completions, so toggling a parent fans out to its
-  // sub-habits. Mirrors the habits page.
-  const handleHabitToggle = useCallback((node: HabitNode) => {
-    const target = parentToggleTarget(node, todayKey);
-    const leaves = habitsToToggle(node, todayKey, target);
-    if (leaves.length === 0) return;
-
-    const ids = new Set(leaves.map((leaf) => leaf.id));
-    setHabits((prev) =>
-      prev.map((h) => {
-        if (!ids.has(h.id)) return h;
-        const completions = target
-          ? [...h.completions, todayKey]
-          : h.completions.filter((c) => c !== todayKey);
-        return { ...h, completions };
-      })
-    );
-    Promise.all(leaves.map((leaf) => apiToggleHabitCompletion(leaf.id, todayKey, target))).catch(() => {
-      fetchHabits().then(setHabits).catch(() => { });
-    });
-  }, []);
-
-  // Sub-habits stay on the habits page; the day view lists only top-level habits.
-  const rootHabits = useMemo(() => buildHabitTree(habits), [habits]);
-
-  const renderHabitRow = useCallback((habit: HabitNode) => {
-    const state = dayState(habit, todayKey);
-    const done = state === 'full';
-
-    return (
-      <div
-        key={habit.id}
-        className={`task-item group ${done ? 'opacity-[0.35]' : ''}`}
-        aria-label={habit.name}
-        role="button"
-        tabIndex={0}
-        onClick={() => handleHabitToggle(habit)}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            handleHabitToggle(habit);
-          }
-        }}
-      >
-        <button
-          type="button"
-          aria-label={done ? `Reopen: ${habit.name}` : `Complete: ${habit.name}`}
-          role="checkbox"
-          aria-checked={state === 'half' ? 'mixed' : done}
-          onClick={(e) => {
-            e.stopPropagation();
-            handleHabitToggle(habit);
-          }}
-          className="task-item-toggle w-6 text-center overflow-hidden text-ink select-none shrink-0 cursor-pointer bg-transparent border-0 p-0"
-          style={done ? {
-            fontSize: 'var(--icon-check-size, 26px)',
-            transform: 'translateY(var(--icon-check-offset, 0px))',
-            lineHeight: 'var(--task-line-height, 24px)',
-          } : {
-            fontSize: 'var(--icon-dot-size, 10px)',
-            transform: 'translateY(var(--icon-dot-offset, 0px))',
-            lineHeight: 'var(--task-line-height, 24px)',
-          }}
-        >
-          {done ? '×' : state === 'half' ? '◐' : '•'}
-        </button>
-
-        <span
-          style={{ lineHeight: 'var(--task-line-height, 24px)' }}
-          className="task-item-title-area flex-1 flex flex-wrap items-baseline min-w-0"
-        >
-          <span
-            style={{ lineHeight: 'var(--task-line-height, 24px)' }}
-            className={`task-item-title-text text-sm break-words ${done ? 'line-through text-ink-light' : 'text-ink'}`}
-          >
-            {habit.name}
-          </span>
-        </span>
-      </div>
-    );
-  }, [handleHabitToggle]);
 
   const replaceTodayFromApi = useCallback(() => {
     fetchTodayTasks().then((response) => {
@@ -205,10 +109,6 @@ export function DailyPage() {
   }, []);
 
   useSync(useCallback((event) => {
-    if (event.entityType === 'habit' || event.entityType === 'habit_completion') {
-      fetchHabits().then(setHabits).catch(() => { });
-      return;
-    }
     if (event.entityType !== 'task') return;
     if (event.eventType === 'deleted') {
       setSections((prev) =>
@@ -508,8 +408,6 @@ export function DailyPage() {
             <div className="text-[11px] tracking-[0.08em] uppercase text-ink-light leading-6 h-6 m-0 font-medium">
               {section.label}
             </div>
-
-            {isToday && rootHabits.map(renderHabitRow)}
 
             <TaskList
               tasks={section.tasks}
