@@ -7,7 +7,7 @@ import pool from '../db/pool.js';
 import { redisClient } from '../db/redis.js';
 import { AppError } from '../utils/AppError.js';
 import { validate, type ValidationError } from '../utils/validate.js';
-import { JWT_SECRET } from '../config.js';
+import { DISABLE_RATE_LIMITS_IN_DEV, JWT_SECRET } from '../config.js';
 const JWT_EXPIRATION_SECONDS = 3600; // 1 hour
 const REFRESH_TOKEN_EXPIRATION_DAYS = 30;
 const BCRYPT_COST = 12;
@@ -124,7 +124,7 @@ export async function register(input: RegisterInput): Promise<AuthResult> {
 export async function login(email: string, password: string): Promise<AuthResult> {
   // Check rate limit (best-effort - skip if Redis unavailable)
   const rateLimitKey = `login_attempts:${email.toLowerCase()}`;
-  if (redisClient.isReady) {
+  if (!DISABLE_RATE_LIMITS_IN_DEV && redisClient.isReady) {
     const attempts = await redisClient.get(rateLimitKey);
     if (attempts && parseInt(attempts, 10) > LOGIN_RATE_LIMIT_MAX) {
       throw new AppError({
@@ -144,7 +144,9 @@ export async function login(email: string, password: string): Promise<AuthResult
   const user = result.rows[0];
 
   if (!user) {
-    await incrementFailedAttempts(rateLimitKey);
+    if (!DISABLE_RATE_LIMITS_IN_DEV) {
+      await incrementFailedAttempts(rateLimitKey);
+    }
     throw new AppError({
       code: 'INVALID_CREDENTIALS',
       message: 'Invalid email or password.',
@@ -155,7 +157,9 @@ export async function login(email: string, password: string): Promise<AuthResult
   const valid = await bcrypt.compare(password, user.password_hash);
 
   if (!valid) {
-    await incrementFailedAttempts(rateLimitKey);
+    if (!DISABLE_RATE_LIMITS_IN_DEV) {
+      await incrementFailedAttempts(rateLimitKey);
+    }
     throw new AppError({
       code: 'INVALID_CREDENTIALS',
       message: 'Invalid email or password.',
@@ -163,7 +167,7 @@ export async function login(email: string, password: string): Promise<AuthResult
     });
   }
 
-  if (redisClient.isReady) await redisClient.del(rateLimitKey).catch(() => {});
+  if (!DISABLE_RATE_LIMITS_IN_DEV && redisClient.isReady) await redisClient.del(rateLimitKey).catch(() => {});
 
   const sessionId = uuidv4();
   const expiresAt = new Date(Date.now() + REFRESH_TOKEN_EXPIRATION_DAYS * 24 * 60 * 60 * 1000);

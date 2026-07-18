@@ -10,3 +10,4 @@ export const DATABASE_URL = env('DATABASE_URL', 'postgres://planner:planner@loca
 export const CORS_ORIGIN = env('CORS_ORIGIN', 'http://localhost:5173');
 export const PORT = process.env.PORT || '4000';
 export const REDIS_PASSWORD = process.env.REDIS_PASSWORD || '';
+export const DISABLE_RATE_LIMITS_IN_DEV = !process.env.NODE_ENV || process.env.NODE_ENV === 'development';

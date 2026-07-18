@@ -8,7 +8,7 @@ import { errorHandler } from "./middleware/errorHandler.js";
 import { notFound } from "./middleware/notFound.js";
 import { connectRedis } from "./db/redis.js";
 import { attachSyncServer } from "./services/syncService.js";
-import { PORT, CORS_ORIGIN } from "./config.js";
+import { PORT, CORS_ORIGIN, DISABLE_RATE_LIMITS_IN_DEV } from "./config.js";
 import { csrfProtection } from "./middleware/csrf.js";
 import authRoutes from "./routes/auth.js";
 
@@ -33,14 +33,16 @@ app.use(helmet({
 }));
 app.use(cookieParser());
 
-// Global rate limit
-const globalLimiter = rateLimit({
-  windowMs: 60 * 1000,
-  max: 100,
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-app.use(globalLimiter);
+if (!DISABLE_RATE_LIMITS_IN_DEV) {
+  // Global rate limit
+  const globalLimiter = rateLimit({
+    windowMs: 60 * 1000,
+    max: 100,
+    standardHeaders: true,
+    legacyHeaders: false,
+  });
+  app.use(globalLimiter);
+}
 
 // Middleware
 app.use(express.json());
@@ -58,24 +60,28 @@ app.use((_req, res, next) => {
   next();
 });
 
-// Per-route rate limiters
-const authRegisterLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000,
-  max: 5,
-  standardHeaders: true,
-  legacyHeaders: false,
-});
+if (!DISABLE_RATE_LIMITS_IN_DEV) {
+  // Per-route rate limiters
+  const authRegisterLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000,
+    max: 5,
+    standardHeaders: true,
+    legacyHeaders: false,
+  });
 
-const passwordResetLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000,
-  max: 3,
-  standardHeaders: true,
-  legacyHeaders: false,
-});
+  const passwordResetLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000,
+    max: 3,
+    standardHeaders: true,
+    legacyHeaders: false,
+  });
+
+  // Auth routes before CSRF (login/register don't need CSRF token)
+  app.use("/api/v1/auth/register", authRegisterLimiter);
+  app.use("/api/v1/auth/reset-password", passwordResetLimiter);
+}
 
 // Auth routes before CSRF (login/register don't need CSRF token)
-app.use("/api/v1/auth/register", authRegisterLimiter);
-app.use("/api/v1/auth/reset-password", passwordResetLimiter);
 app.use("/api/v1/auth", authRoutes);
 
 // CSRF protection (excludes GET/HEAD/OPTIONS)

@@ -177,6 +177,35 @@ describe("login - rate limiting", () => {
 
     expect(mockRedisDel).toHaveBeenCalledWith("login_attempts:user@example.com");
   });
+
+  it("skips the login throttle in development", async () => {
+    vi.stubEnv("NODE_ENV", "development");
+    vi.stubEnv("JWT_SECRET", "test-secret-not-for-prod");
+    vi.stubEnv("DATABASE_URL", "postgres://planner:planner@localhost:5432/planner");
+    vi.stubEnv("CORS_ORIGIN", "http://localhost:5173");
+    try {
+      vi.resetModules();
+
+      const { login: devLogin } = await import("../authService.js");
+      const { default: bcrypt } = await import("bcrypt");
+
+      mockRedisGet.mockResolvedValue("11");
+      mockQuery
+        .mockResolvedValueOnce({
+          rows: [{ id: "user-1", email: "user@example.com", password_hash: "hash", display_name: "User" }],
+        })
+        .mockResolvedValueOnce({ rows: [] });
+      (bcrypt.compare as ReturnType<typeof vi.fn>).mockResolvedValueOnce(true);
+
+      await devLogin("user@example.com", "doesnotmatter");
+
+      expect(mockRedisGet).not.toHaveBeenCalled();
+      expect(mockRedisDel).not.toHaveBeenCalled();
+    } finally {
+      vi.unstubAllEnvs();
+      vi.resetModules();
+    }
+  });
 });
 
 describe("confirmPasswordReset - token lifecycle", () => {
