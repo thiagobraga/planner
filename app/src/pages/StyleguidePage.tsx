@@ -11,7 +11,7 @@ import { Select } from '../components/ui/Select';
 import { Checkbox } from '../components/ui/Checkbox';
 import { Radio } from '../components/ui/Radio';
 import { Toggle } from '../components/ui/Toggle';
-import { Chip, ProjectChip } from '../components/ui/Chip';
+import { Chip, CollectionChip } from '../components/ui/Chip';
 import { StatusPill } from '../components/ui/StatusPill';
 import { PriorityDot } from '../components/ui/PriorityDot';
 import { ViewToolbar } from '../components/ui/ViewToolbar';
@@ -52,7 +52,7 @@ const TYPE_SCALE = [
   { label: 'Mono', spec: 'Monospace · 12px / 16px', className: 'text-[12px] leading-4 font-mono' },
 ];
 
-const PROJECTS = [
+const COLLECTIONS = [
   { name: 'dev', color: 'green' },
   { name: 'planner', color: 'lime_green' },
   { name: 'health', color: 'yellow' },
@@ -171,12 +171,12 @@ export function StyleguidePage() {
     { type: 'item', label: 'Priority', disabled: true, icon: <Tag size={14} /> },
     {
       type: 'item',
-      label: 'Project',
+      label: 'Collection',
       icon: <Briefcase size={14} />,
       submenu: [
-        { type: 'item', label: 'No project', onClick: () => console.log('No project') },
+        { type: 'item', label: 'No collection', onClick: () => console.log('No collection') },
         { type: 'separator' },
-        ...PROJECTS.map(p => ({
+        ...COLLECTIONS.map(p => ({
           type: 'item' as const,
           label: p.name,
           icon: <span className="w-2 h-2 rounded-full" style={{ backgroundColor: `var(--color-${p.color})` }} />,
@@ -379,7 +379,7 @@ export function StyleguidePage() {
                 <Input error defaultValue="Invalid value" errorText="Check the information." />
               </Field>
               <Field label="Help text">
-                <Input placeholder="Add a note..." helpText="Tip: use @ for mentions and # for projects." />
+                <Input placeholder="Add a note..." helpText="Tip: use @ for mentions and # for collections." />
               </Field>
             </div>
             <div className="flex flex-col gap-4">
@@ -409,10 +409,10 @@ export function StyleguidePage() {
         <Card title="Chips & Tags">
           <div className="flex flex-col gap-4">
             <div>
-              <span className="text-[10px] text-ink-light uppercase tracking-[0.1em] block mb-2">Project chips</span>
+              <span className="text-[10px] text-ink-light uppercase tracking-[0.1em] block mb-2">Collection chips</span>
               <div className="flex flex-wrap gap-2 items-center">
-                {PROJECTS.map((p) => (
-                  <ProjectChip key={p.name} name={p.name} color={p.color} />
+                {COLLECTIONS.map((p) => (
+                  <CollectionChip key={p.name} name={p.name} color={p.color} />
                 ))}
                 <Chip className="text-ink-light">＋ New</Chip>
               </div>
@@ -456,10 +456,10 @@ export function StyleguidePage() {
                 />
               ))}
             </nav>
-            <div className="text-[10px] text-ink-light uppercase tracking-[0.1em] mt-3 mb-1 px-3">Projects</div>
+            <div className="text-[10px] text-ink-light uppercase tracking-[0.1em] mt-3 mb-1 px-3">Collections</div>
             <div className="flex flex-col gap-1 px-3">
-              {PROJECTS.map((p) => (
-                <ProjectChip key={p.name} name={p.name} color={p.color} className="bg-transparent px-0" />
+              {COLLECTIONS.map((p) => (
+                <CollectionChip key={p.name} name={p.name} color={p.color} className="bg-transparent px-0" />
               ))}
             </div>
           </div>

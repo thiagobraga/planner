@@ -4,7 +4,7 @@ const START_OFFSET = 4;
 const MONTH_TASKS: Record<number, string[]> = {
   4: ['Rent'],
   8: ['Review goals'],
-  13: ['Project check-in'],
+  13: ['Collection check-in'],
   16: ['Weekly reset'],
   21: ['Send invoices'],
   28: ['Plan June'],

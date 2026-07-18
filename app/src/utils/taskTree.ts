@@ -12,7 +12,7 @@ export const MAX_INDENT = 5;
 export interface TreeNode {
   id: string;
   indent?: number;
-  projectId?: string;
+  collectionId?: string;
 }
 
 /**
@@ -92,15 +92,15 @@ export interface IndentResult<T> {
  * computes the new indent, the parent to persist, and optimistically shifts the
  * task's contiguous descendant subtree by the same delta.
  *
- * `sameProjectOnly` (for cross-project views like Daily/Upcoming/Search) makes
+ * `sameCollectionOnly` (for cross-collection views like Daily/Upcoming/Search) makes
  * the operation a no-op when the structural parent belongs to a different
- * project, preventing a task from silently jumping projects.
+ * collection, preventing a task from silently jumping collections.
  */
 export function applyIndent<T extends TreeNode>(
   tasks: T[],
   id: string,
   dir: 1 | -1,
-  opts?: { sameProjectOnly?: boolean },
+  opts?: { sameCollectionOnly?: boolean },
 ): IndentResult<T> {
   const noop: IndentResult<T> = { tasks, parentTaskId: null, changed: false };
 
@@ -113,9 +113,9 @@ export function applyIndent<T extends TreeNode>(
 
   const parentTaskId = getParentCandidate(tasks, index, newIndent);
 
-  if (opts?.sameProjectOnly && parentTaskId) {
+  if (opts?.sameCollectionOnly && parentTaskId) {
     const parent = tasks.find((t) => t.id === parentTaskId);
-    if (parent && parent.projectId !== tasks[index]!.projectId) return noop;
+    if (parent && parent.collectionId !== tasks[index]!.collectionId) return noop;
   }
 
   const delta = newIndent - current;

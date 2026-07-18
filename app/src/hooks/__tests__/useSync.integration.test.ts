@@ -41,10 +41,10 @@ describe('SyncEvent: entity type filtering', () => {
     expect(handler).toHaveBeenCalledWith(event);
   });
 
-  it('delivers project events to handler', () => {
+  it('delivers collection events to handler', () => {
     const handler = vi.fn();
     renderHook(() => useSync(handler));
-    const event = makeEvent({ entityType: 'project' });
+    const event = makeEvent({ entityType: 'collection' });
     act(() => { capturedSyncHandler?.(event); });
     expect(handler).toHaveBeenCalledWith(event);
   });
@@ -242,17 +242,17 @@ describe('Cross-tab sync: failure scenarios', () => {
     };
     act(() => { capturedSyncHandler?.(event); });
     expect(handler).toHaveBeenCalledWith(event);
-    expect(event.projectId).toBeUndefined();
+    expect(event.collectionId).toBeUndefined();
     expect(event.payload).toBeUndefined();
   });
 
-  it('handler receives event with projectId', () => {
+  it('handler receives event with collectionId', () => {
     const handler = vi.fn();
     renderHook(() => useSync(handler));
-    const event = makeEvent({ projectId: 'project-1' });
+    const event = makeEvent({ collectionId: 'collection-1' });
     act(() => { capturedSyncHandler?.(event); });
     expect(handler).toHaveBeenCalledWith(event);
-    expect(event.projectId).toBe('project-1');
+    expect(event.collectionId).toBe('collection-1');
   });
 
   it('handler receives event with payload', () => {

@@ -16,20 +16,20 @@ import { SortableContext, useSortable, arrayMove, verticalListSortingStrategy } 
 import { CSS } from '@dnd-kit/utilities';
 import { Plus } from 'lucide-react';
 import {
-  fetchProjects,
-  apiCreateProject,
-  apiUpdateProject,
-  apiDeleteProject,
-  PROJECT_COLORS,
-  projectColorHex,
-  type ApiProject,
+  fetchCollections,
+  apiCreateCollection,
+  apiUpdateCollection,
+  apiDeleteCollection,
+  PALETTE_COLORS,
+  paletteColorHex,
+  type ApiCollection,
 } from '../api/client';
 import { ConfirmModal } from './ConfirmModal';
 
 const INDENT = 22;
 const MAX_DEPTH = 4; // backend enforces nesting depth of 4
 const DEPTH_PADDING_CLASSES = ['pl-3', 'pl-[22px]', 'pl-[44px]', 'pl-[66px]', 'pl-[88px]'] as const;
-// Indentation for the new-subproject input: parent depth → parent base + INDENT (22 px).
+// Indentation for the new-subcollection input: parent depth → parent base + INDENT (22 px).
 // depth-0 parent: pl-3 (12) + 22 = 34 px, depth-1: 22+22=44, depth-2: 44+22=66, …
 const SUB_INPUT_PADDING_CLASSES = ['pl-[34px]', 'pl-[44px]', 'pl-[66px]', 'pl-[88px]', 'pl-[110px]'] as const;
 
@@ -57,24 +57,24 @@ const COLOR_SHADE_FAMILIES: Record<string, readonly string[]> = {
 };
 
 function getHierarchicalColor(
-  projectId: string,
+  collectionId: string,
   parentId: string | null,
-  projects: ApiProject[],
+  collections: ApiCollection[],
   pendingParentUpdates: Map<string, string | null> = new Map(),
 ): string {
   const getParentId = (id: string) => {
     return pendingParentUpdates.has(id)
       ? pendingParentUpdates.get(id)!
-      : (projects.find((p) => p.id === id)?.parentId ?? null);
+      : (collections.find((p) => p.id === id)?.parentId ?? null);
   };
 
   const getOriginalColor = (id: string) => {
-    return projects.find((p) => p.id === id)?.color ?? 'blue';
+    return collections.find((p) => p.id === id)?.color ?? 'blue';
   };
 
   let depth = 0;
   let currParentId = parentId;
-  let lastId = projectId;
+  let lastId = collectionId;
 
   while (currParentId) {
     depth++;
@@ -87,7 +87,7 @@ function getHierarchicalColor(
   return family[depth % family.length];
 }
 
-interface FlatProject {
+interface FlatCollection {
   id: string;
   name: string;
   colorName: string;
@@ -95,11 +95,11 @@ interface FlatProject {
   depth: number;
 }
 
-// Flatten the visible (non-inbox, non-archived) projects into a depth-annotated,
+// Flatten the visible (non-inbox, non-archived) collections into a depth-annotated,
 // order-sorted list suitable for a single sortable list with indentation.
-function flattenProjects(projects: ApiProject[]): FlatProject[] {
-  const visible = projects.filter((p) => !p.isArchived && !p.isInbox);
-  const childrenOf = new Map<string | null, ApiProject[]>();
+function flattenCollections(collections: ApiCollection[]): FlatCollection[] {
+  const visible = collections.filter((p) => !p.isArchived && !p.isInbox);
+  const childrenOf = new Map<string | null, ApiCollection[]>();
   for (const p of visible) {
     const key = p.parentId && visible.some((v) => v.id === p.parentId) ? p.parentId : null;
     const list = childrenOf.get(key) ?? [];
@@ -109,7 +109,7 @@ function flattenProjects(projects: ApiProject[]): FlatProject[] {
   for (const list of childrenOf.values()) {
     list.sort((a, b) => a.orderValue - b.orderValue || a.name.localeCompare(b.name));
   }
-  const out: FlatProject[] = [];
+  const out: FlatCollection[] = [];
   const walk = (parentId: string | null, depth: number) => {
     for (const p of childrenOf.get(parentId) ?? []) {
       out.push({ id: p.id, name: p.name, colorName: p.color, parentId, depth });
@@ -122,7 +122,7 @@ function flattenProjects(projects: ApiProject[]): FlatProject[] {
 
 // Compute the projected parent/depth for the dragged item given the horizontal drag offset.
 function getProjection(
-  items: FlatProject[],
+  items: FlatCollection[],
   activeId: string,
   overId: string,
   dragOffset: number,
@@ -157,12 +157,12 @@ function getProjection(
 // avoid re-renders on every pointer move while still feeding getProjection).
 const overIdRef: { current: string | null } = { current: null };
 
-export function ProjectTreeNav() {
+export function CollectionTreeNav() {
   const navigate = useNavigate();
   const qc = useQueryClient();
-  const { data: projects = [] } = useQuery({ queryKey: ['projects'], queryFn: fetchProjects });
+  const { data: collections = [] } = useQuery({ queryKey: ['collections'], queryFn: fetchCollections });
 
-  const flat = useMemo(() => flattenProjects(projects), [projects]);
+  const flat = useMemo(() => flattenCollections(collections), [collections]);
 
   const [activeId, setActiveId] = useState<string | null>(null);
   const [offsetLeft, setOffsetLeft] = useState(0);
@@ -172,7 +172,7 @@ export function ProjectTreeNav() {
   const [newName, setNewName] = useState('');
   const [subAddingParentId, setSubAddingParentId] = useState<string | null>(null);
   const [subNewName, setSubNewName] = useState('');
-  const [deletingProject, setDeletingProject] = useState<{ id: string; name: string } | null>(null);
+  const [deletingCollection, setDeletingCollection] = useState<{ id: string; name: string } | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
@@ -184,35 +184,35 @@ export function ProjectTreeNav() {
       ? getProjection(flat, activeId, overIdRef.current ?? activeId, offsetLeft)
       : null;
 
-  const setProjectsCache = useCallback(
-    (updater: (prev: ApiProject[]) => ApiProject[]) => {
-      qc.setQueryData<ApiProject[]>(['projects'], (prev) => updater(prev ?? []));
+  const setCollectionsCache = useCallback(
+    (updater: (prev: ApiCollection[]) => ApiCollection[]) => {
+      qc.setQueryData<ApiCollection[]>(['collections'], (prev) => updater(prev ?? []));
     },
     [qc],
   );
 
-  const nextColor = () => PROJECT_COLORS[projects.length % PROJECT_COLORS.length].name;
+  const nextColor = () => PALETTE_COLORS[collections.length % PALETTE_COLORS.length].name;
 
   const handleCreate = (name: string, parentId: string | null) => {
     const trimmed = name.trim();
     if (!trimmed) return;
     let color = nextColor();
     if (parentId) {
-      color = getHierarchicalColor('temp-id', parentId, projects);
+      color = getHierarchicalColor('temp-id', parentId, collections);
     }
-    apiCreateProject({ name: trimmed, color, parentId })
-      .then((created) => setProjectsCache((prev) => [...prev, created]))
-      .catch(() => qc.invalidateQueries({ queryKey: ['projects'] }));
+    apiCreateCollection({ name: trimmed, color, parentId })
+      .then((created) => setCollectionsCache((prev) => [...prev, created]))
+      .catch(() => qc.invalidateQueries({ queryKey: ['collections'] }));
   };
 
-  const handleCommitNewProject = () => {
+  const handleCommitNewCollection = () => {
     if (!adding) return;
     setAdding(false);
     handleCreate(newName, null);
     setNewName('');
   };
 
-  const handleStartSubProject = (parentId: string) => {
+  const handleStartSubCollection = (parentId: string) => {
     setAdding(false);
     setNewName('');
     setEditingId(null);
@@ -220,7 +220,7 @@ export function ProjectTreeNav() {
     setSubNewName('');
   };
 
-  const handleCommitSubProject = () => {
+  const handleCommitSubCollection = () => {
     if (!subAddingParentId) return;
     const parentId = subAddingParentId;
     setSubAddingParentId(null);
@@ -233,12 +233,12 @@ export function ProjectTreeNav() {
     if (editingId !== id) return;
     setEditingId(null);
     if (!trimmed) return;
-    setProjectsCache((prev) => prev.map((p) => (p.id === id ? { ...p, name: trimmed } : p)));
-    apiUpdateProject(id, { name: trimmed }).catch(() => qc.invalidateQueries({ queryKey: ['projects'] }));
+    setCollectionsCache((prev) => prev.map((p) => (p.id === id ? { ...p, name: trimmed } : p)));
+    apiUpdateCollection(id, { name: trimmed }).catch(() => qc.invalidateQueries({ queryKey: ['collections'] }));
   };
 
   const handleDelete = (id: string, name: string) => {
-    setDeletingProject({ id, name });
+    setDeletingCollection({ id, name });
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -264,7 +264,7 @@ export function ProjectTreeNav() {
 
     const descendants = new Set<string>();
     const findDescendants = (parentId: string) => {
-      for (const p of projects) {
+      for (const p of collections) {
         if (p.parentId === parentId) {
           descendants.add(p.id);
           findDescendants(p.id);
@@ -273,7 +273,7 @@ export function ProjectTreeNav() {
     };
     findDescendants(event.active.id as string);
 
-    setProjectsCache((prev) =>
+    setCollectionsCache((prev) =>
       prev.map((p) => {
         if (!orderById.has(p.id)) return p;
         const orderValue = orderById.get(p.id)!;
@@ -293,21 +293,21 @@ export function ProjectTreeNav() {
 
     Promise.all(
       changed.map((c) =>
-        apiUpdateProject(c.id, { parentId: c.parentId, orderValue: c.orderValue, color: c.color }),
+        apiUpdateCollection(c.id, { parentId: c.parentId, orderValue: c.orderValue, color: c.color }),
       ),
-    ).catch(() => qc.invalidateQueries({ queryKey: ['projects'] }));
+    ).catch(() => qc.invalidateQueries({ queryKey: ['collections'] }));
   };
 
   return (
     <div className="mt-6 flex-1">
       <div className="flex items-center justify-between px-3">
         <span className="text-[10px] leading-6 tracking-[0.1em] uppercase text-ink-light font-medium">
-          Projects
+          Collections
         </span>
         <button
           type="button"
-          aria-label="Add project"
-          title="Add project"
+          aria-label="Add collection"
+          title="Add collection"
           onClick={() => { setAdding(true); setNewName(''); }}
           className="bg-transparent border-0 cursor-pointer text-ink-light flex items-center p-0"
         >
@@ -329,17 +329,17 @@ export function ProjectTreeNav() {
         <SortableContext items={flat.map((f) => f.id)} strategy={verticalListSortingStrategy}>
           {flat.map((item) => (
             <Fragment key={item.id}>
-              <SortableProjectRow
+              <SortableCollectionRow
                 item={item}
                 depth={activeId === item.id && projection ? projection.depth : item.depth}
                 isEditing={editingId === item.id}
                 draft={draft}
-                onNavigate={() => navigate(`/project/${item.id}`)}
+                onNavigate={() => navigate(`/collection/${item.id}`)}
                 onStartRename={() => { setEditingId(item.id); setDraft(item.name); }}
                 onDraftChange={setDraft}
                 onCommitRename={() => handleRename(item.id, draft)}
                 onCancelRename={() => setEditingId(null)}
-                onAddSub={() => handleStartSubProject(item.id)}
+                onAddSub={() => handleStartSubCollection(item.id)}
                 onDelete={() => handleDelete(item.id, item.name)}
               />
               {subAddingParentId === item.id && (
@@ -348,15 +348,15 @@ export function ProjectTreeNav() {
                     autoFocus
                     value={subNewName}
                     onChange={(e) => setSubNewName(e.target.value)}
-                    onBlur={handleCommitSubProject}
+                    onBlur={handleCommitSubCollection}
                     onKeyDown={(e) => {
-                      if (e.key === 'Enter') handleCommitSubProject();
+                      if (e.key === 'Enter') handleCommitSubCollection();
                       if (e.key === 'Escape') {
                         setSubAddingParentId(null);
                         setSubNewName('');
                       }
                     }}
-                    placeholder="Project name…"
+                    placeholder="Collection name…"
                     className="flex-1 min-w-0 h-6 text-[13px] leading-6 text-ink bg-transparent border-0 border-b border-dot outline-none px-0 focus:outline-none focus-visible:outline-none focus-visible:ring-0"
                   />
                 </div>
@@ -372,12 +372,12 @@ export function ProjectTreeNav() {
             autoFocus
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
-            onBlur={handleCommitNewProject}
+            onBlur={handleCommitNewCollection}
             onKeyDown={(e) => {
-              if (e.key === 'Enter') handleCommitNewProject();
+              if (e.key === 'Enter') handleCommitNewCollection();
               if (e.key === 'Escape') setAdding(false);
             }}
-            placeholder="Project name…"
+            placeholder="Collection name…"
             className="w-full h-6 text-[13px] leading-6 text-ink bg-transparent border-0 border-b border-dot outline-none px-0 focus:outline-none focus-visible:outline-none focus-visible:ring-0"
           />
         </div>
@@ -385,33 +385,33 @@ export function ProjectTreeNav() {
 
       {flat.length === 0 && !adding && (
         <div className="text-xs leading-6 text-ink-light px-3 italic opacity-60">
-          No projects yet
+          No collections yet
         </div>
       )}
 
       <ConfirmModal
-        isOpen={deletingProject !== null}
-        title="Delete Project"
-        message={`Delete project "${deletingProject?.name}" and all its tasks? This cannot be undone.`}
+        isOpen={deletingCollection !== null}
+        title="Delete Collection"
+        message={`Delete collection "${deletingCollection?.name}" and all its tasks? This cannot be undone.`}
         confirmLabel="Delete"
         cancelLabel="Cancel"
         onConfirm={() => {
-          if (deletingProject) {
-            setProjectsCache((prev) => prev.filter((p) => p.id !== deletingProject.id));
-            apiDeleteProject(deletingProject.id)
+          if (deletingCollection) {
+            setCollectionsCache((prev) => prev.filter((p) => p.id !== deletingCollection.id));
+            apiDeleteCollection(deletingCollection.id)
               .then(() => navigate('/daily'))
-              .catch(() => qc.invalidateQueries({ queryKey: ['projects'] }));
-            setDeletingProject(null);
+              .catch(() => qc.invalidateQueries({ queryKey: ['collections'] }));
+            setDeletingCollection(null);
           }
         }}
-        onCancel={() => setDeletingProject(null)}
+        onCancel={() => setDeletingCollection(null)}
       />
     </div>
   );
 }
 
 interface RowProps {
-  item: FlatProject;
+  item: FlatCollection;
   depth: number;
   isEditing: boolean;
   draft: string;
@@ -424,7 +424,7 @@ interface RowProps {
   onDelete: () => void;
 }
 
-function SortableProjectRow({
+function SortableCollectionRow({
   item,
   depth,
   isEditing,
@@ -450,7 +450,7 @@ function SortableProjectRow({
         transition,
         opacity: isDragging ? 0.5 : 1,
       }}
-      className={`project-row flex items-center gap-[7px] h-6 pr-2 text-[13px] text-ink ${depthClass}`}
+      className={`collection-row flex items-center gap-[7px] h-6 pr-2 text-[13px] text-ink ${depthClass}`}
     >
       <span
         {...attributes}
@@ -460,7 +460,7 @@ function SortableProjectRow({
       >
         <span
           className="w-2 h-2 rounded-full shrink-0 block [filter:saturate(0.55)]"
-          style={{ background: projectColorHex(item.colorName) }}
+          style={{ background: paletteColorHex(item.colorName) }}
         />
       </span>
       {isEditing ? (
@@ -487,18 +487,18 @@ function SortableProjectRow({
           </button>
           <button
             type="button"
-            className="project-row__action bg-transparent border-0 cursor-pointer text-ink-light text-sm leading-none py-0 px-0.5 shrink-0"
-            aria-label={`Add sub-project to ${item.name}`}
-            title="Add sub-project"
+            className="collection-row__action bg-transparent border-0 cursor-pointer text-ink-light text-sm leading-none py-0 px-0.5 shrink-0"
+            aria-label={`Add sub-collection to ${item.name}`}
+            title="Add sub-collection"
             onClick={onAddSub}
           >
             +
           </button>
           <button
             type="button"
-            className="project-row__action bg-transparent border-0 cursor-pointer text-ink-light text-sm leading-none py-0 px-0.5 shrink-0"
+            className="collection-row__action bg-transparent border-0 cursor-pointer text-ink-light text-sm leading-none py-0 px-0.5 shrink-0"
             aria-label={`Delete ${item.name}`}
-            title="Delete project"
+            title="Delete collection"
             onClick={onDelete}
           >
             ×

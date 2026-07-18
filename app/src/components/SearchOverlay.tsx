@@ -2,7 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import type { Task } from './TaskItem';
 
 interface SearchResult {
-  type: 'task' | 'project' | 'label';
+  type: 'task' | 'collection' | 'label';
   id: string;
   title: string;
   subtitle?: string;
@@ -10,16 +10,16 @@ interface SearchResult {
 
 function groupResults(results: SearchResult[]) {
   const tasks = results.filter((r) => r.type === 'task');
-  const projects = results.filter((r) => r.type === 'project');
+  const collections = results.filter((r) => r.type === 'collection');
   const labels = results.filter((r) => r.type === 'label');
-  return { tasks, projects, labels };
+  return { tasks, collections, labels };
 }
 
 interface SearchOverlayProps {
   isOpen: boolean;
   onClose: () => void;
   tasks?: Task[];
-  projects?: Array<{ id: string; name: string }>;
+  collections?: Array<{ id: string; name: string }>;
   labels?: Array<{ id: string; name: string }>;
   onSelectTask?: (id: string) => void;
 }
@@ -28,7 +28,7 @@ export function SearchOverlay({
   isOpen,
   onClose,
   tasks = [],
-  projects = [],
+  collections = [],
   labels = [],
   onSelectTask,
 }: SearchOverlayProps) {
@@ -50,10 +50,10 @@ export function SearchOverlay({
           .filter((t) => t.title.toLowerCase().includes(query.toLowerCase()))
           .slice(0, 10)
           .map((t) => ({ type: 'task' as const, id: t.id, title: t.title, subtitle: t.dueDate })),
-        ...projects
+        ...collections
           .filter((p) => p.name.toLowerCase().includes(query.toLowerCase()))
           .slice(0, 5)
-          .map((p) => ({ type: 'project' as const, id: p.id, title: p.name })),
+          .map((p) => ({ type: 'collection' as const, id: p.id, title: p.name })),
         ...labels
           .filter((l) => l.name.toLowerCase().includes(query.toLowerCase()))
           .slice(0, 5)
@@ -62,7 +62,7 @@ export function SearchOverlay({
     : [];
 
   const grouped = groupResults(results);
-  const flatResults = [...grouped.tasks, ...grouped.projects, ...grouped.labels];
+  const flatResults = [...grouped.tasks, ...grouped.collections, ...grouped.labels];
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -145,7 +145,7 @@ export function SearchOverlay({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Search tasks, projects, labels…"
+            placeholder="Search tasks, collections, labels…"
             aria-label="Search"
             role="combobox"
             aria-expanded={results.length > 0}
@@ -179,8 +179,8 @@ export function SearchOverlay({
           ) : (
             <>
               {renderGroup('Tasks', grouped.tasks, 0)}
-              {renderGroup('Projects', grouped.projects, grouped.tasks.length)}
-              {renderGroup('Labels', grouped.labels, grouped.tasks.length + grouped.projects.length)}
+              {renderGroup('Collections', grouped.collections, grouped.tasks.length)}
+              {renderGroup('Labels', grouped.labels, grouped.tasks.length + grouped.collections.length)}
             </>
           )}
         </div>
