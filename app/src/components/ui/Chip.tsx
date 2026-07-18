@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { projectColorHex } from '../../api/client';
+import { paletteColorHex } from '../../api/client';
 
 export interface ChipProps {
   children: ReactNode;
@@ -17,22 +17,22 @@ export function Chip({ children, className = '' }: ChipProps) {
   );
 }
 
-export interface ProjectChipProps {
+export interface CollectionChipProps {
   name: string;
-  /** Named project color (see PROJECT_COLORS); falls back to ink-light. */
+  /** Named collection color (see PALETTE_COLORS); falls back to ink-light. */
   color?: string;
   className?: string;
 }
 
-// Project chip: quiet dot-grey pill with a colored dot + name.
-export function ProjectChip({ name, color, className = '' }: ProjectChipProps) {
+// Collection chip: quiet dot-grey pill with a colored dot + name.
+export function CollectionChip({ name, color, className = '' }: CollectionChipProps) {
   return (
     <span
-      className={`ui-project-chip inline-flex items-center gap-1.5 text-[11px] leading-6 px-2 rounded-[8px] bg-dot/60 text-ink whitespace-nowrap ${className}`}
+      className={`ui-collection-chip inline-flex items-center gap-1.5 text-[11px] leading-6 px-2 rounded-[8px] bg-dot/60 text-ink whitespace-nowrap ${className}`}
     >
       <span
-        className="ui-project-chip-dot w-2 h-2 rounded-full shrink-0 [filter:saturate(0.55)]"
-        style={{ backgroundColor: projectColorHex(color) }}
+        className="ui-collection-chip-dot w-2 h-2 rounded-full shrink-0 [filter:saturate(0.55)]"
+        style={{ backgroundColor: paletteColorHex(color) }}
       />
       {name}
     </span>

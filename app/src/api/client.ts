@@ -132,7 +132,7 @@ export interface ApiTask {
   title: string;
   description?: string;
   priority: number;
-  projectId: string;
+  collectionId: string;
   sectionId?: string;
   parentTaskId?: string;
   dueDate?: string;
@@ -155,7 +155,7 @@ export interface Preferences {
   smallCaps: boolean;
 }
 
-export async function fetchInboxTasks(): Promise<{ tasks: ApiTask[]; projectId: string | null }> {
+export async function fetchInboxTasks(): Promise<{ tasks: ApiTask[]; collectionId: string | null }> {
   return request('/views/inbox');
 }
 
@@ -189,7 +189,7 @@ export async function apiUpdatePreferences(patch: Partial<Preferences>): Promise
 export async function apiCreateTask(input: {
   title: string;
   priority?: number;
-  projectId?: string;
+  collectionId?: string;
   dueDate?: string;
   parentTaskId?: string;
   depth?: number;
@@ -223,9 +223,9 @@ export async function apiDeleteTask(id: string): Promise<void> {
   await request<unknown>(`/tasks/${id}`, { method: 'DELETE' });
 }
 
-// ── Projects ────────────────────────────────────────────────────────────────
+// ── Collections ────────────────────────────────────────────────────────────────
 
-export interface ApiProject {
+export interface ApiCollection {
   id: string;
   userId: string;
   parentId: string | null;
@@ -238,7 +238,7 @@ export interface ApiProject {
   updatedAt: string;
 }
 
-export const PROJECT_COLORS: ReadonlyArray<{ name: string; hex: string }> = [
+export const PALETTE_COLORS: ReadonlyArray<{ name: string; hex: string }> = [
   { name: 'berry_red', hex: '#b8255f' },
   { name: 'red', hex: '#db4035' },
   { name: 'orange', hex: '#ff9933' },
@@ -261,53 +261,53 @@ export const PROJECT_COLORS: ReadonlyArray<{ name: string; hex: string }> = [
   { name: 'taupe', hex: '#ccac93' },
 ];
 
-const PROJECT_COLOR_HEX = new Map(PROJECT_COLORS.map((c) => [c.name, c.hex]));
+const PALETTE_COLOR_HEX = new Map(PALETTE_COLORS.map((c) => [c.name, c.hex]));
 
-export function projectColorHex(name: string | undefined): string {
-  return (name && PROJECT_COLOR_HEX.get(name)) || 'var(--color-ink-light)';
+export function paletteColorHex(name: string | undefined): string {
+  return (name && PALETTE_COLOR_HEX.get(name)) || 'var(--color-ink-light)';
 }
 
-export async function fetchProjects(): Promise<ApiProject[]> {
-  return request('/projects');
+export async function fetchCollections(): Promise<ApiCollection[]> {
+  return request('/collections');
 }
 
-export async function apiCreateProject(input: {
+export async function apiCreateCollection(input: {
   name: string;
   color: string;
   parentId?: string | null;
-}): Promise<ApiProject> {
-  return request<ApiProject>('/projects', {
+}): Promise<ApiCollection> {
+  return request<ApiCollection>('/collections', {
     method: 'POST',
     body: JSON.stringify(input),
   });
 }
 
-export async function apiUpdateProject(
+export async function apiUpdateCollection(
   id: string,
-  updates: Partial<Pick<ApiProject, 'name' | 'color' | 'parentId' | 'orderValue'>>,
-): Promise<ApiProject> {
-  return request<ApiProject>(`/projects/${id}`, {
+  updates: Partial<Pick<ApiCollection, 'name' | 'color' | 'parentId' | 'orderValue'>>,
+): Promise<ApiCollection> {
+  return request<ApiCollection>(`/collections/${id}`, {
     method: 'PATCH',
     body: JSON.stringify(updates),
   });
 }
 
-export async function apiDeleteProject(id: string): Promise<void> {
-  await request<unknown>(`/projects/${id}`, { method: 'DELETE' });
+export async function apiDeleteCollection(id: string): Promise<void> {
+  await request<unknown>(`/collections/${id}`, { method: 'DELETE' });
 }
 
-export async function apiArchiveProject(id: string): Promise<ApiProject> {
-  return request<ApiProject>(`/projects/${id}/archive`, { method: 'POST' });
+export async function apiArchiveCollection(id: string): Promise<ApiCollection> {
+  return request<ApiCollection>(`/collections/${id}/archive`, { method: 'POST' });
 }
 
-export interface ProjectView {
-  project: { id: string; name: string; color: string; isInbox: boolean };
+export interface CollectionView {
+  collection: { id: string; name: string; color: string; isInbox: boolean };
   tasks: ApiTask[];
-  projectId: string;
+  collectionId: string;
 }
 
-export async function fetchProjectView(id: string): Promise<ProjectView> {
-  return request<ProjectView>(`/views/project/${id}`);
+export async function fetchCollectionView(id: string): Promise<CollectionView> {
+  return request<CollectionView>(`/views/collection/${id}`);
 }
 
 // ── Habits ───────────────────────────────────────────────────────────────────

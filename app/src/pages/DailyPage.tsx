@@ -58,7 +58,7 @@ function apiToTask(t: ApiTask): Task {
     isCompleted: t.isCompleted,
     orderValue: t.orderValue,
     indent: t.depth ?? 0,
-    projectId: t.projectId,
+    collectionId: t.collectionId,
     dueDate: t.dueDate ? t.dueDate.slice(0, 10) : undefined,
     type: t.type,
     createdAt: t.createdAt,
@@ -390,9 +390,9 @@ export function DailyPage() {
     updateSections((prev) =>
       prev.map((s) => {
         if (!s.tasks.some((t) => t.id === id)) return s;
-        // Cross-project view: only nest under a same-project preceding task.
+        // Cross-collection view: only nest under a same-collection preceding task.
         const { tasks: next, parentTaskId, changed } = applyIndent(s.tasks, id, dir, {
-          sameProjectOnly: true,
+          sameCollectionOnly: true,
         });
         if (!changed) return s;
         if (!id.startsWith('temp-')) {

@@ -116,9 +116,9 @@ components:
     rounded: '{rounded.md}'
     padding: '24px 32px'
   habit-dot:
-    backgroundColor: '{colors.ink}'
-    width: '16px'
-    height: '16px'
+    backgroundColor: '{colors.ink-lighter}'
+    width: '8px'
+    height: '8px'
 ---
 
 # Design System: Planner
@@ -186,7 +186,7 @@ A short palette of warm, slightly aged neutrals with one brick-red anchor; every
 - **Headline** (Lora 600, 16px / 24px): Section titles inside a page; secondary headings inside overlay panels.
 - **Body** (Lora 400, 14px / 24px): Task titles, prose, default text. 24px line height locks to the baseline grid.
 - **Caption** (Lora 400, 12px / 24px): Due dates, italic sub-notes, empty states. Italics are part of this style.
-- **Label** (Lora 500, 11px / 24px, `letter-spacing: 0.1em`, UPPERCASE): Section dividers ("OVERDUE", "TODAY", "PROJECTS"). The only uppercase style in the system.
+- **Label** (Lora 500, 11px / 24px, `letter-spacing: 0.1em`, UPPERCASE): Section dividers ("OVERDUE", "TODAY", "COLLECTIONS"). The only uppercase style in the system.
 - **Mono** (monospace, 11px / 16px): Keyboard caps inside the help panel and the sidebar footer hints. Nothing else.
 
 ### Named Rules
@@ -295,7 +295,7 @@ those same components rather than copying them.
 
 ### Navigation
 
-- **Top-level:** Three primary destinations (Inbox, Daily, Upcoming) plus secondary (Habits, Projects). All in the left sidebar; no top bar.
+- **Top-level:** Three primary destinations (Inbox, Daily, Upcoming) plus secondary (Habits, Collections). All in the left sidebar; no top bar.
 - **Active state:** See Sidebar Link.
 - **Mobile:** Sidebar collapses to a 240px drawer that slides in from the left with a 200ms ease transition. Backdrop dims to `rgba(44,44,44,0.3)`.
 

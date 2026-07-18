@@ -6,7 +6,7 @@ import { AppShell } from './components/AppShell';
 import { OfflineIndicator } from './components/OfflineIndicator';
 import { LoginPage } from './pages/LoginPage';
 import { InboxPage } from './pages/InboxPage';
-import { ProjectsPage } from './pages/ProjectsPage';
+import { CollectionsPage } from './pages/CollectionsPage';
 import { DailyPage } from './pages/DailyPage';
 import { HabitsPage } from './pages/HabitsPage';
 import { MonthlyPage } from './pages/MonthlyPage';
@@ -29,7 +29,7 @@ function AppRoutes() {
           <Route path="/habits" element={<HabitsPage />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="/styleguide" element={<StyleguidePage />} />
-          <Route path="/project/:id" element={<ProjectsPage />} />
+          <Route path="/collection/:id" element={<CollectionsPage />} />
         </Route>
       </Routes>
     </BrowserRouter>

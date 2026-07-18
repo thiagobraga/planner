@@ -4,6 +4,7 @@
   --color-cream: #f5f0e8;
   --color-ink: #44443d;
   --color-ink-light: #8b867e;
+  --color-ink-lighter: #c5c1ba;
   --color-dot: #d8d3cb;
   --color-border: #e5e1d8;
   --color-accent: #c9483b;
@@ -170,8 +171,7 @@ kbd {
 }
 
 .main-content,
-.sidebar-drawer,
-aside[aria-label="Navigation"] {
+.sidebar-drawer {
   scrollbar-gutter: stable;
 }
 
@@ -293,6 +293,14 @@ textarea:focus-visible {
   box-shadow: none;
 }
 
+/* Collapsed sidebar */
+.sidebar-collapsed {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 /* Collapsed sidebar icon links */
 .sidebar-icon-link {
   display: flex;
@@ -321,19 +329,19 @@ textarea:focus-visible {
   padding: 24px 12px;
 }
 
-/* Project rows - reveal row actions on hover */
-.project-row {
+/* Collection rows - reveal row actions on hover */
+.collection-row {
   border-radius: 4px;
 
   &:hover {
     background: rgba(212, 207, 199, 0.4);
   }
 }
-.project-row__action {
+.collection-row__action {
   opacity: 0;
   transition: opacity 120ms ease;
 }
-.project-row:hover .project-row__action {
+.collection-row:hover .collection-row__action {
   opacity: 0.7;
 }
 

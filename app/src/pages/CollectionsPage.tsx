@@ -1,11 +1,11 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
-import { useParams } from 'react-router';
+import { Fragment, useState, useRef, useCallback, useEffect, useMemo } from 'react';
+import { useParams, Link } from 'react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { TaskList } from '../components/TaskList';
 import { setPendingColumn } from '../components/TaskItem';
 import type { Task } from '../components/TaskItem';
 import {
-  fetchProjectView,
+  fetchCollectionView,
   apiCreateTask,
   apiUpdateTask,
   apiToggleTask,
@@ -13,7 +13,8 @@ import {
   type ApiTask,
 } from '../api/client';
 import { useAuth } from '../contexts/AuthContext';
-import { applyIndent } from '../utils/taskTree';
+import { applyIndent, getParentCandidate } from '../utils/taskTree';
+import { fetchCollections, paletteColorHex } from '../api/client';
 
 function apiToTask(t: ApiTask): Task {
   return {
@@ -21,7 +22,7 @@ function apiToTask(t: ApiTask): Task {
     title: t.title,
     description: t.description,
     priority: t.priority,
-    projectId: t.projectId,
+    collectionId: t.collectionId,
     dueDate: t.dueDate ?? undefined,
     isCompleted: t.isCompleted,
     orderValue: t.orderValue,
@@ -33,7 +34,7 @@ function apiToTask(t: ApiTask): Task {
 let tempCounter = 0;
 function tempId() { return `temp-${++tempCounter}`; }
 
-export function ProjectsPage() {
+export function CollectionsPage() {
   const { id = '' } = useParams();
   const qc = useQueryClient();
   const { logout } = useAuth();
@@ -48,8 +49,8 @@ export function ProjectsPage() {
   }, [id]);
 
   const { data, error } = useQuery({
-    queryKey: ['project', id],
-    queryFn: () => fetchProjectView(id),
+    queryKey: ['collection', id],
+    queryFn: () => fetchCollectionView(id),
     staleTime: 30_000,
     enabled: !!id,
   });
@@ -68,7 +69,7 @@ export function ProjectsPage() {
   }, [error, logout]);
 
   const invalidate = useCallback(
-    () => qc.invalidateQueries({ queryKey: ['project', id] }),
+    () => qc.invalidateQueries({ queryKey: ['collection', id] }),
     [qc, id],
   );
 
@@ -82,7 +83,7 @@ export function ProjectsPage() {
       ...prev,
       { id: tid, title: trimmed, priority: 4, isCompleted: false, orderValue: prev.length + 1, type: 'task' },
     ]);
-    apiCreateTask({ title: trimmed, priority: 4, projectId: id })
+    apiCreateTask({ title: trimmed, priority: 4, collectionId: id })
       .then((created) => {
         setTasks((prev) => prev.map((t) => (t.id === tid ? apiToTask(created) : t)));
       })
@@ -127,7 +128,13 @@ export function ProjectsPage() {
     }
     setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, title: trimmed } : t)));
     if (taskId.startsWith('temp-')) {
-      apiCreateTask({ title: trimmed, priority: 4, projectId: id })
+      let parentTaskId: string | undefined;
+      const currentIndent = tasks.find((t) => t.id === taskId)?.indent ?? 0;
+      if (currentIndent > 0) {
+        const idx = tasks.findIndex((t) => t.id === taskId);
+        parentTaskId = getParentCandidate(tasks, idx, currentIndent) ?? undefined;
+      }
+      apiCreateTask({ title: trimmed, priority: 4, collectionId: id, parentTaskId, depth: currentIndent })
         .then((created) => {
           setTasks((prev) => prev.map((t) => (t.id === taskId ? apiToTask(created) : t)));
         })
@@ -137,7 +144,7 @@ export function ProjectsPage() {
     } else {
       apiUpdateTask(taskId, { title: trimmed }).catch(() => invalidate());
     }
-  }, [id]);
+  }, [id, tasks, invalidate]);
   const handleEditCancel = useCallback((taskId: string) => {
     setEditingId(undefined);
     if (taskId.startsWith('temp-')) {
@@ -202,6 +209,32 @@ export function ProjectsPage() {
       if (task) apiToggleTask(taskId, !task.isCompleted).catch(() => invalidate());
     }
   }, [tasks]);
+
+  // Same query key the sidebar uses, so the ancestor lookup reads from a cache
+  // that is already populated rather than refetching.
+  const { data: collections = [] } = useQuery({ queryKey: ['collections'], queryFn: fetchCollections });
+
+  // A sub-collection reads as a breadcrumb of its ancestors, so its place in the
+  // tree is visible from the page itself. Falls back to the view payload when the
+  // sidebar store has not loaded yet.
+  const trail = useMemo(() => {
+    const byId = new Map(collections.map((c) => [c.id, c]));
+    const out: { id: string; name: string; color: string }[] = [];
+    const seen = new Set<string>();
+
+    let current = byId.get(id);
+    while (current && !seen.has(current.id)) {
+      seen.add(current.id);
+      out.unshift({ id: current.id, name: current.name, color: paletteColorHex(current.color) });
+      current = current.parentId ? byId.get(current.parentId) : undefined;
+    }
+
+    if (out.length > 0) return out;
+    return data?.collection
+      ? [{ id: data.collection.id, name: data.collection.name, color: paletteColorHex(data.collection.color) }]
+      : [];
+  }, [collections, id, data]);
+
   return (
     <div
       className="max-w-162 cursor-text"
@@ -210,8 +243,36 @@ export function ProjectsPage() {
         inputRef.current?.focus();
       }}
     >
-      <h1 className="text-lg leading-6 h-6 font-semibold text-ink">
-        {data?.project.name ?? 'Project'}
+      <h1 className="collections-page-title flex h-6 items-center gap-2 text-lg leading-6 font-semibold text-ink">
+        {trail.map((crumb, i) => {
+          const isCurrent = i === trail.length - 1;
+          return (
+            <Fragment key={crumb.id}>
+              {i > 0 && (
+                <span className="collections-page-title-separator font-normal text-ink-light opacity-50" aria-hidden="true">
+                  /
+                </span>
+              )}
+              <span className="collections-page-crumb flex min-w-0 items-center gap-2">
+                <span
+                  aria-hidden="true"
+                  className="h-2 w-2 shrink-0 rounded-full"
+                  style={{ background: crumb.color }}
+                />
+                {isCurrent ? (
+                  <span className="truncate">{crumb.name}</span>
+                ) : (
+                  <Link
+                    to={`/collection/${crumb.id}`}
+                    className="truncate text-ink-light transition-colors hover:text-ink"
+                  >
+                    {crumb.name}
+                  </Link>
+                )}
+              </span>
+            </Fragment>
+          );
+        })}
       </h1>
 
       <div className="h-6" />

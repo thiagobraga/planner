@@ -9,7 +9,7 @@ interface Token {
 }
 
 const KEYWORDS = ['today', 'overdue', 'no date', 'p1', 'p2', 'p3', 'p4', 'assigned to: me'];
-const PROJECT_RE = /^#\S+/;
+const COLLECTION_RE = /^#\S+/;
 const LABEL_RE = /^@\S+/;
 const DATE_FILTER_RE = /^due\s*(?:before|after)?:\s*\d{4}-\d{2}-\d{2}/;
 const LOGIC_OPS = ['&', '|', '!'];
@@ -42,8 +42,8 @@ function tokenize(input: string): Token[] {
       continue;
     }
 
-    // Project
-    const projMatch = s.slice(i).match(PROJECT_RE);
+    // Collection
+    const projMatch = s.slice(i).match(COLLECTION_RE);
     if (projMatch) {
       tokens.push({ text: projMatch[0], type: 'keyword' });
       i += projMatch[0].length;
@@ -193,7 +193,7 @@ export function FilterBar({ value: externalValue, onChange, onApply }: FilterBar
           onKeyDown={handleKeyDown}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
-          placeholder="Filter: #project @label p1 today overdue…"
+          placeholder="Filter: #collection @label p1 today overdue…"
           aria-label="Filter tasks"
           aria-invalid={!!error}
           aria-describedby={error ? 'filter-error' : undefined}

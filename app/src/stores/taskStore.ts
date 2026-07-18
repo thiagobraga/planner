@@ -5,7 +5,7 @@ interface Task {
   title: string;
   description?: string;
   priority: number;
-  projectId: string;
+  collectionId: string;
   sectionId?: string;
   parentTaskId?: string;
   dueDate?: string;

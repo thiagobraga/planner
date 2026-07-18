@@ -13,9 +13,9 @@ function list(...rows: Array<[string, number]>): TreeNode[] {
   return rows.map(([id, indent]) => ({ id, indent }));
 }
 
-// Like `list` but with a project id per row: [id, indent, projectId].
+// Like `list` but with a collection id per row: [id, indent, collectionId].
 function plist(...rows: Array<[string, number, string]>): TreeNode[] {
-  return rows.map(([id, indent, projectId]) => ({ id, indent, projectId }));
+  return rows.map(([id, indent, collectionId]) => ({ id, indent, collectionId }));
 }
 
 describe('computeIndent', () => {
@@ -120,16 +120,16 @@ describe('applyIndent', () => {
     expect(r.tasks.map((t) => t.indent)).toEqual([0, 0]);
   });
 
-  it('sameProjectOnly: no-op when the structural parent is a different project', () => {
+  it('sameCollectionOnly: no-op when the structural parent is a different collection', () => {
     const l = plist(['a', 0, 'p1'], ['b', 0, 'p2']);
-    const r = applyIndent(l, 'b', 1, { sameProjectOnly: true });
+    const r = applyIndent(l, 'b', 1, { sameCollectionOnly: true });
     expect(r.changed).toBe(false);
     expect(r.tasks).toBe(l);
   });
 
-  it('sameProjectOnly: allows nesting under a same-project parent', () => {
+  it('sameCollectionOnly: allows nesting under a same-collection parent', () => {
     const l = plist(['a', 0, 'p1'], ['b', 0, 'p1']);
-    const r = applyIndent(l, 'b', 1, { sameProjectOnly: true });
+    const r = applyIndent(l, 'b', 1, { sameCollectionOnly: true });
     expect(r.changed).toBe(true);
     expect(r.parentTaskId).toBe('a');
   });
