@@ -315,16 +315,29 @@ export async function fetchProjectView(id: string): Promise<ProjectView> {
 export interface ApiHabit {
   id: string;
   name: string;
-  note?: string;
+  // Sub-habits are one level deep: a habit with a parentId has no children of its own.
+  parentId: string | null;
+  // Sub-habits inherit their parent's group, so their own groupId is always null.
+  groupId: string | null;
   orderValue: number;
-  completions: string[]; // ISO dates (YYYY-MM-DD), last 12 weeks
+  completions: string[]; // ISO dates (YYYY-MM-DD)
+}
+
+export interface ApiHabitGroup {
+  id: string;
+  name: string;
+  orderValue: number;
 }
 
 export async function fetchHabits(): Promise<ApiHabit[]> {
   return request('/habits');
 }
 
-export async function apiCreateHabit(input: { name: string; note?: string }): Promise<ApiHabit> {
+export async function apiCreateHabit(input: {
+  name: string;
+  parentId?: string | null;
+  groupId?: string | null;
+}): Promise<ApiHabit> {
   return request<ApiHabit>('/habits', {
     method: 'POST',
     body: JSON.stringify(input),
@@ -333,7 +346,7 @@ export async function apiCreateHabit(input: { name: string; note?: string }): Pr
 
 export async function apiUpdateHabit(
   id: string,
-  updates: { name?: string; note?: string | null; orderValue?: number },
+  updates: { name?: string; parentId?: string | null; groupId?: string | null; orderValue?: number },
 ): Promise<ApiHabit> {
   return request<ApiHabit>(`/habits/${id}`, {
     method: 'PATCH',
@@ -345,6 +358,8 @@ export async function apiDeleteHabit(id: string): Promise<void> {
   await request<unknown>(`/habits/${id}`, { method: 'DELETE' });
 }
 
+// Only leaf habits accept completions. A parent's state is derived from its
+// sub-habits, and the API rejects a write here for a habit that has children.
 export async function apiToggleHabitCompletion(
   id: string,
   date: string,
@@ -354,4 +369,30 @@ export async function apiToggleHabitCompletion(
     method: 'PUT',
     body: JSON.stringify({ date, isCompleted }),
   });
+}
+
+export async function fetchHabitGroups(): Promise<ApiHabitGroup[]> {
+  return request('/habit-groups');
+}
+
+export async function apiCreateHabitGroup(input: { name: string }): Promise<ApiHabitGroup> {
+  return request<ApiHabitGroup>('/habit-groups', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+}
+
+export async function apiUpdateHabitGroup(
+  id: string,
+  updates: { name?: string; orderValue?: number },
+): Promise<ApiHabitGroup> {
+  return request<ApiHabitGroup>(`/habit-groups/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(updates),
+  });
+}
+
+// Habits in the group are ungrouped, not deleted.
+export async function apiDeleteHabitGroup(id: string): Promise<void> {
+  await request<unknown>(`/habit-groups/${id}`, { method: 'DELETE' });
 }

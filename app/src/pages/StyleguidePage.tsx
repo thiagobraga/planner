@@ -4,6 +4,7 @@ import { BjTask, MonthlyIcon } from '../components/Sidebar';
 import { SidebarNavItem } from '../components/SidebarNavItem';
 import { ChevronRight, Repeat2 } from 'lucide-react';
 import { MonthlyCalendarSpecimen } from '../components/monthly/MonthlyCalendarSpecimen';
+import { HabitSpecimen } from '../components/habits/HabitSpecimen';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Select } from '../components/ui/Select';
@@ -86,13 +87,14 @@ const SECONDARY_COLORS = [
   { name: 'Warm Brick Red', var: '--color-accent', hex: '#c9483b' },
   { name: 'Felt-Tip Red', var: '--color-accent-light', hex: '#e76052' },
   { name: 'Orange', var: '--color-priority-2', hex: '#e39133' },
-  { name: 'Annotation Blue', var: '--color-priority-3', hex: '#4d8fd6' },
   { name: 'Soft Moss', var: '--color-moss', hex: '#8ca46a' },
+  { name: 'Annotation Blue', var: '--color-priority-3', hex: '#4d8fd6' },
 ];
 
 const INK_COLORS = [
   { name: 'Ink', var: '--color-ink', hex: '#44443d' },
   { name: 'Ink Light', var: '--color-ink-light', hex: '#8b867e' },
+  { name: 'Ink Lighter', var: '--color-ink-lighter', hex: '#c5c1ba' },
 ];
 
 export function StyleguidePage() {
@@ -206,7 +208,7 @@ export function StyleguidePage() {
             <div>
               <h3 className="text-[10px] text-ink-light uppercase tracking-[0.1em] font-semibold">Primary Palette</h3>
               <p className="text-[11px] text-ink-light opacity-70 -mt-2 mb-4">Base neutral and structural colors - calm, readable foundations for content.</p>
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 gap-4">
                 {PRIMARY_COLORS.map(({ name, var: varName, hex }) => (
                   <div key={varName} className="flex items-start gap-3">
                     <span
@@ -226,7 +228,7 @@ export function StyleguidePage() {
             <div>
               <h3 className="text-[10px] text-ink-light uppercase tracking-[0.1em] font-semibold -mb-2">Secondary Palette</h3>
               <p className="text-[11px] text-ink-light opacity-70 -mt-2 mb-4">Accent and semantic colors - for emphasis, priority, and status signals.</p>
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 gap-4">
                 {SECONDARY_COLORS.map(({ name, var: varName, hex }) => (
                   <div key={varName} className="flex items-start gap-3">
                     <span
@@ -246,9 +248,9 @@ export function StyleguidePage() {
           </div>
           <div className="mt-6 pt-6">
             <h3 className="text-[10px] text-ink-light uppercase tracking-[0.1em] font-semibold mb-4">Text & Foreground</h3>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 gap-4">
               {INK_COLORS.map(({ name, var: varName, hex }) => (
-                <div key={varName} className="flex items-start gap-3 sm:flex-col sm:items-center sm:text-center">
+                <div key={varName} className="flex items-start gap-3">
                   <span
                     className="w-10 h-10 rounded-[6px] border border-border flex-shrink-0 sm:flex-shrink"
                     style={{ backgroundColor: hex }}
@@ -307,8 +309,25 @@ export function StyleguidePage() {
               <Button variant="secondary" leftIcon={<Calendar />} disabled>Add date</Button>
             </div>
           </div>
+          <div className="mt-6 pt-6 border-t border-border">
+            <span className="text-[10px] text-ink-light uppercase tracking-[0.1em] font-semibold block mb-4">Size Variations</span>
+            <div className="flex items-center gap-4 flex-wrap">
+              <div className="flex flex-col items-start gap-1">
+                <Button variant="secondary" size="lg">Large</Button>
+                <span className="text-[9px] text-ink-light font-mono">lg · 40px · r-8</span>
+              </div>
+              <div className="flex flex-col items-start gap-1">
+                <Button variant="secondary" size="md">Medium</Button>
+                <span className="text-[9px] text-ink-light font-mono">md · 32px · r-6</span>
+              </div>
+              <div className="flex flex-col items-start gap-1">
+                <Button variant="secondary" size="sm">Small</Button>
+                <span className="text-[9px] text-ink-light font-mono">sm · 24px · r-4</span>
+              </div>
+            </div>
+          </div>
           <p className="mt-4 text-[11px] leading-5 text-ink-light">
-            Default height: 40px · Radius: 8px · Icons left with 8px spacing.
+            lg: 40px / r-8 · md: 32px / r-6 · sm: 24px / r-4 (dot row) · Icons left with 8px spacing.
           </p>
         </Card>
 
@@ -466,57 +485,80 @@ export function StyleguidePage() {
           <MonthlyCalendarSpecimen compact />
         </Card>
 
-        {/* 9 - Habit Chain */}
-        <Card title="Habit Chain">
-          <div className="flex flex-col gap-4">
-            <div className="grid [grid-template-columns:repeat(7,16px)] gap-x-[6px] text-[10px] text-ink-light tracking-wider">
-              {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((d, i) => (
-                <span key={i} className="text-center opacity-70 w-4 font-semibold">{d}</span>
-              ))}
-            </div>
-            <div className="grid [grid-template-columns:repeat(7,16px)] [grid-auto-rows:16px] gap-[6px]">
-              {habitCells.map(({ iso, col, row, future }) => {
-                if (future) return <span key={iso} aria-hidden className="w-4 h-4" />;
-                const completed = completedDays.has(iso);
-                const isToday = iso === todayIso;
-                return (
-                  <button
-                    key={iso}
-                    type="button"
-                    onClick={() => toggleHabitCell(iso)}
-                    aria-label={`${iso}${completed ? ' completed' : ''}`}
-                    className={`w-4 h-4 p-0 cursor-pointer ${isToday ? '[border:1.5px_solid_var(--color-ink)] bg-transparent' : completed ? 'border-none bg-ink' : 'border border-border bg-transparent'
-                      }`}
-                    style={{ ...cellShape(col, row, completed), transition: 'background 120ms ease-out, border-radius 120ms ease-out' }}
-                  />
-                );
-              })}
-            </div>
-            <div className="text-xs text-ink-light leading-5 flex flex-col gap-1 mt-1">
-              <div className="flex items-center gap-2">
-                <span className="w-4 h-4 border border-border rounded-full inline-block" />
-                <span>Empty cell (incomplete)</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="w-4 h-4 bg-ink rounded-full inline-block" />
-                <span>Isolated completed day</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="flex gap-[6px]">
-                  <span className="w-4 h-4 bg-ink rounded-l-full inline-block" />
-                  <span className="w-4 h-4 bg-ink rounded-r-full inline-block" />
+        {/* 9 - Habit */}
+        <Card title="Habit" span>
+          <HabitSpecimen />
+        </Card>
+        {/* 10 - Calendar */}
+        <Card title="Calendar">
+          {(() => {
+            const fmtISO = (d: Date) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+            const todayD = new Date(); todayD.setHours(0,0,0,0);
+            const todayISO = fmtISO(todayD);
+            const DOW = ['M','T','W','T','F','S','S'];
+            const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+            const [viewDate, setViewDate] = useState(() => new Date(todayD.getFullYear(), todayD.getMonth(), 1));
+            const [selected, setSelected] = useState<string>(todayISO);
+
+            const year = viewDate.getFullYear();
+            const month = viewDate.getMonth();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const firstDow = (new Date(year, month, 1).getDay() + 6) % 7; // Mon=0
+
+            const prevMonth = () => setViewDate(new Date(year, month - 1, 1));
+            const nextMonth = () => setViewDate(new Date(year, month + 1, 1));
+
+            const cells = Array.from({length: daysInMonth}, (_, i) => {
+              const d = new Date(year, month, i + 1);
+              return { iso: fmtISO(d), day: i + 1, future: d > todayD };
+            });
+
+            return (
+              <div className="w-fit">
+                {/* header: month nav */}
+                <div className="flex items-center justify-between mb-3" style={{width: 7 * 24}}>
+                  <button type="button" onClick={prevMonth}
+                    className="flex h-6 w-6 items-center justify-center rounded-[4px] text-ink-light hover:text-ink hover:bg-dot/30 cursor-pointer border-none bg-transparent transition-colors">
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M7.5 2L4 6l3.5 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  </button>
+                  <span className="text-[11px] font-medium text-ink tracking-[0.04em]">{MONTHS[month]} {year}</span>
+                  <button type="button" onClick={nextMonth}
+                    className="flex h-6 w-6 items-center justify-center rounded-[4px] text-ink-light hover:text-ink hover:bg-dot/30 cursor-pointer border-none bg-transparent transition-colors">
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4.5 2L8 6l-3.5 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                  </button>
                 </div>
-                <span>Consecutive days (fused capsule)</span>
+                {/* day-of-week header */}
+                <div className="grid" style={{gridTemplateColumns:'repeat(7, 24px)'}}>
+                  {DOW.map((l, i) => (
+                    <span key={i} className="flex items-center justify-center h-6 text-[10px] text-ink-light opacity-60 font-medium">{l}</span>
+                  ))}
+                </div>
+                {/* day cells */}
+                <div className="grid" style={{gridTemplateColumns:'repeat(7, 24px)'}}>
+                  {Array.from({length: firstDow}, (_, i) => <span key={`p${i}`} style={{width:24,height:24}} />)}
+                  {cells.map(({iso, day, future}) => {
+                    const isSel = iso === selected;
+                    const isToday = iso === todayISO;
+                    return (
+                      <button
+                        key={iso} type="button" disabled={future}
+                        onClick={() => setSelected(iso)}
+                        className={`flex items-center justify-center text-[11px] rounded-full cursor-pointer border-none transition-colors duration-[var(--motion-fast)] disabled:cursor-default disabled:opacity-30
+                          ${isSel ? 'bg-ink text-cream font-semibold' : isToday ? 'bg-transparent text-ink font-semibold border border-ink' : 'bg-transparent hover:bg-dot/40 text-ink-light hover:text-ink'}
+                        `}
+                        style={{width:24,height:24}}
+                      >
+                        {day}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <span className="w-4 h-4 [border:1.5px_solid_var(--color-ink)] rounded-full inline-block" />
-                <span>Today indicator</span>
-              </div>
-            </div>
-          </div>
+            );
+          })()}
         </Card>
 
-        {/* 10 - Essential Tokens */}
+        {/* 11 - Essential Tokens */}
         <Card title="Essential Tokens" span>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             <div>
