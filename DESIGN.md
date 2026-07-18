@@ -273,14 +273,25 @@ Mostly flat. Depth is carried first by three quiet mechanisms: (1) tint, by step
 - **Shadow:** The single overlay drop (see Elevation).
 - **Dismissal:** Click backdrop or Escape. No close X by default; if needed, it's a serif "Close" button, not an icon.
 
-### Habit Dot Grid (signature)
+### Habit Day Dot (signature)
 
-- **Cell:** 16×16px circle, 6px gap.
+One 24×24px cell holds one 8px dot. The same dot renders in both habit views — the
+month timeline and the calendar grid — so a habit reads identically in each.
+
 - **Empty:** 1px Dot Grey border, transparent fill.
-- **Completed:** Ink fill, no border.
-- **The Capsule Rule:** Consecutive completed days in the same row collapse their inner corners (`border-radius` becomes `0` on the adjacent edge), fusing into a single ink capsule. The capsule IS the chain visualization; no connector lines, no flame icons, no streak counters overlaid.
-- **Today:** 1.5px Ink ring outline, regardless of completion state.
-- **Future:** Renders as empty grid space, no cell drawn.
+- **Half:** bottom half filled with Ink Lighter, 1px Dot Grey border. Reserved for a
+  parent habit whose sub-habits are only partly done that day. A habit without
+  sub-habits is never half.
+- **Full:** Ink Lighter fill, no border.
+- **The Chain Rule:** Consecutive days with any progress — full **or** half — are
+  joined by a 2px Ink Lighter connector drawn from cell edge to cell edge, reading
+  as one unbroken stroke. The connector IS the chain visualization; no flame icons,
+  no streak counters overlaid. Only an empty day breaks the chain: partial credit
+  still keeps the run alive.
+- **Future:** Renders as empty grid space, no cell drawn, not clickable.
+
+Implemented once in `HabitDot` and `HabitMonthGrid`; the styleguide specimen drives
+those same components rather than copying them.
 
 ### Navigation
 
@@ -297,8 +308,8 @@ Mostly flat. Depth is carried first by three quiet mechanisms: (1) tint, by step
 - **Do** let the dot grid show through. If a section sits on the body background, do not opaque-fill it.
 - **Do** convey depth with tint (Cream → Sidebar Cream → Dot Grey) and 1px Dot Grey hairlines, not shadow.
 - **Do** reserve Warm Brick Red for state that requires the eye to stop: overdue, P1, error, active caret. Keep it under 10% of screen surface.
-- **Do** render counters and metrics in the Numeric style (Lora 600, 56px, tight letter-spacing) when they earn the weight, like the unbroken-chain count.
-- **Do** use the Capsule Rule to fuse consecutive completed habit days into a single ink stroke. The capsule is the chain.
+- **Do** render counters and metrics in the Numeric style (Lora 600, 56px, tight letter-spacing) when they earn the weight.
+- **Do** use the Chain Rule to join consecutive completed habit days into a single unbroken stroke. The connected run is the chain.
 - **Do** style labels as UPPERCASE with `letter-spacing: 0.1em` at 11px. That treatment belongs to labels and nothing else.
 
 ### Don't:
