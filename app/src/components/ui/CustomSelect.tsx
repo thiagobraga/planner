@@ -186,7 +186,7 @@ export function CustomSelect({
 
   const buttonClasses = `
     flex items-center gap-2 w-full h-10 px-3
-    text-sm text-left bg-cream border rounded-[8px]
+    text-sm text-left bg-[var(--planner-control-bg)] border rounded-[8px]
     transition-colors duration-[var(--motion-fast)]
     ${disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}
     ${error ? 'border-accent text-accent' : 'border-border focus:border-ink'}
@@ -228,7 +228,7 @@ export function CustomSelect({
       )}
 
       {isOpen && (alwaysOpen ? (
-        <div className="ui-custom-select-dropdown absolute z-10 p-1 bg-cream border border-border rounded-md shadow-medium left-0 right-0 top-full mt-1">
+        <div className="ui-custom-select-dropdown absolute z-10 p-1 bg-[var(--planner-control-bg)] border border-border rounded-md shadow-medium left-0 right-0 top-full mt-1">
           <ul
               id={`${id}-listbox`}
               role="listbox"
@@ -244,11 +244,11 @@ export function CustomSelect({
                 if (option.disabled) {
                   itemClass += `opacity-40 cursor-not-allowed text-ink-light [text-shadow:0_1px_0_rgba(255,255,255,0.7)] `;
                 } else if (isSelected) {
-                  itemClass += `bg-[#d4cfc7]/60 text-ink `;
+                  itemClass += `bg-dot/60 text-ink `;
                 } else if (isHighlighted) {
-                  itemClass += `bg-[#d4cfc7]/40 text-ink `;
+                  itemClass += `bg-dot/40 text-ink `;
                 } else {
-                  itemClass += `text-ink hover:bg-[#d4cfc7]/40 `;
+                  itemClass += `text-ink hover:bg-dot/40 `;
                 }
 
                 return (
@@ -271,7 +271,7 @@ export function CustomSelect({
         createPortal(
           <div
             ref={floatingRef}
-            className="ui-custom-select-dropdown fixed z-50 p-1 bg-cream border border-border rounded-md shadow-medium"
+            className="ui-custom-select-dropdown fixed z-50 p-1 bg-[var(--planner-control-bg)] border border-border rounded-md shadow-medium"
             style={{
               top,
               left,
@@ -293,11 +293,11 @@ export function CustomSelect({
                 if (option.disabled) {
                   itemClass += `opacity-40 cursor-not-allowed text-ink-light [text-shadow:0_1px_0_rgba(255,255,255,0.7)] `;
                 } else if (isSelected) {
-                  itemClass += `bg-[#d4cfc7]/60 text-ink `;
+                  itemClass += `bg-dot/60 text-ink `;
                 } else if (isHighlighted) {
-                  itemClass += `bg-[#d4cfc7]/40 text-ink `;
+                  itemClass += `bg-dot/40 text-ink `;
                 } else {
-                  itemClass += `text-ink hover:bg-[#d4cfc7]/40 `;
+                  itemClass += `text-ink hover:bg-dot/40 `;
                 }
 
                 return (
@@ -316,7 +316,7 @@ export function CustomSelect({
               })}
             </ul>
           </div>,
-          document.body
+          triggerRef.current?.closest('.app-shell') ?? document.body
         )
       ))}
     </div>

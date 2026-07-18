@@ -48,9 +48,12 @@ export function AppShell() {
   const shellThemeStyle = {
     backgroundColor: pageBackground,
     '--color-dot': isWhiteBackground ? '#e5e1d8' : '#d8d3cb',
+    '--color-sidebar-bg': isWhiteBackground ? '#f1f1f1' : '#ebe6de',
     '--planner-page-bg': pageBackground,
-    '--planner-sidebar-bg': isWhiteBackground ? '#f1f1f1' : 'var(--color-sidebar-bg)',
-    '--planner-card-bg': isWhiteBackground ? '#fafafa' : '#ebe6de',
+    '--planner-sidebar-bg': 'var(--color-sidebar-bg)',
+    '--planner-card-bg': 'var(--color-sidebar-bg)',
+    '--planner-sidebar-active-bg': isWhiteBackground ? 'rgba(212, 212, 212, 0.55)' : 'rgba(212, 207, 199, 0.5)',
+    '--planner-sidebar-hover-bg': isWhiteBackground ? 'rgba(212, 212, 212, 0.35)' : 'rgba(212, 207, 199, 0.4)',
     '--planner-control-bg': isWhiteBackground ? '#ffffff' : 'rgba(245, 240, 232, 0.2)',
     '--planner-control-bg-hover': isWhiteBackground ? '#f5f5f5' : 'rgba(245, 240, 232, 0.35)',
     /* Monthly-specific tokens */
@@ -58,7 +61,7 @@ export function AppShell() {
     '--planner-monthly-strip-selected': isWhiteBackground ? 'rgba(255,255,255,0.92)' : 'rgba(245, 240, 232, 0.90)',
     '--planner-monthly-strip-idle': isWhiteBackground ? 'rgba(255,255,255,0.55)' : 'rgba(245, 240, 232, 0.55)',
     '--planner-monthly-strip-hover': isWhiteBackground ? 'rgba(255,255,255,0.78)' : 'rgba(245, 240, 232, 0.75)',
-    '--planner-monthly-weekend': isWhiteBackground ? 'rgba(220,220,220,0.22)' : 'rgba(245, 230, 198, 0.38)',
+    '--planner-monthly-weekend': 'rgba(245, 230, 198, 0.38)',
   } as CSSProperties;
 
   useEffect(() => {

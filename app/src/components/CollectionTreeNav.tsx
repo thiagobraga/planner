@@ -1,5 +1,5 @@
 import { Fragment, useMemo, useState, useCallback } from 'react';
-import { useNavigate } from 'react-router';
+import { useLocation, useNavigate } from 'react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   DndContext,
@@ -159,10 +159,12 @@ const overIdRef: { current: string | null } = { current: null };
 
 export function CollectionTreeNav() {
   const navigate = useNavigate();
+  const location = useLocation();
   const qc = useQueryClient();
   const { data: collections = [] } = useQuery({ queryKey: ['collections'], queryFn: fetchCollections });
 
   const flat = useMemo(() => flattenCollections(collections), [collections]);
+  const selectedCollectionId = location.pathname.match(/^\/collection\/([^/]+)$/)?.[1] ?? null;
 
   const [activeId, setActiveId] = useState<string | null>(null);
   const [offsetLeft, setOffsetLeft] = useState(0);
@@ -332,6 +334,7 @@ export function CollectionTreeNav() {
               <SortableCollectionRow
                 item={item}
                 depth={activeId === item.id && projection ? projection.depth : item.depth}
+                isActive={selectedCollectionId === item.id}
                 isEditing={editingId === item.id}
                 draft={draft}
                 onNavigate={() => navigate(`/collection/${item.id}`)}
@@ -413,6 +416,7 @@ export function CollectionTreeNav() {
 interface RowProps {
   item: FlatCollection;
   depth: number;
+  isActive: boolean;
   isEditing: boolean;
   draft: string;
   onNavigate: () => void;
@@ -427,6 +431,7 @@ interface RowProps {
 function SortableCollectionRow({
   item,
   depth,
+  isActive,
   isEditing,
   draft,
   onNavigate,
@@ -450,7 +455,7 @@ function SortableCollectionRow({
         transition,
         opacity: isDragging ? 0.5 : 1,
       }}
-      className={`collection-row flex items-center gap-[7px] h-6 pr-2 text-[13px] text-ink ${depthClass}`}
+      className={`collection-row flex items-center gap-[7px] h-6 pr-2 text-[13px] text-ink ${depthClass} ${isActive ? 'collection-row--active font-medium' : ''}`}
     >
       <span
         {...attributes}
@@ -481,7 +486,8 @@ function SortableCollectionRow({
             type="button"
             onClick={onNavigate}
             onDoubleClick={onStartRename}
-            className="flex-1 text-left bg-transparent border-0 cursor-pointer text-[13px] text-ink opacity-60 truncate p-0"
+            aria-current={isActive ? 'page' : undefined}
+            className={`flex-1 text-left bg-transparent border-0 cursor-pointer text-[13px] text-ink truncate p-0 ${isActive ? 'opacity-100' : 'opacity-60'}`}
           >
             {item.name}
           </button>

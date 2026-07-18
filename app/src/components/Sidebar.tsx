@@ -37,7 +37,7 @@ export const StyleguideIcon = ({ size = 15 }: { size?: number }) => (
   </svg>
 );
 
-const PlannerIcon = ({ width, height, className = '' }: { width: number; height: number; className?: string }) => (
+export const PlannerIcon = ({ width, height, className = '' }: { width: number; height: number; className?: string }) => (
   <img
     src={`/images/bulletjournal-planner-${width}x${height}.png`}
     width={width}

@@ -328,12 +328,12 @@ textarea:focus-visible {
 
   &:hover {
     opacity: 1;
-    background-color: rgba(212, 207, 199, 0.5);
+    background-color: var(--planner-sidebar-hover-bg);
   }
 }
 .sidebar-icon-link--active {
   opacity: 1;
-  background-color: rgba(212, 207, 199, 0.5);
+  background-color: var(--planner-sidebar-active-bg);
 }
 
 /* Sidebar drawer */
@@ -346,8 +346,12 @@ textarea:focus-visible {
   border-radius: 4px;
 
   &:hover {
-    background: rgba(212, 207, 199, 0.4);
+    background: var(--planner-sidebar-hover-bg);
   }
+}
+.collection-row--active,
+.collection-row--active:hover {
+  background: var(--planner-sidebar-active-bg);
 }
 .collection-row__action {
   opacity: 0;

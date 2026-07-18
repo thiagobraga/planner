@@ -7,7 +7,7 @@ export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   errorText?: string;
 }
 
-// 40px tall, 8px radius, 1px border, cream surface, leading icon 8px before value.
+// 40px tall, 8px radius, 1px border, theme surface, leading icon 8px before value.
 export function Input({
   icon,
   error = false,
@@ -22,7 +22,7 @@ export function Input({
   return (
     <div className={`ui-input ${className}`}>
       <div
-        className={`ui-input-container flex items-center gap-2 h-10 px-3 rounded-[8px] border bg-cream ${borderClass} transition-colors duration-[var(--motion-fast)]`}
+        className={`ui-input-container flex items-center gap-2 h-10 px-3 rounded-[8px] border bg-[var(--planner-control-bg)] ${borderClass} transition-colors duration-[var(--motion-fast)]`}
       >
         {icon && (
           <span className="ui-input-icon flex items-center justify-center shrink-0 text-ink-light [&_svg]:w-4 [&_svg]:h-4">

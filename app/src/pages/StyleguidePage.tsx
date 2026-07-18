@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Plus, Calendar, Trash2, Search } from 'lucide-react';
-import { BjTask, MonthlyIcon } from '../components/Sidebar';
+import { BjTask, MonthlyIcon, PlannerIcon } from '../components/Sidebar';
 import { SidebarNavItem } from '../components/SidebarNavItem';
 import { ChevronRight, Repeat2 } from 'lucide-react';
 import { MonthlyCalendarSpecimen } from '../components/monthly/MonthlyCalendarSpecimen';
@@ -19,6 +19,7 @@ import { TaskRowSpecimen } from '../components/ui/TaskRowSpecimen';
 import { CustomSelect } from '../components/ui/CustomSelect';
 import { ContextMenu, ContextMenuItem } from '../components/ui/ContextMenu';
 import { Briefcase, Calendar as CalendarIcon, Tag, ArrowUp, ArrowDown } from 'lucide-react';
+import { paletteColorHex } from '../api/client';
 
 // ── Card wrapper ──────────────────────────────────────────────────────────────
 function Card({
@@ -32,7 +33,7 @@ function Card({
 }) {
   return (
     <section
-      className={`border border-border rounded-[8px] bg-cream/40 shadow-subtle p-5 ${span ? 'lg:col-span-2' : ''
+      className={`border border-border rounded-[8px] bg-[var(--planner-card-bg)] shadow-subtle p-5 ${span ? 'lg:col-span-2' : ''
         }`}
     >
       <h2 className="text-[11px] font-semibold text-ink uppercase tracking-[0.1em] mb-4">
@@ -59,6 +60,18 @@ const COLLECTIONS = [
   { name: 'senac', color: 'orange' },
   { name: 'sociopata', color: 'red' },
 ];
+
+const NAV_COLLECTIONS = [
+  { name: 'dev', color: 'green', depth: 0 },
+  { name: 'openclaw', color: 'lime_green', depth: 1 },
+  { name: 'planner', color: 'lime_green', depth: 1 },
+  { name: 'health', color: 'yellow', depth: 0 },
+  { name: 'music', color: 'red', depth: 0 },
+  { name: 'sociopata', color: 'berry_red', depth: 1 },
+  { name: 'senac', color: 'orange', depth: 0 },
+  { name: 'tech', color: 'teal', depth: 0 },
+  { name: 'ai', color: 'mint_green', depth: 1 },
+] as const;
 
 const NAV = [
   { label: 'Daily', Icon: BjTask, active: true },
@@ -194,11 +207,8 @@ export function StyleguidePage() {
   return (
     <div className="max-w-5xl pb-24 text-ink">
       <h1 className="text-lg leading-6 font-semibold text-ink">Styleguide</h1>
-      <p className="text-[13px] leading-6 text-ink-light opacity-70">
-        Interface library for the Planner ecosystem
-      </p>
       <p className="text-[13px] leading-6 text-ink-light opacity-70 mb-6">
-        Components, patterns, and tokens to build consistent, calm, productive experiences.
+        Fonts, colors, components, and tokens to build Planner ecosystem.
       </p>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
@@ -441,10 +451,15 @@ export function StyleguidePage() {
 
         {/* 5 - Navigation */}
         <Card title="Navigation">
-          <div className="w-[200px] bg-sidebar-bg border border-border rounded-[8px] p-3">
-            <div className="mb-3">
-              <div className="text-base leading-6 font-semibold text-ink">Planner</div>
-              <div className="text-[11px] leading-5 text-ink-light opacity-60">Bulletjournal online</div>
+          <div className="w-[220px] border border-dot bg-[var(--planner-sidebar-bg)] px-3 py-6">
+            <div className="mb-6 ml-3">
+              <div className="flex items-start gap-3">
+                <PlannerIcon width={28} height={38} className="mt-1" />
+                <div>
+                  <div className="h-6 text-lg font-semibold leading-6 text-ink">Planner</div>
+                  <div className="h-6 text-[13px] leading-6 text-ink-light opacity-60">Bulletjournal online</div>
+                </div>
+              </div>
             </div>
             <nav className="flex flex-col">
               {NAV.map(({ label, Icon, active }) => (
@@ -456,10 +471,24 @@ export function StyleguidePage() {
                 />
               ))}
             </nav>
-            <div className="text-[10px] text-ink-light uppercase tracking-[0.1em] mt-3 mb-1 px-3">Collections</div>
-            <div className="flex flex-col gap-1 px-3">
-              {COLLECTIONS.map((p) => (
-                <CollectionChip key={p.name} name={p.name} color={p.color} className="bg-transparent px-0" />
+            <div className="mt-6">
+              <div className="flex items-center justify-between px-3">
+                <span className="text-[10px] font-medium uppercase leading-6 tracking-[0.1em] text-ink-light">Collections</span>
+                <span className="flex items-center text-sm leading-none text-ink-light" aria-hidden="true">+</span>
+              </div>
+              {NAV_COLLECTIONS.map((collection) => (
+                <div
+                  key={collection.name}
+                  className={`collection-row flex h-6 items-center gap-[7px] pr-2 text-[13px] text-ink ${collection.depth === 0 ? 'pl-3' : 'pl-[22px]'}`}
+                >
+                  <span className="flex w-4 shrink-0 items-center justify-center">
+                    <span
+                      className="block h-2 w-2 shrink-0 rounded-full [filter:saturate(0.55)]"
+                      style={{ background: paletteColorHex(collection.color) }}
+                    />
+                  </span>
+                  <span className="truncate text-[13px] text-ink opacity-60">{collection.name}</span>
+                </div>
               ))}
             </div>
           </div>

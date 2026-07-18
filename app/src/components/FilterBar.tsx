@@ -167,7 +167,7 @@ export function FilterBar({ value: externalValue, onChange, onApply }: FilterBar
   return (
     <div className="relative flex flex-col gap-1">
       <div
-        className={`flex items-center gap-2 py-1.5 px-3 border rounded bg-cream transition-[border-color] duration-[120ms] ${error ? 'border-accent' : isFocused ? 'border-ink' : 'border-dot'}`}
+        className={`flex items-center gap-2 py-1.5 px-3 border rounded bg-[var(--planner-control-bg)] transition-[border-color] duration-[120ms] ${error ? 'border-accent' : isFocused ? 'border-ink' : 'border-dot'}`}
       >
         {/* Filter icon */}
         <span className="text-xs text-ink-light shrink-0">⊟</span>

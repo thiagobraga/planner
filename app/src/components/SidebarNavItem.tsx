@@ -20,14 +20,16 @@ export function SidebarNavItem({ label, icon, to, onClick, active = false }: Sid
     </>
   );
 
-  const stateClass = active ? 'font-medium bg-dot/50' : 'opacity-60 hover:opacity-100 bg-transparent';
+  const stateClass = active
+    ? 'font-medium bg-[var(--planner-sidebar-active-bg)]'
+    : 'opacity-60 hover:opacity-100 hover:bg-[var(--planner-sidebar-hover-bg)] bg-transparent';
 
   if (to) {
     return (
       <NavLink
         to={to}
         className={({ isActive }) =>
-          `${BASE_CLASS} w-full no-underline focus:outline-none focus-visible:outline-none focus-visible:ring-0 ${isActive ? 'font-medium bg-dot/50' : 'opacity-60 hover:opacity-100 bg-transparent'}`
+          `${BASE_CLASS} w-full no-underline focus:outline-none focus-visible:outline-none focus-visible:ring-0 ${isActive ? 'font-medium bg-[var(--planner-sidebar-active-bg)]' : 'opacity-60 hover:opacity-100 hover:bg-[var(--planner-sidebar-hover-bg)] bg-transparent'}`
         }
       >
         {content}

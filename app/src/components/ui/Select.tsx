@@ -11,7 +11,7 @@ export function Select({ error = false, className = '', children, ...rest }: Sel
 
   return (
     <div
-      className={`ui-select relative flex items-center h-10 rounded-[8px] border bg-cream ${borderClass} transition-colors duration-[var(--motion-fast)] ${className}`}
+      className={`ui-select relative flex items-center h-10 rounded-[8px] border bg-[var(--planner-control-bg)] ${borderClass} transition-colors duration-[var(--motion-fast)] ${className}`}
     >
       <select
         className="ui-select-field peer flex-1 min-w-0 h-full px-3 pr-9 py-2 bg-transparent border-0 outline-none appearance-none text-sm text-ink cursor-pointer"
