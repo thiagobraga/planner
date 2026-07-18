@@ -6,7 +6,7 @@ import { redisPubClient, redisSubClient } from "../db/redis.js";
 import { JWT_SECRET, CORS_ORIGIN } from "../config.js";
 const SYNC_CHANNEL = "sync";
 
-export type SyncEntityType = "task" | "project" | "section" | "label" | "comment" | "reminder" | "preferences" | "habit" | "habit_completion";
+export type SyncEntityType = "task" | "project" | "section" | "label" | "comment" | "reminder" | "preferences" | "habit" | "habit_completion" | "habit_group";
 export type SyncEventType = "created" | "updated" | "deleted" | "completed" | "uncompleted";
 
 export interface SyncEvent {
