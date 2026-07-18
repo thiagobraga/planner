@@ -9,8 +9,8 @@ import {
 
 const router: ReturnType<typeof Router> = Router();
 
-// GET /api/v1/projects/:id/sections
-router.get("/projects/:id/sections", authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+// GET /api/v1/collections/:id/sections
+router.get("/collections/:id/sections", authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const sections = await listSections(req.params.id as string, req.userId!);
     res.json(sections);
@@ -19,8 +19,8 @@ router.get("/projects/:id/sections", authMiddleware, async (req: Request, res: R
   }
 });
 
-// POST /api/v1/projects/:id/sections
-router.post("/projects/:id/sections", authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+// POST /api/v1/collections/:id/sections
+router.post("/collections/:id/sections", authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const section = await createSection(req.params.id as string, req.userId!, req.body);
     res.status(201).json(section);

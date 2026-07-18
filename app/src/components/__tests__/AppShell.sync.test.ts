@@ -20,17 +20,17 @@ import { useSync } from '../../hooks/useSync';
 
 // Mirrors the AppShell callback for sync events handled at the shell level.
 function useAppShellSync({
-  invalidateProjects,
+  invalidateCollections,
   invalidatePreferences,
   setPreferences,
 }: {
-  invalidateProjects: () => void;
+  invalidateCollections: () => void;
   invalidatePreferences: () => void;
   setPreferences: (payload: unknown) => void;
 }) {
   useSync(useCallback((event: SyncEvent) => {
-    if (event.entityType === 'project') {
-      invalidateProjects();
+    if (event.entityType === 'collection') {
+      invalidateCollections();
     } else if (event.entityType === 'preferences') {
       if (event.payload && typeof event.payload === 'object') {
         setPreferences(event.payload);
@@ -38,7 +38,7 @@ function useAppShellSync({
         invalidatePreferences();
       }
     }
-  }, [invalidateProjects, invalidatePreferences, setPreferences]));
+  }, [invalidateCollections, invalidatePreferences, setPreferences]));
 }
 
 function makeEvent(overrides: Partial<SyncEvent> = {}): SyncEvent {
@@ -67,7 +67,7 @@ describe('AppShell: sync event invalidation', () => {
 
   it('does not invalidate when a task sync event fires', () => {
     renderHook(() => useAppShellSync({
-      invalidateProjects: mockInvalidate,
+      invalidateCollections: mockInvalidate,
       invalidatePreferences: mockInvalidatePreferences,
       setPreferences: mockSetPreferences,
     }));
@@ -79,7 +79,7 @@ describe('AppShell: sync event invalidation', () => {
 
   it('does not invalidate for all task event types', () => {
     renderHook(() => useAppShellSync({
-      invalidateProjects: mockInvalidate,
+      invalidateCollections: mockInvalidate,
       invalidatePreferences: mockInvalidatePreferences,
       setPreferences: mockSetPreferences,
     }));
@@ -90,21 +90,21 @@ describe('AppShell: sync event invalidation', () => {
     expect(mockInvalidate).not.toHaveBeenCalled();
   });
 
-  it('invalidates for project entity types', () => {
+  it('invalidates for collection entity types', () => {
     renderHook(() => useAppShellSync({
-      invalidateProjects: mockInvalidate,
+      invalidateCollections: mockInvalidate,
       invalidatePreferences: mockInvalidatePreferences,
       setPreferences: mockSetPreferences,
     }));
     act(() => {
-      capturedSyncHandler?.(makeEvent({ entityType: 'project' }));
+      capturedSyncHandler?.(makeEvent({ entityType: 'collection' }));
     });
     expect(mockInvalidate).toHaveBeenCalledTimes(1);
   });
 
   it('sets preferences from preferences sync payload', () => {
     renderHook(() => useAppShellSync({
-      invalidateProjects: mockInvalidate,
+      invalidateCollections: mockInvalidate,
       invalidatePreferences: mockInvalidatePreferences,
       setPreferences: mockSetPreferences,
     }));
@@ -118,7 +118,7 @@ describe('AppShell: sync event invalidation', () => {
 
   it('invalidates preferences when preferences sync has no payload', () => {
     renderHook(() => useAppShellSync({
-      invalidateProjects: mockInvalidate,
+      invalidateCollections: mockInvalidate,
       invalidatePreferences: mockInvalidatePreferences,
       setPreferences: mockSetPreferences,
     }));

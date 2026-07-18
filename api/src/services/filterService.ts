@@ -170,20 +170,20 @@ export async function evaluateSavedFilter(filterId: string, userId: string, toda
   const filterRow = filterResult.rows[0] as FilterRow;
   const expr = parseFilter(filterRow.query);
 
-  // Load all tasks owned or shared with the user, with project name and labels
+  // Load all tasks owned or shared with the user, with collection name and labels
   const tasksResult = await pool.query(
     `SELECT
        t.id, t.title, t.description, t.priority,
        t.due_date, t.is_completed,
-       p.name AS project_name,
+       p.name AS collection_name,
        u.email AS assignee_email,
        COALESCE(array_agg(l.name) FILTER (WHERE l.id IS NOT NULL), '{}') AS label_names
      FROM tasks t
-     JOIN projects p ON p.id = t.project_id
+     JOIN collections p ON p.id = t.collection_id
      LEFT JOIN users u ON u.id = t.assignee_user_id
      LEFT JOIN task_labels tl ON tl.task_id = t.id
      LEFT JOIN labels l ON l.id = tl.label_id
-     WHERE (t.user_id = $1 OR t.project_id IN (SELECT project_id FROM collaborators WHERE user_id = $1))
+     WHERE (t.user_id = $1 OR t.collection_id IN (SELECT collection_id FROM collaborators WHERE user_id = $1))
      GROUP BY t.id, p.name, u.email`,
     [userId],
   );
@@ -195,7 +195,7 @@ export async function evaluateSavedFilter(filterId: string, userId: string, toda
     priority: 1 | 2 | 3 | 4;
     due_date: string | null;
     is_completed: boolean;
-    project_name: string;
+    collection_name: string;
     assignee_email: string | null;
     label_names: string[];
   }) => ({
@@ -205,7 +205,7 @@ export async function evaluateSavedFilter(filterId: string, userId: string, toda
     priority: r.priority,
     dueDate: r.due_date,
     isCompleted: r.is_completed,
-    projectName: r.project_name,
+    collectionName: r.collection_name,
     assigneeUser: r.assignee_email,
     labelNames: r.label_names ?? [],
   }));

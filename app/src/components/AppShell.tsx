@@ -27,9 +27,9 @@ export function AppShell() {
   });
 
   useSync(useCallback((event) => {
-    if (event.entityType === 'project') {
-      qc.invalidateQueries({ queryKey: ['projects'] });
-      qc.invalidateQueries({ queryKey: ['project'] });
+    if (event.entityType === 'collection') {
+      qc.invalidateQueries({ queryKey: ['collections'] });
+      qc.invalidateQueries({ queryKey: ['collection'] });
     } else if (event.entityType === 'preferences') {
       if (event.payload && typeof event.payload === 'object') {
         qc.setQueryData<Preferences>(['preferences'], event.payload as Preferences);

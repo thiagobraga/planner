@@ -3,7 +3,7 @@ import { printFilter } from '../filterPrinter.js';
 
 describe('filterPrinter', () => {
   it('prints leaf operands', () => {
-    expect(printFilter({ type: 'project', name: 'work' })).toBe('#work');
+    expect(printFilter({ type: 'collection', name: 'work' })).toBe('#work');
     expect(printFilter({ type: 'label', name: 'urgent' })).toBe('@urgent');
     expect(printFilter({ type: 'priority', level: 2 })).toBe('p2');
     expect(printFilter({ type: 'today' })).toBe('today');
@@ -25,43 +25,43 @@ describe('filterPrinter', () => {
   it('prints binary operators without unnecessary parens', () => {
     expect(printFilter({
       type: 'and',
-      left: { type: 'project', name: 'a' },
-      right: { type: 'project', name: 'b' },
+      left: { type: 'collection', name: 'a' },
+      right: { type: 'collection', name: 'b' },
     })).toBe('#a & #b');
   });
 
   it('parenthesizes lower-precedence left child of and', () => {
     expect(printFilter({
       type: 'and',
-      left: { type: 'or', left: { type: 'project', name: 'a' }, right: { type: 'project', name: 'b' } },
-      right: { type: 'project', name: 'c' },
+      left: { type: 'or', left: { type: 'collection', name: 'a' }, right: { type: 'collection', name: 'b' } },
+      right: { type: 'collection', name: 'c' },
     })).toBe('(#a | #b) & #c');
   });
 
   it('omits parens for same-precedence left of left-assoc', () => {
     expect(printFilter({
       type: 'and',
-      left: { type: 'and', left: { type: 'project', name: 'a' }, right: { type: 'project', name: 'b' } },
-      right: { type: 'project', name: 'c' },
+      left: { type: 'and', left: { type: 'collection', name: 'a' }, right: { type: 'collection', name: 'b' } },
+      right: { type: 'collection', name: 'c' },
     })).toBe('#a & #b & #c');
   });
 
   it('parens for same-precedence right of left-assoc', () => {
     expect(printFilter({
       type: 'and',
-      left: { type: 'project', name: 'a' },
-      right: { type: 'and', left: { type: 'project', name: 'b' }, right: { type: 'project', name: 'c' } },
+      left: { type: 'collection', name: 'a' },
+      right: { type: 'and', left: { type: 'collection', name: 'b' }, right: { type: 'collection', name: 'c' } },
     })).toBe('#a & (#b & #c)');
   });
 
   it('not before atom: no parens', () => {
-    expect(printFilter({ type: 'not', expr: { type: 'project', name: 'a' } })).toBe('!#a');
+    expect(printFilter({ type: 'not', expr: { type: 'collection', name: 'a' } })).toBe('!#a');
   });
 
   it('not before binary: parens', () => {
     expect(printFilter({
       type: 'not',
-      expr: { type: 'and', left: { type: 'project', name: 'a' }, right: { type: 'project', name: 'b' } },
+      expr: { type: 'and', left: { type: 'collection', name: 'a' }, right: { type: 'collection', name: 'b' } },
     })).toBe('!(#a & #b)');
   });
 });

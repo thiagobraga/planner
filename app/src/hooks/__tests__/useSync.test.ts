@@ -115,7 +115,7 @@ describe('useSync', () => {
     const handler = vi.fn();
     renderHook(() => useSync(handler));
     const handlerFn = mockOn.mock.calls[0][1] as (e: SyncEvent) => void;
-    const entityTypes: SyncEvent['entityType'][] = ['task', 'project', 'section', 'label', 'comment', 'reminder', 'preferences'];
+    const entityTypes: SyncEvent['entityType'][] = ['task', 'collection', 'section', 'label', 'comment', 'reminder', 'preferences'];
     for (const entityType of entityTypes) {
       const event: SyncEvent = {
         id: `${entityType}-1`,

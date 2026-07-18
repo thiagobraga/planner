@@ -22,12 +22,12 @@
 
 Planner is a minimalist Bullet Journal-inspired task manager designed to help you organize your tasks with focus and clarity.
 
-It supports daily planning, monthly organization, habit tracking, projects, tags and filters through a clean and distraction-free interface.
+It supports daily planning, monthly organization, habit tracking, collections, tags and filters through a clean and distraction-free interface.
 
 ## Features
 
 - **Daily, Monthly, and Habits Views**: Flexible layouts to manage tasks, schedule events, and log habit completions.
-- **Projects, Tags, and Filters**: Rich hierarchical project trees and flexible classification rules.
+- **Collections, Tags, and Filters**: Rich hierarchical collection trees and flexible classification rules.
 - **PWA (Progressive Web App) Support**: Fully installable on Desktop, iOS, and Android devices. Custom launch configurations and optimized asset precaching.
 - **Offline Mode & Local-First Flow**: Browse the app shell and cached data offline, and seamlessly queue writes (POST, PATCH, PUT, DELETE) inside an IndexedDB-backed mutation store.
 - **Background Sync & ID Remapping**: Automatically replays queued offline operations in strict FIFO order on reconnection. Automatically resolves client-minted temporary IDs with server-assigned IDs to prevent desyncing subsequent modifications.

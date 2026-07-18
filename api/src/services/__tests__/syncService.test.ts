@@ -20,7 +20,7 @@ describe("syncService.buildEvent", () => {
       eventType: "updated",
       entityId: "t1",
       userId: "u1",
-      projectId: "p1",
+      collectionId: "p1",
       payload: { foo: "bar" },
     });
     expect(e.id).toBeDefined();
@@ -33,7 +33,7 @@ describe("syncService.buildEvent", () => {
   it("respects explicit id when provided", () => {
     const e = buildEvent({
       id: "custom-id",
-      entityType: "project",
+      entityType: "collection",
       eventType: "created",
       entityId: "p1",
       userId: "u1",

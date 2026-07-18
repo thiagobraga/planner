@@ -1,7 +1,7 @@
 import { NavLink, useNavigate } from 'react-router';
 import { ChevronRight, Repeat2, Settings, HelpCircle, LogOut, type LucideIcon } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { ProjectTreeNav } from './ProjectTreeNav';
+import { CollectionTreeNav } from './CollectionTreeNav';
 import { SidebarNavItem } from './SidebarNavItem';
 
 interface SidebarProps {
@@ -171,8 +171,8 @@ export function Sidebar({ isOpen, onClose, collapsed = false, onOpenHelp }: Side
         ))}
       </nav>
 
-      {/* Projects */}
-      <ProjectTreeNav />
+      {/* Collections */}
+      <CollectionTreeNav />
 
       {/* Footer utilities */}
       <div className="mt-auto pt-4">

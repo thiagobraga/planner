@@ -4,7 +4,7 @@ export interface EvalTask {
   id: string;
   title: string;
   description?: string | null;
-  projectName: string;
+  collectionName: string;
   labelNames: string[];
   priority: 1 | 2 | 3 | 4;
   dueDate?: string | null;
@@ -25,8 +25,8 @@ function matches(expr: FilterExpr, task: EvalTask, ctx: EvalContext): boolean {
       return matches(expr.left, task, ctx) || matches(expr.right, task, ctx);
     case 'not':
       return !matches(expr.expr, task, ctx);
-    case 'project':
-      return task.projectName === expr.name;
+    case 'collection':
+      return task.collectionName === expr.name;
     case 'label':
       return task.labelNames.includes(expr.name);
     case 'priority':

@@ -80,12 +80,13 @@ app.use("/api/v1/auth", authRoutes);
 
 // CSRF protection (excludes GET/HEAD/OPTIONS)
 app.use("/api/v1/tasks", csrfProtection);
-app.use("/api/v1/projects", csrfProtection);
+app.use("/api/v1/collections", csrfProtection);
 app.use("/api/v1/labels", csrfProtection);
 app.use("/api/v1/sections", csrfProtection);
 app.use("/api/v1/comments", csrfProtection);
 app.use("/api/v1/reminders", csrfProtection);
 app.use("/api/v1/habits", csrfProtection);
+app.use("/api/v1/habit-groups", csrfProtection);
 app.use("/api/v1/filters", csrfProtection);
 app.use("/api/v1/preferences", csrfProtection);
 app.use("/api/v1/activity", csrfProtection);

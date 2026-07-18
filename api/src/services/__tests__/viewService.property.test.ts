@@ -17,7 +17,7 @@ function row(id: string, dueDate: string, priority: number, orderValue: number) 
   return {
     id,
     user_id: userId,
-    project_id: "p-1",
+    collection_id: "p-1",
     section_id: null,
     parent_task_id: null,
     assignee_user_id: null,

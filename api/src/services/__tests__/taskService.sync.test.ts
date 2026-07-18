@@ -21,13 +21,13 @@ import { redisPubClient } from "../../db/redis.js";
 import pool from "../../db/pool.js";
 
 const userId = "user-1";
-const projectId = "project-1";
+const collectionId = "collection-1";
 const taskId = "task-1";
 
 const mockTaskRow = {
   id: taskId,
   user_id: userId,
-  project_id: projectId,
+  collection_id: collectionId,
   section_id: null,
   parent_task_id: null,
   assignee_user_id: null,
@@ -65,10 +65,10 @@ describe("taskService: sync event emission", () => {
   describe("createTask", () => {
     it("emits a created sync event after successful creation", async () => {
       (pool.query as ReturnType<typeof vi.fn>)
-        .mockResolvedValueOnce({ rows: [{ id: projectId }] })
+        .mockResolvedValueOnce({ rows: [{ id: collectionId }] })
         .mockResolvedValueOnce({ rows: [mockTaskRow] });
 
-      await createTask(userId, { title: "New Task", projectId });
+      await createTask(userId, { title: "New Task", collectionId });
 
       expect(redisPubClient.publish).toHaveBeenCalledTimes(1);
       const call = (redisPubClient.publish as ReturnType<typeof vi.fn>).mock.calls[0];
@@ -78,15 +78,15 @@ describe("taskService: sync event emission", () => {
       expect(event.eventType).toBe("created");
       expect(event.entityId).toBe(taskId);
       expect(event.userId).toBe(userId);
-      expect(event.projectId).toBe(projectId);
+      expect(event.collectionId).toBe(collectionId);
     });
 
     it("defaults type to 'task' when not provided, and propagates it in the sync payload", async () => {
       (pool.query as ReturnType<typeof vi.fn>)
-        .mockResolvedValueOnce({ rows: [{ id: projectId }] })
+        .mockResolvedValueOnce({ rows: [{ id: collectionId }] })
         .mockResolvedValueOnce({ rows: [mockTaskRow] });
 
-      await createTask(userId, { title: "New Task", projectId });
+      await createTask(userId, { title: "New Task", collectionId });
 
       const call = (redisPubClient.publish as ReturnType<typeof vi.fn>).mock.calls[0];
       const event = JSON.parse(call[1] as string);
@@ -95,10 +95,10 @@ describe("taskService: sync event emission", () => {
 
     it("propagates type: 'note' in the sync payload when creating a note", async () => {
       (pool.query as ReturnType<typeof vi.fn>)
-        .mockResolvedValueOnce({ rows: [{ id: projectId }] })
+        .mockResolvedValueOnce({ rows: [{ id: collectionId }] })
         .mockResolvedValueOnce({ rows: [{ ...mockTaskRow, type: "note" }] });
 
-      await createTask(userId, { title: "New Note", projectId, type: "note" });
+      await createTask(userId, { title: "New Note", collectionId, type: "note" });
 
       const call = (redisPubClient.publish as ReturnType<typeof vi.fn>).mock.calls[0];
       const event = JSON.parse(call[1] as string);
@@ -252,7 +252,7 @@ describe("taskService: sync event emission", () => {
       expect(event.entityType).toBe("task");
       expect(event.eventType).toBe("deleted");
       expect(event.entityId).toBe(taskId);
-      expect(event.projectId).toBe(projectId);
+      expect(event.collectionId).toBe(collectionId);
     });
   });
 });

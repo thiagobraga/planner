@@ -3,7 +3,14 @@ import { useSync } from '../hooks/useSync';
 import { TaskList } from '../components/TaskList';
 import type { Task } from '../components/TaskItem';
 import { getPhrase } from '../utils/phrases';
-import { applyIndent } from '../utils/taskTree';
+import { applyIndent, getParentCandidate } from '../utils/taskTree';
+import {
+  buildHabitTree,
+  dayState,
+  habitsToToggle,
+  parentToggleTarget,
+  type HabitNode,
+} from '../utils/habitTree';
 import {
   apiCreateTask,
   apiToggleTask,
@@ -51,7 +58,7 @@ function apiToTask(t: ApiTask): Task {
     isCompleted: t.isCompleted,
     orderValue: t.orderValue,
     indent: t.depth ?? 0,
-    projectId: t.projectId,
+    collectionId: t.collectionId,
     dueDate: t.dueDate ? t.dueDate.slice(0, 10) : undefined,
     type: t.type,
     createdAt: t.createdAt,
@@ -107,23 +114,34 @@ export function DailyPage() {
     fetchHabits().then(setHabits).catch(() => setHabits([]));
   }, []);
 
-  const handleHabitToggle = useCallback((id: string, isCompleted: boolean) => {
+  // Only leaf habits store completions, so toggling a parent fans out to its
+  // sub-habits. Mirrors the habits page.
+  const handleHabitToggle = useCallback((node: HabitNode) => {
+    const target = parentToggleTarget(node, todayKey);
+    const leaves = habitsToToggle(node, todayKey, target);
+    if (leaves.length === 0) return;
+
+    const ids = new Set(leaves.map((leaf) => leaf.id));
     setHabits((prev) =>
       prev.map((h) => {
-        if (h.id !== id) return h;
-        const completions = isCompleted
+        if (!ids.has(h.id)) return h;
+        const completions = target
           ? [...h.completions, todayKey]
           : h.completions.filter((c) => c !== todayKey);
         return { ...h, completions };
       })
     );
-    apiToggleHabitCompletion(id, todayKey, isCompleted).catch(() => {
+    Promise.all(leaves.map((leaf) => apiToggleHabitCompletion(leaf.id, todayKey, target))).catch(() => {
       fetchHabits().then(setHabits).catch(() => { });
     });
   }, []);
 
-  const renderHabitRow = useCallback((habit: ApiHabit) => {
-    const done = habit.completions.includes(todayKey);
+  // Sub-habits stay on the habits page; the day view lists only top-level habits.
+  const rootHabits = useMemo(() => buildHabitTree(habits), [habits]);
+
+  const renderHabitRow = useCallback((habit: HabitNode) => {
+    const state = dayState(habit, todayKey);
+    const done = state === 'full';
 
     return (
       <div
@@ -132,21 +150,22 @@ export function DailyPage() {
         aria-label={habit.name}
         role="button"
         tabIndex={0}
-        onClick={() => handleHabitToggle(habit.id, !done)}
+        onClick={() => handleHabitToggle(habit)}
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault();
-            handleHabitToggle(habit.id, !done);
+            handleHabitToggle(habit);
           }
         }}
       >
         <button
           type="button"
           aria-label={done ? `Reopen: ${habit.name}` : `Complete: ${habit.name}`}
-          aria-pressed={done}
+          role="checkbox"
+          aria-checked={state === 'half' ? 'mixed' : done}
           onClick={(e) => {
             e.stopPropagation();
-            handleHabitToggle(habit.id, !done);
+            handleHabitToggle(habit);
           }}
           className="task-item-toggle w-6 text-center overflow-hidden text-ink select-none shrink-0 cursor-pointer bg-transparent border-0 p-0"
           style={done ? {
@@ -159,7 +178,7 @@ export function DailyPage() {
             lineHeight: 'var(--task-line-height, 24px)',
           }}
         >
-          {done ? '×' : '•'}
+          {done ? '×' : state === 'half' ? '◐' : '•'}
         </button>
 
         <span
@@ -262,7 +281,9 @@ export function DailyPage() {
 
   const handleEditCommit = useCallback((id: string, title: string) => {
     const trimmed = title.trim();
-    const currentType = sectionsRef.current.flatMap((s) => s.tasks).find((t) => t.id === id)?.type ?? 'task';
+    const currentTask = sectionsRef.current.flatMap((s) => s.tasks).find((t) => t.id === id);
+    const currentType = currentTask?.type ?? 'task';
+    const currentIndent = currentTask?.indent ?? 0;
     setEditingId(undefined);
     if (!trimmed) {
       updateSections((prev) =>
@@ -280,7 +301,15 @@ export function DailyPage() {
     );
 
     if (id.startsWith('temp-')) {
-      apiCreateTask({ title: trimmed, priority: 4, dueDate: todayKey, type: currentType }).then((created) => {
+      let parentTaskId: string | undefined;
+      if (currentIndent > 0) {
+        const section = sectionsRef.current.find((s) => s.tasks.some((t) => t.id === id));
+        if (section) {
+          const idx = section.tasks.findIndex((t) => t.id === id);
+          parentTaskId = getParentCandidate(section.tasks, idx, currentIndent) ?? undefined;
+        }
+      }
+      apiCreateTask({ title: trimmed, priority: 4, dueDate: todayKey, type: currentType, parentTaskId, depth: currentIndent }).then((created) => {
         const createdTask = apiToTask(created);
         updateSections((prev) =>
           prev.map((s) => ({
@@ -361,9 +390,9 @@ export function DailyPage() {
     updateSections((prev) =>
       prev.map((s) => {
         if (!s.tasks.some((t) => t.id === id)) return s;
-        // Cross-project view: only nest under a same-project preceding task.
+        // Cross-collection view: only nest under a same-collection preceding task.
         const { tasks: next, parentTaskId, changed } = applyIndent(s.tasks, id, dir, {
-          sameProjectOnly: true,
+          sameCollectionOnly: true,
         });
         if (!changed) return s;
         if (!id.startsWith('temp-')) {
@@ -480,7 +509,7 @@ export function DailyPage() {
               {section.label}
             </div>
 
-            {isToday && habits.map(renderHabitRow)}
+            {isToday && rootHabits.map(renderHabitRow)}
 
             <TaskList
               tasks={section.tasks}

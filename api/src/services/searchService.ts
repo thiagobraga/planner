@@ -3,7 +3,7 @@ import { AppError } from "../utils/AppError.js";
 
 export interface SearchableEntity {
   id: string;
-  type: "task" | "project" | "label";
+  type: "task" | "collection" | "label";
   text: string;
   updatedAt: string;
   description?: string | null;
@@ -11,7 +11,7 @@ export interface SearchableEntity {
 
 export interface SearchResults {
   tasks: SearchableEntity[];
-  projects: SearchableEntity[];
+  collections: SearchableEntity[];
   labels: SearchableEntity[];
 }
 
@@ -50,16 +50,16 @@ export async function searchEntities(userId: string, query: string): Promise<Sea
   const { tooShort } = validateQuery(query);
 
   if (tooShort) {
-    return { tasks: [], projects: [], labels: [] };
+    return { tasks: [], collections: [], labels: [] };
   }
 
   const pattern = `%${query.replace(/[\\%_]/g, (m) => `\\${m}`)}%`;
 
-  const [tasksResult, projectsResult, labelsResult] = await Promise.all([
+  const [tasksResult, collectionsResult, labelsResult] = await Promise.all([
     pool.query(
       `SELECT id, title AS text, description, updated_at
        FROM tasks
-       WHERE (user_id = $1 OR project_id IN (SELECT project_id FROM collaborators WHERE user_id = $1))
+       WHERE (user_id = $1 OR collection_id IN (SELECT collection_id FROM collaborators WHERE user_id = $1))
          AND (title ILIKE $2 OR COALESCE(description, '') ILIKE $2)
        ORDER BY updated_at DESC
        LIMIT $3`,
@@ -67,8 +67,8 @@ export async function searchEntities(userId: string, query: string): Promise<Sea
     ),
     pool.query(
       `SELECT id, name AS text, updated_at
-       FROM projects
-       WHERE (user_id = $1 OR id IN (SELECT project_id FROM collaborators WHERE user_id = $1))
+       FROM collections
+       WHERE (user_id = $1 OR id IN (SELECT collection_id FROM collaborators WHERE user_id = $1))
          AND name ILIKE $2
        ORDER BY updated_at DESC
        LIMIT $3`,
@@ -88,8 +88,8 @@ export async function searchEntities(userId: string, query: string): Promise<Sea
   return {
     tasks: (tasksResult.rows as { id: string; text: string; description: string | null; updated_at: string }[])
       .map((r) => ({ id: r.id, type: "task" as const, text: r.text, description: r.description, updatedAt: r.updated_at })),
-    projects: (projectsResult.rows as { id: string; text: string; updated_at: string }[])
-      .map((r) => ({ id: r.id, type: "project" as const, text: r.text, updatedAt: r.updated_at })),
+    collections: (collectionsResult.rows as { id: string; text: string; updated_at: string }[])
+      .map((r) => ({ id: r.id, type: "collection" as const, text: r.text, updatedAt: r.updated_at })),
     labels: (labelsResult.rows as { id: string; text: string; updated_at: string }[])
       .map((r) => ({ id: r.id, type: "label" as const, text: r.text, updatedAt: r.updated_at })),
   };

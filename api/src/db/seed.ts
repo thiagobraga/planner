@@ -21,7 +21,7 @@ async function seed() {
 
   const passwordHash = await bcrypt.hash(password, BCRYPT_COST);
   const userId = uuidv4();
-  const projectId = uuidv4();
+  const collectionId = uuidv4();
 
   const client = await pool.connect();
   try {
@@ -34,13 +34,13 @@ async function seed() {
     );
 
     await client.query(
-      `INSERT INTO projects (id, user_id, name, color, is_inbox)
+      `INSERT INTO collections (id, user_id, name, color, is_inbox)
        VALUES ($1, $2, 'Inbox', 'grey', true)`,
-      [projectId, userId]
+      [collectionId, userId]
     );
 
-    // Example projects + tasks so the Projects page has content out of the box.
-    const exampleProjects: Array<{
+    // Example collections + tasks so the Collections page has content out of the box.
+    const exampleCollections: Array<{
       name: string;
       color: string;
       parentName?: string;
@@ -82,28 +82,28 @@ async function seed() {
       },
     ];
 
-    const projectIdByName = new Map<string, string>();
-    let projectOrder = 1;
-    for (const proj of exampleProjects) {
+    const collectionIdByName = new Map<string, string>();
+    let collectionOrder = 1;
+    for (const proj of exampleCollections) {
       const id = uuidv4();
-      projectIdByName.set(proj.name, id);
+      collectionIdByName.set(proj.name, id);
       await client.query(
-        `INSERT INTO projects (id, user_id, parent_id, name, color, order_value)
+        `INSERT INTO collections (id, user_id, parent_id, name, color, order_value)
          VALUES ($1, $2, $3, $4, $5, $6)`,
         [
           id,
           userId,
-          proj.parentName ? projectIdByName.get(proj.parentName) ?? null : null,
+          proj.parentName ? collectionIdByName.get(proj.parentName) ?? null : null,
           proj.name,
           proj.color,
-          projectOrder++,
+          collectionOrder++,
         ]
       );
 
       let taskOrder = 1;
       for (const task of proj.tasks) {
         await client.query(
-          `INSERT INTO tasks (id, user_id, project_id, title, priority, order_value)
+          `INSERT INTO tasks (id, user_id, collection_id, title, priority, order_value)
            VALUES ($1, $2, $3, $4, $5, $6)`,
           [uuidv4(), userId, id, task.title, task.priority ?? 4, taskOrder++]
         );

@@ -31,7 +31,7 @@ vi.mock("jsonwebtoken", () => ({
 
 vi.mock("../../db/pool.js", () => ({
   default: {
-    query: vi.fn().mockResolvedValue({ rows: [{ project_id: "project-1" }] }),
+    query: vi.fn().mockResolvedValue({ rows: [{ collection_id: "collection-1" }] }),
   },
 }));
 
@@ -166,7 +166,7 @@ describe("syncService: Socket.IO server", () => {
       expect(mockSocket.join).toHaveBeenCalledWith("user:user-1");
     });
 
-    it("joins project rooms on connect", async () => {
+    it("joins collection rooms on connect", async () => {
       const httpServer = {} as Parameters<typeof attachSyncServer>[0];
       await attachSyncServer(httpServer);
 
@@ -175,10 +175,10 @@ describe("syncService: Socket.IO server", () => {
       mockSocket.handshake.auth = { token: "valid-token" };
       await connectionHandler(mockSocket);
 
-      expect(mockSocket.join).toHaveBeenCalledWith("project:project-1");
+      expect(mockSocket.join).toHaveBeenCalledWith("collection:collection-1");
     });
 
-    it("handles subscribe:project event", async () => {
+    it("handles subscribe:collection event", async () => {
       const httpServer = {} as Parameters<typeof attachSyncServer>[0];
       await attachSyncServer(httpServer);
 
@@ -188,12 +188,12 @@ describe("syncService: Socket.IO server", () => {
       await connectionHandler(mockSocket);
 
       const subscribeHandler = mockSocket.on.mock.calls.find(
-        (call: unknown[]) => (call as string[])[0] === "subscribe:project"
+        (call: unknown[]) => (call as string[])[0] === "subscribe:collection"
       )?.[1];
 
       expect(subscribeHandler).toBeDefined();
-      subscribeHandler("project-1");
-      expect(mockSocket.join).toHaveBeenCalledWith("project:project-1");
+      subscribeHandler("collection-1");
+      expect(mockSocket.join).toHaveBeenCalledWith("collection:collection-1");
     });
   });
 
@@ -217,7 +217,7 @@ describe("syncService: Socket.IO server", () => {
       expect(mockIO.to).toHaveBeenCalledWith("user:user-1");
     });
 
-    it("emits sync event to project room when projectId is present", async () => {
+    it("emits sync event to collection room when collectionId is present", async () => {
       const httpServer = {} as Parameters<typeof attachSyncServer>[0];
       await attachSyncServer(httpServer);
 
@@ -228,13 +228,13 @@ describe("syncService: Socket.IO server", () => {
         eventType: "updated",
         entityId: "task-1",
         userId: "user-1",
-        projectId: "project-1",
+        collectionId: "collection-1",
         emittedAt: new Date().toISOString(),
       };
 
       redisCallback(JSON.stringify(event));
 
-      expect(mockIO.to).toHaveBeenCalledWith("project:project-1");
+      expect(mockIO.to).toHaveBeenCalledWith("collection:collection-1");
     });
 
     it("ignores malformed JSON from Redis", async () => {

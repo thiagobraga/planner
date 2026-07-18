@@ -13,7 +13,7 @@ import {
 } from '../api/client';
 import { useAuth } from '../contexts/AuthContext';
 import { getPhrase } from '../utils/phrases';
-import { applyIndent } from '../utils/taskTree';
+import { applyIndent, getParentCandidate } from '../utils/taskTree';
 import { useSync } from '../hooks/useSync';
 
 function apiToTask(t: ApiTask): Task {
@@ -22,7 +22,7 @@ function apiToTask(t: ApiTask): Task {
     title: t.title,
     description: t.description,
     priority: t.priority,
-    projectId: t.projectId,
+    collectionId: t.collectionId,
     dueDate: t.dueDate ?? undefined,
     isCompleted: t.isCompleted,
     orderValue: t.orderValue,
@@ -136,8 +136,14 @@ export function InboxPage() {
     }
     setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, title: trimmed } : t)));
     if (id.startsWith('temp-')) {
+      let parentTaskId: string | undefined;
+      const currentIndent = tasks.find((t) => t.id === id)?.indent ?? 0;
+      if (currentIndent > 0) {
+        const idx = tasks.findIndex((t) => t.id === id);
+        parentTaskId = getParentCandidate(tasks, idx, currentIndent) ?? undefined;
+      }
       // was a new task - create it
-      apiCreateTask({ title: trimmed, priority: 4 })
+      apiCreateTask({ title: trimmed, priority: 4, parentTaskId, depth: currentIndent })
         .then((created) => {
           setTasks((prev) => prev.map((t) => (t.id === id ? apiToTask(created) : t)));
         })
@@ -147,7 +153,7 @@ export function InboxPage() {
     } else {
       apiUpdateTask(id, { title: trimmed }).catch(() => invalidate());
     }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [tasks, invalidate]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleEditCancel = useCallback((id: string) => {
     setEditingId(undefined);

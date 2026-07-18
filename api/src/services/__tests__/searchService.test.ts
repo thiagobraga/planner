@@ -66,23 +66,23 @@ describe("searchService", () => {
   describe("searchEntities", () => {
     it("returns empty for query < 2 chars without querying db", async () => {
       const result = await searchEntities("u1", "a");
-      expect(result).toEqual({ tasks: [], projects: [], labels: [] });
+      expect(result).toEqual({ tasks: [], collections: [], labels: [] });
       expect(mockQuery).not.toHaveBeenCalled();
     });
 
     it("queries all three entity types with ILIKE pattern", async () => {
       mockQuery
         .mockResolvedValueOnce({ rows: [{ id: "t1", text: "Task one", description: null, updated_at: "2024-01-01T00:00:00Z" }] })
-        .mockResolvedValueOnce({ rows: [{ id: "p1", text: "Project alpha", updated_at: "2024-01-02T00:00:00Z" }] })
+        .mockResolvedValueOnce({ rows: [{ id: "p1", text: "Collection alpha", updated_at: "2024-01-02T00:00:00Z" }] })
         .mockResolvedValueOnce({ rows: [{ id: "l1", text: "alpha-label", updated_at: "2024-01-03T00:00:00Z" }] });
 
       const result = await searchEntities("u1", "alpha");
 
       expect(result.tasks).toHaveLength(1);
-      expect(result.projects).toHaveLength(1);
+      expect(result.collections).toHaveLength(1);
       expect(result.labels).toHaveLength(1);
       expect(result.tasks[0]).toMatchObject({ id: "t1", type: "task", text: "Task one" });
-      expect(result.projects[0]).toMatchObject({ id: "p1", type: "project" });
+      expect(result.collections[0]).toMatchObject({ id: "p1", type: "collection" });
       expect(result.labels[0]).toMatchObject({ id: "l1", type: "label" });
 
       // ILIKE pattern is wrapped

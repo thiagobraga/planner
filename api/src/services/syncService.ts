@@ -6,7 +6,7 @@ import { redisPubClient, redisSubClient } from "../db/redis.js";
 import { JWT_SECRET, CORS_ORIGIN } from "../config.js";
 const SYNC_CHANNEL = "sync";
 
-export type SyncEntityType = "task" | "project" | "section" | "label" | "comment" | "reminder" | "preferences" | "habit" | "habit_completion";
+export type SyncEntityType = "task" | "collection" | "section" | "label" | "comment" | "reminder" | "preferences" | "habit" | "habit_completion" | "habit_group";
 export type SyncEventType = "created" | "updated" | "deleted" | "completed" | "uncompleted";
 
 export interface SyncEvent {
@@ -15,7 +15,7 @@ export interface SyncEvent {
   eventType: SyncEventType;
   entityId: string;
   userId: string;
-  projectId?: string | null;
+  collectionId?: string | null;
   payload?: unknown;
   emittedAt: string;
 }
@@ -29,8 +29,8 @@ function userRoom(userId: string): string {
   return `user:${userId}`;
 }
 
-function projectRoom(projectId: string): string {
-  return `project:${projectId}`;
+function collectionRoom(collectionId: string): string {
+  return `collection:${collectionId}`;
 }
 
 let ioInstance: IOServer | null = null;
@@ -57,14 +57,14 @@ export function buildEvent(input: Omit<SyncEvent, "id" | "emittedAt"> & { id?: s
   };
 }
 
-async function loadUserProjectIds(userId: string): Promise<string[]> {
+async function loadUserCollectionIds(userId: string): Promise<string[]> {
   const result = await pool.query(
-    `SELECT id AS project_id FROM projects WHERE user_id = $1
+    `SELECT id AS collection_id FROM collections WHERE user_id = $1
      UNION
-     SELECT project_id FROM collaborators WHERE user_id = $1`,
+     SELECT collection_id FROM collaborators WHERE user_id = $1`,
     [userId],
   );
-  return result.rows.map((r: { project_id: string }) => r.project_id);
+  return result.rows.map((r: { collection_id: string }) => r.collection_id);
 }
 
 function parseCookies(cookieHeader: string | undefined): Record<string, string> {
@@ -130,31 +130,31 @@ export async function attachSyncServer(httpServer: HTTPServer): Promise<IOServer
     console.log(`[sync] socket connected user=${userId} id=${socket.id}`);
     socket.join(userRoom(userId));
 
-    const projectIds = await loadUserProjectIds(userId);
-    for (const pid of projectIds) {
-      socket.join(projectRoom(pid));
+    const collectionIds = await loadUserCollectionIds(userId);
+    for (const pid of collectionIds) {
+      socket.join(collectionRoom(pid));
     }
 
-    socket.on("subscribe:project", (projectId: string) => {
-      if (typeof projectId === "string" && projectIds.includes(projectId)) {
-        socket.join(projectRoom(projectId));
+    socket.on("subscribe:collection", (collectionId: string) => {
+      if (typeof collectionId === "string" && collectionIds.includes(collectionId)) {
+        socket.join(collectionRoom(collectionId));
       }
     });
 
-    socket.on("task:update", (event: { projectId?: string }) => {
-      if (event?.projectId && !projectIds.includes(event.projectId)) {
+    socket.on("task:update", (event: { collectionId?: string }) => {
+      if (event?.collectionId && !collectionIds.includes(event.collectionId)) {
         socket.disconnect();
       }
     });
 
-    socket.on("task:delete", (event: { projectId?: string }) => {
-      if (event?.projectId && !projectIds.includes(event.projectId)) {
+    socket.on("task:delete", (event: { collectionId?: string }) => {
+      if (event?.collectionId && !collectionIds.includes(event.collectionId)) {
         socket.disconnect();
       }
     });
 
     socket.on("comment:create", (event: { taskId: string }) => {
-      // No-op: project-scope validation happens server-side in the service
+      // No-op: collection-scope validation happens server-side in the service
     });
   });
 
@@ -169,9 +169,9 @@ export async function attachSyncServer(httpServer: HTTPServer): Promise<IOServer
     // Fan out: all of this user's sessions
     io.to(userRoom(event.userId)).emit("sync", event);
 
-    // If the change is project-scoped, also to all collaborators in the project room
-    if (event.projectId) {
-      io.to(projectRoom(event.projectId)).emit("sync", event);
+    // If the change is collection-scoped, also to all collaborators in the collection room
+    if (event.collectionId) {
+      io.to(collectionRoom(event.collectionId)).emit("sync", event);
     }
   });
 
