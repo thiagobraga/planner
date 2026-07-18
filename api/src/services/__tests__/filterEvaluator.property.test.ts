@@ -3,7 +3,7 @@ import fc from 'fast-check';
 import { evaluateFilter, type EvalTask, type EvalContext } from '../filterEvaluator.js';
 import type { FilterExpr } from '../../parsers/filterParser.js';
 
-const PROJECT_NAMES = ['work', 'home', 'misc'];
+const COLLECTION_NAMES = ['work', 'home', 'misc'];
 const LABEL_NAMES = ['urgent', 'review', 'later'];
 const USERS = ['me-id', 'alice', 'bob'];
 
@@ -17,7 +17,7 @@ const arbTask: fc.Arbitrary<EvalTask> = fc.record({
   id: fc.string({ minLength: 1, maxLength: 8 }),
   title: fc.string({ minLength: 0, maxLength: 20 }),
   description: fc.option(fc.string({ minLength: 0, maxLength: 20 }), { nil: null }),
-  projectName: fc.constantFrom(...PROJECT_NAMES),
+  collectionName: fc.constantFrom(...COLLECTION_NAMES),
   labelNames: fc.subarray(LABEL_NAMES),
   priority: fc.integer({ min: 1, max: 4 }) as fc.Arbitrary<1 | 2 | 3 | 4>,
   dueDate: arbDate,
@@ -26,7 +26,7 @@ const arbTask: fc.Arbitrary<EvalTask> = fc.record({
 });
 
 const arbLeaf: fc.Arbitrary<FilterExpr> = fc.oneof(
-  fc.constantFrom(...PROJECT_NAMES).map(name => ({ type: 'project' as const, name })),
+  fc.constantFrom(...COLLECTION_NAMES).map(name => ({ type: 'collection' as const, name })),
   fc.constantFrom(...LABEL_NAMES).map(name => ({ type: 'label' as const, name })),
   (fc.integer({ min: 1, max: 4 }) as fc.Arbitrary<1 | 2 | 3 | 4>).map(level => ({ type: 'priority' as const, level })),
   fc.constant({ type: 'today' as const }),

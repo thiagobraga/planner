@@ -18,7 +18,7 @@ beforeEach(() => {
 });
 
 function taskRow(userId = "owner") {
-  return { user_id: userId, project_id: "p1" };
+  return { user_id: userId, collection_id: "p1" };
 }
 
 function commentRow(overrides: Record<string, unknown> = {}) {

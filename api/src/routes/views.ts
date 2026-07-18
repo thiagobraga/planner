@@ -1,6 +1,6 @@
 import { Router, type Request, type Response, type NextFunction } from "express";
 import { authMiddleware } from "../middleware/auth.js";
-import { getTodayView, getUpcomingView, getInboxView, getProjectView, getMonthView } from "../services/viewService.js";
+import { getTodayView, getUpcomingView, getInboxView, getCollectionView, getMonthView } from "../services/viewService.js";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -43,9 +43,9 @@ router.get("/inbox", authMiddleware, async (req: Request, res: Response, next: N
   }
 });
 
-router.get("/project/:id", authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+router.get("/collection/:id", authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const view = await getProjectView(req.userId!, req.params.id as string);
+    const view = await getCollectionView(req.userId!, req.params.id as string);
     res.json(view);
   } catch (err) {
     next(err);

@@ -53,7 +53,7 @@ describe("validateRemindAt", () => {
 describe("createReminder", () => {
   it("verifies task access, validates datetime, and inserts", async () => {
     mockQuery
-      .mockResolvedValueOnce({ rows: [{ project_id: "p1" }] }) // task access
+      .mockResolvedValueOnce({ rows: [{ collection_id: "p1" }] }) // task access
       .mockResolvedValueOnce({
         rows: [{
           id: "rem-uuid",
@@ -79,7 +79,7 @@ describe("createReminder", () => {
   });
 
   it("rejects past datetime before querying db", async () => {
-    mockQuery.mockResolvedValueOnce({ rows: [{ project_id: "p1" }] });
+    mockQuery.mockResolvedValueOnce({ rows: [{ collection_id: "p1" }] });
     await expect(createReminder("t1", "u1", "2024-06-15T11:00:00Z", now))
       .rejects.toBeInstanceOf(AppError);
   });
@@ -88,7 +88,7 @@ describe("createReminder", () => {
 describe("listRemindersForTask", () => {
   it("verifies access then returns reminders ordered by remind_at", async () => {
     mockQuery
-      .mockResolvedValueOnce({ rows: [{ project_id: "p1" }] })
+      .mockResolvedValueOnce({ rows: [{ collection_id: "p1" }] })
       .mockResolvedValueOnce({ rows: [] });
 
     await listRemindersForTask("t1", "u1");

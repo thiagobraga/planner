@@ -4,7 +4,7 @@ import { AppError } from "../utils/AppError.js";
 interface TaskRow {
   id: string;
   user_id: string;
-  project_id: string;
+  collection_id: string;
   section_id: string | null;
   parent_task_id: string | null;
   assignee_user_id: string | null;
@@ -28,7 +28,7 @@ function formatTask(row: TaskRow) {
   return {
     id: row.id,
     userId: row.user_id,
-    projectId: row.project_id,
+    collectionId: row.collection_id,
     sectionId: row.section_id,
     parentTaskId: row.parent_task_id,
     assigneeUserId: row.assignee_user_id,
@@ -94,7 +94,7 @@ export async function getTodayView(userId: string, now: Date = new Date()): Prom
 
   const result = await pool.query(
     `SELECT t.* FROM tasks t
-     JOIN projects p ON p.id = t.project_id
+     JOIN collections p ON p.id = t.collection_id
      WHERE t.user_id = $1
        AND t.due_date IS NOT NULL
        AND t.due_date <= $2::date
@@ -140,7 +140,7 @@ export async function getUpcomingView(userId: string, days: number, now: Date = 
 
   const result = await pool.query(
     `SELECT t.* FROM tasks t
-     JOIN projects p ON p.id = t.project_id
+     JOIN collections p ON p.id = t.collection_id
      WHERE t.user_id = $1
        AND t.is_completed = false
        AND t.due_date IS NOT NULL
@@ -198,7 +198,7 @@ export async function getMonthView(userId: string, year: number, month: number):
 
   const result = await pool.query(
     `SELECT t.* FROM tasks t
-     JOIN projects p ON p.id = t.project_id
+     JOIN collections p ON p.id = t.collection_id
      WHERE t.user_id = $1
        AND (
          t.type = 'note'
@@ -226,7 +226,7 @@ export async function getMonthView(userId: string, year: number, month: number):
 export async function getInboxView(userId: string) {
   const result = await pool.query(
     `SELECT t.* FROM tasks t
-     JOIN projects p ON p.id = t.project_id
+     JOIN collections p ON p.id = t.collection_id
      WHERE t.user_id = $1
        AND p.is_inbox = true
        AND p.is_archived = false
@@ -236,41 +236,41 @@ export async function getInboxView(userId: string) {
 
   return {
     tasks: (result.rows as TaskRow[]).map(formatTask),
-    projectId: null,
+    collectionId: null,
   };
 }
 
-export async function getProjectView(userId: string, projectId: string) {
-  const projectResult = await pool.query(
-    `SELECT id, name, color, is_inbox FROM projects
+export async function getCollectionView(userId: string, collectionId: string) {
+  const collectionResult = await pool.query(
+    `SELECT id, name, color, is_inbox FROM collections
      WHERE id = $1
-       AND (user_id = $2 OR id IN (SELECT project_id FROM collaborators WHERE user_id = $2))`,
-    [projectId, userId],
+       AND (user_id = $2 OR id IN (SELECT collection_id FROM collaborators WHERE user_id = $2))`,
+    [collectionId, userId],
   );
 
-  const project = projectResult.rows[0] as
+  const collection = collectionResult.rows[0] as
     | { id: string; name: string; color: string; is_inbox: boolean }
     | undefined;
-  if (!project) {
-    throw new AppError({ code: "NOT_FOUND", message: "Project not found", statusCode: 404 });
+  if (!collection) {
+    throw new AppError({ code: "NOT_FOUND", message: "Collection not found", statusCode: 404 });
   }
 
   const result = await pool.query(
     `SELECT * FROM tasks
-     WHERE project_id = $1
+     WHERE collection_id = $1
        AND is_completed = false
      ORDER BY order_value ASC, created_at ASC`,
-    [projectId],
+    [collectionId],
   );
 
   return {
-    project: {
-      id: project.id,
-      name: project.name,
-      color: project.color,
-      isInbox: project.is_inbox,
+    collection: {
+      id: collection.id,
+      name: collection.name,
+      color: collection.color,
+      isInbox: collection.is_inbox,
     },
     tasks: (result.rows as TaskRow[]).map(formatTask),
-    projectId,
+    collectionId,
   };
 }

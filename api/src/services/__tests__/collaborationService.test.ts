@@ -19,7 +19,7 @@ vi.mock("../../db/pool.js", () => ({
 vi.mock("uuid", () => ({ v4: () => "uuid-1" }));
 
 import {
-  inviteToProject,
+  inviteToCollection,
   acceptInvitation,
   listCollaborators,
   removeCollaborator,
@@ -32,24 +32,24 @@ beforeEach(() => {
   mockClientQuery.mockResolvedValue({ rows: [] });
 });
 
-describe("inviteToProject", () => {
+describe("inviteToCollection", () => {
   it("rejects invalid email", async () => {
-    await expect(inviteToProject("p1", "u1", "not-an-email")).rejects.toBeInstanceOf(AppError);
+    await expect(inviteToCollection("p1", "u1", "not-an-email")).rejects.toBeInstanceOf(AppError);
   });
 
   it("verifies owner before inserting invitation", async () => {
     mockQuery.mockResolvedValueOnce({ rows: [] }); // not owner
-    await expect(inviteToProject("p1", "u1", "a@b.com")).rejects.toMatchObject({ statusCode: 403 });
+    await expect(inviteToCollection("p1", "u1", "a@b.com")).rejects.toMatchObject({ statusCode: 403 });
   });
 
   it("creates invitation and returns plaintext token", async () => {
     mockQuery
       .mockResolvedValueOnce({ rows: [{ id: "p1" }] }) // ownership check
       .mockResolvedValueOnce({
-        rows: [{ id: "i1", project_id: "p1", email: "a@b.com", token_hash: "hash", accepted_at: null, created_at: "t" }],
+        rows: [{ id: "i1", collection_id: "p1", email: "a@b.com", token_hash: "hash", accepted_at: null, created_at: "t" }],
       });
 
-    const result = await inviteToProject("p1", "u1", "a@b.com");
+    const result = await inviteToCollection("p1", "u1", "a@b.com");
     expect(result.invitation.id).toBe("i1");
     expect(typeof result.token).toBe("string");
     expect(result.token.length).toBeGreaterThan(0);
@@ -64,7 +64,7 @@ describe("acceptInvitation", () => {
 
   it("409s when already accepted", async () => {
     mockQuery.mockResolvedValueOnce({
-      rows: [{ id: "i1", project_id: "p1", email: "a@b.com", token_hash: "hash", accepted_at: "2024-01-01", created_at: "t" }],
+      rows: [{ id: "i1", collection_id: "p1", email: "a@b.com", token_hash: "hash", accepted_at: "2024-01-01", created_at: "t" }],
     });
     await expect(acceptInvitation("tok", "u1")).rejects.toMatchObject({ statusCode: 409 });
   });
@@ -72,7 +72,7 @@ describe("acceptInvitation", () => {
   it("403s when email does not match", async () => {
     mockQuery
       .mockResolvedValueOnce({
-        rows: [{ id: "i1", project_id: "p1", email: "intended@b.com", token_hash: "hash", accepted_at: null, created_at: "t" }],
+        rows: [{ id: "i1", collection_id: "p1", email: "intended@b.com", token_hash: "hash", accepted_at: null, created_at: "t" }],
       })
       .mockResolvedValueOnce({ rows: [{ email: "different@b.com" }] });
     await expect(acceptInvitation("tok", "u1")).rejects.toMatchObject({ statusCode: 403 });
@@ -81,12 +81,12 @@ describe("acceptInvitation", () => {
   it("inserts collaborator and marks invitation accepted", async () => {
     mockQuery
       .mockResolvedValueOnce({
-        rows: [{ id: "i1", project_id: "p1", email: "a@b.com", token_hash: "hash", accepted_at: null, created_at: "t" }],
+        rows: [{ id: "i1", collection_id: "p1", email: "a@b.com", token_hash: "hash", accepted_at: null, created_at: "t" }],
       })
       .mockResolvedValueOnce({ rows: [{ email: "a@b.com" }] });
 
     const result = await acceptInvitation("tok", "u1");
-    expect(result.projectId).toBe("p1");
+    expect(result.collectionId).toBe("p1");
     expect(mockClientQuery).toHaveBeenCalled();
   });
 });
@@ -127,26 +127,26 @@ describe("assignTask", () => {
     await expect(assignTask("t1", "u2", "u1")).rejects.toMatchObject({ statusCode: 404 });
   });
 
-  it("rejects assignee not in project", async () => {
+  it("rejects assignee not in collection", async () => {
     mockQuery
-      .mockResolvedValueOnce({ rows: [{ id: "t1", project_id: "p1", user_id: "u1" }] })
+      .mockResolvedValueOnce({ rows: [{ id: "t1", collection_id: "p1", user_id: "u1" }] })
       .mockResolvedValueOnce({ rows: [] }); // assignee not owner/collab
 
     await expect(assignTask("t1", "outsider", "u1")).rejects.toBeInstanceOf(AppError);
   });
 
-  it("allows unassign (assignee=null) without checking project membership", async () => {
+  it("allows unassign (assignee=null) without checking collection membership", async () => {
     mockQuery
-      .mockResolvedValueOnce({ rows: [{ id: "t1", project_id: "p1", user_id: "u1" }] })
+      .mockResolvedValueOnce({ rows: [{ id: "t1", collection_id: "p1", user_id: "u1" }] })
       .mockResolvedValueOnce({ rows: [] });
 
     const result = await assignTask("t1", null, "u1");
     expect(result).toEqual({ success: true });
   });
 
-  it("assigns when target is project owner or collaborator", async () => {
+  it("assigns when target is collection owner or collaborator", async () => {
     mockQuery
-      .mockResolvedValueOnce({ rows: [{ id: "t1", project_id: "p1", user_id: "u1" }] })
+      .mockResolvedValueOnce({ rows: [{ id: "t1", collection_id: "p1", user_id: "u1" }] })
       .mockResolvedValueOnce({ rows: [{ "?column?": 1 }] })
       .mockResolvedValueOnce({ rows: [] });
 

@@ -4,7 +4,7 @@ import { AppError } from '../utils/AppError.js';
 import { validate, type ValidationError } from '../utils/validate.js';
 import { buildEvent, publishEvent } from './syncService.js';
 
-function publishProjectEvent(
+function publishCollectionEvent(
   eventType: 'created' | 'updated' | 'deleted',
   entityId: string,
   userId: string,
@@ -12,11 +12,11 @@ function publishProjectEvent(
 ) {
   publishEvent(
     buildEvent({
-      entityType: 'project',
+      entityType: 'collection',
       eventType,
       entityId,
       userId,
-      projectId: entityId,
+      collectionId: entityId,
       payload,
     }),
   ).catch((err) => console.error('[sync] publish failed', err));
@@ -45,7 +45,7 @@ const SUPPORTED_COLORS = [
   'taupe',
 ] as const;
 
-interface ProjectRow {
+interface CollectionRow {
   id: string;
   user_id: string;
   parent_id: string | null;
@@ -58,7 +58,7 @@ interface ProjectRow {
   updated_at: string;
 }
 
-function formatProject(row: ProjectRow) {
+function formatCollection(row: CollectionRow) {
   return {
     id: row.id,
     userId: row.user_id,
@@ -73,46 +73,46 @@ function formatProject(row: ProjectRow) {
   };
 }
 
-async function verifyProjectOwnership(projectId: string, userId: string): Promise<ProjectRow> {
-  const result = await pool.query(`SELECT * FROM projects WHERE id = $1 AND user_id = $2`, [
-    projectId,
+async function verifyCollectionOwnership(collectionId: string, userId: string): Promise<CollectionRow> {
+  const result = await pool.query(`SELECT * FROM collections WHERE id = $1 AND user_id = $2`, [
+    collectionId,
     userId,
   ]);
 
   if (result.rows.length === 0) {
     throw new AppError({
       code: 'NOT_FOUND',
-      message: 'Project not found',
+      message: 'Collection not found',
       statusCode: 404,
     });
   }
 
-  return result.rows[0] as ProjectRow;
+  return result.rows[0] as CollectionRow;
 }
 
-async function getProjectDepth(projectId: string): Promise<number> {
+async function getCollectionDepth(collectionId: string): Promise<number> {
   const result = await pool.query(
     `WITH RECURSIVE ancestors AS (
-       SELECT id, parent_id, 1 AS depth FROM projects WHERE id = $1
+       SELECT id, parent_id, 1 AS depth FROM collections WHERE id = $1
        UNION ALL
        SELECT p.id, p.parent_id, a.depth + 1
-       FROM projects p
+       FROM collections p
        INNER JOIN ancestors a ON p.id = a.parent_id
      )
      SELECT MAX(depth) AS max_depth FROM ancestors`,
-    [projectId],
+    [collectionId],
   );
   return (result.rows[0]?.max_depth ?? 1) as number;
 }
 
 // True if candidateId equals targetId or is one of its descendants - used to block
-// reparenting cycles (a project cannot be moved under itself or its own subtree).
+// reparenting cycles (a collection cannot be moved under itself or its own subtree).
 async function isSelfOrDescendant(candidateId: string, targetId: string): Promise<boolean> {
   const result = await pool.query(
     `WITH RECURSIVE subtree AS (
-       SELECT id FROM projects WHERE id = $1
+       SELECT id FROM collections WHERE id = $1
        UNION ALL
-       SELECT p.id FROM projects p INNER JOIN subtree s ON p.parent_id = s.id
+       SELECT p.id FROM collections p INNER JOIN subtree s ON p.parent_id = s.id
      )
      SELECT 1 FROM subtree WHERE id = $2 LIMIT 1`,
     [targetId, candidateId],
@@ -120,25 +120,25 @@ async function isSelfOrDescendant(candidateId: string, targetId: string): Promis
   return result.rows.length > 0;
 }
 
-export async function listProjects(userId: string) {
+export async function listCollections(userId: string) {
   const result = await pool.query(
-    `SELECT p.* FROM projects p
+    `SELECT p.* FROM collections p
      WHERE p.user_id = $1
-        OR p.id IN (SELECT project_id FROM collaborators WHERE user_id = $1)
+        OR p.id IN (SELECT collection_id FROM collaborators WHERE user_id = $1)
      ORDER BY p.order_value ASC, p.created_at ASC`,
     [userId],
   );
 
-  return result.rows.map((row) => formatProject(row as ProjectRow));
+  return result.rows.map((row) => formatCollection(row as CollectionRow));
 }
 
-export interface CreateProjectInput {
+export interface CreateCollectionInput {
   name: string;
   color: string;
   parentId?: string | null;
 }
 
-export async function createProject(userId: string, input: CreateProjectInput) {
+export async function createCollection(userId: string, input: CreateCollectionInput) {
   const errors: ValidationError[] = [];
 
   if (!input.name || input.name.length === 0 || input.name.length > 120) {
@@ -156,7 +156,7 @@ export async function createProject(userId: string, input: CreateProjectInput) {
 
   // Check unique name per user
   const duplicateCheck = await pool.query(
-    `SELECT id FROM projects WHERE user_id = $1 AND LOWER(name) = LOWER($2)`,
+    `SELECT id FROM collections WHERE user_id = $1 AND LOWER(name) = LOWER($2)`,
     [userId, input.name],
   );
 
@@ -165,18 +165,18 @@ export async function createProject(userId: string, input: CreateProjectInput) {
       code: 'VALIDATION_ERROR',
       message: 'Validation failed',
       statusCode: 400,
-      details: [{ field: 'name', message: 'A project with this name already exists' }],
+      details: [{ field: 'name', message: 'A collection with this name already exists' }],
     });
   }
 
   // Validate parentId and enforce nesting depth
   if (input.parentId) {
-    await verifyProjectOwnership(input.parentId, userId);
-    const parentDepth = await getProjectDepth(input.parentId);
+    await verifyCollectionOwnership(input.parentId, userId);
+    const parentDepth = await getCollectionDepth(input.parentId);
     if (parentDepth >= 4) {
       throw new AppError({
         code: 'MAX_DEPTH_EXCEEDED',
-        message: 'Maximum project nesting depth of 4 exceeded',
+        message: 'Maximum collection nesting depth of 4 exceeded',
         statusCode: 400,
       });
     }
@@ -184,31 +184,31 @@ export async function createProject(userId: string, input: CreateProjectInput) {
 
   const id = uuidv4();
   const result = await pool.query(
-    `INSERT INTO projects (id, user_id, parent_id, name, color)
+    `INSERT INTO collections (id, user_id, parent_id, name, color)
      VALUES ($1, $2, $3, $4, $5)
      RETURNING *`,
     [id, userId, input.parentId ?? null, input.name, input.color],
   );
 
-  const created = formatProject(result.rows[0] as ProjectRow);
-  publishProjectEvent('created', created.id, userId, created);
+  const created = formatCollection(result.rows[0] as CollectionRow);
+  publishCollectionEvent('created', created.id, userId, created);
   return created;
 }
 
-export interface UpdateProjectInput {
+export interface UpdateCollectionInput {
   name?: string;
   color?: string;
   parentId?: string | null;
   orderValue?: number;
 }
 
-export async function updateProject(projectId: string, userId: string, input: UpdateProjectInput) {
-  const project = await verifyProjectOwnership(projectId, userId);
+export async function updateCollection(collectionId: string, userId: string, input: UpdateCollectionInput) {
+  const collection = await verifyCollectionOwnership(collectionId, userId);
 
-  if (project.is_inbox && input.name !== undefined) {
+  if (collection.is_inbox && input.name !== undefined) {
     throw new AppError({
       code: 'INBOX_PROTECTED',
-      message: 'Inbox project cannot be renamed',
+      message: 'Inbox collection cannot be renamed',
       statusCode: 400,
     });
   }
@@ -232,8 +232,8 @@ export async function updateProject(projectId: string, userId: string, input: Up
   // Check unique name per user (exclude self)
   if (input.name !== undefined) {
     const duplicateCheck = await pool.query(
-      `SELECT id FROM projects WHERE user_id = $1 AND LOWER(name) = LOWER($2) AND id != $3`,
-      [userId, input.name, projectId],
+      `SELECT id FROM collections WHERE user_id = $1 AND LOWER(name) = LOWER($2) AND id != $3`,
+      [userId, input.name, collectionId],
     );
 
     if (duplicateCheck.rows.length > 0) {
@@ -241,7 +241,7 @@ export async function updateProject(projectId: string, userId: string, input: Up
         code: 'VALIDATION_ERROR',
         message: 'Validation failed',
         statusCode: 400,
-        details: [{ field: 'name', message: 'A project with this name already exists' }],
+        details: [{ field: 'name', message: 'A collection with this name already exists' }],
       });
     }
   }
@@ -262,26 +262,26 @@ export async function updateProject(projectId: string, userId: string, input: Up
 
   if (input.parentId !== undefined) {
     if (input.parentId !== null) {
-      if (input.parentId === projectId) {
+      if (input.parentId === collectionId) {
         throw new AppError({
           code: 'VALIDATION_ERROR',
-          message: 'A project cannot be its own parent',
+          message: 'A collection cannot be its own parent',
           statusCode: 400,
         });
       }
-      await verifyProjectOwnership(input.parentId, userId);
-      if (await isSelfOrDescendant(input.parentId, projectId)) {
+      await verifyCollectionOwnership(input.parentId, userId);
+      if (await isSelfOrDescendant(input.parentId, collectionId)) {
         throw new AppError({
           code: 'VALIDATION_ERROR',
-          message: 'Cannot move a project under its own descendant',
+          message: 'Cannot move a collection under its own descendant',
           statusCode: 400,
         });
       }
-      const parentDepth = await getProjectDepth(input.parentId);
+      const parentDepth = await getCollectionDepth(input.parentId);
       if (parentDepth >= 4) {
         throw new AppError({
           code: 'MAX_DEPTH_EXCEEDED',
-          message: 'Maximum project nesting depth of 4 exceeded',
+          message: 'Maximum collection nesting depth of 4 exceeded',
           statusCode: 400,
         });
       }
@@ -296,27 +296,27 @@ export async function updateProject(projectId: string, userId: string, input: Up
   }
 
   if (setClauses.length === 0) {
-    return formatProject(project);
+    return formatCollection(collection);
   }
 
   setClauses.push(`updated_at = NOW()`);
-  values.push(projectId);
+  values.push(collectionId);
 
-  const query = `UPDATE projects SET ${setClauses.join(', ')} WHERE id = $${paramIndex} RETURNING *`;
+  const query = `UPDATE collections SET ${setClauses.join(', ')} WHERE id = $${paramIndex} RETURNING *`;
   const result = await pool.query(query, values);
 
-  const updated = formatProject(result.rows[0] as ProjectRow);
-  publishProjectEvent('updated', updated.id, userId, updated);
+  const updated = formatCollection(result.rows[0] as CollectionRow);
+  publishCollectionEvent('updated', updated.id, userId, updated);
   return updated;
 }
 
-export async function deleteProject(projectId: string, userId: string): Promise<{ success: true }> {
-  const project = await verifyProjectOwnership(projectId, userId);
+export async function deleteCollection(collectionId: string, userId: string): Promise<{ success: true }> {
+  const collection = await verifyCollectionOwnership(collectionId, userId);
 
-  if (project.is_inbox) {
+  if (collection.is_inbox) {
     throw new AppError({
       code: 'INBOX_PROTECTED',
-      message: 'Inbox project cannot be deleted',
+      message: 'Inbox collection cannot be deleted',
       statusCode: 400,
     });
   }
@@ -325,14 +325,14 @@ export async function deleteProject(projectId: string, userId: string): Promise<
   try {
     await client.query('BEGIN');
 
-    // Cascade: delete tasks in this project (sections cascade via FK)
-    await client.query(`DELETE FROM tasks WHERE project_id = $1`, [projectId]);
+    // Cascade: delete tasks in this collection (sections cascade via FK)
+    await client.query(`DELETE FROM tasks WHERE collection_id = $1`, [collectionId]);
 
     // Delete sections
-    await client.query(`DELETE FROM sections WHERE project_id = $1`, [projectId]);
+    await client.query(`DELETE FROM sections WHERE collection_id = $1`, [collectionId]);
 
-    // Delete the project itself
-    await client.query(`DELETE FROM projects WHERE id = $1`, [projectId]);
+    // Delete the collection itself
+    await client.query(`DELETE FROM collections WHERE id = $1`, [collectionId]);
 
     await client.query('COMMIT');
   } catch (err) {
@@ -342,27 +342,27 @@ export async function deleteProject(projectId: string, userId: string): Promise<
     client.release();
   }
 
-  publishProjectEvent('deleted', projectId, userId);
+  publishCollectionEvent('deleted', collectionId, userId);
   return { success: true };
 }
 
-export async function archiveProject(projectId: string, userId: string) {
-  const project = await verifyProjectOwnership(projectId, userId);
+export async function archiveCollection(collectionId: string, userId: string) {
+  const collection = await verifyCollectionOwnership(collectionId, userId);
 
-  if (project.is_inbox) {
+  if (collection.is_inbox) {
     throw new AppError({
       code: 'INBOX_PROTECTED',
-      message: 'Inbox project cannot be archived',
+      message: 'Inbox collection cannot be archived',
       statusCode: 400,
     });
   }
 
   const result = await pool.query(
-    `UPDATE projects SET is_archived = true, updated_at = NOW() WHERE id = $1 RETURNING *`,
-    [projectId],
+    `UPDATE collections SET is_archived = true, updated_at = NOW() WHERE id = $1 RETURNING *`,
+    [collectionId],
   );
 
-  const archived = formatProject(result.rows[0] as ProjectRow);
-  publishProjectEvent('updated', archived.id, userId, archived);
+  const archived = formatCollection(result.rows[0] as CollectionRow);
+  publishCollectionEvent('updated', archived.id, userId, archived);
   return archived;
 }

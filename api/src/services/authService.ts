@@ -85,7 +85,7 @@ export async function register(input: RegisterInput): Promise<AuthResult> {
 
   const passwordHash = await bcrypt.hash(input.password, BCRYPT_COST);
   const userId = uuidv4();
-  const projectId = uuidv4();
+  const collectionId = uuidv4();
 
   const client = await pool.connect();
   try {
@@ -98,9 +98,9 @@ export async function register(input: RegisterInput): Promise<AuthResult> {
     );
 
     await client.query(
-      `INSERT INTO projects (id, user_id, name, color, is_inbox)
+      `INSERT INTO collections (id, user_id, name, color, is_inbox)
        VALUES ($1, $2, 'Inbox', 'grey', true)`,
-      [projectId, userId],
+      [collectionId, userId],
     );
 
     await client.query(`INSERT INTO preferences (user_id) VALUES ($1)`, [userId]);

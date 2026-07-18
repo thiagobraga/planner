@@ -16,7 +16,7 @@ const arbText = fc.string({ minLength: 1, maxLength: 30 })
   .filter(s => /^[\x20-\x7E]+$/.test(s));
 
 const arbLeaf: fc.Arbitrary<FilterExpr> = fc.oneof(
-  arbIdent.map(name => ({ type: 'project' as const, name })),
+  arbIdent.map(name => ({ type: 'collection' as const, name })),
   arbIdent.map(name => ({ type: 'label' as const, name })),
   arbPriorityLevel.map(level => ({ type: 'priority' as const, level })),
   fc.constant({ type: 'today' as const }),

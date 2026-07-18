@@ -7,7 +7,7 @@ import { addDaysISO } from './viewService.js';
 interface TaskRow {
   id: string;
   user_id: string;
-  project_id: string;
+  collection_id: string;
   section_id: string | null;
   parent_task_id: string | null;
   assignee_user_id: string | null;
@@ -31,7 +31,7 @@ function formatTask(row: TaskRow) {
   return {
     id: row.id,
     userId: row.user_id,
-    projectId: row.project_id,
+    collectionId: row.collection_id,
     sectionId: row.section_id,
     parentTaskId: row.parent_task_id,
     assigneeUserId: row.assignee_user_id,
@@ -58,8 +58,8 @@ async function verifyTaskAccess(taskId: string, userId: string): Promise<TaskRow
      WHERE t.id = $1
        AND (
          t.user_id = $2
-         OR t.project_id IN (
-           SELECT project_id FROM collaborators WHERE user_id = $2
+         OR t.collection_id IN (
+           SELECT collection_id FROM collaborators WHERE user_id = $2
          )
        )`,
     [taskId, userId],
@@ -96,9 +96,9 @@ export async function completeTask(taskId: string, userId: string) {
 
       // Record activity event
       await client.query(
-        `INSERT INTO activity_events (user_id, project_id, entity_type, entity_id, event_type, after_data)
+        `INSERT INTO activity_events (user_id, collection_id, entity_type, entity_id, event_type, after_data)
          VALUES ($1, $2, 'task', $3, 'task_completed', $4)`,
-        [userId, task.project_id, taskId, JSON.stringify({ recurring: true, nextDueDate })],
+        [userId, task.collection_id, taskId, JSON.stringify({ recurring: true, nextDueDate })],
       );
 
       await client.query('COMMIT');
@@ -111,7 +111,7 @@ export async function completeTask(taskId: string, userId: string) {
           eventType: 'updated',
           entityId: formatted.id,
           userId,
-          projectId: formatted.projectId,
+          collectionId: formatted.collectionId,
           payload: formatted,
         }),
       ).catch((err) => console.error('[sync] publish failed', err));
@@ -142,9 +142,9 @@ export async function completeTask(taskId: string, userId: string) {
 
     // Record activity event
     await client.query(
-      `INSERT INTO activity_events (user_id, project_id, entity_type, entity_id, event_type)
+      `INSERT INTO activity_events (user_id, collection_id, entity_type, entity_id, event_type)
        VALUES ($1, $2, 'task', $3, 'task_completed')`,
-      [userId, task.project_id, taskId],
+      [userId, task.collection_id, taskId],
     );
 
     await client.query('COMMIT');
@@ -157,7 +157,7 @@ export async function completeTask(taskId: string, userId: string) {
         eventType: 'completed',
         entityId: formatted.id,
         userId,
-        projectId: formatted.projectId,
+        collectionId: formatted.collectionId,
         payload: formatted,
       }),
     ).catch((err) => console.error('[sync] publish failed', err));
@@ -174,7 +174,7 @@ export interface CreateTaskInput {
   title: string;
   description?: string | null;
   priority?: number;
-  projectId?: string;
+  collectionId?: string;
   sectionId?: string | null;
   parentTaskId?: string | null;
   labelIds?: string[];
@@ -215,7 +215,7 @@ export async function createTask(userId: string, input: CreateTaskInput) {
     });
   }
 
-  let projectId = input.projectId;
+  let collectionId = input.collectionId;
   let sectionId = input.sectionId ?? null;
   let depth = 0;
 
@@ -223,8 +223,8 @@ export async function createTask(userId: string, input: CreateTaskInput) {
     // Verify parent exists and user has access
     const parentTask = await verifyTaskAccess(input.parentTaskId, userId);
 
-    // Inherit parent's project_id and section_id
-    projectId = parentTask.project_id;
+    // Inherit parent's collection_id and section_id
+    collectionId = parentTask.collection_id;
     sectionId = parentTask.section_id;
     depth = parentTask.depth + 1;
 
@@ -237,29 +237,29 @@ export async function createTask(userId: string, input: CreateTaskInput) {
     }
   }
 
-  // If no project specified and no parent, use Inbox
-  if (!projectId) {
+  // If no collection specified and no parent, use Inbox
+  if (!collectionId) {
     const inboxResult = await pool.query(
-      `SELECT id FROM projects WHERE user_id = $1 AND is_inbox = true`,
+      `SELECT id FROM collections WHERE user_id = $1 AND is_inbox = true`,
       [userId],
     );
-    projectId = inboxResult.rows[0]?.id;
+    collectionId = inboxResult.rows[0]?.id;
   }
 
-  // Verify user has access to project
-  if (projectId) {
-    const projectAccess = await pool.query(
-      `SELECT id FROM projects
+  // Verify user has access to collection
+  if (collectionId) {
+    const collectionAccess = await pool.query(
+      `SELECT id FROM collections
        WHERE id = $1
-         AND (user_id = $2 OR id IN (SELECT project_id FROM collaborators WHERE user_id = $2))`,
-      [projectId, userId],
+         AND (user_id = $2 OR id IN (SELECT collection_id FROM collaborators WHERE user_id = $2))`,
+      [collectionId, userId],
     );
-    if (projectAccess.rows.length === 0) {
+    if (collectionAccess.rows.length === 0) {
       throw new AppError({
         code: 'VALIDATION_ERROR',
-        message: 'Project not accessible',
+        message: 'Collection not accessible',
         statusCode: 400,
-        details: [{ field: 'projectId', message: 'Project not accessible' }],
+        details: [{ field: 'collectionId', message: 'Collection not accessible' }],
       });
     }
   }
@@ -269,13 +269,13 @@ export async function createTask(userId: string, input: CreateTaskInput) {
   const type = input.type ?? 'task';
 
   const result = await pool.query(
-    `INSERT INTO tasks (id, user_id, project_id, section_id, parent_task_id, title, description, priority, due_date, depth, type)
+    `INSERT INTO tasks (id, user_id, collection_id, section_id, parent_task_id, title, description, priority, due_date, depth, type)
      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
      RETURNING *`,
     [
       id,
       userId,
-      projectId,
+      collectionId,
       sectionId,
       input.parentTaskId ?? null,
       input.title,
@@ -294,7 +294,7 @@ export async function createTask(userId: string, input: CreateTaskInput) {
       eventType: 'created',
       entityId: task.id,
       userId,
-      projectId: task.projectId,
+      collectionId: task.collectionId,
       payload: task,
     }),
   ).catch((err) => console.error('[sync] publish failed', err));
@@ -305,7 +305,7 @@ export interface UpdateTaskInput {
   title?: string;
   description?: string | null;
   priority?: number;
-  projectId?: string;
+  collectionId?: string;
   sectionId?: string | null;
   parentTaskId?: string | null;
   dueDate?: string | null;
@@ -407,9 +407,9 @@ export async function updateTask(taskId: string, userId: string, input: UpdateTa
       setClauses.push(`depth = $${paramIndex++}`);
       values.push(newDepth);
 
-      // Inherit parent's project_id and section_id
-      setClauses.push(`project_id = $${paramIndex++}`);
-      values.push(parentTask.project_id);
+      // Inherit parent's collection_id and section_id
+      setClauses.push(`collection_id = $${paramIndex++}`);
+      values.push(parentTask.collection_id);
       setClauses.push(`section_id = $${paramIndex++}`);
       values.push(parentTask.section_id);
     }
@@ -435,35 +435,35 @@ export async function updateTask(taskId: string, userId: string, input: UpdateTa
     values.push(input.type);
   }
 
-  if (input.projectId !== undefined && input.parentTaskId === undefined) {
-    // Verify user has access to target project
-    const projectAccess = await pool.query(
-      `SELECT id FROM projects
+  if (input.collectionId !== undefined && input.parentTaskId === undefined) {
+    // Verify user has access to target collection
+    const collectionAccess = await pool.query(
+      `SELECT id FROM collections
        WHERE id = $1
-         AND (user_id = $2 OR id IN (SELECT project_id FROM collaborators WHERE user_id = $2))`,
-      [input.projectId, userId],
+         AND (user_id = $2 OR id IN (SELECT collection_id FROM collaborators WHERE user_id = $2))`,
+      [input.collectionId, userId],
     );
-    if (projectAccess.rows.length === 0) {
+    if (collectionAccess.rows.length === 0) {
       throw new AppError({
         code: 'VALIDATION_ERROR',
-        message: 'Project not accessible',
+        message: 'Collection not accessible',
         statusCode: 400,
-        details: [{ field: 'projectId', message: 'Project not accessible' }],
+        details: [{ field: 'collectionId', message: 'Collection not accessible' }],
       });
     }
 
-    setClauses.push(`project_id = $${paramIndex++}`);
-    values.push(input.projectId);
+    setClauses.push(`collection_id = $${paramIndex++}`);
+    values.push(input.collectionId);
 
-    // Moving to different project clears section_id
-    if (input.projectId !== task.project_id) {
+    // Moving to different collection clears section_id
+    if (input.collectionId !== task.collection_id) {
       setClauses.push(`section_id = NULL`);
     }
   }
 
   if (
     input.sectionId !== undefined &&
-    input.projectId === undefined &&
+    input.collectionId === undefined &&
     input.parentTaskId === undefined
   ) {
     setClauses.push(`section_id = $${paramIndex++}`);
@@ -524,7 +524,7 @@ export async function updateTask(taskId: string, userId: string, input: UpdateTa
       eventType: 'updated',
       entityId: formatted.id,
       userId,
-      projectId: formatted.projectId,
+      collectionId: formatted.collectionId,
       payload: formatted,
     }),
   ).catch((err) => console.error('[sync] publish failed', err));
@@ -570,9 +570,9 @@ export async function reopenTask(taskId: string, userId: string) {
 
     // Record activity event
     await client.query(
-      `INSERT INTO activity_events (user_id, project_id, entity_type, entity_id, event_type)
+      `INSERT INTO activity_events (user_id, collection_id, entity_type, entity_id, event_type)
        VALUES ($1, $2, 'task', $3, 'task_reopened')`,
-      [userId, task.project_id, taskId],
+      [userId, task.collection_id, taskId],
     );
 
     await client.query('COMMIT');
@@ -585,7 +585,7 @@ export async function reopenTask(taskId: string, userId: string) {
         eventType: 'uncompleted',
         entityId: formatted.id,
         userId,
-        projectId: formatted.projectId,
+        collectionId: formatted.collectionId,
         payload: formatted,
       }),
     ).catch((err) => console.error('[sync] publish failed', err));
@@ -614,15 +614,15 @@ export async function reorderTask(taskId: string, userId: string, position: numb
   try {
     await client.query('BEGIN');
 
-    // Get sibling tasks (same project + section + parent) ordered by current order_value
+    // Get sibling tasks (same collection + section + parent) ordered by current order_value
     const siblingsResult = await client.query(
       `SELECT id, order_value FROM tasks
-       WHERE project_id = $1
+       WHERE collection_id = $1
          AND section_id IS NOT DISTINCT FROM $2
          AND parent_task_id IS NOT DISTINCT FROM $3
          AND id != $4
        ORDER BY order_value ASC`,
-      [task.project_id, task.section_id, task.parent_task_id, taskId],
+      [task.collection_id, task.section_id, task.parent_task_id, taskId],
     );
 
     const siblings = siblingsResult.rows as { id: string; order_value: number }[];
@@ -683,9 +683,9 @@ export async function deleteTask(taskId: string, userId: string): Promise<{ succ
 
     // Append activity event
     await client.query(
-      `INSERT INTO activity_events (id, user_id, project_id, entity_type, entity_id, event_type, before_data)
+      `INSERT INTO activity_events (id, user_id, collection_id, entity_type, entity_id, event_type, before_data)
        VALUES ($1, $2, $3, 'task', $4, 'task_deleted', $5)`,
-      [uuidv4(), userId, task.project_id, taskId, JSON.stringify({ title: task.title })],
+      [uuidv4(), userId, task.collection_id, taskId, JSON.stringify({ title: task.title })],
     );
 
     await client.query('COMMIT');
@@ -695,7 +695,7 @@ export async function deleteTask(taskId: string, userId: string): Promise<{ succ
         eventType: 'deleted',
         entityId: taskId,
         userId,
-        projectId: task.project_id,
+        collectionId: task.collection_id,
       }),
     ).catch((err) => console.error('[sync] publish failed', err));
   } catch (err) {

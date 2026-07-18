@@ -22,11 +22,11 @@ function formatReminder(row: ReminderRow) {
   };
 }
 
-async function verifyTaskAccess(taskId: string, userId: string): Promise<{ project_id: string }> {
+async function verifyTaskAccess(taskId: string, userId: string): Promise<{ collection_id: string }> {
   const result = await pool.query(
-    `SELECT t.project_id FROM tasks t
+    `SELECT t.collection_id FROM tasks t
      WHERE t.id = $1
-       AND (t.user_id = $2 OR t.project_id IN (SELECT project_id FROM collaborators WHERE user_id = $2))`,
+       AND (t.user_id = $2 OR t.collection_id IN (SELECT collection_id FROM collaborators WHERE user_id = $2))`,
     [taskId, userId],
   );
 
@@ -38,7 +38,7 @@ async function verifyTaskAccess(taskId: string, userId: string): Promise<{ proje
     });
   }
 
-  return result.rows[0] as { project_id: string };
+  return result.rows[0] as { collection_id: string };
 }
 
 export function validateRemindAt(remindAt: unknown, now: Date = new Date()): Date {
