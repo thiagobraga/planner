@@ -1,0 +1,21 @@
+# Secrets
+.env
+.env.example
+.env.local
+.env.*.local
+
+# Dependencies
+node_modules/
+
+# Build output
+app/dist/
+api/dist/
+*.tsbuildinfo
+
+# Lock files (large, machine-generated)
+pnpm-lock.yaml
+package-lock.json
+yarn.lock
+
+# Git internals
+.git/
