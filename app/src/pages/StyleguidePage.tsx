@@ -89,7 +89,7 @@ const MOTION = [
 ];
 
 const PRIMARY_COLORS = [
-  { name: 'Ink', var: '--color-ink', hex: '#5e5e55' },
+  { name: 'Ink', var: '--color-ink', hex: '#44443d' },
   { name: 'Ink Light', var: '--color-ink-light', hex: '#8b867e' },
   { name: 'Ink Lighter', var: '--color-ink-lighter', hex: '#c5c1ba' },
   { name: 'Dot Grid', var: '--color-dot', hex: '#d8d3cb' },
@@ -271,15 +271,15 @@ export function StyleguidePage() {
 
         {/* 2 - Buttons */}
         <Card title="Buttons" span>
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-x-4 gap-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-x-4 gap-y-3 items-start">
             {([
               { label: 'Primary', variant: 'primary' as const },
               { label: 'Secondary', variant: 'secondary' as const },
               { label: 'Tertiary', variant: 'tertiary' as const },
               { label: 'Destructive', variant: 'destructive' as const },
             ]).map(({ label, variant }) => (
-              <div key={label} className="flex flex-col gap-3">
-                <span className="text-[10px] text-ink-light uppercase tracking-[0.1em] text-center">{label}</span>
+              <div key={label} className="flex flex-col items-start gap-3">
+                <span className="text-[10px] text-ink-light uppercase tracking-[0.1em] text-left">{label}</span>
                 <Button variant={variant}>{label === 'Destructive' ? 'Delete' : label}</Button>
                 <Button variant={variant} leftIcon={variant === 'destructive' ? <Trash2 /> : <Plus />}>
                   {variant === 'destructive' ? 'Delete' : 'New item'}
@@ -289,8 +289,8 @@ export function StyleguidePage() {
                 </Button>
               </div>
             ))}
-            <div className="flex flex-col gap-3">
-              <span className="text-[10px] text-ink-light uppercase tracking-[0.1em] text-center">Disabled</span>
+            <div className="flex flex-col items-start gap-3">
+              <span className="text-[10px] text-ink-light uppercase tracking-[0.1em] text-left">Disabled</span>
               <Button variant="secondary" disabled>Disabled</Button>
               <Button variant="secondary" leftIcon={<Plus />} disabled>New item</Button>
               <Button variant="secondary" leftIcon={<Calendar />} disabled>Add date</Button>
@@ -298,7 +298,7 @@ export function StyleguidePage() {
           </div>
           <div className="mt-6 pt-6 border-t border-border">
             <span className="text-[10px] text-ink-light uppercase tracking-[0.1em] font-semibold block mb-4">Size Variations</span>
-            <div className="flex items-center gap-4 flex-wrap">
+            <div className="flex flex-col gap-3">
               <div className="flex flex-col items-start gap-1">
                 <Button variant="secondary" size="lg">Large</Button>
                 <span className="text-[9px] text-ink-light font-mono">lg · 40px · r-8</span>
@@ -566,20 +566,22 @@ export function StyleguidePage() {
 
         {/* 11 - Essential Tokens */}
         <Card title="Essential Tokens" span>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div>
-              <span className="text-[10px] text-ink-light uppercase tracking-[0.1em] block mb-3">Spacing</span>
-              <div className="flex items-end gap-2">
+          <div className="flex flex-col gap-5">
+            <TokenRow label="Spacing">
+              <div className="flex flex-col gap-3">
                 {SPACING.map((s) => (
-                  <div key={s} className="flex flex-col items-center gap-1">
-                    <span className="rounded-full bg-dot" style={{ width: s, height: s }} />
-                    <span className="text-[9px] text-ink-light font-mono">{s}</span>
+                  <div key={s} className="flex items-center gap-4">
+                    <div className="flex items-center" style={{ gap: `${s}px` }}>
+                      <span className="block h-2 w-2 rounded-[2px] bg-dot" aria-hidden="true" />
+                      <span className="block h-2 w-2 rounded-[2px] bg-dot" aria-hidden="true" />
+                    </div>
+                    <span className="text-[9px] text-ink-light font-mono leading-none">{s}px</span>
                   </div>
                 ))}
               </div>
-            </div>
-            <div>
-              <span className="text-[10px] text-ink-light uppercase tracking-[0.1em] block mb-3">Radius</span>
+            </TokenRow>
+
+            <TokenRow label="Radius">
               <div className="flex items-end gap-2">
                 {RADII.map((r) => (
                   <div key={r} className="flex flex-col items-center gap-1">
@@ -588,16 +590,16 @@ export function StyleguidePage() {
                   </div>
                 ))}
               </div>
-            </div>
-            <div>
-              <span className="text-[10px] text-ink-light uppercase tracking-[0.1em] block mb-3">Borders</span>
+            </TokenRow>
+
+            <TokenRow label="Borders">
               <div className="flex flex-col gap-2">
                 <span className="w-full border-t border-border" />
                 <span className="text-[10px] text-ink-light font-mono">1px · #E5E1D8</span>
               </div>
-            </div>
-            <div>
-              <span className="text-[10px] text-ink-light uppercase tracking-[0.1em] block mb-3">Shadows</span>
+            </TokenRow>
+
+            <TokenRow label="Shadows">
               <div className="flex gap-3">
                 <div className="flex flex-col items-center gap-1">
                   <span className="w-10 h-10 rounded-[6px] bg-cream border border-border shadow-subtle" />
@@ -608,9 +610,9 @@ export function StyleguidePage() {
                   <span className="text-[9px] text-ink-light">Medium</span>
                 </div>
               </div>
-            </div>
-            <div className="sm:col-span-2 lg:col-span-4">
-              <span className="text-[10px] text-ink-light uppercase tracking-[0.1em] block mb-3">Motion</span>
+            </TokenRow>
+
+            <TokenRow label="Motion">
               <div className="flex flex-wrap gap-6">
                 {MOTION.map(({ ms, label }) => (
                   <div key={ms} className="flex items-center gap-2">
@@ -619,7 +621,7 @@ export function StyleguidePage() {
                   </div>
                 ))}
               </div>
-            </div>
+            </TokenRow>
           </div>
         </Card>
 
@@ -658,6 +660,15 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   return (
     <div>
       <label className="text-[10px] text-ink-light uppercase tracking-[0.1em] block mb-1.5">{label}</label>
+      {children}
+    </div>
+  );
+}
+
+function TokenRow({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="grid grid-cols-1 gap-2">
+      <span className="text-[10px] text-ink-light uppercase tracking-[0.1em] block">{label}</span>
       {children}
     </div>
   );
