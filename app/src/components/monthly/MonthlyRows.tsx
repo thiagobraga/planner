@@ -9,11 +9,6 @@ function dateKey(year: number, month: number, day: number): string {
   return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 }
 
-function getInitialMonth() {
-  const now = new Date();
-  return { year: now.getFullYear(), month: now.getMonth() };
-}
-
 function monthlyNoteText(note: ApiTask): string {
   if (note.type === 'note') {
     return note.title;
@@ -23,10 +18,13 @@ function monthlyNoteText(note: ApiTask): string {
   return description || note.title;
 }
 
-export function MonthlyRows() {
-  const initialMonth = getInitialMonth();
-  const [selectedYear, setSelectedYear] = useState(initialMonth.year);
-  const [selectedMonth, setSelectedMonth] = useState(initialMonth.month);
+export interface MonthlyRowsProps {
+  year: number;
+  month: number;
+  onMonthChange: (year: number, month: number) => void;
+}
+
+export function MonthlyRows({ year: selectedYear, month: selectedMonth, onMonthChange }: MonthlyRowsProps) {
   const [notesByDate, setNotesByDate] = useState<Record<string, string[]>>({});
 
   const loadMonthNotes = useCallback(() => {
@@ -88,10 +86,7 @@ export function MonthlyRows() {
       <MonthSelector
         year={selectedYear}
         month={selectedMonth}
-        onChange={(year, month) => {
-          setSelectedYear(year);
-          setSelectedMonth(month);
-        }}
+        onChange={onMonthChange}
         className="mb-6"
       />
 
