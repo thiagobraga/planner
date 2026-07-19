@@ -4,9 +4,9 @@
 
 ## Locked behavior
 
-- [ ] Manual order is authoritative
-  - [ ] Open and completed tasks may remain interleaved in the exact dropped position
-  - [ ] Priority and completion state must not override manual order after reload
+- [x] Manual order is authoritative
+  - [x] Open and completed tasks may remain interleaved in the exact dropped position
+  - [x] Priority and completion state must not override manual order after reload
   - [x] Stable fallback ordering uses `createdAt` only when two stored order values tie
 - [x] Task drag supports full tree movement
   - [x] Vertical movement changes sibling position
@@ -14,17 +14,17 @@
   - [x] Maximum task depth remains 5
   - [x] Dragging a parent carries its complete descendant block
   - [x] Invalid cycle and descendant drops are rejected without mutating local or server state
-- [ ] Habit drag supports the existing one-level hierarchy
-  - [ ] Root habits can move between groups
-  - [ ] Leaf habits can become sub-habits through horizontal projection
-  - [ ] Sub-habits can be promoted to roots
-  - [ ] Sub-habits can be manually reordered under the same parent
+- [x] Habit drag supports the existing one-level hierarchy
+  - [x] Root habits can move between groups
+  - [x] Leaf habits can become sub-habits through horizontal projection
+  - [x] Sub-habits can be promoted to roots
+  - [x] Sub-habits can be manually reordered under the same parent
   - [x] A habit with children cannot become a sub-habit
-  - [ ] Dragging a parent habit carries its sub-habits
+  - [x] Dragging a parent habit carries its sub-habits
 - [ ] Press interaction works on desktop and mobile
   - [x] Pointer drag activates after a 180ms press with 8px movement tolerance
   - [x] Quick scrolling before activation cancels drag instead of blocking page scroll
-  - [ ] Toggles, inputs, menus, task controls, and habit day cells never initiate pointer drag
+  - [x] Toggles, inputs, menus, task controls, and habit day cells never initiate pointer drag
   - [x] Keyboard dragging remains available from the accessible drag handle
 - [x] Editing is direct
   - [x] Remove task row selection state, selected styling, and single-click selection callbacks
@@ -49,7 +49,11 @@
 - [x] Preserve existing endpoints for compatibility
   - [x] Keep `PATCH /tasks/:id/reorder` operational but stop using it from the new UI
   - [x] Keep name/property update endpoints separate from structural move endpoints
-- [ ] Confirm no database migration is required
+- [x] Migration 025 IS required, contrary to this spec's original assumption
+  - [x] A task holds a position in its collection *and* an independent one in its
+        day; one `order_value` column cannot express both, so day positions live
+        in `task_order` (migration 025). Daily ordering could not survive reload
+        without it.
   - [x] Reuse task `parent_task_id`, `collection_id`, `due_date`, `depth`, and `order_value`
   - [x] Reuse habit `parent_id`, `group_id`, and `order_value`
   - [x] Reuse habit-group `order_value`
@@ -71,13 +75,15 @@
   - [x] Habit drags consider habit rows/cards and habit-group containers
   - [x] Collection drags consider only collection rows
   - [x] Prefer pointer intersection for container targets and closest-center for sortable rows
-- [ ] Add shared drag presentation
+- [x] Add shared drag presentation
   - [x] Render `DragOverlay` outside clipped scroll containers
   - [x] Show dragged title and descendant count
   - [x] Show a 1px insertion line at the projected target position
   - [x] Show projected indentation aligned to the 24px page grid
-  - [ ] Highlight valid day, group, Inbox, and collection drop targets
-  - [ ] Visually reject invalid targets and announce the reason through an ARIA live region
+  - [x] Highlight valid day, group, Inbox, and collection drop targets
+  - [x] Visually reject invalid targets and announce the reason through an ARIA live region
+        (collision detection filters invalid targets so they never light up; the
+        drag hooks announce why a drop was refused)
   - [x] Enable vertical auto-scroll while dragging long lists
 
 ## Phase 2 - Task move service and endpoint

@@ -1044,11 +1044,18 @@ async function renumberDayScope(
   client: Client,
   opts: { userId: string; date: string; movedTaskId: string; position: number },
 ): Promise<void> {
+  // Seed from every task on this day, not only those already carrying a day
+  // position. The first drag into a day would otherwise renumber a list of one
+  // and rank the moved task above tasks it was dropped below - they hold no
+  // position to compare against. Reading the day in its current rendered order
+  // and writing the whole list back is what makes the first drag stick.
   const result = await client.query(
-    `SELECT task_id FROM task_order
-     WHERE user_id = $1 AND scope_type = 'day' AND scope_id = $2 AND task_id != $3
-     ORDER BY position ASC
-     FOR UPDATE`,
+    `SELECT t.id AS task_id
+     FROM tasks t
+     LEFT JOIN task_order o
+       ON o.task_id = t.id AND o.scope_type = 'day' AND o.scope_id = $2
+     WHERE t.user_id = $1 AND t.due_date = $2::date AND t.id != $3
+     ORDER BY o.position ASC NULLS LAST, t.order_value ASC, t.created_at ASC`,
     [opts.userId, opts.date, opts.movedTaskId],
   );
   const ids = (result.rows as { task_id: string }[]).map((r) => r.task_id);

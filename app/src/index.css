@@ -294,6 +294,21 @@ kbd {
   opacity: 0.6;
 }
 
+/*
+  A container that will accept the drag currently in flight.
+
+  Kept to a tinted wash plus a hairline rather than a heavy border, because the
+  target is often a whole day section: a strong outline around a tall region
+  reads as an error state rather than an invitation.
+*/
+.task-list--drop-target,
+.habit-timeline-section--drop-target,
+.habit-calendar-section--drop-target {
+  background: color-mix(in srgb, var(--color-ink-light) 6%, transparent);
+  border-radius: 4px;
+  box-shadow: inset 0 0 0 1px var(--color-dot);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .task-item {
     transition: none !important;

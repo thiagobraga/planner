@@ -92,14 +92,22 @@ export async function getTodayView(userId: string, now: Date = new Date()): Prom
   const timeZone = await getUserTimezone(userId);
   const todayDate = localDateInTimezone(now, timeZone);
 
+  // Daily is hand-sorted per day, and those positions live in `task_order`
+  // rather than `tasks.order_value` - a task holds a place in its collection and
+  // a separate place in its day, and one column cannot express both. Tasks never
+  // dragged within Daily hold no day position and fall back to collection order.
   const result = await pool.query(
     `SELECT t.* FROM tasks t
      JOIN collections p ON p.id = t.collection_id
+     LEFT JOIN task_order o
+       ON o.task_id = t.id
+      AND o.scope_type = 'day'
+      AND o.scope_id = to_char(t.due_date, 'YYYY-MM-DD')
      WHERE t.user_id = $1
        AND t.due_date IS NOT NULL
        AND t.due_date <= $2::date
        AND p.is_archived = false
-     ORDER BY t.order_value ASC, t.created_at ASC`,
+     ORDER BY o.position ASC NULLS LAST, t.order_value ASC, t.created_at ASC`,
     [userId, todayDate],
   );
 

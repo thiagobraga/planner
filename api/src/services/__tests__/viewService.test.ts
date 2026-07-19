@@ -78,8 +78,29 @@ describe("getTodayView", () => {
 
     const sql = mockQuery.mock.calls[1][0] as string;
     expect(sql).toMatch(/is_archived = false/);
-    expect(sql).toMatch(/ORDER BY t\.order_value ASC, t\.created_at ASC/);
+    // Daily's hand-sorted order lives in task_order; collection order is only
+    // the fallback for a task that has never been dragged within a day.
+    expect(sql).toMatch(/LEFT JOIN task_order o/);
+    expect(sql).toMatch(/ORDER BY o\.position ASC NULLS LAST, t\.order_value ASC, t\.created_at ASC/);
     expect(sql).not.toMatch(/ORDER BY[^`]*priority/);
+  });
+
+  it("returns the day's hand-sorted order, with completed rows left where they were dropped", async () => {
+    mockQuery
+      .mockResolvedValueOnce({ rows: [{ time_zone: "UTC" }] })
+      // The SQL orders by task_order.position, so the driver returns them already
+      // in the order the user dragged them into - completed row included.
+      .mockResolvedValueOnce({
+        rows: [
+          taskRow({ id: "third", due_date: "2024-06-15", priority: 1, order_value: 0 }),
+          taskRow({ id: "done", due_date: "2024-06-15", is_completed: true, priority: 4 }),
+          taskRow({ id: "first", due_date: "2024-06-15", priority: 4, order_value: 5000 }),
+        ],
+      });
+
+    const view = await getTodayView(userId, new Date("2024-06-15T12:00:00Z"));
+
+    expect(view.today.map((t) => t.id)).toEqual(["third", "done", "first"]);
   });
 
   it("uses user's timezone for today determination", async () => {

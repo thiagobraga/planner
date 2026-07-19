@@ -239,7 +239,9 @@ describe("moveTask ordering scopes", () => {
     (pool.query as ReturnType<typeof vi.fn>).mockResolvedValue({ rows: [taskRow({ due_date: "2026-07-18" })] });
     const tx = stubSuccessfulMove([
       [/WITH RECURSIVE/, [{ id: taskId, parent_task_id: null, depth: 0, collection_id: collectionId, section_id: null, due_date: "2026-07-18" }]],
-      [/SELECT task_id FROM task_order/, [{ task_id: "other-1" }, { task_id: "other-2" }]],
+      // The day's current order is read from tasks joined to task_order, so a
+      // task that has never been dragged in Daily is seeded alongside those that have.
+      [/LEFT JOIN task_order/, [{ task_id: "other-1" }, { task_id: "other-2" }]],
     ]);
 
     await moveTask(taskId, userId, {
