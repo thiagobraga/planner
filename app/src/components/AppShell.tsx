@@ -11,6 +11,7 @@ import { useSync } from '../hooks/useSync';
 import { fetchPreferences, type Preferences } from '../api/client';
 import { ensureFontLoaded, type FontOption } from '../utils/fontLoader';
 import { updateDocumentThemeColor } from '../utils/theme';
+import { PlannerDragProvider } from '../contexts/PlannerDragContext';
 
 const FONT_CLASSES: Record<FontOption, string> = {
   lora: 'font-journal',
@@ -159,25 +160,31 @@ export function AppShell() {
         </button>
       )}
 
-      <Sidebar
-        isOpen={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
-        collapsed={sidebarCollapsed}
-        onOpenHelp={() => setHelpOpen(true)}
-      />
+      {/*
+        Sidebar and page share one drag context so a task can be dragged out of a
+        list and dropped onto a collection in the nav.
+      */}
+      <PlannerDragProvider>
+        <Sidebar
+          isOpen={sidebarOpen}
+          onClose={() => setSidebarOpen(false)}
+          collapsed={sidebarCollapsed}
+          onOpenHelp={() => setHelpOpen(true)}
+        />
 
-      <main
-        className="app-shell-main-content main-content flex-1 overflow-y-auto p-6"
-        style={{
-          backgroundColor: pageBackground,
-          backgroundImage: preferences?.showDots === false ? 'none' : 'radial-gradient(circle, var(--color-dot) 1px, transparent 1px)',
-          backgroundSize: preferences?.showDots === false ? undefined : 'var(--dot-grid) var(--dot-grid)',
-          backgroundPosition: preferences?.showDots === false ? undefined : 'calc(var(--dot-grid)/2) calc(var(--dot-grid)/2)',
-          backgroundRepeat: 'repeat',
-        }}
-      >
-        <Outlet />
-      </main>
+        <main
+          className="app-shell-main-content main-content flex-1 overflow-y-auto p-6"
+          style={{
+            backgroundColor: pageBackground,
+            backgroundImage: preferences?.showDots === false ? 'none' : 'radial-gradient(circle, var(--color-dot) 1px, transparent 1px)',
+            backgroundSize: preferences?.showDots === false ? undefined : 'var(--dot-grid) var(--dot-grid)',
+            backgroundPosition: preferences?.showDots === false ? undefined : 'calc(var(--dot-grid)/2) calc(var(--dot-grid)/2)',
+            backgroundRepeat: 'repeat',
+          }}
+        >
+          <Outlet />
+        </main>
+      </PlannerDragProvider>
 
       {/* Overlays */}
       <QuickAdd
