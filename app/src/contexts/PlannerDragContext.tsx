@@ -26,6 +26,7 @@ import {
   PRESS_ACTIVATION,
 } from '../components/dnd/sensors';
 import { plannerCollisionDetection } from '../components/dnd/collision';
+import { createIndentTracker } from '../utils/dragIndent';
 import type { DragData, DragKind } from '../types/drag';
 
 /** The page grid. One indent step of horizontal drag equals one nesting level. */
@@ -130,6 +131,10 @@ export function PlannerDragProvider({ children }: { children: ReactNode }) {
   const [indentSteps, setIndentSteps] = useState(0);
   const [overId, setOverId] = useState<string | null>(null);
   const handlersRef = useRef(new Map<DragKind, DragHandlers>());
+  /** Nesting intent, rebased per row so drift cannot accumulate into a preview. */
+  const indent = useRef(createIndentTracker());
+  /** Mirrors overId for comparison outside a state updater. */
+  const overIdRef = useRef<string | null>(null);
 
   const registerHandlers = useCallback((kind: DragKind, handlers: DragHandlers) => {
     handlersRef.current.set(kind, handlers);
@@ -167,7 +172,8 @@ export function PlannerDragProvider({ children }: { children: ReactNode }) {
 
   const handleDragMove = useCallback(
     (event: DragMoveEvent) => {
-      const steps = Math.round(event.delta.x / INDENT_PX);
+      indent.current.move(event.delta.x);
+      const steps = Math.round(indent.current.offset() / INDENT_PX);
       setIndentSteps((prev) => (prev === steps ? prev : steps));
       dispatch(event, (h) => h.onDragMove);
     },
@@ -177,13 +183,23 @@ export function PlannerDragProvider({ children }: { children: ReactNode }) {
   const handleDragOver = useCallback(
     (event: DragOverEvent) => {
       const next = event.over ? String(event.over.id) : null;
-      setOverId((prev) => (prev === next ? prev : next));
+      if (next !== overIdRef.current) {
+        overIdRef.current = next;
+        // Same rebasing the move hooks apply: nesting intent is measured from
+        // the row the pointer is on, so the preview shows the depth a drop will
+        // actually produce rather than one drift accumulated on the way here.
+        indent.current.enterRow();
+        setIndentSteps(Math.round(indent.current.offset() / INDENT_PX));
+        setOverId(next);
+      }
       dispatch(event, (h) => h.onDragOver);
     },
     [dispatch],
   );
 
   const reset = useCallback(() => {
+    indent.current.reset();
+    overIdRef.current = null;
     setActiveDrag(null);
     setOverlay(null);
     setIndentSteps(0);

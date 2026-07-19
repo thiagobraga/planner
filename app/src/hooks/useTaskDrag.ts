@@ -9,6 +9,7 @@ import { usePlannerDrag, usePlannerDragHandlers } from '../contexts/PlannerDragC
 import { flattenTasks, getSubtreeBlock, projectMove, type FlatRow } from '../utils/taskProjection';
 import { apiMoveTask, type TaskOrderScope } from '../api/client';
 import { trackMove } from '../utils/moveEcho';
+import { createIndentTracker } from '../utils/dragIndent';
 import type { CollectionDropData, DayDropData, TaskDragData } from '../types/drag';
 import type { Task } from '../components/TaskItem';
 
@@ -60,6 +61,9 @@ export function useTaskDrag({ tasks, setTasks, scope, onError, onMoved }: UseTas
   const snapshot = useRef<Task[] | null>(null);
   /** Last spoken hover target, so an unchanged projection is not repeated. */
   const lastPreview = useRef<string | null>(null);
+  /** Nesting intent, rebased on each row so drift cannot accumulate. */
+  const indent = useRef(createIndentTracker());
+  const overRowId = useRef<string | null>(null);
 
   const rows = flattenTasks(tasks);
 
@@ -70,6 +74,8 @@ export function useTaskDrag({ tasks, setTasks, scope, onError, onMoved }: UseTas
       const id = data.taskId;
       setActiveDragId(id);
       offsetX.current = 0;
+      indent.current.reset();
+      overRowId.current = null;
       snapshot.current = tasks;
       lastPreview.current = null;
 
@@ -86,7 +92,8 @@ export function useTaskDrag({ tasks, setTasks, scope, onError, onMoved }: UseTas
   );
 
   const handleDragMove = useCallback((event: DragMoveEvent) => {
-    offsetX.current = event.delta.x;
+    indent.current.move(event.delta.x);
+    offsetX.current = indent.current.offset();
   }, []);
 
   /**
@@ -104,6 +111,15 @@ export function useTaskDrag({ tasks, setTasks, scope, onError, onMoved }: UseTas
         | CollectionDropData
         | undefined;
       if (!active) return;
+
+      // Rebase nesting intent whenever the pointer reaches a different row, so
+      // sideways drift on the way there is not read as a request to indent.
+      const overRow = event.over ? String(event.over.id) : null;
+      if (overRow !== overRowId.current) {
+        overRowId.current = overRow;
+        indent.current.enterRow();
+        offsetX.current = indent.current.offset();
+      }
 
       if (!over) {
         if (lastPreview.current !== null) {
@@ -292,12 +308,22 @@ export function resolveMove({
   const overIndex = rows.findIndex((r) => r.id === over.taskId);
   if (overIndex === -1) return null;
 
-  const projection = projectMove(rows, active.taskId, overIndex, offsetX);
-
   // On Daily the row underneath defines which day's ordering applies, so the
   // page's own scope is only a fallback for a target with no date of its own.
   const targetDay = scope.kind === 'day' ? (over.dueDate ?? scope.dueDate) : null;
   const crossesDay = targetDay !== null && targetDay !== active.dueDate;
+
+  const projected = projectMove(rows, active.taskId, overIndex, offsetX);
+
+  // Moving to another date is a coarse gesture: it covers a lot of vertical
+  // distance, and the pointer drifts sideways on the way. Read as nesting
+  // intent, that drift parented tasks under whatever row happened to sit above
+  // the drop - a top-level parent landed as a child of a completed subtask on
+  // the destination day. Arriving on a new date puts the task there at top
+  // level; indenting it is a separate, deliberate drag afterwards.
+  const projection = crossesDay
+    ? { parentId: null, depth: 0, position: projected.position }
+    : projected;
 
   return {
     input: {
