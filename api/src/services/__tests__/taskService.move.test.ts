@@ -168,6 +168,42 @@ describe("moveTask structural rules", () => {
     );
   });
 
+  it("rejects a move into a collection the user cannot reach", async () => {
+    (pool.query as ReturnType<typeof vi.fn>)
+      // The dragged task resolves; the target collection does not.
+      .mockResolvedValueOnce({ rows: [taskRow()] })
+      .mockResolvedValue({ rows: [] });
+    mockTransaction([
+      [/WITH RECURSIVE/, [{ id: taskId, parent_task_id: null, depth: 0, collection_id: collectionId, section_id: null, due_date: null }]],
+    ]);
+
+    await expect(
+      moveTask(taskId, userId, {
+        parentTaskId: null,
+        collectionId: "someone-elses-collection",
+        scope: { kind: "collection", collectionId: "someone-elses-collection" },
+        position: 0,
+      }),
+    ).rejects.toThrow(AppError);
+  });
+
+  it("rejects a move under a parent the user cannot reach", async () => {
+    (pool.query as ReturnType<typeof vi.fn>)
+      .mockResolvedValueOnce({ rows: [taskRow()] })
+      .mockResolvedValue({ rows: [] });
+    mockTransaction([
+      [/WITH RECURSIVE/, [{ id: taskId, parent_task_id: null, depth: 0, collection_id: collectionId, section_id: null, due_date: null }]],
+    ]);
+
+    await expect(
+      moveTask(taskId, userId, {
+        parentTaskId: "someone-elses-task",
+        scope: scopeCollection,
+        position: 0,
+      }),
+    ).rejects.toThrow(AppError);
+  });
+
   it("rolls back and releases the connection when a statement fails", async () => {
     (pool.query as ReturnType<typeof vi.fn>).mockResolvedValue({ rows: [taskRow()] });
     const release = vi.fn();
@@ -259,6 +295,51 @@ describe("moveTask ordering scopes", () => {
     // The whole point of the separate table: a Daily drag must not renumber the
     // collection's ordering.
     expect(tx.calls.some((c) => /SET order_value/.test(c.sql))).toBe(false);
+  });
+});
+
+describe("moveTask onto a sidebar collection", () => {
+  const inboxId = "inbox-collection";
+
+  it("promotes a dated subtask to the top of Inbox while keeping its due date", async () => {
+    (pool.query as ReturnType<typeof vi.fn>)
+      // The dragged task: a depth-1 subtask, dated, in another collection.
+      .mockResolvedValueOnce({
+        rows: [taskRow({ depth: 1, parent_task_id: "parent-1", due_date: "2026-07-18" })],
+      })
+      // Inbox resolves as an accessible collection.
+      .mockResolvedValueOnce({ rows: [{ id: inboxId }] })
+      // The moved records the response reports back, then the reordered siblings.
+      .mockResolvedValueOnce({
+        rows: [taskRow({ collection_id: inboxId, depth: 0, parent_task_id: null, due_date: "2026-07-18" })],
+      })
+      .mockResolvedValue({ rows: [] });
+
+    const tx = mockTransaction([
+      [
+        /WITH RECURSIVE/,
+        [{ id: taskId, parent_task_id: "parent-1", depth: 1, collection_id: collectionId, section_id: null, due_date: "2026-07-18" }],
+      ],
+    ]);
+
+    await moveTask(taskId, userId, {
+      parentTaskId: null,
+      collectionId: inboxId,
+      scope: { kind: "collection", collectionId: inboxId },
+      // The client appends; the server clamps to the end of the list.
+      position: Number.MAX_SAFE_INTEGER,
+    });
+
+    const rootWrite = tx.calls.find((c) => /UPDATE tasks\s+SET parent_task_id/.test(c.sql));
+    expect(rootWrite).toBeDefined();
+    const [parentTaskId, destCollectionId, , dueDate, depth] = rootWrite!.params as unknown[];
+
+    // Detached from its old parent and promoted to the root of Inbox...
+    expect(parentTaskId).toBeNull();
+    expect(destCollectionId).toBe(inboxId);
+    expect(depth).toBe(0);
+    // ...but still sitting on the day it was already scheduled for.
+    expect(dueDate).toBe("2026-07-18");
   });
 });
 

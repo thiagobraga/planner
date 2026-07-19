@@ -125,15 +125,15 @@
   - [x] Cross-collection move updates every descendant collection/section
   - [x] Cross-day move updates every descendant due date
   - [x] Completed task remains completed and retains exact position
-  - [ ] Sidebar Inbox move
+  - [x] Sidebar Inbox move
   - [x] Position clamping
-  - [ ] Inaccessible collection/parent rejection
+  - [x] Inaccessible collection/parent rejection
   - [x] Cycle and maximum-depth rejection
   - [x] Transaction rollback leaves the original tree and order untouched
 
 ## Phase 3 - Tree-aware task projection
 
-- [ ] Extend `app/src/utils/taskTree.ts`
+- [x] Extend `app/src/utils/taskTree.ts`
   - [x] Flatten parent-first trees with stable sibling order
   - [x] Return the contiguous `[root, ...descendants]` block for a dragged task
   - [x] Remove and insert a subtree block without splitting descendants
@@ -149,7 +149,7 @@
   - [x] Indent, outdent, and reparent projections
   - [x] Invalid descendant target
   - [x] Maximum-depth subtree clamp/rejection
-  - [ ] Cross-container root move
+  - [x] Cross-container root move
   - [x] Stable order for equal `orderValue`
   - [x] Property test that every descendant remains after its ancestor and no ID is duplicated or lost
 
@@ -189,10 +189,10 @@
   - [x] Optimistically move/reparent task subtrees
   - [x] Patch cache from `TaskMoveResponse`
   - [x] Roll back and invalidate the current collection on failure
-- [ ] Inbox page
+- [x] Inbox page
   - [x] Resolve the user's Inbox collection ID for move requests
   - [x] Register Inbox as a collection-scoped task container
-  - [ ] Preserve completed tasks in their exact manual positions
+  - [x] Preserve completed tasks in their exact manual positions
   - [x] Roll back and invalidate Inbox on failure
 - [x] Daily page
   - [x] Register each rendered date section as a droppable task container
@@ -228,7 +228,7 @@
   - [ ] Prevent the sidebar overlay from intercepting the active drag pointer
   - [ ] Close the drawer after successful drop or cancellation unless it was open before drag started
   - [ ] Announce drawer opening and current collection target to assistive technology
-- [ ] Add integration tests for named collection, sub-collection, Inbox, same-collection promotion, invalid target, and mobile edge-open behavior
+- [x] Add integration tests for named collection, sub-collection, Inbox, same-collection promotion and invalid target (mobile edge-open deferred)
 
 ## Phase 7 - Manual task ordering in views
 

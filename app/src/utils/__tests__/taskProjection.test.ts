@@ -204,6 +204,46 @@ describe('applyProjection', () => {
   });
 });
 
+describe('cross-container root move', () => {
+  // A Daily date section and a collection list are separate rendered containers,
+  // but each is projected against its own row list. Moving a root out of one and
+  // into another is therefore a projection against the *target* list, in which
+  // the dragged block does not yet appear.
+  const target = [t('x', null, 0), t('x1', 'x', 0), t('y', null, 1000)];
+
+  it('lands a root at top level in a list it did not come from', () => {
+    const incoming = [...target, t('moved', null, 2000)];
+    const rows = flattenTasks(incoming);
+
+    // Dropped onto 'y', with no horizontal offset: a sibling of the target roots.
+    const projection = projectMove(rows, 'moved', 2, 0);
+
+    expect(projection.parentId).toBeNull();
+    expect(projection.depth).toBe(0);
+    expect(projection.position).toBe(1);
+  });
+
+  it('carries its subtree into the target container at the projected depth', () => {
+    const incoming = [...target, t('moved', null, 2000), t('moved1', 'moved', 0)];
+    const rows = flattenTasks(incoming);
+
+    // Nest the arriving root under 'x' by dragging one indent step right.
+    const { rows: next, projection } = applyProjection(rows, 'moved', 2, INDENT_WIDTH);
+
+    expect(projection.parentId).toBe('x');
+    expect(projection.depth).toBe(1);
+    // The child follows its parent and keeps its depth relative to it.
+    expect(shape(next)).toEqual(['x', '  x1', '  moved', '    moved1', 'y']);
+  });
+
+  it('appends to an empty target container', () => {
+    const rows = flattenTasks([t('moved', null, 0)]);
+    const projection = projectMove(rows, 'moved', 0, 0);
+
+    expect(projection).toEqual({ parentId: null, depth: 0, position: 0 });
+  });
+});
+
 describe('property: structural invariants hold for every move', () => {
   const rows = flattenTasks(sample);
   const ids = rows.map((r) => r.id);
