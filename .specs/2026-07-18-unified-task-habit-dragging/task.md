@@ -241,33 +241,33 @@
 
 ## Phase 8 - Habit move service and endpoints
 
-- [ ] Add `PATCH /api/v1/habits/:id/move`
-  - [ ] Validate ownership, parent/group IDs, one-level hierarchy, and position
-  - [ ] Reject self-parenting and making a parent-with-children a sub-habit
-  - [ ] Move roots between ungrouped and named group scopes
-  - [ ] Move leaves into or out of a parent's child scope
-  - [ ] Normalize source and target sibling order values transactionally
-  - [ ] Preserve a moved parent's children and their relative order
-  - [ ] Keep child `group_id` null because group membership is inherited from the parent
-  - [ ] Seed an existing habit's completions from its new parent when it becomes a sub-habit
-  - [ ] Return every habit whose hierarchy or order changed
-  - [ ] Publish an updated habit sync event with affected IDs
-- [ ] Add `PATCH /api/v1/habit-groups/:id/move`
-  - [ ] Validate ownership and non-negative integer position
-  - [ ] Reorder all user groups transactionally with gap-based values
-  - [ ] Return every group whose order changed
-  - [ ] Publish an updated habit-group sync event
-- [ ] Add service/route tests
-  - [ ] Root reorder within ungrouped scope
-  - [ ] Root move into and out of a group
-  - [ ] Journaling-style root move into Morning Routine-style group
-  - [ ] Sub-habit sibling reorder
-  - [ ] Leaf becomes sub-habit and inherits completion seeds
-  - [ ] Sub-habit becomes root in a target group
-  - [ ] Parent-with-children moves groups with children intact
-  - [ ] Invalid third-level hierarchy rejection
-  - [ ] Group reorder
-  - [ ] Transaction rollback
+- [x] Add `PATCH /api/v1/habits/:id/move`
+  - [x] Validate ownership, parent/group IDs, one-level hierarchy, and position
+  - [x] Reject self-parenting and making a parent-with-children a sub-habit
+  - [x] Move roots between ungrouped and named group scopes
+  - [x] Move leaves into or out of a parent's child scope
+  - [x] Normalize source and target sibling order values transactionally
+  - [x] Preserve a moved parent's children and their relative order
+  - [x] Keep child `group_id` null because group membership is inherited from the parent
+  - [x] Seed an existing habit's completions from its new parent when it becomes a sub-habit
+  - [x] Return every habit whose hierarchy or order changed
+  - [x] Publish an updated habit sync event with affected IDs
+- [x] Add `PATCH /api/v1/habit-groups/:id/move`
+  - [x] Validate ownership and non-negative integer position
+  - [x] Reorder all user groups transactionally with gap-based values
+  - [x] Return every group whose order changed
+  - [x] Publish an updated habit-group sync event
+- [x] Add service/route tests
+  - [x] Root reorder within ungrouped scope
+  - [x] Root move into and out of a group
+  - [x] Journaling-style root move into Morning Routine-style group
+  - [x] Sub-habit sibling reorder
+  - [x] Leaf becomes sub-habit and inherits completion seeds
+  - [x] Sub-habit becomes root in a target group
+  - [x] Parent-with-children moves groups with children intact
+  - [x] Invalid third-level hierarchy rejection
+  - [x] Group reorder
+  - [x] Transaction rollback
 
 ## Phase 9 - Habit drag and editing UI
 

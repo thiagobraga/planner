@@ -5,6 +5,7 @@ import {
   createGroup,
   updateGroup,
   deleteGroup,
+  moveHabitGroup,
 } from "../services/habitService.js";
 
 const router: ReturnType<typeof Router> = Router();
@@ -29,6 +30,14 @@ router.post("/", authMiddleware, async (req: Request, res: Response, next: NextF
 router.patch("/:id", authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
   try {
     res.json(await updateGroup(req.userId!, req.params.id as string, req.body ?? {}));
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.patch("/:id/move", authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    res.json(await moveHabitGroup(req.userId!, req.params.id as string, req.body ?? {}));
   } catch (err) {
     next(err);
   }

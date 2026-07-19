@@ -6,6 +6,7 @@ import {
   updateHabit,
   deleteHabit,
   toggleCompletion,
+  moveHabit,
 } from "../services/habitService.js";
 
 const router: ReturnType<typeof Router> = Router();
@@ -30,6 +31,15 @@ router.post("/", authMiddleware, async (req: Request, res: Response, next: NextF
 router.patch("/:id", authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
   try {
     res.json(await updateHabit(req.userId!, req.params.id as string, req.body ?? {}));
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Structural move: hierarchy, group and surrounding order, in one transaction.
+router.patch("/:id/move", authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    res.json(await moveHabit(req.userId!, req.params.id as string, req.body ?? {}));
   } catch (err) {
     next(err);
   }

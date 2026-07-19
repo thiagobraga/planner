@@ -1,3 +1,4 @@
+import type { PoolClient } from "pg";
 import pool from "../db/pool.js";
 import { AppError } from "../utils/AppError.js";
 import { buildEvent, publishEvent } from "./syncService.js";
@@ -58,6 +59,15 @@ function emit(userId: string, entityType: HabitEntityType, eventType: "created" 
   publishEvent(
     buildEvent({ entityType, eventType, entityId, userId, payload }),
   ).catch((err) => console.error("[sync] publish failed", err));
+}
+
+function validationError(field: string, message: string): AppError {
+  return new AppError({
+    code: "VALIDATION_ERROR",
+    message: "Validation failed",
+    statusCode: 400,
+    details: [{ field, message }],
+  });
 }
 
 function validateName(name: unknown): string {
@@ -384,4 +394,240 @@ export async function deleteGroup(userId: string, groupId: string): Promise<void
     throw new AppError({ code: "NOT_FOUND", message: "Habit group not found", statusCode: 404 });
   }
   emit(userId, "habit_group", "deleted", groupId);
+}
+
+export interface MoveHabitInput {
+  parentId: string | null;
+  groupId: string | null;
+  position: number;
+}
+
+export interface MoveHabitResult {
+  moved: Habit[];
+  reordered: Habit[];
+}
+
+function validateMoveHabitInput(input: MoveHabitInput): void {
+  if (!input || typeof input !== "object") {
+    throw validationError("body", "Move input is required");
+  }
+  if (input.parentId !== null && typeof input.parentId !== "string") {
+    throw validationError("parentId", "Parent id must be a string or null");
+  }
+  if (input.groupId !== null && typeof input.groupId !== "string") {
+    throw validationError("groupId", "Group id must be a string or null");
+  }
+  if (!Number.isInteger(input.position) || input.position < 0) {
+    throw validationError("position", "Position must be a non-negative integer");
+  }
+}
+
+type Client = PoolClient;
+
+/** Place `movedHabitId` at `position` among its new siblings, gap-numbered. Returns every other sibling id. */
+async function renumberHabitScope(
+  client: Client,
+  opts: { parentId: string | null; groupId: string | null; movedHabitId: string; position: number },
+): Promise<string[]> {
+  const where = opts.parentId !== null ? `parent_id = $1` : `parent_id IS NULL AND group_id IS NOT DISTINCT FROM $1`;
+  const scopeParam = opts.parentId !== null ? opts.parentId : opts.groupId;
+  const siblingsResult = await client.query(
+    `SELECT id FROM habits WHERE ${where} AND id != $2 ORDER BY order_value ASC, created_at ASC FOR UPDATE`,
+    [scopeParam, opts.movedHabitId],
+  );
+  const ids = (siblingsResult.rows as { id: string }[]).map((r) => r.id);
+  ids.splice(Math.min(opts.position, ids.length), 0, opts.movedHabitId);
+
+  for (let i = 0; i < ids.length; i++) {
+    await client.query(`UPDATE habits SET order_value = $1, updated_at = NOW() WHERE id = $2`, [i * 1000, ids[i]]);
+  }
+  return ids.filter((id) => id !== opts.movedHabitId);
+}
+
+/** Close gaps left in a scope a habit moved out of, preserving relative order. Returns every affected id. */
+async function normalizeHabitScope(
+  client: Client,
+  opts: { parentId: string | null; groupId: string | null },
+): Promise<string[]> {
+  const where = opts.parentId !== null ? `parent_id = $1` : `parent_id IS NULL AND group_id IS NOT DISTINCT FROM $1`;
+  const scopeParam = opts.parentId !== null ? opts.parentId : opts.groupId;
+  const result = await client.query(
+    `SELECT id FROM habits WHERE ${where} ORDER BY order_value ASC, created_at ASC FOR UPDATE`,
+    [scopeParam],
+  );
+  const ids = (result.rows as { id: string }[]).map((r) => r.id);
+  for (let i = 0; i < ids.length; i++) {
+    await client.query(`UPDATE habits SET order_value = $1, updated_at = NOW() WHERE id = $2`, [i * 1000, ids[i]]);
+  }
+  return ids;
+}
+
+export async function moveHabit(userId: string, habitId: string, input: MoveHabitInput): Promise<MoveHabitResult> {
+  validateMoveHabitInput(input);
+
+  const habit = await getOwnedHabit(userId, habitId);
+
+  if (input.parentId === habitId) {
+    throw validationError("parentId", "a habit cannot be its own parent");
+  }
+
+  const client = await pool.connect();
+  let reorderedIds: string[] = [];
+  let reordered: Habit[] = [];
+  try {
+    await client.query("BEGIN");
+
+    // Lock the moved habit for the duration so a concurrent move touching the
+    // same row cannot interleave its renumbering with this one.
+    await client.query(`SELECT id FROM habits WHERE id = $1 FOR UPDATE`, [habitId]);
+
+    let destParent: HabitRow | null = null;
+    if (input.parentId !== null) {
+      const parentResult = await client.query(
+        `SELECT * FROM habits WHERE id = $1 AND user_id = $2 FOR UPDATE`,
+        [input.parentId, userId],
+      );
+      if (parentResult.rows.length === 0) {
+        throw new AppError({ code: "NOT_FOUND", message: "Habit not found", statusCode: 404 });
+      }
+      destParent = parentResult.rows[0] as HabitRow;
+      if (destParent.parent_id !== null) {
+        throw validationError("parentId", "sub-habits cannot have sub-habits of their own");
+      }
+      const childrenResult = await client.query(`SELECT 1 FROM habits WHERE parent_id = $1 LIMIT 1`, [habitId]);
+      if (childrenResult.rows.length > 0) {
+        throw validationError("parentId", "a habit with sub-habits cannot become a sub-habit");
+      }
+    }
+
+    // A child belongs to its parent's group implicitly, so a reparent always
+    // clears any explicit group.
+    const destGroupId = destParent ? null : input.groupId;
+    if (destGroupId !== null) {
+      const groupResult = await client.query(`SELECT id FROM habit_groups WHERE id = $1 AND user_id = $2`, [
+        destGroupId,
+        userId,
+      ]);
+      if (groupResult.rows.length === 0) {
+        throw new AppError({ code: "NOT_FOUND", message: "Habit group not found", statusCode: 404 });
+      }
+    }
+
+    const becomingSubHabit = habit.parent_id === null && input.parentId !== null;
+
+    await client.query(
+      `UPDATE habits SET parent_id = $1, group_id = $2, updated_at = NOW() WHERE id = $3`,
+      [input.parentId, destGroupId, habitId],
+    );
+
+    // Mirror createHabit's seeding: a habit that just became a sub-habit
+    // inherits the days its new parent already has, so those days stay full
+    // instead of dropping the moment the parent starts deriving from children.
+    if (becomingSubHabit) {
+      await client.query(
+        `INSERT INTO habit_completions (habit_id, completed_date)
+         SELECT $1, completed_date FROM habit_completions WHERE habit_id = $2
+         ON CONFLICT (habit_id, completed_date) DO NOTHING`,
+        [habitId, input.parentId],
+      );
+    }
+
+    reorderedIds = await renumberHabitScope(client, {
+      parentId: input.parentId,
+      groupId: destGroupId,
+      movedHabitId: habitId,
+      position: input.position,
+    });
+
+    const sourceDiffers =
+      (habit.parent_id ?? null) !== (input.parentId ?? null) || (habit.group_id ?? null) !== (destGroupId ?? null);
+    if (sourceDiffers) {
+      const sourceIds = await normalizeHabitScope(client, { parentId: habit.parent_id, groupId: habit.group_id });
+      reorderedIds = [...reorderedIds, ...sourceIds];
+    }
+
+    const uniqueReorderedIds = [...new Set(reorderedIds)].filter((id) => id !== habitId);
+    if (uniqueReorderedIds.length > 0) {
+      const reorderedResult = await client.query(`SELECT * FROM habits WHERE id = ANY($1)`, [uniqueReorderedIds]);
+      reordered = (reorderedResult.rows as HabitRow[]).map((r) => formatHabit(r));
+    }
+
+    await client.query("COMMIT");
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
+
+  const movedResult = await pool.query(
+    `SELECT * FROM habits WHERE id = $1 OR parent_id = $1 ORDER BY created_at ASC`,
+    [habitId],
+  );
+  const moved = (movedResult.rows as HabitRow[]).map((r) => formatHabit(r));
+
+  const root = moved.find((h) => h.id === habitId);
+  emit(userId, "habit", "updated", habitId, {
+    ...root,
+    affectedIds: [...moved.map((h) => h.id), ...reordered.map((h) => h.id)],
+  });
+
+  return { moved, reordered };
+}
+
+export interface MoveHabitGroupInput {
+  position: number;
+}
+
+export interface MoveHabitGroupResult {
+  reordered: HabitGroup[];
+}
+
+function validateMoveGroupInput(input: MoveHabitGroupInput): void {
+  if (!input || typeof input !== "object" || !Number.isInteger(input.position) || input.position < 0) {
+    throw validationError("position", "Position must be a non-negative integer");
+  }
+}
+
+export async function moveHabitGroup(
+  userId: string,
+  groupId: string,
+  input: MoveHabitGroupInput,
+): Promise<MoveHabitGroupResult> {
+  validateMoveGroupInput(input);
+  await getOwnedGroup(userId, groupId);
+
+  const client = await pool.connect();
+  let reordered: HabitGroup[] = [];
+  try {
+    await client.query("BEGIN");
+
+    const siblingsResult = await client.query(
+      `SELECT id FROM habit_groups WHERE user_id = $1 AND id != $2 ORDER BY order_value ASC, created_at ASC FOR UPDATE`,
+      [userId, groupId],
+    );
+    const ids = (siblingsResult.rows as { id: string }[]).map((r) => r.id);
+    ids.splice(Math.min(input.position, ids.length), 0, groupId);
+
+    for (let i = 0; i < ids.length; i++) {
+      await client.query(`UPDATE habit_groups SET order_value = $1, updated_at = NOW() WHERE id = $2`, [
+        i * 1000,
+        ids[i],
+      ]);
+    }
+
+    const groupsResult = await client.query(`SELECT * FROM habit_groups WHERE id = ANY($1)`, [ids]);
+    reordered = (groupsResult.rows as HabitGroupRow[]).map(formatGroup);
+
+    await client.query("COMMIT");
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
+
+  emit(userId, "habit_group", "updated", groupId, { affectedIds: reordered.map((g) => g.id) });
+
+  return { reordered };
 }
