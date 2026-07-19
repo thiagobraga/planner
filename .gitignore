@@ -30,6 +30,7 @@ pnpm-debug.log*
 .pnpm-store/
 .turbo/
 .eslintcache
+*.tsbuildinfo
 
 # antigravitycli
 .antigravitycli/
