@@ -279,6 +279,15 @@ kbd {
   visibility: hidden;
 }
 
+/*
+  The dragged row once the drop is heading for a different list. It keeps no
+  slot here - the destination is already drawing one, and two slots read as two
+  possible landings for a single block.
+*/
+.task-item--departed {
+  display: none;
+}
+
 .task-item--placeholder {
   position: relative;
 }
@@ -286,9 +295,9 @@ kbd {
 .task-item--placeholder::after {
   content: '';
   position: absolute;
-  /* Starts at the row's padded edge, so the slot sits at the projected depth
-     rather than spanning the full width regardless of nesting. */
-  left: 0;
+  /* Aligned to the row's projected indent rather than its outer edge, so the
+     slot shows the depth the drop will actually land at. */
+  left: var(--row-indent, 0px);
   right: 0;
   top: 0;
   bottom: 0;

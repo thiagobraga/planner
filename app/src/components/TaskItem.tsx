@@ -46,6 +46,11 @@ export interface TaskItemProps {
    * stored tree depth when a caller does not flatten its own rows.
    */
   renderedDepth?: number;
+  /**
+   * The block has left this list: the drop is heading somewhere else. The row
+   * gives up its space rather than holding a slot the drop will not use.
+   */
+  departed?: boolean;
   /** Rendered beside the title - used on Daily, where rows span collections. */
   collectionBadge?: ReactNode;
   onToggle?: (id: string) => void;
@@ -103,6 +108,7 @@ export const TaskItem = memo(function TaskItem({
   subtreeIds,
   projectedDepth,
   renderedDepth,
+  departed,
   collectionBadge,
   onToggle,
   onStartEdit,
@@ -152,10 +158,17 @@ export const TaskItem = memo(function TaskItem({
   // tree. Daily renders one date at a time, so a task parented to a task on
   // another date has an ancestor that is nowhere on screen, and indenting by the
   // global depth drew it one level in with nothing above it to belong to.
+  const depth = projectedDepth ?? renderedDepth ?? task.indent ?? 0;
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    paddingLeft: `${(projectedDepth ?? renderedDepth ?? task.indent ?? 0) * 24}px`,
+    paddingLeft: `${depth * 24}px`,
+    // Published for the placeholder slot. An absolutely positioned ::after is
+    // laid out against the padding box, so `left: 0` sits at the row's outer
+    // edge and ignores this indent entirely - the slot drew flush no matter how
+    // deep the drop would land, which is exactly what a depth preview must not
+    // do. The slot reads this instead.
+    ['--row-indent' as string]: `${depth * 24}px`,
   };
 
   const handleCheckClick = (e: React.MouseEvent) => {
@@ -253,7 +266,7 @@ export const TaskItem = memo(function TaskItem({
       // the keyboard sensor only fires from the handle, so this costs neither
       // the controls nor Space-to-toggle.
       {...listeners}
-      className={`task-item group ${isEditing ? 'task-item--editing' : ''} ${isDragging ? 'task-item--placeholder' : task.isCompleted || dimmed ? 'opacity-[0.35]' : ''}`}
+      className={`task-item group ${isEditing ? 'task-item--editing' : ''} ${departed ? 'task-item--departed' : isDragging ? 'task-item--placeholder' : task.isCompleted || dimmed ? 'opacity-[0.35]' : ''}`}
       aria-label={task.title}
       // A quick click does nothing; editing is opened deliberately by
       // double-click, which leaves single clicks free and removes the need for

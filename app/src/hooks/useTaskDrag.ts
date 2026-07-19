@@ -129,6 +129,16 @@ export function useTaskDrag({ tasks, setTasks, scope, onError, onMoved }: UseTas
         return;
       }
 
+      // Hovering its own row means the block is back where it started - the
+      // resting state of every drag, not an invalid target.
+      if (over.kind === 'task' && over.taskId === active.taskId) {
+        const message = 'Back in its original position.';
+        if (lastPreview.current === message) return;
+        lastPreview.current = message;
+        announce(message);
+        return;
+      }
+
       const move = resolveMove({ rows, active, over, offsetX: offsetX.current, scope });
       const message = move?.preview ?? 'That is not a valid place to drop this task.';
       if (lastPreview.current === message) return;
@@ -162,6 +172,12 @@ export function useTaskDrag({ tasks, setTasks, scope, onError, onMoved }: UseTas
       // task the API has never seen.
       if (active.taskId.startsWith('temp-')) {
         announce('This task is still being created. Try again in a moment.');
+        return;
+      }
+
+      // Released on its own row: nothing to do, and nothing to complain about.
+      if (over.kind === 'task' && over.taskId === active.taskId) {
+        announce('Left where it was.');
         return;
       }
 

@@ -111,6 +111,12 @@ export function TaskList({
   // mounted in the list it came from and this one has nothing to reposition.
   // Without a standalone marker the destination gave no sign of where the drop
   // would land - the whole gesture previewed only in the day it started from.
+  // Where the drop would land, as far as this list is concerned. A list that
+  // holds the dragged row but is not the destination must not keep drawing a
+  // slot: with the destination drawing one too, the same drag appeared to be
+  // heading for two places at once.
+  const landsHere = overIndex !== -1 || isOver;
+
   const insertAfterId =
     hasMoved && !holdsActiveRow && overIndex !== -1 ? rows[overIndex].id : null;
   const showEmptyInsert = hasMoved && !holdsActiveRow && rows.length === 0 && isOver;
@@ -159,6 +165,7 @@ export function TaskList({
               projectedDepth={
                 projection && task.id === activeDragId ? projection.depth : undefined
               }
+              departed={hasMoved && task.id === activeDragId && !landsHere}
               collectionBadge={renderBadge?.(task)}
               isEditing={task.id === editingId}
               dimmed={dimNotes && task.type === 'note'}

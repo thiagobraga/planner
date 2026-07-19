@@ -60,8 +60,15 @@ export const plannerCollisionDetection: CollisionDetection = (args) => {
     if (!allowed.has(data.kind)) return false;
     // A task cannot be dropped into its own subtree - that would orphan the
     // block being carried. Filtering here means the invalid row never lights up.
+    //
+    // Descendants only: the dragged row stays a candidate for itself. subtreeIds
+    // leads with the dragged id, and excluding that too left the row unable to
+    // be its own drop target, so the nearest *other* row won from the first
+    // frame of the drag - dragging the last row in a list made it swap with the
+    // row above before the pointer had moved at all.
     if (activeData.kind === 'task' && data.kind === 'task') {
-      return !activeData.subtreeIds.includes(data.taskId);
+      const descendants = activeData.subtreeIds.slice(1);
+      return !descendants.includes(data.taskId);
     }
     return true;
   });
