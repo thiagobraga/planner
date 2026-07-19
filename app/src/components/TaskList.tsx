@@ -86,18 +86,28 @@ export function TaskList({
     : new Set<string>();
   const rows = carried.size > 0 ? allRows.filter((r) => !carried.has(r.id)) : allRows;
 
+  const overIndex = overId ? rows.findIndex((r) => r.id === overId) : -1;
+  const holdsActiveRow = !!activeDragId && rows.some((r) => r.id === activeDragId);
+
   // The dragged row doubles as the insertion indicator: dnd-kit already moves it
   // to the drop position, so showing it at the projected depth previews exactly
   // where the block will land.
+  //
+  // Only while the hovered row is one of ours, though. `findIndex` returns -1
+  // for a target in another list, and clamping that to 0 previewed the row
+  // leaping to the top of its own day whenever the pointer crossed into a
+  // different one.
   const projection =
-    activeDragId && rows.some((r) => r.id === activeDragId) && overId
-      ? projectMove(
-          rows,
-          activeDragId,
-          Math.max(0, rows.findIndex((r) => r.id === overId)),
-          indentSteps * INDENT_WIDTH,
-        )
+    holdsActiveRow && overIndex !== -1
+      ? projectMove(rows, activeDragId!, overIndex, indentSteps * INDENT_WIDTH)
       : null;
+
+  // Daily renders each date as its own list, so a row dragged across dates stays
+  // mounted in the list it came from and this one has nothing to reposition.
+  // Without a standalone marker the destination gave no sign of where the drop
+  // would land - the whole gesture previewed only in the day it started from.
+  const insertAfterId = !holdsActiveRow && overIndex !== -1 ? rows[overIndex].id : null;
+  const showEmptyInsert = !holdsActiveRow && rows.length === 0 && isOver;
 
   return (
     <SortableContext items={rows.map((r) => r.id)} strategy={verticalListSortingStrategy}>
@@ -107,12 +117,15 @@ export function TaskList({
         aria-label="task list"
         className={`task-list flex flex-col gap-0 ${isOver ? 'task-list--drop-target' : ''}`}
       >
-        {rows.map(({ task }) => (
+        {showEmptyInsert && <div aria-hidden className="task-list-insertion" />}
+        {rows.map(({ task, depth }) => (
           <div key={task.id} role="listitem" className="task-list-item">
+            {task.id === insertAfterId && <div aria-hidden className="task-list-insertion" />}
             <TaskItem
               task={task}
               containerId={containerId}
               subtreeIds={subtreeIdsOf.get(task.id)}
+              renderedDepth={depth}
               projectedDepth={
                 projection && task.id === activeDragId ? projection.depth : undefined
               }

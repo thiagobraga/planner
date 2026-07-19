@@ -41,6 +41,11 @@ export interface TaskItemProps {
    * before the drop rather than only after it.
    */
   projectedDepth?: number;
+  /**
+   * Depth within the list actually being rendered. Falls back to the task's
+   * stored tree depth when a caller does not flatten its own rows.
+   */
+  renderedDepth?: number;
   /** Rendered beside the title - used on Daily, where rows span collections. */
   collectionBadge?: ReactNode;
   onToggle?: (id: string) => void;
@@ -97,6 +102,7 @@ export const TaskItem = memo(function TaskItem({
   containerId = '',
   subtreeIds,
   projectedDepth,
+  renderedDepth,
   collectionBadge,
   onToggle,
   onStartEdit,
@@ -140,10 +146,16 @@ export const TaskItem = memo(function TaskItem({
   // Only dnd-kit runtime values + computed indent remain inline. While dragging,
   // the projected depth replaces the stored one so the row sits where it would
   // land, not where it came from.
+  //
+  // `renderedDepth` is the row's depth *within the list being rendered*, which
+  // is not the same as `task.indent` - that carries depth in the whole task
+  // tree. Daily renders one date at a time, so a task parented to a task on
+  // another date has an ancestor that is nowhere on screen, and indenting by the
+  // global depth drew it one level in with nothing above it to belong to.
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    paddingLeft: `${(projectedDepth ?? task.indent ?? 0) * 24}px`,
+    paddingLeft: `${(projectedDepth ?? renderedDepth ?? task.indent ?? 0) * 24}px`,
   };
 
   const handleCheckClick = (e: React.MouseEvent) => {
