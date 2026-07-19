@@ -405,6 +405,11 @@ export function HabitsPage() {
           month={selected.month}
           onMonthChange={handleMonthChange}
           onToggleDay={handleToggleDay}
+          editing={editing}
+          activeDragId={activeDragId}
+          onStartEdit={setEditing}
+          onCommitEdit={handleCommitEdit}
+          onCancelEdit={handleCancelEdit}
         />
       )}
     </div>

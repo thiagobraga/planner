@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { buildMonthDays, fmtISO } from '../../utils/date';
 import type { DayState } from '../../utils/habitTree';
 import { HabitDot, dotAriaProps } from './HabitDot';
+import { NO_DRAG_ATTR } from '../dnd/sensors';
 
 const CELL = 24;
 const DOW_LABELS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
@@ -86,6 +87,8 @@ export function HabitMonthGrid({
           }
 
           const interactive = !readOnly && Boolean(onToggle);
+          // A Calendar card is draggable as a whole, so its day cells opt out of
+          // pointer drag - otherwise tracking a day would pick the habit up.
 
           return (
             <button
@@ -95,6 +98,7 @@ export function HabitMonthGrid({
               onClick={interactive ? () => onToggle!(day.iso) : undefined}
               aria-label={`${label ? `${label} ` : ''}${day.iso}`}
               {...dotAriaProps(state)}
+              {...{ [NO_DRAG_ATTR]: '' }}
               className={`habit-month-grid-cell group relative border-none bg-transparent p-0 ${
                 interactive ? 'cursor-pointer' : 'cursor-default'
               } ${day.iso === todayISO ? 'habit-month-grid-cell-today' : ''}`}

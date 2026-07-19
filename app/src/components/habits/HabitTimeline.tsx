@@ -6,6 +6,8 @@ import { ContextMenu } from '../ui/ContextMenu';
 import { MonthSelector, type MonthSelectorHandle } from '../monthly/MonthSelector';
 import { StripNavigator } from '../ui/StripNavigator';
 import { HabitDot, dotAriaProps } from './HabitDot';
+import { HabitNameInput } from './HabitNameInput';
+import { NO_DRAG_ATTR } from '../dnd/sensors';
 import { fmtISO } from '../../utils/date';
 import { dayState, flattenHabits, type HabitNode, type HabitSections } from '../../utils/habitTree';
 import { usePlannerDrag } from '../../contexts/PlannerDragContext';
@@ -412,7 +414,7 @@ export function HabitTimeline({
                   dimmed={activeDragId === row.group.id}
                 >
                   {isEditing('group', row.group.id) ? (
-                    <RowNameInput
+                    <HabitNameInput
                       defaultValue={row.group.name}
                       className="uppercase tracking-[0.1em] text-[10px] font-semibold text-ink-light"
                       onCommit={(name) => onCommitEdit(target, name)}
@@ -458,6 +460,7 @@ export function HabitTimeline({
                     aria-label={isCollapsed ? `Expand ${node.name}` : `Collapse ${node.name}`}
                     aria-expanded={!isCollapsed}
                     onClick={() => onToggleCollapse(node.id)}
+                    {...{ [NO_DRAG_ATTR]: '' }}
                     className="habit-timeline-row-disclosure flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center border-none bg-transparent p-0 text-ink-light hover:text-ink"
                   >
                     {isCollapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
@@ -473,7 +476,7 @@ export function HabitTimeline({
                 )}
 
                 {isEditing('habit', node.id) ? (
-                  <RowNameInput
+                  <HabitNameInput
                     defaultValue={node.name}
                     placeholder="Habit name"
                     onCommit={(name) => onCommitEdit(target, name)}
@@ -745,6 +748,7 @@ function RowOptionsButton({ label, onOpen }: { label: string; onOpen: (x: number
     <button
       type="button"
       aria-label={label}
+      {...{ [NO_DRAG_ATTR]: '' }}
       className="habit-timeline-row-options flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-[4px] text-ink-light opacity-0 transition-opacity duration-75 hover:bg-dot/30 hover:text-ink focus:opacity-100 group-hover:opacity-100"
       onClick={(event) => {
         const rect = event.currentTarget.getBoundingClientRect();
@@ -753,56 +757,5 @@ function RowOptionsButton({ label, onOpen }: { label: string; onOpen: (x: number
     >
       <MoreHorizontal size={14} />
     </button>
-  );
-}
-
-interface RowNameInputProps {
-  defaultValue: string;
-  placeholder?: string;
-  className?: string;
-  onCommit: (name: string) => void;
-  onCancel: () => void;
-}
-
-// Swap-to-input rename, following the task row pattern: Enter commits, Escape
-// cancels, and blur commits once. committedRef stops blur from firing a second
-// commit after Enter has already handled it.
-function RowNameInput({ defaultValue, placeholder, className = '', onCommit, onCancel }: RowNameInputProps) {
-  const inputRef = useRef<HTMLInputElement>(null);
-  const committedRef = useRef(false);
-
-  useEffect(() => {
-    const input = inputRef.current;
-    if (!input) return;
-    input.focus();
-    input.select();
-  }, []);
-
-  const commit = (value: string) => {
-    if (committedRef.current) return;
-    committedRef.current = true;
-    onCommit(value.trim());
-  };
-
-  return (
-    <input
-      ref={inputRef}
-      type="text"
-      defaultValue={defaultValue}
-      placeholder={placeholder}
-      spellCheck={false}
-      className={`habit-timeline-row-name-input task-input min-w-0 flex-1 border-0 bg-transparent p-0 text-sm leading-6 text-ink outline-none ${className}`}
-      onKeyDown={(event) => {
-        if (event.key === 'Enter') {
-          event.preventDefault();
-          commit(event.currentTarget.value);
-        } else if (event.key === 'Escape') {
-          event.preventDefault();
-          committedRef.current = true;
-          onCancel();
-        }
-      }}
-      onBlur={(event) => commit(event.currentTarget.value)}
-    />
   );
 }

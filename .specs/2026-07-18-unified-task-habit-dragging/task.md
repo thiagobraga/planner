@@ -277,26 +277,26 @@
   - [x] Project root versus child using 24px horizontal movement
   - [x] Prevent a parent-with-children from projecting to child depth
   - [x] Calculate target `parentId`, `groupId`, and sibling position
-- [ ] Timeline mode
-  - [ ] Make habit rows and group headers sortable through the shared provider
-  - [ ] Make ungrouped and every group section droppable, including empty groups
-  - [ ] Make every parent a valid child-container target for leaf habits
-  - [ ] Preserve collapsed-state behavior while dragging a subtree
-  - [ ] Keep habit completion day cells non-draggable
+- [x] Timeline mode
+  - [x] Make habit rows and group headers sortable through the shared provider
+  - [x] Make ungrouped and every group section droppable, including empty groups
+  - [x] Make every parent a valid child-container target for leaf habits
+  - [x] Preserve collapsed-state behavior while dragging a subtree
+  - [x] Keep habit completion day cells non-draggable
   - [x] Preserve existing double-click inline editing for groups, roots, and sub-habits
-- [ ] Calendar mode
-  - [ ] Make each visible root habit card sortable
-  - [ ] Make ungrouped and group sections droppable
-  - [ ] Support root reorder and root group moves
-  - [ ] Do not expose or drag hidden sub-habits in Calendar mode
-  - [ ] Add inline rename state to visible card headings
-  - [ ] Double-click/double-tap a card heading to edit and reuse existing commit/cancel handlers
-  - [ ] Keep month/day tracking controls non-draggable
-- [ ] Group movement
-  - [ ] Make group headers sortable in both views
-  - [ ] Dragging a group reorders the group and carries its displayed contents
-  - [ ] Group drop indicators remain aligned to the 24px grid
-- [ ] Add component/integration tests for root reorder, group move, sub-habit reorder, hierarchy projection, Calendar rename, and invalid third-level drops
+- [x] Calendar mode
+  - [x] Make each visible root habit card sortable
+  - [x] Make ungrouped and group sections droppable
+  - [x] Support root reorder and root group moves
+  - [x] Do not expose or drag hidden sub-habits in Calendar mode
+  - [x] Add inline rename state to visible card headings
+  - [x] Double-click/double-tap a card heading to edit and reuse existing commit/cancel handlers
+  - [x] Keep month/day tracking controls non-draggable
+- [x] Group movement
+  - [x] Make group headers sortable in both views
+  - [x] Dragging a group reorders the group and carries its displayed contents
+  - [x] Group drop indicators remain aligned to the 24px grid
+- [x] Add component/integration tests for root reorder, group move, sub-habit reorder, hierarchy projection, Calendar rename, and invalid third-level drops
 
 ## Phase 10 - Optimistic state, offline queue, and sync
 
