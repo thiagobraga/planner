@@ -77,9 +77,11 @@ export function HabitMonthGrid({
               <span
                 key={day.iso}
                 aria-hidden="true"
-                className="habit-month-grid-cell-future"
+                className="habit-month-grid-cell-future flex items-center justify-center text-[10px] text-ink-light opacity-35"
                 style={{ width: CELL, height: CELL }}
-              />
+              >
+                {day.dayOfMonth}
+              </span>
             );
           }
 

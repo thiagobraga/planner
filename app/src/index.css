@@ -214,6 +214,15 @@ kbd {
   }
 }
 
+.habit-timeline-selectors-sticky,
+.habit-calendar-selector-sticky {
+  position: sticky;
+  top: 48px;
+  z-index: 21;
+  padding-top: 24px;
+  background-color: var(--planner-page-bg);
+}
+
 .habit-timeline-header {
   border-bottom: 1px solid color-mix(in srgb, var(--color-ink-lighter) 50%, transparent);
 }
@@ -224,6 +233,10 @@ kbd {
 
 .habit-timeline-today-col {
   background-color: color-mix(in srgb, var(--color-ink-lighter) 15%, transparent);
+}
+
+.habit-month-grid-cell-today {
+  background-color: color-mix(in srgb, var(--color-ink-lighter) 12%, transparent);
 }
 
 /* Monthly strip buttons - hover uses the theme-aware token */

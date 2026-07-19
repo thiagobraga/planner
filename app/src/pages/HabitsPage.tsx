@@ -278,6 +278,15 @@ export function HabitsPage() {
     setSelected({ year, month });
   }, []);
 
+  const handleToday = useCallback(() => {
+    if (view === 'timeline') {
+      setTodaySignal((signal) => signal + 1);
+      return;
+    }
+
+    handleMonthChange(today.getFullYear(), today.getMonth());
+  }, [handleMonthChange, today, view]);
+
   return (
     <div className={`habits-page relative ${view === 'timeline' ? 'max-w-none' : 'max-w-none'}`}>
       <header className="sticky-page-header w-full" style={{ width: '100%' }}>
@@ -290,11 +299,9 @@ export function HabitsPage() {
       </header>
 
       <div className="absolute top-6 right-0 z-20 flex items-center gap-2">
-        {view === 'timeline' && (
-          <Button variant="secondary" size="sm" onClick={() => setTodaySignal((n) => n + 1)}>
-            Today
-          </Button>
-        )}
+        <Button variant="secondary" size="sm" onClick={handleToday}>
+          Today
+        </Button>
 
         <div className="habits-page-view-toggle inline-flex items-center rounded-[2px] border border-border h-6 overflow-hidden">
           {(

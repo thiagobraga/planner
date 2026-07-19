@@ -1,6 +1,6 @@
 import { MonthSelector } from '../monthly/MonthSelector';
 import { HabitMonthGrid } from './HabitMonthGrid';
-import { dayState, flattenHabits, type HabitNode, type HabitSections } from '../../utils/habitTree';
+import { dayState, type HabitNode, type HabitSections } from '../../utils/habitTree';
 
 export interface HabitCalendarProps {
   sections: HabitSections;
@@ -27,7 +27,9 @@ export function HabitCalendar({
 
   return (
     <div className="habit-calendar">
-      <MonthSelector year={year} month={month} onChange={onMonthChange} className="mt-6" />
+      <div className="habit-calendar-selector-sticky">
+        <MonthSelector year={year} month={month} onChange={onMonthChange} />
+      </div>
 
       {!hasAnything && (
         <p className="habit-calendar-empty mt-8 text-sm text-ink-light opacity-60">
@@ -46,8 +48,8 @@ export function HabitCalendar({
       )}
 
       {sections.groups.map((section) => (
-        <section key={section.group.id} className="habit-calendar-group mt-10">
-          <h2 className="habit-calendar-group-name text-[10px] font-semibold uppercase leading-6 tracking-[0.1em] text-ink-light">
+        <section key={section.group.id} className="habit-calendar-group mt-12">
+          <h2 className="habit-calendar-group-name h-6 border-b border-border/60 text-[10px] font-semibold uppercase leading-6 tracking-[0.1em] text-ink-light">
             {section.group.name}
           </h2>
           {section.habits.length > 0 ? (
@@ -59,7 +61,7 @@ export function HabitCalendar({
               onToggleDay={onToggleDay}
             />
           ) : (
-            <p className="habit-calendar-group-empty mt-2 text-sm text-ink-light opacity-60">
+            <p className="habit-calendar-group-empty mt-6 text-sm text-ink-light opacity-60">
               No habits in this group.
             </p>
           )}
@@ -78,19 +80,14 @@ interface HabitCalendarGridProps {
 }
 
 function HabitCalendarGrid({ habits, today, year, month, onToggleDay }: HabitCalendarGridProps) {
-  // Sub-habits get their own cell rather than nesting inside the parent's. Nesting
-  // made one column as tall as its sub-habit stack and stretched the whole row,
-  // leaving the other columns short and a large gap beneath them.
-  const cells = flattenHabits(habits);
-
   return (
     <div
-      className="habit-calendar-grid mt-4 grid items-start gap-x-8 gap-y-8"
-      style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))' }}
+      className="habit-calendar-grid mt-6 grid items-start gap-6"
+      style={{ gridTemplateColumns: 'repeat(auto-fill, 192px)' }}
     >
-      {cells.map(({ node, depth }) => (
+      {habits.map((node) => (
         <div key={node.id} className="habit-calendar-item min-w-0">
-          <HabitCalendarHeading node={node} muted={depth > 0} />
+          <HabitCalendarHeading node={node} />
           <HabitMonthGrid
             year={year}
             month={month}
@@ -105,19 +102,16 @@ function HabitCalendarGrid({ habits, today, year, month, onToggleDay }: HabitCal
   );
 }
 
-function HabitCalendarHeading({ node, muted = false }: { node: HabitNode; muted?: boolean }) {
+function HabitCalendarHeading({ node }: { node: HabitNode }) {
   return (
-    <div className="habit-calendar-item-heading mb-1 flex h-6 items-center gap-2">
-      <span
-        aria-hidden="true"
-        className="h-2 w-2 shrink-0 rounded-full"
-        style={{ background: 'var(--color-ink-lighter)' }}
-      />
-      <span
-        className={`habit-calendar-item-name truncate text-sm leading-6 ${
-          muted ? 'text-ink-light' : 'text-ink'
-        }`}
-      >
+    <div className="habit-calendar-item-heading flex h-6 items-center">
+      <span aria-hidden="true" className="flex h-6 w-6 shrink-0 items-center justify-center">
+        <span
+          className="h-2 w-2 rounded-full"
+          style={{ background: 'var(--color-ink-lighter)' }}
+        />
+      </span>
+      <span className="habit-calendar-item-name truncate text-sm leading-6 text-ink">
         {node.name}
       </span>
     </div>

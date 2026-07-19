@@ -70,6 +70,7 @@ export function HabitTimeline({
   const [menu, setMenu] = useState<{ target: HabitEditTarget; canAddSub: boolean; x: number; y: number } | null>(null);
   const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set());
   const daysViewportRef = useRef<HTMLDivElement>(null);
+  const daysHeaderViewportRef = useRef<HTMLDivElement>(null);
   const monthSelectorRef = useRef<MonthSelectorHandle>(null);
   const [canPagePrevious, setCanPagePrevious] = useState(false);
   const [canPageNext, setCanPageNext] = useState(false);
@@ -95,8 +96,7 @@ export function HabitTimeline({
   // future day - weekend or not - fades by the same uniform amount.
   const dayColClass = useCallback(
     (d: DayCell) =>
-      `${d.isWeekend ? 'habit-timeline-weekend-col' : ''} ${d.iso === todayISO ? 'habit-timeline-today-col' : ''} ${
-        d.future ? 'opacity-40' : ''
+      `${d.isWeekend ? 'habit-timeline-weekend-col' : ''} ${d.iso === todayISO ? 'habit-timeline-today-col' : ''} ${d.future ? 'opacity-40' : ''
       }`,
     [todayISO],
   );
@@ -143,6 +143,9 @@ export function HabitTimeline({
     const viewport = daysViewportRef.current;
     if (!viewport) return;
 
+    if (daysHeaderViewportRef.current) {
+      daysHeaderViewportRef.current.scrollLeft = viewport.scrollLeft;
+    }
     setCanPagePrevious(viewport.scrollLeft > 1);
     setCanPageNext(viewport.scrollLeft + viewport.clientWidth < viewport.scrollWidth - 1);
   }, []);
@@ -164,7 +167,7 @@ export function HabitTimeline({
     const resizeObserver = new ResizeObserver(updatePagingState);
     resizeObserver.observe(viewport);
     return () => resizeObserver.disconnect();
-  }, [days, todayISO, updatePagingState]);
+  }, [days, todayISO, todaySignal, updatePagingState]);
 
   const pageDays = (direction: -1 | 1) => {
     const viewport = daysViewportRef.current;
@@ -186,21 +189,69 @@ export function HabitTimeline({
 
   return (
     <div className="habit-timeline">
-      <MonthSelector
-        ref={monthSelectorRef}
-        year={year}
-        month={month}
-        onChange={onMonthChange}
-        className="mt-6"
-      />
+      <div className="habit-timeline-selectors-sticky">
+        <MonthSelector
+          ref={monthSelectorRef}
+          year={year}
+          month={month}
+          onChange={onMonthChange}
+        />
 
-      <div className="habit-timeline-table mt-6 flex min-w-0 items-start gap-0">
-        <div className="habit-timeline-labels w-48 shrink-0 min-w-0">
-          <div className="h-12" aria-hidden="true" />
-          {rows.map((row) => {
-            if (row.kind === 'spacer') {
-              return <div key={row.key} className="h-6" aria-hidden="true" />;
-            }
+        <div className="habit-timeline-day-selector mt-6 flex min-w-0 items-start gap-0">
+          <div className="h-12 w-56 min-w-0 shrink-0" aria-hidden="true" />
+
+          <StripNavigator
+            direction="previous"
+            aria-label="Previous days"
+            disabled={!canPagePrevious}
+            onClick={() => pageDays(-1)}
+            className="habit-timeline-days-prev"
+          />
+
+          <div
+            ref={daysHeaderViewportRef}
+            className="habit-timeline-days-header-viewport min-w-0 flex-1 overflow-hidden"
+          >
+            <div className="habit-timeline-header flex h-12" style={{ width: days.length * CELL_W }}>
+              {days.map((d) => (
+                <div
+                  key={d.iso}
+                  className={`habit-timeline-header-day flex h-12 shrink-0 flex-col items-center justify-center ${dayColClass(
+                    d,
+                  )}`}
+                  style={{ width: CELL_W }}
+                >
+                  <span className="habit-timeline-header-day-letter block h-6 w-full text-center text-[10px] leading-[24px] text-ink-light opacity-70">
+                    {d.letter}
+                  </span>
+                  <span
+                    className={`habit-timeline-header-day-number block h-6 w-full text-center text-[10px] leading-[24px] ${d.iso === todayISO ? 'text-ink font-semibold' : 'text-ink-light'
+                      }`}
+                  >
+                    {d.dayOfMonth}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <StripNavigator
+            direction="next"
+            aria-label="Next days"
+            disabled={!canPageNext}
+            onClick={() => pageDays(1)}
+            className="habit-timeline-days-next"
+          />
+        </div>
+      </div>
+
+      <div className="habit-timeline-table min-w-0">
+        <div className="habit-timeline-body flex min-w-0 items-start gap-0">
+          <div className="habit-timeline-labels w-56 shrink-0 min-w-0">
+            {rows.map((row) => {
+              if (row.kind === 'spacer') {
+                return <div key={row.key} className="h-6" aria-hidden="true" />;
+              }
 
             if (row.kind === 'add-group') {
               return (
@@ -320,47 +371,18 @@ export function HabitTimeline({
                 )}
               </div>
             );
-          })}
-        </div>
+            })}
+          </div>
 
-        <StripNavigator
-          direction="previous"
-          aria-label="Previous days"
-          disabled={!canPagePrevious}
-          onClick={() => pageDays(-1)}
-          className="habit-timeline-days-prev"
-        />
+          <div className="h-6 w-6 shrink-0" aria-hidden="true" />
 
-        <div
-          ref={daysViewportRef}
-          onScroll={updatePagingState}
-          className="habit-timeline-days-viewport min-w-0 flex-1 overflow-x-auto overscroll-x-contain scroll-smooth snap-x snap-mandatory"
-        >
-          <div className="habit-timeline-table-inner" style={{ width: days.length * CELL_W }}>
-            <div className="habit-timeline-header flex h-12">
-              {days.map((d) => (
-                <div
-                  key={d.iso}
-                  className={`habit-timeline-header-day flex h-12 shrink-0 flex-col items-center justify-center snap-start ${dayColClass(
-                    d,
-                  )}`}
-                  style={{ width: CELL_W }}
-                >
-                  <span className="habit-timeline-header-day-letter block h-6 w-full text-center text-[10px] leading-[24px] text-ink-light opacity-70">
-                    {d.letter}
-                  </span>
-                  <span
-                    className={`habit-timeline-header-day-number block h-6 w-full text-center text-[10px] leading-[24px] ${
-                      d.iso === todayISO ? 'text-ink font-semibold' : 'text-ink-light'
-                    }`}
-                  >
-                    {d.dayOfMonth}
-                  </span>
-                </div>
-              ))}
-            </div>
-
-            {rows.map((row) => {
+          <div
+            ref={daysViewportRef}
+            onScroll={updatePagingState}
+            className="habit-timeline-days-viewport min-w-0 flex-1 overflow-x-auto overscroll-x-contain scroll-smooth snap-x snap-mandatory"
+          >
+            <div className="habit-timeline-table-inner" style={{ width: days.length * CELL_W }}>
+              {rows.map((row) => {
               // Non-habit rows still occupy a band so both columns stay in step,
               // and keep the weekend/today column shading unbroken top to bottom.
               if (row.kind !== 'habit') {
@@ -369,7 +391,7 @@ export function HabitTimeline({
                     {days.map((d) => (
                       <span
                         key={d.iso}
-                        className={`h-6 shrink-0 ${dayColClass(d)}`}
+                        className={`h-6 shrink-0 snap-start ${dayColClass(d)}`}
                         style={{ width: CELL_W }}
                       />
                     ))}
@@ -386,7 +408,7 @@ export function HabitTimeline({
                         <span
                           key={d.iso}
                           aria-hidden="true"
-                          className={`habit-timeline-day-placeholder h-6 shrink-0 ${dayColClass(d)}`}
+                          className={`habit-timeline-day-placeholder h-6 shrink-0 snap-start ${dayColClass(d)}`}
                           style={{ width: CELL_W }}
                         />
                       );
@@ -410,7 +432,7 @@ export function HabitTimeline({
                         onClick={() => onToggleDay(node, d.iso)}
                         aria-label={`${node.name} ${d.iso}`}
                         {...dotAriaProps(state)}
-                        className={`habit-timeline-day-cell group relative h-6 shrink-0 cursor-pointer border-none bg-transparent p-0 ${dayColClass(
+                        className={`habit-timeline-day-cell group relative h-6 shrink-0 snap-start cursor-pointer border-none bg-transparent p-0 ${dayColClass(
                           d,
                         )}`}
                         style={{ width: CELL_W }}
@@ -435,17 +457,12 @@ export function HabitTimeline({
                   })}
                 </div>
               );
-            })}
+              })}
+            </div>
           </div>
-        </div>
 
-        <StripNavigator
-          direction="next"
-          aria-label="Next days"
-          disabled={!canPageNext}
-          onClick={() => pageDays(1)}
-          className="habit-timeline-days-next"
-        />
+          <div className="h-6 w-6 shrink-0" aria-hidden="true" />
+        </div>
       </div>
 
       {menu && (
@@ -456,12 +473,12 @@ export function HabitTimeline({
             { type: 'item', label: 'Rename', onClick: () => onStartEdit(menu.target) },
             ...(menu.canAddSub
               ? [
-                  {
-                    type: 'item' as const,
-                    label: 'Add sub-habit',
-                    onClick: () => onAddHabit({ groupId: null, parentId: menu.target.id }),
-                  },
-                ]
+                {
+                  type: 'item' as const,
+                  label: 'Add sub-habit',
+                  onClick: () => onAddHabit({ groupId: null, parentId: menu.target.id }),
+                },
+              ]
               : []),
             { type: 'separator' },
             {
