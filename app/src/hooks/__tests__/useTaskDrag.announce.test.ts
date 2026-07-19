@@ -23,9 +23,18 @@ const rows = flattenTasks(tasks);
 const active: TaskDragData = {
   kind: 'task',
   taskId: 'a',
+  parentTaskId: null,
+  collectionId: 'c1',
+  dueDate: null,
+  depth: 0,
+  containerId: 'list',
   subtreeIds: ['a'],
-  indent: 0,
 };
+
+/** A row in the same list, used as the hovered drop target. */
+function over(taskId: string): TaskDragData {
+  return { ...active, taskId, subtreeIds: [taskId] };
+}
 
 const scope = { kind: 'collection', collectionId: 'c1' } as const;
 
@@ -47,7 +56,7 @@ describe('useTaskDrag: projected-target announcements', () => {
     const move = resolveMove({
       rows,
       active,
-      over: { kind: 'day', date: '2026-07-19' },
+      over: { kind: 'day', date: '2026-07-19', containerId: 'day:2026-07-19' },
       offsetX: 0,
       scope,
     });
@@ -61,7 +70,7 @@ describe('useTaskDrag: projected-target announcements', () => {
     const move = resolveMove({
       rows,
       active: { ...active, taskId: 'c', subtreeIds: ['c'] },
-      over: { kind: 'task', taskId: 'b', subtreeIds: ['b'], indent: 0 },
+      over: over('b'),
       offsetX: 60,
       scope,
     });
@@ -74,7 +83,7 @@ describe('useTaskDrag: projected-target announcements', () => {
     const move = resolveMove({
       rows,
       active: { ...active, taskId: 'c', subtreeIds: ['c'] },
-      over: { kind: 'task', taskId: 'b', subtreeIds: ['b'], indent: 0 },
+      over: over('b'),
       offsetX: 0,
       scope,
     });
@@ -86,7 +95,7 @@ describe('useTaskDrag: projected-target announcements', () => {
     const move = resolveMove({
       rows,
       active,
-      over: { kind: 'day', date: '2026-07-19' },
+      over: { kind: 'day', date: '2026-07-19', containerId: 'day:2026-07-19' },
       offsetX: 0,
       scope,
     });
@@ -99,7 +108,7 @@ describe('useTaskDrag: projected-target announcements', () => {
     const move = resolveMove({
       rows,
       active,
-      over: { kind: 'task', taskId: 'a', subtreeIds: ['a'], indent: 0 },
+      over: over('a'),
       offsetX: 0,
       scope,
     });
