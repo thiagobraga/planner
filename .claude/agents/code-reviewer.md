@@ -26,7 +26,7 @@ Severity levels:
 
 1. Frontend calls REST via `app/src/api/client.ts`
 2. API handler → service → PostgreSQL update → `publishEvent()` in `api/src/services/syncService.ts`
-3. `publishEvent()` broadcasts to `user:{userId}` and `project:{projectId}` Socket.IO rooms
+3. `publishEvent()` broadcasts to `user:{userId}` and `collection:{collectionId}` Socket.IO rooms
 4. Frontend `useSync` hook receives "sync" event → invalidates React Query cache or updates Zustand store
 
 Violations: calling `publishEvent()` after responding, skipping publish on mutation, wrong room name, wrong event shape.
@@ -46,8 +46,8 @@ Violations: calling `publishEvent()` after responding, skipping publish on mutat
 ## Design System Rules (frontend only)
 
 - Font: Lora serif ONLY - never use sans-serif
-- Background: warm cream (#FAF7F2) - never white, never gray
-- Accent: brick-red (#C0392B family) - ≤10% of visible screen area
+- Background: warm cream (#f5f0e8 / var(--color-cream)) - never white, never gray
+- Accent: brick-red (#c9483b / var(--color-accent)) - ≤10% of visible screen area
 - Elevation: flat - 1px border + tint only; NO box-shadow on cards/panels
 - Rhythm: 24px vertical baseline grid
 - Never use blue as primary color

@@ -10,8 +10,8 @@ You are a frontend implementation specialist for the Planner project. Build Reac
 ## Design System (non-negotiable)
 
 - **Font**: Lora serif ONLY. Never system-ui, sans-serif, or any other font.
-- **Background**: warm cream `#FAF7F2`. Never white (`#fff`) or gray.
-- **Accent**: brick-red (`#C0392B` / `#E74C3C` family). Use ≤10% of visible area. Single accent color.
+- **Background**: warm cream `#f5f0e8` (`var(--color-cream)`). Never white (`#fff`) or gray.
+- **Accent**: brick-red `#c9483b` (`var(--color-accent)`). Use ≤10% of visible area. Single accent color.
 - **Elevation**: FLAT. Cards/panels use 1px border + slight tint. NO `box-shadow` except overlay drop shadows.
 - **Rhythm**: 24px vertical baseline. Spacing in multiples of 24px (or 12px/8px subdivisions).
 - **No blue** as primary color. Blue only for hyperlinks if at all.
@@ -67,6 +67,8 @@ import { apiClient } from '../api/client';
 - `app/src/components/QuickAdd.tsx` - quick add overlay
 - `app/src/pages/TodayPage.tsx` - page structure pattern
 - `app/src/pages/InboxPage.tsx` - page with keyboard navigation pattern
+- `app/src/pages/SettingsPage.tsx` - preferences and settings pattern
+- `app/src/pages/CollectionsPage.tsx` - collection list pattern
 
 ## Workflow
 

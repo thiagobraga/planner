@@ -25,16 +25,20 @@ Every new entity that needs real-time updates touches **5 locations** in a fixed
 
 ```ts
 // Before
-export type SyncEntityType = 'task' | 'project' | 'section' | 'label' | 'comment' | 'reminder';
+export type SyncEntityType = 'task' | 'collection' | 'section' | 'label' | 'comment' | 'reminder' | 'preferences' | 'habit' | 'habit_completion' | 'habit_group';
 
 // After
 export type SyncEntityType =
   | 'task'
-  | 'project'
+  | 'collection'
   | 'section'
   | 'label'
   | 'comment'
   | 'reminder'
+  | 'preferences'
+  | 'habit'
+  | 'habit_completion'
+  | 'habit_group'
   | 'yourEntity';
 ```
 
@@ -51,7 +55,7 @@ publishEvent(
     eventType: 'created', // 'updated' | 'deleted' | 'completed' | 'uncompleted'
     entityId: row.id,
     userId,
-    projectId: row.project_id ?? null, // null for user-owned entities
+    collectionId: row.collection_id ?? null, // null for user-owned entities
     payload: formattedRow,
   }),
 ).catch((err) => console.error('[sync] publish failed', err));
@@ -65,11 +69,15 @@ publishEvent(
 // Match the backend union exactly - string literals must be identical
 export type SyncEntityType =
   | 'task'
-  | 'project'
+  | 'collection'
   | 'section'
   | 'label'
   | 'comment'
   | 'reminder'
+  | 'preferences'
+  | 'habit'
+  | 'habit_completion'
+  | 'habit_group'
   | 'yourEntity';
 ```
 
@@ -102,7 +110,7 @@ interface SyncEvent {
   eventType: SyncEventType; // "created" | "updated" | "deleted" | "completed" | "uncompleted"
   entityId: string;
   userId: string;
-  projectId?: string | null;
+  collectionId?: string | null;
   payload?: unknown;
   emittedAt: string;
 }
@@ -122,7 +130,7 @@ docker compose exec api npm test && docker compose exec app npm test
 
 | Mistake                                              | Effect                                             |
 | ---------------------------------------------------- | -------------------------------------------------- |
-| Omit `projectId` on project-scoped entity            | Collaborators never receive the event              |
+| Omit `collectionId` on collection-scoped entity      | Collaborators never receive the event              |
 | String literal differs between backend/frontend      | TypeScript won't catch it; events silently ignored |
 | Handler not wrapped in `useCallback`                 | New subscription on every render → memory leak     |
 | Forget `publishEvent` on one mutation (e.g., delete) | Partial sync - other tabs stale after deletion     |

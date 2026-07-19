@@ -45,11 +45,21 @@ Required `.env` vars: `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `JWT_
 - `services/taskService.ts` - CRUD, completion, recurrence
 - `services/viewService.ts` - today/upcoming/inbox aggregations
 - `services/filterService.ts` - saved filter CRUD + evaluation via Peggy DSL parser
+- `services/collectionService.ts` - collection (project) CRUD
+- `services/habitService.ts` - habit tracking, completions, streaks
+- `services/preferencesService.ts` - user preferences (font, theme, etc.)
+- `services/labelService.ts` - label CRUD
+- `services/sectionService.ts` - section CRUD
+- `services/commentService.ts` - comment CRUD
+- `services/reminderService.ts` - reminder CRUD
+- `services/searchService.ts` - full-text search
+- `services/activityService.ts` - activity feed
+- `services/collaborationService.ts` - project collaboration
 - `db/pool.ts` - PostgreSQL pool (max 20); `db/redis.ts` - three clients (general, pub, sub)
 - `parsers/` - Peggy-based filter DSL and date parsers
 - `engines/recurrenceEngine.ts` - daily/weekly/monthly/yearly recurrence
 
-All routes under `/api/v1/`. Route files: `auth`, `tasks`, `projects`, `labels`, `sections`, `views`, `filters`, `search`, `reminders`, `comments`, `preferences`, `activity`, `collaboration`.
+All routes under `/api/v1/`. Route files: `auth`, `tasks`, `collections`, `labels`, `sections`, `views`, `filters`, `search`, `reminders`, `comments`, `preferences`, `activity`, `collaboration`, `habits`, `habitGroups`.
 
 ### Frontend (`app/src/`)
 
@@ -60,6 +70,8 @@ All routes under `/api/v1/`. Route files: `auth`, `tasks`, `projects`, `labels`,
 - `api/client.ts` - Fetch wrapper; base `/api/v1`; auto-logout on 401
 - `api/queryClient.ts` - React Query config (staleTime 60s, 1 retry)
 - `stores/taskStore.ts` - Zustand store; `setTasks / addTask / updateTask / removeTask`
+- `stores/collectionStore.ts` - Zustand store for collections
+- `stores/authStore.ts` - Zustand store for auth state
 - `stores/optimistic.ts` - optimistic helpers: `runOptimistic`, `applyOptimistic`, `revertOptimistic` (2s auto-revert)
 
 ### Pages & Routes
@@ -67,10 +79,12 @@ All routes under `/api/v1/`. Route files: `auth`, `tasks`, `projects`, `labels`,
 | Route              | Page             | Purpose                                |
 | ------------------ | ---------------- | -------------------------------------- |
 | `/today` (default) | `TodayPage`      | Overdue + today sections               |
-| `/inbox`           | `InboxPage`      | Unprocessed tasks; also `/project/:id` |
+| `/inbox`           | `InboxPage`      | Unprocessed tasks; also `/collection/:id` |
 | `/upcoming`        | `UpcomingPage`   | 7-day preview                          |
 | `/monthly`         | `MonthlyPage`    | Monthly calendar                       |
 | `/habits`          | `HabitsPage`     | Habit streaks (12-week grid)           |
+| `/collections`     | `CollectionsPage`| Collection/project management          |
+| `/settings`        | `SettingsPage`   | Font, theme, preferences               |
 | `/styleguide`      | `StyleguidePage` | Design system reference                |
 
 `AppShell` wraps all routes: sidebar, keyboard dispatch, QuickAdd/Search dialogs.
@@ -84,7 +98,7 @@ api/src/services/syncService.ts      publishEvent() - real-time broadcast
 api/src/services/taskService.ts      Task CRUD + recurrence
 api/src/db/pool.ts                   PostgreSQL pool
 api/src/db/redis.ts                  Redis clients (pub/sub)
-api/src/db/migrations/               SQL migration files (001–015)
+api/src/db/migrations/               SQL migration files (001–025)
 api/src/parsers/filterParser.ts      Peggy filter DSL parser
 api/src/engines/recurrenceEngine.ts  Recurrence rule engine
 api/src/utils/AppError.ts            Custom error class
@@ -137,19 +151,19 @@ Event name: `"sync"`. Payload (`SyncEvent`):
   eventType:  'created' | 'updated' | 'deleted' | 'completed' | 'uncompleted';
   entityId:   string;
   userId:     string;
-  projectId?: string | null;
+  collectionId?: string | null;
   payload?:   unknown;
   emittedAt:  string;   // ISO 8601
 }
 ```
 
-Rooms: `user:{userId}` (all sessions) and `project:{projectId}` (collaborators).  
+Rooms: `user:{userId}` (all sessions) and `collection:{collectionId}` (collaborators).  
 `publishEvent()` in `syncService.ts` is the sole entry point - call it from every mutation.
 
 ## Database
 
 PostgreSQL 16. Pool max 20 connections. Migrations run at startup from `api/src/db/migrations/`.  
-Schema tables: `users`, `sessions`, `preferences`, `password_reset_tokens`, `projects`, `collaborators`, `project_invitations`, `sections`, `tasks`, `labels`, `task_labels`, `filters`, `comments`, `reminders`, `activity_events`.
+Schema tables: `users`, `sessions`, `preferences`, `password_reset_tokens`, `collections`, `collaborators`, `project_invitations`, `sections`, `tasks`, `labels`, `task_labels`, `filters`, `comments`, `reminders`, `activity_events`, `habits`, `habit_completions`, `habit_groups`.
 
 Redis: three clients from `db/redis.ts` - `redisClient` (general), `redisPubClient` (publish), `redisSubClient` (subscribe). Auth rate-limiting uses `redisClient`.
 
@@ -168,7 +182,7 @@ Pattern for mutations: `runOptimistic({ apply, revert })` → fire API call → 
 ## Design System
 
 - **Font:** Lora serif only - no sans-serif anywhere
-- **Palette:** warm cream/beige background (`#FAF7F2`), single brick-red accent (`#C0392B` family, ≤10% of screen)
+- **Palette:** warm cream/beige background (`--color-cream: #f5f0e8`), single brick-red accent (`--color-accent: #c9483b`, ≤10% of screen)
 - **Elevation:** flat - tint + 1px border only; no `box-shadow` on cards (overlay drop-shadow only)
 - **Rhythm:** 24px vertical baseline
 - **Never:** blue as primary color; `box-shadow` on cards

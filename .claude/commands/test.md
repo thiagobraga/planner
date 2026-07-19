@@ -58,6 +58,9 @@ find /p/projects/planner -name "*.integration.test.ts" -o -name "*.sync.test.ts"
 - API sync tests: `api/src/services/__tests__/*.sync.test.ts`
 - Frontend hook tests: `app/src/hooks/__tests__/*.test.ts`
 - Frontend component tests: `app/src/components/__tests__/*.test.ts`
+- Frontend store tests: `app/src/stores/__tests__/*.test.ts`
+- Frontend util tests: `app/src/utils/__tests__/*.test.ts`
+- Frontend page tests: `app/src/pages/__tests__/*.test.ts`
 - Frontend integration tests: `app/src/hooks/__tests__/*.integration.test.ts`
 
 ## After running

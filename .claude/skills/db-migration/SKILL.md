@@ -12,7 +12,7 @@ Migrations are numbered SQL files in `api/src/db/migrations/`. They run once in 
 ## Naming
 
 ```bash
-ls api/src/db/migrations/ | sort | tail -1   # find current max (currently 015_)
+ls api/src/db/migrations/ | sort | tail -1   # find current max (currently 025_)
 ```
 
 Next file: `NNN_snake_case_description.sql` where NNN = current max + 1.

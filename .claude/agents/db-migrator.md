@@ -63,23 +63,26 @@ You are a database migration specialist for the Planner project (PostgreSQL 16).
 
 ## Existing Schema Overview
 
-Tables (from migrations 001–015):
+Tables (from migrations 001–025):
 
 - `users` - id, email, password_hash, created_at
 - `sessions` - id, user_id, token, expires_at, revoked_at
 - `preferences` - user_id (FK), settings JSONB
 - `password_reset_tokens` - user_id, token, expires_at
-- `projects` - id, user_id, name, color, is_inbox, created_at
-- `collaborators` - project_id, user_id, role, joined_at
-- `project_invitations` - project_id, email, token, expires_at
-- `sections` - id, project_id, name, position
-- `tasks` - id, project_id, section_id, user_id, title, description, due_date, priority, completed_at, recurrence, position, created_at, updated_at
+- `collections` - id, user_id, name, color, is_inbox, created_at (was `projects`, renamed in 024)
+- `collaborators` - collection_id, user_id, role, joined_at
+- `project_invitations` - collection_id, email, token, expires_at
+- `sections` - id, collection_id, name, position
+- `tasks` - id, collection_id, section_id, user_id, title, description, due_date, priority, completed_at, recurrence, position, created_at, updated_at, task_type (note/task)
 - `labels` - id, user_id, name, color
 - `task_labels` - task_id, label_id (junction)
 - `filters` - id, user_id, name, query
 - `comments` - id, task_id, user_id, body, created_at
 - `reminders` - id, task_id, user_id, remind_at, fired_at
-- `activity_events` - id, user_id, project_id, task_id, type, payload JSONB, created_at
+- `activity_events` - id, user_id, collection_id, task_id, type, payload JSONB, created_at
+- `habits` - id, user_id, title, parent_id, is_group, color, created_at
+- `habit_completions` - id, habit_id, date, created_at
+- `habit_groups` - id, user_id, name, color, position
 
 ## Migration Template
 

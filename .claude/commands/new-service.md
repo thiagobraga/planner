@@ -26,7 +26,7 @@ export async function create(userId: string, data: { taskId: string; remindAt: D
     'INSERT INTO reminders (user_id, task_id, remind_at) VALUES ($1, $2, $3) RETURNING *',
     [userId, data.taskId, data.remindAt],
   );
-  await publishEvent({ type: 'reminder:created', userId, payload: rows[0] });
+  await publishEvent({ entityType: 'reminder', eventType: 'created', entityId: rows[0].id, userId, payload: rows[0] });
   return rows[0];
 }
 ```

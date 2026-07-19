@@ -45,7 +45,7 @@ Add to `/etc/hosts`: `planner.local`, `api.planner.local`, `db.planner.local`.
 3. `publishEvent()` publishes to Redis Pub/Sub
 4. Redis adapter fans out Socket.IO "sync" event to:
    - `user:{userId}` room - all sessions of that user (multi-device)
-   - `project:{projectId}` room - collaborators
+   - `collection:{collectionId}` room - collaborators
 5. Frontend `useSync` hook receives event → updates Zustand store or React Query cache
 
 ### Backend (`api/src/`)
@@ -55,6 +55,18 @@ Add to `/etc/hosts`: `planner.local`, `api.planner.local`, `db.planner.local`.
 - `services/syncService.ts` - core sync engine; `publishEvent()` is the single entry point for broadcasting
 - `services/authService.ts` - register, login (rate-limited via Redis: 10 attempts/15 min), JWT 7-day expiry
 - `services/taskService.ts` - CRUD, completion, recurrence logic
+- `services/viewService.ts` - today/upcoming/inbox aggregations
+- `services/collectionService.ts` - collection (project) CRUD
+- `services/habitService.ts` - habit tracking, completions, streaks
+- `services/preferencesService.ts` - user preferences (font, theme, etc.)
+- `services/labelService.ts` - label CRUD
+- `services/sectionService.ts` - section CRUD
+- `services/commentService.ts` - comment CRUD
+- `services/reminderService.ts` - reminder CRUD
+- `services/searchService.ts` - full-text search
+- `services/filterService.ts` - saved filter CRUD + Peggy DSL evaluation
+- `services/activityService.ts` - activity feed
+- `services/collaborationService.ts` - project collaboration
 - `db/pool.ts` - PostgreSQL pool (max 20 conns); `db/redis.ts` - three Redis clients (general, pub, sub)
 - All routes under `/api/v1/`; route aggregation in `routes/index.ts`
 
@@ -65,15 +77,16 @@ Add to `/etc/hosts`: `planner.local`, `api.planner.local`, `db.planner.local`.
 - `hooks/useSync.ts` - subscribes to "sync" Socket.IO events; triggers cache invalidation or store updates
 - `api/client.ts` - Fetch wrapper; auto-logout on 401
 - `api/queryClient.ts` - React Query config (staleTime 60s, 1 retry)
-- Zustand stores in `stores/` for client-side task cache; optimistic helpers in `stores/optimistic.ts`
-- Pages in `pages/`; reusable components in `components/`
+- Zustand stores in `stores/` (`taskStore`, `collectionStore`, `authStore`, `optimistic`) for client-side state
+- Pages in `pages/` (`DailyPage`, `InboxPage`, `UpcomingPage`, `MonthlyPage`, `HabitsPage`, `CollectionsPage`, `SettingsPage`, `LoginPage`, `StyleguidePage`)
+- Reusable components in `components/`
 
 ## Design System
 
 See `DESIGN.md` for full spec. Key rules:
 
 - **Font**: Lora serif only - no sans-serif
-- **Palette**: warm cream/beige background, single brick-red accent (≤10% of screen)
+- **Palette**: warm cream `#f5f0e8` background, brick-red `#c9483b` accent (≤10% of screen)
 - **Elevation**: flat design - tint + 1px border only; no shadows except overlay drop shadow
 - **Rhythm**: 24px vertical baseline
 - Never use blue as primary color; never use box shadows on cards

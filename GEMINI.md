@@ -59,6 +59,18 @@ docker compose exec api npm exec vitest run src/path/to/file.test.ts     # singl
 | `services/syncService.ts`     | Core sync engine; `publishEvent()` is single broadcast entry point |
 | `services/authService.ts`     | Register, login (Redis rate-limit: 10 attempts/15 min), JWT        |
 | `services/taskService.ts`     | CRUD, completion toggle, recurrence logic                          |
+| `services/viewService.ts`     | Today/upcoming/inbox aggregations                                  |
+| `services/collectionService.ts` | Collection (project) CRUD                                        |
+| `services/habitService.ts`    | Habit tracking, completions, streaks                               |
+| `services/preferencesService.ts` | User preferences (font, theme, etc.)                            |
+| `services/labelService.ts`    | Label CRUD                                                         |
+| `services/sectionService.ts`  | Section CRUD                                                       |
+| `services/commentService.ts`  | Comment CRUD                                                       |
+| `services/reminderService.ts` | Reminder CRUD                                                      |
+| `services/searchService.ts`   | Full-text search                                                   |
+| `services/filterService.ts`   | Saved filter CRUD + Peggy DSL evaluation                           |
+| `services/activityService.ts` | Activity feed                                                      |
+| `services/collaborationService.ts` | Project collaboration                                          |
 | `db/pool.ts`                  | PostgreSQL pool (max 20 conns)                                     |
 | `db/redis.ts`                 | Three Redis clients: general, pub, sub                             |
 | `routes/index.ts`             | Aggregates all routes under `/api/v1/`                             |
@@ -77,8 +89,10 @@ docker compose exec api npm exec vitest run src/path/to/file.test.ts     # singl
 | `api/client.ts`            | Fetch wrapper; auto-logout on 401                                                       |
 | `api/queryClient.ts`       | React Query config (staleTime 60s, 1 retry)                                             |
 | `stores/taskStore.ts`      | Zustand client-side task cache                                                          |
+| `stores/collectionStore.ts` | Zustand store for collections                                                          |
+| `stores/authStore.ts`      | Zustand store for auth state                                                            |
 | `stores/optimistic.ts`     | Optimistic update helpers                                                               |
-| `pages/`                   | InboxPage, TodayPage, MonthlyPage, HabitsPage, LoginPage, StyleguidePage                |
+| `pages/`                   | DailyPage, InboxPage, UpcomingPage, MonthlyPage, HabitsPage, CollectionsPage, SettingsPage, LoginPage, StyleguidePage |
 | `components/AppShell.tsx`  | Layout wrapper with sidebar                                                             |
 | `index.css`                | Design system tokens and global styles                                                  |
 
@@ -87,7 +101,7 @@ docker compose exec api npm exec vitest run src/path/to/file.test.ts     # singl
 See `DESIGN.md` for the full spec. These rules are non-negotiable:
 
 - **Font**: Lora serif only - no sans-serif anywhere
-- **Palette**: warm cream `#f5f0e8` background, brick-red `#c0392b` accent (≤10% of screen), ink `#2c2c2c`
+- **Palette**: warm cream `#f5f0e8` background, brick-red `#c9483b` accent (≤10% of screen), ink `#44443d`
 - **Elevation**: flat design - tint + 1px border only; no box shadows on cards/rows
 - **Rhythm**: 24px vertical baseline grid - all spacing must be multiples of 24px
 - **Color rules**: no pure white `#fff` or pure black `#000`; never use blue as primary

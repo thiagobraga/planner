@@ -20,7 +20,7 @@ Frontend mutation
   → Redis subscriber picks up
   → Socket.IO emits "sync" event to rooms:
       user:{userId}      ← all sessions of this user
-      project:{projectId} ← collaborators
+      collection:{collectionId} ← collaborators
   → Frontend app/src/utils/socket.ts receives
   → app/src/hooks/useSync.ts handler fires
   → React Query invalidation OR Zustand store update
@@ -44,8 +44,8 @@ Read `api/src/services/syncService.ts`. Verify:
 
 - Event has correct `type` field matching what `useSync` listens for
 - `resourceId` and `userId` are populated
-- `projectId` present when needed for project room broadcast
-- Room names are `user:{userId}` and `project:{projectId}` (check for typos)
+- `collectionId` present when needed for collection room broadcast
+- Room names are `user:{userId}` and `collection:{collectionId}` (check for typos)
 
 ### Step 3: Check useSync subscription
 
@@ -79,7 +79,7 @@ grep REDIS .env
 In `api/src/index.ts`, verify:
 
 - Socket joins `user:{userId}` room on connect
-- Socket joins `project:{projectId}` room when appropriate
+- Socket joins `collection:{collectionId}` room when appropriate
 - Room names match exactly what `publishEvent` targets
 
 ## Common Break Points
@@ -88,7 +88,7 @@ In `api/src/index.ts`, verify:
 | --------------------------- | ----------------------------------------------------- |
 | No update on same device    | `publishEvent` not called or wrong event type         |
 | No update on other devices  | Socket not joining `user:{userId}` room               |
-| No update for collaborators | Socket not joining `project:{projectId}` room         |
+| No update for collaborators | Socket not joining `collection:{collectionId}` room         |
 | Intermittent updates        | Race condition - publishEvent before DB commit        |
 | Updates then stops          | Socket disconnect on token expiry, no reconnect logic |
 | Never worked                | Redis not running, wrong REDIS_URL, wrong room names  |

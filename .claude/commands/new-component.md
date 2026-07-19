@@ -3,7 +3,7 @@ Scaffold a new React component named $ARGUMENTS following the planner design sys
 ## Design System Rules (mandatory)
 
 - Font: `font-family: var(--font-serif)` (Lora) - no sans-serif
-- Background: `var(--color-paper)` (warm cream/beige)
+- Background: `var(--color-cream)` (warm cream/beige)
 - Accent: `var(--color-accent)` (brick-red) - use sparingly, ≤10% of visible area
 - Elevation: flat - tint + 1px border only; NO box-shadow on cards
 - Vertical rhythm: 24px baseline (`var(--spacing-6)`)
@@ -32,7 +32,7 @@ export const $ARGUMENTS: FC<$ARGUMENTSProps> = (
 ```css
 .$ARGUMENTS-root {
   font-family: var(--font-serif);
-  background: var(--color-paper);
+  background: var(--color-cream);
   border: 1px solid var(--color-border);
   padding: var(--spacing-6); /* 24px vertical rhythm */
 }

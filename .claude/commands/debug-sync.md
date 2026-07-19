@@ -20,7 +20,7 @@ Open `api/src/services/syncService.ts`.
 
 - Verify `type` field matches what frontend expects
 - Verify `userId` is set (for `user:{userId}` room broadcast)
-- Verify `projectId` is set if collaborators need the event (for `project:{projectId}` room)
+- Verify `collectionId` is set if collaborators need the event (for `collection:{collectionId}` room)
 
 ## 3. Check Redis pub/sub
 

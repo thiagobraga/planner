@@ -43,12 +43,14 @@ grep -rn "#3498db\|color.*blue\|background.*blue" app/src/
 
 | Token               | Hex             | Use                       |
 | ------------------- | --------------- | ------------------------- |
-| `--color-paper`     | `#f5f0e8`       | body background           |
-| `--color-sidebar`   | `#ebe6de`       | secondary surface         |
-| `--color-ink`       | `#2c2c2c`       | primary text              |
-| `--color-ink-light` | `#6b6b6b`       | secondary text, captions  |
-| `--color-accent`    | `#c0392b`       | brick-red, ≤10% of screen |
-| `--color-border`    | `#d4cfc7`       | borders, dividers, chips  |
+| `--color-cream`     | `#f5f0e8`       | body background           |
+| `--color-sidebar-bg`| `#ebe6de`       | secondary surface         |
+| `--color-ink`       | `#44443d`       | primary text              |
+| `--color-ink-light` | `#8b867e`       | secondary text, captions  |
+| `--color-ink-lighter`| `#c5c1ba`      | muted/disabled text       |
+| `--color-accent`    | `#c9483b`       | brick-red, ≤10% of screen |
+| `--color-border`    | `#e5e1d8`       | borders, dividers, chips  |
+| `--color-dot`       | `#d8d3cb`       | dot grid pattern          |
 | `--font-serif`      | `"Lora", serif` | all text                  |
 
 ## Typography Scale
@@ -67,8 +69,10 @@ grep -rn "#3498db\|color.*blue\|background.*blue" app/src/
 Only one shadow exists in the system - overlay drop for modals/floating panels:
 
 ```css
-box-shadow: 0 8px 32px rgba(44, 44, 44, 0.15);
+box-shadow: 0 8px 32px rgba(68, 68, 61, 0.15);
 ```
+
+Also allowed: `--shadow-subtle`, `--shadow-medium`, `--shadow-overlay` Tailwind utilities.
 
 Everything else: flat. Use `1px solid var(--color-border)` for elevation.
 
@@ -82,7 +86,7 @@ path/to/file.tsx:91: VIOLATION: #fff background. Use var(--color-paper) or var(-
 
 ## Don'ts Quick Reference
 
-- No `#fff` / `#000` - always use ink/paper vars
+- No `#fff` / `#000` - always use ink/cream vars
 - No sans-serif of any kind
 - No `box-shadow` outside overlay-drop
 - No orange (`#e67e22`) or blue (`#3498db`) outside P2/P3 priority bullets

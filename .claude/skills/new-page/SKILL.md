@@ -23,7 +23,6 @@ import { TaskList } from '../components/TaskList';
 import { setPendingColumn } from '../components/TaskItem';
 import type { Task } from '../components/TaskItem';
 import {
-  fetchXTasks,
   apiCreateTask,
   apiUpdateTask,
   apiToggleTask,
@@ -74,7 +73,7 @@ const invalidate = useCallback(() => qc.invalidateQueries({ queryKey: ['pageKey'
 ```ts
 const { data, error } = useQuery({
   queryKey: ['pageKey'],
-  queryFn: fetchXTasks,
+  queryFn: () => apiClient('/tasks'),
   staleTime: 30_000,
 });
 useEffect(() => {
