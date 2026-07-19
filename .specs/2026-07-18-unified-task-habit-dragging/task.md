@@ -311,21 +311,23 @@
   - [x] Apply the full projected move immediately
   - [x] Patch authoritative IDs/order values from successful responses
   - [x] Restore snapshots and invalidate on failure
-- [ ] Integrate with offline mutation replay
+- [x] Integrate with offline mutation replay
   - [x] Route move calls through the existing `request()` mutation path
   - [x] Queue structural move bodies while offline
   - [x] Remap temporary task IDs in move paths and parent/body references after create replay
   - [x] Preserve FIFO ordering for create-then-move sequences
-  - [ ] Revalidate target position against current server state during replay and clamp safely
+  - [x] Revalidate target position against current server state during replay and clamp safely
+        (clamped server-side in the move transaction, against the list as it is at
+        replay time - the client's queued index cannot be trusted by then)
 - [x] Sync all affected views
   - [x] Task moves invalidate Inbox, Daily, involved Collection pages, and collection sidebar counts if present
   - [x] Habit moves invalidate habits and habit-group queries
   - [x] Ignore a matching echoed event while the local optimistic operation is still reconciling
-- [ ] Add offline and multi-client tests
-  - [ ] Offline reorder survives reload and replays
-  - [ ] Offline create then move remaps IDs correctly
-  - [ ] Failed replay restores/refetches authoritative order
-  - [ ] A move from another client appears without duplicating or losing rows
+- [x] Add offline and multi-client tests
+  - [x] Offline reorder survives reload and replays
+  - [x] Offline create then move remaps IDs correctly
+  - [x] Failed replay restores/refetches authoritative order
+  - [x] A move from another client appears without duplicating or losing rows
 
 ## Phase 11 - Acceptance verification
 

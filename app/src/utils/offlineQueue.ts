@@ -56,6 +56,23 @@ function withStore<T>(mode: IDBTransactionMode, run: (store: IDBObjectStore) => 
 }
 
 /**
+ * Strictly increasing enqueue stamps.
+ *
+ * Replay order is FIFO by `createdAt`, but `Date.now()` only has millisecond
+ * resolution and several mutations can easily be queued inside one tick - a
+ * task created and immediately dragged, for instance. Ties then fall back to
+ * IndexedDB key order, which is a random UUID, so the move could replay before
+ * the create it depends on and be addressed to a task the server has never
+ * seen. Nudging the stamp forward on a tie keeps the sequence total.
+ */
+let lastStamp = 0;
+function nextStamp(): number {
+  const now = Date.now();
+  lastStamp = now > lastStamp ? now : lastStamp + 1;
+  return lastStamp;
+}
+
+/**
  * Queue a write-method REST call for replay once the app reconnects. Returns
  * the generated id of the queued record (not the eventual server id).
  */
@@ -71,7 +88,7 @@ export async function enqueueMutation(op: {
     method: op.method,
     path: op.path,
     body: op.body,
-    createdAt: Date.now(),
+    createdAt: nextStamp(),
     ...(op.clientEntityId ? { clientEntityId: op.clientEntityId } : {}),
   };
   await withStore('readwrite', (store) => store.add(record));
