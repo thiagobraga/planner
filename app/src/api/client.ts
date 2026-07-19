@@ -223,6 +223,51 @@ export async function apiDeleteTask(id: string): Promise<void> {
   await request<unknown>(`/tasks/${id}`, { method: 'DELETE' });
 }
 
+// ── Structural moves ───────────────────────────────────────────────────────────
+//
+// A move is deliberately separate from `apiUpdateTask`. Update patches a task's
+// own fields; move rewrites tree position, list membership and the ordering of
+// everything around it, and must do so in one transaction. The legacy
+// `PATCH /tasks/:id/reorder` stays live for older clients but is unused here.
+
+/**
+ * Which hand-sorted list the target `position` counts within.
+ *
+ * These are independent orderings of the same task - see migration 025. A drag
+ * inside a collection reorders the collection scope and leaves the day scope
+ * alone, and vice versa.
+ */
+export type TaskOrderScope =
+  | { kind: 'collection'; collectionId: string }
+  | { kind: 'day'; dueDate: string };
+
+export interface TaskMoveInput {
+  /** New parent, or null to place at the top level. */
+  parentTaskId: string | null;
+  /** Omit to keep the task's current collection. */
+  collectionId?: string;
+  /** ISO YYYY-MM-DD; null clears the date. Omit to keep the current one. */
+  dueDate?: string | null;
+  /** The list the task lands in. */
+  scope: TaskOrderScope;
+  /** Zero-based index within that scope. Clamped server-side. */
+  position: number;
+}
+
+export interface TaskMoveResponse {
+  /** The dragged task and every descendant, with updated depth/collection/date. */
+  moved: ApiTask[];
+  /** Siblings in the source and target scopes whose order value shifted. */
+  reordered: ApiTask[];
+}
+
+export async function apiMoveTask(id: string, input: TaskMoveInput): Promise<TaskMoveResponse> {
+  return request<TaskMoveResponse>(`/tasks/${id}/move`, {
+    method: 'PATCH',
+    body: JSON.stringify(input),
+  });
+}
+
 // ── Collections ────────────────────────────────────────────────────────────────
 
 export interface ApiCollection {
@@ -395,4 +440,55 @@ export async function apiUpdateHabitGroup(
 // Habits in the group are ungrouped, not deleted.
 export async function apiDeleteHabitGroup(id: string): Promise<void> {
   await request<unknown>(`/habit-groups/${id}`, { method: 'DELETE' });
+}
+
+// ── Habit structural moves ─────────────────────────────────────────────────────
+
+export interface HabitMoveInput {
+  /**
+   * New parent, or null to sit as a root. A habit that has children cannot take
+   * a parent - the hierarchy is only one level deep.
+   */
+  parentId: string | null;
+  /**
+   * New group, or null for ungrouped. Must be null when `parentId` is set: a
+   * sub-habit inherits its parent's group.
+   */
+  groupId: string | null;
+  /** Zero-based index among the habits sharing the target parent/group scope. */
+  position: number;
+}
+
+export interface HabitMoveResponse {
+  /** The moved habit plus any children carried along with it. */
+  moved: ApiHabit[];
+  /** Every other habit whose parent, group or order value changed. */
+  reordered: ApiHabit[];
+}
+
+export async function apiMoveHabit(id: string, input: HabitMoveInput): Promise<HabitMoveResponse> {
+  return request<HabitMoveResponse>(`/habits/${id}/move`, {
+    method: 'PATCH',
+    body: JSON.stringify(input),
+  });
+}
+
+export interface HabitGroupMoveInput {
+  /** Zero-based index among the user's groups. */
+  position: number;
+}
+
+export interface HabitGroupMoveResponse {
+  /** Every group whose order value changed, including the moved one. */
+  reordered: ApiHabitGroup[];
+}
+
+export async function apiMoveHabitGroup(
+  id: string,
+  input: HabitGroupMoveInput,
+): Promise<HabitGroupMoveResponse> {
+  return request<HabitGroupMoveResponse>(`/habit-groups/${id}/move`, {
+    method: 'PATCH',
+    body: JSON.stringify(input),
+  });
 }
