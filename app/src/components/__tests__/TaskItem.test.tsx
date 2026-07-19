@@ -75,6 +75,12 @@ describe('TaskItem - task/note conversion', () => {
     expect(screen.getByText('-')).toBeInTheDocument();
   });
 
+  it('dims past note rows the same way completed tasks are dimmed', () => {
+    renderTaskItem({ ...baseTask, type: 'note', title: 'Old note' }, { isEditing: false, dimmed: true });
+
+    expect(screen.getByRole('button', { name: 'Old note' })).toHaveClass('opacity-[0.35]');
+  });
+
   it('renders a checkbox toggle button for tasks', () => {
     renderTaskItem({ ...baseTask, title: 'A task' }, { isEditing: false });
 

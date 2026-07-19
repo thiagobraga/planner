@@ -403,6 +403,7 @@ export function DailyPage() {
 
       {sections.map((section) => {
         const isToday = section.key === todayKey;
+        const dimNotes = section.key < todayKey;
         return (
           <div key={section.key} className="mt-6">
             <div className="text-[11px] tracking-[0.08em] uppercase text-ink-light leading-6 h-6 m-0 font-medium">
@@ -413,6 +414,7 @@ export function DailyPage() {
               tasks={section.tasks}
               selectedTaskId={selectedId}
               editingId={editingId}
+              dimNotes={dimNotes}
               hideDueDate
               onTaskClick={handleTaskClick}
               onTaskToggle={handleToggle}

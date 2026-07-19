@@ -27,6 +27,7 @@ export interface TaskItemProps {
   task: Task;
   isSelected?: boolean;
   isEditing?: boolean;
+  dimmed?: boolean;
   hideDueDate?: boolean;
   italicDueDate?: boolean;
   onToggle?: (id: string) => void;
@@ -79,6 +80,7 @@ export const TaskItem = memo(function TaskItem({
   task,
   isSelected,
   isEditing,
+  dimmed,
   hideDueDate,
   italicDueDate = true,
   onToggle,
@@ -202,7 +204,7 @@ export const TaskItem = memo(function TaskItem({
       ref={setNodeRef}
       style={style}
       data-task-id={task.id}
-      className={`task-item group ${isSelected ? 'task-item--selected' : ''} ${isEditing ? 'task-item--editing' : ''} ${isDragging ? 'opacity-50' : task.isCompleted ? 'opacity-[0.35]' : ''}`}
+      className={`task-item group ${isSelected ? 'task-item--selected' : ''} ${isEditing ? 'task-item--editing' : ''} ${isDragging ? 'opacity-50' : task.isCompleted || dimmed ? 'opacity-[0.35]' : ''}`}
       aria-label={task.title}
       aria-selected={isSelected}
       onClick={isEditing ? undefined : () => onClick?.(task.id)}
