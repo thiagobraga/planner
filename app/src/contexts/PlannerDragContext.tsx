@@ -52,6 +52,21 @@ interface PlannerDragContextValue {
   overlay: DragOverlayInfo | null;
   setOverlay: (info: DragOverlayInfo | null) => void;
   /**
+   * The rows being dragged, rendered by whichever list owns them.
+   *
+   * The provider cannot build this itself - it knows a drag is in flight but
+   * nothing about what a task row looks like - so the owning list hands it up.
+   * Falls back to a title chip when no list has claimed the drag.
+   */
+  overlayNode: ReactNode | null;
+  setOverlayNode: (node: ReactNode | null) => void;
+  /**
+   * False until the pointer actually travels. Lets a list hold its layout
+   * completely still on pickup: pressing a row must not reflow anything until
+   * the user has expressed movement.
+   */
+  hasMoved: boolean;
+  /**
    * Horizontal drag distance, quantised to whole indent steps.
    *
    * Quantised rather than raw so lists re-render only when the projected
@@ -127,6 +142,8 @@ const SILENT_ANNOUNCEMENTS: Announcements = {
 export function PlannerDragProvider({ children }: { children: ReactNode }) {
   const [activeDrag, setActiveDrag] = useState<DragData | null>(null);
   const [overlay, setOverlay] = useState<DragOverlayInfo | null>(null);
+  const [overlayNode, setOverlayNode] = useState<ReactNode | null>(null);
+  const [hasMoved, setHasMoved] = useState(false);
   const [announcement, setAnnouncement] = useState('');
   const [indentSteps, setIndentSteps] = useState(0);
   const [overId, setOverId] = useState<string | null>(null);
@@ -172,6 +189,7 @@ export function PlannerDragProvider({ children }: { children: ReactNode }) {
 
   const handleDragMove = useCallback(
     (event: DragMoveEvent) => {
+      if (event.delta.x !== 0 || event.delta.y !== 0) setHasMoved(true);
       indent.current.move(event.delta.x);
       const steps = Math.round(indent.current.offset() / INDENT_PX);
       setIndentSteps((prev) => (prev === steps ? prev : steps));
@@ -202,6 +220,8 @@ export function PlannerDragProvider({ children }: { children: ReactNode }) {
     overIdRef.current = null;
     setActiveDrag(null);
     setOverlay(null);
+    setOverlayNode(null);
+    setHasMoved(false);
     setIndentSteps(0);
     setOverId(null);
   }, []);
@@ -226,8 +246,19 @@ export function PlannerDragProvider({ children }: { children: ReactNode }) {
   );
 
   const value = useMemo<PlannerDragContextValue>(
-    () => ({ activeDrag, overlay, setOverlay, indentSteps, overId, announce, registerHandlers }),
-    [activeDrag, overlay, indentSteps, overId, announce, registerHandlers],
+    () => ({
+      activeDrag,
+      overlay,
+      setOverlay,
+      overlayNode,
+      setOverlayNode,
+      hasMoved,
+      indentSteps,
+      overId,
+      announce,
+      registerHandlers,
+    }),
+    [activeDrag, overlay, overlayNode, hasMoved, indentSteps, overId, announce, registerHandlers],
   );
 
   return (
@@ -249,7 +280,15 @@ export function PlannerDragProvider({ children }: { children: ReactNode }) {
           of are `overflow-y-auto` and would clip the floating item at their edge.
         */}
         <DragOverlay dropAnimation={null}>
-          {overlay ? (
+          {/*
+            The rows themselves travel when the owning list provides them, so
+            what moves under the pointer is the block being moved rather than a
+            label describing it - the shape of a parent carrying children is
+            legible at a glance. The chip remains for drags no list claims.
+          */}
+          {overlayNode ? (
+            <div className="planner-drag-overlay planner-drag-overlay--block">{overlayNode}</div>
+          ) : overlay ? (
             <div className="planner-drag-overlay flex items-center gap-2 rounded-[8px] border border-dot bg-cream px-2 py-1 text-[13px] text-ink shadow-[0_4px_16px_rgba(44,44,44,0.18)]">
               <span className="planner-drag-overlay-title truncate max-w-[280px]">
                 {overlay.title}

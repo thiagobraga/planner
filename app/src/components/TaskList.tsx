@@ -1,9 +1,10 @@
-import type { ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { TaskItem, type Task, type TaskItemProps } from './TaskItem';
 import { flattenTasks, getSubtreeBlock, projectMove, INDENT_WIDTH } from '../utils/taskProjection';
 import { usePlannerDrag } from '../contexts/PlannerDragContext';
+import { TaskBlockPreview } from './TaskBlockPreview';
 import type { DayDropData } from '../types/drag';
 
 type TaskCallbacks = Pick<
@@ -60,7 +61,7 @@ export function TaskList({
   onNavigate,
   onConvertType,
 }: TaskListProps) {
-  const { indentSteps, overId } = usePlannerDrag();
+  const { indentSteps, overId, hasMoved, setOverlayNode } = usePlannerDrag();
 
   const dropData: DayDropData | undefined = dayDate
     ? { kind: 'day', date: dayDate, containerId }
@@ -79,11 +80,15 @@ export function TaskList({
   // than left in place. dnd-kit sorts each row independently, so leaving them
   // would shift only the parent's placeholder and strand the children behind it
   // - they would appear detached, at the wrong depth, mid-drag. Collapsing the
-  // block means the single remaining parent row represents the whole subtree,
-  // which is what the overlay's "+N" already says.
-  const carried = activeDragId
-    ? new Set(getSubtreeBlock(allRows, activeDragId).slice(1).map((r) => r.id))
-    : new Set<string>();
+  // block means the single remaining parent row represents the whole subtree.
+  //
+  // Held back until the pointer actually travels, so pressing a row changes
+  // nothing: a press that collapses a subtree before any movement reads as the
+  // list reacting to a click the user has not finished making.
+  const carried =
+    activeDragId && hasMoved
+      ? new Set(getSubtreeBlock(allRows, activeDragId).slice(1).map((r) => r.id))
+      : new Set<string>();
   const rows = carried.size > 0 ? allRows.filter((r) => !carried.has(r.id)) : allRows;
 
   const overIndex = overId ? rows.findIndex((r) => r.id === overId) : -1;
@@ -106,8 +111,29 @@ export function TaskList({
   // mounted in the list it came from and this one has nothing to reposition.
   // Without a standalone marker the destination gave no sign of where the drop
   // would land - the whole gesture previewed only in the day it started from.
-  const insertAfterId = !holdsActiveRow && overIndex !== -1 ? rows[overIndex].id : null;
-  const showEmptyInsert = !holdsActiveRow && rows.length === 0 && isOver;
+  const insertAfterId =
+    hasMoved && !holdsActiveRow && overIndex !== -1 ? rows[overIndex].id : null;
+  const showEmptyInsert = hasMoved && !holdsActiveRow && rows.length === 0 && isOver;
+
+  // A drop arriving from another date lands at top level, so the slot shown here
+  // is flush. Within a list the dragged row is its own placeholder and carries
+  // the projected depth itself.
+  const foreignInsertDepth = 0;
+
+  // Hand the travelling rows up to the overlay. Only the list holding them can
+  // draw them, and only once the drag is really under way - before that the row
+  // is still sitting in place and there is nothing to float.
+  const draggedBlock =
+    activeDragId && hasMoved ? getSubtreeBlock(allRows, activeDragId) : null;
+
+  useEffect(() => {
+    if (!draggedBlock || draggedBlock.length === 0) return;
+    setOverlayNode(
+      <TaskBlockPreview rows={draggedBlock.map((r) => ({ task: r.task, depth: r.depth }))} />,
+    );
+    return () => setOverlayNode(null);
+    // Identity of the block is what matters, not the array instance.
+  }, [draggedBlock?.map((r) => r.id).join(','), setOverlayNode]);
 
   return (
     <SortableContext items={rows.map((r) => r.id)} strategy={verticalListSortingStrategy}>
@@ -115,12 +141,16 @@ export function TaskList({
         ref={setNodeRef}
         role="list"
         aria-label="task list"
-        className={`task-list flex flex-col gap-0 ${isOver ? 'task-list--drop-target' : ''}`}
+        className="task-list flex flex-col gap-0"
       >
-        {showEmptyInsert && <div aria-hidden className="task-list-insertion" />}
+        {showEmptyInsert && (
+          <div aria-hidden className="task-list-slot" style={{ marginLeft: foreignInsertDepth * INDENT_WIDTH }} />
+        )}
         {rows.map(({ task, depth }) => (
           <div key={task.id} role="listitem" className="task-list-item">
-            {task.id === insertAfterId && <div aria-hidden className="task-list-insertion" />}
+            {task.id === insertAfterId && (
+              <div aria-hidden className="task-list-slot" style={{ marginLeft: foreignInsertDepth * INDENT_WIDTH }} />
+            )}
             <TaskItem
               task={task}
               containerId={containerId}

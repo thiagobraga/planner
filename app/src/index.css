@@ -271,9 +271,9 @@ kbd {
 }
 /*
  * The dragged row, left behind as dnd-kit moves it to the drop position while
- * the overlay follows the pointer. Its own content is hidden and it renders as a
- * 1px insertion line instead, indented to the projected nesting level - so the
- * line shows both where the block lands and how deep it nests.
+ * the block itself follows the pointer. Its content is hidden and it renders as
+ * an empty slot instead, indented to the projected nesting level - so the gap
+ * shows both where the block lands and how deep it will nest.
  */
 .task-item--placeholder > * {
   visibility: hidden;
@@ -286,12 +286,15 @@ kbd {
 .task-item--placeholder::after {
   content: '';
   position: absolute;
+  /* Starts at the row's padded edge, so the slot sits at the projected depth
+     rather than spanning the full width regardless of nesting. */
   left: 0;
   right: 0;
-  top: 50%;
-  height: 1px;
-  background: var(--color-ink-light);
-  opacity: 0.6;
+  top: 0;
+  bottom: 0;
+  border-radius: 3px;
+  border: 1px dashed var(--color-dot);
+  background: color-mix(in srgb, var(--color-ink-light) 4%, transparent);
 }
 
 /*
@@ -301,7 +304,12 @@ kbd {
   target is often a whole day section: a strong outline around a tall region
   reads as an error state rather than an invitation.
 */
-.task-list--drop-target,
+/*
+  Habit sections still tint, because they have no per-row slot to point at. Task
+  lists no longer do: tinting a whole date while a single row's slot already
+  marks the landing spot said the same thing twice, and the outline around a
+  tall region read as an error rather than an invitation.
+*/
 .habit-timeline-section--drop-target,
 .habit-calendar-section--drop-target {
   background: color-mix(in srgb, var(--color-ink-light) 6%, transparent);
@@ -309,19 +317,29 @@ kbd {
   box-shadow: inset 0 0 0 1px var(--color-dot);
 }
 
+/* The block travelling under the pointer: the rows themselves, lifted. */
+.planner-drag-overlay--block {
+  border-radius: 6px;
+  border: 1px solid var(--color-dot);
+  background: var(--color-cream);
+  padding: 2px 8px 2px 0;
+  box-shadow: 0 4px 16px rgba(44, 44, 44, 0.18);
+  max-width: 420px;
+}
+
 /*
   Where a row dragged in from another day would land.
 
   Daily keeps each date in its own list, so a row crossing dates never moves out
   of the list it started in and cannot preview the drop itself. This stands in
-  for it. A hairline in the accent rather than a full ghost row, because it marks
-  a seam between two rows rather than occupying one.
+  for it - and occupies a whole row rather than marking a seam, so the gap it
+  leaves is the space the block is about to take, at the indent it will take it.
 */
-.task-list-insertion {
-  height: 2px;
-  margin: -1px 0;
-  border-radius: 1px;
-  background: var(--color-accent);
+.task-list-slot {
+  height: 24px;
+  border-radius: 3px;
+  border: 1px dashed var(--color-dot);
+  background: color-mix(in srgb, var(--color-ink-light) 4%, transparent);
 }
 
 @media (prefers-reduced-motion: reduce) {
