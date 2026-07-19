@@ -1,8 +1,13 @@
 import { NavLink, useNavigate } from 'react-router';
+import { useQuery } from '@tanstack/react-query';
+import { useDroppable } from '@dnd-kit/core';
 import { ChevronRight, Repeat2, Settings, HelpCircle, LogOut, type LucideIcon } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { usePlannerDrag } from '../contexts/PlannerDragContext';
 import { CollectionTreeNav } from './CollectionTreeNav';
 import { SidebarNavItem } from './SidebarNavItem';
+import { fetchCollections } from '../api/client';
+import type { CollectionDropData } from '../types/drag';
 
 interface SidebarProps {
   isOpen?: boolean;
@@ -47,6 +52,8 @@ export const PlannerIcon = ({ width, height, className = '' }: { width: number; 
   />
 );
 
+type ReactNode = React.ReactNode;
+
 type NavItem = { to: string; label: string; Icon: LucideIcon | React.ComponentType<{ size?: number }> };
 
 const NAV_ITEMS: NavItem[] = [
@@ -55,6 +62,41 @@ const NAV_ITEMS: NavItem[] = [
   { to: '/monthly', label: 'Monthly', Icon: MonthlyIcon },
   { to: '/habits', label: 'Habits', Icon: Repeat2 },
 ];
+
+/**
+ * The Inbox nav entry, doubling as a drop target for tasks.
+ *
+ * Inbox is a real collection behind a nav item of its own, so a task dropped
+ * here files into it exactly as it would into a named collection. The wrapper
+ * swallows the click that a drop would otherwise land on the NavLink, so
+ * finishing a drag over Inbox files the task instead of navigating away from
+ * the page the user is still working in.
+ */
+function InboxNavItem({ label, icon }: { label: string; icon: ReactNode }) {
+  const { data: collections = [] } = useQuery({ queryKey: ['collections'], queryFn: fetchCollections });
+  const inboxId = collections.find((c) => c.isInbox)?.id ?? null;
+  const { activeDrag, overId } = usePlannerDrag();
+
+  const data: CollectionDropData | undefined = inboxId
+    ? { kind: 'collection', collectionId: inboxId, isInbox: true, parentId: null }
+    : undefined;
+
+  const { setNodeRef } = useDroppable({ id: 'sidebar-inbox', data, disabled: !inboxId });
+  const isTaskTarget = activeDrag?.kind === 'task' && overId === 'sidebar-inbox';
+
+  return (
+    <div
+      ref={setNodeRef}
+      data-drop-target={isTaskTarget ? 'true' : undefined}
+      onClickCapture={(e) => {
+        if (activeDrag) e.preventDefault();
+      }}
+      className={isTaskTarget ? 'rounded-[4px] outline outline-1 outline-dot' : undefined}
+    >
+      <SidebarNavItem to="/inbox" label={label} icon={icon} />
+    </div>
+  );
+}
 
 export function Sidebar({ isOpen, onClose, collapsed = false, onOpenHelp }: SidebarProps) {
   const { logout } = useAuth();
@@ -161,14 +203,18 @@ export function Sidebar({ isOpen, onClose, collapsed = false, onOpenHelp }: Side
 
       {/* Main nav */}
       <nav aria-label="Main navigation" className="flex flex-col">
-        {NAV_ITEMS.map((entry) => (
-          <SidebarNavItem
-            key={entry.to}
-            to={entry.to}
-            label={entry.label}
-            icon={<entry.Icon size={15} strokeWidth={1.5} />}
-          />
-        ))}
+        {NAV_ITEMS.map((entry) =>
+          entry.to === '/inbox' ? (
+            <InboxNavItem key={entry.to} label={entry.label} icon={<entry.Icon size={15} strokeWidth={1.5} />} />
+          ) : (
+            <SidebarNavItem
+              key={entry.to}
+              to={entry.to}
+              label={entry.label}
+              icon={<entry.Icon size={15} strokeWidth={1.5} />}
+            />
+          ),
+        )}
       </nav>
 
       {/* Collections */}

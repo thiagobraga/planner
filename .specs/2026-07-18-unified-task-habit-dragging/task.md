@@ -60,7 +60,7 @@
   - [x] Own the single `DndContext` used by collections, tasks, habits, and habit groups
   - [x] Dispatch drag lifecycle events by `active.data.current.kind`
   - [x] Allow the currently mounted page and sidebar to register entity-specific handlers
-  - [ ] Remove nested `DndContext` instances that prevent cross-sidebar drops
+  - [x] Remove nested `DndContext` instances that prevent cross-sidebar drops
 - [x] Add custom sensors
   - [x] Pointer sensor enforces the 180ms/8px press constraint
   - [x] Pointer activator ignores interactive descendants marked as non-draggable
@@ -69,7 +69,7 @@
 - [ ] Add type-aware collision detection
   - [x] Task drags consider task rows, Daily containers, collection rows, and Inbox
   - [ ] Habit drags consider habit rows/cards and habit-group containers
-  - [ ] Collection drags consider only collection rows
+  - [x] Collection drags consider only collection rows
   - [x] Prefer pointer intersection for container targets and closest-center for sortable rows
 - [ ] Add shared drag presentation
   - [x] Render `DragOverlay` outside clipped scroll containers
@@ -204,17 +204,17 @@
 
 ## Phase 6 - Sidebar collection drops
 
-- [ ] Make every named collection and sub-collection row a task drop target
-  - [ ] Keep collection rows sortable when the active entity is a collection
-  - [ ] Highlight the full row when an active task can be dropped there
-  - [ ] Do not navigate when the drop gesture ends
-- [ ] Make Inbox navigation a task drop target
-  - [ ] Resolve and attach the Inbox collection ID
-  - [ ] Use the same top-level append behavior as named collections
-- [ ] Implement desktop cross-sidebar drops
-  - [ ] Keep Sidebar and routed page inside the shared drag provider
-  - [ ] Preserve collection-tree drag behavior and horizontal collection projection
-  - [ ] Filter collision targets so task and collection drags cannot interfere
+- [x] Make every named collection and sub-collection row a task drop target
+  - [x] Keep collection rows sortable when the active entity is a collection
+  - [x] Highlight the full row when an active task can be dropped there
+  - [x] Do not navigate when the drop gesture ends
+- [x] Make Inbox navigation a task drop target
+  - [x] Resolve and attach the Inbox collection ID
+  - [x] Use the same top-level append behavior as named collections
+- [x] Implement desktop cross-sidebar drops
+  - [x] Keep Sidebar and routed page inside the shared drag provider
+  - [x] Preserve collection-tree drag behavior and horizontal collection projection
+  - [x] Filter collision targets so task and collection drags cannot interfere
 - [ ] Implement mobile edge-open
   - [ ] Detect an active task pointer within 32px of the left viewport edge
   - [ ] Open the drawer after a continuous 350ms edge hold

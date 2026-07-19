@@ -20,6 +20,24 @@ const ALLOWED_TARGETS: Record<DragKind, ReadonlySet<DropKind>> = {
 const CONTAINER_KINDS: ReadonlySet<DropKind> = new Set<DropKind>(['day', 'collection', 'habit-group']);
 
 /**
+ * A sidebar collection row plays both parts, depending on what is being dragged.
+ *
+ * To a task it is a container - a place to be filed into, claimed only when the
+ * pointer is really inside it. To another collection it is a row in a sortable
+ * list, and must resolve by closest-center or reordering loses its midpoint
+ * crossing behaviour and stalls whenever the pointer leaves the row.
+ *
+ * The same applies to a habit group: a habit is filed *into* it, but a group
+ * drag reorders it *among* its siblings.
+ */
+function containerKindsFor(activeKind: DragKind): ReadonlySet<DropKind> {
+  if (activeKind === 'collection' || activeKind === 'habit-group') {
+    return new Set([...CONTAINER_KINDS].filter((k) => k !== activeKind));
+  }
+  return CONTAINER_KINDS;
+}
+
+/**
  * Type-aware collision detection.
  *
  * Containers are resolved by pointer intersection, because a Daily section or a
@@ -49,13 +67,14 @@ export const plannerCollisionDetection: CollisionDetection = (args) => {
     return true;
   });
 
+  const containerKinds = containerKindsFor(activeData.kind);
   const rows = candidates.filter((c) => {
     const data = c.data.current as DropData | undefined;
-    return data ? !CONTAINER_KINDS.has(data.kind) : false;
+    return data ? !containerKinds.has(data.kind) : false;
   });
   const containers = candidates.filter((c) => {
     const data = c.data.current as DropData | undefined;
-    return data ? CONTAINER_KINDS.has(data.kind) : false;
+    return data ? containerKinds.has(data.kind) : false;
   });
 
   const rowHits = rows.length ? closestCenter({ ...args, droppableContainers: rows }) : [];

@@ -2,17 +2,13 @@ import { Fragment, useMemo, useState, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
-  DndContext,
-  PointerSensor,
-  KeyboardSensor,
-  useSensor,
-  useSensors,
-  closestCenter,
   type DragStartEvent,
   type DragMoveEvent,
   type DragEndEvent,
 } from '@dnd-kit/core';
 import { SortableContext, useSortable, arrayMove, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { usePlannerDrag, usePlannerDragHandlers } from '../contexts/PlannerDragContext';
+import type { CollectionDragData, CollectionDropData } from '../types/drag';
 import { CSS } from '@dnd-kit/utilities';
 import { Plus } from 'lucide-react';
 import {
@@ -176,11 +172,6 @@ export function CollectionTreeNav() {
   const [subNewName, setSubNewName] = useState('');
   const [deletingCollection, setDeletingCollection] = useState<{ id: string; name: string } | null>(null);
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
-    useSensor(KeyboardSensor),
-  );
-
   const projection =
     activeId && flat.length
       ? getProjection(flat, activeId, overIdRef.current ?? activeId, offsetLeft)
@@ -253,6 +244,10 @@ export function CollectionTreeNav() {
 
     const activeIndex = flat.findIndex((i) => i.id === event.active.id);
     const overIndex = flat.findIndex((i) => i.id === over.id);
+    // The shared context also offers the Inbox nav item as a collection target.
+    // It is a valid place to drop a *task*, but not a peer in this sortable list.
+    if (activeIndex === -1 || overIndex === -1) return;
+
     const reordered = arrayMove(flat, activeIndex, overIndex).map((item) =>
       item.id === event.active.id ? { ...item, parentId: proj.parentId } : item,
     );
@@ -300,6 +295,23 @@ export function CollectionTreeNav() {
     ).catch(() => qc.invalidateQueries({ queryKey: ['collections'] }));
   };
 
+  // Collection drags run on the shell-level DndContext rather than a private one.
+  // A private context could not see a drag that started on a task row in the
+  // page, which is exactly the gesture that files a task into a collection.
+  usePlannerDragHandlers('collection', {
+    onDragStart: ({ active }: DragStartEvent) => setActiveId(String(active.id)),
+    onDragMove: ({ delta, over }: DragMoveEvent) => {
+      setOffsetLeft(delta.x);
+      overIdRef.current = over ? String(over.id) : null;
+    },
+    onDragEnd: handleDragEnd,
+    onDragCancel: () => {
+      setActiveId(null);
+      setOffsetLeft(0);
+      overIdRef.current = null;
+    },
+  });
+
   return (
     <div className="mt-6 flex-1">
       <div className="flex items-center justify-between px-3">
@@ -317,18 +329,7 @@ export function CollectionTreeNav() {
         </button>
       </div>
 
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragStart={({ active }: DragStartEvent) => setActiveId(String(active.id))}
-        onDragMove={({ delta, over }: DragMoveEvent) => {
-          setOffsetLeft(delta.x);
-          overIdRef.current = over ? String(over.id) : null;
-        }}
-        onDragEnd={handleDragEnd}
-        onDragCancel={() => { setActiveId(null); setOffsetLeft(0); overIdRef.current = null; }}
-      >
-        <SortableContext items={flat.map((f) => f.id)} strategy={verticalListSortingStrategy}>
+      <SortableContext items={flat.map((f) => f.id)} strategy={verticalListSortingStrategy}>
           {flat.map((item) => (
             <Fragment key={item.id}>
               <SortableCollectionRow
@@ -366,8 +367,7 @@ export function CollectionTreeNav() {
               )}
             </Fragment>
           ))}
-        </SortableContext>
-      </DndContext>
+      </SortableContext>
 
       {adding && (
         <div className="px-3">
@@ -442,9 +442,20 @@ function SortableCollectionRow({
   onAddSub,
   onDelete,
 }: RowProps) {
+  // One payload serves both roles: this row is a peer to drag against when a
+  // collection is moving, and a container to file into when a task is.
+  const data: CollectionDragData & CollectionDropData = {
+    kind: 'collection',
+    collectionId: item.id,
+    parentId: item.parentId,
+    isInbox: false,
+  };
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: item.id,
+    data,
   });
+  const { activeDrag, overId } = usePlannerDrag();
+  const isTaskTarget = activeDrag?.kind === 'task' && overId === item.id;
   const depthClass = DEPTH_PADDING_CLASSES[Math.min(depth, DEPTH_PADDING_CLASSES.length - 1)];
 
   return (
@@ -455,7 +466,8 @@ function SortableCollectionRow({
         transition,
         opacity: isDragging ? 0.5 : 1,
       }}
-      className={`collection-row flex items-center gap-[7px] h-6 pr-2 text-[13px] text-ink ${depthClass} ${isActive ? 'collection-row--active font-medium' : ''}`}
+      data-drop-target={isTaskTarget ? 'true' : undefined}
+      className={`collection-row flex items-center gap-[7px] h-6 pr-2 text-[13px] text-ink ${depthClass} ${isActive ? 'collection-row--active font-medium' : ''} ${isTaskTarget ? 'collection-row--drop-target rounded-[4px] bg-[var(--planner-hover,rgba(44,44,44,0.06))] outline outline-1 outline-dot' : ''}`}
     >
       <span
         {...attributes}
