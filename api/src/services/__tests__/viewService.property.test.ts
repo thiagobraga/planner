@@ -52,7 +52,7 @@ beforeEach(() => {
 });
 
 describe("Property 20: Today view correctness (Requirements 15.2, 15.5, 15.6)", () => {
-  it("partitions tasks into overdue (< today) and today (=== today), sorted by priority then order_value", () => {
+  it("partitions tasks into overdue (< today) and today (=== today), sorted by manual order_value", () => {
     const today = "2024-06-15";
 
     fc.assert(
@@ -60,10 +60,11 @@ describe("Property 20: Today view correctness (Requirements 15.2, 15.5, 15.6)", 
         fc.array(fc.tuple(arbDayOffset, arbPriority, arbOrder), { minLength: 0, maxLength: 30 }),
         async (tasks) => {
           mockQuery.mockReset();
-          // Order rows the way the SQL would: priority ASC, order_value ASC
+          // Order rows the way the SQL would: order_value ASC, created_at ASC.
+          // Priority deliberately does not participate - manual order is authoritative.
           const rows = tasks
             .map(([off, prio, ord], i) => row(`t${i}`, addDays(today, off), prio, ord))
-            .sort((a, b) => a.priority - b.priority || a.order_value - b.order_value);
+            .sort((a, b) => a.order_value - b.order_value);
 
           mockQuery
             .mockResolvedValueOnce({ rows: [{ time_zone: "UTC" }] })
@@ -81,15 +82,10 @@ describe("Property 20: Today view correctness (Requirements 15.2, 15.5, 15.6)", 
           }
           expect(view.overdue.length + view.today.length).toBe(rows.length);
 
-          // Both groups preserve priority ASC then order_value ASC
+          // Both groups preserve stored manual order regardless of priority
           for (const group of [view.overdue, view.today]) {
             for (let i = 1; i < group.length; i++) {
-              const a = group[i - 1];
-              const b = group[i];
-              expect(
-                a.priority < b.priority ||
-                  (a.priority === b.priority && a.orderValue <= b.orderValue),
-              ).toBe(true);
+              expect(group[i - 1].orderValue <= group[i].orderValue).toBe(true);
             }
           }
         },

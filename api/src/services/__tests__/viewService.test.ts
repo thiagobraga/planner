@@ -78,7 +78,8 @@ describe("getTodayView", () => {
 
     const sql = mockQuery.mock.calls[1][0] as string;
     expect(sql).toMatch(/is_archived = false/);
-    expect(sql).toMatch(/ORDER BY t\.priority ASC, t\.order_value ASC/);
+    expect(sql).toMatch(/ORDER BY t\.order_value ASC, t\.created_at ASC/);
+    expect(sql).not.toMatch(/ORDER BY[^`]*priority/);
   });
 
   it("uses user's timezone for today determination", async () => {
@@ -182,11 +183,11 @@ describe("getMonthView", () => {
 });
 
 describe("getInboxView", () => {
-  it("returns inbox tasks ordered by completion, priority, then creation time", async () => {
+  it("returns inbox tasks in stored manual order, interleaving completed rows", async () => {
     mockQuery.mockResolvedValueOnce({
       rows: [
-        taskRow({ id: "done", collection_id: "p-2", is_completed: true, priority: 4, created_at: "2024-06-02T00:00:00Z" }),
-        taskRow({ id: "open", collection_id: "p-1", is_completed: false, priority: 1, created_at: "2024-06-01T00:00:00Z" }),
+        taskRow({ id: "done", collection_id: "p-2", is_completed: true, priority: 4, order_value: 1000, created_at: "2024-06-02T00:00:00Z" }),
+        taskRow({ id: "open", collection_id: "p-1", is_completed: false, priority: 1, order_value: 2000, created_at: "2024-06-01T00:00:00Z" }),
       ],
     });
 
@@ -198,7 +199,8 @@ describe("getInboxView", () => {
     expect(sql).toMatch(/JOIN collections p ON p\.id = t\.collection_id/);
     expect(sql).toMatch(/p\.is_inbox = true/);
     expect(sql).toMatch(/is_archived = false/);
-    expect(sql).toMatch(/ORDER BY t\.is_completed ASC, t\.priority ASC, t\.created_at ASC/);
+    expect(sql).toMatch(/ORDER BY t\.order_value ASC, t\.created_at ASC/);
+    expect(sql).not.toMatch(/ORDER BY[^`]*(is_completed|priority)/);
   });
 
   it("returns empty when there are no accessible tasks", async () => {
@@ -209,15 +211,15 @@ describe("getInboxView", () => {
 });
 
 describe("getCollectionView", () => {
-  it("returns completed tasks on collection pages and sorts them after open tasks", async () => {
+  it("returns completed tasks on collection pages interleaved in stored manual order", async () => {
     mockQuery
       .mockResolvedValueOnce({
         rows: [{ id: "c-1", name: "Work", color: "green", is_inbox: false }],
       })
       .mockResolvedValueOnce({
         rows: [
-          taskRow({ id: "open", is_completed: false, order_value: 1, created_at: "2024-06-01T00:00:00Z" }),
-          taskRow({ id: "done", is_completed: true, order_value: 0, created_at: "2024-06-02T00:00:00Z" }),
+          taskRow({ id: "done", is_completed: true, order_value: 1000, created_at: "2024-06-02T00:00:00Z" }),
+          taskRow({ id: "open", is_completed: false, order_value: 2000, created_at: "2024-06-01T00:00:00Z" }),
         ],
       });
 
@@ -230,11 +232,11 @@ describe("getCollectionView", () => {
       isInbox: false,
     });
     expect(view.collectionId).toBe("c-1");
-    expect(view.tasks.map((t) => t.id)).toEqual(["open", "done"]);
+    expect(view.tasks.map((t) => t.id)).toEqual(["done", "open"]);
 
     const sql = mockQuery.mock.calls[1][0] as string;
     expect(sql).toMatch(/FROM tasks/);
-    expect(sql).toMatch(/ORDER BY is_completed ASC, order_value ASC, created_at ASC/);
-    expect(sql).not.toMatch(/is_completed = false/);
+    expect(sql).toMatch(/ORDER BY order_value ASC, created_at ASC/);
+    expect(sql).not.toMatch(/is_completed/);
   });
 });

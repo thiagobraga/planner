@@ -99,7 +99,7 @@ export async function getTodayView(userId: string, now: Date = new Date()): Prom
        AND t.due_date IS NOT NULL
        AND t.due_date <= $2::date
        AND p.is_archived = false
-     ORDER BY t.priority ASC, t.order_value ASC, t.created_at ASC`,
+     ORDER BY t.order_value ASC, t.created_at ASC`,
     [userId, todayDate],
   );
 
@@ -230,7 +230,7 @@ export async function getInboxView(userId: string) {
      WHERE t.user_id = $1
        AND p.is_inbox = true
        AND p.is_archived = false
-     ORDER BY t.is_completed ASC, t.priority ASC, t.created_at ASC`,
+     ORDER BY t.order_value ASC, t.created_at ASC`,
     [userId],
   );
 
@@ -258,7 +258,7 @@ export async function getCollectionView(userId: string, collectionId: string) {
   const result = await pool.query(
     `SELECT * FROM tasks
      WHERE collection_id = $1
-     ORDER BY is_completed ASC, order_value ASC, created_at ASC`,
+     ORDER BY order_value ASC, created_at ASC`,
     [collectionId],
   );
 
