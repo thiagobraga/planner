@@ -54,6 +54,7 @@ function apiToTask(t: ApiTask): Task {
     orderValue: t.orderValue,
     indent: t.depth ?? 0,
     collectionId: t.collectionId,
+    sectionId: t.sectionId,
     parentTaskId: t.parentTaskId ?? undefined,
     dueDate: t.dueDate ? t.dueDate.slice(0, 10) : undefined,
     type: t.type,

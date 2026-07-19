@@ -24,12 +24,16 @@ function apiToTask(t: ApiTask): Task {
     description: t.description,
     priority: t.priority,
     collectionId: t.collectionId,
+    sectionId: t.sectionId,
     parentTaskId: t.parentTaskId ?? undefined,
     dueDate: t.dueDate ?? undefined,
     isCompleted: t.isCompleted,
     orderValue: t.orderValue,
     indent: t.depth ?? 0,
     type: t.type,
+    // Siblings with equal order values fall back to creation time; without it
+    // every tie resolves arbitrarily.
+    createdAt: t.createdAt,
   };
 }
 

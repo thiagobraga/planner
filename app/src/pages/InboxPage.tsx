@@ -25,6 +25,7 @@ function apiToTask(t: ApiTask): Task {
     description: t.description,
     priority: t.priority,
     collectionId: t.collectionId,
+    sectionId: t.sectionId,
     parentTaskId: t.parentTaskId ?? undefined,
     dueDate: t.dueDate ?? undefined,
     isCompleted: t.isCompleted,

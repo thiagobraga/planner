@@ -21,7 +21,7 @@
   - [x] Sub-habits can be manually reordered under the same parent
   - [x] A habit with children cannot become a sub-habit
   - [x] Dragging a parent habit carries its sub-habits
-- [ ] Press interaction works on desktop and mobile
+- [x] Press interaction works on desktop and mobile
   - [x] Pointer drag activates after a 180ms press with 8px movement tolerance
   - [x] Quick scrolling before activation cancels drag instead of blocking page scroll
   - [x] Toggles, inputs, menus, task controls, and habit day cells never initiate pointer drag
@@ -203,10 +203,12 @@
   - [x] Remove an empty overdue section after its last task moves away
   - [x] Keep Today rendered even when empty
   - [x] Do not create arbitrary unrendered future-day targets
-- [ ] Update task API mappings
-  - [ ] Preserve `parentTaskId`, `sectionId`, collection ID, due date, depth, and order value in every page model
-  - [ ] Ensure optimistic temporary tasks cannot be moved to the server until their real ID is resolved
-  - [ ] Either disable drag for temporary rows or remap a queued move after creation using existing offline ID remapping
+- [x] Update task API mappings
+  - [x] Preserve `parentTaskId`, `sectionId`, collection ID, due date, depth, and order value in every page model
+  - [x] Ensure optimistic temporary tasks cannot be moved to the server until their real ID is resolved
+  - [x] Either disable drag for temporary rows or remap a queued move after creation using existing offline ID remapping
+        (a `temp-` row refuses the move and says so; the queue also rewrites ids
+        for a move that was already queued behind an offline create)
 
 ## Phase 6 - Sidebar collection drops
 
@@ -306,8 +308,11 @@
 
 ## Phase 10 - Optimistic state, offline queue, and sync
 
-- [ ] Add reusable optimistic move helpers for task and habit query caches
-  - [ ] Snapshot all affected cache keys before mutation
+- [x] Add reusable optimistic move helpers for task and habit query caches
+  - [x] Snapshot all affected cache keys before mutation
+        (each drag hook snapshots the list it owns before mutating and restores it
+        on failure; sibling views are invalidated rather than snapshotted, since
+        they hold no optimistic state to roll back)
   - [x] Apply the full projected move immediately
   - [x] Patch authoritative IDs/order values from successful responses
   - [x] Restore snapshots and invalidate on failure
