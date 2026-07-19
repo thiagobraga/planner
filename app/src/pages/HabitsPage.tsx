@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Calendar } from 'lucide-react';
 import { getPhrase } from '../utils/phrases';
@@ -7,11 +7,16 @@ import { HabitTimeline, type HabitEditTarget } from '../components/habits/HabitT
 import { HabitCalendar } from '../components/habits/HabitCalendar';
 import { Button } from '../components/ui/Button';
 import { startOfDay } from '../utils/date';
+import { flattenHabits, type HabitNode } from '../utils/habitTree';
+import {
+  loadCollapsedHabitIds,
+  pruneCollapsedHabitIds,
+  saveCollapsedHabitIds,
+} from '../utils/habitCollapseStorage';
 import {
   buildHabitSections,
   habitsToToggle,
   parentToggleTarget,
-  type HabitNode,
 } from '../utils/habitTree';
 import type { LucideProps } from 'lucide-react';
 
@@ -70,13 +75,17 @@ export function HabitsPage() {
   const [view, setView] = useState<HabitsView>('timeline');
   const [editing, setEditing] = useState<HabitEditTarget>();
   const [todaySignal, setTodaySignal] = useState(0);
+  const [collapsedHabitIds, setCollapsedHabitIds] = useState<Set<string>>(() => loadCollapsedHabitIds());
   const [selected, setSelected] = useState(() => ({
     year: today.getFullYear(),
     month: today.getMonth(),
   }));
 
-  const { data: habits = [] } = useQuery({ queryKey: ['habits'], queryFn: fetchHabits });
-  const { data: groups = [] } = useQuery({ queryKey: ['habitGroups'], queryFn: fetchHabitGroups });
+  const { data: habits = [], isSuccess: habitsLoaded } = useQuery({ queryKey: ['habits'], queryFn: fetchHabits });
+  const { data: groups = [], isSuccess: groupsLoaded } = useQuery({
+    queryKey: ['habitGroups'],
+    queryFn: fetchHabitGroups,
+  });
 
   const setHabits = useCallback(
     (updater: (prev: ApiHabit[]) => ApiHabit[]) => {
@@ -114,6 +123,36 @@ export function HabitsPage() {
   );
 
   const sections = useMemo(() => buildHabitSections(habits, groups), [habits, groups]);
+  const habitIds = useMemo(() => {
+    const ids = new Set<string>();
+    const collect = (nodes: HabitNode[]) => {
+      for (const { node } of flattenHabits(nodes)) ids.add(node.id);
+    };
+    collect(sections.ungrouped);
+    for (const section of sections.groups) collect(section.habits);
+    return ids;
+  }, [sections]);
+
+  useEffect(() => {
+    if (!habitsLoaded || !groupsLoaded) return;
+
+    setCollapsedHabitIds((prev) => {
+      const next = pruneCollapsedHabitIds(prev, habitIds);
+      return next.size === prev.size ? prev : next;
+    });
+  }, [habitsLoaded, groupsLoaded, habitIds]);
+
+  useEffect(() => {
+    saveCollapsedHabitIds(collapsedHabitIds);
+  }, [collapsedHabitIds]);
+
+  const toggleHabitCollapsed = useCallback((id: string) => {
+    setCollapsedHabitIds((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  }, []);
 
   // Only leaf habits store completions, so a click on a parent fans out to its
   // sub-habits. Everything moves to the same target state in one gesture.
@@ -335,6 +374,8 @@ export function HabitsPage() {
           onMonthChange={handleMonthChange}
           todaySignal={todaySignal}
           editing={editing}
+          collapsed={collapsedHabitIds}
+          onToggleCollapse={toggleHabitCollapsed}
           onToggleDay={handleToggleDay}
           onStartEdit={setEditing}
           onCommitEdit={handleCommitEdit}

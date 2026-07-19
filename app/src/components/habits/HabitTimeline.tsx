@@ -9,6 +9,9 @@ import { dayState, flattenHabits, type HabitNode, type HabitSections } from '../
 import type { ApiHabitGroup } from '../../api/client';
 
 const CELL_W = 24;
+// Keep the label column on a 24px multiple so the day grid aligns with the
+// app's dotted paper background.
+const LABEL_COL_W = 216;
 const INDENT = 24;
 const DAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
@@ -31,6 +34,8 @@ export interface HabitTimelineProps {
   onMonthChange: (year: number, month: number) => void;
   todaySignal?: number;
   editing?: HabitEditTarget;
+  collapsed: ReadonlySet<string>;
+  onToggleCollapse: (id: string) => void;
   onToggleDay: (node: HabitNode, iso: string) => void;
   onStartEdit: (target: HabitEditTarget) => void;
   onCommitEdit: (target: HabitEditTarget, name: string) => void;
@@ -59,6 +64,8 @@ export function HabitTimeline({
   onMonthChange,
   todaySignal,
   editing,
+  collapsed,
+  onToggleCollapse,
   onToggleDay,
   onStartEdit,
   onCommitEdit,
@@ -68,7 +75,6 @@ export function HabitTimeline({
   onDelete,
 }: HabitTimelineProps) {
   const [menu, setMenu] = useState<{ target: HabitEditTarget; canAddSub: boolean; x: number; y: number } | null>(null);
-  const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set());
   const daysViewportRef = useRef<HTMLDivElement>(null);
   const daysHeaderViewportRef = useRef<HTMLDivElement>(null);
   const monthSelectorRef = useRef<MonthSelectorHandle>(null);
@@ -177,13 +183,6 @@ export function HabitTimeline({
     viewport.scrollBy({ left: direction * visibleCells * CELL_W, behavior: 'smooth' });
   };
 
-  const toggleCollapse = (id: string) =>
-    setCollapsed((prev) => {
-      const next = new Set(prev);
-      next.has(id) ? next.delete(id) : next.add(id);
-      return next;
-    });
-
   const isEditing = (kind: 'habit' | 'group', id: string) =>
     editing?.kind === kind && editing.id === id;
 
@@ -198,7 +197,7 @@ export function HabitTimeline({
         />
 
         <div className="habit-timeline-day-selector mt-6 flex min-w-0 items-start gap-0">
-          <div className="h-12 w-56 min-w-0 shrink-0" aria-hidden="true" />
+          <div className="h-12 shrink-0 min-w-0" style={{ width: LABEL_COL_W }} aria-hidden="true" />
 
           <StripNavigator
             direction="previous"
@@ -247,7 +246,7 @@ export function HabitTimeline({
 
       <div className="habit-timeline-table min-w-0">
         <div className="habit-timeline-body flex min-w-0 items-start gap-0">
-          <div className="habit-timeline-labels w-56 shrink-0 min-w-0">
+          <div className="habit-timeline-labels shrink-0 min-w-0" style={{ width: LABEL_COL_W }}>
             {rows.map((row) => {
               if (row.kind === 'spacer') {
                 return <div key={row.key} className="h-6" aria-hidden="true" />;
@@ -333,7 +332,7 @@ export function HabitTimeline({
                     type="button"
                     aria-label={isCollapsed ? `Expand ${node.name}` : `Collapse ${node.name}`}
                     aria-expanded={!isCollapsed}
-                    onClick={() => toggleCollapse(node.id)}
+                    onClick={() => onToggleCollapse(node.id)}
                     className="habit-timeline-row-disclosure flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center border-none bg-transparent p-0 text-ink-light hover:text-ink"
                   >
                     {isCollapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
