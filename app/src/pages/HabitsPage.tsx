@@ -5,6 +5,7 @@ import { getPhrase } from '../utils/phrases';
 import { useSync } from '../hooks/useSync';
 import { HabitTimeline, type HabitEditTarget } from '../components/habits/HabitTimeline';
 import { HabitCalendar } from '../components/habits/HabitCalendar';
+import { useHabitDrag } from '../hooks/useHabitDrag';
 import { Button } from '../components/ui/Button';
 import { startOfDay } from '../utils/date';
 import { flattenHabits, type HabitNode } from '../utils/habitTree';
@@ -123,6 +124,17 @@ export function HabitsPage() {
   );
 
   const sections = useMemo(() => buildHabitSections(habits, groups), [habits, groups]);
+
+  // Habit and group drags both run on the shell-level DndContext, so a habit can
+  // be dragged between groups - and, in Calendar mode, between cards - without
+  // each section owning a context of its own.
+  const { activeDragId } = useHabitDrag({
+    habits,
+    groups,
+    setHabits: useCallback((next: ApiHabit[]) => setHabits(() => next), [setHabits]),
+    setGroups: useCallback((next: ApiHabitGroup[]) => setGroups(() => next), [setGroups]),
+    onError: invalidate,
+  });
   const habitIds = useMemo(() => {
     const ids = new Set<string>();
     const collect = (nodes: HabitNode[]) => {
@@ -375,6 +387,7 @@ export function HabitsPage() {
           todaySignal={todaySignal}
           editing={editing}
           collapsed={collapsedHabitIds}
+          activeDragId={activeDragId}
           onToggleCollapse={toggleHabitCollapsed}
           onToggleDay={handleToggleDay}
           onStartEdit={setEditing}

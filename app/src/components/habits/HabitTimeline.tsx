@@ -1,11 +1,22 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { ChevronDown, ChevronRight, MoreHorizontal, Plus } from 'lucide-react';
+import { useDroppable } from '@dnd-kit/core';
+import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { ContextMenu } from '../ui/ContextMenu';
 import { MonthSelector, type MonthSelectorHandle } from '../monthly/MonthSelector';
 import { StripNavigator } from '../ui/StripNavigator';
 import { HabitDot, dotAriaProps } from './HabitDot';
 import { fmtISO } from '../../utils/date';
 import { dayState, flattenHabits, type HabitNode, type HabitSections } from '../../utils/habitTree';
+import { usePlannerDrag } from '../../contexts/PlannerDragContext';
+import {
+  flattenHabitRows,
+  projectHabitMove,
+  containerForGroup,
+  HABIT_INDENT_WIDTH,
+  UNGROUPED_CONTAINER,
+} from '../../utils/habitProjection';
+import type { HabitDragData, HabitGroupDragData, HabitSectionDropData } from '../../types/drag';
 import type { ApiHabitGroup } from '../../api/client';
 
 const CELL_W = 24;
@@ -21,10 +32,26 @@ export type HabitEditTarget = { kind: 'habit' | 'group'; id: string };
 // the two columns cannot drift out of alignment.
 type TimelineRow =
   | { key: string; kind: 'group-header'; group: ApiHabitGroup }
-  | { key: string; kind: 'habit'; node: HabitNode; depth: number }
+  | { key: string; kind: 'habit'; node: HabitNode; depth: number; groupId: string | null }
   | { key: string; kind: 'add-habit'; groupId: string | null }
   | { key: string; kind: 'spacer' }
   | { key: string; kind: 'add-group' };
+
+/**
+ * One drop region of the label column.
+ *
+ * Rows are grouped into sections so a habit can be dropped into a group that has
+ * no rows to aim at. The day-grid column re-flattens these back into one list,
+ * so both columns still render exactly the same bands in the same order.
+ */
+interface TimelineSection {
+  key: string;
+  /** Null for the ungrouped list; absent entirely for the trailing add-group area. */
+  groupId: string | null;
+  /** The tail section holds only chrome and accepts nothing. */
+  droppable: boolean;
+  rows: TimelineRow[];
+}
 
 export interface HabitTimelineProps {
   sections: HabitSections;
@@ -35,6 +62,8 @@ export interface HabitTimelineProps {
   todaySignal?: number;
   editing?: HabitEditTarget;
   collapsed: ReadonlySet<string>;
+  /** The habit or group currently being dragged, so its block can be collapsed. */
+  activeDragId?: string | null;
   onToggleCollapse: (id: string) => void;
   onToggleDay: (node: HabitNode, iso: string) => void;
   onStartEdit: (target: HabitEditTarget) => void;
@@ -65,6 +94,7 @@ export function HabitTimeline({
   todaySignal,
   editing,
   collapsed,
+  activeDragId,
   onToggleCollapse,
   onToggleDay,
   onStartEdit,
@@ -80,6 +110,7 @@ export function HabitTimeline({
   const monthSelectorRef = useRef<MonthSelectorHandle>(null);
   const [canPagePrevious, setCanPagePrevious] = useState(false);
   const [canPageNext, setCanPageNext] = useState(false);
+  const { indentSteps, overId } = usePlannerDrag();
 
   const days = useMemo<DayCell[]>(() => {
     const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -107,31 +138,112 @@ export function HabitTimeline({
     [todayISO],
   );
 
-  const rows = useMemo<TimelineRow[]>(() => {
-    const out: TimelineRow[] = [];
+  const timelineSections = useMemo<TimelineSection[]>(() => {
+    // A dragged parent's sub-habits are pulled out of the list for the duration
+    // of the drag, exactly as the task list does: dnd-kit sorts each row on its
+    // own, so leaving them behind would strand them under the wrong parent while
+    // the block is in flight. The overlay's "+N" stands in for them.
+    const carried = new Set<string>();
+    if (activeDragId) {
+      const dragged = [...sections.ungrouped, ...sections.groups.flatMap((s) => s.habits)].find(
+        (node) => node.id === activeDragId,
+      );
+      for (const child of dragged?.children ?? []) carried.add(child.id);
+    }
 
-    const pushHabits = (nodes: HabitNode[]) => {
+    const habitRows = (nodes: HabitNode[], groupId: string | null): TimelineRow[] => {
+      const out: TimelineRow[] = [];
       for (const { node, depth } of flattenHabits(nodes)) {
         // A collapsed parent hides its sub-habits but keeps its own row.
         if (depth > 0 && node.parentId && collapsed.has(node.parentId)) continue;
-        out.push({ key: `habit-${node.id}`, kind: 'habit', node, depth });
+        if (carried.has(node.id)) continue;
+        out.push({ key: `habit-${node.id}`, kind: 'habit', node, depth, groupId });
       }
+      return out;
     };
 
-    pushHabits(sections.ungrouped);
-    out.push({ key: 'add-habit-root', kind: 'add-habit', groupId: null });
+    const out: TimelineSection[] = [
+      {
+        key: UNGROUPED_CONTAINER,
+        groupId: null,
+        droppable: true,
+        rows: [
+          ...habitRows(sections.ungrouped, null),
+          { key: 'add-habit-root', kind: 'add-habit', groupId: null },
+        ],
+      },
+    ];
 
     for (const section of sections.groups) {
-      out.push({ key: `spacer-${section.group.id}`, kind: 'spacer' });
-      out.push({ key: `group-${section.group.id}`, kind: 'group-header', group: section.group });
-      pushHabits(section.habits);
-      out.push({ key: `add-habit-${section.group.id}`, kind: 'add-habit', groupId: section.group.id });
+      out.push({
+        key: section.group.id,
+        groupId: section.group.id,
+        droppable: true,
+        rows: [
+          { key: `spacer-${section.group.id}`, kind: 'spacer' },
+          { key: `group-${section.group.id}`, kind: 'group-header', group: section.group },
+          ...habitRows(section.habits, section.group.id),
+          { key: `add-habit-${section.group.id}`, kind: 'add-habit', groupId: section.group.id },
+        ],
+      });
     }
 
-    out.push({ key: 'spacer-add-group', kind: 'spacer' });
-    out.push({ key: 'add-group', kind: 'add-group' });
+    out.push({
+      key: 'timeline-tail',
+      groupId: null,
+      droppable: false,
+      rows: [
+        { key: 'spacer-add-group', kind: 'spacer' },
+        { key: 'add-group', kind: 'add-group' },
+      ],
+    });
+
     return out;
-  }, [sections, collapsed]);
+  }, [sections, collapsed, activeDragId]);
+
+  // The day grid renders the same bands in the same order, flattened back out.
+  const rows = useMemo<TimelineRow[]>(
+    () => timelineSections.flatMap((section) => section.rows),
+    [timelineSections],
+  );
+
+  // Everything the shared DndContext can address in this view: habit rows to
+  // reorder against, and group headers to move whole groups.
+  const sortableIds = useMemo(
+    () =>
+      rows
+        .filter((row) => row.kind === 'habit' || row.kind === 'group-header')
+        .map((row) => (row.kind === 'habit' ? row.node.id : row.kind === 'group-header' ? row.group.id : '')),
+    [rows],
+  );
+
+  // Where the block would land, previewed as an insertion line. The timeline is
+  // a two-column grid, so rows deliberately do not slide out of the way - only
+  // the label column could move, and the day cells would fall out of step.
+  const dragRows = useMemo(() => flattenHabitRows(sections), [sections]);
+  const projection =
+    activeDragId && overId && dragRows.some((r) => r.id === activeDragId)
+      ? projectHabitMove(
+          dragRows,
+          activeDragId,
+          Math.max(0, dragRows.findIndex((r) => r.id === overId)),
+          indentSteps * HABIT_INDENT_WIDTH,
+        )
+      : null;
+
+  // The row the line is drawn above: the first sibling at or after the projected
+  // position within the target scope.
+  const insertionBeforeId = useMemo(() => {
+    if (!projection || !activeDragId) return null;
+    const siblings = dragRows.filter(
+      (row) =>
+        row.id !== activeDragId &&
+        (projection.parentId
+          ? row.parentId === projection.parentId
+          : row.depth === 0 && row.groupId === projection.groupId),
+    );
+    return siblings[projection.position]?.id ?? null;
+  }, [projection, activeDragId, dragRows]);
 
   useEffect(() => {
     if (todaySignal) {
@@ -247,7 +359,14 @@ export function HabitTimeline({
       <div className="habit-timeline-table min-w-0">
         <div className="habit-timeline-body flex min-w-0 items-start gap-0">
           <div className="habit-timeline-labels shrink-0 min-w-0" style={{ width: LABEL_COL_W }}>
-            {rows.map((row) => {
+            <SortableContext items={sortableIds} strategy={verticalListSortingStrategy}>
+            {timelineSections.map((section) => (
+              <TimelineSectionDrop
+                key={section.key}
+                groupId={section.groupId}
+                droppable={section.droppable}
+              >
+            {section.rows.map((row) => {
               if (row.kind === 'spacer') {
                 return <div key={row.key} className="h-6" aria-hidden="true" />;
               }
@@ -287,9 +406,10 @@ export function HabitTimeline({
             if (row.kind === 'group-header') {
               const target: HabitEditTarget = { kind: 'group', id: row.group.id };
               return (
-                <div
+                <SortableGroupHeader
                   key={row.key}
-                  className="habit-timeline-group-header group flex h-6 min-w-0 items-center pr-2"
+                  group={row.group}
+                  dimmed={activeDragId === row.group.id}
                 >
                   {isEditing('group', row.group.id) ? (
                     <RowNameInput
@@ -312,7 +432,7 @@ export function HabitTimeline({
                       />
                     </>
                   )}
-                </div>
+                </SortableGroupHeader>
               );
             }
 
@@ -322,10 +442,15 @@ export function HabitTimeline({
             const isCollapsed = collapsed.has(node.id);
 
             return (
-              <div
+              <SortableHabitLabelRow
                 key={row.key}
-                className="habit-timeline-row-label group flex h-6 min-w-0 items-center pr-2"
-                style={{ paddingLeft: depth * INDENT }}
+                node={node}
+                depth={depth}
+                groupId={row.groupId}
+                indent={INDENT}
+                dimmed={activeDragId === node.id}
+                showInsertionBefore={insertionBeforeId === node.id}
+                insertionDepth={projection?.depth ?? 0}
               >
                 {hasChildren ? (
                   <button
@@ -368,9 +493,12 @@ export function HabitTimeline({
                     />
                   </>
                 )}
-              </div>
+              </SortableHabitLabelRow>
             );
             })}
+              </TimelineSectionDrop>
+            ))}
+            </SortableContext>
           </div>
 
           <div className="h-6 w-6 shrink-0" aria-hidden="true" />
@@ -489,6 +617,125 @@ export function HabitTimeline({
           ]}
         />
       )}
+    </div>
+  );
+}
+
+/**
+ * One drop region of the label column - the ungrouped list, or one group.
+ *
+ * Registered even when it holds no habits, because an empty group has no row to
+ * aim at and would otherwise be unreachable by drag.
+ */
+function TimelineSectionDrop({
+  groupId,
+  droppable,
+  children,
+}: {
+  groupId: string | null;
+  droppable: boolean;
+  children: ReactNode;
+}) {
+  const data: HabitSectionDropData = { kind: 'habit-section', groupId };
+  const { setNodeRef, isOver } = useDroppable({
+    id: `section-${containerForGroup(groupId)}`,
+    data,
+    disabled: !droppable,
+  });
+
+  return (
+    <div
+      ref={droppable ? setNodeRef : undefined}
+      data-drop-target={isOver ? 'true' : undefined}
+      className={`habit-timeline-section ${isOver ? 'habit-timeline-section--drop-target' : ''}`}
+    >
+      {children}
+    </div>
+  );
+}
+
+/**
+ * A habit label row, draggable through the shared context.
+ *
+ * Deliberately does not apply dnd-kit's transform. The timeline is two columns
+ * driven by one row list, and only this column would move - the day cells would
+ * slide out of step with their own habit. The insertion line previews the
+ * landing position instead.
+ */
+function SortableHabitLabelRow({
+  node,
+  depth,
+  groupId,
+  indent,
+  dimmed,
+  showInsertionBefore,
+  insertionDepth,
+  children,
+}: {
+  node: HabitNode;
+  depth: number;
+  groupId: string | null;
+  indent: number;
+  dimmed: boolean;
+  showInsertionBefore: boolean;
+  insertionDepth: number;
+  children: ReactNode;
+}) {
+  const childIds = node.children.map((c) => c.id);
+  const data = (
+    depth === 0
+      ? { kind: 'habit', habitId: node.id, parentId: null, groupId, childIds }
+      : { kind: 'habit', habitId: node.id, parentId: node.parentId!, groupId: null, childIds: [] }
+  ) as HabitDragData;
+
+  const { attributes, listeners, setNodeRef, isDragging } = useSortable({ id: node.id, data });
+
+  return (
+    <>
+      {showInsertionBefore && (
+        <div
+          aria-hidden="true"
+          className="habit-timeline-insertion relative h-0"
+          style={{ marginLeft: insertionDepth * indent }}
+        >
+          <span className="absolute inset-x-0 -top-px block h-px bg-ink" />
+        </div>
+      )}
+      <div
+        ref={setNodeRef}
+        {...attributes}
+        {...listeners}
+        style={{ paddingLeft: depth * indent, opacity: isDragging || dimmed ? 0.4 : 1 }}
+        className="habit-timeline-row-label group flex h-6 min-w-0 items-center pr-2"
+      >
+        {children}
+      </div>
+    </>
+  );
+}
+
+/** A group header, draggable to reorder whole groups. */
+function SortableGroupHeader({
+  group,
+  dimmed,
+  children,
+}: {
+  group: ApiHabitGroup;
+  dimmed: boolean;
+  children: ReactNode;
+}) {
+  const data: HabitGroupDragData = { kind: 'habit-group', groupId: group.id };
+  const { attributes, listeners, setNodeRef, isDragging } = useSortable({ id: group.id, data });
+
+  return (
+    <div
+      ref={setNodeRef}
+      {...attributes}
+      {...listeners}
+      style={{ opacity: isDragging || dimmed ? 0.4 : 1 }}
+      className="habit-timeline-group-header group flex h-6 min-w-0 items-center pr-2"
+    >
+      {children}
     </div>
   );
 }

@@ -10,14 +10,16 @@ import type { DragData, DropData, DragKind, DropKind } from '../../types/drag';
  */
 const ALLOWED_TARGETS: Record<DragKind, ReadonlySet<DropKind>> = {
   task: new Set<DropKind>(['task', 'day', 'collection']),
-  habit: new Set<DropKind>(['habit', 'habit-group']),
+  habit: new Set<DropKind>(['habit', 'habit-section']),
+  // A group reorders against other group headers; it is never filed into a
+  // section, least of all its own.
   'habit-group': new Set<DropKind>(['habit-group']),
   // Collections reorder among themselves; they are never filed into a day or task.
   collection: new Set<DropKind>(['collection']),
 };
 
 /** Containers are regions; rows are points on a list. They resolve differently. */
-const CONTAINER_KINDS: ReadonlySet<DropKind> = new Set<DropKind>(['day', 'collection', 'habit-group']);
+const CONTAINER_KINDS: ReadonlySet<DropKind> = new Set<DropKind>(['day', 'collection', 'habit-section']);
 
 /**
  * A sidebar collection row plays both parts, depending on what is being dragged.
@@ -26,13 +28,10 @@ const CONTAINER_KINDS: ReadonlySet<DropKind> = new Set<DropKind>(['day', 'collec
  * pointer is really inside it. To another collection it is a row in a sortable
  * list, and must resolve by closest-center or reordering loses its midpoint
  * crossing behaviour and stalls whenever the pointer leaves the row.
- *
- * The same applies to a habit group: a habit is filed *into* it, but a group
- * drag reorders it *among* its siblings.
  */
 function containerKindsFor(activeKind: DragKind): ReadonlySet<DropKind> {
-  if (activeKind === 'collection' || activeKind === 'habit-group') {
-    return new Set([...CONTAINER_KINDS].filter((k) => k !== activeKind));
+  if (activeKind === 'collection') {
+    return new Set([...CONTAINER_KINDS].filter((k) => k !== 'collection'));
   }
   return CONTAINER_KINDS;
 }

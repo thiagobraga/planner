@@ -8,8 +8,15 @@
 /** Discriminator for anything that can be picked up. */
 export type DragKind = 'task' | 'habit' | 'habit-group' | 'collection';
 
-/** Discriminator for anything that can be dropped on. */
-export type DropKind = 'task' | 'habit' | 'habit-group' | 'collection' | 'day';
+/**
+ * Discriminator for anything that can be dropped on.
+ *
+ * `habit-group` is the group *header* - a row a group drag reorders against.
+ * `habit-section` is the region beneath it, which accepts habits. They are
+ * separate kinds because they resolve differently: a header by closest-center
+ * like any sortable row, a section by pointer intersection like any container.
+ */
+export type DropKind = 'task' | 'habit' | 'habit-group' | 'habit-section' | 'collection' | 'day';
 
 /**
  * Which ordered list a task position refers to.
@@ -70,6 +77,17 @@ export interface HabitGroupDragData {
   groupId: string;
 }
 
+/**
+ * A habit section as a drop target: the ungrouped list, or the body of one
+ * group. Dropping a habit here appends it as a root of that scope, which is how
+ * an empty group can be filled at all.
+ */
+export interface HabitSectionDropData {
+  kind: 'habit-section';
+  /** Null for the ungrouped section, which holds roots but is not a group. */
+  groupId: string | null;
+}
+
 export interface CollectionDragData {
   kind: 'collection';
   collectionId: string;
@@ -108,6 +126,7 @@ export type DropData =
   | TaskDragData
   | HabitDragData
   | HabitGroupDragData
+  | HabitSectionDropData
   | CollectionDropData
   | DayDropData;
 
