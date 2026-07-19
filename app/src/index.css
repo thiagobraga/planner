@@ -269,6 +269,37 @@ kbd {
     border-radius: 4px;
   }
 }
+/*
+ * The dragged row, left behind as dnd-kit moves it to the drop position while
+ * the overlay follows the pointer. Its own content is hidden and it renders as a
+ * 1px insertion line instead, indented to the projected nesting level - so the
+ * line shows both where the block lands and how deep it nests.
+ */
+.task-item--placeholder > * {
+  visibility: hidden;
+}
+
+.task-item--placeholder {
+  position: relative;
+}
+
+.task-item--placeholder::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1px;
+  background: var(--color-ink-light);
+  opacity: 0.6;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .task-item {
+    transition: none !important;
+  }
+}
+
 .task-add-input::placeholder {
   color: var(--color-ink-light);
   opacity: 0.35;

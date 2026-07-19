@@ -2,7 +2,8 @@ import type { ReactNode } from 'react';
 import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { TaskItem, type Task, type TaskItemProps } from './TaskItem';
-import { flattenTasks, getSubtreeBlock } from '../utils/taskProjection';
+import { flattenTasks, getSubtreeBlock, projectMove, INDENT_WIDTH } from '../utils/taskProjection';
+import { usePlannerDrag } from '../contexts/PlannerDragContext';
 import type { DayDropData } from '../types/drag';
 
 type TaskCallbacks = Pick<
@@ -59,6 +60,8 @@ export function TaskList({
   onNavigate,
   onConvertType,
 }: TaskListProps) {
+  const { indentSteps, overId } = usePlannerDrag();
+
   const dropData: DayDropData | undefined = dayDate
     ? { kind: 'day', date: dayDate, containerId }
     : undefined;
@@ -67,13 +70,34 @@ export function TaskList({
   // drop, and a SortableContext with no items cannot receive one.
   const { setNodeRef, isOver } = useDroppable({ id: containerId, data: dropData });
 
-  const rows = flattenTasks(tasks);
-  const carried = new Set(
-    activeDragId ? getSubtreeBlock(rows, activeDragId).slice(1).map((r) => r.id) : [],
-  );
+  const allRows = flattenTasks(tasks);
   const subtreeIdsOf = new Map(
-    rows.map((r) => [r.id, getSubtreeBlock(rows, r.id).map((b) => b.id)]),
+    allRows.map((r) => [r.id, getSubtreeBlock(allRows, r.id).map((b) => b.id)]),
   );
+
+  // While a parent is dragged, its descendants are removed from the list rather
+  // than left in place. dnd-kit sorts each row independently, so leaving them
+  // would shift only the parent's placeholder and strand the children behind it
+  // - they would appear detached, at the wrong depth, mid-drag. Collapsing the
+  // block means the single remaining parent row represents the whole subtree,
+  // which is what the overlay's "+N" already says.
+  const carried = activeDragId
+    ? new Set(getSubtreeBlock(allRows, activeDragId).slice(1).map((r) => r.id))
+    : new Set<string>();
+  const rows = carried.size > 0 ? allRows.filter((r) => !carried.has(r.id)) : allRows;
+
+  // The dragged row doubles as the insertion indicator: dnd-kit already moves it
+  // to the drop position, so showing it at the projected depth previews exactly
+  // where the block will land.
+  const projection =
+    activeDragId && rows.some((r) => r.id === activeDragId) && overId
+      ? projectMove(
+          rows,
+          activeDragId,
+          Math.max(0, rows.findIndex((r) => r.id === overId)),
+          indentSteps * INDENT_WIDTH,
+        )
+      : null;
 
   return (
     <SortableContext items={rows.map((r) => r.id)} strategy={verticalListSortingStrategy}>
@@ -89,7 +113,9 @@ export function TaskList({
               task={task}
               containerId={containerId}
               subtreeIds={subtreeIdsOf.get(task.id)}
-              isCarried={carried.has(task.id)}
+              projectedDepth={
+                projection && task.id === activeDragId ? projection.depth : undefined
+              }
               collectionBadge={renderBadge?.(task)}
               isEditing={task.id === editingId}
               dimmed={dimNotes && task.type === 'note'}

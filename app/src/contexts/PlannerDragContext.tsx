@@ -49,6 +49,15 @@ interface PlannerDragContextValue {
   activeDrag: DragData | null;
   overlay: DragOverlayInfo | null;
   setOverlay: (info: DragOverlayInfo | null) => void;
+  /**
+   * Horizontal drag distance, quantised to whole indent steps.
+   *
+   * Quantised rather than raw so lists re-render only when the projected
+   * nesting level actually changes, instead of on every pointer move.
+   */
+  indentSteps: number;
+  /** The droppable currently under the pointer, for positioning the indicator. */
+  overId: string | null;
   /** Speak a message through the shared live region. */
   announce: (message: string) => void;
   registerHandlers: (kind: DragKind, handlers: DragHandlers) => () => void;
@@ -101,6 +110,8 @@ export function PlannerDragProvider({ children }: { children: ReactNode }) {
   const [activeDrag, setActiveDrag] = useState<DragData | null>(null);
   const [overlay, setOverlay] = useState<DragOverlayInfo | null>(null);
   const [announcement, setAnnouncement] = useState('');
+  const [indentSteps, setIndentSteps] = useState(0);
+  const [overId, setOverId] = useState<string | null>(null);
   const handlersRef = useRef(new Map<DragKind, DragHandlers>());
 
   const registerHandlers = useCallback((kind: DragKind, handlers: DragHandlers) => {
@@ -138,18 +149,28 @@ export function PlannerDragProvider({ children }: { children: ReactNode }) {
   );
 
   const handleDragMove = useCallback(
-    (event: DragMoveEvent) => dispatch(event, (h) => h.onDragMove),
+    (event: DragMoveEvent) => {
+      const steps = Math.round(event.delta.x / INDENT_PX);
+      setIndentSteps((prev) => (prev === steps ? prev : steps));
+      dispatch(event, (h) => h.onDragMove);
+    },
     [dispatch],
   );
 
   const handleDragOver = useCallback(
-    (event: DragOverEvent) => dispatch(event, (h) => h.onDragOver),
+    (event: DragOverEvent) => {
+      const next = event.over ? String(event.over.id) : null;
+      setOverId((prev) => (prev === next ? prev : next));
+      dispatch(event, (h) => h.onDragOver);
+    },
     [dispatch],
   );
 
   const reset = useCallback(() => {
     setActiveDrag(null);
     setOverlay(null);
+    setIndentSteps(0);
+    setOverId(null);
   }, []);
 
   const handleDragEnd = useCallback(
@@ -172,8 +193,8 @@ export function PlannerDragProvider({ children }: { children: ReactNode }) {
   );
 
   const value = useMemo<PlannerDragContextValue>(
-    () => ({ activeDrag, overlay, setOverlay, announce, registerHandlers }),
-    [activeDrag, overlay, announce, registerHandlers],
+    () => ({ activeDrag, overlay, setOverlay, indentSteps, overId, announce, registerHandlers }),
+    [activeDrag, overlay, indentSteps, overId, announce, registerHandlers],
   );
 
   return (

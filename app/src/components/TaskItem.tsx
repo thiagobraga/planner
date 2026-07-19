@@ -35,8 +35,12 @@ export interface TaskItemProps {
   containerId?: string;
   /** `[task.id, ...descendantIds]`, so a drop inside the dragged block is detectable. */
   subtreeIds?: string[];
-  /** True while an ancestor is being dragged: the overlay already represents this row. */
-  isCarried?: boolean;
+  /**
+   * Depth this row would land at, set only on the row being dragged. It renders
+   * as the insertion indicator, so horizontal drag previews the nesting level
+   * before the drop rather than only after it.
+   */
+  projectedDepth?: number;
   /** Rendered beside the title - used on Daily, where rows span collections. */
   collectionBadge?: ReactNode;
   onToggle?: (id: string) => void;
@@ -92,7 +96,7 @@ export const TaskItem = memo(function TaskItem({
   italicDueDate = true,
   containerId = '',
   subtreeIds,
-  isCarried,
+  projectedDepth,
   collectionBadge,
   onToggle,
   onStartEdit,
@@ -133,11 +137,13 @@ export const TaskItem = memo(function TaskItem({
     }
   }, [isEditing]);
 
-  // Only dnd-kit runtime values + computed indent remain inline.
+  // Only dnd-kit runtime values + computed indent remain inline. While dragging,
+  // the projected depth replaces the stored one so the row sits where it would
+  // land, not where it came from.
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-    paddingLeft: `${(task.indent ?? 0) * 24}px`,
+    paddingLeft: `${(projectedDepth ?? task.indent ?? 0) * 24}px`,
   };
 
   const handleCheckClick = (e: React.MouseEvent) => {
@@ -235,7 +241,7 @@ export const TaskItem = memo(function TaskItem({
       // the keyboard sensor only fires from the handle, so this costs neither
       // the controls nor Space-to-toggle.
       {...listeners}
-      className={`task-item group ${isEditing ? 'task-item--editing' : ''} ${isDragging || isCarried ? 'opacity-50' : task.isCompleted || dimmed ? 'opacity-[0.35]' : ''}`}
+      className={`task-item group ${isEditing ? 'task-item--editing' : ''} ${isDragging ? 'task-item--placeholder' : task.isCompleted || dimmed ? 'opacity-[0.35]' : ''}`}
       aria-label={task.title}
       // A quick click does nothing; editing is opened deliberately by
       // double-click, which leaves single clicks free and removes the need for

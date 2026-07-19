@@ -99,10 +99,20 @@ describe('TaskItem: drag surfaces', () => {
   });
 });
 
-describe('TaskItem: carried descendants', () => {
-  it('dims a row represented by an ancestor’s drag overlay', () => {
-    renderRow({ isCarried: true });
-    expect(row().className).toContain('opacity-50');
+describe('TaskItem: projected depth', () => {
+  it('renders at its stored indent when not dragging', () => {
+    renderRow({}, { indent: 2 });
+    expect(row().style.paddingLeft).toBe('48px');
+  });
+
+  it('renders at the projected depth instead, previewing where it will land', () => {
+    renderRow({ projectedDepth: 1 }, { indent: 3 });
+    expect(row().style.paddingLeft).toBe('24px');
+  });
+
+  it('treats a projected depth of 0 as top level rather than falling back', () => {
+    renderRow({ projectedDepth: 0 }, { indent: 4 });
+    expect(row().style.paddingLeft).toBe('0px');
   });
 });
 
