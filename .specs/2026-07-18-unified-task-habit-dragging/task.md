@@ -223,13 +223,9 @@
   - [x] Keep Sidebar and routed page inside the shared drag provider
   - [x] Preserve collection-tree drag behavior and horizontal collection projection
   - [x] Filter collision targets so task and collection drags cannot interfere
-- [ ] Implement mobile edge-open (DEFERRED by request 2026-07-19; desktop sidebar drops ship without it)
-  - [ ] Detect an active task pointer within 32px of the left viewport edge
-  - [ ] Open the drawer after a continuous 350ms edge hold
-  - [ ] Keep the drag overlay and pointer tracking active while the drawer opens
-  - [ ] Prevent the sidebar overlay from intercepting the active drag pointer
-  - [ ] Close the drawer after successful drop or cancellation unless it was open before drag started
-  - [ ] Announce drawer opening and current collection target to assistive technology
+- [~] Implement mobile edge-open — MOVED to Phase 12 on 2026-07-19. Superseded by manual
+      sidebar toggle: a user who can pin the sidebar open does not need an edge-hold gesture
+      to reach a drop target mid-drag. Desktop sidebar drops ship without either.
 - [x] Add integration tests for named collection, sub-collection, Inbox, same-collection promotion and invalid target (mobile edge-open deferred)
 
 ## Phase 7 - Manual task ordering in views
@@ -357,15 +353,40 @@
 - [ ] Verify mobile behavior at representative narrow widths
   - [ ] Long-press reorder without blocking normal vertical scroll
   - [ ] Long-press completed task and move it between Daily dates
-  - [ ] Hold at left edge, auto-open sidebar, and drop on a collection
+  - [~] Hold at left edge, auto-open sidebar, and drop on a collection — N/A, see Phase 12
   - [ ] Cancel drag and confirm sidebar/state restoration
   - [ ] Double-tap edit remains distinct from long-press drag
 - [ ] Verify accessibility
-  - [ ] Keyboard reorder and hierarchy movement remain operable
-  - [ ] Drag handles have descriptive labels
-  - [ ] Live region announces pickup, projected target, invalid target, drop, and cancel
-  - [ ] Focus returns to the moved/edited row after drop or commit
+  - [x] Keyboard reorder remains operable — verified 2026-07-19 on Daily: space/ArrowUp/space
+        moved a task up one slot, order survived reload, restored cleanly with ArrowDown
+  - [ ] Keyboard hierarchy movement (reparent via arrow keys) remains operable
+  - [x] Task drag handles have descriptive labels — `Reorder <task name>` on all 34 main-region handles
+  - [x] Sidebar collection handles have descriptive labels — was a generic `Drag to reorder`;
+        FIXED to `Reorder <collection name>` in CollectionTreeNav
+  - [x] Live region announces pickup, projected target, invalid target, drop, and cancel
+        - [x] Pickup — polite: `Picked up <task name>.`
+        - [x] Drop — polite: `Moved under <task name>.`
+        - [x] Projected target — was a DEFECT: the polite region did not update while arrowing,
+              and dnd-kit's own assertive region emitted raw UUIDs (`Draggable item fb7d5e86-…
+              was moved over droppable area 2ffc167d-…`). FIXED two ways: dnd-kit's built-in
+              region is suppressed via `accessibility.announcements` on DndContext, and both
+              entity hooks gained an `onDragOver` that speaks the projected target
+              (`Drop to place under <task name>.`). Verified live: assertive region now empty.
+        - [x] Invalid target — `That is not a valid place to drop this task.`
+        - [x] Cancel — polite: `Move cancelled.`, verified live via Escape
+  - [x] Focus returns to the moved row after drop — verified, focus landed on the moved handle
   - [ ] Reduced-motion preference removes nonessential drag transitions
+
+## Phase 12 - Sidebar state control (deferred, not started)
+
+Requested 2026-07-19. Replaces the mobile edge-open approach dropped from Phase 6.
+Requirements to be confirmed before implementation.
+
+- [ ] Let the user manually collapse and expand the sidebar
+- [ ] Persist the collapsed/expanded state across reloads and sessions
+- [ ] Decide whether state is per-device (localStorage) or per-account (preferences service)
+- [ ] Define collapsed-state behavior as a drag drop target
+- [ ] Keep the toggle keyboard-operable and announced to assistive technology
 
 ## Completion criteria
 
@@ -373,7 +394,7 @@
 - [x] Task hierarchy, Daily date, collection, subtree, and exact manual order persist after reload
 - [ ] Every visible habit can be press-dragged in both Habit modes within the mode's visibility constraints
 - [ ] Sub-habits and habit groups can be manually reordered and persist after reload
-- [ ] Sidebar collection and Inbox drops work on desktop and through mobile edge-open
+- [ ] Sidebar collection and Inbox drops work on desktop (mobile edge-open half moved to Phase 12)
 - [x] No task row selection remains; double-click/double-tap edits directly
 - [x] No unrelated dirty worktree files are reverted or included in implementation commits
 - [ ] All automated and browser acceptance checks pass

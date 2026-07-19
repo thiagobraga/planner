@@ -17,6 +17,7 @@ import {
   type DragMoveEvent,
   type DragOverEvent,
   type DragEndEvent,
+  type Announcements,
 } from '@dnd-kit/core';
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import {
@@ -106,6 +107,22 @@ export function usePlannerDragHandlers(kind: DragKind, handlers: DragHandlers): 
  * about what a move *means*. Each page registers handlers for its own entity
  * kind and receives only the events matching that kind.
  */
+/**
+ * Suppress dnd-kit's built-in live region.
+ *
+ * Its defaults speak in raw ids - "Draggable item 4343b20a-… was moved over
+ * droppable area 2ffc167d-…" - which is noise at best and unusable for a screen
+ * reader user at worst. Returning undefined from every handler leaves the
+ * provider's own region below as the single, human-readable voice; the entity
+ * hooks phrase those messages because only they know what a row *is*.
+ */
+const SILENT_ANNOUNCEMENTS: Announcements = {
+  onDragStart: () => undefined,
+  onDragOver: () => undefined,
+  onDragEnd: () => undefined,
+  onDragCancel: () => undefined,
+};
+
 export function PlannerDragProvider({ children }: { children: ReactNode }) {
   const [activeDrag, setActiveDrag] = useState<DragData | null>(null);
   const [overlay, setOverlay] = useState<DragOverlayInfo | null>(null);
@@ -202,6 +219,7 @@ export function PlannerDragProvider({ children }: { children: ReactNode }) {
       <DndContext
         sensors={sensors}
         collisionDetection={plannerCollisionDetection}
+        accessibility={{ announcements: SILENT_ANNOUNCEMENTS }}
         onDragStart={handleDragStart}
         onDragMove={handleDragMove}
         onDragOver={handleDragOver}

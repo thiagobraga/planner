@@ -1,5 +1,10 @@
 import { useCallback, useRef, useState } from 'react';
-import type { DragEndEvent, DragMoveEvent, DragStartEvent } from '@dnd-kit/core';
+import type {
+  DragEndEvent,
+  DragMoveEvent,
+  DragOverEvent,
+  DragStartEvent,
+} from '@dnd-kit/core';
 import { usePlannerDrag, usePlannerDragHandlers } from '../contexts/PlannerDragContext';
 import { flattenTasks, getSubtreeBlock, projectMove, type FlatRow } from '../utils/taskProjection';
 import { apiMoveTask, type TaskOrderScope } from '../api/client';
@@ -53,6 +58,8 @@ export function useTaskDrag({ tasks, setTasks, scope, onError, onMoved }: UseTas
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
   const offsetX = useRef(0);
   const snapshot = useRef<Task[] | null>(null);
+  /** Last spoken hover target, so an unchanged projection is not repeated. */
+  const lastPreview = useRef<string | null>(null);
 
   const rows = flattenTasks(tasks);
 
@@ -64,6 +71,7 @@ export function useTaskDrag({ tasks, setTasks, scope, onError, onMoved }: UseTas
       setActiveDragId(id);
       offsetX.current = 0;
       snapshot.current = tasks;
+      lastPreview.current = null;
 
       const descendants = Math.max(0, data.subtreeIds.length - 1);
       const title = tasks.find((t) => t.id === id)?.title ?? '';
@@ -81,6 +89,39 @@ export function useTaskDrag({ tasks, setTasks, scope, onError, onMoved }: UseTas
     offsetX.current = event.delta.x;
   }, []);
 
+  /**
+   * Speak the target the row would land on if released now.
+   *
+   * Fires only when the hovered target changes, so this stays quiet during a
+   * continuous pointer drag rather than narrating every frame.
+   */
+  const handleDragOver = useCallback(
+    (event: DragOverEvent) => {
+      const active = event.active.data.current as TaskDragData | undefined;
+      const over = event.over?.data.current as
+        | TaskDragData
+        | DayDropData
+        | CollectionDropData
+        | undefined;
+      if (!active) return;
+
+      if (!over) {
+        if (lastPreview.current !== null) {
+          lastPreview.current = null;
+          announce('No drop target.');
+        }
+        return;
+      }
+
+      const move = resolveMove({ rows, active, over, offsetX: offsetX.current, scope });
+      const message = move?.preview ?? 'That is not a valid place to drop this task.';
+      if (lastPreview.current === message) return;
+      lastPreview.current = message;
+      announce(message);
+    },
+    [rows, scope, announce],
+  );
+
   const handleDragEnd = useCallback(
     (event: DragEndEvent) => {
       const active = event.active.data.current as TaskDragData | undefined;
@@ -90,6 +131,7 @@ export function useTaskDrag({ tasks, setTasks, scope, onError, onMoved }: UseTas
         | CollectionDropData
         | undefined;
       setActiveDragId(null);
+      lastPreview.current = null;
       if (!active) return;
 
       const before = snapshot.current ?? tasks;
@@ -161,12 +203,14 @@ export function useTaskDrag({ tasks, setTasks, scope, onError, onMoved }: UseTas
     // and nulled the ref on the next line. React runs that updater later, by
     // which point it returned null and blanked the page.)
     snapshot.current = null;
+    lastPreview.current = null;
     setActiveDragId(null);
   }, []);
 
   usePlannerDragHandlers('task', {
     onDragStart: handleDragStart,
     onDragMove: handleDragMove,
+    onDragOver: handleDragOver,
     onDragEnd: handleDragEnd,
     onDragCancel: handleDragCancel,
   });
@@ -178,11 +222,24 @@ interface ResolvedMove {
   input: Parameters<typeof apiMoveTask>[1];
   parentTaskId: string | null;
   depth: number;
+  /** Past tense, spoken once the move has committed. */
   announcement: string;
+  /**
+   * Present tense, spoken while the row hovers this target. A keyboard user
+   * arrowing through positions never sees the overlay, so without this the
+   * projected target is invisible to them until they commit the drop.
+   */
+  preview: string;
 }
 
-/** Translate a drop target into the move the API should perform. */
-function resolveMove({
+/**
+ * Translate a drop target into the move the API should perform.
+ *
+ * Exported for tests: the preview strings are the only thing a screen-reader
+ * user has to go on mid-drag, and jsdom gives dnd-kit zero-size rects, so a
+ * driven keyboard drag never resolves a target there.
+ */
+export function resolveMove({
   rows,
   active,
   over,
@@ -209,6 +266,7 @@ function resolveMove({
       parentTaskId: null,
       depth: 0,
       announcement: 'Moved to collection.',
+      preview: 'Drop to file in this collection.',
     };
   }
 
@@ -224,6 +282,7 @@ function resolveMove({
       parentTaskId: null,
       depth: 0,
       announcement: `Moved to ${over.date}.`,
+      preview: `Drop to move to ${over.date}.`,
     };
   }
 
@@ -252,6 +311,9 @@ function resolveMove({
     announcement: projection.parentId
       ? `Moved under ${rows.find((r) => r.id === projection.parentId)?.task.title ?? 'parent'}.`
       : 'Moved to top level.',
+    preview: projection.parentId
+      ? `Drop to place under ${rows.find((r) => r.id === projection.parentId)?.task.title ?? 'parent'}.`
+      : 'Drop to place at top level.',
   };
 }
 

@@ -473,7 +473,7 @@ function SortableCollectionRow({
         {...attributes}
         {...listeners}
         className="w-4 flex items-center justify-center shrink-0 cursor-grab"
-        aria-label="Drag to reorder"
+        aria-label={`Reorder ${item.name}`}
       >
         <span
           className="w-2 h-2 rounded-full shrink-0 block [filter:saturate(0.55)]"

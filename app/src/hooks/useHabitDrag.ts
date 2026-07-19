@@ -1,5 +1,10 @@
 import { useCallback, useRef, useState } from 'react';
-import type { DragEndEvent, DragMoveEvent, DragStartEvent } from '@dnd-kit/core';
+import type {
+  DragEndEvent,
+  DragMoveEvent,
+  DragOverEvent,
+  DragStartEvent,
+} from '@dnd-kit/core';
 import { usePlannerDrag, usePlannerDragHandlers } from '../contexts/PlannerDragContext';
 import {
   flattenHabitRows,
@@ -59,6 +64,8 @@ export function useHabitDrag({
   const offsetX = useRef(0);
   const habitSnapshot = useRef<ApiHabit[] | null>(null);
   const groupSnapshot = useRef<ApiHabitGroup[] | null>(null);
+  /** Last spoken hover target, so an unchanged projection is not repeated. */
+  const lastPreview = useRef<string | null>(null);
 
   const rows = flattenHabitRows(buildHabitSections(habits, groups));
 
@@ -69,6 +76,7 @@ export function useHabitDrag({
       offsetX.current = 0;
       habitSnapshot.current = habits;
       groupSnapshot.current = groups;
+      lastPreview.current = null;
 
       if (data.kind === 'habit-group') {
         setActiveDragId(data.groupId);
@@ -95,6 +103,74 @@ export function useHabitDrag({
   const handleDragMove = useCallback((event: DragMoveEvent) => {
     offsetX.current = event.delta.x;
   }, []);
+
+  /**
+   * Speak the target the row would land on if released now.
+   *
+   * Mirrors the task hook: a keyboard user never sees the overlay, so the
+   * projected target has to be spoken rather than only shown. Fires when the
+   * hovered target changes, and repeats nothing.
+   */
+  const handleDragOver = useCallback(
+    (event: DragOverEvent) => {
+      const active = event.active.data.current as HabitDragData | HabitGroupDragData | undefined;
+      const over = event.over?.data.current as
+        | HabitDragData
+        | HabitGroupDragData
+        | HabitSectionDropData
+        | undefined;
+      if (!active) return;
+
+      const speak = (message: string) => {
+        if (lastPreview.current === message) return;
+        lastPreview.current = message;
+        announce(message);
+      };
+
+      if (!over) {
+        speak('No drop target.');
+        return;
+      }
+
+      if (active.kind === 'habit-group') {
+        if (over.kind !== 'habit-group') {
+          speak('That is not a valid place to drop this group.');
+          return;
+        }
+        const target = groups.find((g) => g.id === over.groupId);
+        speak(`Drop to place group ${target?.name ?? ''}.`);
+        return;
+      }
+
+      if (over.kind === 'habit-section') {
+        const target = groups.find((g) => g.id === over.groupId);
+        speak(target ? `Drop to add to ${target.name}.` : 'Drop to add to this group.');
+        return;
+      }
+
+      if (over.kind !== 'habit') {
+        speak('That is not a valid place to drop this habit.');
+        return;
+      }
+
+      const projection = rowProjection(rows, active.habitId, over.habitId, offsetX.current);
+      if (!projection) {
+        speak('That is not a valid place to drop this habit.');
+        return;
+      }
+      if (projection.depth === 1 && active.childIds.length > 0) {
+        speak('A habit with sub-habits cannot become a sub-habit.');
+        return;
+      }
+      if (projection.parentId) {
+        const parent = habits.find((h) => h.id === projection.parentId);
+        speak(`Drop to place under ${parent?.name ?? 'parent'}.`);
+        return;
+      }
+      speak('Drop to place at top level.');
+    },
+    [rows, habits, groups, announce],
+  );
 
   const handleHabitDrop = useCallback(
     (active: HabitDragData, over: HabitDragData | HabitSectionDropData) => {
@@ -198,6 +274,7 @@ export function useHabitDrag({
         | HabitSectionDropData
         | undefined;
       setActiveDragId(null);
+      lastPreview.current = null;
       if (!active) return;
 
       if (!over) {
@@ -224,12 +301,14 @@ export function useHabitDrag({
     // end are mutually exclusive.
     habitSnapshot.current = null;
     groupSnapshot.current = null;
+    lastPreview.current = null;
     setActiveDragId(null);
   }, []);
 
   const handlers = {
     onDragStart: handleDragStart,
     onDragMove: handleDragMove,
+    onDragOver: handleDragOver,
     onDragEnd: handleDragEnd,
     onDragCancel: handleDragCancel,
   };
