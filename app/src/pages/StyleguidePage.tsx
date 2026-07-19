@@ -89,11 +89,13 @@ const MOTION = [
 ];
 
 const PRIMARY_COLORS = [
-  { name: 'Cream Paper', var: '--color-cream', hex: '#f5f0e8' },
-  { name: 'Sidebar Cream', var: '--color-sidebar-bg', hex: '#ebe6de' },
+  { name: 'Ink', var: '--color-ink', hex: '#5e5e55' },
+  { name: 'Ink Light', var: '--color-ink-light', hex: '#8b867e' },
+  { name: 'Ink Lighter', var: '--color-ink-lighter', hex: '#c5c1ba' },
   { name: 'Dot Grid', var: '--color-dot', hex: '#d8d3cb' },
   { name: 'Border', var: '--color-border', hex: '#e5e1d8' },
-  { name: 'Ink', var: '--color-ink', hex: '#44443d' },
+  { name: 'Sidebar Cream', var: '--color-sidebar-bg', hex: '#ebe6de' },
+  { name: 'Cream Paper', var: '--color-cream', hex: '#f5f0e8' },
 ];
 
 const SECONDARY_COLORS = [
@@ -102,12 +104,6 @@ const SECONDARY_COLORS = [
   { name: 'Orange', var: '--color-priority-2', hex: '#e39133' },
   { name: 'Soft Moss', var: '--color-moss', hex: '#8ca46a' },
   { name: 'Annotation Blue', var: '--color-priority-3', hex: '#4d8fd6' },
-];
-
-const INK_COLORS = [
-  { name: 'Ink', var: '--color-ink', hex: '#44443d' },
-  { name: 'Ink Light', var: '--color-ink-light', hex: '#8b867e' },
-  { name: 'Ink Lighter', var: '--color-ink-lighter', hex: '#c5c1ba' },
 ];
 
 export function StyleguidePage() {
@@ -215,7 +211,7 @@ export function StyleguidePage() {
         {/* 11 - Color Palette */}
         <Card title="Color Palette" span>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <div>
+            <div className="lg:col-span-2">
               <h3 className="text-[10px] text-ink-light uppercase tracking-[0.1em] font-semibold">Primary Palette</h3>
               <p className="text-[11px] text-ink-light opacity-70 -mt-2 mb-4">Base neutral and structural colors - calm, readable foundations for content.</p>
               <div className="grid grid-cols-1 gap-4">
@@ -254,25 +250,6 @@ export function StyleguidePage() {
                   </div>
                 ))}
               </div>
-            </div>
-          </div>
-          <div className="mt-6 pt-6">
-            <h3 className="text-[10px] text-ink-light uppercase tracking-[0.1em] font-semibold mb-4">Text & Foreground</h3>
-            <div className="grid grid-cols-1 gap-4">
-              {INK_COLORS.map(({ name, var: varName, hex }) => (
-                <div key={varName} className="flex items-start gap-3">
-                  <span
-                    className="w-10 h-10 rounded-[6px] border border-border flex-shrink-0 sm:flex-shrink"
-                    style={{ backgroundColor: hex }}
-                    title={varName}
-                  />
-                  <div className="flex flex-col gap-0.5">
-                    <span className="text-sm text-ink font-medium leading-none mb-1">{name}</span>
-                    <span className="text-[10px] text-ink-light font-mono leading-none">{varName}</span>
-                    <span className="text-[10px] text-ink-light font-mono leading-none">{hex}</span>
-                  </div>
-                </div>
-              ))}
             </div>
           </div>
         </Card>
