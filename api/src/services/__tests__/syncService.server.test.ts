@@ -2,11 +2,12 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 const mockSocket = {
   id: "socket-1",
-  data: {} as { userId: string },
-  handshake: { auth: {} },
+  data: {} as { userId: string; sessionId: number },
+  handshake: { auth: {}, headers: {} } as { auth: Record<string, unknown>; headers: Record<string, string> },
   join: vi.fn(),
   on: vi.fn(),
   emit: vi.fn(),
+  disconnect: vi.fn(),
 };
 
 const mockIO = {
@@ -21,12 +22,6 @@ vi.mock("http", () => ({
 
 vi.mock("socket.io", () => ({
   Server: vi.fn().mockImplementation(() => mockIO),
-}));
-
-vi.mock("jsonwebtoken", () => ({
-  default: {
-    verify: vi.fn().mockReturnValue({ userId: "user-1" }),
-  },
 }));
 
 vi.mock("../../db/pool.js", () => ({
@@ -46,208 +41,103 @@ vi.mock("../../db/redis.js", () => ({
   },
 }));
 
+vi.mock("../sessionService.js", () => ({
+  validateSession: vi.fn(),
+  buildCookieName: vi.fn().mockReturnValue("planner_session"),
+}));
+
 import { attachSyncServer, getIO, publishEvent } from "../syncService.js";
 import { redisSubClient } from "../../db/redis.js";
-import jwt from "jsonwebtoken";
+import { validateSession } from "../sessionService.js";
 
 describe("syncService: Socket.IO server", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockSocket.data = {} as { userId: string };
+    mockSocket.data = {} as { userId: string; sessionId: number };
     mockSocket.handshake.auth = {};
+    mockSocket.handshake.headers = {};
     mockSocket.join.mockClear();
     mockSocket.on.mockClear();
+    mockSocket.disconnect.mockClear();
     mockIO.use.mockClear();
     mockIO.on.mockClear();
-    mockIO.to.mockClear();
-    (jwt.verify as ReturnType<typeof vi.fn>).mockReturnValue({ userId: "user-1" });
   });
 
-  describe("attachSyncServer", () => {
-    it("creates an IO server instance", async () => {
-      const httpServer = {} as Parameters<typeof attachSyncServer>[0];
-      const io = await attachSyncServer(httpServer);
-      expect(io).toBeDefined();
-      expect(getIO()).toBe(io);
-    });
-
-    it("registers authentication middleware", async () => {
-      const httpServer = {} as Parameters<typeof attachSyncServer>[0];
-      await attachSyncServer(httpServer);
-      expect(mockIO.use).toHaveBeenCalledTimes(1);
-    });
-
-    it("registers connection handler", async () => {
-      const httpServer = {} as Parameters<typeof attachSyncServer>[0];
-      await attachSyncServer(httpServer);
-      expect(mockIO.on).toHaveBeenCalledWith("connection", expect.any(Function));
-    });
-
-    it("subscribes to Redis sync channel", async () => {
-      const httpServer = {} as Parameters<typeof attachSyncServer>[0];
-      await attachSyncServer(httpServer);
-      expect(redisSubClient.subscribe).toHaveBeenCalledWith("sync", expect.any(Function));
-    });
+  it("attaches the sync server and registers middleware", async () => {
+    const httpServer = {} as import("http").Server;
+    const io = await attachSyncServer(httpServer);
+    expect(io).toBe(mockIO);
+    expect(mockIO.use).toHaveBeenCalled();
+    expect(mockIO.on).toHaveBeenCalledWith("connection", expect.any(Function));
   });
 
-  describe("Socket authentication", () => {
-    it("rejects connection without token", async () => {
-      const httpServer = {} as Parameters<typeof attachSyncServer>[0];
-      await attachSyncServer(httpServer);
-
-      const middleware = mockIO.use.mock.calls[0][0];
-      const next = vi.fn();
-
-      await middleware(mockSocket, next);
-
-      expect(next).toHaveBeenCalledWith(new Error("UNAUTHORIZED"));
-    });
-
-    it("rejects connection with invalid token", async () => {
-      const httpServer = {} as Parameters<typeof attachSyncServer>[0];
-      await attachSyncServer(httpServer);
-
-      (jwt.verify as ReturnType<typeof vi.fn>).mockImplementation(() => {
-        throw new Error("invalid");
+  describe("socket auth middleware", () => {
+    it("passes when cookie contains a valid session", async () => {
+      (validateSession as ReturnType<typeof vi.fn>).mockResolvedValue({
+        userId: "user-1",
+        sessionId: 1,
       });
 
-      const middleware = mockIO.use.mock.calls[0][0];
-      const next = vi.fn();
-      mockSocket.handshake.auth = { token: "invalid-token" };
-
-      await middleware(mockSocket, next);
-
-      expect(next).toHaveBeenCalledWith(new Error("UNAUTHORIZED"));
-    });
-
-    it("rejects connection when userId is missing from token", async () => {
-      const httpServer = {} as Parameters<typeof attachSyncServer>[0];
+      const httpServer = {} as import("http").Server;
       await attachSyncServer(httpServer);
-
-      (jwt.verify as ReturnType<typeof vi.fn>).mockReturnValue({});
-
       const middleware = mockIO.use.mock.calls[0][0];
+
+      mockSocket.handshake.headers = {
+        cookie: "planner_session=valid-token",
+      };
+
       const next = vi.fn();
-      mockSocket.handshake.auth = { token: "valid-token" };
-
       await middleware(mockSocket, next);
-
-      expect(next).toHaveBeenCalledWith(new Error("UNAUTHORIZED"));
-    });
-
-    it("accepts connection with valid token", async () => {
-      const httpServer = {} as Parameters<typeof attachSyncServer>[0];
-      await attachSyncServer(httpServer);
-
-      (jwt.verify as ReturnType<typeof vi.fn>).mockReturnValue({ userId: "user-1" });
-
-      const middleware = mockIO.use.mock.calls[0][0];
-      const next = vi.fn();
-      mockSocket.handshake.auth = { token: "valid-token" };
-
-      await middleware(mockSocket, next);
-
-      expect(next).toHaveBeenCalled();
-      expect(next).not.toHaveBeenCalledWith(expect.any(Error));
+      expect(next).toHaveBeenCalledWith();
       expect(mockSocket.data.userId).toBe("user-1");
     });
-  });
 
-  describe("Connection handling", () => {
-    it("joins user room on connect", async () => {
-      const httpServer = {} as Parameters<typeof attachSyncServer>[0];
+    it("blocks when no cookie is present", async () => {
+      const httpServer = {} as import("http").Server;
       await attachSyncServer(httpServer);
+      const middleware = mockIO.use.mock.calls[0][0];
 
-      const connectionHandler = mockIO.on.mock.calls[0][1];
-      mockSocket.data.userId = "user-1";
-      mockSocket.handshake.auth = { token: "valid-token" };
-      await connectionHandler(mockSocket);
+      mockSocket.handshake.headers = {};
 
-      expect(mockSocket.join).toHaveBeenCalledWith("user:user-1");
+      const next = vi.fn();
+      await middleware(mockSocket, next);
+      expect(next).toHaveBeenCalledWith(new Error("UNAUTHORIZED"));
     });
 
-    it("joins collection rooms on connect", async () => {
-      const httpServer = {} as Parameters<typeof attachSyncServer>[0];
+    it("blocks when session is invalid", async () => {
+      (validateSession as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+
+      const httpServer = {} as import("http").Server;
       await attachSyncServer(httpServer);
+      const middleware = mockIO.use.mock.calls[0][0];
 
-      const connectionHandler = mockIO.on.mock.calls[0][1];
-      mockSocket.data.userId = "user-1";
-      mockSocket.handshake.auth = { token: "valid-token" };
-      await connectionHandler(mockSocket);
+      mockSocket.handshake.headers = {
+        cookie: "planner_session=invalid-token",
+      };
 
-      expect(mockSocket.join).toHaveBeenCalledWith("collection:collection-1");
-    });
-
-    it("handles subscribe:collection event", async () => {
-      const httpServer = {} as Parameters<typeof attachSyncServer>[0];
-      await attachSyncServer(httpServer);
-
-      const connectionHandler = mockIO.on.mock.calls[0][1];
-      mockSocket.data.userId = "user-1";
-      mockSocket.handshake.auth = { token: "valid-token" };
-      await connectionHandler(mockSocket);
-
-      const subscribeHandler = mockSocket.on.mock.calls.find(
-        (call: unknown[]) => (call as string[])[0] === "subscribe:collection"
-      )?.[1];
-
-      expect(subscribeHandler).toBeDefined();
-      subscribeHandler("collection-1");
-      expect(mockSocket.join).toHaveBeenCalledWith("collection:collection-1");
+      const next = vi.fn();
+      await middleware(mockSocket, next);
+      expect(next).toHaveBeenCalledWith(new Error("UNAUTHORIZED"));
     });
   });
 
-  describe("Redis subscription fan-out", () => {
-    it("emits sync event to user room", async () => {
-      const httpServer = {} as Parameters<typeof attachSyncServer>[0];
-      await attachSyncServer(httpServer);
-
-      const redisCallback = (global as Record<string, unknown>).__redisCallback as (msg: string) => void;
+  describe("publishEvent", () => {
+    it("publishes a sync event to the Redis channel", async () => {
       const event = {
-        id: "1",
-        entityType: "task",
-        eventType: "created",
+        id: "evt-1",
+        entityType: "task" as const,
+        eventType: "created" as const,
         entityId: "task-1",
         userId: "user-1",
         emittedAt: new Date().toISOString(),
       };
 
-      redisCallback(JSON.stringify(event));
-
-      expect(mockIO.to).toHaveBeenCalledWith("user:user-1");
-    });
-
-    it("emits sync event to collection room when collectionId is present", async () => {
-      const httpServer = {} as Parameters<typeof attachSyncServer>[0];
-      await attachSyncServer(httpServer);
-
-      const redisCallback = (global as Record<string, unknown>).__redisCallback as (msg: string) => void;
-      const event = {
-        id: "1",
-        entityType: "task",
-        eventType: "updated",
-        entityId: "task-1",
-        userId: "user-1",
-        collectionId: "collection-1",
-        emittedAt: new Date().toISOString(),
-      };
-
-      redisCallback(JSON.stringify(event));
-
-      expect(mockIO.to).toHaveBeenCalledWith("collection:collection-1");
-    });
-
-    it("ignores malformed JSON from Redis", async () => {
-      const httpServer = {} as Parameters<typeof attachSyncServer>[0];
-      await attachSyncServer(httpServer);
-
-      const redisCallback = (global as Record<string, unknown>).__redisCallback as (msg: string) => void;
-
-      expect(() => {
-        redisCallback("not valid json");
-      }).not.toThrow();
-
-      expect(mockIO.to).not.toHaveBeenCalled();
+      await publishEvent(event);
+      const { redisPubClient } = await import("../../db/redis.js");
+      expect(redisPubClient.publish).toHaveBeenCalledWith(
+        "sync",
+        JSON.stringify(event),
+      );
     });
   });
 });

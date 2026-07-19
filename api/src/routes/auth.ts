@@ -2,23 +2,15 @@ import { Router, type Request, type Response, type NextFunction } from "express"
 import { login, register, requestPasswordReset, confirmPasswordReset } from "../services/authService.js";
 import { validate, type ValidationError } from "../utils/validate.js";
 import { authMiddleware } from "../middleware/auth.js";
-import pool from "../db/pool.js";
+import { buildCookieName, buildCookieOptions, revokeSession } from "../services/sessionService.js";
 
 const router: ReturnType<typeof Router> = Router();
-const COOKIE_NAME = "planner_session";
-const COOKIE_OPTIONS = {
-  httpOnly: true,
-  secure: process.env.NODE_ENV === "production",
-  sameSite: "strict" as const,
-  path: "/",
-};
 
 router.post("/register", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { email, password } = req.body;
-    const result = await register({ email, password });
-    res.cookie(COOKIE_NAME, result.token, COOKIE_OPTIONS);
-    res.status(201).json({ user: result.user });
+    const user = await register({ email, password });
+    res.status(201).json({ user });
   } catch (err) {
     next(err);
   }
@@ -37,9 +29,9 @@ router.post("/login", async (req: Request, res: Response, next: NextFunction) =>
     }
     validate(errors);
 
-    const result = await login(email, password);
-    res.cookie(COOKIE_NAME, result.token, COOKIE_OPTIONS);
-    res.json({ user: result.user });
+    const { user, rawToken } = await login(email, password);
+    res.cookie(buildCookieName(), rawToken, buildCookieOptions());
+    res.json({ user });
   } catch (err) {
     next(err);
   }
@@ -48,9 +40,9 @@ router.post("/login", async (req: Request, res: Response, next: NextFunction) =>
 router.post("/logout", authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
   try {
     if (req.sessionId) {
-      await pool.query("DELETE FROM sessions WHERE id = $1", [req.sessionId]);
+      await revokeSession(req.sessionId);
     }
-    res.clearCookie(COOKIE_NAME, { path: "/" });
+    res.clearCookie(buildCookieName(), { path: "/" });
     res.json({ success: true });
   } catch (err) {
     next(err);
@@ -86,6 +78,7 @@ router.post("/reset-password/confirm", async (req: Request, res: Response, next:
 
 router.get("/me", authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
   try {
+    const pool = (await import("../db/pool.js")).default;
     const result = await pool.query(
       "SELECT id, email, display_name FROM users WHERE id = $1",
       [req.userId],

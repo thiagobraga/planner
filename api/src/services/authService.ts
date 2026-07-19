@@ -1,24 +1,22 @@
 import crypto from 'node:crypto';
-import jwt from 'jsonwebtoken';
-import { v4 as uuidv4 } from 'uuid';
 import pool from '../db/pool.js';
 import { redisClient } from '../db/redis.js';
 import { AppError } from '../utils/AppError.js';
 import { validate, type ValidationError } from '../utils/validate.js';
-import { DISABLE_RATE_LIMITS_IN_DEV, JWT_SECRET } from '../config.js';
+import { DISABLE_RATE_LIMITS_IN_DEV } from '../config.js';
 import { validatePassword, hashPassword, verifyAndUpgrade } from './passwordService.js';
+import { createSession } from './sessionService.js';
 
-const JWT_EXPIRATION_SECONDS = 3600;
-const REFRESH_TOKEN_EXPIRATION_DAYS = 30;
 const LOGIN_RATE_LIMIT_MAX = 10;
 const LOGIN_RATE_LIMIT_WINDOW = 15 * 60;
 
 const EMAIL_REGEX =
   /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
 
-interface AuthResult {
-  user: { id: string; email: string; displayName: string | null };
-  token: string;
+export interface UserData {
+  id: string;
+  email: string;
+  displayName: string | null;
 }
 
 export interface RegisterInput {
@@ -27,7 +25,7 @@ export interface RegisterInput {
   displayName?: string;
 }
 
-export async function register(input: RegisterInput): Promise<AuthResult> {
+export async function register(input: RegisterInput): Promise<UserData> {
   const errors: ValidationError[] = [];
 
   if (!input.email || !EMAIL_REGEX.test(input.email)) {
@@ -67,8 +65,8 @@ export async function register(input: RegisterInput): Promise<AuthResult> {
   }
 
   const passwordHash = await hashPassword(validatedPassword);
-  const userId = uuidv4();
-  const collectionId = uuidv4();
+  const userId = crypto.randomUUID();
+  const collectionId = crypto.randomUUID();
 
   const client = await pool.connect();
   try {
@@ -96,15 +94,10 @@ export async function register(input: RegisterInput): Promise<AuthResult> {
     client.release();
   }
 
-  const token = jwt.sign({ userId }, JWT_SECRET, { expiresIn: JWT_EXPIRATION_SECONDS });
-
-  return {
-    user: { id: userId, email: input.email, displayName: input.displayName ?? null },
-    token,
-  };
+  return { id: userId, email: input.email, displayName: input.displayName ?? null };
 }
 
-export async function login(email: string, password: string): Promise<AuthResult> {
+export async function login(email: string, password: string): Promise<{ user: UserData; rawToken: string }> {
   const rateLimitKey = `login_attempts:${email.toLowerCase()}`;
   if (!DISABLE_RATE_LIMITS_IN_DEV && redisClient.isReady) {
     const attempts = await redisClient.get(rateLimitKey);
@@ -154,17 +147,7 @@ export async function login(email: string, password: string): Promise<AuthResult
 
   if (!DISABLE_RATE_LIMITS_IN_DEV && redisClient.isReady) await redisClient.del(rateLimitKey).catch(() => {});
 
-  const sessionId = uuidv4();
-  const expiresAt = new Date(Date.now() + REFRESH_TOKEN_EXPIRATION_DAYS * 24 * 60 * 60 * 1000);
-
-  await pool.query(
-    'INSERT INTO sessions (id, user_id, token_hash, expires_at) VALUES ($1, $2, $3, $4)',
-    [sessionId, user.id, sessionId, expiresAt],
-  );
-
-  const token = jwt.sign({ userId: user.id, sessionId }, JWT_SECRET, {
-    expiresIn: JWT_EXPIRATION_SECONDS,
-  });
+  const rawToken = await createSession(user.id);
 
   return {
     user: {
@@ -172,62 +155,7 @@ export async function login(email: string, password: string): Promise<AuthResult
       email: user.email,
       displayName: user.display_name,
     },
-    token,
-  };
-}
-
-export async function refreshToken(sessionId: string): Promise<AuthResult> {
-  const result = await pool.query(
-    `SELECT s.id, s.user_id, u.email, u.display_name
-     FROM sessions s
-     JOIN users u ON u.id = s.user_id
-     WHERE s.id = $1 AND s.expires_at > NOW()`,
-    [sessionId],
-  );
-
-  if (result.rows.length === 0) {
-    throw new AppError({
-      code: 'SESSION_EXPIRED',
-      message: 'Session expired. Please log in again.',
-      statusCode: 401,
-    });
-  }
-
-  const row = result.rows[0];
-
-  const newSessionId = uuidv4();
-  const expiresAt = new Date(Date.now() + REFRESH_TOKEN_EXPIRATION_DAYS * 24 * 60 * 60 * 1000);
-
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
-
-    await client.query('DELETE FROM sessions WHERE id = $1', [sessionId]);
-
-    await client.query(
-      'INSERT INTO sessions (id, user_id, token_hash, expires_at) VALUES ($1, $2, $3, $4)',
-      [newSessionId, row.user_id, newSessionId, expiresAt],
-    );
-
-    await client.query('COMMIT');
-  } catch (err) {
-    await client.query('ROLLBACK');
-    throw err;
-  } finally {
-    client.release();
-  }
-
-  const token = jwt.sign({ userId: row.user_id, sessionId: newSessionId }, JWT_SECRET, {
-    expiresIn: JWT_EXPIRATION_SECONDS,
-  });
-
-  return {
-    user: {
-      id: row.user_id,
-      email: row.email,
-      displayName: row.display_name,
-    },
-    token,
+    rawToken,
   };
 }
 

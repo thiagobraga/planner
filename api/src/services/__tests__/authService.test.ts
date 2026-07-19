@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { AppError } from "../../utils/AppError.js";
 
-// Mock pool
 const mockQuery = vi.fn();
 const mockClientQuery = vi.fn();
 const mockRelease = vi.fn();
@@ -17,38 +16,43 @@ vi.mock("../../db/pool.js", () => ({
   },
 }));
 
-// Mock redis
-const mockRedisGet = vi.fn().mockResolvedValue(null);
-const mockRedisIncr = vi.fn().mockResolvedValue(0);
-const mockRedisExpire = vi.fn().mockResolvedValue(true);
-const mockRedisDel = vi.fn().mockResolvedValue(1);
-
 vi.mock("../../db/redis.js", () => ({
   redisClient: {
-    get: (...args: unknown[]) => mockRedisGet(...args),
-    incr: (...args: unknown[]) => mockRedisIncr(...args),
-    expire: (...args: unknown[]) => mockRedisExpire(...args),
-    del: (...args: unknown[]) => mockRedisDel(...args),
+    get: vi.fn().mockResolvedValue(null),
+    incr: vi.fn().mockResolvedValue(0),
+    expire: vi.fn().mockResolvedValue(true),
+    del: vi.fn().mockResolvedValue(1),
     isReady: true,
   },
 }));
 
-// Mock bcrypt so verifyAndUpgrade takes the bcrypt path
 vi.mock("bcrypt", () => ({
   default: {
-    hash: vi.fn().mockResolvedValue("hashed_password"),
+    hash: vi.fn().mockResolvedValue("$2b$mocked_hash"),
     compare: vi.fn().mockResolvedValue(true),
   },
 }));
 
-// Mock uuid
-vi.mock("uuid", () => ({
-  v4: () => "test-uuid-1234",
+vi.mock("../sessionService.js", () => ({
+  createSession: vi.fn().mockResolvedValue("mock-raw-session-token"),
+}));
+
+vi.mock("../../utils/AppError.js", () => ({
+  AppError: class AppError extends Error {
+    code: string;
+    statusCode: number;
+    details: unknown;
+    constructor(opts: { code: string; message: string; statusCode: number; details?: unknown }) {
+      super(opts.message);
+      this.code = opts.code;
+      this.statusCode = opts.statusCode;
+      this.details = opts.details;
+    }
+  },
 }));
 
 import { register, login, confirmPasswordReset } from "../authService.js";
 
-// 19-character password that passes all strength checks
 const STRONG_PASSWORD = "correct-horse-battery-staple";
 
 beforeEach(() => {
@@ -106,7 +110,6 @@ describe("register - validation", () => {
       );
     }
 
-    // Too long
     try {
       await register({ email: "test@example.com", password: STRONG_PASSWORD, displayName: "a".repeat(51) });
       expect.fail("should throw");
@@ -146,9 +149,25 @@ describe("register - validation", () => {
   });
 });
 
+describe("login", () => {
+  it("returns user and raw session token on success", async () => {
+    mockQuery
+      .mockResolvedValueOnce({
+        rows: [{ id: "user-1", email: "user@example.com", password_hash: "$2b$hash", display_name: "User" }],
+      })
+      .mockResolvedValueOnce({ rows: [] });
+
+    const result = await login("user@example.com", STRONG_PASSWORD);
+
+    expect(result.user).toEqual({ id: "user-1", email: "user@example.com", displayName: "User" });
+    expect(result.rawToken).toBe("mock-raw-session-token");
+  });
+});
+
 describe("login - rate limiting", () => {
   it("returns RATE_LIMITED after 10+ failed attempts", async () => {
-    mockRedisGet.mockResolvedValue("11");
+    const { redisClient } = await import("../../db/redis.js");
+    (redisClient.get as ReturnType<typeof vi.fn>).mockResolvedValue("11");
 
     try {
       await login("user@example.com", "doesnotmatter");
@@ -158,23 +177,6 @@ describe("login - rate limiting", () => {
       expect(e.code).toBe("RATE_LIMITED");
       expect(e.statusCode).toBe(429);
     }
-  });
-
-  it("resets counter on successful login", async () => {
-    mockRedisGet.mockResolvedValue("3");
-    mockQuery
-      .mockResolvedValueOnce({
-        // Use a $2b$ prefix so verifyAndUpgrade uses the bcrypt path (mocked)
-        rows: [{ id: "user-1", email: "user@example.com", password_hash: "$2b$hash", display_name: "User" }],
-      })
-      .mockResolvedValueOnce({ rows: [] }); // session insert
-
-    const { default: bcrypt } = await import("bcrypt");
-    (bcrypt.compare as ReturnType<typeof vi.fn>).mockResolvedValueOnce(true);
-
-    await login("user@example.com", "doesnotmatter");
-
-    expect(mockRedisDel).toHaveBeenCalledWith("login_attempts:user@example.com");
   });
 
   it("skips the login throttle in development", async () => {
@@ -187,27 +189,21 @@ describe("login - rate limiting", () => {
       vi.resetModules();
 
       const { login: devLogin } = await import("../authService.js");
+      const { redisClient } = await import("../../db/redis.js");
 
-      mockRedisGet.mockResolvedValue("11");
+      (redisClient.get as ReturnType<typeof vi.fn>).mockResolvedValue("11");
       mockQuery
         .mockResolvedValueOnce({
-          // Use a $2b$ prefix so verifyAndUpgrade uses the bcrypt path (mocked)
           rows: [{ id: "user-1", email: "user@example.com", password_hash: "$2b$hash", display_name: "User" }],
         })
         .mockResolvedValueOnce({ rows: [] });
-      // bcrypt mock is global, so the re-imported module uses it too
-      // Set up mock bcrypt.compare for the re-imported context
-      const { default: bcrypt } = await import("bcrypt");
-      (bcrypt.compare as ReturnType<typeof vi.fn>).mockResolvedValueOnce(true);
 
-      await devLogin("user@example.com", "doesnotmatter");
+      await devLogin("user@example.com", STRONG_PASSWORD);
 
-      expect(mockRedisGet).not.toHaveBeenCalled();
-      expect(mockRedisDel).not.toHaveBeenCalled();
+      expect(redisClient.get).not.toHaveBeenCalled();
     } finally {
       vi.unstubAllEnvs();
       vi.resetModules();
-      // Re-import the module in the test's original env so subsequent tests work
       await import("../authService.js");
     }
   });

@@ -1,9 +1,9 @@
 import type { Server as HTTPServer } from "http";
 import { Server as IOServer, type Socket } from "socket.io";
-import jwt from "jsonwebtoken";
 import pool from "../db/pool.js";
 import { redisPubClient, redisSubClient } from "../db/redis.js";
-import { JWT_SECRET, CORS_ORIGIN } from "../config.js";
+import { CORS_ORIGIN } from "../config.js";
+import { validateSession, buildCookieName } from "./sessionService.js";
 const SYNC_CHANNEL = "sync";
 
 export type SyncEntityType = "task" | "collection" | "section" | "label" | "comment" | "reminder" | "preferences" | "habit" | "habit_completion" | "habit_group";
@@ -18,11 +18,6 @@ export interface SyncEvent {
   collectionId?: string | null;
   payload?: unknown;
   emittedAt: string;
-}
-
-interface JwtPayload {
-  userId: string;
-  sessionId?: string;
 }
 
 function userRoom(userId: string): string {
@@ -48,7 +43,6 @@ export async function publishEvent(event: SyncEvent): Promise<void> {
   }
 }
 
-// Used by service layer to emit changes without depending on the IO server directly.
 export function buildEvent(input: Omit<SyncEvent, "id" | "emittedAt"> & { id?: string }): SyncEvent {
   return {
     id: input.id ?? `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
@@ -77,17 +71,15 @@ function parseCookies(cookieHeader: string | undefined): Record<string, string> 
   );
 }
 
-function extractJwtFromSocket(socket: Socket): string | null {
+function extractSessionFromSocket(socket: Socket): string | null {
   const cookieHeader = (socket.handshake.headers as Record<string, string | string[] | undefined> | undefined)?.cookie as string | undefined;
   if (cookieHeader) {
     const cookies = parseCookies(cookieHeader);
-    const token = cookies["planner_session"];
+    const cookieName = buildCookieName();
+    const token = cookies[cookieName];
     if (token) return token;
   }
-
-  // Fallback to auth handshake (legacy / test mode)
-  const authToken = socket.handshake.auth?.token as string | undefined;
-  return authToken ?? null;
+  return null;
 }
 
 export async function attachSyncServer(httpServer: HTTPServer): Promise<IOServer> {
@@ -100,26 +92,20 @@ export async function attachSyncServer(httpServer: HTTPServer): Promise<IOServer
   });
 
   io.use(async (socket: Socket, next) => {
-    const token = extractJwtFromSocket(socket);
-    if (!token) {
+    const rawToken = extractSessionFromSocket(socket);
+    if (!rawToken) {
       next(new Error("UNAUTHORIZED"));
       return;
     }
 
-    let payload: JwtPayload;
-    try {
-      payload = jwt.verify(token, JWT_SECRET) as JwtPayload;
-    } catch {
+    const session = await validateSession(rawToken);
+    if (!session) {
       next(new Error("UNAUTHORIZED"));
       return;
     }
 
-    if (!payload.userId) {
-      next(new Error("UNAUTHORIZED"));
-      return;
-    }
-
-    (socket.data as { userId: string }).userId = payload.userId;
+    (socket.data as { userId: string; sessionId: number }).userId = session.userId;
+    (socket.data as { userId: string; sessionId: number }).sessionId = session.sessionId;
     next();
   });
 
@@ -153,8 +139,8 @@ export async function attachSyncServer(httpServer: HTTPServer): Promise<IOServer
       }
     });
 
-    socket.on("comment:create", (event: { taskId: string }) => {
-      // No-op: collection-scope validation happens server-side in the service
+    socket.on("comment:create", () => {
+      // No-op: collection-scope validation happens server-side
     });
   });
 
@@ -166,10 +152,8 @@ export async function attachSyncServer(httpServer: HTTPServer): Promise<IOServer
       return;
     }
 
-    // Fan out: all of this user's sessions
     io.to(userRoom(event.userId)).emit("sync", event);
 
-    // If the change is collection-scoped, also to all collaborators in the collection room
     if (event.collectionId) {
       io.to(collectionRoom(event.collectionId)).emit("sync", event);
     }
