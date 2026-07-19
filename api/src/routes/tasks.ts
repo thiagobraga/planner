@@ -1,6 +1,6 @@
 import { Router, type Request, type Response, type NextFunction } from "express";
 import { authMiddleware } from "../middleware/auth.js";
-import { createTask, updateTask, completeTask, reopenTask, reorderTask, deleteTask } from "../services/taskService.js";
+import { createTask, updateTask, completeTask, reopenTask, reorderTask, moveTask, deleteTask } from "../services/taskService.js";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -44,6 +44,18 @@ router.patch("/:id/reorder", authMiddleware, async (req: Request, res: Response,
   try {
     const task = await reorderTask(req.params.id as string, req.userId!, req.body.position);
     res.json(task);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// Structural move: tree position, list membership and surrounding order, in one
+// transaction. `/reorder` above stays for older clients but only shifts a task
+// within its existing sibling list.
+router.patch("/:id/move", authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const result = await moveTask(req.params.id as string, req.userId!, req.body);
+    res.json(result);
   } catch (err) {
     next(err);
   }

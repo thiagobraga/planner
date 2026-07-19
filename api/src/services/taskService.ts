@@ -1,4 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
+import type { PoolClient } from 'pg';
 import pool from '../db/pool.js';
 import { AppError } from '../utils/AppError.js';
 import { buildEvent, publishEvent } from './syncService.js';
@@ -651,6 +652,455 @@ export async function reorderTask(taskId: string, userId: string, position: numb
     throw err;
   } finally {
     client.release();
+  }
+}
+
+/**
+ * Which hand-sorted list a move's `position` counts within.
+ *
+ * A task holds a position in its collection *and* a position in its day, and the
+ * two are independent - reordering Today must not disturb the collection's
+ * order. Collection positions live in `tasks.order_value`; day positions live in
+ * the `task_order` table (migration 025), which is also what lets a day rank
+ * tasks drawn from several different collections.
+ */
+export type TaskOrderScope =
+  | { kind: 'collection'; collectionId: string }
+  | { kind: 'day'; dueDate: string };
+
+export interface MoveTaskInput {
+  parentTaskId: string | null;
+  collectionId?: string;
+  dueDate?: string | null;
+  scope: TaskOrderScope;
+  position: number;
+}
+
+const MAX_DEPTH = 5;
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+
+function validationError(field: string, message: string): AppError {
+  return new AppError({
+    code: 'VALIDATION_ERROR',
+    message: 'Validation failed',
+    statusCode: 400,
+    details: [{ field, message }],
+  });
+}
+
+function validateMoveInput(input: MoveTaskInput): void {
+  if (!input || typeof input !== 'object') {
+    throw validationError('body', 'Move input is required');
+  }
+  if (input.parentTaskId !== null && typeof input.parentTaskId !== 'string') {
+    throw validationError('parentTaskId', 'Parent task id must be a string or null');
+  }
+  if (input.collectionId !== undefined && typeof input.collectionId !== 'string') {
+    throw validationError('collectionId', 'Collection id must be a string');
+  }
+  if (
+    input.dueDate !== undefined &&
+    input.dueDate !== null &&
+    !ISO_DATE.test(input.dueDate)
+  ) {
+    throw validationError('dueDate', 'Due date must be an ISO date (YYYY-MM-DD)');
+  }
+  if (!Number.isInteger(input.position) || input.position < 0) {
+    throw validationError('position', 'Position must be a non-negative integer');
+  }
+
+  const scope = input.scope;
+  if (!scope || typeof scope !== 'object') {
+    throw validationError('scope', 'Ordering scope is required');
+  }
+  if (scope.kind === 'collection') {
+    if (typeof scope.collectionId !== 'string') {
+      throw validationError('scope.collectionId', 'Collection scope requires a collection id');
+    }
+  } else if (scope.kind === 'day') {
+    if (!ISO_DATE.test(scope.dueDate ?? '')) {
+      throw validationError('scope.dueDate', 'Day scope requires an ISO date (YYYY-MM-DD)');
+    }
+  } else {
+    throw validationError('scope.kind', "Ordering scope must be 'collection' or 'day'");
+  }
+}
+
+interface SubtreeRow {
+  id: string;
+  parent_task_id: string | null;
+  depth: number;
+  collection_id: string;
+  section_id: string | null;
+  due_date: string | null;
+}
+
+/**
+ * Structurally move a task, carrying its entire descendant subtree.
+ *
+ * Deliberately separate from `updateTask`: this rewrites tree position, list
+ * membership and the ordering of everything around it, and every one of those
+ * writes has to land together. A partial move - a reparented root whose children
+ * kept the old depth, say - leaves the tree unrenderable, so the whole operation
+ * is one transaction that rolls back intact.
+ */
+export async function moveTask(taskId: string, userId: string, input: MoveTaskInput) {
+  validateMoveInput(input);
+
+  // Authenticate before resolving anything else, so an unauthorized caller
+  // cannot probe which task or collection ids exist by reading error shapes.
+  const task = await verifyTaskAccess(taskId, userId);
+
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    // Lock the dragged task and its descendants for the duration. Two concurrent
+    // moves touching the same subtree would otherwise interleave their
+    // renumbering and leave duplicate order values behind.
+    const subtreeResult = await client.query(
+      `WITH RECURSIVE subtree AS (
+         SELECT id, parent_task_id, depth, collection_id, section_id, due_date
+         FROM tasks WHERE id = $1
+         UNION ALL
+         SELECT t.id, t.parent_task_id, t.depth, t.collection_id, t.section_id, t.due_date
+         FROM tasks t JOIN subtree s ON t.parent_task_id = s.id
+       )
+       SELECT * FROM subtree ORDER BY depth ASC`,
+      [taskId],
+    );
+    const subtree = subtreeResult.rows as SubtreeRow[];
+    const subtreeIds = subtree.map((r) => r.id);
+
+    await client.query(`SELECT id FROM tasks WHERE id = ANY($1::uuid[]) FOR UPDATE`, [subtreeIds]);
+
+    // ── Resolve the destination ────────────────────────────────────────────────
+    let destParent: TaskRow | null = null;
+    if (input.parentTaskId) {
+      if (input.parentTaskId === taskId) {
+        throw validationError('parentTaskId', 'A task cannot be its own parent');
+      }
+      // Reparenting into your own subtree would detach that whole branch from
+      // the tree - it would still exist, but nothing would reach it.
+      if (subtreeIds.includes(input.parentTaskId)) {
+        throw validationError('parentTaskId', 'A task cannot be moved inside its own subtree');
+      }
+      destParent = await verifyTaskAccess(input.parentTaskId, userId);
+    }
+
+    const rootOldDepth = task.depth;
+    const rootNewDepth = destParent ? destParent.depth + 1 : 0;
+    const depthDelta = rootNewDepth - rootOldDepth;
+
+    const deepest = subtree.reduce((max, r) => Math.max(max, r.depth), rootOldDepth);
+    if (deepest + depthDelta > MAX_DEPTH) {
+      throw validationError(
+        'parentTaskId',
+        `Move would nest deeper than ${MAX_DEPTH} levels`,
+      );
+    }
+
+    // Reparenting inherits the new parent's collection and section; an explicit
+    // collectionId only applies when moving to the top level.
+    const destCollectionId = destParent
+      ? destParent.collection_id
+      : (input.collectionId ?? task.collection_id);
+    const destSectionId = destParent ? destParent.section_id : null;
+
+    if (!destParent && input.collectionId && input.collectionId !== task.collection_id) {
+      await verifyCollectionAccess(input.collectionId, userId);
+    }
+
+    // `undefined` keeps the current date - that is what makes a sidebar drop
+    // file a dated task into a collection without knocking it off its day.
+    const destDueDate = input.dueDate === undefined ? task.due_date : input.dueDate;
+
+    const crossesCollection = destCollectionId !== task.collection_id;
+    const crossesDate = destDueDate !== task.due_date;
+
+    // ── Apply the move to the root ─────────────────────────────────────────────
+    await client.query(
+      `UPDATE tasks
+       SET parent_task_id = $1,
+           collection_id = $2,
+           section_id = $3,
+           due_date = $4,
+           depth = $5,
+           updated_at = NOW()
+       WHERE id = $6`,
+      [input.parentTaskId, destCollectionId, destSectionId, destDueDate, rootNewDepth, taskId],
+    );
+
+    // ── Carry the descendants ──────────────────────────────────────────────────
+    // Their parent links and relative order are untouched; only the values that
+    // are inherited from the root shift. Completion, priority, labels,
+    // recurrence and content are never written here.
+    const descendantIds = subtreeIds.filter((id) => id !== taskId);
+    if (descendantIds.length > 0) {
+      if (depthDelta !== 0) {
+        await client.query(
+          `UPDATE tasks SET depth = depth + $1, updated_at = NOW() WHERE id = ANY($2::uuid[])`,
+          [depthDelta, descendantIds],
+        );
+      }
+      if (crossesCollection) {
+        // Sections belong to a collection, so a section id cannot survive the
+        // crossing; descendants land unsectioned under their new collection.
+        await client.query(
+          `UPDATE tasks SET collection_id = $1, section_id = NULL, updated_at = NOW()
+           WHERE id = ANY($2::uuid[])`,
+          [destCollectionId, descendantIds],
+        );
+      }
+      if (crossesDate) {
+        await client.query(
+          `UPDATE tasks SET due_date = $1, updated_at = NOW() WHERE id = ANY($2::uuid[])`,
+          [destDueDate, descendantIds],
+        );
+      }
+    }
+
+    // ── Update day membership ──────────────────────────────────────────────────
+    // Runs before the scope repositioning below, not after: repositioning writes
+    // the dragged task's row in the target day, and a later bulk delete would
+    // wipe exactly that row and leave the task absent from its own day's order.
+    if (crossesDate) {
+      await client.query(
+        `DELETE FROM task_order WHERE task_id = ANY($1::uuid[]) AND scope_type = 'day'`,
+        [subtreeIds],
+      );
+      if (destDueDate) {
+        for (const id of subtreeIds) {
+          await appendToDayScope(client, task.user_id, id, destDueDate);
+        }
+      }
+      if (task.due_date) {
+        await normalizeDayScope(client, task.user_id, task.due_date);
+      }
+    }
+
+    // ── Reposition within the target ordering scope ────────────────────────────
+    if (input.scope.kind === 'collection') {
+      await renumberCollectionScope(client, {
+        collectionId: destCollectionId,
+        sectionId: destSectionId,
+        parentTaskId: input.parentTaskId,
+        movedTaskId: taskId,
+        position: input.position,
+      });
+    } else {
+      await renumberDayScope(client, {
+        userId: task.user_id,
+        date: input.scope.dueDate,
+        movedTaskId: taskId,
+        position: input.position,
+      });
+    }
+
+    // The source list closes the gap the task left behind, but only when it is a
+    // different list - otherwise this would undo the renumbering just applied.
+    const sourceDiffers =
+      crossesCollection ||
+      (task.parent_task_id ?? null) !== (input.parentTaskId ?? null) ||
+      (task.section_id ?? null) !== (destSectionId ?? null);
+    if (sourceDiffers) {
+      await normalizeCollectionScope(client, {
+        collectionId: task.collection_id,
+        sectionId: task.section_id,
+        parentTaskId: task.parent_task_id,
+      });
+    }
+
+    await client.query('COMMIT');
+
+    // ── Report every record the client must patch ──────────────────────────────
+    const movedResult = await pool.query(
+      `SELECT * FROM tasks WHERE id = ANY($1::uuid[]) ORDER BY depth ASC, order_value ASC`,
+      [subtreeIds],
+    );
+    const moved = (movedResult.rows as TaskRow[]).map(formatTask);
+
+    const reorderedResult = await pool.query(
+      `SELECT DISTINCT t.* FROM tasks t
+       LEFT JOIN task_order o ON o.task_id = t.id AND o.scope_type = 'day'
+       WHERE t.id <> ALL($1::uuid[])
+         AND (
+           (t.collection_id = $2 AND t.section_id IS NOT DISTINCT FROM $3
+              AND t.parent_task_id IS NOT DISTINCT FROM $4)
+           OR (t.collection_id = $5 AND t.section_id IS NOT DISTINCT FROM $6
+              AND t.parent_task_id IS NOT DISTINCT FROM $7)
+           OR o.scope_id = ANY($8::varchar[])
+         )`,
+      [
+        subtreeIds,
+        destCollectionId,
+        destSectionId,
+        input.parentTaskId,
+        task.collection_id,
+        task.section_id,
+        task.parent_task_id,
+        [destDueDate, task.due_date].filter(Boolean),
+      ],
+    );
+    const reordered = (reorderedResult.rows as TaskRow[]).map(formatTask);
+
+    const root = moved.find((t) => t.id === taskId)!;
+    publishEvent(
+      buildEvent({
+        entityType: 'task',
+        eventType: 'updated',
+        entityId: taskId,
+        userId,
+        collectionId: root.collectionId,
+        payload: { task: root, affectedIds: [...subtreeIds, ...reordered.map((t) => t.id)] },
+      }),
+    ).catch((err) => console.error('[sync] publish failed', err));
+
+    return { moved, reordered };
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+async function verifyCollectionAccess(collectionId: string, userId: string): Promise<void> {
+  const result = await pool.query(
+    `SELECT id FROM collections
+     WHERE id = $1
+       AND (user_id = $2 OR id IN (SELECT collection_id FROM collaborators WHERE user_id = $2))`,
+    [collectionId, userId],
+  );
+  if (result.rows.length === 0) {
+    throw new AppError({ code: 'NOT_FOUND', message: 'Collection not found', statusCode: 404 });
+  }
+}
+
+type Client = PoolClient;
+
+/** Place `movedTaskId` at `position` among its new siblings, gap-numbered. */
+async function renumberCollectionScope(
+  client: Client,
+  opts: {
+    collectionId: string;
+    sectionId: string | null;
+    parentTaskId: string | null;
+    movedTaskId: string;
+    position: number;
+  },
+): Promise<void> {
+  const siblingsResult = await client.query(
+    `SELECT id FROM tasks
+     WHERE collection_id = $1
+       AND section_id IS NOT DISTINCT FROM $2
+       AND parent_task_id IS NOT DISTINCT FROM $3
+       AND id != $4
+     ORDER BY order_value ASC, created_at ASC
+     FOR UPDATE`,
+    [opts.collectionId, opts.sectionId, opts.parentTaskId, opts.movedTaskId],
+  );
+  const ids = (siblingsResult.rows as { id: string }[]).map((r) => r.id);
+  ids.splice(Math.min(opts.position, ids.length), 0, opts.movedTaskId);
+
+  for (let i = 0; i < ids.length; i++) {
+    await client.query(`UPDATE tasks SET order_value = $1, updated_at = NOW() WHERE id = $2`, [
+      i * 1000,
+      ids[i],
+    ]);
+  }
+}
+
+/** Close gaps left in a list a task moved out of, preserving relative order. */
+async function normalizeCollectionScope(
+  client: Client,
+  opts: { collectionId: string; sectionId: string | null; parentTaskId: string | null },
+): Promise<void> {
+  const result = await client.query(
+    `SELECT id FROM tasks
+     WHERE collection_id = $1
+       AND section_id IS NOT DISTINCT FROM $2
+       AND parent_task_id IS NOT DISTINCT FROM $3
+     ORDER BY order_value ASC, created_at ASC
+     FOR UPDATE`,
+    [opts.collectionId, opts.sectionId, opts.parentTaskId],
+  );
+  const ids = (result.rows as { id: string }[]).map((r) => r.id);
+  for (let i = 0; i < ids.length; i++) {
+    await client.query(`UPDATE tasks SET order_value = $1, updated_at = NOW() WHERE id = $2`, [
+      i * 1000,
+      ids[i],
+    ]);
+  }
+}
+
+/** Place a task at `position` within one day's list, gap-numbered. */
+async function renumberDayScope(
+  client: Client,
+  opts: { userId: string; date: string; movedTaskId: string; position: number },
+): Promise<void> {
+  const result = await client.query(
+    `SELECT task_id FROM task_order
+     WHERE user_id = $1 AND scope_type = 'day' AND scope_id = $2 AND task_id != $3
+     ORDER BY position ASC
+     FOR UPDATE`,
+    [opts.userId, opts.date, opts.movedTaskId],
+  );
+  const ids = (result.rows as { task_id: string }[]).map((r) => r.task_id);
+  ids.splice(Math.min(opts.position, ids.length), 0, opts.movedTaskId);
+
+  await client.query(
+    `DELETE FROM task_order WHERE task_id = $1 AND scope_type = 'day' AND scope_id = $2`,
+    [opts.movedTaskId, opts.date],
+  );
+
+  for (let i = 0; i < ids.length; i++) {
+    await client.query(
+      `INSERT INTO task_order (user_id, task_id, scope_type, scope_id, position)
+       VALUES ($1, $2, 'day', $3, $4)
+       ON CONFLICT (task_id, scope_type, scope_id)
+       DO UPDATE SET position = EXCLUDED.position, updated_at = NOW()`,
+      [opts.userId, ids[i], opts.date, i * 1000],
+    );
+  }
+}
+
+/** Add a task to the end of a day's list, if it is not already in it. */
+async function appendToDayScope(
+  client: Client,
+  userId: string,
+  taskId: string,
+  date: string,
+): Promise<void> {
+  // $3 is both an inserted value and a WHERE comparand, so it needs an explicit
+  // cast - Postgres otherwise deduces text in one position and varchar in the
+  // other and rejects the statement.
+  await client.query(
+    `INSERT INTO task_order (user_id, task_id, scope_type, scope_id, position)
+     SELECT $1::uuid, $2::uuid, 'day', $3::varchar,
+            COALESCE(MAX(position), 0) + 1000
+     FROM task_order WHERE user_id = $1::uuid AND scope_type = 'day' AND scope_id = $3::varchar
+     ON CONFLICT (task_id, scope_type, scope_id) DO NOTHING`,
+    [userId, taskId, date],
+  );
+}
+
+/** Close gaps in a day's list after tasks left it. */
+async function normalizeDayScope(client: Client, userId: string, date: string): Promise<void> {
+  const result = await client.query(
+    `SELECT task_id FROM task_order
+     WHERE user_id = $1 AND scope_type = 'day' AND scope_id = $2
+     ORDER BY position ASC
+     FOR UPDATE`,
+    [userId, date],
+  );
+  const ids = (result.rows as { task_id: string }[]).map((r) => r.task_id);
+  for (let i = 0; i < ids.length; i++) {
+    await client.query(
+      `UPDATE task_order SET position = $1, updated_at = NOW()
+       WHERE task_id = $2 AND scope_type = 'day' AND scope_id = $3`,
+      [i * 1000, ids[i], date],
+    );
   }
 }
 
