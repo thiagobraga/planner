@@ -952,7 +952,12 @@ export async function moveTask(taskId: string, userId: string, input: MoveTaskIn
         entityId: taskId,
         userId,
         collectionId: root.collectionId,
-        payload: { task: root, affectedIds: [...subtreeIds, ...reordered.map((t) => t.id)] },
+        // The payload must BE the task: every existing consumer reads it as one
+        // (`apiToTask(event.payload as ApiTask)`). Wrapping it in an envelope
+        // yields an all-undefined task that blanks the row it replaces.
+        // affectedIds rides alongside as an extra field, which those consumers
+        // ignore and an order-aware one can use.
+        payload: { ...root, affectedIds: [...subtreeIds, ...reordered.map((t) => t.id)] },
       }),
     ).catch((err) => console.error('[sync] publish failed', err));
 

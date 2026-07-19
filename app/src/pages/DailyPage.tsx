@@ -64,7 +64,11 @@ function buildSections(overdueTasks: Task[], todayTasks: Task[]): DaySection[] {
   const byDate = new Map<string, Task[]>();
 
   for (const t of [...overdueTasks, ...todayTasks]) {
-    const key = t.dueDate && /^\d{4}-\d{2}-\d{2}$/.test(t.dueDate) ? t.dueDate : todayKey;
+    // Trim any timestamp portion before matching. Falling back to todayKey is a
+    // last resort for a genuinely undated task, not something a full ISO
+    // timestamp should ever trigger - that would drag unrelated rows into today.
+    const date = t.dueDate?.slice(0, 10);
+    const key = date && /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : todayKey;
     const bucket = byDate.get(key) ?? [];
     bucket.push(t);
     byDate.set(key, bucket);

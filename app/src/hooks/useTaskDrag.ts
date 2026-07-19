@@ -6,6 +6,20 @@ import { apiMoveTask, type TaskOrderScope } from '../api/client';
 import type { CollectionDropData, DayDropData, TaskDragData } from '../types/drag';
 import type { Task } from '../components/TaskItem';
 
+/**
+ * Normalise an API date to the bare `YYYY-MM-DD` the page models use.
+ *
+ * The API returns a full timestamp (`2026-07-18T00:00:00.000Z`). Daily buckets
+ * rows by matching the date against `^\d{4}-\d{2}-\d{2}$` and falls back to
+ * *today* when it does not match, so patching a raw timestamp straight into a
+ * task silently collapses it - and every sibling returned alongside it - into
+ * today's section.
+ */
+function toISODate(value: string | null | undefined): string | undefined {
+  if (!value) return undefined;
+  return value.slice(0, 10);
+}
+
 interface UseTaskDragOptions {
   /** Current rows, flat and unordered; the hook builds the tree itself. */
   tasks: Task[];
@@ -106,7 +120,7 @@ export function useTaskDrag({ tasks, setTasks, scope, onError }: UseTaskDragOpti
                 ...t,
                 parentTaskId: authoritative.parentTaskId ?? undefined,
                 collectionId: authoritative.collectionId,
-                dueDate: authoritative.dueDate ?? undefined,
+                dueDate: toISODate(authoritative.dueDate),
                 orderValue: authoritative.orderValue,
                 indent: authoritative.depth ?? t.indent,
               };
