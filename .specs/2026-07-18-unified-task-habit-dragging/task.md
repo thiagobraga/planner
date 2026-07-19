@@ -215,7 +215,7 @@
   - [x] Keep Sidebar and routed page inside the shared drag provider
   - [x] Preserve collection-tree drag behavior and horizontal collection projection
   - [x] Filter collision targets so task and collection drags cannot interfere
-- [ ] Implement mobile edge-open
+- [ ] Implement mobile edge-open (DEFERRED by request 2026-07-19; desktop sidebar drops ship without it)
   - [ ] Detect an active task pointer within 32px of the left viewport edge
   - [ ] Open the drawer after a continuous 350ms edge hold
   - [ ] Keep the drag overlay and pointer tracking active while the drawer opens
@@ -271,12 +271,12 @@
 
 ## Phase 9 - Habit drag and editing UI
 
-- [ ] Add pure habit projection helpers
-  - [ ] Flatten ungrouped roots, groups, roots inside groups, and child rows into stable drag containers
-  - [ ] Move a parent and child block together
-  - [ ] Project root versus child using 24px horizontal movement
-  - [ ] Prevent a parent-with-children from projecting to child depth
-  - [ ] Calculate target `parentId`, `groupId`, and sibling position
+- [x] Add pure habit projection helpers
+  - [x] Flatten ungrouped roots, groups, roots inside groups, and child rows into stable drag containers
+  - [x] Move a parent and child block together
+  - [x] Project root versus child using 24px horizontal movement
+  - [x] Prevent a parent-with-children from projecting to child depth
+  - [x] Calculate target `parentId`, `groupId`, and sibling position
 - [ ] Timeline mode
   - [ ] Make habit rows and group headers sortable through the shared provider
   - [ ] Make ungrouped and every group section droppable, including empty groups
