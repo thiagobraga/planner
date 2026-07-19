@@ -9,7 +9,7 @@ export interface ToggleProps {
   className?: string;
 }
 
-// Pill switch (role="switch"). Off = dot-grey track; On = ink track. Cream knob.
+// Pill switch (role="switch") with theme-aware off track and knob surfaces.
 export function Toggle({ checked, onChange, disabled = false, label, id, className = '' }: ToggleProps) {
   return (
     <label
@@ -25,11 +25,11 @@ export function Toggle({ checked, onChange, disabled = false, label, id, classNa
         disabled={disabled}
         onClick={() => onChange?.(!checked)}
         className={`ui-toggle-switch relative inline-flex items-center w-9 h-5 rounded-full border border-transparent transition-colors duration-[var(--motion-fast)] ${
-          checked ? 'bg-ink' : 'bg-dot'
+          checked ? 'bg-ink' : 'bg-[var(--planner-toggle-off-bg)]'
         } ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'}`}
       >
         <span
-          className={`ui-toggle-knob inline-block w-4 h-4 rounded-full bg-cream transition-transform duration-[var(--motion-fast)] ${
+          className={`ui-toggle-knob inline-block w-4 h-4 rounded-full bg-[var(--planner-toggle-knob-bg)] transition-transform duration-[var(--motion-fast)] ${
             checked ? 'translate-x-[18px]' : 'translate-x-[2px]'
           }`}
         />

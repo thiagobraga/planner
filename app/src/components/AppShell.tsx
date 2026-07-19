@@ -10,6 +10,7 @@ import type { MatcherState } from '../hooks/shortcuts';
 import { useSync } from '../hooks/useSync';
 import { fetchPreferences, type Preferences } from '../api/client';
 import { ensureFontLoaded, type FontOption } from '../utils/fontLoader';
+import { updateDocumentThemeColor } from '../utils/theme';
 
 const FONT_CLASSES: Record<FontOption, string> = {
   lora: 'font-journal',
@@ -56,6 +57,8 @@ export function AppShell() {
     '--planner-sidebar-hover-bg': isWhiteBackground ? 'rgba(212, 212, 212, 0.35)' : 'rgba(212, 207, 199, 0.4)',
     '--planner-control-bg': isWhiteBackground ? '#ffffff' : 'rgba(245, 240, 232, 0.2)',
     '--planner-control-bg-hover': isWhiteBackground ? '#f5f5f5' : 'rgba(245, 240, 232, 0.35)',
+    '--planner-toggle-off-bg': isWhiteBackground ? '#dedede' : 'var(--color-dot)',
+    '--planner-toggle-knob-bg': isWhiteBackground ? '#ffffff' : 'var(--color-cream)',
     /* Monthly-specific tokens */
     '--planner-monthly-ledger-bg': isWhiteBackground ? 'rgba(255,255,255,0.24)' : 'rgba(245, 240, 232, 0.24)',
     '--planner-monthly-strip-selected': isWhiteBackground ? 'rgba(255,255,255,0.92)' : 'rgba(245, 240, 232, 0.90)',
@@ -69,6 +72,10 @@ export function AppShell() {
       ensureFontLoaded(preferences.font);
     }
   }, [preferences?.font]);
+
+  useEffect(() => {
+    updateDocumentThemeColor(isWhiteBackground ? 'white' : 'beige');
+  }, [isWhiteBackground]);
 
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 639px)');
