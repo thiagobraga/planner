@@ -63,7 +63,12 @@ function apiToTask(t: ApiTask): Task {
 function buildSections(overdueTasks: Task[], todayTasks: Task[]): DaySection[] {
   const byDate = new Map<string, Task[]>();
 
-  for (const t of [...overdueTasks, ...todayTasks]) {
+  // Tolerate a missing list rather than throwing. This renders the whole page,
+  // so a bad argument here unmounts DailyPage and leaves a blank screen with no
+  // way back - too harsh a failure for one caller's mistake.
+  const all = [...(overdueTasks ?? []), ...(todayTasks ?? [])];
+
+  for (const t of all) {
     // Trim any timestamp portion before matching. Falling back to todayKey is a
     // last resort for a genuinely undated task, not something a full ISO
     // timestamp should ever trigger - that would drag unrelated rows into today.

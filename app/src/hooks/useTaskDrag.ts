@@ -138,12 +138,17 @@ export function useTaskDrag({ tasks, setTasks, scope, onError }: UseTaskDragOpti
   );
 
   const handleDragCancel = useCallback(() => {
+    // Nothing to undo: the optimistic move is only applied on drop, and cancel
+    // and end are mutually exclusive. So cancelling deliberately leaves task
+    // state untouched rather than reassigning it - Escape puts the row back
+    // exactly where it was, changing nothing.
+    //
+    // (Restoring here previously passed `() => snapshot.current` to the setter
+    // and nulled the ref on the next line. React runs that updater later, by
+    // which point it returned null and blanked the page.)
+    snapshot.current = null;
     setActiveDragId(null);
-    if (snapshot.current) {
-      setTasks(() => snapshot.current!);
-      snapshot.current = null;
-    }
-  }, [setTasks]);
+  }, []);
 
   usePlannerDragHandlers('task', {
     onDragStart: handleDragStart,
