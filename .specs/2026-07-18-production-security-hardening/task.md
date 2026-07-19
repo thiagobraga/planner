@@ -1,0 +1,328 @@
+# Production Security Hardening
+
+> Release rule: do not expose Planner to public traffic until every P0 acceptance item in `plan.md` is checked and the production backup restore has succeeded.
+
+## Phase 0 - Security contract and configuration
+
+- [ ] Add `docs/security/data-protection.md`
+  - [ ] Classify identity, authentication, content, preferences, logs, and backups
+  - [ ] Record mandatory transport/storage/backup encryption boundaries
+  - [ ] Record why application-level task/habit/content encryption is deferred
+  - [ ] Define the trigger and requirements for a future envelope-encryption spec
+  - [ ] Define retention, deletion/export, log redaction, and prohibited log content
+- [ ] Add `docs/production-runbook.md`
+  - [ ] Select and document same-host encrypted storage or managed PostgreSQL/Redis
+  - [ ] Document secret creation, storage, rotation, revocation, and ownership
+  - [ ] Document deploy, migration, rollback, backup, restore, and session-revocation procedures
+  - [ ] Add a dated go-live evidence table
+- [ ] Harden `api/src/config.ts`
+  - [ ] Validate `NODE_ENV` and reject non-production mode in the production image
+  - [ ] Support `DATABASE_URL_FILE`, `REDIS_URL_FILE`, and `CSRF_SECRET_FILE`
+  - [ ] Require database, Redis, origin, CSRF, and session TTL configuration
+  - [ ] Reject missing, placeholder, default, or malformed production values
+  - [ ] Set secure defaults: 30-minute idle session, 12-hour absolute session
+  - [ ] Remove `JWT_SECRET` after session migration
+  - [ ] Fail production startup when Redis is unavailable
+- [ ] Add configuration unit tests for every fail-fast branch
+
+## Phase 1 - Single-user identity and password storage
+
+- [ ] Add `api/src/db/migrations/025_users_auth_hardening.sql`
+  - [ ] Detect and abort on case-insensitive duplicate emails
+  - [ ] Normalize existing email values
+  - [ ] Add a unique index on `LOWER(email)`
+  - [ ] Make `display_name` nullable
+  - [ ] Add migration rollback/recovery notes to the runbook
+- [ ] Add Argon2id to `api/package.json` and lockfile
+- [ ] Add `api/src/services/passwordService.ts`
+  - [ ] Normalize passwords using Unicode NFC
+  - [ ] Enforce 15-128 character length without composition rules
+  - [ ] Add a versioned local common/compromised password blocklist
+  - [ ] Include Planner name/domain and known development passwords in the blocklist
+  - [ ] Hash new passwords with benchmarked Argon2id parameters
+  - [ ] Verify legacy bcrypt hashes
+  - [ ] Rehash bcrypt to Argon2id after successful authentication
+  - [ ] Never log raw passwords or hashes
+- [ ] Add password service tests
+  - [ ] Valid Unicode passphrase with spaces
+  - [ ] Minimum/maximum boundaries
+  - [ ] NFC-equivalent inputs
+  - [ ] Blocklisted value
+  - [ ] Argon2id verify success/failure
+  - [ ] Bcrypt verify and rehash
+- [ ] Add `api/src/db/provisionUser.ts`
+  - [ ] Accept email plus password from a protected file or hidden standard input
+  - [ ] Reject password command-line arguments
+  - [ ] Require an explicit production provisioning flag
+  - [ ] Transactionally create/update user, inbox, and preferences
+  - [ ] Produce redacted success/failure output
+  - [ ] Add an `npm run provision-user` script
+- [ ] Update `api/src/services/authService.ts`
+  - [ ] Use `passwordService` for login/provisioning/reset paths
+  - [ ] Normalize email consistently
+  - [ ] Remove display-name requirement from the production contract
+  - [ ] Preserve generic invalid-credential responses
+- [ ] Update `api/src/routes/auth.ts`
+  - [ ] Default public registration to disabled
+  - [ ] Default password reset request/confirm to disabled
+  - [ ] Return no JWT/session token fields
+  - [ ] Validate request types and JSON content type
+- [ ] Update `app/src/pages/LoginPage.tsx`
+  - [ ] Remove production registration UI and display-name input
+  - [ ] Keep development helpers unavailable in production artifacts
+  - [ ] Preserve password-manager autofill and paste
+- [ ] Update `app/src/contexts/AuthContext.tsx` and `app/src/api/client.ts`
+  - [ ] Remove registration/display-name types when disabled
+  - [ ] Remove token response types
+- [ ] Remove or adapt unused `app/src/stores/authStore.ts` after confirming no consumers
+
+## Phase 2 - Opaque server-side sessions
+
+- [ ] Add `api/src/db/migrations/026_opaque_sessions.sql`
+  - [ ] Store only unique SHA-256 token hashes
+  - [ ] Add `last_seen_at`, `idle_expires_at`, and `absolute_expires_at`
+  - [ ] Add revocation timestamp/reason metadata
+  - [ ] Add lookup and expiry-cleanup indexes
+  - [ ] Delete/invalidate all legacy JWT sessions intentionally
+- [ ] Add `api/src/services/sessionService.ts`
+  - [ ] Generate 32-byte random opaque session tokens
+  - [ ] Hash tokens before database lookup/storage
+  - [ ] Create session with idle and absolute expiry
+  - [ ] Validate active/non-expired/non-revoked sessions
+  - [ ] Touch `last_seen_at` at a bounded cadence
+  - [ ] Revoke one session and all sessions for a user
+  - [ ] Delete expired sessions safely
+  - [ ] Build exact production/development cookie options
+- [ ] Add session service tests
+  - [ ] Database never receives raw token
+  - [ ] Idle expiry
+  - [ ] Absolute expiry
+  - [ ] Explicit revocation
+  - [ ] Password-change all-session revocation
+  - [ ] Production `__Host-` cookie attributes
+- [ ] Replace JWT logic in `api/src/middleware/auth.ts`
+  - [ ] Read cookie credentials only
+  - [ ] Reject Authorization Bearer credentials
+  - [ ] Attach user ID and internal session ID to request context
+  - [ ] Return generic `401` for invalid/expired/revoked credentials
+- [ ] Update `api/src/routes/auth.ts`
+  - [ ] Create a session on login
+  - [ ] Return only user and CSRF bootstrap data
+  - [ ] Revoke server session on logout
+  - [ ] Clear cookie with matching name/path/security attributes
+- [ ] Update `api/src/services/syncService.ts`
+  - [ ] Remove handshake auth-token fallback
+  - [ ] Parse the session cookie safely
+  - [ ] Use `sessionService` during connection
+  - [ ] Reject expired/revoked sessions on reconnect
+  - [ ] Revalidate sessions periodically and before client-originated events
+  - [ ] Ensure server-pushed sync events do not extend idle expiry
+  - [ ] Disconnect active sockets when the session becomes invalid
+- [ ] Update `api/src/types/express.d.ts` and frontend auth/socket types
+- [ ] Delete refresh-token/JWT code
+- [ ] Remove `jsonwebtoken` and its type package from API dependencies
+- [ ] Add REST + Socket.IO session lifecycle integration tests
+
+## Phase 3 - Global request protection
+
+- [ ] Replace `api/src/middleware/csrf.ts`
+  - [ ] Generate a random token plus HMAC-SHA-256 signature
+  - [ ] Bind the HMAC to the authenticated session
+  - [ ] Use a dedicated CSRF secret
+  - [ ] Compare signatures with `crypto.timingSafeEqual`
+  - [ ] Use a readable production `__Host-` CSRF cookie plus required custom header
+  - [ ] Reject missing, malformed, mismatched-session, and invalid-HMAC tokens
+- [ ] Add `api/src/middleware/origin.ts`
+  - [ ] Validate `Origin` for unsafe browser requests
+  - [ ] Validate Fetch Metadata where present
+  - [ ] Reject simple non-JSON state-changing requests
+  - [ ] Cover proxy/origin behavior with tests
+- [ ] Refactor `api/src/index.ts` and `api/src/routes/index.ts`
+  - [ ] Mount auth routes once
+  - [ ] Replace per-resource CSRF allowlisting with a global unsafe-method boundary
+  - [ ] Keep a minimal documented public-route exemption list
+  - [ ] Protect logout and `/invitations/accept`
+  - [ ] Ensure habit-group and collection routes inherit all global middleware
+  - [ ] Configure `trust proxy` for exactly the verified Traefik hop
+  - [ ] Add `Cache-Control: private, no-store` to authenticated API responses
+  - [ ] Add request IDs to every response
+- [ ] Harden authentication throttling
+  - [ ] Use Redis-backed IP and normalized-account keys
+  - [ ] Avoid storing raw email addresses in Redis keys
+  - [ ] Add progressive delay or bounded lockout behavior
+  - [ ] Verify counters work across two API processes
+  - [ ] Verify Redis failure cannot silently disable protection in production
+- [ ] Update `app/src/api/client.ts`
+  - [ ] Send signed CSRF token header on every unsafe request
+  - [ ] Never store session credentials in JavaScript storage or state
+  - [ ] Handle `401` without replaying unsafe requests
+  - [ ] Clear authenticated UI state on invalid session
+- [ ] Update `.docker/app/nginx.conf`
+  - [ ] Proxy `/api/` and `/socket.io/` to `api:4000`
+  - [ ] Add CSP with `frame-ancestors 'none'`
+  - [ ] Add HSTS after TLS-only staging verification
+  - [ ] Add `X-Content-Type-Options: nosniff`
+  - [ ] Add strict `Referrer-Policy`
+  - [ ] Add bounded `Permissions-Policy`
+  - [ ] Cache hashed assets immutably
+  - [ ] Revalidate `index.html`
+  - [ ] Never cache API responses
+- [ ] Remove the CSP meta tag from `app/index.html` after header verification
+- [ ] Add route-matrix tests proving every unsafe endpoint requires valid CSRF
+
+## Phase 4 - Offline/shared-device isolation
+
+- [ ] Upgrade `app/src/utils/offlineQueue.ts` IndexedDB schema
+  - [ ] Increment database version
+  - [ ] Add required `ownerUserId` to queued records
+  - [ ] Add an owner index
+  - [ ] Delete legacy unowned records during upgrade
+  - [ ] Require owner ID for enqueue/list/remove/remap operations
+  - [ ] Add per-user and full-clear functions
+  - [ ] Fail closed when no authenticated owner exists
+- [ ] Update `app/src/hooks/useOfflineQueueReplay.ts`
+  - [ ] Accept current user ID, not only a boolean
+  - [ ] Replay only records owned by that user
+  - [ ] Preserve FIFO and ID remapping within the owner's partition
+- [ ] Update `app/src/contexts/AuthContext.tsx`
+  - [ ] Set offline queue owner only after authenticated `/me` or login response
+  - [ ] Clear the current user's queue before completing logout
+  - [ ] Clear local auth/query state even when network logout fails
+  - [ ] Never replay until ownership is established
+- [ ] Update `app/src/api/client.ts`
+  - [ ] Supply authenticated owner to offline enqueue operations
+  - [ ] Reject unauthenticated offline mutation attempts
+- [ ] Update `app/vite.config.ts`
+  - [ ] Explicitly exclude `/api/` from service-worker caching
+  - [ ] Explicitly exclude `/socket.io/` from service-worker caching
+- [ ] Add offline security tests
+  - [ ] Account A data never appears in Account B listing/replay
+  - [ ] Logout clears Account A queue
+  - [ ] Failed network logout still clears Account A queue
+  - [ ] Legacy unowned records are deleted
+  - [ ] Unauthenticated enqueue fails
+  - [ ] Owner-specific ID remapping remains correct
+
+## Phase 5 - Production deployment and encryption
+
+- [ ] Rebuild `.docker/api/Dockerfile`
+  - [ ] Use `npm ci` with the committed lockfile
+  - [ ] Separate build and minimal runtime stages
+  - [ ] Copy only runtime dependencies, compiled code, and migrations
+  - [ ] Run as non-root
+  - [ ] Add API health check
+  - [ ] Do not run seed or package installation at startup
+- [ ] Rebuild `.docker/app/Dockerfile`
+  - [ ] Build Vite assets in a Node build stage
+  - [ ] Serve `dist/` from unprivileged Nginx
+  - [ ] Remove `vite preview` from production execution
+  - [ ] Run as non-root and add health check
+- [ ] Add `compose.prod.yml`
+  - [ ] Use only production image targets
+  - [ ] Set `NODE_ENV=production`
+  - [ ] Expose only the frontend edge to Traefik
+  - [ ] Add separate edge, backend, and data networks
+  - [ ] Keep API, PostgreSQL, and Redis ports unpublished
+  - [ ] Add one-shot migration service
+  - [ ] Include no seed and no pgAdmin service
+  - [ ] Consume secrets from mounted files/Docker secrets with no defaults
+  - [ ] Add `read_only` filesystems and bounded `tmpfs` mounts
+  - [ ] Drop all capabilities and enable `no-new-privileges` where compatible
+  - [ ] Add health checks, restart policies, and resource limits
+- [ ] Replace values in `.env.example` with explicit placeholders
+- [ ] Harden `.gitignore` and `.dockerignore`
+  - [ ] Ignore all local secret files
+  - [ ] Ignore backup/restore artifacts
+  - [ ] Exclude secrets, logs, backups, private keys, and Git metadata from build contexts
+- [ ] Validate production storage encryption
+  - [ ] Record provider/host encryption configuration and key owner
+  - [ ] Confirm PostgreSQL data volume is encrypted before first production write
+  - [ ] Configure verified TLS for remote PostgreSQL/Redis or document isolated same-host exception
+- [ ] Validate encrypted backup and restore
+  - [ ] Create production-format encrypted backup
+  - [ ] Store backup and encryption key separately
+  - [ ] Restore into an isolated database
+  - [ ] Verify user/collection/task/habit row counts
+  - [ ] Log in and read restored task/habit data
+  - [ ] Record date, operator, commands, checksums, and result in runbook
+- [ ] Run container security checks
+  - [ ] `docker buildx build --check` passes
+  - [ ] Containers run as non-root
+  - [ ] Containers cannot write outside approved paths
+  - [ ] No high/critical production image finding remains unreviewed
+
+## Phase 6 - CI, monitoring, and incident readiness
+
+- [ ] Add `.github/workflows/ci.yml`
+  - [ ] Clean install, lint, test, and build API
+  - [ ] Clean install, lint, test, and build app
+  - [ ] Build production containers
+- [ ] Add `.github/workflows/security.yml`
+  - [ ] Production dependency audit
+  - [ ] Secret scan
+  - [ ] CodeQL/static analysis
+  - [ ] Docker build checks
+  - [ ] Container vulnerability scan
+  - [ ] SBOM generation and retention
+  - [ ] Pin every third-party action to a commit SHA
+- [ ] Add `.github/dependabot.yml` or equivalent automated update policy
+- [ ] Add API security regression tests
+  - [ ] Cookie flags and no-token response
+  - [ ] Session expiry/revocation across REST and Socket.IO
+  - [ ] Password change revokes all sessions
+  - [ ] CSRF/origin route matrix
+  - [ ] Durable distributed rate limiting
+  - [ ] Email uniqueness and display-name optionality
+  - [ ] Registration/reset disabled defaults
+  - [ ] Cache/security headers
+  - [ ] Object authorization for all route families
+- [ ] Add structured security event logging
+  - [ ] Authentication success/failure without email or password
+  - [ ] Rate-limit activation
+  - [ ] Session revocation/expiry
+  - [ ] Provisioning and migration outcome
+  - [ ] Backup and restore outcome
+  - [ ] Request IDs correlate client errors and server logs
+- [ ] Configure staging alerts
+  - [ ] Repeated authentication failure
+  - [ ] Unexpected registration/reset attempts
+  - [ ] Redis unavailable
+  - [ ] Migration failure
+  - [ ] Backup failure
+  - [ ] Restore verification failure
+- [ ] Complete incident section in `docs/production-runbook.md`
+  - [ ] Incident owner and contacts
+  - [ ] Containment/session revocation steps
+  - [ ] Secret/key rotation steps
+  - [ ] Evidence preservation and five-year incident record handling where applicable
+  - [ ] ANPD/user assessment and notification workflow
+
+## P0 Go-Live Verification
+
+- [ ] `git ls-files` contains no `.env`, private key, backup, or secret file
+- [ ] `git grep` finds no known production credential or fallback secret
+- [ ] `cd api && npm ci && npm run lint && npm test && npm run build`
+- [ ] `cd app && npm ci && npm run lint && npm test && npm run build`
+- [ ] `npm audit --omit=dev --audit-level=high` passes in both packages
+- [ ] `docker compose -f compose.prod.yml config` passes with injected secrets
+- [ ] The same command fails when each required secret is individually omitted
+- [ ] Production images build reproducibly and pass container scanning
+- [ ] Production bundle contains no development email/password or registration UI
+- [ ] Login response contains user data only; no session/JWT token is in JSON or browser storage
+- [ ] Cookie inspection confirms `__Host-`, Secure, HttpOnly, SameSite Strict, Path `/`, and no Domain
+- [ ] Missing/invalid/cross-session CSRF fails on every unsafe route
+- [ ] Logout and password rotation revoke REST and Socket.IO immediately
+- [ ] Account-switch offline-queue scenario passes
+- [ ] Frontend and API response security headers pass automated assertions
+- [ ] Only the frontend edge is externally reachable
+- [ ] Encrypted storage evidence is recorded
+- [ ] Encrypted backup restore succeeds and is recorded
+- [ ] Staging alerts are exercised without sensitive content appearing in logs
+- [ ] All P0 acceptance criteria in `plan.md` are checked
+
+## Deferred Until Public Multi-User Launch
+
+- `[DEFERRED]` Create a separate spec for email verification and real password recovery.
+- `[DEFERRED]` Create a separate spec for passkeys/WebAuthn, recovery codes, and optional MFA.
+- `[DEFERRED]` Create a separate spec for account export/deletion and published privacy controls.
+- `[DEFERRED]` Revisit field-level envelope encryption only if the documented threat model requires database/operator resistance.
