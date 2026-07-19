@@ -269,10 +269,6 @@ kbd {
     border-radius: 4px;
   }
 }
-.task-item--selected {
-  background: rgba(212, 207, 199, 0.6);
-}
-
 .task-add-input::placeholder {
   color: var(--color-ink-light);
   opacity: 0.35;

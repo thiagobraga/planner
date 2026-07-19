@@ -1,6 +1,8 @@
-import { useRef, useEffect, memo } from 'react';
+import { useRef, useEffect, memo, type ReactNode } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { NO_DRAG_ATTR, DRAG_HANDLE_ATTR } from './dnd/sensors';
+import type { TaskDragData } from '../types/drag';
 
 let _pendingCol: number | null = null;
 export function setPendingColumn(col: number | null): void { _pendingCol = col; }
@@ -25,13 +27,19 @@ export interface Task {
 
 export interface TaskItemProps {
   task: Task;
-  isSelected?: boolean;
   isEditing?: boolean;
   dimmed?: boolean;
   hideDueDate?: boolean;
   italicDueDate?: boolean;
+  /** The list this row renders in - a collection list, or one Daily date section. */
+  containerId?: string;
+  /** `[task.id, ...descendantIds]`, so a drop inside the dragged block is detectable. */
+  subtreeIds?: string[];
+  /** True while an ancestor is being dragged: the overlay already represents this row. */
+  isCarried?: boolean;
+  /** Rendered beside the title - used on Daily, where rows span collections. */
+  collectionBadge?: ReactNode;
   onToggle?: (id: string) => void;
-  onClick?: (id: string) => void;
   onStartEdit?: (id: string) => void;
   onEditCommit?: (id: string, title: string) => void;
   onEditCancel?: (id: string) => void;
@@ -78,13 +86,15 @@ function focusAdjacent(currentId: string, dir: 'up' | 'down') {
 
 export const TaskItem = memo(function TaskItem({
   task,
-  isSelected,
   isEditing,
   dimmed,
   hideDueDate,
   italicDueDate = true,
+  containerId = '',
+  subtreeIds,
+  isCarried,
+  collectionBadge,
   onToggle,
-  onClick,
   onStartEdit,
   onEditCommit,
   onEditCancel,
@@ -94,8 +104,20 @@ export const TaskItem = memo(function TaskItem({
   onNavigate,
   onConvertType,
 }: TaskItemProps) {
+  const dragData: TaskDragData = {
+    kind: 'task',
+    taskId: task.id,
+    parentTaskId: task.parentTaskId ?? null,
+    collectionId: task.collectionId ?? '',
+    dueDate: task.dueDate ?? null,
+    depth: task.indent ?? 0,
+    containerId,
+    subtreeIds: subtreeIds ?? [task.id],
+  };
+
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: task.id,
+    data: dragData,
   });
 
   const editRef = useRef<HTMLInputElement>(null);
@@ -204,20 +226,35 @@ export const TaskItem = memo(function TaskItem({
       ref={setNodeRef}
       style={style}
       data-task-id={task.id}
-      className={`task-item group ${isSelected ? 'task-item--selected' : ''} ${isEditing ? 'task-item--editing' : ''} ${isDragging ? 'opacity-50' : task.isCompleted || dimmed ? 'opacity-[0.35]' : ''}`}
+      // `attributes` carries dnd-kit's screen-reader instructions and
+      // aria-roledescription; role and tabIndex are re-stated below because this
+      // row is a button in its own right.
+      {...attributes}
+      // Listeners sit on the row, not only the handle, so the whole row is
+      // press-draggable. The pointer sensor skips [data-no-drag] descendants and
+      // the keyboard sensor only fires from the handle, so this costs neither
+      // the controls nor Space-to-toggle.
+      {...listeners}
+      className={`task-item group ${isEditing ? 'task-item--editing' : ''} ${isDragging || isCarried ? 'opacity-50' : task.isCompleted || dimmed ? 'opacity-[0.35]' : ''}`}
       aria-label={task.title}
-      aria-selected={isSelected}
-      onClick={isEditing ? undefined : () => onClick?.(task.id)}
-      onKeyDown={handleRowKeyDown}
+      // A quick click does nothing; editing is opened deliberately by
+      // double-click, which leaves single clicks free and removes the need for
+      // any selection state.
+      onDoubleClick={isEditing ? undefined : () => onStartEdit?.(task.id)}
+      onKeyDown={(e) => {
+        listeners?.onKeyDown?.(e);
+        handleRowKeyDown(e);
+      }}
       role="button"
       tabIndex={isEditing ? -1 : 0}
     >
-      {/* Drag handle */}
+      {/* Drag handle: the keyboard activator, and the visible hover affordance. */}
       <span
-        {...attributes}
-        {...listeners}
+        {...{ [DRAG_HANDLE_ATTR]: '' }}
+        tabIndex={isEditing ? -1 : 0}
+        role="button"
         className="task-item-drag-handle drag-handle absolute left-[-18px] w-4 cursor-grab flex items-center justify-center opacity-0 text-ink-light text-[10px] select-none"
-        aria-label="drag to reorder"
+        aria-label={`Reorder ${task.title}`}
       >
         ⠿
       </span>
@@ -233,9 +270,13 @@ export const TaskItem = memo(function TaskItem({
       ) : (
         <button
           type="button"
+          {...{ [NO_DRAG_ATTR]: '' }}
           aria-label={task.isCompleted ? `Reopen: ${task.title}` : `Complete: ${task.title}`}
           aria-pressed={task.isCompleted}
+          // stopPropagation keeps the row's double-click from turning a quick
+          // double toggle into an edit.
           onClick={(e) => { e.stopPropagation(); handleCheckClick(e); }}
+          onDoubleClick={(e) => e.stopPropagation()}
           style={task.isCompleted ? {
             fontSize: 'var(--icon-check-size, 26px)',
             transform: 'translateY(var(--icon-check-offset, 0px))',
@@ -258,6 +299,7 @@ export const TaskItem = memo(function TaskItem({
           <input
             ref={editRef}
             type="text"
+            {...{ [NO_DRAG_ATTR]: '' }}
             defaultValue={task.title}
             className="task-item-title-input task-input flex-1 w-full text-sm leading-6 text-ink bg-transparent border-0 outline-none p-0"
             spellCheck={false}
@@ -272,6 +314,10 @@ export const TaskItem = memo(function TaskItem({
             >
               {task.title}
             </span>
+
+            {collectionBadge && (
+              <span className="task-item-collection ml-1.5 shrink-0">{collectionBadge}</span>
+            )}
 
             {task.dueDate && !hideDueDate && (
               <span className={`task-item-due-date text-xs leading-6 text-ink-light ml-1.5 whitespace-nowrap ${italicDueDate ? 'italic' : ''}`}>
