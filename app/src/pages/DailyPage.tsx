@@ -1,15 +1,19 @@
 import { useMemo, useRef, useState, useEffect, useCallback } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useSync } from '../hooks/useSync';
 import { TaskList } from '../components/TaskList';
+import { CollectionChip } from '../components/ui/Chip';
 import type { Task } from '../components/TaskItem';
 import { getPhrase } from '../utils/phrases';
 import { applyIndent, getParentCandidate } from '../utils/taskTree';
+import { useTaskDrag } from '../hooks/useTaskDrag';
 import {
   apiCreateTask,
   apiToggleTask,
   apiUpdateTask,
   apiDeleteTask,
   fetchTodayTasks,
+  fetchCollections,
   type ApiTask,
 } from '../api/client';
 
@@ -49,6 +53,7 @@ function apiToTask(t: ApiTask): Task {
     orderValue: t.orderValue,
     indent: t.depth ?? 0,
     collectionId: t.collectionId,
+    parentTaskId: t.parentTaskId ?? undefined,
     dueDate: t.dueDate ? t.dueDate.slice(0, 10) : undefined,
     type: t.type,
     createdAt: t.createdAt,
@@ -82,7 +87,6 @@ function tempId() { return `temp-daily-${++tempCounter}`; }
 export function DailyPage() {
   const phrase = useMemo(() => getPhrase('daily'), []);
   const [sections, setSections] = useState<DaySection[]>([]);
-  const [selectedId, setSelectedId] = useState<string>();
   const [editingId, setEditingId] = useState<string>();
   const [input, setInput] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
@@ -142,6 +146,43 @@ export function DailyPage() {
     setSections(updater);
   }, []);
 
+  // Drag handling is lifted above the individual TaskLists so a task can move
+  // between rendered dates. The sections are a presentation of one flat list, so
+  // the hook works on that list and the sections are rebuilt from the result -
+  // which also drops an overdue section once its last task leaves, while
+  // buildSections keeps Today rendered even when empty.
+  const allTasks = useMemo(() => sections.flatMap((s) => s.tasks), [sections]);
+  const setAllTasks = useCallback(
+    (updater: (prev: Task[]) => Task[]) => {
+      setSections((prev) => buildSections([], updater(prev.flatMap((s) => s.tasks))));
+    },
+    [],
+  );
+
+  const { activeDragId } = useTaskDrag({
+    tasks: allTasks,
+    setTasks: setAllTasks,
+    scope: { kind: 'day', dueDate: todayKey },
+    onError: () => {
+      fetchTodayTasks().then((response) => {
+        setSections(
+          buildSections((response.overdue || []).map(apiToTask), (response.today || []).map(apiToTask)),
+        );
+      });
+    },
+  });
+
+  // Daily spans collections, so each row states which one it belongs to.
+  const { data: collections = [] } = useQuery({ queryKey: ['collections'], queryFn: fetchCollections });
+  const renderBadge = useCallback(
+    (task: Task) => {
+      const collection = collections.find((c) => c.id === task.collectionId);
+      if (!collection || collection.isInbox) return null;
+      return <CollectionChip name={collection.name} color={collection.color} />;
+    },
+    [collections],
+  );
+
   const handleToggle = useCallback((id: string) => {
     const prevSections = sectionsRef.current;
     const task = prevSections.flatMap((s) => s.tasks).find((t) => t.id === id);
@@ -170,13 +211,8 @@ export function DailyPage() {
     }
   }, [updateSections]);
 
-  const handleReorder = useCallback((key: string) => (reordered: Task[]) => {
-    updateSections((prev) => prev.map((s) => (s.key === key ? { ...s, tasks: reordered } : s)));
-  }, [updateSections]);
-
   const handleStartEdit = useCallback((id: string) => {
     setEditingId(id);
-    setSelectedId(id);
   }, []);
 
   const handleEditCommit = useCallback((id: string, title: string) => {
@@ -243,13 +279,8 @@ export function DailyPage() {
       prev.map((s) => ({ ...s, tasks: s.tasks.filter((t) => t.id !== id) }))
     );
     setEditingId(undefined);
-    setSelectedId(undefined);
     if (!id.startsWith('temp-')) apiDeleteTask(id).catch(() => replaceTodayFromApi());
   }, [replaceTodayFromApi, updateSections]);
-
-  const handleTaskClick = useCallback((id: string) => {
-    setSelectedId((prev) => prev === id ? undefined : id);
-  }, []);
 
   const handleAddBelow = useCallback((afterId: string) => {
     const tid = tempId();
@@ -271,7 +302,6 @@ export function DailyPage() {
       })
     );
     setEditingId(tid);
-    setSelectedId(tid);
   }, [updateSections]);
 
   const handleConvertType = useCallback((id: string, type: 'task' | 'note') => {
@@ -381,7 +411,6 @@ export function DailyPage() {
     });
 
     setEditingId(tid);
-    setSelectedId(tid);
   };
 
   return (
@@ -412,13 +441,14 @@ export function DailyPage() {
 
             <TaskList
               tasks={section.tasks}
-              selectedTaskId={selectedId}
+              containerId={`day:${section.key}`}
+              dayDate={section.key}
+              activeDragId={activeDragId}
+              renderBadge={renderBadge}
               editingId={editingId}
               dimNotes={dimNotes}
               hideDueDate
-              onTaskClick={handleTaskClick}
               onTaskToggle={handleToggle}
-              onReorder={handleReorder(section.key)}
               onStartEdit={handleStartEdit}
               onEditCommit={handleEditCommit}
               onEditCancel={handleEditCancel}

@@ -12,6 +12,7 @@ import {
   type ApiTask,
 } from '../api/client';
 import { useAuth } from '../contexts/AuthContext';
+import { useTaskDrag } from '../hooks/useTaskDrag';
 import { getPhrase } from '../utils/phrases';
 import { applyIndent, getParentCandidate } from '../utils/taskTree';
 import { useSync } from '../hooks/useSync';
@@ -23,6 +24,7 @@ function apiToTask(t: ApiTask): Task {
     description: t.description,
     priority: t.priority,
     collectionId: t.collectionId,
+    parentTaskId: t.parentTaskId ?? undefined,
     dueDate: t.dueDate ?? undefined,
     isCompleted: t.isCompleted,
     orderValue: t.orderValue,
@@ -41,7 +43,6 @@ export function InboxPage() {
   const phrase = useMemo(() => getPhrase('inbox'), []);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [input, setInput] = useState('');
-  const [selectedId, setSelectedId] = useState<string | undefined>();
   const [editingId, setEditingId] = useState<string | undefined>();
   const inputRef = useRef<HTMLInputElement>(null);
   const tasksRef = useRef(tasks);
@@ -72,6 +73,15 @@ export function InboxPage() {
 
   const invalidate = useCallback(() => qc.invalidateQueries({ queryKey: ['inbox'] }), [qc]);
 
+  // Moves are addressed to the real Inbox collection, which the view resolves
+  // for us rather than the client having to look it up.
+  const { activeDragId } = useTaskDrag({
+    tasks,
+    setTasks,
+    scope: { kind: 'collection', collectionId: data?.collectionId ?? '' },
+    onError: invalidate,
+  });
+
   useSync(useCallback((event) => {
     if (event.entityType !== 'task') return;
     invalidate();
@@ -97,10 +107,6 @@ export function InboxPage() {
       });
   };
 
-  const handleTaskClick = useCallback((id: string) => {
-    setSelectedId((prev) => prev === id ? undefined : id);
-  }, []);
-
   const handleAddBelow = useCallback((afterId: string) => {
     const tid = tempId();
     setTasks((prev) => {
@@ -118,12 +124,10 @@ export function InboxPage() {
       return next.map((t, i) => ({ ...t, orderValue: i + 1 }));
     });
     setEditingId(tid);
-    setSelectedId(tid);
   }, []);
 
   const handleStartEdit = useCallback((id: string) => {
     setEditingId(id);
-    setSelectedId(id);
   }, []);
 
   const handleEditCommit = useCallback((id: string, title: string) => {
@@ -175,7 +179,6 @@ export function InboxPage() {
       return next;
     });
     setEditingId(undefined);
-    setSelectedId(undefined);
     if (!id.startsWith('temp-')) apiDeleteTask(id).catch(() => invalidate());
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -208,7 +211,6 @@ export function InboxPage() {
       const target = prev[targetIdx];
       setPendingColumn(col);
       setEditingId(target.id);
-      setSelectedId(target.id);
       return prev;
     });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -248,12 +250,11 @@ export function InboxPage() {
 
       <TaskList
         tasks={tasks}
-        selectedTaskId={selectedId}
+        containerId="inbox"
+        activeDragId={activeDragId}
         editingId={editingId}
         italicDueDate={false}
-        onTaskClick={handleTaskClick}
         onTaskToggle={handleToggle}
-        onReorder={setTasks}
         onStartEdit={handleStartEdit}
         onEditCommit={handleEditCommit}
         onEditCancel={handleEditCancel}
@@ -287,7 +288,6 @@ export function InboxPage() {
                 const last = prev[prev.length - 1];
                 setPendingColumn(col);
                 setEditingId(last.id);
-                setSelectedId(last.id);
                 return prev;
               });
             }

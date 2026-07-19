@@ -13,6 +13,7 @@ import {
   type ApiTask,
 } from '../api/client';
 import { useAuth } from '../contexts/AuthContext';
+import { useTaskDrag } from '../hooks/useTaskDrag';
 import { applyIndent, getParentCandidate } from '../utils/taskTree';
 import { fetchCollections, paletteColorHex } from '../api/client';
 
@@ -23,6 +24,7 @@ function apiToTask(t: ApiTask): Task {
     description: t.description,
     priority: t.priority,
     collectionId: t.collectionId,
+    parentTaskId: t.parentTaskId ?? undefined,
     dueDate: t.dueDate ?? undefined,
     isCompleted: t.isCompleted,
     orderValue: t.orderValue,
@@ -40,7 +42,6 @@ export function CollectionsPage() {
   const { logout } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [input, setInput] = useState('');
-  const [selectedId, setSelectedId] = useState<string | undefined>();
   const [editingId, setEditingId] = useState<string | undefined>();
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -72,6 +73,13 @@ export function CollectionsPage() {
     () => qc.invalidateQueries({ queryKey: ['collection', id] }),
     [qc, id],
   );
+
+  const { activeDragId } = useTaskDrag({
+    tasks,
+    setTasks,
+    scope: { kind: 'collection', collectionId: id },
+    onError: invalidate,
+  });
 
   const handleAddAtEnd = (e: React.FormEvent) => {
     e.preventDefault();
@@ -110,12 +118,10 @@ export function CollectionsPage() {
       return next.map((t, i) => ({ ...t, orderValue: i + 1 }));
     });
     setEditingId(tid);
-    setSelectedId(tid);
   }, []);
 
   const handleStartEdit = useCallback((taskId: string) => {
     setEditingId(taskId);
-    setSelectedId(taskId);
   }, []);
 
   const handleEditCommit = useCallback((taskId: string, title: string) => {
@@ -165,7 +171,6 @@ export function CollectionsPage() {
       return next;
     });
     setEditingId(undefined);
-    setSelectedId(undefined);
     if (!taskId.startsWith('temp-')) apiDeleteTask(taskId).catch(() => invalidate());
   }, []);
   const handleIndent = useCallback((taskId: string, dir: 1 | -1) => {
@@ -196,7 +201,6 @@ export function CollectionsPage() {
       const target = prev[targetIdx];
       setPendingColumn(col);
       setEditingId(target.id);
-      setSelectedId(target.id);
       return prev;
     });
   }, []);
@@ -279,11 +283,10 @@ export function CollectionsPage() {
 
       <TaskList
         tasks={tasks}
-        selectedTaskId={selectedId}
+        containerId={`collection:${id}`}
+        activeDragId={activeDragId}
         editingId={editingId}
-        onTaskClick={(taskId) => setSelectedId(taskId === selectedId ? undefined : taskId)}
         onTaskToggle={handleToggle}
-        onReorder={setTasks}
         onStartEdit={handleStartEdit}
         onEditCommit={handleEditCommit}
         onEditCancel={handleEditCancel}
@@ -317,7 +320,6 @@ export function CollectionsPage() {
                 const last = prev[prev.length - 1];
                 setPendingColumn(col);
                 setEditingId(last.id);
-                setSelectedId(last.id);
                 return prev;
               });
             }

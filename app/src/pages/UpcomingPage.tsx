@@ -44,11 +44,6 @@ export function UpcomingPage() {
   const days = getUpcomingDays(7);
   const phrase = useMemo(() => getPhrase('upcoming'), []);
   const [tasksByDay, setTasksByDay] = useState<Record<string, Task[]>>(makeSeed);
-  const [selectedId, setSelectedId] = useState<string>();
-
-  const handleTaskClick = useCallback((id: string) => {
-    setSelectedId((prev) => prev === id ? undefined : id);
-  }, []);
 
   const handleToggle = useCallback((id: string) => {
     setTasksByDay((prev) => {
@@ -97,11 +92,9 @@ export function UpcomingPage() {
             {tasks.length > 0 ? (
               <TaskList
                 tasks={tasks}
-                selectedTaskId={selectedId}
-                onTaskClick={handleTaskClick}
+                containerId={`day:${day.key}`}
                 onTaskToggle={handleToggle}
                 onIndent={handleIndent}
-                onReorder={(reordered) => setTasksByDay((prev) => ({ ...prev, [day.key]: reordered }))}
               />
             ) : (
               <div className="h-6 leading-6 text-[12px] text-ink-light opacity-40 italic">
