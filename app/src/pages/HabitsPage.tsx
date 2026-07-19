@@ -6,6 +6,7 @@ import { useSync } from '../hooks/useSync';
 import { HabitTimeline, type HabitEditTarget } from '../components/habits/HabitTimeline';
 import { HabitCalendar } from '../components/habits/HabitCalendar';
 import { useHabitDrag } from '../hooks/useHabitDrag';
+import { isEchoedMove } from '../utils/moveEcho';
 import { Button } from '../components/ui/Button';
 import { startOfDay } from '../utils/date';
 import { flattenHabits, type HabitNode } from '../utils/habitTree';
@@ -117,6 +118,8 @@ export function HabitsPage() {
         ) {
           return;
         }
+        // Our own habit or group move, still reconciling.
+        if (isEchoedMove(event)) return;
         invalidate();
       },
       [invalidate],

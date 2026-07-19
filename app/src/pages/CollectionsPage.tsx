@@ -79,6 +79,11 @@ export function CollectionsPage() {
     setTasks,
     scope: { kind: 'collection', collectionId: id },
     onError: invalidate,
+    // A task can be dropped onto Inbox or another collection in the sidebar.
+    onMoved: () => {
+      qc.invalidateQueries({ queryKey: ['inbox'] });
+      qc.invalidateQueries({ queryKey: ['collection'] });
+    },
   });
 
   const handleAddAtEnd = (e: React.FormEvent) => {

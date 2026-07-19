@@ -66,9 +66,9 @@
   - [x] Pointer activator ignores interactive descendants marked as non-draggable
   - [x] Keyboard sensor starts only from the dedicated drag handle so Space continues toggling tasks
   - [x] Preserve sortable keyboard coordinates and screen-reader instructions
-- [ ] Add type-aware collision detection
+- [x] Add type-aware collision detection
   - [x] Task drags consider task rows, Daily containers, collection rows, and Inbox
-  - [ ] Habit drags consider habit rows/cards and habit-group containers
+  - [x] Habit drags consider habit rows/cards and habit-group containers
   - [x] Collection drags consider only collection rows
   - [x] Prefer pointer intersection for container targets and closest-center for sortable rows
 - [ ] Add shared drag presentation
@@ -108,10 +108,10 @@
   - [x] Dropping a subtask onto its current collection also promotes it to a top-level appended task
   - [x] Sidebar drops preserve each moved task's due date
   - [x] Daily cross-date drops set the target date on the entire moved subtree
-- [ ] Return and synchronize affected records
+- [x] Return and synchronize affected records
   - [x] Return all moved subtree records and source/target siblings whose order changed
   - [x] Publish an `updated` task sync event containing the root task and affected IDs
-  - [ ] Ensure other sessions invalidate Inbox, Daily, and Collection task queries
+  - [x] Ensure other sessions invalidate Inbox, Daily, and Collection task queries
 - [x] Add service and route tests
   - [x] Same-parent reorder upward and downward
   - [x] Parent move carries all descendants
@@ -311,10 +311,10 @@
   - [x] Remap temporary task IDs in move paths and parent/body references after create replay
   - [x] Preserve FIFO ordering for create-then-move sequences
   - [ ] Revalidate target position against current server state during replay and clamp safely
-- [ ] Sync all affected views
-  - [ ] Task moves invalidate Inbox, Daily, involved Collection pages, and collection sidebar counts if present
-  - [ ] Habit moves invalidate habits and habit-group queries
-  - [ ] Ignore a matching echoed event while the local optimistic operation is still reconciling
+- [x] Sync all affected views
+  - [x] Task moves invalidate Inbox, Daily, involved Collection pages, and collection sidebar counts if present
+  - [x] Habit moves invalidate habits and habit-group queries
+  - [x] Ignore a matching echoed event while the local optimistic operation is still reconciling
 - [ ] Add offline and multi-client tests
   - [ ] Offline reorder survives reload and replays
   - [ ] Offline create then move remaps IDs correctly

@@ -3,6 +3,7 @@ import type { DragEndEvent, DragMoveEvent, DragStartEvent } from '@dnd-kit/core'
 import { usePlannerDrag, usePlannerDragHandlers } from '../contexts/PlannerDragContext';
 import { flattenTasks, getSubtreeBlock, projectMove, type FlatRow } from '../utils/taskProjection';
 import { apiMoveTask, type TaskOrderScope } from '../api/client';
+import { trackMove } from '../utils/moveEcho';
 import type { CollectionDropData, DayDropData, TaskDragData } from '../types/drag';
 import type { Task } from '../components/TaskItem';
 
@@ -29,6 +30,13 @@ interface UseTaskDragOptions {
   scope: TaskOrderScope;
   /** Called after a failed move so the page can refetch authoritative order. */
   onError?: () => void;
+  /**
+   * Called after a successful move, so the page can invalidate the *other* views
+   * a move can reach into. A task dropped on a sidebar collection leaves this
+   * page's list and joins one this page does not own; without this, navigating
+   * there would serve a cache that never saw the move.
+   */
+  onMoved?: () => void;
 }
 
 /**
@@ -40,7 +48,7 @@ interface UseTaskDragOptions {
  * dropped it, because a silently-wrong order that survives reload is worse than
  * a visible snap-back.
  */
-export function useTaskDrag({ tasks, setTasks, scope, onError }: UseTaskDragOptions) {
+export function useTaskDrag({ tasks, setTasks, scope, onError, onMoved }: UseTaskDragOptions) {
   const { setOverlay, announce } = usePlannerDrag();
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
   const offsetX = useRef(0);
@@ -107,6 +115,10 @@ export function useTaskDrag({ tasks, setTasks, scope, onError }: UseTaskDragOpti
 
       setTasks(() => applyMoveLocally(before, active, move));
 
+      // Ignore this move's own broadcast until the request settles; the optimistic
+      // state is already ahead of it.
+      const untrack = trackMove(active.subtreeIds);
+
       apiMoveTask(active.taskId, move.input)
         .then((res) => {
           // Patch authoritative depth, parent, collection, date and order from
@@ -127,14 +139,16 @@ export function useTaskDrag({ tasks, setTasks, scope, onError }: UseTaskDragOpti
             });
           });
           announce(move.announcement);
+          onMoved?.();
         })
         .catch(() => {
           setTasks(() => before);
           announce('Move failed. The task returned to its original position.');
           onError?.();
-        });
+        })
+        .finally(untrack);
     },
-    [rows, tasks, scope, setTasks, announce, onError],
+    [rows, tasks, scope, setTasks, announce, onError, onMoved],
   );
 
   const handleDragCancel = useCallback(() => {

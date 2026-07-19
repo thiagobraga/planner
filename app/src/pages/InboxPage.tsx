@@ -16,6 +16,7 @@ import { useTaskDrag } from '../hooks/useTaskDrag';
 import { getPhrase } from '../utils/phrases';
 import { applyIndent, getParentCandidate } from '../utils/taskTree';
 import { useSync } from '../hooks/useSync';
+import { isEchoedMove } from '../utils/moveEcho';
 
 function apiToTask(t: ApiTask): Task {
   return {
@@ -80,10 +81,15 @@ export function InboxPage() {
     setTasks,
     scope: { kind: 'collection', collectionId: data?.collectionId ?? '' },
     onError: invalidate,
+    // A task can be dropped onto a sidebar collection and leave Inbox entirely.
+    onMoved: () => qc.invalidateQueries({ queryKey: ['collection'] }),
   });
 
   useSync(useCallback((event) => {
     if (event.entityType !== 'task') return;
+    // Refetching mid-move would overwrite the optimistic state with the order the
+    // server held before the request this session is still waiting on.
+    if (isEchoedMove(event)) return;
     invalidate();
   }, [invalidate]));
 

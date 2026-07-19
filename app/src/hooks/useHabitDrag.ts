@@ -15,6 +15,7 @@ import {
   type ApiHabit,
   type ApiHabitGroup,
 } from '../api/client';
+import { trackMove } from '../utils/moveEcho';
 import type {
   HabitDragData,
   HabitGroupDragData,
@@ -120,6 +121,8 @@ export function useHabitDrag({
 
       setHabits(applyToHabits(before, rows, active.habitId, projection, over));
 
+      const untrack = trackMove([active.habitId, ...active.childIds]);
+
       apiMoveHabit(active.habitId, {
         parentId: projection.parentId,
         groupId: projection.groupId,
@@ -145,7 +148,8 @@ export function useHabitDrag({
           setHabits(before);
           announce('Move failed. The habit returned to its original position.');
           onError?.();
-        });
+        })
+        .finally(untrack);
     },
     [rows, habits, groups, setHabits, announce, onError],
   );
@@ -155,10 +159,14 @@ export function useHabitDrag({
       const before = groupSnapshot.current ?? groups;
       groupSnapshot.current = null;
 
+      const untrack = trackMove([active.groupId]);
       const ordered = [...before].sort((a, b) => a.orderValue - b.orderValue);
       const from = ordered.findIndex((g) => g.id === active.groupId);
       const to = ordered.findIndex((g) => g.id === overGroupId);
-      if (from === -1 || to === -1 || from === to) return;
+      if (from === -1 || to === -1 || from === to) {
+        untrack();
+        return;
+      }
 
       const next = [...ordered];
       const [moved] = next.splice(from, 1);
@@ -175,7 +183,8 @@ export function useHabitDrag({
           setGroups(before);
           announce('Move failed. The group returned to its original position.');
           onError?.();
-        });
+        })
+        .finally(untrack);
     },
     [groups, setGroups, announce, onError],
   );

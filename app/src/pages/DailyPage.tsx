@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState, useEffect, useCallback } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSync } from '../hooks/useSync';
+import { isEchoedMove, isStructuralMove } from '../utils/moveEcho';
 import { TaskList } from '../components/TaskList';
 import { CollectionChip } from '../components/ui/Chip';
 import type { Task } from '../components/TaskItem';
@@ -95,6 +96,7 @@ function tempId() { return `temp-daily-${++tempCounter}`; }
 
 export function DailyPage() {
   const phrase = useMemo(() => getPhrase('daily'), []);
+  const qc = useQueryClient();
   const [sections, setSections] = useState<DaySection[]>([]);
   const [editingId, setEditingId] = useState<string>();
   const [input, setInput] = useState('');
@@ -123,6 +125,15 @@ export function DailyPage() {
 
   useSync(useCallback((event) => {
     if (event.entityType !== 'task') return;
+    // Our own move, still reconciling: the optimistic state is already ahead.
+    if (isEchoedMove(event)) return;
+    // Another session moved a subtree. Its date, collection, depth and every
+    // sibling's order may have changed at once, so patching the one row named by
+    // the event would leave it in the section it just left. Refetch instead.
+    if (isStructuralMove(event)) {
+      replaceTodayFromApi();
+      return;
+    }
     if (event.eventType === 'deleted') {
       setSections((prev) =>
         prev.map((s) => ({ ...s, tasks: s.tasks.filter((t) => t.id !== event.entityId) }))
@@ -149,7 +160,7 @@ export function DailyPage() {
         }))
       );
     }
-  }, []));
+  }, [replaceTodayFromApi]));
 
   const updateSections = useCallback((updater: (prev: DaySection[]) => DaySection[]) => {
     setSections(updater);
@@ -178,6 +189,12 @@ export function DailyPage() {
           buildSections((response.overdue || []).map(apiToTask), (response.today || []).map(apiToTask)),
         );
       });
+    },
+    // Daily spans every collection, so a move here can reorder a list Inbox or a
+    // Collection page is caching.
+    onMoved: () => {
+      qc.invalidateQueries({ queryKey: ['inbox'] });
+      qc.invalidateQueries({ queryKey: ['collection'] });
     },
   });
 
