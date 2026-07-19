@@ -1,51 +1,30 @@
 import crypto from 'node:crypto';
-import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
-import zxcvbn from 'zxcvbn';
 import pool from '../db/pool.js';
 import { redisClient } from '../db/redis.js';
 import { AppError } from '../utils/AppError.js';
 import { validate, type ValidationError } from '../utils/validate.js';
 import { DISABLE_RATE_LIMITS_IN_DEV, JWT_SECRET } from '../config.js';
-const JWT_EXPIRATION_SECONDS = 3600; // 1 hour
-const REFRESH_TOKEN_EXPIRATION_DAYS = 30;
-const BCRYPT_COST = 12;
-const LOGIN_RATE_LIMIT_MAX = 10;
-const LOGIN_RATE_LIMIT_WINDOW = 15 * 60; // 15 minutes in seconds
+import { validatePassword, hashPassword, verifyAndUpgrade } from './passwordService.js';
 
-// RFC 5322 simplified email regex
+const JWT_EXPIRATION_SECONDS = 3600;
+const REFRESH_TOKEN_EXPIRATION_DAYS = 30;
+const LOGIN_RATE_LIMIT_MAX = 10;
+const LOGIN_RATE_LIMIT_WINDOW = 15 * 60;
+
 const EMAIL_REGEX =
   /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
 
 interface AuthResult {
-  user: { id: string; email: string; displayName: string };
+  user: { id: string; email: string; displayName: string | null };
   token: string;
 }
 
 export interface RegisterInput {
   email: string;
   password: string;
-  displayName: string;
-}
-
-function validatePassword(password: string): void {
-  if (password.length < 12) {
-    throw new AppError({
-      code: 'VALIDATION_ERROR',
-      message: 'Password must be at least 12 characters',
-      statusCode: 400,
-    });
-  }
-
-  const result = zxcvbn(password);
-  if (result.score < 3) {
-    throw new AppError({
-      code: 'WEAK_PASSWORD',
-      message: 'Password is too weak. Try a longer phrase with mixed characters.',
-      statusCode: 400,
-    });
-  }
+  displayName?: string;
 }
 
 export async function register(input: RegisterInput): Promise<AuthResult> {
@@ -55,22 +34,26 @@ export async function register(input: RegisterInput): Promise<AuthResult> {
     errors.push({ field: 'email', message: 'Email must be a valid RFC 5322 address' });
   }
 
+  let validatedPassword = '';
+
   if (!input.password) {
     errors.push({ field: 'password', message: 'Password is required' });
+  } else {
+    try {
+      validatedPassword = validatePassword(input.password);
+    } catch {
+      errors.push({ field: 'password', message: 'Password does not meet strength requirements' });
+    }
   }
 
-  if (!input.displayName || input.displayName.length < 1 || input.displayName.length > 50) {
-    errors.push({ field: 'displayName', message: 'Display name must be 1 to 50 characters' });
+  if (input.displayName !== undefined && input.displayName !== null) {
+    if (input.displayName.length < 1 || input.displayName.length > 50) {
+      errors.push({ field: 'displayName', message: 'Display name must be 1 to 50 characters' });
+    }
   }
 
   validate(errors);
 
-  // Check password strength after field validation
-  if (input.password) {
-    validatePassword(input.password);
-  }
-
-  // Check duplicate email
   const existing = await pool.query('SELECT id FROM users WHERE LOWER(email) = LOWER($1)', [
     input.email,
   ]);
@@ -83,7 +66,7 @@ export async function register(input: RegisterInput): Promise<AuthResult> {
     });
   }
 
-  const passwordHash = await bcrypt.hash(input.password, BCRYPT_COST);
+  const passwordHash = await hashPassword(validatedPassword);
   const userId = uuidv4();
   const collectionId = uuidv4();
 
@@ -94,7 +77,7 @@ export async function register(input: RegisterInput): Promise<AuthResult> {
     await client.query(
       `INSERT INTO users (id, email, password_hash, display_name)
        VALUES ($1, $2, $3, $4)`,
-      [userId, input.email, passwordHash, input.displayName],
+      [userId, input.email, passwordHash, input.displayName ?? null],
     );
 
     await client.query(
@@ -116,13 +99,12 @@ export async function register(input: RegisterInput): Promise<AuthResult> {
   const token = jwt.sign({ userId }, JWT_SECRET, { expiresIn: JWT_EXPIRATION_SECONDS });
 
   return {
-    user: { id: userId, email: input.email, displayName: input.displayName },
+    user: { id: userId, email: input.email, displayName: input.displayName ?? null },
     token,
   };
 }
 
 export async function login(email: string, password: string): Promise<AuthResult> {
-  // Check rate limit (best-effort - skip if Redis unavailable)
   const rateLimitKey = `login_attempts:${email.toLowerCase()}`;
   if (!DISABLE_RATE_LIMITS_IN_DEV && redisClient.isReady) {
     const attempts = await redisClient.get(rateLimitKey);
@@ -135,7 +117,6 @@ export async function login(email: string, password: string): Promise<AuthResult
     }
   }
 
-  // Look up user
   const result = await pool.query(
     'SELECT id, email, password_hash, display_name FROM users WHERE LOWER(email) = LOWER($1)',
     [email],
@@ -154,7 +135,7 @@ export async function login(email: string, password: string): Promise<AuthResult
     });
   }
 
-  const valid = await bcrypt.compare(password, user.password_hash);
+  const { valid, newHash } = await verifyAndUpgrade(user.password_hash, password);
 
   if (!valid) {
     if (!DISABLE_RATE_LIMITS_IN_DEV) {
@@ -165,6 +146,10 @@ export async function login(email: string, password: string): Promise<AuthResult
       message: 'Invalid email or password.',
       statusCode: 401,
     });
+  }
+
+  if (newHash) {
+    await pool.query('UPDATE users SET password_hash = $1 WHERE id = $2', [newHash, user.id]).catch(() => {});
   }
 
   if (!DISABLE_RATE_LIMITS_IN_DEV && redisClient.isReady) await redisClient.del(rateLimitKey).catch(() => {});
@@ -210,7 +195,6 @@ export async function refreshToken(sessionId: string): Promise<AuthResult> {
 
   const row = result.rows[0];
 
-  // Rotate the session: delete old, create new
   const newSessionId = uuidv4();
   const expiresAt = new Date(Date.now() + REFRESH_TOKEN_EXPIRATION_DAYS * 24 * 60 * 60 * 1000);
 
@@ -291,14 +275,12 @@ export async function confirmPasswordReset(
   newPassword: string,
 ): Promise<{ success: true }> {
   const errors: ValidationError[] = [];
-  if (!newPassword || newPassword.length < 12) {
-    errors.push({ field: 'newPassword', message: 'Password must be at least 12 characters' });
+  if (!newPassword) {
+    errors.push({ field: 'newPassword', message: 'Password is required' });
   }
   validate(errors);
 
-  if (newPassword) {
-    validatePassword(newPassword);
-  }
+  const validatedPassword = newPassword ? validatePassword(newPassword) : '';
 
   const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
 
@@ -327,7 +309,7 @@ export async function confirmPasswordReset(
     });
   }
 
-  const passwordHash = await bcrypt.hash(newPassword, BCRYPT_COST);
+  const passwordHash = await hashPassword(validatedPassword);
 
   const client = await pool.connect();
   try {

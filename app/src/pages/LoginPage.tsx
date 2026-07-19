@@ -7,12 +7,10 @@ const PlannerIcon64 = () => (
 );
 
 export function LoginPage() {
-  const { login, register } = useAuth();
+  const { login } = useAuth();
   const navigate = useNavigate();
-  const [mode, setMode] = useState<'login' | 'register'>('login');
   const [email, setEmail] = useState(import.meta.env.DEV ? 'dev@planner.local' : '');
   const [password, setPassword] = useState(import.meta.env.DEV ? 'password123' : '');
-  const [displayName, setDisplayName] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -21,11 +19,7 @@ export function LoginPage() {
     setError('');
     setLoading(true);
     try {
-      if (mode === 'login') {
-        await login(email, password);
-      } else {
-        await register(email, password, displayName);
-      }
+      await login(email, password);
       navigate('/daily', { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Something went wrong');
@@ -39,7 +33,6 @@ export function LoginPage() {
   return (
     <div className="flex min-h-dvh items-center justify-center px-4 py-6">
       <div className="w-full max-w-80">
-        {/* Logo */}
         <div className="text-center mb-6">
           <PlannerIcon64 />
           <h1 className="text-lg leading-6 font-semibold text-ink mt-2">
@@ -51,17 +44,6 @@ export function LoginPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-          {mode === 'register' && (
-            <input
-              type="text"
-              placeholder="Name"
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
-              required
-              className={inputClassName}
-              autoFocus
-            />
-          )}
           <input
             type="email"
             placeholder="Email"
@@ -69,7 +51,7 @@ export function LoginPage() {
             onChange={(e) => setEmail(e.target.value)}
             required
             className={inputClassName}
-            autoFocus={mode === 'login'}
+            autoFocus
           />
           <input
             type="password"
@@ -89,7 +71,7 @@ export function LoginPage() {
             disabled={loading}
             className={`h-12 px-3 text-sm font-semibold text-cream bg-ink border-none rounded ${loading ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
           >
-            {loading ? '…' : mode === 'login' ? 'Sign in' : 'Create account'}
+            {loading ? '…' : 'Sign in'}
           </button>
         </form>
 
@@ -98,28 +80,6 @@ export function LoginPage() {
             Dev account: dev@planner.local / password123
           </p>
         )}
-
-        <p className="text-xs text-ink-light text-center mt-3">
-          {mode === 'login' ? (
-            <>No account?{' '}
-              <button
-                onClick={() => setMode('register')}
-                className="bg-transparent border-none text-ink cursor-pointer text-xs underline"
-              >
-                Register
-              </button>
-            </>
-          ) : (
-            <>Already have one?{' '}
-              <button
-                onClick={() => setMode('login')}
-                className="bg-transparent border-none text-ink cursor-pointer text-xs underline"
-              >
-                Sign in
-              </button>
-            </>
-          )}
-        </p>
       </div>
     </div>
   );

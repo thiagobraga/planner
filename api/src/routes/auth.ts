@@ -15,10 +15,10 @@ const COOKIE_OPTIONS = {
 
 router.post("/register", async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { email, password, displayName } = req.body;
-    const result = await register({ email, password, displayName });
+    const { email, password } = req.body;
+    const result = await register({ email, password });
     res.cookie(COOKIE_NAME, result.token, COOKIE_OPTIONS);
-    res.status(201).json(result);
+    res.status(201).json({ user: result.user });
   } catch (err) {
     next(err);
   }
@@ -39,7 +39,7 @@ router.post("/login", async (req: Request, res: Response, next: NextFunction) =>
 
     const result = await login(email, password);
     res.cookie(COOKIE_NAME, result.token, COOKIE_OPTIONS);
-    res.json(result);
+    res.json({ user: result.user });
   } catch (err) {
     next(err);
   }

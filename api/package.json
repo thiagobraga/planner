@@ -8,9 +8,11 @@
     "build": "tsc && cp src/parsers/*.peggy dist/parsers/ 2>/dev/null || true && cp -r src/db/migrations dist/db/ 2>/dev/null || true && cp src/db/seed.ts dist/db/ 2>/dev/null || true",
     "start": "node dist/index.js",
     "lint": "eslint src/",
-    "test": "vitest run"
+    "test": "vitest run",
+    "provision-user": "tsx src/db/provisionUser.ts"
   },
   "dependencies": {
+    "argon2": "^0.45.0",
     "bcrypt": "^5.1.1",
     "cookie-parser": "^1.4.7",
     "express": "^4.21.0",

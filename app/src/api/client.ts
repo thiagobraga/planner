@@ -102,19 +102,19 @@ export { request };
 export interface AuthUser {
   id: string;
   email: string;
-  displayName: string;
+  displayName: string | null;
 }
 
-export async function apiRegister(email: string, password: string, displayName: string): Promise<AuthUser> {
-  const data = await request<{ user: AuthUser; token: string }>('/auth/register', {
+export async function apiRegister(email: string, password: string): Promise<AuthUser> {
+  const data = await request<{ user: AuthUser }>('/auth/register', {
     method: 'POST',
-    body: JSON.stringify({ email, password, displayName }),
+    body: JSON.stringify({ email, password }),
   });
   return data.user;
 }
 
 export async function apiLogin(email: string, password: string): Promise<AuthUser> {
-  const data = await request<{ user: AuthUser; token: string }>('/auth/login', {
+  const data = await request<{ user: AuthUser }>('/auth/login', {
     method: 'POST',
     body: JSON.stringify({ email, password }),
   });

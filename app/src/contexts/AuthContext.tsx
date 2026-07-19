@@ -8,7 +8,7 @@ interface AuthContextValue {
   user: AuthUser | null;
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, displayName: string) => Promise<void>;
+  register: (email: string, password: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -32,7 +32,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useOfflineQueueReplay(isAuthenticated);
 
-  // On mount, check if session cookie is valid
   useEffect(() => {
     fetchCurrentUser().then((u) => {
       if (u) {
@@ -57,8 +56,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsAuthenticated(true);
   }, []);
 
-  const register = useCallback(async (email: string, password: string, displayName: string) => {
-    const u = await apiRegister(email, password, displayName);
+  const register = useCallback(async (email: string, password: string) => {
+    const u = await apiRegister(email, password);
     setUser(u);
     setIsAuthenticated(true);
   }, []);
