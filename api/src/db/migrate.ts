@@ -21,7 +21,7 @@ async function getAppliedMigrations(): Promise<Set<string>> {
   return new Set(result.rows.map((r) => r.filename));
 }
 
-async function migrate(): Promise<void> {
+export async function migrate(): Promise<void> {
   await ensureMigrationsTable();
   const applied = await getAppliedMigrations();
 
@@ -58,7 +58,9 @@ async function migrate(): Promise<void> {
   await pool.end();
 }
 
-migrate().catch((err) => {
-  console.error("Migration failed:", err);
-  process.exit(1);
-});
+if (!process.env.VITEST) {
+  migrate().catch((err) => {
+    console.error("Migration failed:", err);
+    process.exit(1);
+  });
+}

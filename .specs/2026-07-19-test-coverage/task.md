@@ -4,12 +4,12 @@
 
 | Package | Stmts | Branch | Funcs | Lines | Tests |
 |---------|-------|--------|-------|-------|-------|
-| API     | 82.25% | 82.54% | 90.41% | 82.25% | 535 ✓ |
-| App     | 73.36% | 80.97% | 61.24% | 73.36% | 544 ✓ |
+| API     | 82.25% | 82.54% | 90.41% | 82.25% | 548 ✓ |
+| App     | 73.36% | 80.97% | 61.24% | 73.36% | 570 ✓ |
 
-**Completed phases:** 1 (stores/utils), 2 (middleware), 3 (uncovered services), 4 (extended services), 5 (API routes), 7 (app pages), 8 (app components), 9 (contexts/hooks)
+**Completed phases:** 1 (stores/utils), 2 (middleware), 3 (uncovered services), 4 (extended services), 5 (API routes), 6 (API infra: seed/migrate/provisionUser), 7 (app pages), 8 (app components), 9 (contexts/hooks)
 
-**Remaining:** Phase 6 (API infra: seed/migrate/provisionUser smoke), further edge-case coverage for 25 remaining files
+**Remaining:** Further edge-case coverage for remaining low-coverage files
 
 ## Prerequisites
 
@@ -259,17 +259,21 @@
 - [x] 3 tests: health endpoint, 404 handling, error handler
 
 ### Task 6.3 — api/src/db/__tests__/seed.test.ts (smoke)
-- [ ] Run seed against test DB → dev user created
-- [ ] Run seed again → skips (idempotent), no error
+- [x] User exists → exits 0 (idempotent)
+- [x] No user → creates user + collections + tasks + prefs
+- [x] Transaction failure → rolls back, exits 1
 
 ### Task 6.4 — api/src/db/__tests__/provisionUser.test.ts (smoke)
-- [ ] Calling without `--production` flag → refuses
-- [ ] Calling with `--production --email x@y.com --password-stdin` (mock stdin) → creates user + inbox + prefs
+- [x] Without `--production` → exits 1
+- [x] `--password` flag → exits 1 (security warning)
+- [x] `--password-stdin` → creates user, exits 0
+- [x] `--password-file` → reads file, creates user
+- [x] DB failure → rolls back, exits 1
 
 ### Task 6.5 — api/src/db/__tests__/migrate.test.ts (smoke)
-- [ ] Run migrate on empty DB → all migrations applied
-- [ ] Run migrate again → no migrations run (idempotent)
-- [ ] Migration failure → rolls back, exits with code 1 (verify via mock)
+- [x] All migrations applied on empty DB
+- [x] Idempotent re-run (no migrations applied)
+- [x] Migration failure → rolls back, exits 1
 
 ---
 
@@ -310,7 +314,7 @@ AuthContext (7 tests), PlannerDragContext (8 tests), usePreferences (2 tests), u
 ## Verification
 
 ### Final
-- [x] API: 535 tests passing (59 files)
-- [x] App: 544 tests passing (67 files)
-- [ ] API coverage 82.25% → target 90%+ (remaining: seed/migrate/provisionUser smoke, branch edges in services)
-- [ ] App coverage 73.36% → target 85%+ (remaining: date.ts, api/client.ts, CollectionTreeNav, HabitTimeline, MonthlyRows branches)
+- [x] API: 548 tests passing (62 files)
+- [x] App: 570 tests passing (68 files)
+- [ ] API coverage 82.25% → target 90%+ (remaining: branch edges in services)
+- [ ] App coverage 73.36% → target 85%+ (remaining: date.ts, api/client.ts, drag hooks branches)

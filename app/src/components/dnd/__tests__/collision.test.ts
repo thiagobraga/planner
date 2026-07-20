@@ -64,6 +64,57 @@ function candidates(activeId: string, subtreeIds: string[], pointerY: number): s
   return collisions.map((c) => String(c.id));
 }
 
+/**
+ * A day section with no tasks of its own.
+ *
+ * `closestCenter` names a winner whenever it is given any candidate, so
+ * resolving rows before containers meant a row somewhere else on the page always
+ * beat the empty day the pointer was actually inside - it could never be
+ * dropped on, and never previewed a landing slot.
+ */
+function candidatesWithEmptyDay(pointerY: number): string[] {
+  const taskRow = {
+    ...container('other-day-row', 0),
+    data: { current: { ...dragData('other-day-row', ['other-day-row']), containerId: 'day:other' } },
+  };
+  const emptyDay = {
+    id: 'day:empty',
+    rect: { current: { top: 100, bottom: 148, left: 0, right: 200, width: 200, height: 48 } },
+    data: { current: { kind: 'day', date: '2026-07-20', containerId: 'day:empty' } },
+    disabled: false,
+    key: 'day:empty',
+    node: { current: null },
+  };
+
+  const collisions = plannerCollisionDetection({
+    active: {
+      id: 'dragged',
+      data: { current: dragData('dragged', ['dragged']) },
+      rect: { current: { initial: rect(0), translated: rect(pointerY) } },
+    },
+    collisionRect: rect(pointerY),
+    droppableRects: new Map([
+      ['other-day-row', rect(0)],
+      ['day:empty', emptyDay.rect.current],
+    ]),
+    droppableContainers: [taskRow, emptyDay],
+    pointerCoordinates: { x: 10, y: pointerY },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } as any);
+
+  return collisions.map((c) => String(c.id));
+}
+
+describe('plannerCollisionDetection: containers with no rows', () => {
+  it('offers an empty day the pointer is inside, even with rows elsewhere', () => {
+    expect(candidatesWithEmptyDay(120)).toContain('day:empty');
+  });
+
+  it('still prefers a row when the pointer is not inside any container', () => {
+    expect(candidatesWithEmptyDay(0)).toContain('other-day-row');
+  });
+});
+
 describe('plannerCollisionDetection: the dragged row is its own target', () => {
   it('offers the dragged row itself, so a resting drag moves nothing', () => {
     // Pointer still on the row it picked up.

@@ -1,8 +1,14 @@
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, useMemo, type ReactNode } from 'react';
 import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { TaskItem, type Task, type TaskItemProps } from './TaskItem';
-import { flattenTasks, getSubtreeBlock, projectMove, INDENT_WIDTH } from '../utils/taskProjection';
+import {
+  buildSubtreeIndex,
+  flattenTasks,
+  getSubtreeBlock,
+  projectMove,
+  INDENT_WIDTH,
+} from '../utils/taskProjection';
 import { usePlannerDrag } from '../contexts/PlannerDragContext';
 import { TaskBlockPreview } from './TaskBlockPreview';
 import type { DayDropData } from '../types/drag';
@@ -61,7 +67,7 @@ export function TaskList({
   onNavigate,
   onConvertType,
 }: TaskListProps) {
-  const { indentSteps, overId, hasMoved, setOverlayNode } = usePlannerDrag();
+  const { activeDrag, indentSteps, overId, hasMoved, setOverlayNode } = usePlannerDrag();
 
   const dropData: DayDropData | undefined = dayDate
     ? { kind: 'day', date: dayDate, containerId }
@@ -71,10 +77,18 @@ export function TaskList({
   // drop, and a SortableContext with no items cannot receive one.
   const { setNodeRef, isOver } = useDroppable({ id: containerId, data: dropData });
 
-  const allRows = flattenTasks(tasks);
-  const subtreeIdsOf = new Map(
-    allRows.map((r) => [r.id, getSubtreeBlock(allRows, r.id).map((b) => b.id)]),
-  );
+  // Derived from `tasks` alone, so it survives the renders a drag forces: every
+  // change of projected depth or hovered row re-renders this list, and
+  // reflattening the tree each time made the cost of a drag scale with the list.
+  const allRows = useMemo(() => flattenTasks(tasks), [tasks]);
+  const subtreeIdsOf = useMemo(() => buildSubtreeIndex(allRows), [allRows]);
+
+  // Memoised per row, because a fresh element on every render would defeat
+  // TaskItem's memo for the whole list on each drag frame.
+  const badges = useMemo(() => {
+    if (!renderBadge) return null;
+    return new Map(allRows.map((r) => [r.id, renderBadge(r.task)]));
+  }, [allRows, renderBadge]);
 
   // While a parent is dragged, its descendants are removed from the list rather
   // than left in place. dnd-kit sorts each row independently, so leaving them
@@ -85,11 +99,11 @@ export function TaskList({
   // Held back until the pointer actually travels, so pressing a row changes
   // nothing: a press that collapses a subtree before any movement reads as the
   // list reacting to a click the user has not finished making.
-  const carried =
-    activeDragId && hasMoved
-      ? new Set(getSubtreeBlock(allRows, activeDragId).slice(1).map((r) => r.id))
-      : new Set<string>();
-  const rows = carried.size > 0 ? allRows.filter((r) => !carried.has(r.id)) : allRows;
+  const rows = useMemo(() => {
+    if (!activeDragId || !hasMoved) return allRows;
+    const carried = new Set(getSubtreeBlock(allRows, activeDragId).slice(1).map((r) => r.id));
+    return carried.size > 0 ? allRows.filter((r) => !carried.has(r.id)) : allRows;
+  }, [allRows, activeDragId, hasMoved]);
 
   const overIndex = overId ? rows.findIndex((r) => r.id === overId) : -1;
   const holdsActiveRow = !!activeDragId && rows.some((r) => r.id === activeDragId);
@@ -126,11 +140,16 @@ export function TaskList({
   // the projected depth itself.
   const foreignInsertDepth = 0;
 
-  // Hand the travelling rows up to the overlay. Only the list holding them can
-  // draw them, and only once the drag is really under way - before that the row
-  // is still sitting in place and there is nothing to float.
-  const draggedBlock =
-    activeDragId && hasMoved ? getSubtreeBlock(allRows, activeDragId) : null;
+  // Hand the travelling rows up to the overlay, from the first frame of the
+  // drag. Deliberately *not* gated on `hasMoved` the way the list's own layout
+  // is: the overlay is drawn over the row rather than in the flow, so publishing
+  // it early reflows nothing, while publishing it late meant a press showed the
+  // fallback title chip - taller than a row, and missing the bullet - until the
+  // pointer travelled and the real block replaced it mid-gesture.
+  const draggedBlock = useMemo(
+    () => (activeDragId ? getSubtreeBlock(allRows, activeDragId) : null),
+    [allRows, activeDragId],
+  );
 
   useEffect(() => {
     if (!draggedBlock || draggedBlock.length === 0) return;
@@ -138,8 +157,7 @@ export function TaskList({
       <TaskBlockPreview rows={draggedBlock.map((r) => ({ task: r.task, depth: r.depth }))} />,
     );
     return () => setOverlayNode(null);
-    // Identity of the block is what matters, not the array instance.
-  }, [draggedBlock?.map((r) => r.id).join(','), setOverlayNode]);
+  }, [draggedBlock, setOverlayNode]);
 
   return (
     <SortableContext items={rows.map((r) => r.id)} strategy={verticalListSortingStrategy}>
@@ -147,7 +165,13 @@ export function TaskList({
         ref={setNodeRef}
         role="list"
         aria-label="task list"
-        className="task-list flex flex-col gap-0"
+        // An empty list claims a row of drop area while a drag is in flight, so
+        // an empty date can be hovered at all. The class cancels its own height
+        // with a negative margin - see the note on the rule for why it has to
+        // cost the layout nothing.
+        className={`task-list flex flex-col gap-0 ${
+          activeDrag && rows.length === 0 ? 'task-list--empty-target' : ''
+        }`}
       >
         {showEmptyInsert && (
           <div aria-hidden className="task-list-slot" style={{ marginLeft: foreignInsertDepth * INDENT_WIDTH }} />
@@ -166,7 +190,7 @@ export function TaskList({
                 projection && task.id === activeDragId ? projection.depth : undefined
               }
               departed={hasMoved && task.id === activeDragId && !landsHere}
-              collectionBadge={renderBadge?.(task)}
+              collectionBadge={badges?.get(task.id)}
               isEditing={task.id === editingId}
               dimmed={dimNotes && task.type === 'note'}
               hideDueDate={hideDueDate}

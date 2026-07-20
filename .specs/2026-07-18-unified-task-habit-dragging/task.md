@@ -376,6 +376,108 @@
     - [x] Cancel — polite: `Move cancelled.`, verified live via Escape
   - [x] Focus returns to the moved row after drop — verified, focus landed on the moved handle
   - [ ] Reduced-motion preference removes nonessential drag transitions
+- [~] Verify performance and optimize based on trace analysis (2026-07-20)
+  - [~] HIGH: Reduce nesting phase layout recalculations
+    - [x] Profile indentation depth calculation during drag
+    - [x] Cache nesting level; update only on threshold change — already the case:
+          `createIndentTracker` + `PlannerDragProvider` quantise `delta.x` to whole
+          INDENT_PX steps and skip the state write when the step is unchanged, so a
+          pointer move only re-renders when the projected depth actually changes
+    - [x] Replace per-move `getComputedStyle()` — N/A: no `getComputedStyle` call
+          exists in app source, and @dnd-kit does not call it per move either. Depth
+          already travels as the `--row-indent` custom property.
+    - [ ] Target: 10 layouts → 3 layouts, eliminate 1.4ms overhead — NOT re-traced
+  - [~] HIGH: Memoize parent components to reduce commit frequency
+    - [x] Profile React renders during drag
+    - [x] Identify parent containers re-rendering on every child state change —
+          `TaskList` was the hot one. It re-runs on every drag frame (indentSteps,
+          overId, hasMoved all change), and rebuilt `flattenTasks` plus an O(n²)
+          `getSubtreeBlock`-per-row map each time. `TaskItem` was already `memo`'d
+          but the memo never held: `subtreeIds` and `renderBadge(task)` handed it a
+          fresh array and a fresh element on every render.
+    - [x] Wrap with `React.memo()` and `useMemo()` dependencies — `allRows`,
+          `subtreeIdsOf` (now the O(n·depth) `buildSubtreeIndex`), `badges`, `rows`
+          and `draggedBlock` are memoised on `tasks`, so row props keep their
+          identity across drag frames and untouched rows stop re-rendering
+    - [ ] Target: 159 commits/sec → 90 commits/sec — NOT re-traced
+  - [x] HIGH: Reduce IntersectionObserver throttling — N/A. No `IntersectionObserver`
+        exists in app source (only HelpPage) and none in @dnd-kit; the 964 calls in
+        the trace did not come from this app's own code.
+  - [ ] MEDIUM: Investigate and fix jank frames
+    - [ ] Identify 47 frames exceeding 16.67ms budget (3% jank rate)
+    - [ ] Determine cause: layout, paint, JavaScript, or GC
+    - [ ] Batch work to separate frames; use `will-change: transform` hints
+    - [ ] Target: <1% jank rate
+  - [ ] MEDIUM: Optimize memory allocations to reduce GC pauses
+    - [ ] Profile heap allocations with Chrome DevTools Memory tab
+    - [ ] Identify high-frequency temporary objects in drag path
+    - [ ] Implement object pooling for event objects, state clones
+    - [ ] Avoid spread operators in hot paths
+    - [ ] Target: 92ms GC pause → <20ms
+  - [ ] MEDIUM: Validate and optimize drop-target detection logic
+    - [ ] Review collision-detection efficiency (O(n) vs O(log n))
+    - [ ] Cache drop-zone bounding rectangles at drag start
+    - [ ] Update cache only on scroll/resize, not per mouse move
+    - [ ] Confirm spatial indexing or zone-based detection if needed
+  - [ ] LOW: Mobile/low-end device testing
+    - [ ] Test on throttled device (CPU 4x slowdown, 4G network)
+    - [ ] Verify 60 FPS target is achieved
+    - [ ] Adjust task batching if needed
+  - [x] LOW: Validate GPU acceleration (verify complete)
+    - [x] Confirm drag ghost uses `transform` not `left`/`top` — dnd-kit's
+          `DragOverlay` positions by `transform`; no `left`/`top` animation
+    - [x] Verify `will-change: transform` present on drag ghost — was missing,
+          ADDED to `.planner-drag-overlay--block`
+    - [x] No layout-triggering CSS properties during drag — the overlay's `border`
+          was replaced by `outline` (see the drag-card defects below), which also
+          takes the box out of layout
+
+## Phase 11b - Drag presentation and input defects (2026-07-20)
+
+Reported from live use while the performance pass was under way.
+
+- [x] Dragged card lost its bullet on pickup and regained it on first move —
+      `TaskList` only published `overlayNode` once `hasMoved`, so the first frames
+      showed the provider's fallback title chip. The overlay is drawn over the
+      list rather than in it, so publishing the real block immediately reflows
+      nothing; the `hasMoved` gate stays on the list's own layout only.
+- [x] Dragged card stood ~6px taller than the row it came from — the overlay added
+      `border: 1px` plus `2px` vertical padding to a 24px row. Now `outline` and no
+      vertical padding, so the lifted row matches the row exactly.
+- [x] Dragged card is translucent (70%) so the rows beneath stay readable
+- [x] Dragged card keeps the row's exact font, size, height and weight —
+      `TaskBlockPreview` was drawing 13px/`leading-6` text against the row's 14px
+      `--task-line-height`; it now mirrors `TaskItem`'s own marker and title styles
+      and shares its `priorityClasses`
+- [x] A date with no tasks showed no landing slot — two independent causes, both
+      fixed and both verified in Chromium against the running app:
+  - [x] An empty list collapses to zero height, so its droppable had no area for
+        the pointer to be inside. `.task-list--empty-target` claims one row while
+        a drag is in flight and cancels it with an equal negative margin, so the
+        layout is unchanged. Both halves are needed, and each was tried alone
+        first: reserving the height permanently left a visible blank line under
+        every empty date; reserving it without the negative margin grew the
+        content by 24px on pickup, and dnd-kit answers a mid-drag layout shift by
+        moving the scroll — measured as `scrollTop` 400 → 424 on press and back
+        to 400 on release. Verified: 0px at rest, `scrollHeight` identical before
+        and during the drag.
+  - [x] `closestCenter` names a winner whenever it has any candidate, so
+        resolving rows before containers meant a row elsewhere on the page always
+        beat the empty day the pointer was inside. `plannerCollisionDetection`
+        now reads the container under the pointer first and picks among *its*
+        rows, falling back to the container when it has none.
+- [x] Releasing a drag scrolled the page — two causes:
+  - [x] dnd-kit auto-scrolls whenever the *dragged rect* sits in a threshold band
+        at a scroll edge (20% by default), re-evaluated every frame whether or
+        not the pointer has moved, so a press near the top or bottom scrolled on
+        its own. Band tightened to 8% and horizontal auto-scroll switched off.
+  - [x] dnd-kit's focus restore calls a bare `.focus()`, which scrolls the row
+        into view. Its pass is disabled (`accessibility.restoreFocus: false`) and
+        the provider restores the drag's original focus itself with
+        `preventScroll: true`, so keyboard users keep the focus return.
+  - [x] Verified: `scrollTop` holds at 400 and at 900 across press, 1.2s hold and
+        release, with the row in the top band and the bottom band.
+- [x] Press-and-hold delay reduced 180ms → 120ms
 
 ## Phase 12 - Sidebar state control (deferred, not started)
 

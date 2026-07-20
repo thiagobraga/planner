@@ -109,6 +109,33 @@ export function getSubtreeBlock<T extends TaskLike>(
   return rows.slice(start, end);
 }
 
+/**
+ * Every row's `[id, ...descendantIds]`, in one pass.
+ *
+ * Calling `getSubtreeBlock` per row is quadratic, which is paid on every render
+ * - including every frame of a drag, where the list re-renders as the projected
+ * depth changes. Walking the ancestor stack once costs O(rows x depth), and
+ * depth is capped at MAX_DEPTH.
+ *
+ * The arrays keep the same identity for as long as the flattened rows do, which
+ * is what lets a memoised row skip re-rendering while a sibling is dragged.
+ */
+export function buildSubtreeIndex<T extends TaskLike>(
+  rows: FlatRow<T>[],
+): Map<string, string[]> {
+  const index = new Map<string, string[]>();
+  const ancestors: string[] = [];
+
+  for (const row of rows) {
+    ancestors.length = row.depth;
+    index.set(row.id, [row.id]);
+    for (const ancestorId of ancestors) index.get(ancestorId)!.push(row.id);
+    ancestors.push(row.id);
+  }
+
+  return index;
+}
+
 /** Remove a subtree block without splitting it. */
 export function removeBlock<T extends TaskLike>(
   rows: FlatRow<T>[],

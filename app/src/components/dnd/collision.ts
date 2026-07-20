@@ -37,6 +37,17 @@ function containerKindsFor(activeKind: DragKind): ReadonlySet<DropKind> {
 }
 
 /**
+ * The list a target belongs to, for matching rows against the container the
+ * pointer is inside. Sidebar collections and habit sections carry no container
+ * id, which is correct: no task row belongs to one, so they resolve as regions.
+ */
+function containerIdOf(data: DropData | undefined): string | null {
+  if (!data) return null;
+  if (data.kind === 'task' || data.kind === 'day') return data.containerId;
+  return null;
+}
+
+/**
  * Type-aware collision detection.
  *
  * Containers are resolved by pointer intersection, because a Daily section or a
@@ -83,13 +94,34 @@ export const plannerCollisionDetection: CollisionDetection = (args) => {
     return data ? containerKinds.has(data.kind) : false;
   });
 
-  const rowHits = rows.length ? closestCenter({ ...args, droppableContainers: rows }) : [];
-  if (rowHits.length > 0) return rowHits;
-
+  // Which container the pointer is actually inside decides the drop *first*.
+  //
+  // Resolving rows first cannot work: `closestCenter` always names a winner when
+  // it is given any candidate at all, so with a row anywhere on the page a
+  // container could never win - and an empty Daily date, which has no rows of
+  // its own to be nearest to, was therefore impossible to drop on. Reading the
+  // container first and then choosing among *its* rows keeps the two answers
+  // consistent: the pointer is inside this day, so the drop belongs to this day.
   const containerHits = containers.length
     ? pointerWithin({ ...args, droppableContainers: containers })
     : [];
-  if (containerHits.length > 0) return containerHits;
+
+  if (containerHits.length > 0) {
+    const hitIds = new Set(containerHits.map((hit) => hit.id));
+    const hit = containers.find((c) => hitIds.has(c.id));
+    const scope = containerIdOf(hit?.data.current as DropData | undefined);
+    const inside = scope
+      ? rows.filter((r) => containerIdOf(r.data.current as DropData | undefined) === scope)
+      : [];
+
+    // Rows still win inside their own container - dropping onto a task within a
+    // day means "next to that task", not "somewhere in that day".
+    if (inside.length > 0) return closestCenter({ ...args, droppableContainers: inside });
+    return containerHits;
+  }
+
+  const rowHits = rows.length ? closestCenter({ ...args, droppableContainers: rows }) : [];
+  if (rowHits.length > 0) return rowHits;
 
   // Nothing under the pointer: fall back to the nearest allowed target so a drag
   // released just outside a list still resolves instead of silently cancelling.

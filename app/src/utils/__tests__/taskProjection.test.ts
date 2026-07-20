@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
+  buildSubtreeIndex,
   flattenTasks,
   getSubtreeBlock,
   removeBlock,
@@ -90,6 +91,29 @@ describe('getSubtreeBlock', () => {
 
   it('returns nothing for an unknown id', () => {
     expect(getSubtreeBlock(flattenTasks(sample), 'nope')).toEqual([]);
+  });
+});
+
+describe('buildSubtreeIndex', () => {
+  it('agrees with getSubtreeBlock for every row', () => {
+    const rows = flattenTasks(sample);
+    const index = buildSubtreeIndex(rows);
+
+    for (const row of rows) {
+      expect(index.get(row.id)).toEqual(getSubtreeBlock(rows, row.id).map((r) => r.id));
+    }
+  });
+
+  it('leads with the row itself and covers every row exactly once at the root', () => {
+    const rows = flattenTasks(sample);
+    const index = buildSubtreeIndex(rows);
+
+    for (const row of rows) expect(index.get(row.id)![0]).toBe(row.id);
+    expect(index.size).toBe(rows.length);
+  });
+
+  it('returns an empty index for no rows', () => {
+    expect(buildSubtreeIndex([]).size).toBe(0);
   });
 });
 

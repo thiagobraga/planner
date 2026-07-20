@@ -18,7 +18,7 @@ function isWithin(target: EventTarget | null, attr: string): boolean {
 /**
  * Press-and-hold pointer drag.
  *
- * The 180ms delay is what lets a row be both tappable and draggable: a quick tap
+ * The 120ms delay is what lets a row be both tappable and draggable: a quick tap
  * never becomes a drag, so single clicks and double-taps stay intact. The 8px
  * tolerance is what keeps the page scrollable - moving more than 8px before the
  * delay elapses cancels the pending drag and hands the gesture back to the
@@ -58,4 +58,4 @@ export class PlannerKeyboardSensor extends KeyboardSensor {
 }
 
 /** Press-and-hold constraint shared by every pointer drag in the app. */
-export const PRESS_ACTIVATION = { delay: 180, tolerance: 8 } as const;
+export const PRESS_ACTIVATION = { delay: 120, tolerance: 8 } as const;

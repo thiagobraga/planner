@@ -1,4 +1,4 @@
-import type { Task } from './TaskItem';
+import { priorityClasses, type Task } from './TaskItem';
 import { INDENT_WIDTH } from '../utils/taskProjection';
 
 interface TaskBlockPreviewProps {
@@ -27,16 +27,47 @@ export function TaskBlockPreview({ rows }: TaskBlockPreviewProps) {
       {rows.map(({ task, depth }) => (
         <div
           key={task.id}
-          className={`task-block-preview-row flex items-center leading-6 text-[13px] text-ink ${
+          // Mirrors `.task-item`: same row height and same top alignment, so the
+          // lifted row is the row rather than a smaller likeness of it.
+          className={`task-block-preview-row task-item flex items-start ${
             task.isCompleted ? 'opacity-[0.35]' : ''
           }`}
           style={{ paddingLeft: `${Math.max(0, depth - base) * INDENT_WIDTH}px` }}
         >
-          <span className="w-6 text-center text-[10px] shrink-0 select-none">
-            {task.type === 'note' ? '-' : '•'}
-          </span>
+          {/*
+            The marker and title below repeat TaskItem's own type styles rather
+            than approximating them - font, size, line height and the check/dot
+            metrics all read from the same custom properties, so a change to the
+            row's typography carries into the preview instead of drifting from it.
+          */}
+          {task.type === 'note' ? (
+            <span className="w-6 text-center text-[10px] font-normal leading-6 overflow-hidden text-ink select-none shrink-0">
+              -
+            </span>
+          ) : (
+            <span
+              style={
+                task.isCompleted
+                  ? {
+                      fontSize: 'var(--icon-check-size, 26px)',
+                      transform: 'translateY(var(--icon-check-offset, 0px))',
+                      lineHeight: 'var(--task-line-height, 24px)',
+                    }
+                  : {
+                      fontSize: 'var(--icon-dot-size, 10px)',
+                      transform: 'translateY(var(--icon-dot-offset, 0px))',
+                      lineHeight: 'var(--task-line-height, 24px)',
+                    }
+              }
+              className={`w-6 text-center ${task.isCompleted ? 'font-bold' : 'font-normal'} overflow-hidden ${priorityClasses[task.priority]} select-none shrink-0`}
+            >
+              {task.isCompleted ? '×' : '•'}
+            </span>
+          )}
+
           <span
-            className={`truncate ${task.isCompleted ? 'line-through' : ''}`}
+            style={{ lineHeight: 'var(--task-line-height, 24px)' }}
+            className={`text-sm break-words truncate ${task.isCompleted ? 'line-through text-ink-light' : 'text-ink'}`}
           >
             {task.title}
           </span>

@@ -330,11 +330,42 @@ kbd {
 /* The block travelling under the pointer: the rows themselves, lifted. */
 .planner-drag-overlay--block {
   border-radius: 6px;
-  border: 1px solid var(--color-dot);
+  /*
+    Outline, not border, and no vertical padding: both add to the box, and a
+    lifted row that stands 6px taller than the one it came from reads as a
+    different object rather than the same row picked up.
+  */
+  outline: 1px solid var(--color-dot);
   background: var(--color-cream);
-  padding: 2px 8px 2px 0;
+  padding: 0 8px 0 0;
   box-shadow: 0 4px 16px rgba(44, 44, 44, 0.18);
   max-width: 420px;
+  /* Translucent, so the rows the block is passing over stay readable beneath it. */
+  opacity: 0.7;
+  will-change: transform;
+}
+
+/*
+  A date with no tasks still has to be reachable by a drag: an empty list
+  collapses to zero height, which leaves its droppable with no area for the
+  pointer to be inside, so an empty date could never be hovered and never drew a
+  landing slot.
+
+  The row of drop area is claimed only while a drag is in flight, and is undone
+  by an equal negative margin, so the list occupies exactly as much space as it
+  did before. Both halves matter:
+
+  - reserving it permanently left a blank line under every empty date;
+  - reserving it *without* the negative margin grew the content by 24px on
+    pickup, and dnd-kit answers a mid-drag layout shift by moving the scroll
+    position - so pressing a row scrolled the page and released it back.
+
+  The height it takes therefore overlaps the 24px gap below the section, which
+  is empty by construction, and the page does not move at all.
+*/
+.task-list--empty-target {
+  min-height: var(--dot-grid);
+  margin-bottom: calc(-1 * var(--dot-grid));
 }
 
 /*

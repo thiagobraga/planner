@@ -66,7 +66,8 @@ export interface TaskItemProps {
   onConvertType?: (id: string, type: 'task' | 'note') => void;
 }
 
-const priorityClasses: Record<number, string> = {
+/** Shared with the drag preview, so a lifted row keeps its priority colour. */
+export const priorityClasses: Record<number, string> = {
   1: 'text-accent',
   2: 'text-priority-2',
   3: 'text-priority-3',

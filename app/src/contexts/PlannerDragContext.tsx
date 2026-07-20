@@ -132,6 +132,20 @@ export function usePlannerDragHandlers(kind: DragKind, handlers: DragHandlers): 
  * provider's own region below as the single, human-readable voice; the entity
  * hooks phrase those messages because only they know what a row *is*.
  */
+/**
+ * Auto-scroll, narrowed.
+ *
+ * dnd-kit scrolls whenever the *dragged rect* sits inside a threshold band at a
+ * scroll edge - 20% of the viewport by default, and re-evaluated every frame
+ * regardless of whether the pointer has moved. Pressing a row that happened to
+ * be near the top or bottom of the window therefore scrolled the page on its
+ * own, for as long as the press was held.
+ *
+ * The band is tightened to 8%, and horizontal scrolling is switched off
+ * entirely: sideways movement means nesting here, never travel.
+ */
+const AUTO_SCROLL = { threshold: { x: 0, y: 0.08 } } as const;
+
 const SILENT_ANNOUNCEMENTS: Announcements = {
   onDragStart: () => undefined,
   onDragOver: () => undefined,
@@ -152,6 +166,8 @@ export function PlannerDragProvider({ children }: { children: ReactNode }) {
   const indent = useRef(createIndentTracker());
   /** Mirrors overId for comparison outside a state updater. */
   const overIdRef = useRef<string | null>(null);
+  /** Whatever held focus when the drag began, so the drop can hand it back. */
+  const focusOrigin = useRef<HTMLElement | null>(null);
 
   const registerHandlers = useCallback((kind: DragKind, handlers: DragHandlers) => {
     handlersRef.current.set(kind, handlers);
@@ -181,6 +197,8 @@ export function PlannerDragProvider({ children }: { children: ReactNode }) {
   const handleDragStart = useCallback(
     (event: DragStartEvent) => {
       const data = event.active.data.current as DragData | undefined;
+      focusOrigin.current =
+        document.activeElement instanceof HTMLElement ? document.activeElement : null;
       setActiveDrag(data ?? null);
       dispatch(event, (h) => h.onDragStart);
     },
@@ -215,7 +233,27 @@ export function PlannerDragProvider({ children }: { children: ReactNode }) {
     [dispatch],
   );
 
+  /**
+   * Hand focus back to where the drag started, without scrolling.
+   *
+   * dnd-kit does this itself, but with a bare `.focus()`, and focusing an
+   * element the browser considers off-position scrolls it into view - so
+   * releasing a drag jumped the page. Keyboard users still need the focus back
+   * (that is how they carry on after a drop), so this restores it deliberately
+   * with `preventScroll` and dnd-kit's own pass is turned off below.
+   */
+  const restoreFocus = useCallback(() => {
+    const element = focusOrigin.current;
+    focusOrigin.current = null;
+    if (!element) return;
+    // After the drop has been applied, so the row is not focused mid-reorder.
+    requestAnimationFrame(() => {
+      if (element.isConnected) element.focus({ preventScroll: true });
+    });
+  }, []);
+
   const reset = useCallback(() => {
+    restoreFocus();
     indent.current.reset();
     overIdRef.current = null;
     setActiveDrag(null);
@@ -224,7 +262,7 @@ export function PlannerDragProvider({ children }: { children: ReactNode }) {
     setHasMoved(false);
     setIndentSteps(0);
     setOverId(null);
-  }, []);
+  }, [restoreFocus]);
 
   const handleDragEnd = useCallback(
     (event: DragEndEvent) => {
@@ -266,7 +304,8 @@ export function PlannerDragProvider({ children }: { children: ReactNode }) {
       <DndContext
         sensors={sensors}
         collisionDetection={plannerCollisionDetection}
-        accessibility={{ announcements: SILENT_ANNOUNCEMENTS }}
+        autoScroll={AUTO_SCROLL}
+        accessibility={{ announcements: SILENT_ANNOUNCEMENTS, restoreFocus: false }}
         onDragStart={handleDragStart}
         onDragMove={handleDragMove}
         onDragOver={handleDragOver}
