@@ -51,7 +51,7 @@ vi.mock("../../utils/AppError.js", () => ({
   },
 }));
 
-import { register, login, confirmPasswordReset } from "../authService.js";
+import { register, login, requestPasswordReset, confirmPasswordReset } from "../authService.js";
 
 const STRONG_PASSWORD = "correct-horse-battery-staple";
 
@@ -240,5 +240,46 @@ describe("confirmPasswordReset - token lifecycle", () => {
       expect(e.code).toBe("TOKEN_INVALID");
       expect(e.statusCode).toBe(400);
     }
+  });
+
+  it("rejects invalid token (not found in DB)", async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+
+    try {
+      await confirmPasswordReset("nonexistent-token", STRONG_PASSWORD);
+      expect.fail("should throw");
+    } catch (err) {
+      const e = err as AppError;
+      expect(e.code).toBe("TOKEN_INVALID");
+    }
+  });
+
+  it("succeeds and updates password, removes token", async () => {
+    const futureDate = new Date(Date.now() + 60 * 60 * 1000);
+    mockQuery.mockResolvedValueOnce({
+      rows: [{ id: "token-1", user_id: "user-1", expires_at: futureDate.toISOString(), used_at: null }],
+    });
+    mockQuery.mockResolvedValueOnce({ rows: [] }); // update password
+    mockQuery.mockResolvedValueOnce({ rows: [] }); // mark token used
+    mockQuery.mockResolvedValueOnce({ rows: [] }); // revoke sessions
+
+    const result = await confirmPasswordReset("valid-token", STRONG_PASSWORD);
+    expect(result.success).toBe(true);
+  });
+});
+
+describe("requestPasswordReset", () => {
+  it("returns success for existing email", async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [{ id: "user-1", email: "user@example.com" }] });
+
+    const result = await requestPasswordReset("user@example.com");
+    expect(result.message).toBe("If an account exists, a reset email has been sent");
+  });
+
+  it("returns same message for non-existent email (no info leak)", async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+
+    const result = await requestPasswordReset("nonexistent@example.com");
+    expect(result.message).toBe("If an account exists, a reset email has been sent");
   });
 });

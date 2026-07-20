@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 
 vi.mock("../../db/pool.js", () => ({
   default: { query: vi.fn() },
@@ -13,8 +13,12 @@ vi.mock("../../db/redis.js", () => ({
 import { buildEvent, publishEvent } from "../syncService.js";
 import { redisPubClient } from "../../db/redis.js";
 
+beforeEach(() => {
+  vi.clearAllMocks();
+});
+
 describe("syncService.buildEvent", () => {
-  it("fills id and emittedAt", () => {
+  it("fills id and emittedAt for all required fields", () => {
     const e = buildEvent({
       entityType: "task",
       eventType: "updated",
@@ -40,6 +44,17 @@ describe("syncService.buildEvent", () => {
     });
     expect(e.id).toBe("custom-id");
   });
+
+  it("handles missing optional fields (collectionId, payload)", () => {
+    const e = buildEvent({
+      entityType: "task",
+      eventType: "deleted",
+      entityId: "t1",
+      userId: "u1",
+    });
+    expect(e.collectionId).toBeUndefined();
+    expect(e.payload).toBeUndefined();
+  });
 });
 
 describe("syncService.publishEvent", () => {
@@ -56,5 +71,21 @@ describe("syncService.publishEvent", () => {
     const call = (redisPubClient.publish as unknown as ReturnType<typeof vi.fn>).mock.calls[0];
     expect(call[0]).toBe("sync");
     expect(JSON.parse(call[1] as string)).toEqual(event);
+  });
+
+  it("logs error and re-throws when Redis publish fails", async () => {
+    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    (redisPubClient.publish as unknown as ReturnType<typeof vi.fn>).mockRejectedValueOnce(new Error("Redis down"));
+
+    const event = buildEvent({
+      entityType: "task",
+      eventType: "deleted",
+      entityId: "t1",
+      userId: "u1",
+    });
+
+    await expect(publishEvent(event)).rejects.toThrow("Redis down");
+    expect(consoleSpy).toHaveBeenCalledWith("[sync] publishEvent failed:", expect.any(Error));
+    consoleSpy.mockRestore();
   });
 });
