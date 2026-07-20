@@ -8,7 +8,7 @@ const CSRF_COOKIE = 'planner_csrf';
 
 function getCookie(name: string): string | undefined {
   const match = document.cookie.match(new RegExp(`(?:^|;\\s*)${name}=([^;]*)`));
-  return match?.[1];
+  return match ? decodeURIComponent(match[1]) : undefined;
 }
 
 function getCsrfToken(): string | undefined {
