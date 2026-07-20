@@ -1,5 +1,5 @@
 import { Router, type Request, type Response, type NextFunction } from "express";
-import { authMiddleware } from "../middleware/auth.js";
+
 import {
   listHabits,
   createHabit,
@@ -11,7 +11,7 @@ import {
 
 const router: ReturnType<typeof Router> = Router();
 
-router.get("/", authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+router.get("/", async (req: Request, res: Response, next: NextFunction) => {
   try {
     res.json(await listHabits(req.userId!));
   } catch (err) {
@@ -19,7 +19,7 @@ router.get("/", authMiddleware, async (req: Request, res: Response, next: NextFu
   }
 });
 
-router.post("/", authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+router.post("/", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { name, parentId, groupId } = req.body ?? {};
     res.status(201).json(await createHabit(req.userId!, { name, parentId, groupId }));
@@ -28,7 +28,7 @@ router.post("/", authMiddleware, async (req: Request, res: Response, next: NextF
   }
 });
 
-router.patch("/:id", authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+router.patch("/:id", async (req: Request, res: Response, next: NextFunction) => {
   try {
     res.json(await updateHabit(req.userId!, req.params.id as string, req.body ?? {}));
   } catch (err) {
@@ -37,7 +37,7 @@ router.patch("/:id", authMiddleware, async (req: Request, res: Response, next: N
 });
 
 // Structural move: hierarchy, group and surrounding order, in one transaction.
-router.patch("/:id/move", authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+router.patch("/:id/move", async (req: Request, res: Response, next: NextFunction) => {
   try {
     res.json(await moveHabit(req.userId!, req.params.id as string, req.body ?? {}));
   } catch (err) {
@@ -45,7 +45,7 @@ router.patch("/:id/move", authMiddleware, async (req: Request, res: Response, ne
   }
 });
 
-router.delete("/:id", authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+router.delete("/:id", async (req: Request, res: Response, next: NextFunction) => {
   try {
     await deleteHabit(req.userId!, req.params.id as string);
     res.status(204).end();
@@ -54,7 +54,7 @@ router.delete("/:id", authMiddleware, async (req: Request, res: Response, next: 
   }
 });
 
-router.put("/:id/completions", authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+router.put("/:id/completions", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { date, isCompleted } = req.body ?? {};
     res.json(await toggleCompletion(req.userId!, req.params.id as string, date, isCompleted));

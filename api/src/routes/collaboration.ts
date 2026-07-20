@@ -1,5 +1,5 @@
 import { Router, type Request, type Response, type NextFunction } from "express";
-import { authMiddleware } from "../middleware/auth.js";
+
 import {
   inviteToCollection,
   acceptInvitation,
@@ -13,7 +13,7 @@ const router: ReturnType<typeof Router> = Router();
 // POST /collections/:id/invitations
 export const collectionCollabRouter: ReturnType<typeof Router> = Router({ mergeParams: true });
 
-collectionCollabRouter.post("/invitations", authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+collectionCollabRouter.post("/invitations", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const collectionId = (req.params as { id: string }).id;
     const { invitation, token } = await inviteToCollection(collectionId, req.userId!, req.body.email);
@@ -23,7 +23,7 @@ collectionCollabRouter.post("/invitations", authMiddleware, async (req: Request,
   }
 });
 
-collectionCollabRouter.get("/collaborators", authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+collectionCollabRouter.get("/collaborators", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const collectionId = (req.params as { id: string }).id;
     const collaborators = await listCollaborators(collectionId, req.userId!);
@@ -33,7 +33,7 @@ collectionCollabRouter.get("/collaborators", authMiddleware, async (req: Request
   }
 });
 
-collectionCollabRouter.delete("/collaborators/:userId", authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+collectionCollabRouter.delete("/collaborators/:userId", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const collectionId = (req.params as { id: string }).id;
     const collaboratorUserId = (req.params as { userId: string }).userId;
@@ -44,7 +44,7 @@ collectionCollabRouter.delete("/collaborators/:userId", authMiddleware, async (r
   }
 });
 
-router.post("/invitations/accept", authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+router.post("/invitations/accept", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const result = await acceptInvitation(req.body.token, req.userId!);
     res.json(result);
@@ -53,7 +53,7 @@ router.post("/invitations/accept", authMiddleware, async (req: Request, res: Res
   }
 });
 
-router.post("/tasks/:id/assign", authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+router.post("/tasks/:id/assign", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const result = await assignTask(req.params.id as string, req.body.assigneeUserId ?? null, req.userId!);
     res.json(result);

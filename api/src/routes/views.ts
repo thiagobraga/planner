@@ -1,10 +1,10 @@
 import { Router, type Request, type Response, type NextFunction } from "express";
-import { authMiddleware } from "../middleware/auth.js";
+
 import { getTodayView, getUpcomingView, getInboxView, getCollectionView, getMonthView } from "../services/viewService.js";
 
 const router: ReturnType<typeof Router> = Router();
 
-router.get("/today", authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+router.get("/today", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const view = await getTodayView(req.userId!);
     res.json(view);
@@ -13,7 +13,7 @@ router.get("/today", authMiddleware, async (req: Request, res: Response, next: N
   }
 });
 
-router.get("/upcoming", authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+router.get("/upcoming", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const days = parseInt(String(req.query.days ?? "7"), 10);
     const view = await getUpcomingView(req.userId!, days);
@@ -23,7 +23,7 @@ router.get("/upcoming", authMiddleware, async (req: Request, res: Response, next
   }
 });
 
-router.get("/month", authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+router.get("/month", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const year = parseInt(String(req.query.year ?? ""), 10);
     const month = parseInt(String(req.query.month ?? ""), 10);
@@ -34,7 +34,7 @@ router.get("/month", authMiddleware, async (req: Request, res: Response, next: N
   }
 });
 
-router.get("/inbox", authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+router.get("/inbox", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const view = await getInboxView(req.userId!);
     res.json(view);
@@ -43,7 +43,7 @@ router.get("/inbox", authMiddleware, async (req: Request, res: Response, next: N
   }
 });
 
-router.get("/collection/:id", authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+router.get("/collection/:id", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const view = await getCollectionView(req.userId!, req.params.id as string);
     res.json(view);

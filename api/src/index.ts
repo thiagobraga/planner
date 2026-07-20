@@ -12,6 +12,7 @@ import { attachSyncServer } from "./services/syncService.js";
 import { PORT, CORS_ORIGIN, DISABLE_RATE_LIMITS_IN_DEV, IS_PRODUCTION } from "./config.js";
 import { csrfProtection } from "./middleware/csrf.js";
 import { originCheck } from "./middleware/origin.js";
+import { authMiddleware } from "./middleware/auth.js";
 import authRoutes from "./routes/auth.js";
 
 const app: Express = express();
@@ -90,6 +91,15 @@ app.use("/api/v1/auth", authRoutes);
 
 // Origin check for unsafe requests
 app.use("/api/v1", originCheck);
+
+// Auth session validation (before CSRF so req.sessionId is available)
+app.use("/api/v1", async (req, res, next) => {
+  if (req.path.startsWith("/auth")) {
+    next();
+    return;
+  }
+  await authMiddleware(req, res, next);
+});
 
 // Global CSRF protection — safe methods set the cookie, unsafe methods validate
 app.use("/api/v1", csrfProtection);

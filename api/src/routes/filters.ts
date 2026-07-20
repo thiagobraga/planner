@@ -1,5 +1,5 @@
 import { Router, type Request, type Response, type NextFunction } from "express";
-import { authMiddleware } from "../middleware/auth.js";
+
 import {
   createFilter,
   updateFilter,
@@ -10,7 +10,7 @@ import {
 
 const router: ReturnType<typeof Router> = Router();
 
-router.get("/", authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+router.get("/", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const filters = await listFilters(req.userId!);
     res.json(filters);
@@ -19,7 +19,7 @@ router.get("/", authMiddleware, async (req: Request, res: Response, next: NextFu
   }
 });
 
-router.post("/", authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+router.post("/", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const filter = await createFilter(req.userId!, req.body);
     res.status(201).json(filter);
@@ -28,7 +28,7 @@ router.post("/", authMiddleware, async (req: Request, res: Response, next: NextF
   }
 });
 
-router.patch("/:id", authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+router.patch("/:id", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const filter = await updateFilter(req.params.id as string, req.userId!, req.body);
     res.json(filter);
@@ -37,7 +37,7 @@ router.patch("/:id", authMiddleware, async (req: Request, res: Response, next: N
   }
 });
 
-router.delete("/:id", authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+router.delete("/:id", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const result = await deleteFilter(req.params.id as string, req.userId!);
     res.json(result);
@@ -46,7 +46,7 @@ router.delete("/:id", authMiddleware, async (req: Request, res: Response, next: 
   }
 });
 
-router.get("/:id/results", authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+router.get("/:id/results", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const today = new Date().toISOString().slice(0, 10);
     const tasks = await evaluateSavedFilter(req.params.id as string, req.userId!, today);

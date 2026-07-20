@@ -1,10 +1,10 @@
 import { Router, type Request, type Response, type NextFunction } from "express";
-import { authMiddleware } from "../middleware/auth.js";
+
 import { listLabels, createLabel, updateLabel, deleteLabel } from "../services/labelService.js";
 
 const router: ReturnType<typeof Router> = Router();
 
-router.get("/", authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+router.get("/", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const labels = await listLabels(req.userId!);
     res.json(labels);
@@ -13,7 +13,7 @@ router.get("/", authMiddleware, async (req: Request, res: Response, next: NextFu
   }
 });
 
-router.post("/", authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+router.post("/", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const label = await createLabel(req.userId!, req.body);
     res.status(201).json(label);
@@ -22,7 +22,7 @@ router.post("/", authMiddleware, async (req: Request, res: Response, next: NextF
   }
 });
 
-router.patch("/:id", authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+router.patch("/:id", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const label = await updateLabel(req.params.id as string, req.userId!, req.body);
     res.json(label);
@@ -31,7 +31,7 @@ router.patch("/:id", authMiddleware, async (req: Request, res: Response, next: N
   }
 });
 
-router.delete("/:id", authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+router.delete("/:id", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const result = await deleteLabel(req.params.id as string, req.userId!);
     res.json(result);

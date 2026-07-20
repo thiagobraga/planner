@@ -1,5 +1,5 @@
 import { Router, type Request, type Response, type NextFunction } from "express";
-import { authMiddleware } from "../middleware/auth.js";
+
 import {
   listCollections,
   createCollection,
@@ -10,7 +10,7 @@ import {
 
 const router: ReturnType<typeof Router> = Router();
 
-router.get("/", authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+router.get("/", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const collections = await listCollections(req.userId!);
     res.json(collections);
@@ -19,7 +19,7 @@ router.get("/", authMiddleware, async (req: Request, res: Response, next: NextFu
   }
 });
 
-router.post("/", authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+router.post("/", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const collection = await createCollection(req.userId!, req.body);
     res.status(201).json(collection);
@@ -28,7 +28,7 @@ router.post("/", authMiddleware, async (req: Request, res: Response, next: NextF
   }
 });
 
-router.patch("/:id", authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+router.patch("/:id", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const collection = await updateCollection(req.params.id as string, req.userId!, req.body);
     res.json(collection);
@@ -37,7 +37,7 @@ router.patch("/:id", authMiddleware, async (req: Request, res: Response, next: N
   }
 });
 
-router.delete("/:id", authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+router.delete("/:id", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const result = await deleteCollection(req.params.id as string, req.userId!);
     res.json(result);
@@ -46,7 +46,7 @@ router.delete("/:id", authMiddleware, async (req: Request, res: Response, next: 
   }
 });
 
-router.post("/:id/archive", authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+router.post("/:id/archive", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const collection = await archiveCollection(req.params.id as string, req.userId!);
     res.json(collection);

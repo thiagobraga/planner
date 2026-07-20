@@ -1,5 +1,5 @@
 import { Router, type Request, type Response, type NextFunction } from "express";
-import { authMiddleware } from "../middleware/auth.js";
+
 import {
   listGroups,
   createGroup,
@@ -10,7 +10,7 @@ import {
 
 const router: ReturnType<typeof Router> = Router();
 
-router.get("/", authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+router.get("/", async (req: Request, res: Response, next: NextFunction) => {
   try {
     res.json(await listGroups(req.userId!));
   } catch (err) {
@@ -18,7 +18,7 @@ router.get("/", authMiddleware, async (req: Request, res: Response, next: NextFu
   }
 });
 
-router.post("/", authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+router.post("/", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { name } = req.body ?? {};
     res.status(201).json(await createGroup(req.userId!, name));
@@ -27,7 +27,7 @@ router.post("/", authMiddleware, async (req: Request, res: Response, next: NextF
   }
 });
 
-router.patch("/:id", authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+router.patch("/:id", async (req: Request, res: Response, next: NextFunction) => {
   try {
     res.json(await updateGroup(req.userId!, req.params.id as string, req.body ?? {}));
   } catch (err) {
@@ -35,7 +35,7 @@ router.patch("/:id", authMiddleware, async (req: Request, res: Response, next: N
   }
 });
 
-router.patch("/:id/move", authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+router.patch("/:id/move", async (req: Request, res: Response, next: NextFunction) => {
   try {
     res.json(await moveHabitGroup(req.userId!, req.params.id as string, req.body ?? {}));
   } catch (err) {
@@ -43,7 +43,7 @@ router.patch("/:id/move", authMiddleware, async (req: Request, res: Response, ne
   }
 });
 
-router.delete("/:id", authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+router.delete("/:id", async (req: Request, res: Response, next: NextFunction) => {
   try {
     await deleteGroup(req.userId!, req.params.id as string);
     res.status(204).end();
