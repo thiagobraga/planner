@@ -116,6 +116,27 @@ export function InboxPage() {
       });
   };
 
+  /** A leading '-' opens a note instead of a task, as it does on Daily. */
+  const handleAddNoteKeyDown = (e: React.KeyboardEvent<HTMLInputElement>): boolean => {
+    if (e.key !== '-' || input !== '') return false;
+    e.preventDefault();
+
+    const tid = tempId();
+    setTasks((prev) => [
+      ...prev,
+      {
+        id: tid,
+        title: '',
+        priority: 4,
+        isCompleted: false,
+        orderValue: nextOrderValue(prev),
+        type: 'note',
+      },
+    ]);
+    setEditingId(tid);
+    return true;
+  };
+
   const handleAddBelow = useCallback((afterId: string) => {
     const tid = tempId();
     setTasks((prev) => {
@@ -153,8 +174,14 @@ export function InboxPage() {
       const currentTask = tasks.find((t) => t.id === id);
       const parentTaskId = currentTask?.parentTaskId ?? undefined;
       const currentIndent = currentTask?.indent ?? 0;
-      // was a new task - create it
-      apiCreateTask({ title: trimmed, priority: 4, parentTaskId, depth: currentIndent })
+      // was a new row - create it, keeping whichever type it was opened as
+      apiCreateTask({
+        title: trimmed,
+        priority: 4,
+        parentTaskId,
+        depth: currentIndent,
+        type: currentTask?.type ?? 'task',
+      })
         .then((created) => {
           setTasks((prev) => prev.map((t) => (t.id === id ? { ...apiToTask(created), orderValue: t.orderValue } : t)));
         })
@@ -165,6 +192,13 @@ export function InboxPage() {
       apiUpdateTask(id, { title: trimmed }).catch(() => invalidate());
     }
   }, [tasks, invalidate]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleConvertType = useCallback((taskId: string, type: 'task' | 'note') => {
+    setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, type } : t)));
+    if (!taskId.startsWith('temp-')) {
+      apiUpdateTask(taskId, { type }).catch(() => invalidate());
+    }
+  }, [invalidate]);
 
   const handleEditCancel = useCallback((id: string) => {
     setEditingId(undefined);
@@ -270,6 +304,7 @@ export function InboxPage() {
         onAddBelow={handleAddBelow}
         onIndent={handleIndent}
         onNavigate={handleNavigate}
+        onConvertType={handleConvertType}
       />
 
       <form
@@ -288,6 +323,7 @@ export function InboxPage() {
           className="task-input task-add-input flex-1 text-[14px] leading-6 text-ink bg-transparent border-none outline-none p-0"
           spellCheck={false}
           onKeyDown={(e) => {
+            if (handleAddNoteKeyDown(e)) return;
             if (e.key === 'ArrowUp') {
               e.preventDefault();
               setTasks((prev) => {

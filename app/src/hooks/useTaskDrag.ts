@@ -329,7 +329,19 @@ export function resolveMove({
   const targetDay = scope.kind === 'day' ? (over.dueDate ?? scope.dueDate) : null;
   const crossesDay = targetDay !== null && targetDay !== active.dueDate;
 
-  const projected = projectMove(rows, active.taskId, overIndex, offsetX);
+  // Project against the destination day alone. Daily hands this hook every
+  // rendered date as one flat list, so the rows either side of a drop can
+  // belong to a different day - dropping on the last row of one date read the
+  // first row of the *next* date as its neighbour and parented the task there,
+  // across the boundary. It also made the commit disagree with the slot the
+  // list had been previewing, which is drawn from that day's rows alone.
+  const scopedRows = targetDay
+    ? rows.filter((r) => r.task.dueDate === targetDay || active.subtreeIds.includes(r.id))
+    : rows;
+  const scopedIndex = scopedRows.findIndex((r) => r.id === over.taskId);
+  if (scopedIndex === -1) return null;
+
+  const projected = projectMove(scopedRows, active.taskId, scopedIndex, offsetX);
 
   // Moving to another date is a coarse gesture: it covers a lot of vertical
   // distance, and the pointer drifts sideways on the way. Read as nesting
@@ -351,10 +363,10 @@ export function resolveMove({
     parentTaskId: projection.parentId,
     depth: projection.depth,
     announcement: projection.parentId
-      ? `Moved under ${rows.find((r) => r.id === projection.parentId)?.task.title ?? 'parent'}.`
+      ? `Moved under ${scopedRows.find((r) => r.id === projection.parentId)?.task.title ?? 'parent'}.`
       : 'Moved to top level.',
     preview: projection.parentId
-      ? `Drop to place under ${rows.find((r) => r.id === projection.parentId)?.task.title ?? 'parent'}.`
+      ? `Drop to place under ${scopedRows.find((r) => r.id === projection.parentId)?.task.title ?? 'parent'}.`
       : 'Drop to place at top level.',
   };
 }
