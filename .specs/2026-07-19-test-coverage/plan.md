@@ -9,7 +9,7 @@ Achieve 100% statement, branch, function, and line coverage across both `api/` a
 | Package | Stmts | Branch | Funcs | Lines | Tests passing |
 |---------|-------|--------|-------|-------|---------------|
 | API     | 82.25% | 82.54% | 90.41% | 82.25% | 535/535 |
-| App     | 73.36% | 80.97% | 61.24% | 73.36% | 544/544 |
+| App     | 74.35% | 81.28% | 61.44% | 74.35% | 565/565 |
 
 ## Strategy
 

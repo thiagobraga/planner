@@ -302,6 +302,8 @@ All components tested: QuickAdd (11), SearchOverlay (12), FilterBar (14), TaskDe
 AuthContext (7 tests), PlannerDragContext (8 tests), usePreferences (2 tests), useOnlineStatus (existing), useOfflineQueueReplay (existing), useSync (existing), shortcuts (existing).
 
 ### Tasks 9.1-9.3 — All context & hook tests ✓
+- AuthContext 100%, PlannerDragContext 94.6%, useFloatingPosition 92%, useSync 87%
+- Remaining: useTaskDrag (71.8%), useHabitDrag (68.4%) — complex drag edge cases
 
 ---
 
