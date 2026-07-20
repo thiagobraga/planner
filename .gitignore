@@ -19,6 +19,12 @@ backups/
 *.sql.gz
 *.dump
 
+# Artifacts
+*.gz
+*.tgz
+*.zip
+performance-*.trace*
+
 # IDE
 .idea/
 *.swp
