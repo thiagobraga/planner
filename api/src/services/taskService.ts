@@ -4,6 +4,8 @@ import pool from '../db/pool.js';
 import { AppError } from '../utils/AppError.js';
 import { buildEvent, publishEvent } from './syncService.js';
 import { addDaysISO } from './viewService.js';
+import { computeNextOccurrence } from '../engines/recurrenceEngine.js';
+import type { RecurrenceRule } from '../engines/recurrenceEngine.js';
 
 interface TaskRow {
   id: string;
@@ -84,39 +86,93 @@ export async function completeTask(taskId: string, userId: string) {
   try {
     await client.query('BEGIN');
 
-    // Recurring task: compute next due date instead of completing
-    if (task.recurrence_rule) {
-      const nextDueDate = task.due_date ? addDaysISO(task.due_date, 1) : null;
+    // Recurring task: compute next due date and clone instead of mutating in-place
+    if (task.recurrence_rule && task.due_date) {
+      const nextDueDateObj = computeNextOccurrence(
+        {
+          date: task.due_date,
+          time: task.due_time ?? undefined,
+          timezone: task.due_timezone ?? undefined,
+        },
+        task.recurrence_rule as RecurrenceRule
+      );
 
+      // 1. Mark current task completed, clear its recurrence_rule so it acts as history
       await client.query(
         `UPDATE tasks
-         SET due_date = $1, updated_at = NOW()
-         WHERE id = $2`,
-        [nextDueDate, taskId],
+         SET is_completed = true, completed_at = NOW(), recurrence_rule = NULL, updated_at = NOW()
+         WHERE id = $1`,
+        [taskId],
       );
+
+      // 2. Clone the task
+      const newId = uuidv4();
+      const insertResult = await client.query(
+        `INSERT INTO tasks (id, user_id, collection_id, section_id, parent_task_id, title, description, priority, due_date, due_time, due_timezone, recurrence_rule, depth, type, order_value)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+         RETURNING *`,
+        [
+          newId,
+          userId,
+          task.collection_id,
+          task.section_id,
+          task.parent_task_id,
+          task.title,
+          task.description,
+          task.priority,
+          nextDueDateObj.date,
+          nextDueDateObj.time ?? null,
+          nextDueDateObj.timezone ?? null,
+          task.recurrence_rule,
+          task.depth,
+          task.type,
+          task.order_value,
+        ]
+      );
+
+      // 3. Clone labels if any exist
+      const labelsResult = await client.query(`SELECT label_id FROM task_labels WHERE task_id = $1`, [taskId]);
+      if (labelsResult.rows.length > 0) {
+        const placeholders = labelsResult.rows.map((_, i) => `($1, $${i + 2})`).join(', ');
+        const values = [newId, ...labelsResult.rows.map((r) => r.label_id)];
+        await client.query(`INSERT INTO task_labels (task_id, label_id) VALUES ${placeholders}`, values);
+      }
 
       // Record activity event
       await client.query(
         `INSERT INTO activity_events (user_id, collection_id, entity_type, entity_id, event_type, after_data)
          VALUES ($1, $2, 'task', $3, 'task_completed', $4)`,
-        [userId, task.collection_id, taskId, JSON.stringify({ recurring: true, nextDueDate })],
+        [userId, task.collection_id, taskId, JSON.stringify({ recurring: true, nextTaskId: newId })],
       );
 
       await client.query('COMMIT');
 
       const updated = await pool.query('SELECT * FROM tasks WHERE id = $1', [taskId]);
-      const formatted = formatTask(updated.rows[0] as TaskRow);
+      const formattedOld = formatTask(updated.rows[0] as TaskRow);
       publishEvent(
         buildEvent({
           entityType: 'task',
           eventType: 'updated',
-          entityId: formatted.id,
+          entityId: formattedOld.id,
           userId,
-          collectionId: formatted.collectionId,
-          payload: formatted,
+          collectionId: formattedOld.collectionId,
+          payload: formattedOld,
         }),
       ).catch((err) => console.error('[sync] publish failed', err));
-      return formatted;
+
+      const formattedNew = formatTask(insertResult.rows[0] as TaskRow);
+      publishEvent(
+        buildEvent({
+          entityType: 'task',
+          eventType: 'created',
+          entityId: formattedNew.id,
+          userId,
+          collectionId: formattedNew.collectionId,
+          payload: formattedNew,
+        }),
+      ).catch((err) => console.error('[sync] publish failed', err));
+
+      return formattedOld;
     }
 
     // Non-recurring: mark complete
@@ -180,6 +236,7 @@ export interface CreateTaskInput {
   parentTaskId?: string | null;
   labelIds?: string[];
   dueDate?: string | null;
+  recurrenceRule?: object | null;
   type?: 'task' | 'note';
 }
 
@@ -270,8 +327,8 @@ export async function createTask(userId: string, input: CreateTaskInput) {
   const type = input.type ?? 'task';
 
   const result = await pool.query(
-    `INSERT INTO tasks (id, user_id, collection_id, section_id, parent_task_id, title, description, priority, due_date, depth, type)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+    `INSERT INTO tasks (id, user_id, collection_id, section_id, parent_task_id, title, description, priority, due_date, recurrence_rule, depth, type)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
      RETURNING *`,
     [
       id,
@@ -283,6 +340,7 @@ export async function createTask(userId: string, input: CreateTaskInput) {
       input.description ?? null,
       priority,
       input.dueDate ?? null,
+      input.recurrenceRule ?? null,
       depth,
       type,
     ],
@@ -310,6 +368,7 @@ export interface UpdateTaskInput {
   sectionId?: string | null;
   parentTaskId?: string | null;
   dueDate?: string | null;
+  recurrenceRule?: object | null;
   labelIds?: string[];
   type?: 'task' | 'note';
 }
@@ -474,6 +533,11 @@ export async function updateTask(taskId: string, userId: string, input: UpdateTa
   if (input.dueDate !== undefined) {
     setClauses.push(`due_date = $${paramIndex++}`);
     values.push(input.dueDate);
+  }
+
+  if (input.recurrenceRule !== undefined) {
+    setClauses.push(`recurrence_rule = $${paramIndex++}`);
+    values.push(input.recurrenceRule);
   }
 
   if (setClauses.length === 0) {

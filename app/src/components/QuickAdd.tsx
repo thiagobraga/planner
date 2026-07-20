@@ -1,91 +1,11 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 
-interface ParsedDate {
-  text: string;
-  preview: string;
-}
-
-function parseNaturalDate(input: string): ParsedDate | null {
-  const today = new Date();
-  const lower = input.toLowerCase();
-
-  const patterns: Array<{ re: RegExp; resolve: (m: RegExpMatchArray) => Date | null; label: string }> = [
-    {
-      re: /\btoday\b/,
-      resolve: () => today,
-      label: 'Today',
-    },
-    {
-      re: /\btomorrow\b/,
-      resolve: () => {
-        const d = new Date(today);
-        d.setDate(d.getDate() + 1);
-        return d;
-      },
-      label: 'Tomorrow',
-    },
-    {
-      re: /\bnext (monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b/,
-      resolve: (m) => {
-        const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-        const target = days.indexOf(m[1]);
-        const d = new Date(today);
-        d.setDate(d.getDate() + ((target + 7 - d.getDay()) % 7 || 7));
-        return d;
-      },
-      label: 'Next',
-    },
-    {
-      re: /\b(monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b/,
-      resolve: (m) => {
-        const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-        const target = days.indexOf(m[1]);
-        const d = new Date(today);
-        const diff = (target + 7 - d.getDay()) % 7 || 7;
-        d.setDate(d.getDate() + diff);
-        return d;
-      },
-      label: '',
-    },
-    {
-      re: /\bin (\d+) days?\b/,
-      resolve: (m) => {
-        const d = new Date(today);
-        d.setDate(d.getDate() + parseInt(m[1]));
-        return d;
-      },
-      label: '',
-    },
-    {
-      re: /\bnext week\b/,
-      resolve: () => {
-        const d = new Date(today);
-        d.setDate(d.getDate() + 7);
-        return d;
-      },
-      label: 'Next week',
-    },
-  ];
-
-  for (const { re, resolve } of patterns) {
-    const m = lower.match(re);
-    if (m) {
-      const date = resolve(m);
-      if (date) {
-        return {
-          text: m[0],
-          preview: date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
-        };
-      }
-    }
-  }
-  return null;
-}
+import { parseNaturalDate, extractNaturalDate } from '../utils/date';
 
 interface QuickAddProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (title: string, duePreview?: string) => void;
+  onSubmit: (title: string, dueDate?: string, recurrenceRule?: object | null) => void;
 }
 
 export function QuickAdd({ isOpen, onClose, onSubmit }: QuickAddProps) {
@@ -114,7 +34,8 @@ export function QuickAdd({ isOpen, onClose, onSubmit }: QuickAddProps) {
     e.preventDefault();
     const trimmed = value.trim();
     if (!trimmed) return;
-    onSubmit(trimmed, parsed?.preview);
+    const extracted = extractNaturalDate(trimmed);
+    onSubmit(extracted.title, extracted.dueDate, extracted.recurrenceRule);
     onClose();
   };
 

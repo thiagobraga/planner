@@ -33,6 +33,7 @@ describe("comments routes", () => {
     const app = express();
     app.use(express.json());
     app.use(cookieParser());
+    app.use((req, res, next) => { (req as any).userId = "test-user"; next(); });
     app.use("/api/v1/comments", commentRoutes);
 
     it("PATCH /api/v1/comments/:id → calls updateComment", async () => {
@@ -54,6 +55,7 @@ describe("comments routes", () => {
     const app = express();
     app.use(express.json());
     app.use(cookieParser());
+    app.use((req, res, next) => { (req as any).userId = "test-user"; next(); });
     app.use("/api/v1/tasks/:taskId/comments", taskCommentRouter);
 
     it("GET /api/v1/tasks/:taskId/comments → calls listComments", async () => {

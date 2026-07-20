@@ -1,9 +1,11 @@
 import { useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Plus, Calendar, Trash2, Search } from 'lucide-react';
 import { BjTask, MonthlyIcon, PlannerIcon } from '../components/Sidebar';
 import { SidebarNavItem } from '../components/SidebarNavItem';
 import { ChevronRight, Repeat2 } from 'lucide-react';
 import { MonthlyCalendarSpecimen } from '../components/monthly/MonthlyCalendarSpecimen';
+import { DatePickerSpecimen } from '../components/monthly/DatePickerSpecimen';
 import { HabitSpecimen } from '../components/habits/HabitSpecimen';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
@@ -19,7 +21,7 @@ import { TaskRowSpecimen } from '../components/ui/TaskRowSpecimen';
 import { CustomSelect } from '../components/ui/CustomSelect';
 import { ContextMenu, ContextMenuItem } from '../components/ui/ContextMenu';
 import { Briefcase, Calendar as CalendarIcon, Tag, ArrowUp, ArrowDown } from 'lucide-react';
-import { paletteColorHex } from '../api/client';
+import { fetchPreferences, paletteColorHex } from '../api/client';
 
 // ── Card wrapper ──────────────────────────────────────────────────────────────
 function Card({
@@ -107,6 +109,12 @@ const SECONDARY_COLORS = [
 ];
 
 export function StyleguidePage() {
+  const { data: preferences } = useQuery({
+    queryKey: ['preferences'],
+    queryFn: fetchPreferences,
+  });
+  const weekStart = preferences?.weekStart ?? 'sunday';
+
   // Habit chain grid - 4 weeks × 7 days, capsule-fusing borders.
   const today = useMemo(() => {
     const d = new Date();
@@ -488,80 +496,16 @@ export function StyleguidePage() {
 
         {/* 8 - Calendar & Monthly */}
         <Card title="Calendar & Monthly">
-          <MonthlyCalendarSpecimen compact />
+          <MonthlyCalendarSpecimen compact weekStart={weekStart} />
         </Card>
 
         {/* 9 - Habit */}
         <Card title="Habit" span>
-          <HabitSpecimen />
+          <HabitSpecimen weekStart={weekStart} />
         </Card>
         {/* 10 - Calendar */}
         <Card title="Calendar">
-          {(() => {
-            const fmtISO = (d: Date) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-            const todayD = new Date(); todayD.setHours(0,0,0,0);
-            const todayISO = fmtISO(todayD);
-            const DOW = ['M','T','W','T','F','S','S'];
-            const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-            const [viewDate, setViewDate] = useState(() => new Date(todayD.getFullYear(), todayD.getMonth(), 1));
-            const [selected, setSelected] = useState<string>(todayISO);
-
-            const year = viewDate.getFullYear();
-            const month = viewDate.getMonth();
-            const daysInMonth = new Date(year, month + 1, 0).getDate();
-            const firstDow = (new Date(year, month, 1).getDay() + 6) % 7; // Mon=0
-
-            const prevMonth = () => setViewDate(new Date(year, month - 1, 1));
-            const nextMonth = () => setViewDate(new Date(year, month + 1, 1));
-
-            const cells = Array.from({length: daysInMonth}, (_, i) => {
-              const d = new Date(year, month, i + 1);
-              return { iso: fmtISO(d), day: i + 1, future: d > todayD };
-            });
-
-            return (
-              <div className="w-fit">
-                {/* header: month nav */}
-                <div className="flex items-center justify-between mb-3" style={{width: 7 * 24}}>
-                  <button type="button" onClick={prevMonth}
-                    className="flex h-6 w-6 items-center justify-center rounded-[4px] text-ink-light hover:text-ink hover:bg-dot/30 cursor-pointer border-none bg-transparent transition-colors">
-                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M7.5 2L4 6l3.5 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                  </button>
-                  <span className="text-[11px] font-medium text-ink tracking-[0.04em]">{MONTHS[month]} {year}</span>
-                  <button type="button" onClick={nextMonth}
-                    className="flex h-6 w-6 items-center justify-center rounded-[4px] text-ink-light hover:text-ink hover:bg-dot/30 cursor-pointer border-none bg-transparent transition-colors">
-                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M4.5 2L8 6l-3.5 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                  </button>
-                </div>
-                {/* day-of-week header */}
-                <div className="grid" style={{gridTemplateColumns:'repeat(7, 24px)'}}>
-                  {DOW.map((l, i) => (
-                    <span key={i} className="flex items-center justify-center h-6 text-[10px] text-ink-light opacity-60 font-medium">{l}</span>
-                  ))}
-                </div>
-                {/* day cells */}
-                <div className="grid" style={{gridTemplateColumns:'repeat(7, 24px)'}}>
-                  {Array.from({length: firstDow}, (_, i) => <span key={`p${i}`} style={{width:24,height:24}} />)}
-                  {cells.map(({iso, day, future}) => {
-                    const isSel = iso === selected;
-                    const isToday = iso === todayISO;
-                    return (
-                      <button
-                        key={iso} type="button" disabled={future}
-                        onClick={() => setSelected(iso)}
-                        className={`flex items-center justify-center text-[11px] rounded-full cursor-pointer border-none transition-colors duration-[var(--motion-fast)] disabled:cursor-default disabled:opacity-30
-                          ${isSel ? 'bg-ink text-cream font-semibold' : isToday ? 'bg-transparent text-ink font-semibold border border-ink' : 'bg-transparent hover:bg-dot/40 text-ink-light hover:text-ink'}
-                        `}
-                        style={{width:24,height:24}}
-                      >
-                        {day}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })()}
+          <DatePickerSpecimen weekStart={weekStart} />
         </Card>
 
         {/* 11 - Essential Tokens */}

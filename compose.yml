@@ -31,6 +31,10 @@ services:
       REDIS_URL: redis://:${REDIS_PASSWORD:-planner}@redis:6379
       JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
       CORS_ORIGIN: ${CORS_ORIGIN:-https://planner.local}
+      # Defaults match the API's own production values; override in .env for a
+      # local session that outlives a long debugging session.
+      SESSION_IDLE_TTL_MINUTES: ${SESSION_IDLE_TTL_MINUTES:-30}
+      SESSION_ABSOLUTE_TTL_HOURS: ${SESSION_ABSOLUTE_TTL_HOURS:-12}
     ulimits:
       nofile: 65536
     depends_on:

@@ -187,25 +187,49 @@ describe("taskService: sync event emission", () => {
       expect(event.entityId).toBe(taskId);
     });
 
-    it("emits an updated sync event for recurring task", async () => {
+    it("emits updated (for old) and created (for new) sync events for recurring task", async () => {
       const recurringTask = {
         ...mockTaskRow,
-        recurrence_rule: { freq: "DAILY" },
+        recurrence_rule: { type: "daily", interval: 1 },
         due_date: "2026-05-17",
       };
+      
+      const newClonedTask = {
+        ...recurringTask,
+        id: "new-task-uuid",
+        due_date: "2026-05-18",
+      };
+
       (pool.query as ReturnType<typeof vi.fn>)
-        .mockResolvedValueOnce({ rows: [recurringTask] })
-        .mockResolvedValueOnce({ rows: [{ ...recurringTask, due_date: "2026-05-18" }] });
+        .mockResolvedValueOnce({ rows: [recurringTask] }) // verifyTaskAccess
+        .mockResolvedValueOnce({ rows: [recurringTask] }); // SELECT * FROM tasks (updated original)
+
+      const clientQuery = vi
+        .fn()
+        .mockResolvedValueOnce(undefined) // BEGIN
+        .mockResolvedValueOnce(undefined) // UPDATE tasks (mark complete)
+        .mockResolvedValueOnce({ rows: [newClonedTask] }) // INSERT cloned task
+        .mockResolvedValueOnce({ rows: [] }) // SELECT label_id
+        .mockResolvedValueOnce(undefined) // INSERT activity event
+        .mockResolvedValueOnce(undefined); // COMMIT
+        
+      (pool.connect as ReturnType<typeof vi.fn>).mockReturnValue({ query: clientQuery, release: vi.fn() });
 
       await completeTask(taskId, userId);
 
-      expect(redisPubClient.publish).toHaveBeenCalledTimes(1);
-      const call = (redisPubClient.publish as ReturnType<typeof vi.fn>).mock.calls[0];
-      expect(call[0]).toBe("sync");
-      const event = JSON.parse(call[1] as string);
-      expect(event.entityType).toBe("task");
-      expect(event.eventType).toBe("updated");
-      expect(event.entityId).toBe(taskId);
+      expect(redisPubClient.publish).toHaveBeenCalledTimes(2);
+      
+      const call1 = (redisPubClient.publish as ReturnType<typeof vi.fn>).mock.calls[0];
+      const event1 = JSON.parse(call1[1] as string);
+      expect(event1.entityType).toBe("task");
+      expect(event1.eventType).toBe("updated");
+      expect(event1.entityId).toBe(taskId);
+
+      const call2 = (redisPubClient.publish as ReturnType<typeof vi.fn>).mock.calls[1];
+      const event2 = JSON.parse(call2[1] as string);
+      expect(event2.entityType).toBe("task");
+      expect(event2.eventType).toBe("created");
+      expect(event2.entityId).toBe("new-task-uuid");
     });
   });
 

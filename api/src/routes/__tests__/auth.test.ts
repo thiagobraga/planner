@@ -28,7 +28,7 @@ vi.mock("../../services/authService.js", () => ({
 }));
 
 vi.mock("../../utils/validate.js", () => ({
-  validate: (...args: unknown[]) => mockValidate(...args),
+  validate: (...args: any[]) => mockValidate(...args),
 }));
 
 vi.mock("../../middleware/auth.js", () => ({
@@ -49,6 +49,13 @@ vi.mock("../../db/pool.js", () => ({
   default: { query: (...args: unknown[]) => mockPoolQuery(...args) },
 }));
 
+vi.mock("../../services/rateLimitService.js", () => ({
+  checkLoginRate: vi.fn().mockResolvedValue({ allowed: true, remaining: 10, retryAfterSeconds: 0 }),
+  checkRegistrationRate: vi.fn().mockResolvedValue({ allowed: true, remaining: 3, retryAfterSeconds: 0 }),
+  checkPasswordResetRate: vi.fn().mockResolvedValue({ allowed: true, remaining: 5, retryAfterSeconds: 0 }),
+  incrementPasswordResetAttempts: vi.fn().mockResolvedValue(undefined),
+}));
+
 import authRoutes from "../auth.js";
 
 const app = createApp(authRoutes, "/api/v1/auth");
@@ -57,7 +64,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   mockBuildCookieName.mockReturnValue("planner_session");
   mockBuildCookieOptions.mockReturnValue({ httpOnly: true, secure: false, sameSite: "strict", path: "/" });
-  mockValidate.mockImplementation((errors: { field: string; message: string }[]) => {
+  mockValidate.mockImplementation((errors: any[]) => {
     if (errors.length > 0) {
       throw new AppError({ code: "VALIDATION_ERROR", message: "Validation failed", statusCode: 400, details: errors });
     }
@@ -83,6 +90,19 @@ describe("auth routes", () => {
   it("POST /api/v1/auth/login with missing email → 400", async () => {
     const res = await request(app).post("/api/v1/auth/login").send({ password: "test123" });
     expect(res.status).toBe(400);
+  });
+
+  it("POST /api/v1/auth/login → 429 when rate limited", async () => {
+    const rateLimitMock = await import("../../services/rateLimitService.js");
+    (rateLimitMock.checkLoginRate as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      allowed: false,
+      remaining: 0,
+      retryAfterSeconds: 900,
+    });
+
+    const res = await request(app).post("/api/v1/auth/login").send({ email: "a@b.com", password: "test123" });
+    expect(res.status).toBe(429);
+    expect(res.body.error.code).toBe("RATE_LIMITED");
   });
 
   it("POST /api/v1/auth/logout → calls revokeSession, clears cookie", async () => {

@@ -1,6 +1,7 @@
 import { useRef, useEffect, memo, type ReactNode } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { Repeat } from 'lucide-react';
 import { NO_DRAG_ATTR, DRAG_HANDLE_ATTR } from './dnd/sensors';
 import type { TaskDragData } from '../types/drag';
 
@@ -17,6 +18,7 @@ export interface Task {
   sectionId?: string;
   parentTaskId?: string;
   dueDate?: string;
+  recurrenceRule?: object | null;
   isCompleted: boolean;
   orderValue: number;
   labels?: string[];
@@ -351,7 +353,8 @@ export const TaskItem = memo(function TaskItem({
             )}
 
             {task.dueDate && !hideDueDate && (
-              <span className={`task-item-due-date text-xs leading-6 text-ink-light ml-1.5 whitespace-nowrap ${italicDueDate ? 'italic' : ''}`}>
+              <span className={`task-item-due-date inline-flex items-baseline gap-1 text-xs leading-6 text-ink-light ml-1.5 whitespace-nowrap ${italicDueDate ? 'italic' : ''}`}>
+                {task.recurrenceRule && <Repeat className="w-3 h-3 self-center" />}
                 {formatDueDate(task.dueDate)}
               </span>
             )}

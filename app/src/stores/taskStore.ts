@@ -9,6 +9,7 @@ interface Task {
   sectionId?: string;
   parentTaskId?: string;
   dueDate?: string;
+  recurrenceRule?: object | null;
   isCompleted: boolean;
   orderValue: number;
 }

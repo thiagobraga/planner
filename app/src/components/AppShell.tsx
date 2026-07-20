@@ -8,7 +8,7 @@ import { Button } from './ui/Button';
 import { matchKey, createMatcherState, DEFAULT_BINDINGS } from '../hooks/shortcuts';
 import type { MatcherState } from '../hooks/shortcuts';
 import { useSync } from '../hooks/useSync';
-import { fetchPreferences, type Preferences } from '../api/client';
+import { fetchPreferences, type Preferences, apiCreateTask } from '../api/client';
 import { ensureFontLoaded, type FontOption } from '../utils/fontLoader';
 import { updateDocumentThemeColor } from '../utils/theme';
 import { PlannerDragProvider } from '../contexts/PlannerDragContext';
@@ -22,7 +22,7 @@ const FONT_CLASSES: Record<FontOption, string> = {
 export function AppShell() {
   const navigate = useNavigate();
   const qc = useQueryClient();
-  const { data: preferences, isLoading: preferencesLoading } = useQuery({
+  const { data: preferences } = useQuery({
     queryKey: ['preferences'],
     queryFn: fetchPreferences,
     retry: 2,
@@ -38,6 +38,8 @@ export function AppShell() {
       } else {
         qc.invalidateQueries({ queryKey: ['preferences'] });
       }
+      qc.invalidateQueries({ queryKey: ['inbox'] });
+      qc.invalidateQueries({ queryKey: ['collection'] });
     }
   }, [qc]));
   const [quickAddOpen, setQuickAddOpen] = useState(false);
@@ -60,6 +62,7 @@ export function AppShell() {
     '--planner-control-bg-hover': isWhiteBackground ? '#f5f5f5' : 'rgba(245, 240, 232, 0.35)',
     '--planner-toggle-off-bg': isWhiteBackground ? '#dedede' : 'var(--color-dot)',
     '--planner-toggle-knob-bg': isWhiteBackground ? '#ffffff' : 'var(--color-cream)',
+    '--planner-settings-separator': isWhiteBackground ? '#d9d9d9' : '#d8d3cb',
     /* Monthly-specific tokens */
     '--planner-monthly-ledger-bg': isWhiteBackground ? 'rgba(255,255,255,0.24)' : 'rgba(245, 240, 232, 0.24)',
     '--planner-monthly-strip-selected': isWhiteBackground ? 'rgba(255,255,255,0.92)' : 'rgba(245, 240, 232, 0.90)',
@@ -169,7 +172,6 @@ export function AppShell() {
           isOpen={sidebarOpen}
           onClose={() => setSidebarOpen(false)}
           collapsed={sidebarCollapsed}
-          onOpenHelp={() => setHelpOpen(true)}
         />
 
         <main
@@ -190,8 +192,11 @@ export function AppShell() {
       <QuickAdd
         isOpen={quickAddOpen}
         onClose={() => setQuickAddOpen(false)}
-        onSubmit={(title) => {
-          if (import.meta.env.DEV) console.log('Quick add:', title);
+        onSubmit={(title, dueDate, recurrenceRule) => {
+          if (import.meta.env.DEV) console.log('Quick add:', { title, dueDate, recurrenceRule });
+          apiCreateTask({ title, dueDate, recurrenceRule }).catch((err) => {
+            console.error('Failed to quick add task:', err);
+          });
         }}
       />
 

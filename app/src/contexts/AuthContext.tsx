@@ -1,8 +1,9 @@
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
-import { apiLogin, apiRegister, apiLogout, type AuthUser } from '../api/client';
+import { apiLogin, apiRegister, apiLogout, setCurrentUserId, type AuthUser } from '../api/client';
 import { queryClient } from '../api/queryClient';
 import { connectSocket, disconnectSocket } from '../utils/socket';
 import { useOfflineQueueReplay } from '../hooks/useOfflineQueueReplay';
+import { clearUserMutations } from '../utils/offlineQueue';
 
 interface AuthContextValue {
   user: AuthUser | null;
@@ -30,13 +31,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [initializing, setInitializing] = useState(true);
 
-  useOfflineQueueReplay(isAuthenticated);
+  useOfflineQueueReplay(user?.id ?? null);
 
   useEffect(() => {
     fetchCurrentUser().then((u) => {
       if (u) {
         setUser(u);
         setIsAuthenticated(true);
+        setCurrentUserId(u.id);
       }
       setInitializing(false);
     });
@@ -54,23 +56,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const u = await apiLogin(email, password);
     setUser(u);
     setIsAuthenticated(true);
+    setCurrentUserId(u.id);
   }, []);
 
   const register = useCallback(async (email: string, password: string) => {
     const u = await apiRegister(email, password);
     setUser(u);
     setIsAuthenticated(true);
+    setCurrentUserId(u.id);
   }, []);
 
   const logout = useCallback(() => {
+    const uid = user?.id;
     apiLogout()
       .catch(() => {})
       .finally(() => {
         setUser(null);
         setIsAuthenticated(false);
+        setCurrentUserId(null);
         queryClient.clear();
+        if (uid) {
+          clearUserMutations(uid).catch(() => {});
+        }
       });
-  }, []);
+  }, [user]);
 
   if (initializing) {
     return <div className="flex items-center justify-center h-screen text-ink-light">Loading...</div>;

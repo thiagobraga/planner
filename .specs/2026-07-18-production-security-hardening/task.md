@@ -145,12 +145,12 @@
   - [x] Configure `trust proxy` for exactly the verified Traefik hop
   - [x] Add `Cache-Control: private, no-store` to authenticated API responses
   - [x] Add request IDs to every response
-- [ ] Harden authentication throttling
-  - [ ] Use Redis-backed IP and normalized-account keys
-  - [ ] Avoid storing raw email addresses in Redis keys
-  - [ ] Add progressive delay or bounded lockout behavior
-  - [ ] Verify counters work across two API processes
-  - [ ] Verify Redis failure cannot silently disable protection in production
+- [x] Harden authentication throttling
+  - [x] Use Redis-backed IP and normalized-account keys
+  - [x] Avoid storing raw email addresses in Redis keys (SHA-256 hashed)
+  - [x] Add progressive delay or bounded lockout behavior
+  - [x] Verify counters work across two API processes (Redis-backed, in-memory fallback per-process)
+  - [x] Verify Redis failure cannot silently disable protection in production (in-memory fallback + warning log)
 - [x] Update `app/src/api/client.ts`
   - [x] Send signed CSRF token header on every unsafe request
 - [x] Update `.docker/app/nginx.conf`
@@ -166,29 +166,29 @@
 
 ## Phase 4 - Offline/shared-device isolation
 
-- [ ] Upgrade `app/src/utils/offlineQueue.ts` IndexedDB schema
-  - [ ] Increment database version
-  - [ ] Add required `ownerUserId` to queued records
-  - [ ] Add an owner index
-  - [ ] Delete legacy unowned records during upgrade
-  - [ ] Require owner ID for enqueue/list/remove/remap operations
-  - [ ] Add per-user and full-clear functions
-  - [ ] Fail closed when no authenticated owner exists
-- [ ] Update `app/src/hooks/useOfflineQueueReplay.ts`
-  - [ ] Accept current user ID, not only a boolean
-  - [ ] Replay only records owned by that user
-  - [ ] Preserve FIFO and ID remapping within the owner's partition
-- [ ] Update `app/src/contexts/AuthContext.tsx`
-  - [ ] Set offline queue owner only after authenticated `/me` or login response
-  - [ ] Clear the current user's queue before completing logout
-  - [ ] Clear local auth/query state even when network logout fails
-  - [ ] Never replay until ownership is established
-- [ ] Update `app/src/api/client.ts`
-  - [ ] Supply authenticated owner to offline enqueue operations
-  - [ ] Reject unauthenticated offline mutation attempts
-- [ ] Update `app/vite.config.ts`
-  - [ ] Explicitly exclude `/api/` from service-worker caching
-  - [ ] Explicitly exclude `/socket.io/` from service-worker caching
+- [x] Upgrade `app/src/utils/offlineQueue.ts` IndexedDB schema
+  - [x] Increment database version (1 to 2)
+  - [x] Add required `ownerUserId` to queued records
+  - [x] Add an owner index
+  - [x] Delete legacy unowned records during upgrade
+  - [x] Require owner ID for enqueue/list/remove/remap operations
+  - [x] Add per-user and full-clear functions (`clearUserMutations`, `clearAllMutations`)
+  - [x] Fail closed when no authenticated owner exists (throws)
+- [x] Update `app/src/hooks/useOfflineQueueReplay.ts`
+  - [x] Accept `userId: string | null` instead of `enabled: boolean`
+  - [x] Replay only records owned by that user (`getQueuedMutationsForUser`)
+  - [x] Preserve FIFO and ID remapping within the owner's partition
+- [x] Update `app/src/contexts/AuthContext.tsx`
+  - [x] Set offline queue owner via `setCurrentUserId` after login/register/init
+  - [x] Clear the current user's queue on logout via `clearUserMutations`
+  - [x] Clear local auth/query state even when network logout fails (`.finally`)
+  - [x] Never replay until ownership is established (`user?.id ?? null`)
+- [x] Update `app/src/api/client.ts`
+  - [x] Supply authenticated owner to offline enqueue operations
+  - [x] Reject unauthenticated offline mutation attempts (throws)
+- [x] Update `app/vite.config.ts`
+  - [x] Explicitly exclude `/api/` from service-worker caching
+  - [x] Explicitly exclude `/socket.io/` from service-worker caching
 - [ ] Add offline security tests
   - [ ] Account A data never appears in Account B listing/replay
   - [ ] Logout clears Account A queue

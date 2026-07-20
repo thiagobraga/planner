@@ -12,6 +12,8 @@ interface PreferencesRow {
   show_dots: boolean;
   background: string;
   small_caps: boolean;
+  hide_completed_tasks: boolean;
+  hide_old_notes: boolean;
 }
 
 function formatPreferences(row: PreferencesRow) {
@@ -25,6 +27,8 @@ function formatPreferences(row: PreferencesRow) {
     showDots: row.show_dots,
     background: row.background,
     smallCaps: row.small_caps,
+    hideCompletedTasks: row.hide_completed_tasks,
+    hideOldNotes: row.hide_old_notes,
   };
 }
 
@@ -51,6 +55,8 @@ export interface UpdatePreferencesInput {
   showDots?: boolean;
   background?: string;
   smallCaps?: boolean;
+  hideCompletedTasks?: boolean;
+  hideOldNotes?: boolean;
 }
 
 export function validatePreferences(input: UpdatePreferencesInput): UpdatePreferencesInput {
@@ -88,6 +94,14 @@ export function validatePreferences(input: UpdatePreferencesInput): UpdatePrefer
 
   if (input.smallCaps !== undefined && typeof input.smallCaps !== "boolean") {
     errors.push({ field: "smallCaps", message: "smallCaps must be a boolean" });
+  }
+
+  if (input.hideCompletedTasks !== undefined && typeof input.hideCompletedTasks !== "boolean") {
+    errors.push({ field: "hideCompletedTasks", message: "hideCompletedTasks must be a boolean" });
+  }
+
+  if (input.hideOldNotes !== undefined && typeof input.hideOldNotes !== "boolean") {
+    errors.push({ field: "hideOldNotes", message: "hideOldNotes must be a boolean" });
   }
 
   if (errors.length > 0) {
@@ -157,6 +171,14 @@ export async function updatePreferences(userId: string, input: UpdatePreferences
   if (input.smallCaps !== undefined) {
     setClauses.push(`small_caps = $${paramIndex++}`);
     values.push(input.smallCaps);
+  }
+  if (input.hideCompletedTasks !== undefined) {
+    setClauses.push(`hide_completed_tasks = $${paramIndex++}`);
+    values.push(input.hideCompletedTasks);
+  }
+  if (input.hideOldNotes !== undefined) {
+    setClauses.push(`hide_old_notes = $${paramIndex++}`);
+    values.push(input.hideOldNotes);
   }
 
   if (setClauses.length === 0) {

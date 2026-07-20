@@ -6,6 +6,16 @@ const WRITE_METHODS: QueuedMutationMethod[] = ['POST', 'PATCH', 'PUT', 'DELETE']
 
 const CSRF_COOKIE = 'planner_csrf';
 
+let currentUserId: string | null = null;
+
+export function setCurrentUserId(id: string | null): void {
+  currentUserId = id;
+}
+
+export function getCurrentUserId(): string | null {
+  return currentUserId;
+}
+
 function getCookie(name: string): string | undefined {
   const match = document.cookie.match(new RegExp(`(?:^|;\\s*)${name}=([^;]*)`));
   return match ? decodeURIComponent(match[1]) : undefined;
@@ -79,7 +89,10 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
     // be corrected once the real server-assigned id came back from replay.
     const isCreate = method === 'POST' && !extractIdFromPath(path);
     const clientEntityId = isCreate ? crypto.randomUUID() : undefined;
-    await enqueueMutation({ method, path, body: (init.body as string) ?? '', clientEntityId });
+    if (!currentUserId) {
+      throw new Error('Cannot enqueue offline mutation without an authenticated user');
+    }
+    await enqueueMutation({ method, path, body: (init.body as string) ?? '', ownerUserId: currentUserId, clientEntityId });
     return buildSyntheticResponse<T>(method, path, init, clientEntityId);
   }
 
@@ -162,6 +175,8 @@ export interface Preferences {
   showDots: boolean;
   background: 'beige' | 'white';
   smallCaps: boolean;
+  hideCompletedTasks: boolean;
+  hideOldNotes: boolean;
 }
 
 export async function fetchInboxTasks(): Promise<{ tasks: ApiTask[]; collectionId: string | null }> {
@@ -188,7 +203,7 @@ export async function fetchPreferences(): Promise<Preferences> {
   return request<Preferences>('/preferences');
 }
 
-export async function apiUpdatePreferences(patch: Partial<Preferences>): Promise<Preferences> {
+export async function apiUpdatePreferences(patch: Partial<Omit<Preferences, 'userId'>>): Promise<Preferences> {
   return request<Preferences>('/preferences', {
     method: 'PATCH',
     body: JSON.stringify(patch),
@@ -203,6 +218,7 @@ export async function apiCreateTask(input: {
   parentTaskId?: string;
   depth?: number;
   type?: 'task' | 'note';
+  recurrenceRule?: object | null;
 }): Promise<ApiTask> {
   return request<ApiTask>('/tasks', {
     method: 'POST',

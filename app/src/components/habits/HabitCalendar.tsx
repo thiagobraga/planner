@@ -9,12 +9,14 @@ import { containerForGroup } from '../../utils/habitProjection';
 import type { HabitDragData, HabitGroupDragData, HabitSectionDropData } from '../../types/drag';
 import type { HabitEditTarget } from './HabitTimeline';
 import type { ApiHabitGroup } from '../../api/client';
+import type { WeekStart } from '../../utils/date';
 
 export interface HabitCalendarProps {
   sections: HabitSections;
   today: Date;
   year: number;
   month: number;
+  weekStart: WeekStart;
   onMonthChange: (year: number, month: number) => void;
   onToggleDay: (node: HabitNode, iso: string) => void;
   editing?: HabitEditTarget;
@@ -37,6 +39,7 @@ export function HabitCalendar({
   today,
   year,
   month,
+  weekStart,
   onMonthChange,
   onToggleDay,
   editing,
@@ -78,6 +81,7 @@ export function HabitCalendar({
               today={today}
               year={year}
               month={month}
+              weekStart={weekStart}
               onToggleDay={onToggleDay}
               {...editProps}
             />
@@ -115,6 +119,7 @@ export function HabitCalendar({
                   today={today}
                   year={year}
                   month={month}
+                  weekStart={weekStart}
                   onToggleDay={onToggleDay}
                   {...editProps}
                 />
@@ -188,6 +193,7 @@ interface HabitCalendarGridProps {
   today: Date;
   year: number;
   month: number;
+  weekStart: WeekStart;
   onToggleDay: (node: HabitNode, iso: string) => void;
   editing?: HabitEditTarget;
   activeDragId?: string | null;
@@ -202,6 +208,7 @@ function HabitCalendarGrid({
   today,
   year,
   month,
+  weekStart,
   onToggleDay,
   editing,
   activeDragId,
@@ -231,6 +238,7 @@ function HabitCalendarGrid({
           <HabitMonthGrid
             year={year}
             month={month}
+            weekStart={weekStart}
             today={today}
             label={node.name}
             stateFor={(iso) => dayState(node, iso)}

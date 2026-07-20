@@ -1,6 +1,7 @@
 import { useMemo, useState, useCallback } from 'react';
 import { TaskList } from '../components/TaskList';
 import type { Task } from '../components/TaskItem';
+import { flattenTasks } from '../utils/taskProjection';
 import { getPhrase } from '../utils/phrases';
 import { applyIndent } from '../utils/taskTree';
 
@@ -62,8 +63,11 @@ export function UpcomingPage() {
       const next = { ...prev };
       for (const key of Object.keys(next)) {
         if (!next[key].some((t) => t.id === id)) continue;
-        const { tasks, changed } = applyIndent(next[key], id, dir);
-        if (changed) next[key] = tasks;
+        const flatNodes = flattenTasks(next[key]).map((r) => ({ ...r.task, indent: r.depth }));
+        const { tasks, changed, parentTaskId } = applyIndent(flatNodes, id, dir);
+        if (changed) {
+          next[key] = tasks.map(t => t.id === id ? { ...t, parentTaskId: parentTaskId ?? undefined } : t);
+        }
       }
       return next;
     });

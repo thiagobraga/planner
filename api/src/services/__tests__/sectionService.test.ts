@@ -107,11 +107,11 @@ describe("sectionService", () => {
         query: mockClientQuery,
         release: mockRelease,
       });
-      mockClientQuery.mockResolvedValueOnce(); // BEGIN
+      mockClientQuery.mockResolvedValueOnce(undefined); // BEGIN
       mockClientQuery.mockResolvedValueOnce({ rows: [{ id: "s2", order_value: 1000 }] }); // siblings
-      mockClientQuery.mockResolvedValueOnce(); // update s2
-      mockClientQuery.mockResolvedValueOnce(); // update s1
-      mockClientQuery.mockResolvedValueOnce(); // COMMIT
+      mockClientQuery.mockResolvedValueOnce(undefined); // update s2
+      mockClientQuery.mockResolvedValueOnce(undefined); // update s1
+      mockClientQuery.mockResolvedValueOnce(undefined); // COMMIT
       mockQuery.mockResolvedValueOnce({ rows: [makeSectionRow({ order_value: 0 })] }); // final fetch
 
       const section = await updateSection("section-1", "user-1", { position: 0 });

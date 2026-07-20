@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { TaskList } from '../components/TaskList';
 import { nextOrderValue } from '../utils/order';
+import { extractNaturalDate } from '../utils/date';
 import { setPendingColumn } from '../components/TaskItem';
 import type { Task } from '../components/TaskItem';
 import {
@@ -11,6 +12,7 @@ import {
   apiUpdateTask,
   apiToggleTask,
   apiDeleteTask,
+  fetchPreferences,
   type ApiTask,
 } from '../api/client';
 import { useAuth } from '../contexts/AuthContext';
@@ -61,6 +63,10 @@ export function CollectionsPage() {
     staleTime: 30_000,
     enabled: !!id,
   });
+  const { data: preferences } = useQuery({
+    queryKey: ['preferences'],
+    queryFn: fetchPreferences,
+  });
 
   useEffect(() => {
     if (data?.tasks) {
@@ -98,11 +104,19 @@ export function CollectionsPage() {
     if (!trimmed) return;
     const tid = tempId();
     setInput('');
+    const extracted = extractNaturalDate(trimmed);
+    
     setTasks((prev) => [
       ...prev,
-      { id: tid, title: trimmed, priority: 4, isCompleted: false, orderValue: nextOrderValue(prev), type: 'task' },
+      { id: tid, title: extracted.title, priority: 4, isCompleted: false, orderValue: nextOrderValue(prev), type: 'task' },
     ]);
-    apiCreateTask({ title: trimmed, priority: 4, collectionId: id })
+    apiCreateTask({ 
+      title: extracted.title, 
+      priority: 4, 
+      collectionId: id,
+      dueDate: extracted.dueDate, 
+      recurrenceRule: extracted.recurrenceRule 
+    })
       .then((created) => {
         setTasks((prev) => prev.map((t) => (t.id === tid ? apiToTask(created) : t)));
       })
@@ -170,13 +184,19 @@ export function CollectionsPage() {
       const currentTask = tasks.find((t) => t.id === taskId);
       const parentTaskId = currentTask?.parentTaskId ?? undefined;
       const currentIndent = currentTask?.indent ?? 0;
+      
+      const extracted = extractNaturalDate(trimmed);
+      
+      // was a new row - create it, keeping whichever type it was opened as
       apiCreateTask({
-        title: trimmed,
+        title: extracted.title,
         priority: 4,
         collectionId: id,
         parentTaskId,
         depth: currentIndent,
         type: currentTask?.type ?? 'task',
+        dueDate: extracted.dueDate,
+        recurrenceRule: extracted.recurrenceRule,
       })
         .then((created) => {
           setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...apiToTask(created), orderValue: t.orderValue } : t)));
@@ -250,14 +270,25 @@ export function CollectionsPage() {
     });
   }, []);
   const handleToggle = useCallback((taskId: string) => {
+    const hideCompleted = preferences?.hideCompletedTasks ?? false;
+    const task = tasks.find((t) => t.id === taskId);
+    const removeOnComplete = hideCompleted && task && !task.isCompleted;
+    const previousTasks = tasks;
+
     setTasks((prev) =>
-      prev.map((t) => (t.id === taskId ? { ...t, isCompleted: !t.isCompleted } : t)),
+      removeOnComplete
+        ? prev.filter((t) => t.id !== taskId)
+        : prev.map((t) => (t.id === taskId ? { ...t, isCompleted: !t.isCompleted } : t)),
     );
     if (!taskId.startsWith('temp-')) {
-      const task = tasks.find((t) => t.id === taskId);
-      if (task) apiToggleTask(taskId, !task.isCompleted).catch(() => invalidate());
+      if (task) {
+        apiToggleTask(taskId, !task.isCompleted).catch(() => {
+          setTasks(previousTasks);
+          invalidate();
+        });
+      }
     }
-  }, [tasks]);
+  }, [invalidate, preferences?.hideCompletedTasks, tasks]);
 
   // Same query key the sidebar uses, so the ancestor lookup reads from a cache
   // that is already populated rather than refetching.

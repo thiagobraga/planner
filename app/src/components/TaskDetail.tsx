@@ -41,6 +41,7 @@ export function TaskDetail({ task, onClose, onUpdate, onDelete }: TaskDetailProp
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [dueDate, setDueDate] = useState('');
+  const [recurrenceRule, setRecurrenceRule] = useState<object | null>(null);
   const [priority, setPriority] = useState(4);
   const [newComment, setNewComment] = useState('');
   const [comments, setComments] = useState<Comment[]>([]);
@@ -54,6 +55,7 @@ export function TaskDetail({ task, onClose, onUpdate, onDelete }: TaskDetailProp
       setTitle(task.title);
       setDescription(task.description ?? '');
       setDueDate(task.dueDate ?? '');
+      setRecurrenceRule(task.recurrenceRule ?? null);
       setPriority(task.priority);
       setConfirmDelete(false);
     }
@@ -80,6 +82,17 @@ export function TaskDetail({ task, onClose, onUpdate, onDelete }: TaskDetailProp
   const handlePriorityChange = (p: number) => {
     setPriority(p);
     if (task) onUpdate?.(task.id, { priority: p });
+  };
+
+  const handleRecurrenceChange = (type: string) => {
+    if (type === 'none') {
+      setRecurrenceRule(null);
+      if (task) onUpdate?.(task.id, { recurrenceRule: null });
+    } else {
+      const rule = { type, interval: 1 };
+      setRecurrenceRule(rule);
+      if (task) onUpdate?.(task.id, { recurrenceRule: rule });
+    }
   };
 
   const handleAddSubtask = (e: React.FormEvent) => {
@@ -182,6 +195,28 @@ export function TaskDetail({ task, onClose, onUpdate, onDelete }: TaskDetailProp
             aria-label="Due date"
             className="w-full text-[13px] leading-6 text-ink bg-transparent border border-dot rounded outline-none py-1 px-2"
           />
+        </div>
+
+        {/* Recurrence */}
+        <div className="mb-5">
+          <label
+            htmlFor="task-recurrence"
+            className="block text-[11px] tracking-[0.08em] uppercase text-ink-light mb-1.5"
+          >
+            Repeat
+          </label>
+          <select
+            id="task-recurrence"
+            value={(recurrenceRule as any)?.type || 'none'}
+            onChange={(e) => handleRecurrenceChange(e.target.value)}
+            className="w-full text-[13px] leading-6 text-ink bg-transparent border border-dot rounded outline-none py-1 px-2"
+          >
+            <option value="none">None</option>
+            <option value="daily">Daily</option>
+            <option value="weekly">Weekly</option>
+            <option value="monthly">Monthly</option>
+            <option value="yearly">Yearly</option>
+          </select>
         </div>
 
         {/* Priority */}

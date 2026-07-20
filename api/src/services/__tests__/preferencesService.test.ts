@@ -34,6 +34,9 @@ const prefsRow = {
   font: "lora",
   show_dots: true,
   background: "beige",
+  small_caps: false,
+  hide_completed_tasks: false,
+  hide_old_notes: false,
 };
 
 describe("validatePreferences", () => {
@@ -68,6 +71,11 @@ describe("validatePreferences", () => {
     expect(() => validatePreferences({ notificationsEnabled: "yes" as unknown as boolean })).toThrow(AppError);
   });
 
+  it("rejects non-boolean behavior toggles", () => {
+    expect(() => validatePreferences({ hideCompletedTasks: "yes" as unknown as boolean })).toThrow(AppError);
+    expect(() => validatePreferences({ hideOldNotes: "yes" as unknown as boolean })).toThrow(AppError);
+  });
+
   it("aggregates multiple errors", () => {
     try {
       validatePreferences({ timeZone: "x", theme: "y", weekStart: "z" });
@@ -87,6 +95,8 @@ describe("getPreferences", () => {
     expect(p.weekStart).toBe("sunday");
     expect(p.theme).toBe("system");
     expect(p.notificationsEnabled).toBe(true);
+    expect(p.hideCompletedTasks).toBe(false);
+    expect(p.hideOldNotes).toBe(false);
   });
 
   it("404s when no preferences", async () => {
@@ -134,6 +144,19 @@ describe("updatePreferences", () => {
     expect(p.theme).toBe("system");
     expect(mockQuery.mock.calls[0][0]).toMatch(/SELECT/);
     expect(mockPublishEvent).not.toHaveBeenCalled();
+  });
+
+  it("updates behavior toggles and publishes the merged payload", async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [{ ...prefsRow, hide_completed_tasks: true, hide_old_notes: true }] });
+
+    const p = await updatePreferences("u1", { hideCompletedTasks: true, hideOldNotes: true });
+
+    expect(p.hideCompletedTasks).toBe(true);
+    expect(p.hideOldNotes).toBe(true);
+    const sql = mockQuery.mock.calls[0][0] as string;
+    expect(sql).toMatch(/hide_completed_tasks = \$1/);
+    expect(sql).toMatch(/hide_old_notes = \$2/);
+    expect(mockBuildEvent).toHaveBeenCalledWith(expect.objectContaining({ payload: p }));
   });
 
   it("rejects invalid input before db call", async () => {

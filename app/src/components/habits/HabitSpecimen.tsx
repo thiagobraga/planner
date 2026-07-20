@@ -1,14 +1,14 @@
 import { useMemo, useState } from 'react';
 import { HabitDot } from './HabitDot';
 import { HabitMonthGrid } from './HabitMonthGrid';
-import { fmtISO, startOfDay } from '../../utils/date';
+import { fmtISO, startOfDay, type WeekStart } from '../../utils/date';
 import { buildHabitTree, dayState, habitsToToggle, parentToggleTarget } from '../../utils/habitTree';
 import type { ApiHabit } from '../../api/client';
 
 // Styleguide specimen for the habit system. It drives the real HabitDot and
 // HabitMonthGrid components rather than reimplementing them, so this card cannot
 // drift away from what the Habits page actually renders.
-export function HabitSpecimen() {
+export function HabitSpecimen({ weekStart }: { weekStart: WeekStart }) {
   const today = useMemo(() => startOfDay(new Date()), []);
 
   const [habits, setHabits] = useState<ApiHabit[]>(() => {
@@ -88,6 +88,7 @@ export function HabitSpecimen() {
                 year={today.getFullYear()}
                 month={today.getMonth()}
                 today={today}
+                weekStart={weekStart}
                 label={habit.name}
                 stateFor={(iso) => dayState(habit, iso)}
                 onToggle={(iso) => toggle(habit.id, iso)}

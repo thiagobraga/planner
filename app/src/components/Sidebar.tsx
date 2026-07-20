@@ -13,7 +13,6 @@ interface SidebarProps {
   isOpen?: boolean;
   onClose?: () => void;
   collapsed?: boolean;
-  onOpenHelp?: () => void;
 }
 
 export const BjTask = ({ size = 15 }: { size?: number }) => (
@@ -98,7 +97,7 @@ function InboxNavItem({ label, icon }: { label: string; icon: ReactNode }) {
   );
 }
 
-export function Sidebar({ isOpen, onClose, collapsed = false, onOpenHelp }: SidebarProps) {
+export function Sidebar({ isOpen, onClose, collapsed = false }: SidebarProps) {
   const { logout } = useAuth();
   const navigate = useNavigate();
 
@@ -147,18 +146,13 @@ export function Sidebar({ isOpen, onClose, collapsed = false, onOpenHelp }: Side
             <StyleguideIcon size={16} />
           </NavLink>
 
-          <a
-            href="#"
-            role="button"
-            onClick={(e) => {
-              e.preventDefault();
-              onOpenHelp?.();
-            }}
+          <NavLink
+            to="/help"
             title="Help"
-            className="sidebar-icon-link"
+            className={({ isActive }) => (isActive ? 'sidebar-icon-link sidebar-icon-link--active' : 'sidebar-icon-link')}
           >
             <HelpCircle size={16} strokeWidth={1.5} />
-          </a>
+          </NavLink>
 
           <div className="w-8 h-px bg-dot opacity-30 my-1"></div>
 
@@ -225,7 +219,7 @@ export function Sidebar({ isOpen, onClose, collapsed = false, onOpenHelp }: Side
         <nav aria-label="Settings" className="flex flex-col">
           <SidebarNavItem to="/settings" label="Settings" icon={<Settings size={15} strokeWidth={1.5} />} />
           <SidebarNavItem to="/styleguide" label="Styleguide" icon={<StyleguideIcon size={15} />} />
-          <SidebarNavItem label="Help" icon={<HelpCircle size={15} strokeWidth={1.5} />} onClick={onOpenHelp} />
+          <SidebarNavItem to="/help" label="Help" icon={<HelpCircle size={15} strokeWidth={1.5} />} />
 
           <div className="border-t border-dot my-4 mx-0"></div>
 

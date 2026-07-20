@@ -26,7 +26,8 @@ describe('offline queue: structural moves', () => {
     await enqueueMutation({
       method: 'PATCH',
       path: '/tasks/task-1/move',
-      body: JSON.stringify({
+      ownerUserId: 'user-1',
+        body: JSON.stringify({
         parentTaskId: null,
         scope: { kind: 'collection', collectionId: 'c-1' },
         position: 2,
@@ -50,13 +51,15 @@ describe('offline queue: structural moves', () => {
     await enqueueMutation({
       method: 'POST',
       path: '/tasks',
-      body: JSON.stringify({ title: 'Made offline' }),
+      ownerUserId: 'user-1',
+        body: JSON.stringify({ title: 'Made offline' }),
       clientEntityId: 'temp-1',
     });
     await enqueueMutation({
       method: 'PATCH',
       path: '/tasks/temp-1/move',
-      body: JSON.stringify({ parentTaskId: null, position: 0 }),
+      ownerUserId: 'user-1',
+        body: JSON.stringify({ parentTaskId: null, position: 0 }),
     });
 
     // FIFO is what guarantees the task exists by the time the move replays.
@@ -76,10 +79,12 @@ describe('offline queue: structural moves', () => {
       await enqueueMutation({
         method: 'POST',
         path: '/tasks',
+        ownerUserId: 'user-1',
         body: '{}',
         clientEntityId: 'temp-1',
       });
-      await enqueueMutation({ method: 'PATCH', path: '/tasks/temp-1/move', body: '{}' });
+      await enqueueMutation({ method: 'PATCH', path: '/tasks/temp-1/move', ownerUserId: 'user-1',
+        body: '{}' });
     } finally {
       frozen.mockRestore();
     }
@@ -96,7 +101,8 @@ describe('offline queue: structural moves', () => {
     await enqueueMutation({
       method: 'PATCH',
       path: '/tasks/temp-1/move',
-      body: JSON.stringify({ parentTaskId: null, position: 0 }),
+      ownerUserId: 'user-1',
+        body: JSON.stringify({ parentTaskId: null, position: 0 }),
     });
 
     await remapQueuedId('temp-1', 'server-99');
@@ -111,7 +117,8 @@ describe('offline queue: structural moves', () => {
     await enqueueMutation({
       method: 'PATCH',
       path: '/tasks/task-1/move',
-      body: JSON.stringify({ parentTaskId: 'temp-parent', position: 0 }),
+      ownerUserId: 'user-1',
+        body: JSON.stringify({ parentTaskId: 'temp-parent', position: 0 }),
     });
 
     await remapQueuedId('temp-parent', 'server-parent');
@@ -125,9 +132,12 @@ describe('offline queue: structural moves', () => {
   it('keeps a habit move queued alongside task moves in the order made', async () => {
     const { enqueueMutation, getQueuedMutations } = await import('../offlineQueue');
 
-    await enqueueMutation({ method: 'PATCH', path: '/tasks/t-1/move', body: '{}' });
-    await enqueueMutation({ method: 'PATCH', path: '/habits/h-1/move', body: '{}' });
-    await enqueueMutation({ method: 'PATCH', path: '/habit-groups/g-1/move', body: '{}' });
+    await enqueueMutation({ method: 'PATCH', path: '/tasks/t-1/move', ownerUserId: 'user-1',
+        body: '{}' });
+    await enqueueMutation({ method: 'PATCH', path: '/habits/h-1/move', ownerUserId: 'user-1',
+        body: '{}' });
+    await enqueueMutation({ method: 'PATCH', path: '/habit-groups/g-1/move', ownerUserId: 'user-1',
+        body: '{}' });
 
     expect((await getQueuedMutations()).map((m) => m.path)).toEqual([
       '/tasks/t-1/move',

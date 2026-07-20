@@ -1,14 +1,15 @@
 import crypto from 'node:crypto';
 import pool from '../db/pool.js';
-import { redisClient } from '../db/redis.js';
 import { AppError } from '../utils/AppError.js';
 import { validate, type ValidationError } from '../utils/validate.js';
-import { DISABLE_RATE_LIMITS_IN_DEV } from '../config.js';
 import { validatePassword, hashPassword, verifyAndUpgrade } from './passwordService.js';
 import { createSession } from './sessionService.js';
-
-const LOGIN_RATE_LIMIT_MAX = 10;
-const LOGIN_RATE_LIMIT_WINDOW = 15 * 60;
+import {
+  checkLoginRate,
+  incrementLoginAttempts,
+  clearLoginRate,
+  getProgressiveDelay,
+} from './rateLimitService.js';
 
 const EMAIL_REGEX =
   /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
@@ -97,17 +98,17 @@ export async function register(input: RegisterInput): Promise<UserData> {
   return { id: userId, email: input.email, displayName: input.displayName ?? null };
 }
 
-export async function login(email: string, password: string): Promise<{ user: UserData; rawToken: string }> {
-  const rateLimitKey = `login_attempts:${email.toLowerCase()}`;
-  if (!DISABLE_RATE_LIMITS_IN_DEV && redisClient.isReady) {
-    const attempts = await redisClient.get(rateLimitKey);
-    if (attempts && parseInt(attempts, 10) > LOGIN_RATE_LIMIT_MAX) {
-      throw new AppError({
-        code: 'RATE_LIMITED',
-        message: 'Too many failed login attempts. Please try again later.',
-        statusCode: 429,
-      });
-    }
+export async function login(email: string, password: string, ip?: string): Promise<{ user: UserData; rawToken: string }> {
+  const clientIp = ip ?? 'unknown';
+
+  const rateResult = await checkLoginRate(email, clientIp);
+
+  if (!rateResult.allowed) {
+    throw new AppError({
+      code: 'RATE_LIMITED',
+      message: 'Too many failed login attempts. Please try again later.',
+      statusCode: 429,
+    });
   }
 
   const result = await pool.query(
@@ -118,9 +119,7 @@ export async function login(email: string, password: string): Promise<{ user: Us
   const user = result.rows[0];
 
   if (!user) {
-    if (!DISABLE_RATE_LIMITS_IN_DEV) {
-      await incrementFailedAttempts(rateLimitKey);
-    }
+    await incrementLoginAttempts(email, clientIp);
     throw new AppError({
       code: 'INVALID_CREDENTIALS',
       message: 'Invalid email or password.',
@@ -131,9 +130,7 @@ export async function login(email: string, password: string): Promise<{ user: Us
   const { valid, newHash } = await verifyAndUpgrade(user.password_hash, password);
 
   if (!valid) {
-    if (!DISABLE_RATE_LIMITS_IN_DEV) {
-      await incrementFailedAttempts(rateLimitKey);
-    }
+    await incrementLoginAttempts(email, clientIp);
     throw new AppError({
       code: 'INVALID_CREDENTIALS',
       message: 'Invalid email or password.',
@@ -145,7 +142,7 @@ export async function login(email: string, password: string): Promise<{ user: Us
     await pool.query('UPDATE users SET password_hash = $1 WHERE id = $2', [newHash, user.id]).catch(() => {});
   }
 
-  if (!DISABLE_RATE_LIMITS_IN_DEV && redisClient.isReady) await redisClient.del(rateLimitKey).catch(() => {});
+  await clearLoginRate(email, clientIp);
 
   const rawToken = await createSession(user.id);
 
@@ -157,14 +154,6 @@ export async function login(email: string, password: string): Promise<{ user: Us
     },
     rawToken,
   };
-}
-
-async function incrementFailedAttempts(key: string): Promise<void> {
-  if (!redisClient.isReady) return;
-  const current = await redisClient.incr(key);
-  if (current === 1) {
-    await redisClient.expire(key, LOGIN_RATE_LIMIT_WINDOW);
-  }
 }
 
 const PASSWORD_RESET_EXPIRY_MINUTES = 60;

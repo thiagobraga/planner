@@ -26,6 +26,10 @@ describe('client offline integration', () => {
     fetchSpy = vi.fn();
     global.fetch = fetchSpy as unknown as typeof fetch;
 
+    // Set a current user so offline enqueues work
+    const { setCurrentUserId } = await import('../client');
+    setCurrentUserId('test-user');
+
     // Drain the queue between tests (shared fake-indexeddb instance).
     const { getQueuedMutations, removeMutation } = await import('../../utils/offlineQueue');
     const existing = await getQueuedMutations();

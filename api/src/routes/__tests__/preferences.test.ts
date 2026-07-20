@@ -27,17 +27,25 @@ describe("preferences routes", () => {
   });
 
   it("GET /api/v1/preferences → calls getPreferences", async () => {
-    mockGetPreferences.mockResolvedValue({ font: "lora" });
+    mockGetPreferences.mockResolvedValue({
+      font: "lora",
+      hideCompletedTasks: false,
+      hideOldNotes: false,
+    });
     const res = await request(app).get("/api/v1/preferences");
     expect(res.status).toBe(200);
-    expect(res.body).toEqual({ font: "lora" });
+    expect(res.body).toEqual({
+      font: "lora",
+      hideCompletedTasks: false,
+      hideOldNotes: false,
+    });
     expect(mockGetPreferences).toHaveBeenCalledWith("test-user");
   });
 
   it("PATCH /api/v1/preferences → calls updatePreferences", async () => {
-    mockUpdatePreferences.mockResolvedValue({ font: "playpen" });
-    const res = await request(app).patch("/api/v1/preferences").send({ font: "playpen" });
+    mockUpdatePreferences.mockResolvedValue({ font: "playpen", hideCompletedTasks: true, hideOldNotes: true });
+    const res = await request(app).patch("/api/v1/preferences").send({ font: "playpen", hideCompletedTasks: true });
     expect(res.status).toBe(200);
-    expect(mockUpdatePreferences).toHaveBeenCalledWith("test-user", { font: "playpen" });
+    expect(mockUpdatePreferences).toHaveBeenCalledWith("test-user", { font: "playpen", hideCompletedTasks: true });
   });
 });

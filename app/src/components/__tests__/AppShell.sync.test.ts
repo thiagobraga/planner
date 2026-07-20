@@ -21,10 +21,12 @@ import { useSync } from '../../hooks/useSync';
 // Mirrors the AppShell callback for sync events handled at the shell level.
 function useAppShellSync({
   invalidateCollections,
+  invalidateInbox,
   invalidatePreferences,
   setPreferences,
 }: {
   invalidateCollections: () => void;
+  invalidateInbox: () => void;
   invalidatePreferences: () => void;
   setPreferences: (payload: unknown) => void;
 }) {
@@ -37,8 +39,10 @@ function useAppShellSync({
       } else {
         invalidatePreferences();
       }
+      invalidateInbox();
+      invalidateCollections();
     }
-  }, [invalidateCollections, invalidatePreferences, setPreferences]));
+  }, [invalidateCollections, invalidateInbox, invalidatePreferences, setPreferences]));
 }
 
 function makeEvent(overrides: Partial<SyncEvent> = {}): SyncEvent {
@@ -55,12 +59,14 @@ function makeEvent(overrides: Partial<SyncEvent> = {}): SyncEvent {
 
 describe('AppShell: sync event invalidation', () => {
   let mockInvalidate: ReturnType<typeof vi.fn>;
+  let mockInvalidateInbox: ReturnType<typeof vi.fn>;
   let mockInvalidatePreferences: ReturnType<typeof vi.fn>;
   let mockSetPreferences: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     capturedSyncHandler = null;
     mockInvalidate = vi.fn();
+    mockInvalidateInbox = vi.fn();
     mockInvalidatePreferences = vi.fn();
     mockSetPreferences = vi.fn();
   });
@@ -68,6 +74,7 @@ describe('AppShell: sync event invalidation', () => {
   it('does not invalidate when a task sync event fires', () => {
     renderHook(() => useAppShellSync({
       invalidateCollections: mockInvalidate,
+      invalidateInbox: mockInvalidateInbox,
       invalidatePreferences: mockInvalidatePreferences,
       setPreferences: mockSetPreferences,
     }));
@@ -80,6 +87,7 @@ describe('AppShell: sync event invalidation', () => {
   it('does not invalidate for all task event types', () => {
     renderHook(() => useAppShellSync({
       invalidateCollections: mockInvalidate,
+      invalidateInbox: mockInvalidateInbox,
       invalidatePreferences: mockInvalidatePreferences,
       setPreferences: mockSetPreferences,
     }));
@@ -93,6 +101,7 @@ describe('AppShell: sync event invalidation', () => {
   it('invalidates for collection entity types', () => {
     renderHook(() => useAppShellSync({
       invalidateCollections: mockInvalidate,
+      invalidateInbox: mockInvalidateInbox,
       invalidatePreferences: mockInvalidatePreferences,
       setPreferences: mockSetPreferences,
     }));
@@ -105,6 +114,7 @@ describe('AppShell: sync event invalidation', () => {
   it('sets preferences from preferences sync payload', () => {
     renderHook(() => useAppShellSync({
       invalidateCollections: mockInvalidate,
+      invalidateInbox: mockInvalidateInbox,
       invalidatePreferences: mockInvalidatePreferences,
       setPreferences: mockSetPreferences,
     }));
@@ -113,12 +123,15 @@ describe('AppShell: sync event invalidation', () => {
       capturedSyncHandler?.(makeEvent({ entityType: 'preferences', eventType: 'updated', entityId: 'user-1', payload }));
     });
     expect(mockSetPreferences).toHaveBeenCalledWith(payload);
+    expect(mockInvalidateInbox).toHaveBeenCalledTimes(1);
+    expect(mockInvalidate).toHaveBeenCalledTimes(1);
     expect(mockInvalidatePreferences).not.toHaveBeenCalled();
   });
 
   it('invalidates preferences when preferences sync has no payload', () => {
     renderHook(() => useAppShellSync({
       invalidateCollections: mockInvalidate,
+      invalidateInbox: mockInvalidateInbox,
       invalidatePreferences: mockInvalidatePreferences,
       setPreferences: mockSetPreferences,
     }));
@@ -126,6 +139,8 @@ describe('AppShell: sync event invalidation', () => {
       capturedSyncHandler?.(makeEvent({ entityType: 'preferences', eventType: 'updated', entityId: 'user-1' }));
     });
     expect(mockInvalidatePreferences).toHaveBeenCalledTimes(1);
+    expect(mockInvalidateInbox).toHaveBeenCalledTimes(1);
+    expect(mockInvalidate).toHaveBeenCalledTimes(1);
     expect(mockSetPreferences).not.toHaveBeenCalled();
   });
 });

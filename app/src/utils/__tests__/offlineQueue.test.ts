@@ -36,6 +36,7 @@ describe('offlineQueue', () => {
       const id = await enqueueMutation({
         method: 'POST',
         path: '/tasks',
+        ownerUserId: 'user-1',
         body: JSON.stringify({ title: 'buy milk' }),
       });
 
@@ -48,6 +49,7 @@ describe('offlineQueue', () => {
         id,
         method: 'POST',
         path: '/tasks',
+        ownerUserId: 'user-1',
         body: JSON.stringify({ title: 'buy milk' }),
       });
       expect(typeof all[0].createdAt).toBe('number');
@@ -62,11 +64,14 @@ describe('offlineQueue', () => {
       let now = 1000;
       vi.spyOn(Date, 'now').mockImplementation(() => now);
 
-      const idFirst = await enqueueMutation({ method: 'POST', path: '/tasks', body: '{}' });
+      const idFirst = await enqueueMutation({ method: 'POST', path: '/tasks', ownerUserId: 'user-1',
+        body: '{}' });
       now = 2000;
-      const idSecond = await enqueueMutation({ method: 'PATCH', path: '/tasks/1', body: '{}' });
+      const idSecond = await enqueueMutation({ method: 'PATCH', path: '/tasks/1', ownerUserId: 'user-1',
+        body: '{}' });
       now = 3000;
-      const idThird = await enqueueMutation({ method: 'DELETE', path: '/tasks/2', body: '' });
+      const idThird = await enqueueMutation({ method: 'DELETE', path: '/tasks/2', ownerUserId: 'user-1',
+        body: '' });
 
       Date.now = originalNow;
 
@@ -79,7 +84,8 @@ describe('offlineQueue', () => {
     it('deletes a record', async () => {
       const { enqueueMutation, getQueuedMutations, removeMutation } = await import('../offlineQueue');
 
-      const id = await enqueueMutation({ method: 'DELETE', path: '/tasks/1', body: '' });
+      const id = await enqueueMutation({ method: 'DELETE', path: '/tasks/1', ownerUserId: 'user-1',
+        body: '' });
       expect(await getQueuedMutations()).toHaveLength(1);
 
       await removeMutation(id);
@@ -93,8 +99,10 @@ describe('offlineQueue', () => {
       const { enqueueMutation, remapQueuedId, getQueuedMutations } = await import('../offlineQueue');
 
       const clientId = 'client-minted-uuid';
-      await enqueueMutation({ method: 'POST', path: `/tasks/${clientId}/complete`, body: '' });
-      await enqueueMutation({ method: 'DELETE', path: `/tasks/${clientId}`, body: '' });
+      await enqueueMutation({ method: 'POST', path: `/tasks/${clientId}/complete`, ownerUserId: 'user-1',
+        body: '' });
+      await enqueueMutation({ method: 'DELETE', path: `/tasks/${clientId}`, ownerUserId: 'user-1',
+        body: '' });
 
       await remapQueuedId(clientId, 'server-id-1');
 
@@ -111,6 +119,7 @@ describe('offlineQueue', () => {
       await enqueueMutation({
         method: 'POST',
         path: '/tasks',
+        ownerUserId: 'user-1',
         body: JSON.stringify({ title: 'subtask', parentTaskId: clientId }),
       });
 
@@ -128,9 +137,11 @@ describe('offlineQueue', () => {
       let now = 5000;
       vi.spyOn(Date, 'now').mockImplementation(() => now);
 
-      const firstId = await enqueueMutation({ method: 'POST', path: '/tasks', body: '{}' });
+      const firstId = await enqueueMutation({ method: 'POST', path: '/tasks', ownerUserId: 'user-1',
+        body: '{}' });
       now = 6000;
-      await enqueueMutation({ method: 'POST', path: `/tasks/${clientId}/complete`, body: '' });
+      await enqueueMutation({ method: 'POST', path: `/tasks/${clientId}/complete`, ownerUserId: 'user-1',
+        body: '' });
 
       Date.now = originalNow;
 
@@ -145,7 +156,8 @@ describe('offlineQueue', () => {
     it('leaves mutations unrelated to the old id untouched', async () => {
       const { enqueueMutation, remapQueuedId, getQueuedMutations } = await import('../offlineQueue');
 
-      await enqueueMutation({ method: 'PATCH', path: '/tasks/unrelated-id', body: JSON.stringify({ title: 'x' }) });
+      await enqueueMutation({ method: 'PATCH', path: '/tasks/unrelated-id', ownerUserId: 'user-1',
+        body: JSON.stringify({ title: 'x' }) });
 
       await remapQueuedId('some-other-client-id', 'server-id-3');
 
@@ -159,7 +171,8 @@ describe('offlineQueue', () => {
     it('persists clientEntityId when provided for a create-type mutation', async () => {
       const { enqueueMutation, getQueuedMutations } = await import('../offlineQueue');
 
-      await enqueueMutation({ method: 'POST', path: '/tasks', body: '{}', clientEntityId: 'client-abc' });
+      await enqueueMutation({ method: 'POST', path: '/tasks', ownerUserId: 'user-1',
+        body: '{}', clientEntityId: 'client-abc' });
 
       const all = await getQueuedMutations();
       expect(all[0].clientEntityId).toBe('client-abc');
@@ -168,7 +181,8 @@ describe('offlineQueue', () => {
     it('omits clientEntityId when not provided (non-create mutations)', async () => {
       const { enqueueMutation, getQueuedMutations } = await import('../offlineQueue');
 
-      await enqueueMutation({ method: 'DELETE', path: '/tasks/1', body: '' });
+      await enqueueMutation({ method: 'DELETE', path: '/tasks/1', ownerUserId: 'user-1',
+        body: '' });
 
       const all = await getQueuedMutations();
       expect(all[0].clientEntityId).toBeUndefined();

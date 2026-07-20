@@ -3,11 +3,25 @@ import { login, register, requestPasswordReset, confirmPasswordReset } from "../
 import { validate, type ValidationError } from "../utils/validate.js";
 import { authMiddleware } from "../middleware/auth.js";
 import { buildCookieName, buildCookieOptions, revokeSession } from "../services/sessionService.js";
+import {
+  checkLoginRate,
+  checkRegistrationRate,
+  checkPasswordResetRate,
+  incrementPasswordResetAttempts,
+} from "../services/rateLimitService.js";
 
 const router: ReturnType<typeof Router> = Router();
 
 router.post("/register", async (req: Request, res: Response, next: NextFunction) => {
   try {
+    const rateResult = await checkRegistrationRate(req.ip ?? "unknown");
+    if (!rateResult.allowed) {
+      res.status(429).json({
+        error: { code: "RATE_LIMITED", message: "Too many registration attempts. Please try again later." },
+      });
+      return;
+    }
+
     const { email, password } = req.body;
     const user = await register({ email, password });
     res.status(201).json({ user });
@@ -29,7 +43,15 @@ router.post("/login", async (req: Request, res: Response, next: NextFunction) =>
     }
     validate(errors);
 
-    const { user, rawToken } = await login(email, password);
+    const rateResult = await checkLoginRate(email, req.ip ?? "unknown");
+    if (!rateResult.allowed) {
+      res.status(429).json({
+        error: { code: "RATE_LIMITED", message: "Too many failed login attempts. Please try again later." },
+      });
+      return;
+    }
+
+    const { user, rawToken } = await login(email, password, req.ip);
     res.cookie(buildCookieName(), rawToken, buildCookieOptions());
     res.json({ user });
   } catch (err) {
@@ -51,8 +73,17 @@ router.post("/logout", authMiddleware, async (req: Request, res: Response, next:
 
 router.post("/reset-password", async (req: Request, res: Response, next: NextFunction) => {
   try {
+    const rateResult = await checkPasswordResetRate(req.ip ?? "unknown");
+    if (!rateResult.allowed) {
+      res.status(429).json({
+        error: { code: "RATE_LIMITED", message: "Too many password reset requests. Please try again later." },
+      });
+      return;
+    }
+
     const { email } = req.body;
     const result = await requestPasswordReset(email);
+    await incrementPasswordResetAttempts(req.ip ?? "unknown");
     res.json(result);
   } catch (err) {
     next(err);

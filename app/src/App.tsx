@@ -12,6 +12,7 @@ import { HabitsPage } from './pages/HabitsPage';
 import { MonthlyPage } from './pages/MonthlyPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { StyleguidePage } from './pages/StyleguidePage';
+import { HelpPage } from './pages/HelpPage';
 
 function AppRoutes() {
   const { isAuthenticated } = useAuth();
@@ -27,8 +28,10 @@ function AppRoutes() {
           <Route path="/inbox" element={<InboxPage />} />
           <Route path="/monthly" element={<MonthlyPage />} />
           <Route path="/habits" element={<HabitsPage />} />
-          <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/settings" element={<Navigate to="/settings/general" replace />} />
+          <Route path="/settings/:section" element={<SettingsPage />} />
           <Route path="/styleguide" element={<StyleguidePage />} />
+          <Route path="/help" element={<HelpPage />} />
           <Route path="/collection/:id" element={<CollectionsPage />} />
         </Route>
       </Routes>

@@ -1,16 +1,15 @@
 import { useMemo } from 'react';
-import { buildMonthDays, fmtISO } from '../../utils/date';
+import { buildMonthDays, fmtISO, weekdayInitials, type WeekStart } from '../../utils/date';
 import type { DayState } from '../../utils/habitTree';
 import { HabitDot, dotAriaProps } from './HabitDot';
 import { NO_DRAG_ATTR } from '../dnd/sensors';
 
 const CELL = 24;
-const DOW_LABELS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
-
 export interface HabitMonthGridProps {
   year: number;
   month: number;
   today: Date;
+  weekStart: WeekStart;
   /** Resolves the rendered state of one day. Parents report their derived state. */
   stateFor: (iso: string) => DayState;
   onToggle?: (iso: string) => void;
@@ -26,12 +25,17 @@ export function HabitMonthGrid({
   year,
   month,
   today,
+  weekStart,
   stateFor,
   onToggle,
   label,
   readOnly = false,
 }: HabitMonthGridProps) {
-  const days = useMemo(() => buildMonthDays(year, month, today), [year, month, today]);
+  const days = useMemo(
+    () => buildMonthDays(year, month, today, weekStart),
+    [year, month, today, weekStart],
+  );
+  const dayLabels = weekdayInitials(weekStart);
   const todayISO = fmtISO(today);
   const leadingBlanks = days[0]?.dow ?? 0;
 
@@ -41,9 +45,10 @@ export function HabitMonthGrid({
         className="habit-month-grid-labels grid"
         style={{ gridTemplateColumns: `repeat(7, ${CELL}px)` }}
       >
-        {DOW_LABELS.map((letter, i) => (
+        {dayLabels.map((letter, i) => (
           <span
             key={i}
+            data-weekday-label
             className="habit-month-grid-label flex h-6 items-center justify-center text-[10px] text-ink-light opacity-70"
           >
             {letter}

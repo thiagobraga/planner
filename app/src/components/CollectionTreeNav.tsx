@@ -24,10 +24,12 @@ import { ConfirmModal } from './ConfirmModal';
 
 const INDENT = 22;
 const MAX_DEPTH = 4; // backend enforces nesting depth of 4
-const DEPTH_PADDING_CLASSES = ['pl-3', 'pl-[22px]', 'pl-[44px]', 'pl-[66px]', 'pl-[88px]'] as const;
-// Indentation for the new-subcollection input: parent depth → parent base + INDENT (22 px).
-// depth-0 parent: pl-3 (12) + 22 = 34 px, depth-1: 22+22=44, depth-2: 44+22=66, …
-const SUB_INPUT_PADDING_CLASSES = ['pl-[34px]', 'pl-[44px]', 'pl-[66px]', 'pl-[88px]', 'pl-[110px]'] as const;
+// pl-3 (12px) base, then a flat 10px step per depth - the original depth-0→1 distance -
+// so every level reads the same distance instead of the first step alone being narrower.
+const DEPTH_PADDING_CLASSES = ['pl-3', 'pl-[22px]', 'pl-[32px]', 'pl-[42px]', 'pl-[52px]'] as const;
+// Indentation for the new-subcollection input: parent depth → parent base + 10 px.
+// depth-0 parent: pl-3 (12) + 10 = 22 px, depth-1: 22+10=32, depth-2: 32+10=42, …
+const SUB_INPUT_PADDING_CLASSES = ['pl-[22px]', 'pl-[32px]', 'pl-[42px]', 'pl-[52px]', 'pl-[62px]'] as const;
 
 const COLOR_SHADE_FAMILIES: Record<string, readonly string[]> = {
   red: ['red', 'berry_red', 'salmon', 'magenta'],

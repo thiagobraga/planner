@@ -35,6 +35,7 @@ describe("collaboration routes", () => {
     const app = express();
     app.use(express.json());
     app.use(cookieParser());
+    app.use((req, res, next) => { (req as any).userId = "test-user"; next(); });
     app.use("/api/v1/collections/:id", collectionCollabRouter);
 
     it("POST /api/v1/collections/:id/invitations → calls inviteToCollection, returns 201", async () => {
@@ -64,6 +65,7 @@ describe("collaboration routes", () => {
     const app = express();
     app.use(express.json());
     app.use(cookieParser());
+    app.use((req, res, next) => { (req as any).userId = "test-user"; next(); });
     app.use("/api/v1", collaborationRoutes);
 
     it("POST /api/v1/invitations/accept → calls acceptInvitation", async () => {

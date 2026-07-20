@@ -1,0 +1,3 @@
+ALTER TABLE preferences
+  ADD COLUMN IF NOT EXISTS hide_completed_tasks BOOLEAN NOT NULL DEFAULT false,
+  ADD COLUMN IF NOT EXISTS hide_old_notes BOOLEAN NOT NULL DEFAULT false;

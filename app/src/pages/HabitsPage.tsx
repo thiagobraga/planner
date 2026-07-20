@@ -25,6 +25,7 @@ import type { LucideProps } from 'lucide-react';
 import {
   fetchHabits,
   fetchHabitGroups,
+  fetchPreferences,
   apiCreateHabit,
   apiUpdateHabit,
   apiDeleteHabit,
@@ -88,6 +89,11 @@ export function HabitsPage() {
     queryKey: ['habitGroups'],
     queryFn: fetchHabitGroups,
   });
+  const { data: preferences } = useQuery({
+    queryKey: ['preferences'],
+    queryFn: fetchPreferences,
+  });
+  const weekStart = preferences?.weekStart ?? 'sunday';
 
   const setHabits = useCallback(
     (updater: (prev: ApiHabit[]) => ApiHabit[]) => {
@@ -406,6 +412,7 @@ export function HabitsPage() {
           today={today}
           year={selected.year}
           month={selected.month}
+          weekStart={weekStart}
           onMonthChange={handleMonthChange}
           onToggleDay={handleToggleDay}
           editing={editing}

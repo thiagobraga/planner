@@ -9,6 +9,7 @@ import {
   apiUpdateTask,
   apiToggleTask,
   apiDeleteTask,
+  fetchPreferences,
   type ApiTask,
 } from '../api/client';
 import { useAuth } from '../contexts/AuthContext';
@@ -16,6 +17,7 @@ import { useTaskDrag } from '../hooks/useTaskDrag';
 import { flattenTasks } from '../utils/taskProjection';
 import { getPhrase } from '../utils/phrases';
 import { nextOrderValue } from '../utils/order';
+import { extractNaturalDate } from '../utils/date';
 import { applyIndent } from '../utils/taskTree';
 import { useSync } from '../hooks/useSync';
 import { isEchoedMove } from '../utils/moveEcho';
@@ -61,6 +63,10 @@ export function InboxPage() {
     queryFn: fetchInboxTasks,
     staleTime: 30_000,
   });
+  const { data: preferences } = useQuery({
+    queryKey: ['preferences'],
+    queryFn: fetchPreferences,
+  });
 
   useEffect(() => {
     if (data?.tasks) {
@@ -102,11 +108,18 @@ export function InboxPage() {
     if (!trimmed) return;
     const tid = tempId();
     setInput('');
+    const extracted = extractNaturalDate(trimmed);
+    
     setTasks((prev) => [
       ...prev,
-      { id: tid, title: trimmed, priority: 4, isCompleted: false, orderValue: nextOrderValue(prev), type: 'task' },
+      { id: tid, title: extracted.title, priority: 4, isCompleted: false, orderValue: nextOrderValue(prev), type: 'task' },
     ]);
-    apiCreateTask({ title: trimmed, priority: 4 })
+    apiCreateTask({ 
+      title: extracted.title, 
+      priority: 4, 
+      dueDate: extracted.dueDate, 
+      recurrenceRule: extracted.recurrenceRule 
+    })
       .then((created) => {
         setTasks((prev) => prev.map((t) => (t.id === tid ? apiToTask(created) : t)));
       })
@@ -174,13 +187,18 @@ export function InboxPage() {
       const currentTask = tasks.find((t) => t.id === id);
       const parentTaskId = currentTask?.parentTaskId ?? undefined;
       const currentIndent = currentTask?.indent ?? 0;
+      
+      const extracted = extractNaturalDate(trimmed);
+      
       // was a new row - create it, keeping whichever type it was opened as
       apiCreateTask({
-        title: trimmed,
+        title: extracted.title,
         priority: 4,
         parentTaskId,
         depth: currentIndent,
         type: currentTask?.type ?? 'task',
+        dueDate: extracted.dueDate,
+        recurrenceRule: extracted.recurrenceRule,
       })
         .then((created) => {
           setTasks((prev) => prev.map((t) => (t.id === id ? { ...apiToTask(created), orderValue: t.orderValue } : t)));
@@ -260,15 +278,22 @@ export function InboxPage() {
   const handleToggle = useCallback((id: string) => {
     const prevTasks = tasksRef.current;
     const task = prevTasks.find((t) => t.id === id);
+    const hideCompleted = preferences?.hideCompletedTasks ?? false;
+    const removeOnComplete = hideCompleted && task && !task.isCompleted;
 
     setTasks((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, isCompleted: !t.isCompleted } : t)),
+      removeOnComplete
+        ? prev.filter((t) => t.id !== id)
+        : prev.map((t) => (t.id === id ? { ...t, isCompleted: !t.isCompleted } : t)),
     );
 
     if (task && !id.startsWith('temp-')) {
-      apiToggleTask(id, !task.isCompleted).catch(() => invalidate());
+      apiToggleTask(id, !task.isCompleted).catch(() => {
+        setTasks(prevTasks);
+        invalidate();
+      });
     }
-  }, [invalidate]);
+  }, [invalidate, preferences?.hideCompletedTasks]);
 
   return (
     <div

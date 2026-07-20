@@ -30,6 +30,7 @@ describe('HabitCalendar', () => {
         today={new Date(2026, 6, 18)}
         year={2026}
         month={6}
+        weekStart="sunday"
         onMonthChange={vi.fn()}
         onToggleDay={vi.fn()}
       />,
@@ -51,6 +52,7 @@ describe('HabitCalendar', () => {
         today={new Date(2026, 6, 18)}
         year={2026}
         month={6}
+        weekStart="sunday"
         onMonthChange={vi.fn()}
         onToggleDay={vi.fn()}
       />,
@@ -62,6 +64,33 @@ describe('HabitCalendar', () => {
     );
     expect(futureCells.every((cell) => cell.classList.contains('opacity-35'))).toBe(true);
   });
+
+  it('reorders weekday headers and leading blanks from the week-start preference', () => {
+    const sections: HabitSections = {
+      ungrouped: [habit('water', 'Drink water')],
+      groups: [],
+    };
+    const props = {
+      sections,
+      today: new Date(2026, 7, 31),
+      year: 2026,
+      month: 7,
+      onMonthChange: vi.fn(),
+      onToggleDay: vi.fn(),
+    };
+
+    const { container, rerender } = render(<HabitCalendar {...props} weekStart="sunday" />);
+    const labels = () => [...container.querySelectorAll('.habit-month-grid-label')].map((node) => node.textContent);
+    const blanks = () => container.querySelectorAll('.habit-month-grid-cells > span:not(.habit-month-grid-cell-future)');
+
+    expect(labels()).toEqual(['S', 'M', 'T', 'W', 'T', 'F', 'S']);
+    expect(blanks()).toHaveLength(6);
+
+    rerender(<HabitCalendar {...props} weekStart="monday" />);
+
+    expect(labels()).toEqual(['M', 'T', 'W', 'T', 'F', 'S', 'S']);
+    expect(blanks()).toHaveLength(5);
+  });
 });
 
 describe('HabitCalendar: inline rename', () => {
@@ -71,6 +100,7 @@ describe('HabitCalendar: inline rename', () => {
   };
 
   function renderCalendar(props: Partial<Parameters<typeof HabitCalendar>[0]> = {}) {
+    const { weekStart = 'sunday', ...calendarProps } = props;
     return render(
       <PlannerDragProvider>
         <HabitCalendar
@@ -80,7 +110,8 @@ describe('HabitCalendar: inline rename', () => {
           month={6}
           onMonthChange={vi.fn()}
           onToggleDay={vi.fn()}
-          {...props}
+          {...calendarProps}
+          weekStart={weekStart}
         />
       </PlannerDragProvider>,
     );

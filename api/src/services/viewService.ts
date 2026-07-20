@@ -24,6 +24,12 @@ interface TaskRow {
   updated_at: string;
 }
 
+interface PreferencesRow {
+  time_zone: string;
+  hide_completed_tasks: boolean;
+  hide_old_notes: boolean;
+}
+
 function formatTask(row: TaskRow) {
   return {
     id: row.id,
@@ -55,6 +61,24 @@ export async function getUserTimezone(userId: string): Promise<string> {
     [userId],
   );
   return (result.rows[0]?.time_zone as string) ?? "UTC";
+}
+
+async function getViewPreferences(userId: string, now: Date = new Date()) {
+  const result = await pool.query(
+    `SELECT time_zone, hide_completed_tasks, hide_old_notes
+     FROM preferences
+     WHERE user_id = $1`,
+    [userId],
+  );
+
+  const row = result.rows[0] as PreferencesRow | undefined;
+  const timeZone = row?.time_zone ?? "UTC";
+  return {
+    timeZone,
+    hideCompletedTasks: row?.hide_completed_tasks ?? false,
+    hideOldNotes: row?.hide_old_notes ?? false,
+    todayDate: localDateInTimezone(now, timeZone),
+  };
 }
 
 export function localDateInTimezone(now: Date, timeZone: string): string {
@@ -89,8 +113,7 @@ export interface TodayView {
 }
 
 export async function getTodayView(userId: string, now: Date = new Date()): Promise<TodayView> {
-  const timeZone = await getUserTimezone(userId);
-  const todayDate = localDateInTimezone(now, timeZone);
+  const settings = await getViewPreferences(userId, now);
 
   // Daily is hand-sorted per day, and those positions live in `task_order`
   // rather than `tasks.order_value` - a task holds a place in its collection and
@@ -107,8 +130,10 @@ export async function getTodayView(userId: string, now: Date = new Date()): Prom
        AND t.due_date IS NOT NULL
        AND t.due_date <= $2::date
        AND p.is_archived = false
+       AND ($3::boolean = false OR t.is_completed = false)
+       AND ($4::boolean = false OR NOT (t.type = 'note' AND t.due_date < $2::date))
      ORDER BY o.position ASC NULLS LAST, t.order_value ASC, t.created_at ASC`,
-    [userId, todayDate],
+    [userId, settings.todayDate, settings.hideCompletedTasks, settings.hideOldNotes],
   );
 
   const overdue: ReturnType<typeof formatTask>[] = [];
@@ -116,14 +141,14 @@ export async function getTodayView(userId: string, now: Date = new Date()): Prom
 
   for (const row of result.rows as TaskRow[]) {
     const t = formatTask(row);
-    if (t.dueDate && t.dueDate < todayDate) {
+    if (t.dueDate && t.dueDate < settings.todayDate) {
       overdue.push(t);
     } else {
       today.push(t);
     }
   }
 
-  return { overdue, today, date: todayDate };
+  return { overdue, today, date: settings.todayDate };
 }
 
 export interface UpcomingView {
@@ -231,15 +256,18 @@ export async function getMonthView(userId: string, year: number, month: number):
   return { notesByDate, year, month };
 }
 
-export async function getInboxView(userId: string) {
+export async function getInboxView(userId: string, now: Date = new Date()) {
+  const settings = await getViewPreferences(userId, now);
   const result = await pool.query(
     `SELECT t.* FROM tasks t
      JOIN collections p ON p.id = t.collection_id
      WHERE t.user_id = $1
        AND p.is_inbox = true
        AND p.is_archived = false
+       AND ($2::boolean = false OR t.is_completed = false)
+       AND ($3::boolean = false OR NOT (t.type = 'note' AND t.due_date < $4::date))
      ORDER BY t.order_value ASC, t.created_at ASC`,
-    [userId],
+    [userId, settings.hideCompletedTasks, settings.hideOldNotes, settings.todayDate],
   );
 
   return {
@@ -248,11 +276,12 @@ export async function getInboxView(userId: string) {
   };
 }
 
-export async function getCollectionView(userId: string, collectionId: string) {
+export async function getCollectionView(userId: string, collectionId: string, now: Date = new Date()) {
+  const settings = await getViewPreferences(userId, now);
   const collectionResult = await pool.query(
     `SELECT id, name, color, is_inbox FROM collections
      WHERE id = $1
-       AND (user_id = $2 OR id IN (SELECT collection_id FROM collaborators WHERE user_id = $2))`,
+     AND (user_id = $2 OR id IN (SELECT collection_id FROM collaborators WHERE user_id = $2))`,
     [collectionId, userId],
   );
 
@@ -266,8 +295,10 @@ export async function getCollectionView(userId: string, collectionId: string) {
   const result = await pool.query(
     `SELECT * FROM tasks
      WHERE collection_id = $1
+       AND ($2::boolean = false OR is_completed = false)
+       AND ($3::boolean = false OR NOT (type = 'note' AND due_date < $4::date))
      ORDER BY order_value ASC, created_at ASC`,
-    [collectionId],
+    [collectionId, settings.hideCompletedTasks, settings.hideOldNotes, settings.todayDate],
   );
 
   return {

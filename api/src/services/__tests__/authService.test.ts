@@ -37,6 +37,16 @@ vi.mock("../sessionService.js", () => ({
   createSession: vi.fn().mockResolvedValue("mock-raw-session-token"),
 }));
 
+vi.mock("../rateLimitService.js", () => ({
+  checkLoginRate: vi.fn().mockResolvedValue({ allowed: true, remaining: 10, retryAfterSeconds: 0 }),
+  incrementLoginAttempts: vi.fn().mockResolvedValue(undefined),
+  clearLoginRate: vi.fn().mockResolvedValue(undefined),
+  checkRegistrationRate: vi.fn().mockResolvedValue({ allowed: true, remaining: 3, retryAfterSeconds: 0 }),
+  checkPasswordResetRate: vi.fn().mockResolvedValue({ allowed: true, remaining: 5, retryAfterSeconds: 0 }),
+  incrementPasswordResetAttempts: vi.fn().mockResolvedValue(undefined),
+  getProgressiveDelay: vi.fn().mockReturnValue(0),
+}));
+
 vi.mock("../../utils/AppError.js", () => ({
   AppError: class AppError extends Error {
     code: string;
@@ -165,9 +175,13 @@ describe("login", () => {
 });
 
 describe("login - rate limiting", () => {
-  it("returns RATE_LIMITED after 10+ failed attempts", async () => {
-    const { redisClient } = await import("../../db/redis.js");
-    (redisClient.get as ReturnType<typeof vi.fn>).mockResolvedValue("11");
+  it("returns RATE_LIMITED when checkLoginRate returns disallowed", async () => {
+    const rateLimitMock = await import("../rateLimitService.js");
+    (rateLimitMock.checkLoginRate as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      allowed: false,
+      remaining: 0,
+      retryAfterSeconds: 900,
+    });
 
     try {
       await login("user@example.com", "doesnotmatter");
@@ -179,33 +193,30 @@ describe("login - rate limiting", () => {
     }
   });
 
-  it("skips the login throttle in development", async () => {
-    vi.stubEnv("NODE_ENV", "development");
-    vi.stubEnv("JWT_SECRET", "test-secret-not-for-prod");
-    vi.stubEnv("CSRF_SECRET", "a".repeat(32));
-    vi.stubEnv("DATABASE_URL", "postgres://planner:planner@localhost:5432/planner");
-    vi.stubEnv("CORS_ORIGIN", "http://localhost:5173");
+  it("increments attempts on failed login (user not found)", async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+
+    const rateLimitMock = await import("../rateLimitService.js");
+
     try {
-      vi.resetModules();
-
-      const { login: devLogin } = await import("../authService.js");
-      const { redisClient } = await import("../../db/redis.js");
-
-      (redisClient.get as ReturnType<typeof vi.fn>).mockResolvedValue("11");
-      mockQuery
-        .mockResolvedValueOnce({
-          rows: [{ id: "user-1", email: "user@example.com", password_hash: "$2b$hash", display_name: "User" }],
-        })
-        .mockResolvedValueOnce({ rows: [] });
-
-      await devLogin("user@example.com", STRONG_PASSWORD);
-
-      expect(redisClient.get).not.toHaveBeenCalled();
-    } finally {
-      vi.unstubAllEnvs();
-      vi.resetModules();
-      await import("../authService.js");
+      await login("nonexistent@example.com", "somepassword");
+      expect.fail("should throw");
+    } catch {
+      expect(rateLimitMock.incrementLoginAttempts).toHaveBeenCalled();
     }
+  });
+
+  it("clears rate limit on successful login", async () => {
+    mockQuery
+      .mockResolvedValueOnce({
+        rows: [{ id: "user-1", email: "user@example.com", password_hash: "$2b$hash", display_name: "User" }],
+      })
+      .mockResolvedValueOnce({ rows: [] });
+
+    const rateLimitMock = await import("../rateLimitService.js");
+
+    await login("user@example.com", STRONG_PASSWORD);
+    expect(rateLimitMock.clearLoginRate).toHaveBeenCalled();
   });
 });
 

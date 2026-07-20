@@ -67,26 +67,8 @@ app.use((_req, res, next) => {
   next();
 });
 
-if (!DISABLE_RATE_LIMITS_IN_DEV) {
-  const authRegisterLimiter = rateLimit({
-    windowMs: 60 * 60 * 1000,
-    max: 5,
-    standardHeaders: true,
-    legacyHeaders: false,
-  });
-
-  const passwordResetLimiter = rateLimit({
-    windowMs: 60 * 60 * 1000,
-    max: 3,
-    standardHeaders: true,
-    legacyHeaders: false,
-  });
-
-  app.use("/api/v1/auth/register", authRegisterLimiter);
-  app.use("/api/v1/auth/reset-password", passwordResetLimiter);
-}
-
 // Auth routes (mounted before CSRF — login/register don't need tokens)
+// Each auth route handles its own IP + account-based rate limiting via rateLimitService
 app.use("/api/v1/auth", authRoutes);
 
 // Origin check for unsafe requests
