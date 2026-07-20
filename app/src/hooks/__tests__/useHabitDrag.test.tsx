@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { PlannerDragProvider } from '../../contexts/PlannerDragContext';
 import { useHabitDrag } from '../useHabitDrag';
 import { apiMoveHabit, apiMoveHabitGroup, type ApiHabit, type ApiHabitGroup } from '../../api/client';
-import type { DragEndEvent } from '@dnd-kit/core';
+import type { DragEndEvent, DragMoveEvent, DragOverEvent, DragStartEvent } from '@dnd-kit/core';
 import type { HabitDragData, HabitGroupDragData, HabitSectionDropData } from '../../types/drag';
 
 vi.mock('../../api/client', async (importOriginal) => ({
@@ -58,22 +58,47 @@ function over(data: HabitDragData | HabitSectionDropData) {
  * way dnd-kit does: by rendering the hook and calling the registered callback
  * captured at registration time.
  */
-let registered: ((event: DragEndEvent) => void) | null = null;
+interface CapturedHandlers {
+  onDragStart?: (e: DragStartEvent) => void;
+  onDragMove?: (e: DragMoveEvent) => void;
+  onDragOver?: (e: DragOverEvent) => void;
+  onDragEnd?: (e: DragEndEvent) => void;
+}
+
+let registered: CapturedHandlers | null = null;
 
 vi.mock('../../contexts/PlannerDragContext', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../contexts/PlannerDragContext')>();
   return {
     ...actual,
-    usePlannerDragHandlers: (kind: string, handlers: { onDragEnd?: (e: DragEndEvent) => void }) => {
+    usePlannerDragHandlers: (kind: string, handlers: CapturedHandlers) => {
       // Both kinds register the same handler object, so either call captures it.
-      registered = handlers.onDragEnd ?? registered;
+      registered = handlers ?? registered;
     },
   };
 });
 
 function drop(event: Partial<DragEndEvent>) {
   act(() => {
-    registered?.(event as DragEndEvent);
+    registered?.onDragEnd?.(event as DragEndEvent);
+  });
+}
+
+function start(event: Partial<DragStartEvent>) {
+  act(() => {
+    registered?.onDragStart?.(event as DragStartEvent);
+  });
+}
+
+function move(deltaX: number) {
+  act(() => {
+    registered?.onDragMove?.({ delta: { x: deltaX, y: 0 } } as DragMoveEvent);
+  });
+}
+
+function hover(event: Partial<DragOverEvent>) {
+  act(() => {
+    registered?.onDragOver?.(event as DragOverEvent);
   });
 }
 
@@ -228,6 +253,127 @@ describe('useHabitDrag: habit moves', () => {
 
     await waitFor(() => expect(onError).toHaveBeenCalled());
     expect(emitted.at(-1)).toEqual(habits);
+  });
+});
+
+describe('useHabitDrag: nesting intent', () => {
+  const habits = [
+    habit({ id: 'a', orderValue: 0 }),
+    habit({ id: 'b', orderValue: 1000 }),
+    habit({ id: 'c', orderValue: 2000 }),
+  ];
+
+  function habitRow(id: string) {
+    return {
+      id,
+      data: {
+        current: { kind: 'habit', habitId: id, parentId: null, groupId: null, childIds: [] },
+      },
+    };
+  }
+
+  it('rebases sideways drift on each new row instead of accumulating it', () => {
+    render(
+      <PlannerDragProvider>
+        <Harness habits={habits} />
+      </PlannerDragProvider>,
+    );
+
+    const active = drag({
+      kind: 'habit',
+      habitId: 'c',
+      parentId: null,
+      groupId: null,
+      childIds: [],
+    });
+
+    start({ active } as unknown as DragStartEvent);
+    // Drift far to the right on the way down the list...
+    hover({ active, over: habitRow('a') } as unknown as DragOverEvent);
+    move(96);
+    // ...then settle on a different row without any further sideways movement.
+    hover({ active, over: habitRow('b') } as unknown as DragOverEvent);
+
+    drop({ active, over: habitRow('b') } as unknown as DragEndEvent);
+
+    // Drift accrued reaching row 'b' is not nesting intent expressed at row 'b'.
+    expect(moveHabit).toHaveBeenCalledWith('c', expect.objectContaining({ parentId: null }));
+  });
+
+  it('still reads sideways movement made on the target row as nesting', () => {
+    render(
+      <PlannerDragProvider>
+        <Harness habits={habits} />
+      </PlannerDragProvider>,
+    );
+
+    const active = drag({
+      kind: 'habit',
+      habitId: 'c',
+      parentId: null,
+      groupId: null,
+      childIds: [],
+    });
+
+    start({ active } as unknown as DragStartEvent);
+    hover({ active, over: habitRow('b') } as unknown as DragOverEvent);
+    move(96);
+
+    drop({ active, over: habitRow('b') } as unknown as DragEndEvent);
+
+    expect(moveHabit).toHaveBeenCalledWith('c', expect.objectContaining({ parentId: 'a' }));
+  });
+});
+
+describe('useHabitDrag: unsaved rows', () => {
+  it('refuses to move a habit that has no server id yet', () => {
+    const emitted: ApiHabit[][] = [];
+    render(
+      <PlannerDragProvider>
+        <Harness
+          habits={[habit({ id: 'a' }), habit({ id: 'temp-habit-1' })]}
+          onHabits={(next) => emitted.push(next)}
+        />
+      </PlannerDragProvider>,
+    );
+
+    drop({
+      active: drag({
+        kind: 'habit',
+        habitId: 'temp-habit-1',
+        parentId: null,
+        groupId: null,
+        childIds: [],
+      }),
+      over: over({ kind: 'habit', habitId: 'a', parentId: null, groupId: null, childIds: [] }),
+    } as unknown as DragEndEvent);
+
+    expect(moveHabit).not.toHaveBeenCalled();
+    expect(emitted).toEqual([]);
+  });
+
+  it('refuses to move a group that has no server id yet', () => {
+    const emitted: ApiHabitGroup[][] = [];
+    render(
+      <PlannerDragProvider>
+        <Harness
+          habits={[]}
+          groups={[
+            { id: 'g1', name: 'One', orderValue: 0 },
+            { id: 'temp-2', name: 'New', orderValue: 1000 },
+          ]}
+          onGroups={(next) => emitted.push(next)}
+        />
+      </PlannerDragProvider>,
+    );
+
+    drop({
+      active: drag({ kind: 'habit-group', groupId: 'temp-2' }),
+      over: over({ kind: 'habit-group', groupId: 'g1' } as unknown as HabitSectionDropData),
+    } as unknown as DragEndEvent);
+
+    expect(moveGroup).not.toHaveBeenCalled();
+    expect(emitted).toEqual([]);
   });
 });
 

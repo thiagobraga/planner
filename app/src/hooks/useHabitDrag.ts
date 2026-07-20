@@ -14,6 +14,7 @@ import {
   type HabitRow,
 } from '../utils/habitProjection';
 import { buildHabitSections } from '../utils/habitTree';
+import { createIndentTracker } from '../utils/dragIndent';
 import {
   apiMoveHabit,
   apiMoveHabitGroup,
@@ -66,6 +67,9 @@ export function useHabitDrag({
   const groupSnapshot = useRef<ApiHabitGroup[] | null>(null);
   /** Last spoken hover target, so an unchanged projection is not repeated. */
   const lastPreview = useRef<string | null>(null);
+  /** Nesting intent, rebased on each row so drift cannot accumulate. */
+  const indent = useRef(createIndentTracker());
+  const overRowId = useRef<string | null>(null);
 
   const rows = flattenHabitRows(buildHabitSections(habits, groups));
 
@@ -74,6 +78,8 @@ export function useHabitDrag({
       const data = event.active.data.current as HabitDragData | HabitGroupDragData | undefined;
       if (!data) return;
       offsetX.current = 0;
+      indent.current.reset();
+      overRowId.current = null;
       habitSnapshot.current = habits;
       groupSnapshot.current = groups;
       lastPreview.current = null;
@@ -101,7 +107,8 @@ export function useHabitDrag({
   );
 
   const handleDragMove = useCallback((event: DragMoveEvent) => {
-    offsetX.current = event.delta.x;
+    indent.current.move(event.delta.x);
+    offsetX.current = indent.current.offset();
   }, []);
 
   /**
@@ -120,6 +127,15 @@ export function useHabitDrag({
         | HabitSectionDropData
         | undefined;
       if (!active) return;
+
+      // Rebase nesting intent whenever the pointer reaches a different row, so
+      // sideways drift on the way there is not read as a request to indent.
+      const overRow = event.over ? String(event.over.id) : null;
+      if (overRow !== overRowId.current) {
+        overRowId.current = overRow;
+        indent.current.enterRow();
+        offsetX.current = indent.current.offset();
+      }
 
       const speak = (message: string) => {
         if (lastPreview.current === message) return;
@@ -176,6 +192,13 @@ export function useHabitDrag({
     (active: HabitDragData, over: HabitDragData | HabitSectionDropData) => {
       const before = habitSnapshot.current ?? habits;
       habitSnapshot.current = null;
+
+      // A temporary row has no server id yet, so a move would be addressed to a
+      // habit the API has never seen.
+      if (active.habitId.startsWith('temp-')) {
+        announce('This habit is still being created. Try again in a moment.');
+        return;
+      }
 
       const projection =
         over.kind === 'habit-section'
@@ -234,6 +257,11 @@ export function useHabitDrag({
     (active: HabitGroupDragData, overGroupId: string) => {
       const before = groupSnapshot.current ?? groups;
       groupSnapshot.current = null;
+
+      if (active.groupId.startsWith('temp-')) {
+        announce('This group is still being created. Try again in a moment.');
+        return;
+      }
 
       const untrack = trackMove([active.groupId]);
       const ordered = [...before].sort((a, b) => a.orderValue - b.orderValue);
