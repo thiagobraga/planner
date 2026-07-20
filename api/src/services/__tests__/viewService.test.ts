@@ -227,6 +227,7 @@ describe("getInboxView", () => {
     expect(sql).toMatch(/is_archived = false/);
     expect(sql).toMatch(/t\.is_completed = false/);
     expect(sql).toMatch(/t\.type = 'note'/);
+    expect(sql).toMatch(/t\.due_date IS NOT NULL/);
     expect(sql).toMatch(/ORDER BY t\.order_value ASC, t\.created_at ASC/);
     expect(sql).not.toMatch(/ORDER BY[^`]*(is_completed|priority)/);
   });
@@ -268,6 +269,7 @@ describe("getCollectionView", () => {
     expect(sql).toMatch(/FROM tasks/);
     expect(sql).toMatch(/is_completed = false/);
     expect(sql).toMatch(/type = 'note'/);
+    expect(sql).toMatch(/due_date IS NOT NULL/);
     expect(sql).toMatch(/ORDER BY order_value ASC, created_at ASC/);
   });
 });

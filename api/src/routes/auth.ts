@@ -3,6 +3,7 @@ import { login, register, requestPasswordReset, confirmPasswordReset } from "../
 import { validate, type ValidationError } from "../utils/validate.js";
 import { authMiddleware } from "../middleware/auth.js";
 import { buildCookieName, buildCookieOptions, revokeSession } from "../services/sessionService.js";
+import { securityLog } from "../utils/securityLogger.js";
 import {
   checkLoginRate,
   checkRegistrationRate,
@@ -16,6 +17,7 @@ router.post("/register", async (req: Request, res: Response, next: NextFunction)
   try {
     const rateResult = await checkRegistrationRate(req.ip ?? "unknown");
     if (!rateResult.allowed) {
+      securityLog.rateLimitExceeded(req, `register:${req.ip}`, 3);
       res.status(429).json({
         error: { code: "RATE_LIMITED", message: "Too many registration attempts. Please try again later." },
       });
@@ -24,8 +26,12 @@ router.post("/register", async (req: Request, res: Response, next: NextFunction)
 
     const { email, password } = req.body;
     const user = await register({ email, password });
+    securityLog.authRegisterSuccess(req, user.id);
     res.status(201).json({ user });
   } catch (err) {
+    if (err && typeof err === "object" && "code" in err && (err as { code: string }).code === "EMAIL_IN_USE") {
+      securityLog.authRegisterFailure(req, "email-exists");
+    }
     next(err);
   }
 });
@@ -45,6 +51,7 @@ router.post("/login", async (req: Request, res: Response, next: NextFunction) =>
 
     const rateResult = await checkLoginRate(email, req.ip ?? "unknown");
     if (!rateResult.allowed) {
+      securityLog.authLoginFailure(req, "rate-limited");
       res.status(429).json({
         error: { code: "RATE_LIMITED", message: "Too many failed login attempts. Please try again later." },
       });
@@ -52,6 +59,7 @@ router.post("/login", async (req: Request, res: Response, next: NextFunction) =>
     }
 
     const { user, rawToken } = await login(email, password, req.ip);
+    securityLog.authLoginSuccess(req, user.id);
     res.cookie(buildCookieName(), rawToken, buildCookieOptions());
     res.json({ user });
   } catch (err) {
@@ -63,6 +71,7 @@ router.post("/logout", authMiddleware, async (req: Request, res: Response, next:
   try {
     if (req.sessionId) {
       await revokeSession(req.sessionId);
+      securityLog.authLogout(req, req.userId!, req.sessionId);
     }
     res.clearCookie(buildCookieName(), { path: "/" });
     res.json({ success: true });

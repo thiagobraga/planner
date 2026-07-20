@@ -59,6 +59,9 @@ async function expectRejection(promise: Promise<unknown>, field: string, message
 
 beforeEach(() => {
   (pool.query as ReturnType<typeof vi.fn>).mockReset();
+  // Queries a test does not care about - the completion lookup the move ends
+  // with, mostly - answer empty rather than undefined.
+  (pool.query as ReturnType<typeof vi.fn>).mockResolvedValue({ rows: [] });
   (pool.connect as ReturnType<typeof vi.fn>).mockReset();
 });
 
@@ -241,6 +244,22 @@ describe("moveHabit", () => {
 
     expect(calls.some((c) => c.sql === "ROLLBACK")).toBe(true);
     expect(release).toHaveBeenCalled();
+  });
+});
+
+describe("moveHabit: completions", () => {
+  it("returns the moved habit's completion dates, not an empty list", async () => {
+    (pool.query as ReturnType<typeof vi.fn>)
+      .mockResolvedValueOnce({ rows: [habitRow()] }) // getOwnedHabit
+      .mockResolvedValueOnce({ rows: [habitRow()] }) // final moved fetch
+      .mockResolvedValueOnce({ rows: [{ habit_id: habitId, iso: "2026-07-19" }] }); // completions
+    mockTransaction();
+
+    const { moved } = await moveHabit(userId, habitId, { parentId: null, groupId: null, position: 1 });
+
+    // A move that answered with an empty list blanked the marks client-side
+    // until the next full fetch.
+    expect(moved[0]?.completions).toEqual(["2026-07-19"]);
   });
 });
 

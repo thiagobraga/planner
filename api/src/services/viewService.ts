@@ -265,7 +265,11 @@ export async function getInboxView(userId: string, now: Date = new Date()) {
        AND p.is_inbox = true
        AND p.is_archived = false
        AND ($2::boolean = false OR t.is_completed = false)
-       AND ($3::boolean = false OR NOT (t.type = 'note' AND t.due_date < $4::date))
+       AND ($3::boolean = false OR NOT (
+         t.type = 'note'
+         AND t.due_date IS NOT NULL
+         AND t.due_date < $4::date
+       ))
      ORDER BY t.order_value ASC, t.created_at ASC`,
     [userId, settings.hideCompletedTasks, settings.hideOldNotes, settings.todayDate],
   );
@@ -296,7 +300,11 @@ export async function getCollectionView(userId: string, collectionId: string, no
     `SELECT * FROM tasks
      WHERE collection_id = $1
        AND ($2::boolean = false OR is_completed = false)
-       AND ($3::boolean = false OR NOT (type = 'note' AND due_date < $4::date))
+       AND ($3::boolean = false OR NOT (
+         type = 'note'
+         AND due_date IS NOT NULL
+         AND due_date < $4::date
+       ))
      ORDER BY order_value ASC, created_at ASC`,
     [collectionId, settings.hideCompletedTasks, settings.hideOldNotes, settings.todayDate],
   );

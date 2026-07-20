@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import pool from "./pool.js";
+import { securityLog } from "../utils/securityLogger.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const MIGRATIONS_DIR = path.join(__dirname, "migrations");
@@ -22,6 +23,7 @@ async function getAppliedMigrations(): Promise<Set<string>> {
 }
 
 export async function migrate(): Promise<void> {
+  securityLog.migrationStarted();
   await ensureMigrationsTable();
   const applied = await getAppliedMigrations();
 
@@ -48,6 +50,7 @@ export async function migrate(): Promise<void> {
     } catch (err) {
       await client.query("ROLLBACK");
       console.error(`Failed: ${file}`, err);
+      securityLog.migrationFailed(`Migration ${file} failed: ${err instanceof Error ? err.message : String(err)}`);
       throw err;
     } finally {
       client.release();
@@ -55,6 +58,7 @@ export async function migrate(): Promise<void> {
   }
 
   console.log("All migrations applied.");
+  securityLog.migrationCompleted(files.length - applied.size);
   await pool.end();
 }
 

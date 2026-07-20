@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 import { redisClient } from "../db/redis.js";
+import { securityLog } from "../utils/securityLogger.js";
 import { IS_PRODUCTION, DISABLE_RATE_LIMITS_IN_DEV } from "../config.js";
 
 export interface RateLimitResult {
@@ -110,6 +111,7 @@ async function getCounts(
       if (IS_PRODUCTION) {
         console.warn("⚠️  Redis unavailable, falling back to in-memory rate limiting");
         memFallbackActive = true;
+        securityLog.rateLimitActivated({} as never, "redis-fallback-mem", 0);
       }
     }
   }
@@ -117,6 +119,7 @@ async function getCounts(
   if (IS_PRODUCTION && !memFallbackActive) {
     console.warn("⚠️  Redis not ready, falling back to in-memory rate limiting");
     memFallbackActive = true;
+    securityLog.rateLimitActivated({} as never, "redis-not-ready-fallback-mem", 0);
   }
 
   return [getMemCount(accountKey), getMemCount(ipKey)];

@@ -2,6 +2,7 @@ import crypto from 'node:crypto';
 import pool from '../db/pool.js';
 import { AppError } from '../utils/AppError.js';
 import { validate, type ValidationError } from '../utils/validate.js';
+import { securityLog } from '../utils/securityLogger.js';
 import { validatePassword, hashPassword, verifyAndUpgrade } from './passwordService.js';
 import { createSession } from './sessionService.js';
 import {
@@ -240,6 +241,7 @@ export async function confirmPasswordReset(
     await client.query('UPDATE password_reset_tokens SET used_at = NOW() WHERE id = $1', [row.id]);
 
     await client.query('DELETE FROM sessions WHERE user_id = $1', [row.user_id]);
+    securityLog.sessionRevoked(row.user_id, 'password-reset');
 
     await client.query('COMMIT');
   } catch (err) {
@@ -249,5 +251,6 @@ export async function confirmPasswordReset(
     client.release();
   }
 
+  securityLog.passwordChanged(row.user_id);
   return { success: true };
 }

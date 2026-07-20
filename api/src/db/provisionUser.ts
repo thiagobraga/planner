@@ -2,6 +2,7 @@ import fs from "node:fs";
 import { v4 as uuidv4 } from "uuid";
 import pool from "./pool.js";
 import { validatePassword, hashPassword } from "../services/passwordService.js";
+import { securityLog } from "../utils/securityLogger.js";
 
 async function provisionUser(
   email: string,
@@ -40,6 +41,7 @@ async function provisionUser(
 
     await client.query("COMMIT");
     console.log("User provisioned successfully.");
+    securityLog.provisioningUserCreated(userId, normalizedEmail);
   } catch (err) {
     await client.query("ROLLBACK");
     console.error("Failed to provision user:", (err as Error).message);

@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import pool from "../db/pool.js";
 import { AppError } from "../utils/AppError.js";
+import { securityLog } from "../utils/securityLogger.js";
 import { SESSION_IDLE_TTL_MINUTES, SESSION_ABSOLUTE_TTL_HOURS } from "../config.js";
 
 const RAW_TOKEN_BYTES = 32;
@@ -111,12 +112,16 @@ export function resetTouchCounter(): void {
 }
 
 export async function revokeSession(sessionId: number): Promise<void> {
-  await pool.query(
+  const result = await pool.query(
     `UPDATE sessions
      SET revoked_at = NOW(), revoke_reason = 'manual-revoke'
-     WHERE id = $1 AND revoked_at IS NULL`,
+     WHERE id = $1 AND revoked_at IS NULL
+     RETURNING user_id`,
     [sessionId],
   );
+  if (result.rows.length > 0) {
+    securityLog.sessionRevoked(result.rows[0].user_id, "manual-revoke");
+  }
 }
 
 export async function revokeAllUserSessions(
@@ -132,13 +137,13 @@ export async function revokeAllUserSessions(
 }
 
 export async function deleteExpiredSessions(): Promise<number> {
-  const result = await pool.query(
+  const deleted = await pool.query(
     `DELETE FROM sessions
      WHERE (absolute_expires_at IS NOT NULL AND absolute_expires_at < NOW())
         OR (idle_expires_at IS NOT NULL AND idle_expires_at < NOW())
         OR revoked_at IS NOT NULL`,
   );
-  return result.rowCount ?? 0;
+  return deleted.rowCount ?? 0;
 }
 
 export async function findValidSessionByUserId(

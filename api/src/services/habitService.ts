@@ -123,21 +123,34 @@ export async function listHabits(userId: string): Promise<Habit[]> {
   const rows = habitsResult.rows as HabitRow[];
   if (rows.length === 0) return [];
 
+  const byHabit = await completionsFor(rows.map((r) => r.id));
+  return rows.map((r) => formatHabit(r, byHabit.get(r.id) ?? []));
+}
+
+/**
+ * Completed dates for the given habits, keyed by habit.
+ *
+ * Every path that hands a habit back to a client goes through here: a habit
+ * returned with an empty completion list reads to the client as a habit with no
+ * completions, and a structural response has no business saying that.
+ */
+async function completionsFor(habitIds: string[]): Promise<Map<string, string[]>> {
+  const byHabit = new Map<string, string[]>();
+  if (habitIds.length === 0) return byHabit;
+
   const completionsResult = await pool.query(
     `SELECT habit_id, to_char(completed_date, 'YYYY-MM-DD') AS iso
      FROM habit_completions
      WHERE habit_id = ANY($1)`,
-    [rows.map((r) => r.id)],
+    [habitIds],
   );
 
-  const byHabit = new Map<string, string[]>();
   for (const row of completionsResult.rows as { habit_id: string; iso: string }[]) {
     const list = byHabit.get(row.habit_id) ?? [];
     list.push(row.iso);
     byHabit.set(row.habit_id, list);
   }
-
-  return rows.map((r) => formatHabit(r, byHabit.get(r.id) ?? []));
+  return byHabit;
 }
 
 export interface CreateHabitInput {
@@ -253,7 +266,7 @@ export async function updateHabit(userId: string, habitId: string, updates: Upda
 
   if (setClauses.length === 0) {
     const row = await getOwnedHabit(userId, habitId);
-    return formatHabit(row);
+    return formatHabit(row, (await completionsFor([habitId])).get(habitId) ?? []);
   }
 
   setClauses.push(`updated_at = NOW()`);
@@ -267,7 +280,10 @@ export async function updateHabit(userId: string, habitId: string, updates: Upda
     throw new AppError({ code: "NOT_FOUND", message: "Habit not found", statusCode: 404 });
   }
 
-  const habit = formatHabit(result.rows[0] as HabitRow);
+  const habit = formatHabit(
+    result.rows[0] as HabitRow,
+    (await completionsFor([habitId])).get(habitId) ?? [],
+  );
   emit(userId, "habit", "updated", habit.id, habit);
   return habit;
 }
@@ -564,7 +580,14 @@ export async function moveHabit(userId: string, habitId: string, input: MoveHabi
     `SELECT * FROM habits WHERE id = $1 OR parent_id = $1 ORDER BY created_at ASC`,
     [habitId],
   );
-  const moved = (movedResult.rows as HabitRow[]).map((r) => formatHabit(r));
+  const movedRows = movedResult.rows as HabitRow[];
+
+  // A move changes where a habit sits, never what it has been completed on. The
+  // client merges this response over its own copy, so returning bare rows would
+  // read as "no completions" and blank the marks until the next full fetch.
+  const byHabit = await completionsFor([...movedRows.map((r) => r.id), ...reordered.map((h) => h.id)]);
+  const moved = movedRows.map((r) => formatHabit(r, byHabit.get(r.id) ?? []));
+  reordered = reordered.map((h) => ({ ...h, completions: byHabit.get(h.id) ?? [] }));
 
   const root = moved.find((h) => h.id === habitId);
   emit(userId, "habit", "updated", habitId, {

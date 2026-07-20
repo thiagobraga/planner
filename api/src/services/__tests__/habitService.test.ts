@@ -23,6 +23,9 @@ import {
 
 beforeEach(() => {
   mockQuery.mockReset();
+  // Queries a test does not enumerate - the completion lookup that follows a
+  // write, mostly - answer empty rather than undefined.
+  mockQuery.mockResolvedValue({ rows: [] });
 });
 
 function habitRow(overrides: Record<string, unknown> = {}) {
