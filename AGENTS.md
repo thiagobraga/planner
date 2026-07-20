@@ -11,6 +11,15 @@ docker compose up -d          # installs deps, runs migrations, starts api (4000
 
 Required `.env` vars: `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `JWT_SECRET`, `CORS_ORIGIN`.
 
+### Dev hosts (Traefik on the `proxy` network)
+
+Add to `/etc/hosts`: `planner.local`, `api.planner.local`, `db.planner.local`.
+
+- `https://planner.local` - app (also serves `/api` and `/socket.io`)
+- `https://api.planner.local` - API directly (e.g. `/api/v1/...`)
+- `https://db.planner.local` - pgAdmin (desktop mode, no master password). The Planner
+  database is auto-registered; connect with DB password `planner`.
+
 ## Commands
 
 | Command                                                              | What it does                          |
@@ -58,6 +67,7 @@ Required `.env` vars: `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `JWT_
 - `db/pool.ts` - PostgreSQL pool (max 20); `db/redis.ts` - three clients (general, pub, sub)
 - `parsers/` - Peggy-based filter DSL and date parsers
 - `engines/recurrenceEngine.ts` - daily/weekly/monthly/yearly recurrence
+- `routes/index.ts` - Aggregates all routes under `/api/v1/`
 
 All routes under `/api/v1/`. Route files: `auth`, `tasks`, `collections`, `labels`, `sections`, `views`, `filters`, `search`, `reminders`, `comments`, `preferences`, `activity`, `collaboration`, `habits`, `habitGroups`.
 
@@ -67,6 +77,7 @@ All routes under `/api/v1/`. Route files: `auth`, `tasks`, `collections`, `label
 - `utils/socket.ts` - Socket.IO singleton; token passed via `socket.auth`; stored as `planner_token` in localStorage
 - `hooks/useSync.ts` - subscribes to `"sync"` events; handler receives `SyncEvent`
 - `hooks/shortcuts.ts` - pure chord-aware keyboard matcher; `DEFAULT_BINDINGS` for `q /  ? Enter Delete Escape g+i g+t g+u`
+- `hooks/usePreferences.ts` - User preferences hook
 - `api/client.ts` - Fetch wrapper; base `/api/v1`; auto-logout on 401
 - `api/queryClient.ts` - React Query config (staleTime 60s, 1 retry)
 - `stores/taskStore.ts` - Zustand store; `setTasks / addTask / updateTask / removeTask`
@@ -101,7 +112,7 @@ api/src/db/redis.ts                  Redis clients (pub/sub)
 api/src/db/migrations/               SQL migration files (001–025)
 api/src/parsers/filterParser.ts      Peggy filter DSL parser
 api/src/engines/recurrenceEngine.ts  Recurrence rule engine
-api/src/utils/AppError.ts            Custom error class
+api/src/utils/AppError.ts             Custom error class
 
 app/src/contexts/AuthContext.tsx     Auth state + socket lifecycle
 app/src/api/client.ts                REST Fetch wrapper
@@ -182,20 +193,40 @@ Pattern for mutations: `runOptimistic({ apply, revert })` → fire API call → 
 ## Design System
 
 - **Font:** Lora serif only - no sans-serif anywhere
-- **Palette:** warm cream/beige background (`--color-cream: #f5f0e8`), single brick-red accent (`--color-accent: #c9483b`, ≤10% of screen)
-- **Elevation:** flat - tint + 1px border only; no `box-shadow` on cards (overlay drop-shadow only)
-- **Rhythm:** 24px vertical baseline
-- **Never:** blue as primary color; `box-shadow` on cards
+- **Palette:** warm cream/beige background (`--color-cream: #f5f0e8`), single brick-red accent (`--color-accent: #c9483b`, ≤10% of screen), ink (`--color-ink: #44443d`)
+- **Elevation:** flat - tint + 1px border only; no `box-shadow` on cards (overlay drop-shadow only: `box-shadow: 0 8px 32px rgba(44,44,44,0.15)`)
+- **Rhythm:** 24px vertical baseline - all spacing must be multiples of 24px
+- **Never:** blue as primary color; `box-shadow` on cards; pure white `#fff` or pure black `#000`
 
 Full spec: `DESIGN.md`.
 
 ## Coding Conventions
 
 - TypeScript strict mode; no `any` without justification
+- Every mutation must call `publishEvent()` in `services/syncService.ts` after DB write
+- Auth middleware validates JWT **and** queries DB for session validity on every request
+- React Query manages server state; Zustand manages client-side optimistic state
+- Optimistic updates go through helpers in `stores/optimistic.ts`
+- All routes are under `/api/v1/`; add new routes to `routes/index.ts`
+- Property-based tests use `fast-check` alongside standard unit tests
+- No mock databases in integration tests - use real PostgreSQL
+- Validate only at system boundaries (user input, external APIs)
 - Comments only for non-obvious WHY - never for WHAT
 - No error handling for impossible cases; trust framework guarantees
-- Validate only at system boundaries (user input, external APIs)
 - Commits: Conventional Commits (`feat:`, `fix:`, `chore:`, etc.), many small per file/feature
 - No backwards-compat shims for removed code - delete cleanly
 - Tests: Vitest; integration tests hit real DB (no mock-DB pattern)
 - Node ≥ 20 required
+
+## Plan Mode — Specs Convention
+
+All AI agents (Claude, Codex, Antigravity, Opencode) must follow this when entering Plan mode:
+
+1. **Create a new folder** under `.specs/<slug>/` named after the feature being planned (short kebab-case).
+2. Write **`.specs/<slug>/plan.md`** — high-level strategy, approach, and architecture decisions.
+3. Write **`.specs/<slug>/task.md`** — detailed breakdown of the plan into actionable tasks. Use these markers:
+   - `[ ]` not started
+   - `[~]` in progress
+   - `[x]` completed
+4. **Update `task.md`** as work progresses — mark tasks `[~]` when started, `[x]` when done.
+5. Refer to existing `.specs/` folders for naming patterns.
