@@ -1,0 +1,6 @@
+{
+  "summary":  "Refined implementation plan for creating a ChatGPT prompt to generate a Help page UI for the Planner app. Includes a comprehensive research summary covering all pages (Inbox, Daily, Upcoming, Monthly, Habits, Collections, Settings, Login), all components (TaskItem, TaskDetail, QuickAdd, SearchOverlay, FilterBar, CollectionTreeNav, HabitTimeline, HabitCalendar, etc.), all keyboard shortcuts (single-key and chord sequences), the full design system (colors, typography, elevation, dot grid background), data models (tasks, habits, habit groups, collections, labels, comments, reminders), and all ~45 API endpoints. Contains open questions about output format, design fidelity, content depth, and section structure for user review.",
+  "updatedAt":  "2026-07-19T16:52:21.786193762Z",
+  "requestFeedback":  true,
+  "userFacing":  true
+}

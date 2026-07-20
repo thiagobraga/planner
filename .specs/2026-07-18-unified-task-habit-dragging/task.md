@@ -50,7 +50,7 @@
   - [x] Keep `PATCH /tasks/:id/reorder` operational but stop using it from the new UI
   - [x] Keep name/property update endpoints separate from structural move endpoints
 - [x] Migration 025 IS required, contrary to this spec's original assumption
-  - [x] A task holds a position in its collection *and* an independent one in its
+  - [x] A task holds a position in its collection _and_ an independent one in its
         day; one `order_value` column cannot express both, so day positions live
         in `task_order` (migration 025). Daily ordering could not survive reload
         without it.
@@ -224,8 +224,8 @@
   - [x] Preserve collection-tree drag behavior and horizontal collection projection
   - [x] Filter collision targets so task and collection drags cannot interfere
 - [~] Implement mobile edge-open — MOVED to Phase 12 on 2026-07-19. Superseded by manual
-      sidebar toggle: a user who can pin the sidebar open does not need an edge-hold gesture
-      to reach a drop target mid-drag. Desktop sidebar drops ship without either.
+  sidebar toggle: a user who can pin the sidebar open does not need an edge-hold gesture
+  to reach a drop target mid-drag. Desktop sidebar drops ship without either.
 - [x] Add integration tests for named collection, sub-collection, Inbox, same-collection promotion and invalid target (mobile edge-open deferred)
 
 ## Phase 7 - Manual task ordering in views
@@ -364,16 +364,16 @@
   - [x] Sidebar collection handles have descriptive labels — was a generic `Drag to reorder`;
         FIXED to `Reorder <collection name>` in CollectionTreeNav
   - [x] Live region announces pickup, projected target, invalid target, drop, and cancel
-        - [x] Pickup — polite: `Picked up <task name>.`
-        - [x] Drop — polite: `Moved under <task name>.`
-        - [x] Projected target — was a DEFECT: the polite region did not update while arrowing,
-              and dnd-kit's own assertive region emitted raw UUIDs (`Draggable item fb7d5e86-…
-              was moved over droppable area 2ffc167d-…`). FIXED two ways: dnd-kit's built-in
-              region is suppressed via `accessibility.announcements` on DndContext, and both
-              entity hooks gained an `onDragOver` that speaks the projected target
-              (`Drop to place under <task name>.`). Verified live: assertive region now empty.
-        - [x] Invalid target — `That is not a valid place to drop this task.`
-        - [x] Cancel — polite: `Move cancelled.`, verified live via Escape
+    - [x] Pickup — polite: `Picked up <task name>.`
+    - [x] Drop — polite: `Moved under <task name>.`
+    - [x] Projected target — was a DEFECT: the polite region did not update while arrowing,
+          and dnd-kit's own assertive region emitted raw UUIDs (`Draggable item fb7d5e86-…
+    was moved over droppable area 2ffc167d-…`). FIXED two ways: dnd-kit's built-in
+          region is suppressed via `accessibility.announcements` on DndContext, and both
+          entity hooks gained an `onDragOver` that speaks the projected target
+          (`Drop to place under <task name>.`). Verified live: assertive region now empty.
+    - [x] Invalid target — `That is not a valid place to drop this task.`
+    - [x] Cancel — polite: `Move cancelled.`, verified live via Escape
   - [x] Focus returns to the moved row after drop — verified, focus landed on the moved handle
   - [ ] Reduced-motion preference removes nonessential drag transitions
 

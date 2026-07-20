@@ -1,0 +1,6 @@
+{
+  "summary":  "A ready-to-paste ChatGPT prompt that instructs it to generate a design mockup image of a Help page for the Planner app. The prompt describes the exact visual design system (Lora font, cream paper colors, dot grid, warm neutrals, brick-red accent), the page layout (left sidebar navigation matching the app, main content area with help sections, right sidebar with sticky Table of Contents), and curated help content covering: Welcome, Getting Started, Views, Habits, Collections & Tags, Keyboard Shortcuts, and Settings. Includes specific UI element descriptions and the paper-journal aesthetic the mockup should follow.",
+  "updatedAt":  "2026-07-19T17:03:38.928571352Z",
+  "requestFeedback":  true,
+  "userFacing":  true
+}
