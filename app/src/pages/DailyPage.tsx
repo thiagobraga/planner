@@ -5,10 +5,11 @@ import { isEchoedMove, isStructuralMove } from '../utils/moveEcho';
 import { TaskList } from '../components/TaskList';
 import { CollectionChip } from '../components/ui/Chip';
 import type { Task } from '../components/TaskItem';
-import { getPhrase } from '../utils/phrases';
+import { buildMonthDays, extractNaturalDate } from '../utils/date';
 import { nextOrderValue } from '../utils/order';
 import { applyIndent, getParentCandidate } from '../utils/taskTree';
 import { useTaskDrag } from '../hooks/useTaskDrag';
+import { getPhrase } from '../utils/phrases';
 import {
   apiCreateTask,
   apiToggleTask,
@@ -16,6 +17,7 @@ import {
   apiDeleteTask,
   fetchTodayTasks,
   fetchCollections,
+  fetchPreferences,
   type ApiTask,
 } from '../api/client';
 
@@ -103,27 +105,31 @@ export function DailyPage() {
   const [editingId, setEditingId] = useState<string>();
   const [input, setInput] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
+  const loadRequestId = useRef(0);
   const sectionsRef = useRef(sections);
   sectionsRef.current = sections;
 
-  useEffect(() => {
+  const { data: preferences } = useQuery({
+    queryKey: ['preferences'],
+    queryFn: fetchPreferences,
+  });
+
+  const replaceTodayFromApi = useCallback(() => {
+    const requestId = ++loadRequestId.current;
     fetchTodayTasks().then((response) => {
+      if (requestId !== loadRequestId.current) return;
       const overdueTasks = (response.overdue || []).map(apiToTask);
       const todayTasks = (response.today || []).map(apiToTask);
       setSections(buildSections(overdueTasks, todayTasks));
     }).catch(() => {
+      if (requestId !== loadRequestId.current) return;
       setSections(buildSections([], []));
     });
   }, []);
 
-
-  const replaceTodayFromApi = useCallback(() => {
-    fetchTodayTasks().then((response) => {
-      const overdueTasks = (response.overdue || []).map(apiToTask);
-      const todayTasks = (response.today || []).map(apiToTask);
-      setSections(buildSections(overdueTasks, todayTasks));
-    }).catch(() => { });
-  }, []);
+  useEffect(() => {
+    replaceTodayFromApi();
+  }, [replaceTodayFromApi, preferences?.timeZone, preferences?.hideCompletedTasks, preferences?.hideOldNotes]);
 
   useSync(useCallback((event) => {
     if (event.entityType !== 'task') return;
@@ -132,7 +138,7 @@ export function DailyPage() {
     // Another session moved a subtree. Its date, collection, depth and every
     // sibling's order may have changed at once, so patching the one row named by
     // the event would leave it in the section it just left. Refetch instead.
-    if (isStructuralMove(event)) {
+    if (isStructuralMove(event) || preferences?.hideCompletedTasks || preferences?.hideOldNotes) {
       replaceTodayFromApi();
       return;
     }
@@ -162,7 +168,7 @@ export function DailyPage() {
         }))
       );
     }
-  }, [replaceTodayFromApi]));
+  }, [replaceTodayFromApi, preferences?.hideCompletedTasks, preferences?.hideOldNotes]));
 
   const updateSections = useCallback((updater: (prev: DaySection[]) => DaySection[]) => {
     setSections(updater);
@@ -215,29 +221,27 @@ export function DailyPage() {
     const prevSections = sectionsRef.current;
     const task = prevSections.flatMap((s) => s.tasks).find((t) => t.id === id);
     const wasCompleted = task?.isCompleted ?? false;
+    const hideCompleted = preferences?.hideCompletedTasks ?? false;
+    const removeOnComplete = hideCompleted && !wasCompleted;
 
     updateSections((prev) =>
-      prev.map((s) => ({
-        ...s,
-        tasks: s.tasks.map((t) =>
-          t.id === id ? { ...t, isCompleted: !t.isCompleted } : t
-        ),
-      }))
+      removeOnComplete
+        ? prev.map((s) => ({ ...s, tasks: s.tasks.filter((t) => t.id !== id) }))
+        : prev.map((s) => ({
+            ...s,
+            tasks: s.tasks.map((t) =>
+              t.id === id ? { ...t, isCompleted: !t.isCompleted } : t
+            ),
+          }))
     );
 
     if (!id.startsWith('temp-')) {
       apiToggleTask(id, !wasCompleted).catch(() => {
-        updateSections((prev) =>
-          prev.map((s) => ({
-            ...s,
-            tasks: s.tasks.map((t) =>
-              t.id === id ? { ...t, isCompleted: wasCompleted } : t
-            ),
-          }))
-        );
+        setSections(prevSections);
+        replaceTodayFromApi();
       });
     }
-  }, [updateSections]);
+  }, [preferences?.hideCompletedTasks, updateSections, replaceTodayFromApi]);
 
   const handleStartEdit = useCallback((id: string) => {
     setEditingId(id);
@@ -273,7 +277,17 @@ export function DailyPage() {
           parentTaskId = getParentCandidate(section.tasks, idx, currentIndent) ?? undefined;
         }
       }
-      apiCreateTask({ title: trimmed, priority: 4, dueDate: todayKey, type: currentType, parentTaskId, depth: currentIndent }).then((created) => {
+      const extracted = extractNaturalDate(trimmed, todayKey);
+      
+      apiCreateTask({ 
+        title: extracted.title, 
+        priority: 4, 
+        dueDate: extracted.dueDate, 
+        type: currentType, 
+        parentTaskId, 
+        depth: currentIndent,
+        recurrenceRule: extracted.recurrenceRule
+      }).then((created) => {
         const createdTask = apiToTask(created);
         updateSections((prev) =>
           prev.map((s) => ({
@@ -388,8 +402,15 @@ export function DailyPage() {
           : s
       )
     );
+    const extracted = extractNaturalDate(trimmed, todayKey);
 
-    apiCreateTask({ title: trimmed, priority: 4, dueDate: todayKey, type: 'task' }).then((created) => {
+    apiCreateTask({ 
+      title: extracted.title, 
+      priority: 4, 
+      dueDate: extracted.dueDate, 
+      type: 'task',
+      recurrenceRule: extracted.recurrenceRule
+    }).then((created) => {
       const createdTask = apiToTask(created);
       updateSections((prev) =>
         prev.map((s) => ({
