@@ -2,8 +2,15 @@ import { render, screen, fireEvent, act } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { PlannerDragProvider, usePlannerDrag } from '../PlannerDragContext';
 
+const { dndHandlers } = vi.hoisted(() => ({
+  dndHandlers: {} as Record<string, any>,
+}));
+
 vi.mock('@dnd-kit/core', () => ({
-  DndContext: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  DndContext: ({ children, onDragStart, onDragMove, onDragEnd, onDragCancel }: any) => {
+    Object.assign(dndHandlers, { onDragStart, onDragMove, onDragEnd, onDragCancel });
+    return <>{children}</>;
+  },
   DragOverlay: ({ children }: { children: React.ReactNode }) => <>{children}</>,
   useSensor: () => null,
   useSensors: () => [],
@@ -205,5 +212,387 @@ describe('PlannerDragContext', () => {
     );
 
     expect(screen.getByTestId('unregister-type')).toHaveTextContent('function');
+  });
+
+  it('handleDragStart sets activeDrag via DndContext onDragStart', () => {
+    function Consumer() {
+      const ctx = usePlannerDrag();
+      return (
+        <span data-testid="drag-value">
+          {ctx.activeDrag
+            ? `${ctx.activeDrag.kind}:${'taskId' in ctx.activeDrag ? ctx.activeDrag.taskId : 'id'}`
+            : 'none'}
+        </span>
+      );
+    }
+
+    render(
+      <TestWrapper>
+        <Consumer />
+      </TestWrapper>,
+    );
+
+    expect(screen.getByTestId('drag-value')).toHaveTextContent('none');
+
+    act(() => {
+      dndHandlers.onDragStart({
+        active: {
+          id: 'task-1',
+          data: {
+            current: {
+              kind: 'task',
+              taskId: 'task-1',
+              parentTaskId: null,
+              collectionId: 'col-1',
+              dueDate: null,
+              depth: 0,
+              containerId: 'container-1',
+              subtreeIds: ['task-1'],
+            },
+          },
+        },
+      });
+    });
+
+    expect(screen.getByTestId('drag-value')).toHaveTextContent('task:task-1');
+  });
+
+  it('handleDragStart with no data sets activeDrag to null', () => {
+    render(
+      <TestWrapper>
+        <TestConsumer />
+      </TestWrapper>,
+    );
+
+    act(() => {
+      dndHandlers.onDragStart({
+        active: { id: 'unknown', data: { current: undefined } },
+      });
+    });
+
+    expect(screen.getByTestId('active-drag')).toHaveTextContent('null');
+  });
+
+  it('handleDragMove sets hasMoved when delta changes', () => {
+    render(
+      <TestWrapper>
+        <TestConsumer />
+      </TestWrapper>,
+    );
+
+    expect(screen.getByTestId('has-moved')).toHaveTextContent('false');
+
+    act(() => {
+      dndHandlers.onDragMove({
+        active: { id: 'task-1', data: { current: { kind: 'task' } } },
+        delta: { x: 10, y: 0 },
+      });
+    });
+
+    expect(screen.getByTestId('has-moved')).toHaveTextContent('true');
+  });
+
+  it('handleDragMove with zero delta does not set hasMoved', () => {
+    render(
+      <TestWrapper>
+        <TestConsumer />
+      </TestWrapper>,
+    );
+
+    act(() => {
+      dndHandlers.onDragMove({
+        active: { id: 'task-1', data: { current: { kind: 'task' } } },
+        delta: { x: 0, y: 0 },
+      });
+    });
+
+    expect(screen.getByTestId('has-moved')).toHaveTextContent('false');
+  });
+
+  it('handleDragEnd resets all drag state', () => {
+    function Consumer() {
+      const ctx = usePlannerDrag();
+      return (
+        <span data-testid="drag-value">
+          {ctx.activeDrag
+            ? `${ctx.activeDrag.kind}:${'taskId' in ctx.activeDrag ? ctx.activeDrag.taskId : 'id'}`
+            : 'none'}
+        </span>
+      );
+    }
+
+    render(
+      <TestWrapper>
+        <Consumer />
+        <TestConsumer />
+      </TestWrapper>,
+    );
+
+    act(() => {
+      dndHandlers.onDragStart({
+        active: {
+          id: 'task-1',
+          data: {
+            current: {
+              kind: 'task',
+              taskId: 'task-1',
+              parentTaskId: null,
+              collectionId: 'col-1',
+              dueDate: null,
+              depth: 0,
+              containerId: 'container-1',
+              subtreeIds: ['task-1'],
+            },
+          },
+        },
+      });
+    });
+
+    expect(screen.getByTestId('drag-value')).toHaveTextContent('task:task-1');
+
+    act(() => {
+      dndHandlers.onDragEnd({
+        active: { id: 'task-1', data: { current: { kind: 'task', taskId: 'task-1' } } },
+      });
+    });
+
+    expect(screen.getByTestId('active-drag')).toHaveTextContent('null');
+    expect(screen.getByTestId('has-moved')).toHaveTextContent('false');
+    expect(screen.getByTestId('indent-steps')).toHaveTextContent('0');
+    expect(screen.getByTestId('over-id')).toBeEmptyDOMElement();
+  });
+
+  it('handleDragCancel resets all drag state and announces cancellation', () => {
+    function Consumer() {
+      const ctx = usePlannerDrag();
+      return (
+        <span data-testid="drag-value">
+          {ctx.activeDrag
+            ? `${ctx.activeDrag.kind}:${'taskId' in ctx.activeDrag ? ctx.activeDrag.taskId : 'id'}`
+            : 'none'}
+        </span>
+      );
+    }
+
+    render(
+      <TestWrapper>
+        <Consumer />
+      </TestWrapper>,
+    );
+
+    act(() => {
+      dndHandlers.onDragStart({
+        active: {
+          id: 'task-1',
+          data: {
+            current: {
+              kind: 'task',
+              taskId: 'task-1',
+              parentTaskId: null,
+              collectionId: 'col-1',
+              dueDate: null,
+              depth: 0,
+              containerId: 'container-1',
+              subtreeIds: ['task-1'],
+            },
+          },
+        },
+      });
+    });
+
+    expect(screen.getByTestId('drag-value')).toHaveTextContent('task:task-1');
+
+    act(() => {
+      dndHandlers.onDragCancel();
+    });
+
+    expect(screen.getByTestId('drag-value')).toHaveTextContent('none');
+    expect(screen.getByRole('status')).toHaveTextContent('Move cancelled.');
+  });
+
+  it('DndContext onDragStart calls the registered handler via dispatch', () => {
+    const onDragStart = vi.fn();
+
+    function HandlerRegistrar() {
+      const ctx = usePlannerDrag();
+      ctx.registerHandlers('task', { onDragStart });
+      return null;
+    }
+
+    render(
+      <TestWrapper>
+        <HandlerRegistrar />
+      </TestWrapper>,
+    );
+
+    act(() => {
+      dndHandlers.onDragStart({
+        active: {
+          id: 'task-1',
+          data: {
+            current: {
+              kind: 'task',
+              taskId: 'task-1',
+              parentTaskId: null,
+              collectionId: 'col-1',
+              dueDate: null,
+              depth: 0,
+              containerId: 'container-1',
+              subtreeIds: ['task-1'],
+            },
+          },
+        },
+      });
+    });
+
+    expect(onDragStart).toHaveBeenCalledTimes(1);
+    expect(onDragStart).toHaveBeenCalledWith(
+      expect.objectContaining({
+        active: expect.objectContaining({ id: 'task-1' }),
+      }),
+    );
+  });
+
+  it('DndContext onDragEnd calls the registered handler via dispatch', () => {
+    const onDragEnd = vi.fn();
+
+    function HandlerRegistrar() {
+      const ctx = usePlannerDrag();
+      ctx.registerHandlers('task', { onDragEnd });
+      return null;
+    }
+
+    render(
+      <TestWrapper>
+        <HandlerRegistrar />
+      </TestWrapper>,
+    );
+
+    act(() => {
+      dndHandlers.onDragStart({
+        active: {
+          id: 'task-1',
+          data: {
+            current: {
+              kind: 'task',
+              taskId: 'task-1',
+              parentTaskId: null,
+              collectionId: 'col-1',
+              dueDate: null,
+              depth: 0,
+              containerId: 'container-1',
+              subtreeIds: ['task-1'],
+            },
+          },
+        },
+      });
+    });
+
+    act(() => {
+      dndHandlers.onDragEnd({
+        active: { id: 'task-1', data: { current: { kind: 'task', taskId: 'task-1' } } },
+      });
+    });
+
+    expect(onDragEnd).toHaveBeenCalledTimes(1);
+  });
+
+  it('DndContext onDragCancel calls all registered handlers', () => {
+    const onDragCancel = vi.fn();
+
+    function HandlerRegistrar() {
+      const ctx = usePlannerDrag();
+      ctx.registerHandlers('task', { onDragCancel });
+      return null;
+    }
+
+    render(
+      <TestWrapper>
+        <HandlerRegistrar />
+      </TestWrapper>,
+    );
+
+    act(() => {
+      dndHandlers.onDragCancel();
+    });
+
+    expect(onDragCancel).toHaveBeenCalledTimes(1);
+  });
+
+  it('dispatch does not call handler when kind does not match registered handler', () => {
+    const onDragStart = vi.fn();
+
+    function HandlerRegistrar() {
+      const ctx = usePlannerDrag();
+      ctx.registerHandlers('collection', { onDragStart });
+      return null;
+    }
+
+    render(
+      <TestWrapper>
+        <HandlerRegistrar />
+      </TestWrapper>,
+    );
+
+    act(() => {
+      dndHandlers.onDragStart({
+        active: {
+          id: 'task-1',
+          data: {
+            current: {
+              kind: 'task',
+              taskId: 'task-1',
+              parentTaskId: null,
+              collectionId: 'col-1',
+              dueDate: null,
+              depth: 0,
+              containerId: 'container-1',
+              subtreeIds: ['task-1'],
+            },
+          },
+        },
+      });
+    });
+
+    expect(onDragStart).not.toHaveBeenCalled();
+  });
+
+  it('registerHandlers cleanup removes the handlers', () => {
+    const onDragStart = vi.fn();
+
+    function HandlerRegistrar() {
+      const ctx = usePlannerDrag();
+      const unregister = ctx.registerHandlers('task', { onDragStart });
+      unregister();
+      return null;
+    }
+
+    render(
+      <TestWrapper>
+        <HandlerRegistrar />
+      </TestWrapper>,
+    );
+
+    act(() => {
+      dndHandlers.onDragStart({
+        active: {
+          id: 'task-1',
+          data: {
+            current: {
+              kind: 'task',
+              taskId: 'task-1',
+              parentTaskId: null,
+              collectionId: 'col-1',
+              dueDate: null,
+              depth: 0,
+              containerId: 'container-1',
+              subtreeIds: ['task-1'],
+            },
+          },
+        },
+      });
+    });
+
+    expect(onDragStart).not.toHaveBeenCalled();
   });
 });
