@@ -112,4 +112,36 @@ describe('HabitTimeline', () => {
     render(<HabitTimeline {...defaultProps} />, { wrapper: createWrapper() });
     expect(screen.getByText('New group')).toBeInTheDocument();
   });
+
+  it('exposes a drag handle on habit rows and group headers', () => {
+    const water: HabitSections['ungrouped'][number] = {
+      id: 'water',
+      name: 'Drink water',
+      parentId: null,
+      groupId: null,
+      orderValue: 0,
+      completions: new Set(),
+      children: [],
+    };
+    const sections: HabitSections = {
+      ungrouped: [water],
+      groups: [
+        {
+          group: { id: 'morning', name: 'Morning', orderValue: 0 },
+          habits: [],
+        },
+      ],
+    };
+
+    const { container } = render(
+      <HabitTimeline {...defaultProps} sections={sections} />,
+      { wrapper: createWrapper() },
+    );
+
+    // The keyboard sensor only picks up from inside a [data-drag-handle], so
+    // without these the rows are draggable by pointer only.
+    expect(container.querySelectorAll('[data-drag-handle]').length).toBeGreaterThanOrEqual(2);
+    expect(screen.getByLabelText('Reorder Drink water')).toBeInTheDocument();
+    expect(screen.getByLabelText('Reorder Morning')).toBeInTheDocument();
+  });
 });

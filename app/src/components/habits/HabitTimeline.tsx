@@ -8,6 +8,7 @@ import { StripNavigator } from '../ui/StripNavigator';
 import { HabitDot, dotAriaProps } from './HabitDot';
 import { HabitNameInput } from './HabitNameInput';
 import { NO_DRAG_ATTR } from '../dnd/sensors';
+import { HabitDragHandle } from './HabitDragHandle';
 import { fmtISO } from '../../utils/date';
 import { dayState, flattenHabits, type HabitNode, type HabitSections } from '../../utils/habitTree';
 import { usePlannerDrag } from '../../contexts/PlannerDragContext';
@@ -710,7 +711,9 @@ function SortableHabitLabelRow({
         {...listeners}
         style={{ paddingLeft: depth * indent, opacity: isDragging || dimmed ? 0.4 : 1 }}
         className="habit-timeline-row-label group flex h-6 min-w-0 items-center pr-2"
+        aria-label={node.name}
       >
+        <HabitDragHandle label={node.name} />
         {children}
       </div>
     </>
@@ -737,7 +740,9 @@ function SortableGroupHeader({
       {...listeners}
       style={{ opacity: isDragging || dimmed ? 0.4 : 1 }}
       className="habit-timeline-group-header group flex h-6 min-w-0 items-center pr-2"
+      aria-label={group.name}
     >
+      <HabitDragHandle label={group.name} />
       {children}
     </div>
   );

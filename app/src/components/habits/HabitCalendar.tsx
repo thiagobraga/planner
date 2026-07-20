@@ -4,6 +4,7 @@ import { SortableContext, useSortable, rectSortingStrategy } from '@dnd-kit/sort
 import { MonthSelector } from '../monthly/MonthSelector';
 import { HabitMonthGrid } from './HabitMonthGrid';
 import { HabitNameInput } from './HabitNameInput';
+import { HabitDragHandle } from './HabitDragHandle';
 import { dayState, type HabitNode, type HabitSections } from '../../utils/habitTree';
 import { containerForGroup } from '../../utils/habitProjection';
 import type { HabitDragData, HabitGroupDragData, HabitSectionDropData } from '../../types/drag';
@@ -181,7 +182,9 @@ function SortableGroupHeading({
       {...listeners}
       style={{ opacity: isDragging || dimmed ? 0.4 : 1 }}
       className="habit-calendar-group-name h-6 border-b border-border/60 text-[10px] font-semibold uppercase leading-6 tracking-[0.1em] text-ink-light"
+      aria-label={group.name}
     >
+      <HabitDragHandle label={group.name} />
       {children}
     </h2>
   );
@@ -282,7 +285,13 @@ function SortableHabitCard({
       {...listeners}
       style={{ opacity: isDragging || dimmed ? 0.4 : 1 }}
       className="habit-calendar-item min-w-0"
+      aria-label={node.name}
     >
+      {/*
+       * Keyboard-only affordance, tucked into the grid gutter: pointer drag
+       * already works card-wide, so this must not compete with the card itself.
+       */}
+      <HabitDragHandle label={node.name} className="absolute right-[-14px] top-0 h-4 w-4" />
       {children}
     </div>
   );

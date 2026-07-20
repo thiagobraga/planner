@@ -271,6 +271,31 @@ kbd {
   }
 }
 /*
+ * Habit rows, cards and headers: same drag affordance as a task row - the
+ * pointer says "grabbable", the handle fades in on hover. No background wash,
+ * since the timeline's day cells already tint on hover and two washes at once
+ * read as noise.
+ */
+.habit-timeline-row-label,
+.habit-timeline-group-header,
+.habit-calendar-item,
+.habit-calendar-group-name {
+  position: relative;
+  cursor: pointer;
+  transition: opacity 150ms;
+
+  &:hover .drag-handle {
+    opacity: 0.5 !important;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-ink);
+    outline-offset: -2px;
+    border-radius: 4px;
+  }
+}
+
+/*
  * The dragged row, left behind as dnd-kit moves it to the drop position while
  * the block itself follows the pointer. Its content is hidden and it renders as
  * an empty slot instead, indented to the projected nesting level - so the gap
@@ -384,7 +409,11 @@ kbd {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .task-item {
+  .task-item,
+  .habit-timeline-row-label,
+  .habit-timeline-group-header,
+  .habit-calendar-item,
+  .habit-calendar-group-name {
     transition: none !important;
   }
 }

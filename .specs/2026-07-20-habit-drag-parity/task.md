@@ -18,14 +18,14 @@ Markers: `[ ]` not started · `[~]` in progress · `[x]` done
 
 ## Step 2 — handle markup, cursor CSS, reduced motion (gaps 3 + 4 + 6)
 
-- [ ] Gap 3: `DRAG_HANDLE_ATTR` handle in `SortableHabitLabelRow` (Timeline)
-- [ ] Gap 3: handle in `SortableGroupHeader` (Timeline)
-- [ ] Gap 3: handle in `SortableGroupHeading` (Calendar)
-- [ ] Gap 3: small corner handle in `SortableHabitCard` (Calendar) — keyboard target only, whole-card pointer drag unchanged
-- [ ] Gap 4: row-level `aria-label` on all 4 outer elements
-- [ ] Gap 4: cursor/hover/focus-visible CSS block in `index.css` after `.task-item`
-- [ ] Gap 6: extend `prefers-reduced-motion` block with the 4 habit selectors
-- [ ] Tests: each of 4 components exposes `[data-drag-handle]` with `aria-label="Reorder …"`
+- [x] Gap 3: `DRAG_HANDLE_ATTR` handle in `SortableHabitLabelRow` (Timeline)
+- [x] Gap 3: handle in `SortableGroupHeader` (Timeline)
+- [x] Gap 3: handle in `SortableGroupHeading` (Calendar)
+- [x] Gap 3: small corner handle in `SortableHabitCard` (Calendar) — keyboard target only, whole-card pointer drag unchanged
+- [x] Gap 4: row-level `aria-label` on all 4 outer elements
+- [x] Gap 4: cursor/hover/focus-visible CSS block in `index.css` after `.task-item`
+- [x] Gap 6: extend `prefers-reduced-motion` block with the 4 habit selectors
+- [x] Tests: each of 4 components exposes `[data-drag-handle]` with `aria-label="Reorder …"`
 
 ## Step 3 — `HabitBlockPreview` (gap 2)
 

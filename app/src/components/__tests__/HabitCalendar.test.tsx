@@ -148,6 +148,20 @@ describe('HabitCalendar: inline rename', () => {
     expect(onCommitEdit).not.toHaveBeenCalled();
   });
 
+  it('exposes a drag handle on cards and group headings', () => {
+    renderCalendar({
+      sections: {
+        ungrouped: [habit('water', 'Drink water')],
+        groups: [{ group: { id: 'morning', name: 'Morning', orderValue: 0 }, habits: [] }],
+      },
+    });
+
+    // Pointer drag is card-wide here; these handles exist so the keyboard
+    // sensor has something to pick up from.
+    expect(screen.getByLabelText('Reorder Drink water')).toHaveAttribute('data-drag-handle');
+    expect(screen.getByLabelText('Reorder Morning')).toHaveAttribute('data-drag-handle');
+  });
+
   it('keeps day cells out of the card drag so tracking still works', () => {
     const onToggleDay = vi.fn();
     const { container } = renderCalendar({ onToggleDay });
