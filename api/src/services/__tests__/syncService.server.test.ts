@@ -50,6 +50,10 @@ import { attachSyncServer, getIO, publishEvent } from "../syncService.js";
 import { redisSubClient } from "../../db/redis.js";
 import { validateSession } from "../sessionService.js";
 
+function captureConnectionHandler(): (...args: unknown[]) => void {
+  return mockIO.on.mock.calls.find((c: unknown[]) => c[0] === "connection")?.[1] as (...args: unknown[]) => void;
+}
+
 describe("syncService: Socket.IO server", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -90,6 +94,8 @@ describe("syncService: Socket.IO server", () => {
       await middleware(mockSocket, next);
       expect(next).toHaveBeenCalledWith();
       expect(mockSocket.data.userId).toBe("user-1");
+      expect(mockSocket.data.sessionId).toBe(1);
+      expect(mockSocket.data.rawToken).toBe("valid-token");
     });
 
     it("blocks when no cookie is present", async () => {
@@ -138,6 +144,56 @@ describe("syncService: Socket.IO server", () => {
         "sync",
         JSON.stringify(event),
       );
+    });
+  });
+
+  describe("client event session validation", () => {
+    beforeEach(async () => {
+      vi.clearAllMocks();
+      mockSocket.data = {
+        userId: "user-1",
+        sessionId: 1,
+        rawToken: "valid-token",
+      } as { userId: string; sessionId: number; rawToken?: string };
+      mockSocket.on.mockClear();
+
+      const httpServer = {} as import("http").Server;
+      await attachSyncServer(httpServer);
+      const handler = captureConnectionHandler();
+      await handler(mockSocket);
+    });
+
+    it("rejects task:update when session is invalid", async () => {
+      (validateSession as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+
+      const taskUpdateHandler = mockSocket.on.mock.calls.find(
+        (c: unknown[]) => c[0] === "task:update",
+      )?.[1] as (event: { collectionId?: string }) => void;
+
+      await taskUpdateHandler({ collectionId: "collection-1" });
+      expect(mockSocket.disconnect).toHaveBeenCalled();
+    });
+
+    it("rejects task:delete when session is invalid", async () => {
+      (validateSession as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+
+      const taskDeleteHandler = mockSocket.on.mock.calls.find(
+        (c: unknown[]) => c[0] === "task:delete",
+      )?.[1] as (event: { collectionId?: string }) => void;
+
+      await taskDeleteHandler({ collectionId: "collection-1" });
+      expect(mockSocket.disconnect).toHaveBeenCalled();
+    });
+
+    it("disconnects when rawToken is missing from socket data", async () => {
+      mockSocket.data = { userId: "user-1", sessionId: 1 };
+
+      const taskUpdateHandler = mockSocket.on.mock.calls.find(
+        (c: unknown[]) => c[0] === "task:update",
+      )?.[1] as (event: { collectionId?: string }) => void;
+
+      await taskUpdateHandler({ collectionId: "collection-1" });
+      expect(mockSocket.disconnect).toHaveBeenCalled();
     });
   });
 });

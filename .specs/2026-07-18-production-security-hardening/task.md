@@ -4,124 +4,124 @@
 
 ## Phase 0 - Security contract and configuration
 
-- [ ] Add `docs/security/data-protection.md`
-  - [ ] Classify identity, authentication, content, preferences, logs, and backups
-  - [ ] Record mandatory transport/storage/backup encryption boundaries
-  - [ ] Record why application-level task/habit/content encryption is deferred
-  - [ ] Define the trigger and requirements for a future envelope-encryption spec
-  - [ ] Define retention, deletion/export, log redaction, and prohibited log content
-- [ ] Add `docs/production-runbook.md`
-  - [ ] Select and document same-host encrypted storage or managed PostgreSQL/Redis
-  - [ ] Document secret creation, storage, rotation, revocation, and ownership
-  - [ ] Document deploy, migration, rollback, backup, restore, and session-revocation procedures
-  - [ ] Add a dated go-live evidence table
-- [ ] Harden `api/src/config.ts`
-  - [ ] Validate `NODE_ENV` and reject non-production mode in the production image
-  - [ ] Support `DATABASE_URL_FILE`, `REDIS_URL_FILE`, and `CSRF_SECRET_FILE`
-  - [ ] Require database, Redis, origin, CSRF, and session TTL configuration
-  - [ ] Reject missing, placeholder, default, or malformed production values
-  - [ ] Set secure defaults: 30-minute idle session, 12-hour absolute session
-  - [ ] Remove `JWT_SECRET` after session migration
-  - [ ] Fail production startup when Redis is unavailable
-- [ ] Add configuration unit tests for every fail-fast branch
+- [x] Add `docs/security/data-protection.md`
+  - [x] Classify identity, authentication, content, preferences, logs, and backups
+  - [x] Record mandatory transport/storage/backup encryption boundaries
+  - [x] Record why application-level task/habit/content encryption is deferred
+  - [x] Define the trigger and requirements for a future envelope-encryption spec
+  - [x] Define retention, deletion/export, log redaction, and prohibited log content
+- [x] Add `docs/production-runbook.md`
+  - [x] Select and document same-host encrypted storage or managed PostgreSQL/Redis
+  - [x] Document secret creation, storage, rotation, revocation, and ownership
+  - [x] Document deploy, migration, rollback, backup, restore, and session-revocation procedures
+  - [x] Add a dated go-live evidence table
+- [x] Harden `api/src/config.ts`
+  - [x] Validate `NODE_ENV` and reject non-production mode in the production image
+  - [x] Support `DATABASE_URL_FILE`, `REDIS_URL_FILE`, and `CSRF_SECRET_FILE`
+  - [x] Require database, Redis, origin, CSRF, and session TTL configuration
+  - [x] Reject missing, placeholder, default, or malformed production values
+  - [x] Set secure defaults: 30-minute idle session, 12-hour absolute session
+  - [x] Remove `JWT_SECRET` after session migration (Phase 2)
+  - [x] Fail production startup when Redis is unavailable
+- [x] Add configuration unit tests for every fail-fast branch
 
 ## Phase 1 - Single-user identity and password storage
 
-- [ ] Add `api/src/db/migrations/025_users_auth_hardening.sql`
-  - [ ] Detect and abort on case-insensitive duplicate emails
-  - [ ] Normalize existing email values
-  - [ ] Add a unique index on `LOWER(email)`
-  - [ ] Make `display_name` nullable
-  - [ ] Add migration rollback/recovery notes to the runbook
-- [ ] Add Argon2id to `api/package.json` and lockfile
-- [ ] Add `api/src/services/passwordService.ts`
-  - [ ] Normalize passwords using Unicode NFC
-  - [ ] Enforce 15-128 character length without composition rules
-  - [ ] Add a versioned local common/compromised password blocklist
-  - [ ] Include Planner name/domain and known development passwords in the blocklist
-  - [ ] Hash new passwords with benchmarked Argon2id parameters
-  - [ ] Verify legacy bcrypt hashes
-  - [ ] Rehash bcrypt to Argon2id after successful authentication
-  - [ ] Never log raw passwords or hashes
-- [ ] Add password service tests
-  - [ ] Valid Unicode passphrase with spaces
-  - [ ] Minimum/maximum boundaries
-  - [ ] NFC-equivalent inputs
-  - [ ] Blocklisted value
-  - [ ] Argon2id verify success/failure
-  - [ ] Bcrypt verify and rehash
-- [ ] Add `api/src/db/provisionUser.ts`
-  - [ ] Accept email plus password from a protected file or hidden standard input
-  - [ ] Reject password command-line arguments
-  - [ ] Require an explicit production provisioning flag
-  - [ ] Transactionally create/update user, inbox, and preferences
-  - [ ] Produce redacted success/failure output
-  - [ ] Add an `npm run provision-user` script
-- [ ] Update `api/src/services/authService.ts`
-  - [ ] Use `passwordService` for login/provisioning/reset paths
-  - [ ] Normalize email consistently
-  - [ ] Remove display-name requirement from the production contract
-  - [ ] Preserve generic invalid-credential responses
-- [ ] Update `api/src/routes/auth.ts`
-  - [ ] Default public registration to disabled
-  - [ ] Default password reset request/confirm to disabled
-  - [ ] Return no JWT/session token fields
-  - [ ] Validate request types and JSON content type
-- [ ] Update `app/src/pages/LoginPage.tsx`
-  - [ ] Remove production registration UI and display-name input
-  - [ ] Keep development helpers unavailable in production artifacts
-  - [ ] Preserve password-manager autofill and paste
-- [ ] Update `app/src/contexts/AuthContext.tsx` and `app/src/api/client.ts`
-  - [ ] Remove registration/display-name types when disabled
-  - [ ] Remove token response types
-- [ ] Remove or adapt unused `app/src/stores/authStore.ts` after confirming no consumers
+- [x] Add `api/src/db/migrations/026_users_auth_hardening.sql`
+  - [x] Detect and abort on case-insensitive duplicate emails
+  - [x] Normalize existing email values
+  - [x] Add a unique index on `LOWER(email)`
+  - [x] Make `display_name` nullable
+  - [x] Add migration rollback/recovery notes to the runbook
+- [x] Add Argon2id to `api/package.json` and lockfile
+- [x] Add `api/src/services/passwordService.ts`
+  - [x] Normalize passwords using Unicode NFC
+  - [x] Enforce 15-128 character length without composition rules
+  - [x] Add a versioned local common/compromised password blocklist
+  - [x] Include Planner name/domain and known development passwords in the blocklist
+  - [x] Hash new passwords with benchmarked Argon2id parameters
+  - [x] Verify legacy bcrypt hashes
+  - [x] Rehash bcrypt to Argon2id after successful authentication
+  - [x] Never log raw passwords or hashes
+- [x] Add password service tests
+  - [x] Valid Unicode passphrase with spaces
+  - [x] Minimum/maximum boundaries
+  - [x] NFC-equivalent inputs
+  - [x] Blocklisted value
+  - [x] Argon2id verify success/failure
+  - [x] Bcrypt verify and rehash
+- [x] Add `api/src/db/provisionUser.ts`
+  - [x] Accept email plus password from a protected file or hidden standard input
+  - [x] Reject password command-line arguments
+  - [x] Require an explicit production provisioning flag
+  - [x] Transactionally create/update user, inbox, and preferences
+  - [x] Produce redacted success/failure output
+  - [x] Add an `npm run provision-user` script
+- [x] Update `api/src/services/authService.ts`
+  - [x] Use `passwordService` for login/provisioning/reset paths
+  - [x] Normalize email consistently
+  - [x] Remove display-name requirement from the production contract
+  - [x] Preserve generic invalid-credential responses
+- [x] Update `api/src/routes/auth.ts`
+  - [x] Default public registration to disabled
+  - [x] Default password reset request/confirm to disabled
+  - [x] Return no JWT/session token fields
+  - [x] Validate request types and JSON content type
+- [x] Update `app/src/pages/LoginPage.tsx`
+  - [x] Remove production registration UI and display-name input
+  - [x] Keep development helpers unavailable in production artifacts
+  - [x] Preserve password-manager autofill and paste
+- [x] Update `app/src/contexts/AuthContext.tsx` and `app/src/api/client.ts`
+  - [x] Remove registration/display-name types when disabled
+  - [x] Remove token response types
+- [x] Remove or adapt unused `app/src/stores/authStore.ts` after confirming no consumers
 
 ## Phase 2 - Opaque server-side sessions
 
-- [ ] Add `api/src/db/migrations/026_opaque_sessions.sql`
-  - [ ] Store only unique SHA-256 token hashes
-  - [ ] Add `last_seen_at`, `idle_expires_at`, and `absolute_expires_at`
-  - [ ] Add revocation timestamp/reason metadata
-  - [ ] Add lookup and expiry-cleanup indexes
-  - [ ] Delete/invalidate all legacy JWT sessions intentionally
-- [ ] Add `api/src/services/sessionService.ts`
-  - [ ] Generate 32-byte random opaque session tokens
-  - [ ] Hash tokens before database lookup/storage
-  - [ ] Create session with idle and absolute expiry
-  - [ ] Validate active/non-expired/non-revoked sessions
-  - [ ] Touch `last_seen_at` at a bounded cadence
-  - [ ] Revoke one session and all sessions for a user
-  - [ ] Delete expired sessions safely
-  - [ ] Build exact production/development cookie options
-- [ ] Add session service tests
-  - [ ] Database never receives raw token
-  - [ ] Idle expiry
-  - [ ] Absolute expiry
-  - [ ] Explicit revocation
-  - [ ] Password-change all-session revocation
-  - [ ] Production `__Host-` cookie attributes
-- [ ] Replace JWT logic in `api/src/middleware/auth.ts`
-  - [ ] Read cookie credentials only
-  - [ ] Reject Authorization Bearer credentials
-  - [ ] Attach user ID and internal session ID to request context
-  - [ ] Return generic `401` for invalid/expired/revoked credentials
-- [ ] Update `api/src/routes/auth.ts`
-  - [ ] Create a session on login
-  - [ ] Return only user and CSRF bootstrap data
-  - [ ] Revoke server session on logout
-  - [ ] Clear cookie with matching name/path/security attributes
-- [ ] Update `api/src/services/syncService.ts`
-  - [ ] Remove handshake auth-token fallback
-  - [ ] Parse the session cookie safely
-  - [ ] Use `sessionService` during connection
-  - [ ] Reject expired/revoked sessions on reconnect
-  - [ ] Revalidate sessions periodically and before client-originated events
-  - [ ] Ensure server-pushed sync events do not extend idle expiry
-  - [ ] Disconnect active sockets when the session becomes invalid
-- [ ] Update `api/src/types/express.d.ts` and frontend auth/socket types
-- [ ] Delete refresh-token/JWT code
-- [ ] Remove `jsonwebtoken` and its type package from API dependencies
-- [ ] Add REST + Socket.IO session lifecycle integration tests
+- [x] Add `api/src/db/migrations/027_opaque_sessions.sql`
+  - [x] Store only unique SHA-256 token hashes
+  - [x] Add `last_seen_at`, `idle_expires_at`, and `absolute_expires_at`
+  - [x] Add revocation timestamp/reason metadata
+  - [x] Add lookup and expiry-cleanup indexes
+  - [x] Delete/invalidate all legacy JWT sessions intentionally
+- [x] Add `api/src/services/sessionService.ts`
+  - [x] Generate 32-byte random opaque session tokens
+  - [x] Hash tokens before database lookup/storage
+  - [x] Create session with idle and absolute expiry
+  - [x] Validate active/non-expired/non-revoked sessions
+  - [x] Touch `last_seen_at` at a bounded cadence
+  - [x] Revoke one session and all sessions for a user
+  - [x] Delete expired sessions safely
+  - [x] Build exact production/development cookie options
+- [x] Add session service tests
+  - [x] Database never receives raw token
+  - [x] Idle expiry
+  - [x] Absolute expiry
+  - [x] Explicit revocation
+  - [x] Password-change all-session revocation
+  - [x] Production `__Host-` cookie attributes
+- [x] Replace JWT logic in `api/src/middleware/auth.ts`
+  - [x] Read cookie credentials only
+  - [x] Reject Authorization Bearer credentials
+  - [x] Attach user ID and internal session ID to request context
+  - [x] Return generic `401` for invalid/expired/revoked credentials
+- [x] Update `api/src/routes/auth.ts`
+  - [x] Create a session on login
+  - [x] Return only user and CSRF bootstrap data
+  - [x] Revoke server session on logout
+  - [x] Clear cookie with matching name/path/security attributes
+- [x] Update `api/src/services/syncService.ts`
+  - [x] Remove handshake auth-token fallback
+  - [x] Parse the session cookie safely
+  - [x] Use `sessionService` during connection
+  - [x] Reject expired/revoked sessions on reconnect
+- [x] Revalidate sessions periodically and before client-originated events
+- [x] Ensure server-pushed sync events do not extend idle expiry
+- [x] Disconnect active sockets when the session becomes invalid
+- [x] Update `api/src/types/express.d.ts` and frontend auth/socket types
+- [x] Delete refresh-token/JWT code
+- [x] Remove `jsonwebtoken` and its type package from API dependencies
+- [x] Add REST + Socket.IO session lifecycle integration tests
 
 ## Phase 3 - Global request protection
 

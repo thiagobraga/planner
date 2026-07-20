@@ -4,7 +4,15 @@ import pool from "../db/pool.js";
 import { redisPubClient, redisSubClient } from "../db/redis.js";
 import { CORS_ORIGIN } from "../config.js";
 import { validateSession, buildCookieName } from "./sessionService.js";
+
 const SYNC_CHANNEL = "sync";
+const SESSION_REVALIDATION_INTERVAL_MS = 60_000;
+
+interface SocketData {
+  userId: string;
+  sessionId: number;
+  rawToken?: string;
+}
 
 export type SyncEntityType = "task" | "collection" | "section" | "label" | "comment" | "reminder" | "preferences" | "habit" | "habit_completion" | "habit_group";
 export type SyncEventType = "created" | "updated" | "deleted" | "completed" | "uncompleted";
@@ -26,6 +34,41 @@ function userRoom(userId: string): string {
 
 function collectionRoom(collectionId: string): string {
   return `collection:${collectionId}`;
+}
+
+async function isSessionValid(socket: Socket): Promise<boolean> {
+  const rawToken = (socket.data as SocketData).rawToken;
+  if (!rawToken) {
+    socket.disconnect();
+    return false;
+  }
+  const session = await validateSession(rawToken);
+  if (!session) {
+    socket.disconnect();
+    return false;
+  }
+  return true;
+}
+
+function startSessionRevalidation(io: IOServer): NodeJS.Timeout {
+  return setInterval(async () => {
+    try {
+      const sockets = await io.fetchSockets();
+      for (const socket of sockets) {
+        const rawToken = (socket.data as SocketData).rawToken;
+        if (!rawToken) {
+          socket.disconnect();
+          continue;
+        }
+        const session = await validateSession(rawToken);
+        if (!session) {
+          socket.disconnect();
+        }
+      }
+    } catch {
+      // swallow — don't crash the interval on transient failures
+    }
+  }, SESSION_REVALIDATION_INTERVAL_MS);
 }
 
 let ioInstance: IOServer | null = null;
@@ -104,15 +147,18 @@ export async function attachSyncServer(httpServer: HTTPServer): Promise<IOServer
       return;
     }
 
-    (socket.data as { userId: string; sessionId: number }).userId = session.userId;
-    (socket.data as { userId: string; sessionId: number }).sessionId = session.sessionId;
+    const data = socket.data as SocketData;
+    data.userId = session.userId;
+    data.sessionId = session.sessionId;
+    data.rawToken = rawToken;
     next();
   });
 
   console.log("[sync] Socket.IO attached to HTTP server");
 
   io.on("connection", async (socket: Socket) => {
-    const userId = (socket.data as { userId: string }).userId;
+    const data = socket.data as SocketData;
+    const userId = data.userId;
     console.log(`[sync] socket connected user=${userId} id=${socket.id}`);
     socket.join(userRoom(userId));
 
@@ -127,20 +173,22 @@ export async function attachSyncServer(httpServer: HTTPServer): Promise<IOServer
       }
     });
 
-    socket.on("task:update", (event: { collectionId?: string }) => {
+    socket.on("task:update", async (event: { collectionId?: string }) => {
+      if (!(await isSessionValid(socket))) return;
       if (event?.collectionId && !collectionIds.includes(event.collectionId)) {
         socket.disconnect();
       }
     });
 
-    socket.on("task:delete", (event: { collectionId?: string }) => {
+    socket.on("task:delete", async (event: { collectionId?: string }) => {
+      if (!(await isSessionValid(socket))) return;
       if (event?.collectionId && !collectionIds.includes(event.collectionId)) {
         socket.disconnect();
       }
     });
 
-    socket.on("comment:create", () => {
-      // No-op: collection-scope validation happens server-side
+    socket.on("comment:create", async () => {
+      await isSessionValid(socket);
     });
   });
 
@@ -160,6 +208,8 @@ export async function attachSyncServer(httpServer: HTTPServer): Promise<IOServer
   });
 
   console.log("[sync] Redis subscription ready");
+
+  startSessionRevalidation(io);
 
   ioInstance = io;
   return io;
