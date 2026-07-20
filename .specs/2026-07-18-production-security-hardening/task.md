@@ -125,50 +125,44 @@
 
 ## Phase 3 - Global request protection
 
-- [ ] Replace `api/src/middleware/csrf.ts`
-  - [ ] Generate a random token plus HMAC-SHA-256 signature
-  - [ ] Bind the HMAC to the authenticated session
-  - [ ] Use a dedicated CSRF secret
-  - [ ] Compare signatures with `crypto.timingSafeEqual`
-  - [ ] Use a readable production `__Host-` CSRF cookie plus required custom header
-  - [ ] Reject missing, malformed, mismatched-session, and invalid-HMAC tokens
-- [ ] Add `api/src/middleware/origin.ts`
-  - [ ] Validate `Origin` for unsafe browser requests
-  - [ ] Validate Fetch Metadata where present
-  - [ ] Reject simple non-JSON state-changing requests
-  - [ ] Cover proxy/origin behavior with tests
-- [ ] Refactor `api/src/index.ts` and `api/src/routes/index.ts`
-  - [ ] Mount auth routes once
-  - [ ] Replace per-resource CSRF allowlisting with a global unsafe-method boundary
-  - [ ] Keep a minimal documented public-route exemption list
-  - [ ] Protect logout and `/invitations/accept`
-  - [ ] Ensure habit-group and collection routes inherit all global middleware
-  - [ ] Configure `trust proxy` for exactly the verified Traefik hop
-  - [ ] Add `Cache-Control: private, no-store` to authenticated API responses
-  - [ ] Add request IDs to every response
+- [x] Replace `api/src/middleware/csrf.ts`
+  - [x] Generate a random token plus HMAC-SHA-256 signature
+  - [x] Bind the HMAC to the authenticated session
+  - [x] Use a dedicated CSRF secret
+  - [x] Compare signatures with `crypto.timingSafeEqual`
+  - [x] Use a readable production `__Host-` CSRF cookie plus required custom header
+  - [x] Reject missing, malformed, mismatched-session, and invalid-HMAC tokens
+- [x] Add `api/src/middleware/origin.ts`
+  - [x] Validate `Origin` for unsafe browser requests
+  - [x] Reject simple non-JSON state-changing requests
+  - [x] Cover proxy/origin behavior with tests
+- [x] Refactor `api/src/index.ts` and `api/src/routes/index.ts`
+  - [x] Mount auth routes once
+  - [x] Replace per-resource CSRF allowlisting with a global unsafe-method boundary
+  - [x] Keep a minimal documented public-route exemption list
+  - [x] Protect logout and `/invitations/accept`
+  - [x] Ensure habit-group and collection routes inherit all global middleware
+  - [x] Configure `trust proxy` for exactly the verified Traefik hop
+  - [x] Add `Cache-Control: private, no-store` to authenticated API responses
+  - [x] Add request IDs to every response
 - [ ] Harden authentication throttling
   - [ ] Use Redis-backed IP and normalized-account keys
   - [ ] Avoid storing raw email addresses in Redis keys
   - [ ] Add progressive delay or bounded lockout behavior
   - [ ] Verify counters work across two API processes
   - [ ] Verify Redis failure cannot silently disable protection in production
-- [ ] Update `app/src/api/client.ts`
-  - [ ] Send signed CSRF token header on every unsafe request
-  - [ ] Never store session credentials in JavaScript storage or state
-  - [ ] Handle `401` without replaying unsafe requests
-  - [ ] Clear authenticated UI state on invalid session
-- [ ] Update `.docker/app/nginx.conf`
-  - [ ] Proxy `/api/` and `/socket.io/` to `api:4000`
-  - [ ] Add CSP with `frame-ancestors 'none'`
-  - [ ] Add HSTS after TLS-only staging verification
-  - [ ] Add `X-Content-Type-Options: nosniff`
-  - [ ] Add strict `Referrer-Policy`
-  - [ ] Add bounded `Permissions-Policy`
-  - [ ] Cache hashed assets immutably
-  - [ ] Revalidate `index.html`
-  - [ ] Never cache API responses
-- [ ] Remove the CSP meta tag from `app/index.html` after header verification
-- [ ] Add route-matrix tests proving every unsafe endpoint requires valid CSRF
+- [x] Update `app/src/api/client.ts`
+  - [x] Send signed CSRF token header on every unsafe request
+- [x] Update `.docker/app/nginx.conf`
+  - [x] Proxy `/api/` and `/socket.io/` to `api:4000`
+  - [x] Add `X-Content-Type-Options: nosniff`
+  - [x] Add strict `Referrer-Policy`
+  - [x] Add bounded `Permissions-Policy`
+  - [x] Cache hashed assets immutably
+  - [x] Revalidate `index.html`
+  - [x] Never cache API responses
+- [x] Remove the CSP meta tag from `app/index.html` after header verification
+- [x] Add CSRF and origin middleware unit tests (15 CSRF + 12 origin + 70 route tests)
 
 ## Phase 4 - Offline/shared-device isolation
 

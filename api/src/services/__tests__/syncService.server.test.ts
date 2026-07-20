@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 const mockSocket = {
   id: "socket-1",
-  data: {} as { userId: string; sessionId: number },
+  data: {} as { userId: string; sessionId: number; rawToken?: string },
   handshake: { auth: {}, headers: {} } as { auth: Record<string, unknown>; headers: Record<string, string> },
   join: vi.fn(),
   on: vi.fn(),
@@ -57,7 +57,7 @@ function captureConnectionHandler(): (...args: unknown[]) => void {
 describe("syncService: Socket.IO server", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockSocket.data = {} as { userId: string; sessionId: number };
+    mockSocket.data = {} as { userId: string; sessionId: number; rawToken?: string };
     mockSocket.handshake.auth = {};
     mockSocket.handshake.headers = {};
     mockSocket.join.mockClear();
@@ -155,6 +155,9 @@ describe("syncService: Socket.IO server", () => {
         sessionId: 1,
         rawToken: "valid-token",
       } as { userId: string; sessionId: number; rawToken?: string };
+
+      mockSocket.disconnect.mockClear();
+      mockSocket.on.mockClear();
       mockSocket.on.mockClear();
 
       const httpServer = {} as import("http").Server;

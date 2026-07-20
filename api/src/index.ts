@@ -2,20 +2,22 @@ import express, { type Express } from "express";
 import helmet from "helmet";
 import cookieParser from "cookie-parser";
 import rateLimit from "express-rate-limit";
+import crypto from "node:crypto";
 import { createServer } from "http";
 import routes from "./routes/index.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import { notFound } from "./middleware/notFound.js";
 import { connectRedis } from "./db/redis.js";
 import { attachSyncServer } from "./services/syncService.js";
-import { PORT, CORS_ORIGIN, DISABLE_RATE_LIMITS_IN_DEV } from "./config.js";
+import { PORT, CORS_ORIGIN, DISABLE_RATE_LIMITS_IN_DEV, IS_PRODUCTION } from "./config.js";
 import { csrfProtection } from "./middleware/csrf.js";
+import { originCheck } from "./middleware/origin.js";
 import authRoutes from "./routes/auth.js";
 
 const app: Express = express();
-app.set("trust proxy", 1);
+app.set("trust proxy", IS_PRODUCTION ? 1 : 0);
 
-// Security middleware
+// Security headers
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
@@ -33,8 +35,13 @@ app.use(helmet({
 }));
 app.use(cookieParser());
 
+// Request ID on every response
+app.use((req, res, next) => {
+  res.setHeader("X-Request-Id", crypto.randomUUID());
+  next();
+});
+
 if (!DISABLE_RATE_LIMITS_IN_DEV) {
-  // Global rate limit
   const globalLimiter = rateLimit({
     windowMs: 60 * 1000,
     max: 100,
@@ -44,7 +51,6 @@ if (!DISABLE_RATE_LIMITS_IN_DEV) {
   app.use(globalLimiter);
 }
 
-// Middleware
 app.use(express.json());
 
 // CORS
@@ -61,7 +67,6 @@ app.use((_req, res, next) => {
 });
 
 if (!DISABLE_RATE_LIMITS_IN_DEV) {
-  // Per-route rate limiters
   const authRegisterLimiter = rateLimit({
     windowMs: 60 * 60 * 1000,
     max: 5,
@@ -76,29 +81,26 @@ if (!DISABLE_RATE_LIMITS_IN_DEV) {
     legacyHeaders: false,
   });
 
-  // Auth routes before CSRF (login/register don't need CSRF token)
   app.use("/api/v1/auth/register", authRegisterLimiter);
   app.use("/api/v1/auth/reset-password", passwordResetLimiter);
 }
 
-// Auth routes before CSRF (login/register don't need CSRF token)
+// Auth routes (mounted before CSRF — login/register don't need tokens)
 app.use("/api/v1/auth", authRoutes);
 
-// CSRF protection (excludes GET/HEAD/OPTIONS)
-app.use("/api/v1/tasks", csrfProtection);
-app.use("/api/v1/collections", csrfProtection);
-app.use("/api/v1/labels", csrfProtection);
-app.use("/api/v1/sections", csrfProtection);
-app.use("/api/v1/comments", csrfProtection);
-app.use("/api/v1/reminders", csrfProtection);
-app.use("/api/v1/habits", csrfProtection);
-app.use("/api/v1/habit-groups", csrfProtection);
-app.use("/api/v1/filters", csrfProtection);
-app.use("/api/v1/preferences", csrfProtection);
-app.use("/api/v1/activity", csrfProtection);
-app.use("/api/v1/collaboration", csrfProtection);
+// Origin check for unsafe requests
+app.use("/api/v1", originCheck);
 
-// Routes
+// Global CSRF protection — safe methods set the cookie, unsafe methods validate
+app.use("/api/v1", csrfProtection);
+
+// Cache-Control for all API responses
+app.use("/api/v1", (req, res, next) => {
+  res.setHeader("Cache-Control", "private, no-store");
+  next();
+});
+
+// All other API routes
 app.use("/api/v1", routes);
 
 // 404 handler

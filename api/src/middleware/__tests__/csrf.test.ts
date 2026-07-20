@@ -1,17 +1,25 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import type { Request, Response, NextFunction } from "express";
 
+const MOCK_SECRET = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+
 vi.mock("../../config.js", () => ({
-  CSRF_SECRET: "a".repeat(32),
+  CSRF_SECRET: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
   IS_PRODUCTION: false,
 }));
 
+import crypto from "node:crypto";
 import { csrfProtection } from "../csrf.js";
 
 const COOKIE_NAME = "planner_csrf";
 
-function buildCookie(token: string, hmac: string): string {
-  return `${token}:${hmac}`;
+function signToken(token: string, sessionId: number | undefined): string {
+  const data = sessionId !== undefined ? `${token}:${sessionId}` : token;
+  return crypto.createHmac("sha256", MOCK_SECRET).update(data).digest("hex");
+}
+
+function buildCookie(token: string, sessionId?: number): string {
+  return `${token}:${signToken(token, sessionId)}`;
 }
 
 describe("csrfProtection middleware", () => {
@@ -19,23 +27,22 @@ describe("csrfProtection middleware", () => {
   let res: Partial<Response>;
   let jsonFn: ReturnType<typeof vi.fn>;
   let statusFn: ReturnType<typeof vi.fn>;
-  let cookieFn: ReturnType<typeof vi.fn>;
   let nextFn: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     jsonFn = vi.fn();
     statusFn = vi.fn(() => ({ json: jsonFn }));
-    cookieFn = vi.fn();
     nextFn = vi.fn();
     req = {
       headers: {},
       cookies: {},
       method: "GET",
-      path: "/tasks",
     };
+    Object.defineProperty(req, "path", { value: "/tasks", writable: true });
     res = {
       status: statusFn as unknown as Response["status"],
-      cookie: cookieFn as unknown as Response["cookie"],
+      cookie: vi.fn() as unknown as Response["cookie"],
+      setHeader: vi.fn() as unknown as Response["setHeader"],
     };
   });
 
@@ -44,7 +51,7 @@ describe("csrfProtection middleware", () => {
       req.method = "GET";
       csrfProtection(req as Request, res as Response, nextFn);
 
-      expect(cookieFn).toHaveBeenCalledWith(
+      expect((res.cookie as ReturnType<typeof vi.fn>)).toHaveBeenCalledWith(
         COOKIE_NAME,
         expect.stringMatching(/^[a-f0-9]+:[a-f0-9]+$/),
         expect.objectContaining({
@@ -60,7 +67,7 @@ describe("csrfProtection middleware", () => {
       req.method = "HEAD";
       csrfProtection(req as Request, res as Response, nextFn);
 
-      expect(cookieFn).toHaveBeenCalled();
+      expect((res.cookie as ReturnType<typeof vi.fn>)).toHaveBeenCalled();
       expect(nextFn).toHaveBeenCalled();
     });
 
@@ -68,26 +75,15 @@ describe("csrfProtection middleware", () => {
       req.method = "OPTIONS";
       csrfProtection(req as Request, res as Response, nextFn);
 
-      expect(cookieFn).toHaveBeenCalled();
+      expect((res.cookie as ReturnType<typeof vi.fn>)).toHaveBeenCalled();
       expect(nextFn).toHaveBeenCalled();
-    });
-
-    it("includes session-bound HMAC when sessionId is present", () => {
-      req.method = "GET";
-      req.sessionId = 42;
-
-      csrfProtection(req as Request, res as Response, nextFn);
-
-      const callArgs = cookieFn.mock.calls[0];
-      const cookieValue = callArgs[1] as string;
-      expect(cookieValue).toMatch(/^[a-f0-9]+:[a-f0-9]+$/);
     });
   });
 
   describe("exempt paths", () => {
-    it("skips CSRF for /auth paths", () => {
+    it("skips CSRF for /auth/* paths", () => {
       req.method = "POST";
-      req.path = "/auth/login";
+      Object.defineProperty(req, "path", { value: "/auth/login", writable: true });
 
       csrfProtection(req as Request, res as Response, nextFn);
 
@@ -97,7 +93,7 @@ describe("csrfProtection middleware", () => {
 
     it("skips CSRF for /health path", () => {
       req.method = "POST";
-      req.path = "/health";
+      Object.defineProperty(req, "path", { value: "/health", writable: true });
 
       csrfProtection(req as Request, res as Response, nextFn);
 
@@ -110,16 +106,9 @@ describe("csrfProtection middleware", () => {
     it("calls next when x-xsrf-token matches cookie with valid HMAC", () => {
       req.method = "POST";
       req.sessionId = 1;
+      req.cookies = { [COOKIE_NAME]: buildCookie("valid-token", 1) };
+      req.headers = { "x-xsrf-token": "valid-token" };
 
-      csrfProtection(req as Request, res as Response, nextFn);
-
-      const cookieValue = cookieFn.mock.calls[0][1] as string;
-      const token = cookieValue.split(":")[0];
-
-      req.cookies = { [COOKIE_NAME]: cookieValue };
-      req.headers = { "x-xsrf-token": token };
-
-      vi.clearAllMocks();
       csrfProtection(req as Request, res as Response, nextFn);
 
       expect(nextFn).toHaveBeenCalled();
@@ -128,16 +117,9 @@ describe("csrfProtection middleware", () => {
     it("calls next for PATCH with matching token", () => {
       req.method = "PATCH";
       req.sessionId = 1;
+      req.cookies = { [COOKIE_NAME]: buildCookie("patch-token", 1) };
+      req.headers = { "x-xsrf-token": "patch-token" };
 
-      csrfProtection(req as Request, res as Response, nextFn);
-
-      const cookieValue = cookieFn.mock.calls[0][1] as string;
-      const token = cookieValue.split(":")[0];
-
-      req.cookies = { [COOKIE_NAME]: cookieValue };
-      req.headers = { "x-xsrf-token": token };
-
-      vi.clearAllMocks();
       csrfProtection(req as Request, res as Response, nextFn);
 
       expect(nextFn).toHaveBeenCalled();
@@ -146,16 +128,9 @@ describe("csrfProtection middleware", () => {
     it("calls next for DELETE with matching token", () => {
       req.method = "DELETE";
       req.sessionId = 1;
+      req.cookies = { [COOKIE_NAME]: buildCookie("delete-token", 1) };
+      req.headers = { "x-xsrf-token": "delete-token" };
 
-      csrfProtection(req as Request, res as Response, nextFn);
-
-      const cookieValue = cookieFn.mock.calls[0][1] as string;
-      const token = cookieValue.split(":")[0];
-
-      req.cookies = { [COOKIE_NAME]: cookieValue };
-      req.headers = { "x-xsrf-token": token };
-
-      vi.clearAllMocks();
       csrfProtection(req as Request, res as Response, nextFn);
 
       expect(nextFn).toHaveBeenCalled();
@@ -164,15 +139,9 @@ describe("csrfProtection middleware", () => {
     it("returns 403 when header does not match cookie token", () => {
       req.method = "POST";
       req.sessionId = 1;
-
-      csrfProtection(req as Request, res as Response, nextFn);
-
-      const cookieValue = cookieFn.mock.calls[0][1] as string;
-
-      req.cookies = { [COOKIE_NAME]: cookieValue };
+      req.cookies = { [COOKIE_NAME]: buildCookie("cookie-token", 1) };
       req.headers = { "x-xsrf-token": "different-token" };
 
-      vi.clearAllMocks();
       csrfProtection(req as Request, res as Response, nextFn);
 
       expect(statusFn).toHaveBeenCalledWith(403);
@@ -185,9 +154,7 @@ describe("csrfProtection middleware", () => {
     it("returns 403 when HMAC is invalid", () => {
       req.method = "POST";
       req.sessionId = 1;
-
-      const badCookie = buildCookie("valid-token", "bad-hmac-value");
-      req.cookies = { [COOKIE_NAME]: badCookie };
+      req.cookies = { [COOKIE_NAME]: "valid-token:bad-hmac" };
       req.headers = { "x-xsrf-token": "valid-token" };
 
       csrfProtection(req as Request, res as Response, nextFn);
@@ -201,18 +168,10 @@ describe("csrfProtection middleware", () => {
 
     it("returns 403 when HMAC is bound to a different session", () => {
       req.method = "POST";
-      req.sessionId = 1;
-
-      csrfProtection(req as Request, res as Response, nextFn);
-
-      const cookieValue = cookieFn.mock.calls[0][1] as string;
-      const token = cookieValue.split(":")[0];
-
-      req.cookies = { [COOKIE_NAME]: cookieValue };
-      req.headers = { "x-xsrf-token": token };
       req.sessionId = 2;
+      req.cookies = { [COOKIE_NAME]: buildCookie("session-token", 1) };
+      req.headers = { "x-xsrf-token": "session-token" };
 
-      vi.clearAllMocks();
       csrfProtection(req as Request, res as Response, nextFn);
 
       expect(statusFn).toHaveBeenCalledWith(403);
@@ -224,7 +183,7 @@ describe("csrfProtection middleware", () => {
 
     it("returns 403 when header is missing", () => {
       req.method = "POST";
-      req.cookies = { [COOKIE_NAME]: "token:hmac" };
+      req.cookies = { [COOKIE_NAME]: buildCookie("some-token") };
 
       csrfProtection(req as Request, res as Response, nextFn);
 

@@ -4,9 +4,18 @@ const BASE = '/api/v1';
 
 const WRITE_METHODS: QueuedMutationMethod[] = ['POST', 'PATCH', 'PUT', 'DELETE'];
 
+const CSRF_COOKIE = 'planner_csrf';
+
 function getCookie(name: string): string | undefined {
   const match = document.cookie.match(new RegExp(`(?:^|;\\s*)${name}=([^;]*)`));
   return match?.[1];
+}
+
+function getCsrfToken(): string | undefined {
+  const raw = getCookie(CSRF_COOKIE);
+  if (!raw) return undefined;
+  const colonIndex = raw.lastIndexOf(':');
+  return colonIndex === -1 ? raw : raw.substring(0, colonIndex);
 }
 
 function extractIdFromPath(path: string): string | undefined {
@@ -74,7 +83,7 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
     return buildSyntheticResponse<T>(method, path, init, clientEntityId);
   }
 
-  const xsrfToken = getCookie('XSRF-TOKEN');
+  const xsrfToken = getCsrfToken();
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...(init.headers as Record<string, string> ?? {}),
