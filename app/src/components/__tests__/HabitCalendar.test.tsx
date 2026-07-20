@@ -25,15 +25,17 @@ describe('HabitCalendar', () => {
     };
 
     render(
-      <HabitCalendar
-        sections={sections}
-        today={new Date(2026, 6, 18)}
-        year={2026}
-        month={6}
-        weekStart="sunday"
-        onMonthChange={vi.fn()}
-        onToggleDay={vi.fn()}
-      />,
+      <PlannerDragProvider>
+        <HabitCalendar
+          sections={sections}
+          today={new Date(2026, 6, 18)}
+          year={2026}
+          month={6}
+          weekStart="sunday"
+          onMonthChange={vi.fn()}
+          onToggleDay={vi.fn()}
+        />
+      </PlannerDragProvider>,
     );
 
     expect(screen.getByText('Drink water')).toBeInTheDocument();
@@ -47,15 +49,17 @@ describe('HabitCalendar', () => {
     };
 
     const { container } = render(
-      <HabitCalendar
-        sections={sections}
-        today={new Date(2026, 6, 18)}
-        year={2026}
-        month={6}
-        weekStart="sunday"
-        onMonthChange={vi.fn()}
-        onToggleDay={vi.fn()}
-      />,
+      <PlannerDragProvider>
+        <HabitCalendar
+          sections={sections}
+          today={new Date(2026, 6, 18)}
+          year={2026}
+          month={6}
+          weekStart="sunday"
+          onMonthChange={vi.fn()}
+          onToggleDay={vi.fn()}
+        />
+      </PlannerDragProvider>,
     );
 
     const futureCells = [...container.querySelectorAll('.habit-month-grid-cell-future')];
@@ -79,14 +83,22 @@ describe('HabitCalendar', () => {
       onToggleDay: vi.fn(),
     };
 
-    const { container, rerender } = render(<HabitCalendar {...props} weekStart="sunday" />);
+    const { container, rerender } = render(
+      <PlannerDragProvider>
+        <HabitCalendar {...props} weekStart="sunday" />
+      </PlannerDragProvider>,
+    );
     const labels = () => [...container.querySelectorAll('.habit-month-grid-label')].map((node) => node.textContent);
     const blanks = () => container.querySelectorAll('.habit-month-grid-cells > span:not(.habit-month-grid-cell-future)');
 
     expect(labels()).toEqual(['S', 'M', 'T', 'W', 'T', 'F', 'S']);
     expect(blanks()).toHaveLength(6);
 
-    rerender(<HabitCalendar {...props} weekStart="monday" />);
+    rerender(
+      <PlannerDragProvider>
+        <HabitCalendar {...props} weekStart="monday" />
+      </PlannerDragProvider>,
+    );
 
     expect(labels()).toEqual(['M', 'T', 'W', 'T', 'F', 'S', 'S']);
     expect(blanks()).toHaveLength(5);

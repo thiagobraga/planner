@@ -5,6 +5,7 @@ import { MonthSelector } from '../monthly/MonthSelector';
 import { HabitMonthGrid } from './HabitMonthGrid';
 import { HabitNameInput } from './HabitNameInput';
 import { HabitDragHandle } from './HabitDragHandle';
+import { useHabitDragOverlay } from './HabitBlockPreview';
 import { dayState, type HabitNode, type HabitSections } from '../../utils/habitTree';
 import { containerForGroup } from '../../utils/habitProjection';
 import type { HabitDragData, HabitGroupDragData, HabitSectionDropData } from '../../types/drag';
@@ -49,6 +50,8 @@ export function HabitCalendar({
   onCommitEdit,
   onCancelEdit,
 }: HabitCalendarProps) {
+  useHabitDragOverlay(sections, activeDragId);
+
   const hasAnything =
     sections.ungrouped.length > 0 || sections.groups.some((s) => s.habits.length > 0);
 

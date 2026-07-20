@@ -9,6 +9,7 @@ import { HabitDot, dotAriaProps } from './HabitDot';
 import { HabitNameInput } from './HabitNameInput';
 import { NO_DRAG_ATTR } from '../dnd/sensors';
 import { HabitDragHandle } from './HabitDragHandle';
+import { useHabitDragOverlay } from './HabitBlockPreview';
 import { fmtISO } from '../../utils/date';
 import { dayState, flattenHabits, type HabitNode, type HabitSections } from '../../utils/habitTree';
 import { usePlannerDrag } from '../../contexts/PlannerDragContext';
@@ -114,6 +115,7 @@ export function HabitTimeline({
   const [canPagePrevious, setCanPagePrevious] = useState(false);
   const [canPageNext, setCanPageNext] = useState(false);
   const { indentSteps, overId } = usePlannerDrag();
+  useHabitDragOverlay(sections, activeDragId);
 
   const days = useMemo<DayCell[]>(() => {
     const daysInMonth = new Date(year, month + 1, 0).getDate();

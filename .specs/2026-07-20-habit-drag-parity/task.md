@@ -29,13 +29,13 @@ Markers: `[ ]` not started · `[~]` in progress · `[x]` done
 
 ## Step 3 — `HabitBlockPreview` (gap 2)
 
-- [ ] New `app/src/components/HabitBlockPreview.tsx` (`{ name, count, kind }`)
-- [ ] Wire via `setOverlayNode` in `HabitTimeline.tsx`
-- [ ] Wire via `setOverlayNode` in `HabitCalendar.tsx`
-- [ ] Tests: `HabitBlockPreview.test.tsx` — both kinds, count 0 and >0
+- [x] New `app/src/components/HabitBlockPreview.tsx` (`{ name, count, kind }`)
+- [x] Wire via `setOverlayNode` in `HabitTimeline.tsx`
+- [x] Wire via `setOverlayNode` in `HabitCalendar.tsx`
+- [x] Tests: `HabitBlockPreview.test.tsx` — both kinds, count 0 and >0
 
 ## Verification
 
-- [ ] `docker compose exec app npm run lint`
-- [ ] `docker compose exec app npm test` (full suite; regression check on `useTaskDrag*`)
+- [x] `docker compose exec app npm run lint` — no new errors (12 pre-existing)
+- [x] `docker compose exec app npm test` — 579 passed; api 563 passed
 - [ ] Manual browser check, steps 1-8 in `plan.md` § Verification
