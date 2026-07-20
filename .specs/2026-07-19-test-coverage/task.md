@@ -185,112 +185,112 @@
 ## Phase 5 — API routes
 
 ### Shared setup (for all route tests)
-- [ ] Create a `testUtils.ts` or per-file helper:
+- [x] Create a `testUtils.ts` or per-file helper:
   - Mock `authMiddleware` to set `req.userId = "test-user"`
-  - Build Express app with only the route under test (or use `createApp()` from Phase 6)
-  - Export `request(app)` helper
+  - Build Express app with only the route under test
+  - Export `createApp(router, mountPath?)` helper
 
 ### Task 5.1 — api/src/routes/__tests__/auth.test.ts
-- [ ] POST /api/v1/auth/register → calls authService.register, returns 201
-- [ ] POST /api/v1/auth/register with missing email → 400
-- [ ] POST /api/v1/auth/login → calls authService.login, sets cookie, returns 200
-- [ ] POST /api/v1/auth/login with wrong credentials → 401
-- [ ] POST /api/v1/auth/logout → calls sessionService.revokeSession, clears cookie
-- [ ] POST /api/v1/auth/reset-password → calls authService.requestPasswordReset
-- [ ] POST /api/v1/auth/reset-password/confirm → calls authService.confirmPasswordReset
-- [ ] GET /api/v1/auth/me → returns user from pool.query
+- [x] POST /api/v1/auth/register → calls authService.register, returns 201
+- [x] POST /api/v1/auth/login with missing email → 400
+- [x] POST /api/v1/auth/login → calls authService.login, sets cookie, returns 200
+- [x] POST /api/v1/auth/logout → calls sessionService.revokeSession, clears cookie
+- [x] POST /api/v1/auth/reset-password → calls authService.requestPasswordReset
+- [x] POST /api/v1/auth/reset-password/confirm → calls authService.confirmPasswordReset
+- [x] POST /api/v1/auth/reset-password/confirm without token → 400
+- [x] GET /api/v1/auth/me → returns user from pool.query
 
 ### Task 5.2 — api/src/routes/__tests__/tasks.test.ts
-- [ ] POST /api/v1/tasks → calls taskService.createTask, returns 201
-- [ ] PATCH /api/v1/tasks/:id → calls taskService.updateTask
-- [ ] POST /api/v1/tasks/:id/complete → calls taskService.completeTask
-- [ ] POST /api/v1/tasks/:id/reopen → calls taskService.reopenTask
-- [ ] PATCH /api/v1/tasks/:id/reorder → calls taskService.reorderTask
-- [ ] PATCH /api/v1/tasks/:id/move → calls taskService.moveTask
-- [ ] DELETE /api/v1/tasks/:id → calls taskService.deleteTask, returns 200
+- [x] POST /api/v1/tasks → calls taskService.createTask, returns 201
+- [x] PATCH /api/v1/tasks/:id → calls taskService.updateTask
+- [x] POST /api/v1/tasks/:id/complete → calls taskService.completeTask
+- [x] POST /api/v1/tasks/:id/reopen → calls taskService.reopenTask
+- [x] PATCH /api/v1/tasks/:id/reorder → calls taskService.reorderTask
+- [x] PATCH /api/v1/tasks/:id/move → calls taskService.moveTask
+- [x] DELETE /api/v1/tasks/:id → calls taskService.deleteTask, returns 200
 
 ### Task 5.3 — api/src/routes/__tests__/collections.test.ts
-- [ ] GET /api/v1/collections → calls collectionService.listCollections
-- [ ] POST /api/v1/collections → calls collectionService.createCollection, returns 201
-- [ ] PATCH /api/v1/collections/:id → calls collectionService.updateCollection
-- [ ] DELETE /api/v1/collections/:id → calls collectionService.deleteCollection
-- [ ] POST /api/v1/collections/:id/archive → calls collectionService.archiveCollection
+- [x] GET /api/v1/collections → calls collectionService.listCollections
+- [x] POST /api/v1/collections → calls collectionService.createCollection, returns 201
+- [x] PATCH /api/v1/collections/:id → calls collectionService.updateCollection
+- [x] DELETE /api/v1/collections/:id → calls collectionService.deleteCollection
+- [x] POST /api/v1/collections/:id/archive → calls collectionService.archiveCollection
 
 ### Task 5.4 — api/src/routes/__tests__/labels.test.ts
-- [ ] GET /api/v1/labels → calls labelService.listLabels
-- [ ] POST /api/v1/labels → calls labelService.createLabel, returns 201
-- [ ] PATCH /api/v1/labels/:id → calls labelService.updateLabel
-- [ ] DELETE /api/v1/labels/:id → calls labelService.deleteLabel
+- [x] GET /api/v1/labels → calls labelService.listLabels
+- [x] POST /api/v1/labels → calls labelService.createLabel, returns 201
+- [x] PATCH /api/v1/labels/:id → calls labelService.updateLabel
+- [x] DELETE /api/v1/labels/:id → calls labelService.deleteLabel
 
 ### Task 5.5 — api/src/routes/__tests__/sections.test.ts
-- [ ] GET /api/v1/collections/:id/sections → calls sectionService.listSections
-- [ ] POST /api/v1/collections/:id/sections → calls sectionService.createSection, returns 201
-- [ ] PATCH /api/v1/sections/:id → calls sectionService.updateSection
-- [ ] DELETE /api/v1/sections/:id → calls sectionService.deleteSection
+- [x] GET /api/v1/collections/:id/sections → calls sectionService.listSections
+- [x] POST /api/v1/collections/:id/sections → calls sectionService.createSection, returns 201
+- [x] PATCH /api/v1/sections/:id → calls sectionService.updateSection
+- [x] DELETE /api/v1/sections/:id → calls sectionService.deleteSection
 
 ### Task 5.6 — api/src/routes/__tests__/views.test.ts
-- [ ] GET /api/v1/views/today → calls viewService.getTodayView
-- [ ] GET /api/v1/views/upcoming?days=7 → calls viewService.getUpcomingView
-- [ ] GET /api/v1/views/upcoming (no days) → defaults to 7
-- [ ] GET /api/v1/views/month?year=2026&month=7 → calls viewService.getMonthView
-- [ ] GET /api/v1/views/inbox → calls viewService.getInboxView
-- [ ] GET /api/v1/views/collection/:id → calls viewService.getCollectionView
+- [x] GET /api/v1/views/today → calls viewService.getTodayView
+- [x] GET /api/v1/views/upcoming?days=7 → calls viewService.getUpcomingView
+- [x] GET /api/v1/views/upcoming (no days) → defaults to 7
+- [x] GET /api/v1/views/month?year=2026&month=7 → calls viewService.getMonthView
+- [x] GET /api/v1/views/inbox → calls viewService.getInboxView
+- [x] GET /api/v1/views/collection/:id → calls viewService.getCollectionView
 
 ### Task 5.7 — api/src/routes/__tests__/filters.test.ts
-- [ ] GET /api/v1/filters → calls filterService.listFilters
-- [ ] POST /api/v1/filters → calls filterService.createFilter, returns 201
-- [ ] PATCH /api/v1/filters/:id → calls filterService.updateFilter
-- [ ] DELETE /api/v1/filters/:id → calls filterService.deleteFilter
-- [ ] GET /api/v1/filters/:id/results → calls filterService.evaluateSavedFilter
+- [x] GET /api/v1/filters → calls filterService.listFilters
+- [x] POST /api/v1/filters → calls filterService.createFilter, returns 201
+- [x] PATCH /api/v1/filters/:id → calls filterService.updateFilter
+- [x] DELETE /api/v1/filters/:id → calls filterService.deleteFilter
+- [x] GET /api/v1/filters/:id/results → calls filterService.evaluateSavedFilter
 
 ### Task 5.8 — api/src/routes/__tests__/habits.test.ts
-- [ ] GET /api/v1/habits → calls habitService.listHabits
-- [ ] POST /api/v1/habits → calls habitService.createHabit, returns 201
-- [ ] PATCH /api/v1/habits/:id → calls habitService.updateHabit
-- [ ] DELETE /api/v1/habits/:id → calls habitService.deleteHabit, returns 204
-- [ ] PATCH /api/v1/habits/:id/move → calls habitService.moveHabit
-- [ ] PUT /api/v1/habits/:id/completions → calls habitService.toggleCompletion
+- [x] GET /api/v1/habits → calls habitService.listHabits
+- [x] POST /api/v1/habits → calls habitService.createHabit, returns 201
+- [x] PATCH /api/v1/habits/:id → calls habitService.updateHabit
+- [x] DELETE /api/v1/habits/:id → calls habitService.deleteHabit, returns 204
+- [x] PATCH /api/v1/habits/:id/move → calls habitService.moveHabit
+- [x] PUT /api/v1/habits/:id/completions → calls habitService.toggleCompletion
 
 ### Task 5.9 — api/src/routes/__tests__/habitGroups.test.ts
-- [ ] GET /api/v1/habit-groups → calls habitService.listGroups
-- [ ] POST /api/v1/habit-groups → calls habitService.createGroup, returns 201
-- [ ] PATCH /api/v1/habit-groups/:id → calls habitService.updateGroup
-- [ ] DELETE /api/v1/habit-groups/:id → calls habitService.deleteGroup, returns 204
-- [ ] PATCH /api/v1/habit-groups/:id/move → calls habitService.moveHabitGroup
+- [x] GET /api/v1/habit-groups → calls habitService.listGroups
+- [x] POST /api/v1/habit-groups → calls habitService.createGroup, returns 201
+- [x] PATCH /api/v1/habit-groups/:id → calls habitService.updateGroup
+- [x] DELETE /api/v1/habit-groups/:id → calls habitService.deleteGroup, returns 204
+- [x] PATCH /api/v1/habit-groups/:id/move → calls habitService.moveHabitGroup
 
 ### Task 5.10 — api/src/routes/__tests__/comments.test.ts
-- [ ] GET /api/v1/tasks/:taskId/comments → calls commentService.listComments
-- [ ] POST /api/v1/tasks/:taskId/comments → calls commentService.createComment, returns 201
-- [ ] PATCH /api/v1/comments/:id → calls commentService.updateComment
-- [ ] DELETE /api/v1/comments/:id → calls commentService.deleteComment
+- [x] GET /api/v1/tasks/:taskId/comments → calls commentService.listComments
+- [x] POST /api/v1/tasks/:taskId/comments → calls commentService.createComment, returns 201
+- [x] PATCH /api/v1/comments/:id → calls commentService.updateComment
+- [x] DELETE /api/v1/comments/:id → calls commentService.deleteComment
 
 ### Task 5.11 — api/src/routes/__tests__/reminders.test.ts
-- [ ] GET /api/v1/tasks/:taskId/reminders → calls reminderService.listRemindersForTask
-- [ ] POST /api/v1/tasks/:taskId/reminders → calls reminderService.createReminder, returns 201
-- [ ] DELETE /api/v1/reminders/:id → calls reminderService.deleteReminder
+- [x] GET /api/v1/tasks/:taskId/reminders → calls reminderService.listRemindersForTask
+- [x] POST /api/v1/tasks/:taskId/reminders → calls reminderService.createReminder, returns 201
+- [x] DELETE /api/v1/reminders/:id → calls reminderService.deleteReminder
 
 ### Task 5.12 — api/src/routes/__tests__/collaboration.test.ts
-- [ ] POST /api/v1/collections/:id/invitations → calls collaborationService.inviteToCollection
-- [ ] GET /api/v1/collections/:id/collaborators → calls collaborationService.listCollaborators
-- [ ] DELETE /api/v1/collections/:id/collaborators/:userId → calls collaborationService.removeCollaborator
-- [ ] POST /api/v1/invitations/accept → calls collaborationService.acceptInvitation
-- [ ] POST /api/v1/tasks/:id/assign → calls collaborationService.assignTask
+- [x] POST /api/v1/collections/:id/invitations → calls collaborationService.inviteToCollection
+- [x] GET /api/v1/collections/:id/collaborators → calls collaborationService.listCollaborators
+- [x] DELETE /api/v1/collections/:id/collaborators/:userId → calls collaborationService.removeCollaborator
+- [x] POST /api/v1/invitations/accept → calls collaborationService.acceptInvitation
+- [x] POST /api/v1/tasks/:id/assign → calls collaborationService.assignTask
 
 ### Task 5.13 — api/src/routes/__tests__/activity.test.ts
-- [ ] GET /api/v1/activity → calls activityService.listActivity
-- [ ] GET /api/v1/activity?collection_id=x&cursor=y → passes params
+- [x] GET /api/v1/activity → calls activityService.listActivity
+- [x] GET /api/v1/activity?collection_id=x&cursor=y → passes params
 
 ### Task 5.14 — api/src/routes/__tests__/preferences.test.ts
-- [ ] GET /api/v1/preferences → calls preferencesService.getPreferences
-- [ ] PATCH /api/v1/preferences → calls preferencesService.updatePreferences
+- [x] GET /api/v1/preferences → calls preferencesService.getPreferences
+- [x] PATCH /api/v1/preferences → calls preferencesService.updatePreferences
 
 ### Task 5.15 — api/src/routes/__tests__/search.test.ts
-- [ ] GET /api/v1/search?q=test → calls searchService.searchEntities with query
-- [ ] GET /api/v1/search without q → still calls with undefined
+- [x] GET /api/v1/search?q=test → calls searchService.searchEntities with query
+- [x] GET /api/v1/search without q → still calls with undefined
 
 ### Task 5.16 — api/src/routes/__tests__/index.test.ts
-- [ ] GET /api/v1/health → returns `{ status: "ok" }`
-- [ ] Verify all sub-routers are mounted (by checking known routes respond)
+- [x] GET /api/v1/health → returns `{ status: "ok" }"
+- [x] Verify all sub-routers are mounted (by checking known routes respond)
 
 ---
 
