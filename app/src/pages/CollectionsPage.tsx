@@ -2,6 +2,7 @@ import { Fragment, useState, useRef, useCallback, useEffect, useMemo } from 'rea
 import { useParams, Link } from 'react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { TaskList } from '../components/TaskList';
+import { nextOrderValue } from '../utils/order';
 import { setPendingColumn } from '../components/TaskItem';
 import type { Task } from '../components/TaskItem';
 import {
@@ -14,7 +15,8 @@ import {
 } from '../api/client';
 import { useAuth } from '../contexts/AuthContext';
 import { useTaskDrag } from '../hooks/useTaskDrag';
-import { applyIndent, getParentCandidate } from '../utils/taskTree';
+import { flattenTasks } from '../utils/taskProjection';
+import { applyIndent } from '../utils/taskTree';
 import { fetchCollections, paletteColorHex } from '../api/client';
 
 function apiToTask(t: ApiTask): Task {
@@ -98,7 +100,7 @@ export function CollectionsPage() {
     setInput('');
     setTasks((prev) => [
       ...prev,
-      { id: tid, title: trimmed, priority: 4, isCompleted: false, orderValue: prev.length + 1, type: 'task' },
+      { id: tid, title: trimmed, priority: 4, isCompleted: false, orderValue: nextOrderValue(prev), type: 'task' },
     ]);
     apiCreateTask({ title: trimmed, priority: 4, collectionId: id })
       .then((created) => {
@@ -108,6 +110,27 @@ export function CollectionsPage() {
         setTasks((prev) => prev.filter((t) => t.id !== tid));
         invalidate();
       });
+  };
+
+  /** A leading '-' opens a note instead of a task, as it does on Daily. */
+  const handleAddNoteKeyDown = (e: React.KeyboardEvent<HTMLInputElement>): boolean => {
+    if (e.key !== '-' || input !== '') return false;
+    e.preventDefault();
+
+    const tid = tempId();
+    setTasks((prev) => [
+      ...prev,
+      {
+        id: tid,
+        title: '',
+        priority: 4,
+        isCompleted: false,
+        orderValue: nextOrderValue(prev),
+        type: 'note',
+      },
+    ]);
+    setEditingId(tid);
+    return true;
   };
 
   const handleAddBelow = useCallback((afterId: string) => {
@@ -122,6 +145,7 @@ export function CollectionsPage() {
         isCompleted: false,
         orderValue: 0,
         indent: prev[idx]?.indent,
+        parentTaskId: prev[idx]?.parentTaskId,
         type: 'task',
       });
       return next.map((t, i) => ({ ...t, orderValue: i + 1 }));
@@ -143,15 +167,19 @@ export function CollectionsPage() {
     }
     setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, title: trimmed } : t)));
     if (taskId.startsWith('temp-')) {
-      let parentTaskId: string | undefined;
-      const currentIndent = tasks.find((t) => t.id === taskId)?.indent ?? 0;
-      if (currentIndent > 0) {
-        const idx = tasks.findIndex((t) => t.id === taskId);
-        parentTaskId = getParentCandidate(tasks, idx, currentIndent) ?? undefined;
-      }
-      apiCreateTask({ title: trimmed, priority: 4, collectionId: id, parentTaskId, depth: currentIndent })
+      const currentTask = tasks.find((t) => t.id === taskId);
+      const parentTaskId = currentTask?.parentTaskId ?? undefined;
+      const currentIndent = currentTask?.indent ?? 0;
+      apiCreateTask({
+        title: trimmed,
+        priority: 4,
+        collectionId: id,
+        parentTaskId,
+        depth: currentIndent,
+        type: currentTask?.type ?? 'task',
+      })
         .then((created) => {
-          setTasks((prev) => prev.map((t) => (t.id === taskId ? apiToTask(created) : t)));
+          setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...apiToTask(created), orderValue: t.orderValue } : t)));
         })
         .catch(() => {
           setTasks((prev) => prev.filter((t) => t.id !== taskId));
@@ -160,6 +188,13 @@ export function CollectionsPage() {
       apiUpdateTask(taskId, { title: trimmed }).catch(() => invalidate());
     }
   }, [id, tasks, invalidate]);
+  const handleConvertType = useCallback((taskId: string, type: 'task' | 'note') => {
+    setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, type } : t)));
+    if (!taskId.startsWith('temp-')) {
+      apiUpdateTask(taskId, { type }).catch(() => invalidate());
+    }
+  }, [invalidate]);
+
   const handleEditCancel = useCallback((taskId: string) => {
     setEditingId(undefined);
     if (taskId.startsWith('temp-')) {
@@ -184,12 +219,13 @@ export function CollectionsPage() {
   }, []);
   const handleIndent = useCallback((taskId: string, dir: 1 | -1) => {
     setTasks((prev) => {
-      const { tasks: next, parentTaskId, changed } = applyIndent(prev, taskId, dir);
+      const flatNodes = flattenTasks(prev).map((r) => ({ ...r.task, indent: r.depth }));
+      const { tasks: nextFlat, parentTaskId, changed } = applyIndent(flatNodes, taskId, dir);
       if (!changed) return prev;
       if (!taskId.startsWith('temp-')) {
-        apiUpdateTask(taskId, { parentTaskId }).catch(() => invalidate());
+        apiUpdateTask(taskId, { parentTaskId: parentTaskId ?? null }).catch(() => invalidate());
       }
-      return next;
+      return nextFlat.map(t => t.id === taskId ? { ...t, parentTaskId: parentTaskId ?? undefined } : t);
     });
   }, []);
   const handleNavigate = useCallback((taskId: string, dir: 'up' | 'down', col: number) => {
@@ -303,6 +339,7 @@ export function CollectionsPage() {
         onAddBelow={handleAddBelow}
         onIndent={handleIndent}
         onNavigate={handleNavigate}
+        onConvertType={handleConvertType}
       />
 
       <form
@@ -321,6 +358,7 @@ export function CollectionsPage() {
           className="task-input task-add-input flex-1 text-sm leading-6 text-ink bg-transparent border-none outline-none p-0"
           spellCheck={false}
           onKeyDown={(e) => {
+            if (handleAddNoteKeyDown(e)) return;
             if (e.key === 'ArrowUp') {
               e.preventDefault();
               setTasks((prev) => {

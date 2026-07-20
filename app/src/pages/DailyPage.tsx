@@ -6,6 +6,7 @@ import { TaskList } from '../components/TaskList';
 import { CollectionChip } from '../components/ui/Chip';
 import type { Task } from '../components/TaskItem';
 import { getPhrase } from '../utils/phrases';
+import { nextOrderValue } from '../utils/order';
 import { applyIndent, getParentCandidate } from '../utils/taskTree';
 import { useTaskDrag } from '../hooks/useTaskDrag';
 import {
@@ -379,7 +380,7 @@ export function DailyPage() {
                 title: trimmed,
                 priority: 4,
                 isCompleted: false,
-                orderValue: s.tasks.length + 1,
+                orderValue: nextOrderValue(s.tasks),
                 type: 'task',
               },
             ],
@@ -428,7 +429,7 @@ export function DailyPage() {
                 priority: 4,
                 dueDate: todayKey,
                 isCompleted: false,
-                orderValue: s.tasks.length + 1,
+                orderValue: nextOrderValue(s.tasks),
                 type: 'note',
               },
             ],

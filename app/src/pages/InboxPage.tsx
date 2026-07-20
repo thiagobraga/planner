@@ -13,8 +13,10 @@ import {
 } from '../api/client';
 import { useAuth } from '../contexts/AuthContext';
 import { useTaskDrag } from '../hooks/useTaskDrag';
+import { flattenTasks } from '../utils/taskProjection';
 import { getPhrase } from '../utils/phrases';
-import { applyIndent, getParentCandidate } from '../utils/taskTree';
+import { nextOrderValue } from '../utils/order';
+import { applyIndent } from '../utils/taskTree';
 import { useSync } from '../hooks/useSync';
 import { isEchoedMove } from '../utils/moveEcho';
 
@@ -102,7 +104,7 @@ export function InboxPage() {
     setInput('');
     setTasks((prev) => [
       ...prev,
-      { id: tid, title: trimmed, priority: 4, isCompleted: false, orderValue: prev.length + 1, type: 'task' },
+      { id: tid, title: trimmed, priority: 4, isCompleted: false, orderValue: nextOrderValue(prev), type: 'task' },
     ]);
     apiCreateTask({ title: trimmed, priority: 4 })
       .then((created) => {
@@ -126,6 +128,7 @@ export function InboxPage() {
         isCompleted: false,
         orderValue: 0,
         indent: prev[idx]?.indent,
+        parentTaskId: prev[idx]?.parentTaskId,
         type: 'task',
       });
       return next.map((t, i) => ({ ...t, orderValue: i + 1 }));
@@ -147,16 +150,13 @@ export function InboxPage() {
     }
     setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, title: trimmed } : t)));
     if (id.startsWith('temp-')) {
-      let parentTaskId: string | undefined;
-      const currentIndent = tasks.find((t) => t.id === id)?.indent ?? 0;
-      if (currentIndent > 0) {
-        const idx = tasks.findIndex((t) => t.id === id);
-        parentTaskId = getParentCandidate(tasks, idx, currentIndent) ?? undefined;
-      }
+      const currentTask = tasks.find((t) => t.id === id);
+      const parentTaskId = currentTask?.parentTaskId ?? undefined;
+      const currentIndent = currentTask?.indent ?? 0;
       // was a new task - create it
       apiCreateTask({ title: trimmed, priority: 4, parentTaskId, depth: currentIndent })
         .then((created) => {
-          setTasks((prev) => prev.map((t) => (t.id === id ? apiToTask(created) : t)));
+          setTasks((prev) => prev.map((t) => (t.id === id ? { ...apiToTask(created), orderValue: t.orderValue } : t)));
         })
         .catch(() => {
           setTasks((prev) => prev.filter((t) => t.id !== id));
@@ -191,12 +191,13 @@ export function InboxPage() {
 
   const handleIndent = useCallback((id: string, dir: 1 | -1) => {
     setTasks((prev) => {
-      const { tasks: next, parentTaskId, changed } = applyIndent(prev, id, dir);
+      const flatNodes = flattenTasks(prev).map((r) => ({ ...r.task, indent: r.depth }));
+      const { tasks: nextFlat, parentTaskId, changed } = applyIndent(flatNodes, id, dir);
       if (!changed) return prev;
       if (!id.startsWith('temp-')) {
-        apiUpdateTask(id, { parentTaskId }).catch(() => invalidate());
+        apiUpdateTask(id, { parentTaskId: parentTaskId ?? null }).catch(() => invalidate());
       }
-      return next;
+      return nextFlat.map(t => t.id === id ? { ...t, parentTaskId: parentTaskId ?? undefined } : t);
     });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
