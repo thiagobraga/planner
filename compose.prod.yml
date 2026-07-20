@@ -1,0 +1,163 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: .docker/app/Dockerfile
+      target: production
+    container_name: planner-prod-app
+    networks: [edge]
+    cap_drop: [ALL]
+    cap_add: [NET_BIND_SERVICE, CHOWN, SETUID, SETGID]
+    security_opt: [no-new-privileges:true]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:80/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    labels:
+      traefik.enable: true
+      traefik.http.routers.planner-prod-router.rule: Host(`planner.local`)
+      traefik.http.routers.planner-prod-router.entrypoints: websecure
+      traefik.http.routers.planner-prod-router.tls: true
+      traefik.http.services.planner-prod-service.loadbalancer.server.port: 80
+
+  api:
+    build:
+      context: .
+      dockerfile: .docker/api/Dockerfile
+      target: production
+    container_name: planner-prod-api
+    networks: [backend]
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      CORS_ORIGIN: ${CORS_ORIGIN:?CORS_ORIGIN is required}
+      DATABASE_URL_FILE: /run/secrets/database_url
+      REDIS_URL_FILE: /run/secrets/redis_url
+      CSRF_SECRET_FILE: /run/secrets/csrf_secret
+      SESSION_IDLE_TTL_MINUTES: ${SESSION_IDLE_TTL_MINUTES:-30}
+      SESSION_ABSOLUTE_TTL_HOURS: ${SESSION_ABSOLUTE_TTL_HOURS:-12}
+    secrets:
+      - database_url
+      - redis_url
+      - csrf_secret
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop: [ALL]
+    cap_add: [NET_BIND_SERVICE, NET_RAW]
+    security_opt: [no-new-privileges:true]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:4000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  migrate:
+    build:
+      context: .
+      dockerfile: .docker/api/Dockerfile
+      target: production
+    container_name: planner-prod-migrate
+    networks: [backend]
+    environment:
+      NODE_ENV: production
+      DATABASE_URL_FILE: /run/secrets/database_url
+    secrets:
+      - database_url
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    restart: no
+    command: ["node", "-e", "import('./dist/db/migrate.js').then(m => m.migrate()).then(() => { console.log('Migrations complete'); process.exit(0) }).catch(e => { console.error(e); process.exit(1) })"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  postgres:
+    container_name: planner-prod-postgres
+    image: postgres:16-alpine
+    networks: [data]
+    environment:
+      POSTGRES_USER_FILE: /run/secrets/postgres_user
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+      POSTGRES_DB_FILE: /run/secrets/postgres_db
+    secrets:
+      - postgres_user
+      - postgres_password
+      - postgres_db
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    cap_drop: [ALL]
+    cap_add: [CHOWN, SETUID, SETGID, DAC_OVERRIDE, NET_BIND_SERVICE]
+    security_opt: [no-new-privileges:true]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$(cat /run/secrets/postgres_user) -d $$(cat /run/secrets/postgres_db)"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  redis:
+    container_name: planner-prod-redis
+    image: redis:7-alpine
+    networks: [data]
+    command: ["redis-server", "--requirepass", "$$(cat /run/secrets/redis_password)", "--appendonly", "yes"]
+    secrets:
+      - redis_password
+    volumes:
+      - redisdata:/data
+    cap_drop: [ALL]
+    cap_add: [CHOWN, SETUID, SETGID, DAC_OVERRIDE, NET_BIND_SERVICE]
+    security_opt: [no-new-privileges:true]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "$$(cat /run/secrets/redis_password)", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+secrets:
+  database_url:
+    file: ${DATABASE_URL_FILE:-./secrets/database_url}
+  redis_url:
+    file: ${REDIS_URL_FILE:-./secrets/redis_url}
+  csrf_secret:
+    file: ${CSRF_SECRET_FILE:-./secrets/csrf_secret}
+  postgres_user:
+    file: ${POSTGRES_USER_FILE:-./secrets/postgres_user}
+  postgres_password:
+    file: ${POSTGRES_PASSWORD_FILE:-./secrets/postgres_password}
+  postgres_db:
+    file: ${POSTGRES_DB_FILE:-./secrets/postgres_db}
+  redis_password:
+    file: ${REDIS_PASSWORD_FILE:-./secrets/redis_password}
+
+volumes:
+  pgdata:
+  redisdata:
+
+networks:
+  edge:
+    name: planner-prod-edge
+    driver: bridge
+  backend:
+    name: planner-prod-backend
+    driver: bridge
+    internal: true
+  data:
+    name: planner-prod-data
+    driver: bridge
+    internal: true

@@ -10,6 +10,15 @@ out/
 .env.local
 .env.*.local
 
+# Secrets
+secrets/
+
+# Backups
+backups/
+*.sql
+*.sql.gz
+*.dump
+
 # IDE
 .idea/
 *.swp
@@ -25,6 +34,11 @@ logs/
 *.log
 npm-debug.log*
 pnpm-debug.log*
+
+# Coverage
+coverage/
+api/coverage/
+app/coverage/
 
 # Cache
 .pnpm-store/

@@ -1,18 +1,14 @@
-FROM node:22.23.1-alpine3.24 AS app-base
+FROM node:22.23.1-alpine3.24 AS build
 WORKDIR /app
-EXPOSE 5173
-
-FROM app-base AS development
-COPY --chown=node:node --chmod=755 .docker/app/entrypoint.sh /entrypoint.sh
 COPY --chown=node:node app ./
-RUN chown node:node /app
-USER node
-ENTRYPOINT ["/entrypoint.sh"]
-CMD ["npm", "run", "dev"]
+RUN npm ci && npm run build && npm cache clean --force
 
-FROM app-base AS production
-COPY --chown=node:node app ./
-RUN npm install \
-  && npm run build
-USER node
-CMD ["npm", "run", "preview"]
+FROM nginx:1.27-alpine AS production
+COPY --from=build /app/dist /usr/share/nginx/html
+COPY .docker/app/nginx.conf /etc/nginx/conf.d/default.conf
+RUN chown -R nginx:nginx /var/cache/nginx /var/run /etc/nginx/conf.d
+USER nginx
+EXPOSE 80
+HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
+  CMD wget -qO- http://localhost:80/ || exit 1
+CMD ["nginx", "-g", "daemon off;"]

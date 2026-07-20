@@ -215,6 +215,9 @@ Every authenticated request performs a session lookup, which the current middlew
 
 - Remove duplicate auth-router mounting.
 - Apply JSON content-type validation, cache policy, origin checks, authentication, and CSRF from centralized middleware boundaries with explicit, documented public-route exemptions.
+- Set an explicit request body size limit (`express.json({ limit: '100kb' })`) to prevent unauthenticated DOS via large payloads.
+- Add `Strict-Transport-Security` (HSTS) to Helmet configuration or the reverse-proxy layer.
+- Add a global middleware that rejects non-JSON `Content-Type` on API mutation routes to prevent body-parsing bypass.
 - Ensure future unsafe routes are protected automatically.
 - Configure proxy trust only for the known production proxy path.
 

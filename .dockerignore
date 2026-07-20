@@ -7,16 +7,29 @@
 dist
 docs
 node_modules
+secrets/
+backups/
+logs/
 
 # Files
 .claudeignore
 .dockerignore
+.env
 .env.example
+.env.*.local
+.git
 .gitignore
 .vibeyardignore
 AGENTS.md
 CLAUDE.md
 DESIGN.md
-eslint.config.js
 GEMINI.md
 README.md
+eslint.config.js
+*.log
+*.key
+*.pem
+*.crt
+*.cert
+*.p12
+*.pfx

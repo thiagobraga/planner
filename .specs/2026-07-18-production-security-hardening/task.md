@@ -163,6 +163,11 @@
   - [x] Never cache API responses
 - [x] Remove the CSP meta tag from `app/index.html` after header verification
 - [x] Add CSRF and origin middleware unit tests (15 CSRF + 12 origin + 70 route tests)
+- [ ] Harden request size, content-type, and transport security
+  - [ ] Set explicit `express.json({ limit: '100kb' })` to prevent large-payload DOS
+  - [ ] Add HSTS (`Strict-Transport-Security`) to Helmet config or Nginx
+  - [ ] Add global middleware rejecting non-JSON Content-Type on API mutation routes
+  - [ ] Add request-harding tests (oversized body rejected, non-JSON rejected, HSTS header present)
 
 ## Phase 4 - Offline/shared-device isolation
 
@@ -199,35 +204,35 @@
 
 ## Phase 5 - Production deployment and encryption
 
-- [ ] Rebuild `.docker/api/Dockerfile`
-  - [ ] Use `npm ci` with the committed lockfile
-  - [ ] Separate build and minimal runtime stages
-  - [ ] Copy only runtime dependencies, compiled code, and migrations
-  - [ ] Run as non-root
-  - [ ] Add API health check
-  - [ ] Do not run seed or package installation at startup
-- [ ] Rebuild `.docker/app/Dockerfile`
-  - [ ] Build Vite assets in a Node build stage
-  - [ ] Serve `dist/` from unprivileged Nginx
-  - [ ] Remove `vite preview` from production execution
-  - [ ] Run as non-root and add health check
-- [ ] Add `compose.prod.yml`
-  - [ ] Use only production image targets
-  - [ ] Set `NODE_ENV=production`
-  - [ ] Expose only the frontend edge to Traefik
-  - [ ] Add separate edge, backend, and data networks
-  - [ ] Keep API, PostgreSQL, and Redis ports unpublished
-  - [ ] Add one-shot migration service
-  - [ ] Include no seed and no pgAdmin service
-  - [ ] Consume secrets from mounted files/Docker secrets with no defaults
-  - [ ] Add `read_only` filesystems and bounded `tmpfs` mounts
-  - [ ] Drop all capabilities and enable `no-new-privileges` where compatible
-  - [ ] Add health checks, restart policies, and resource limits
-- [ ] Replace values in `.env.example` with explicit placeholders
-- [ ] Harden `.gitignore` and `.dockerignore`
-  - [ ] Ignore all local secret files
-  - [ ] Ignore backup/restore artifacts
-  - [ ] Exclude secrets, logs, backups, private keys, and Git metadata from build contexts
+- [x] Rebuild `.docker/api/Dockerfile`
+  - [x] Use `npm ci` with the committed lockfile
+  - [x] Separate build and minimal runtime stages (base → build → production)
+  - [x] Copy only runtime dependencies, compiled code, and migrations
+  - [x] Run as non-root (`USER node`)
+  - [x] Add API health check via Tini
+  - [x] Do not run seed or package installation at startup
+- [x] Rebuild `.docker/app/Dockerfile`
+  - [x] Build Vite assets in a Node build stage
+  - [x] Serve `dist/` from unprivileged Nginx (`nginx-exporter` user)
+  - [x] Remove `vite preview` from production execution
+  - [x] Run as non-root and add health check
+- [x] Add `compose.prod.yml`
+  - [x] Use only production image targets
+  - [x] Set `NODE_ENV=production`
+  - [x] Expose only the frontend edge to Traefik
+  - [x] Add separate edge, backend, and data networks (backend + data are internal)
+  - [x] Keep API, PostgreSQL, and Redis ports unpublished
+  - [x] Add one-shot migration service
+  - [x] Include no seed and no pgAdmin service
+  - [x] Consume secrets from mounted files/Docker secrets with no defaults (`:?` required vars)
+  - [x] Add `read_only` filesystems and bounded `tmpfs` mounts
+  - [x] Drop all capabilities and enable `no-new-privileges` where compatible
+  - [x] Add health checks, restart policies, and resource limits
+- [x] Replace values in `.env.example` with explicit placeholders (`change-me`)
+- [x] Harden `.gitignore` and `.dockerignore`
+  - [x] Ignore all local secret files (`secrets/`)
+  - [x] Ignore backup/restore artifacts (`backups/`, `*.sql`, `*.dump`)
+  - [x] Exclude secrets, logs, backups, private keys, and Git metadata from build contexts
 - [ ] Validate production storage encryption
   - [ ] Record provider/host encryption configuration and key owner
   - [ ] Confirm PostgreSQL data volume is encrypted before first production write
