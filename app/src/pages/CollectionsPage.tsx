@@ -2,6 +2,7 @@ import { Fragment, useState, useRef, useCallback, useEffect, useMemo } from 'rea
 import { useParams, Link } from 'react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { TaskList } from '../components/TaskList';
+import { TaskVisibilityControls } from '../components/TaskVisibilityControls';
 import { nextOrderValue } from '../utils/order';
 import { extractNaturalDate } from '../utils/date';
 import { setPendingColumn } from '../components/TaskItem';
@@ -12,11 +13,11 @@ import {
   apiUpdateTask,
   apiToggleTask,
   apiDeleteTask,
-  fetchPreferences,
   type ApiTask,
 } from '../api/client';
 import { useAuth } from '../contexts/AuthContext';
 import { useTaskDrag } from '../hooks/useTaskDrag';
+import { useTaskVisibilityPreferences } from '../hooks/useTaskVisibilityPreferences';
 import { flattenTasks } from '../utils/taskProjection';
 import { applyIndent } from '../utils/taskTree';
 import { fetchCollections, paletteColorHex } from '../api/client';
@@ -63,10 +64,12 @@ export function CollectionsPage() {
     staleTime: 30_000,
     enabled: !!id,
   });
-  const { data: preferences } = useQuery({
-    queryKey: ['preferences'],
-    queryFn: fetchPreferences,
-  });
+  const {
+    preferences,
+    isPending: visibilityPreferencesPending,
+    setHideCompletedTasks,
+    setHideOldNotes,
+  } = useTaskVisibilityPreferences();
 
   useEffect(() => {
     if (data?.tasks) {
@@ -317,13 +320,14 @@ export function CollectionsPage() {
 
   return (
     <div
-      className="max-w-162 cursor-text"
+      className="collection-detail-page relative w-full cursor-text"
       onClick={(e) => {
         if ((e.target as HTMLElement).closest('input, button, [role="button"]')) return;
         inputRef.current?.focus();
       }}
     >
-      <h1 className="collections-page-title flex h-6 items-center gap-2 text-lg leading-6 font-semibold text-ink">
+      <header className="page-header-copy sticky-page-header max-w-162">
+        <h1 className="collections-page-title flex h-6 items-center gap-2 text-lg leading-6 font-semibold text-ink">
         {trail.map((crumb, i) => {
           const isCurrent = i === trail.length - 1;
           return (
@@ -353,9 +357,21 @@ export function CollectionsPage() {
             </Fragment>
           );
         })}
-      </h1>
+        </h1>
+      </header>
 
-      <div className="h-6" />
+      <div className="page-header-toolbar collection-page-header-controls sticky top-0 z-20 -mt-6 ml-auto w-fit">
+        <TaskVisibilityControls
+          hideCompletedTasks={preferences?.hideCompletedTasks ?? false}
+          hideOldNotes={preferences?.hideOldNotes ?? false}
+          disabled={!preferences || visibilityPreferencesPending}
+          onHideCompletedTasksChange={setHideCompletedTasks}
+          onHideOldNotesChange={setHideOldNotes}
+        />
+      </div>
+
+      <div className="max-w-162">
+        <div className="h-6" />
 
       <TaskList
         tasks={tasks}
@@ -373,7 +389,7 @@ export function CollectionsPage() {
         onConvertType={handleConvertType}
       />
 
-      <form
+        <form
         onSubmit={handleAddAtEnd}
         className="flex items-center h-6"
       >
@@ -403,7 +419,8 @@ export function CollectionsPage() {
             }
           }}
         />
-      </form>
+        </form>
+      </div>
     </div>
   );
 }

@@ -1,11 +1,13 @@
 # Mobile Header Cleanup and Phrase Adjustment
 
-- [ ] Update MonthlyPage mobile header layout
-- [ ] Update HabitsPage mobile header layout
-- [ ] Add subtitle truncation or fade treatment on mobile
-- [ ] Give the mobile `Today` button a readable background
-- [ ] Preserve current desktop header layout
-- [ ] Add or update MonthlyPage tests
-- [ ] Add or update HabitsPage tests
-- [ ] Verify the header on a narrow viewport
-
+- [x] Align Daily, Monthly, and Habits title/phrase markup
+- [x] Keep all page toolbars outside `<header>` and sticky at the right edge
+- [x] Ellipsize mobile phrases and add a page-colored toolbar fade
+- [x] Preserve Daily and Monthly content-column width limits
+- [x] Add the old-notes visibility icon to Daily
+- [x] Add completed-task and old-note controls to Inbox
+- [x] Add completed-task and old-note controls to collection detail
+- [x] Share persisted visibility behavior across task-list pages
+- [x] Add structural and preference regression tests
+- [x] Run targeted page tests and the app build
+- [x] Verify right alignment, sticky behavior, and visibility controls in the live app

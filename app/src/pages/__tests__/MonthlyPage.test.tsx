@@ -35,8 +35,12 @@ describe('MonthlyPage', () => {
   it('renders header with phrase', () => {
     render(<MonthlyPage />);
 
-    expect(screen.getByText('Monthly')).toBeInTheDocument();
-    expect(screen.getByText('See the full month at a glance')).toBeInTheDocument();
+    const header = screen.getByText('Monthly').closest('header');
+
+    expect(header).toBeInTheDocument();
+    expect(header).toContainElement(screen.getByText('See the full month at a glance'));
+    expect(header).not.toContainElement(screen.getByRole('button', { name: 'Today' }));
+    expect(screen.getByRole('button', { name: 'Today' }).closest('.page-header-toolbar')).toHaveClass('sticky');
   });
 
   it('renders MonthlyRows component', () => {

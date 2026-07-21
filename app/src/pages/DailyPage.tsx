@@ -1,9 +1,9 @@
 import { useMemo, useRef, useState, useEffect, useCallback } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Eye, EyeOff } from 'lucide-react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSync } from '../hooks/useSync';
 import { isEchoedMove, isStructuralMove } from '../utils/moveEcho';
 import { TaskList } from '../components/TaskList';
+import { TaskVisibilityControls } from '../components/TaskVisibilityControls';
 import { CollectionChip } from '../components/ui/Chip';
 import { Button } from '../components/ui/Button';
 import type { Task } from '../components/TaskItem';
@@ -11,16 +11,15 @@ import { buildMonthDays, extractNaturalDate } from '../utils/date';
 import { nextOrderValue } from '../utils/order';
 import { applyIndent, getParentCandidate } from '../utils/taskTree';
 import { useTaskDrag } from '../hooks/useTaskDrag';
+import { useTaskVisibilityPreferences } from '../hooks/useTaskVisibilityPreferences';
 import { getPhrase } from '../utils/phrases';
 import {
   apiCreateTask,
   apiToggleTask,
   apiUpdateTask,
   apiDeleteTask,
-  apiUpdatePreferences,
   fetchTodayTasks,
   fetchCollections,
-  fetchPreferences,
   type ApiTask,
 } from '../api/client';
 
@@ -113,34 +112,6 @@ export function DailyPage() {
   const sectionsRef = useRef(sections);
   sectionsRef.current = sections;
 
-  const { data: preferences } = useQuery({
-    queryKey: ['preferences'],
-    queryFn: fetchPreferences,
-  });
-
-  const completedVisibilityMutation = useMutation({
-    mutationFn: (hideCompletedTasks: boolean) =>
-      apiUpdatePreferences({ hideCompletedTasks }),
-    onMutate: async (hideCompletedTasks) => {
-      await qc.cancelQueries({ queryKey: ['preferences'] });
-      const previous = qc.getQueryData<Awaited<ReturnType<typeof fetchPreferences>>>(['preferences']);
-      if (previous) {
-        qc.setQueryData(['preferences'], { ...previous, hideCompletedTasks });
-      }
-      return { previous };
-    },
-    onError: (_error, _hideCompletedTasks, context) => {
-      if (context?.previous) {
-        qc.setQueryData(['preferences'], context.previous);
-      }
-    },
-    onSuccess: (nextPreferences) => {
-      qc.setQueryData(['preferences'], nextPreferences);
-      qc.invalidateQueries({ queryKey: ['inbox'] });
-      qc.invalidateQueries({ queryKey: ['collection'] });
-    },
-  });
-
   const replaceTodayFromApi = useCallback(() => {
     const requestId = ++loadRequestId.current;
     fetchTodayTasks().then((response) => {
@@ -153,6 +124,13 @@ export function DailyPage() {
       setSections(buildSections([], []));
     });
   }, []);
+
+  const {
+    preferences,
+    isPending: visibilityPreferencesPending,
+    setHideCompletedTasks,
+    setHideOldNotes,
+  } = useTaskVisibilityPreferences(replaceTodayFromApi);
 
   useEffect(() => {
     replaceTodayFromApi();
@@ -276,10 +254,6 @@ export function DailyPage() {
       block: 'start',
     });
   }, []);
-
-  const handleCompletedVisibility = useCallback(() => {
-    completedVisibilityMutation.mutate(!(preferences?.hideCompletedTasks ?? false));
-  }, [completedVisibilityMutation, preferences?.hideCompletedTasks]);
 
   const handleStartEdit = useCallback((id: string) => {
     setEditingId(id);
@@ -502,62 +476,45 @@ export function DailyPage() {
 
   return (
     <div
-      className="max-w-162 cursor-text"
+      className="daily-page relative w-full cursor-text"
       onClick={(e) => {
         if ((e.target as HTMLElement).closest('input, button, [role="button"]')) return;
         inputRef.current?.focus();
       }}
     >
-      <header className="sticky-page-header w-full">
-        <h1 className="m-0 text-[18px] leading-6 font-semibold text-ink">
+      <header className="page-header-copy sticky-page-header max-w-162">
+        <h1 className="m-0 h-6 p-0 text-[18px] leading-6 font-semibold text-ink">
           Daily
         </h1>
-
-        <div className="flex w-full min-w-0 items-center gap-4">
-          <p className="daily-page-header-subtitle m-0 min-w-0 flex-1 text-[13px] leading-6 text-ink-light opacity-60">
-            {phrase}
-          </p>
-
-          <div className="daily-page-header-controls flex shrink-0 items-center gap-2">
-            <Button variant="secondary" size="sm" onClick={handleToday}>
-              Today
-            </Button>
-
-            <div className="inline-flex h-6 items-center overflow-hidden rounded-[2px] border border-border">
-              <button
-                type="button"
-                aria-label={preferences?.hideCompletedTasks ? 'Show completed tasks' : 'Hide completed tasks'}
-                aria-pressed={preferences?.hideCompletedTasks ?? false}
-                title={preferences?.hideCompletedTasks ? 'Show completed tasks' : 'Hide completed tasks'}
-                disabled={!preferences || completedVisibilityMutation.isPending}
-                onClick={handleCompletedVisibility}
-                className={`inline-flex h-6 w-6 items-center justify-center transition-colors duration-[var(--motion-fast)] disabled:cursor-not-allowed disabled:opacity-40 ${
-                  preferences?.hideCompletedTasks
-                    ? 'bg-dot/60 text-ink'
-                    : 'bg-transparent text-ink-light hover:bg-dot/30'
-                }`}
-              >
-                {preferences?.hideCompletedTasks ? (
-                  <Eye size={14} strokeWidth={1.8} />
-                ) : (
-                  <EyeOff size={14} strokeWidth={1.8} />
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
+        <p className="page-header-subtitle daily-page-header-subtitle m-0 h-6 p-0 text-[13px] leading-6 text-ink-light opacity-60">
+          {phrase}
+        </p>
       </header>
 
-      {sections.map((section) => {
-        const isToday = section.key === todayKey;
-        const dimNotes = section.key < todayKey;
-        return (
-          <div
-            key={section.key}
-            ref={isToday ? todaySectionRef : undefined}
-            data-day-date={section.key}
-            className={`mt-6 ${isToday ? 'scroll-mt-24' : ''}`}
-          >
+      <div className="page-header-toolbar daily-page-header-controls sticky top-6 z-20 -mt-6 ml-auto flex w-fit items-center gap-2">
+        <Button variant="secondary" size="sm" onClick={handleToday}>
+          Today
+        </Button>
+        <TaskVisibilityControls
+          hideCompletedTasks={preferences?.hideCompletedTasks ?? false}
+          hideOldNotes={preferences?.hideOldNotes ?? false}
+          disabled={!preferences || visibilityPreferencesPending}
+          onHideCompletedTasksChange={setHideCompletedTasks}
+          onHideOldNotesChange={setHideOldNotes}
+        />
+      </div>
+
+      <div className="max-w-162">
+        {sections.map((section) => {
+          const isToday = section.key === todayKey;
+          const dimNotes = section.key < todayKey;
+          return (
+            <div
+              key={section.key}
+              ref={isToday ? todaySectionRef : undefined}
+              data-day-date={section.key}
+              className={`mt-6 ${isToday ? 'scroll-mt-24' : ''}`}
+            >
             <div className="text-[11px] tracking-[0.08em] uppercase text-ink-light leading-6 h-6 m-0 font-medium">
               {section.label}
             </div>
@@ -601,9 +558,10 @@ export function DailyPage() {
                 />
               </form>
             )}
-          </div>
-        );
-      })}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

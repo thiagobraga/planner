@@ -166,8 +166,15 @@ describe('DailyPage', () => {
   it('renders header with "Daily" title and phrase', async () => {
     renderPage();
 
-    expect(await screen.findByText('Daily')).toBeInTheDocument();
-    expect(screen.getByText('Make today count')).toBeInTheDocument();
+    const title = await screen.findByText('Daily');
+    const header = title.closest('header');
+
+    expect(header).toBeInTheDocument();
+    expect(header).toContainElement(screen.getByText('Make today count'));
+    expect(header).not.toContainElement(screen.getByRole('button', { name: 'Today' }));
+    expect(header).not.toContainElement(screen.getByRole('button', { name: 'Hide completed tasks' }));
+    expect(header).not.toContainElement(screen.getByRole('button', { name: 'Hide old notes' }));
+    expect(screen.getByRole('button', { name: 'Today' }).closest('.page-header-toolbar')).toHaveClass('sticky');
   });
 
   it('renders overdue section label', async () => {

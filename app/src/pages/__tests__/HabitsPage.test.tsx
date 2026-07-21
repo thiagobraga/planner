@@ -86,8 +86,14 @@ describe('HabitsPage', () => {
   it('renders header with "Habits" title and phrase', () => {
     renderPage();
 
-    expect(screen.getByText('Habits')).toBeInTheDocument();
-    expect(screen.getByText('Small reps build large lives.')).toBeInTheDocument();
+    const header = screen.getByText('Habits').closest('header');
+
+    expect(header).toBeInTheDocument();
+    expect(header).toContainElement(screen.getByText('Small reps build large lives.'));
+    expect(header).not.toContainElement(screen.getByRole('button', { name: 'Today' }));
+    expect(header).not.toContainElement(screen.getByLabelText('Timeline view'));
+    expect(header).not.toContainElement(screen.getByLabelText('Calendar view'));
+    expect(screen.getByRole('button', { name: 'Today' }).closest('.page-header-toolbar')).toHaveClass('sticky');
   });
 
   it('renders view toggle buttons (Timeline/Calendar)', () => {

@@ -12,17 +12,17 @@ export function MonthlyPage() {
   }));
 
   return (
-    <div className="monthly-page relative w-full max-w-[832px]">
-      <header className="sticky-page-header max-w-162">
+    <div className="monthly-page relative w-full">
+      <header className="page-header-copy sticky-page-header max-w-162">
         <h1 className="text-[18px] leading-6 h-6 font-semibold text-ink m-0 p-0">
           Monthly
         </h1>
-        <p className="text-[13px] leading-6 h-6 text-ink-light opacity-60 m-0 p-0">
+        <p className="page-header-subtitle text-[13px] leading-6 h-6 text-ink-light opacity-60 m-0 p-0">
           {phrase}
         </p>
       </header>
 
-      <div className="absolute top-6 right-0 z-20">
+      <div className="page-header-toolbar monthly-page-header-controls sticky top-6 z-20 -mt-6 ml-auto w-fit">
         <Button
           variant="secondary"
           size="sm"
@@ -32,13 +32,15 @@ export function MonthlyPage() {
         </Button>
       </div>
 
-      <div className="h-6" />
+      <div className="max-w-[832px]">
+        <div className="h-6" />
 
-      <MonthlyRows
-        year={selected.year}
-        month={selected.month}
-        onMonthChange={(year, month) => setSelected({ year, month })}
-      />
+        <MonthlyRows
+          year={selected.year}
+          month={selected.month}
+          onMonthChange={(year, month) => setSelected({ year, month })}
+        />
+      </div>
     </div>
   );
 }

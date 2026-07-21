@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { TaskList } from '../components/TaskList';
+import { TaskVisibilityControls } from '../components/TaskVisibilityControls';
 import { setPendingColumn } from '../components/TaskItem';
 import type { Task } from '../components/TaskItem';
 import {
@@ -9,11 +10,11 @@ import {
   apiUpdateTask,
   apiToggleTask,
   apiDeleteTask,
-  fetchPreferences,
   type ApiTask,
 } from '../api/client';
 import { useAuth } from '../contexts/AuthContext';
 import { useTaskDrag } from '../hooks/useTaskDrag';
+import { useTaskVisibilityPreferences } from '../hooks/useTaskVisibilityPreferences';
 import { flattenTasks } from '../utils/taskProjection';
 import { getPhrase } from '../utils/phrases';
 import { nextOrderValue } from '../utils/order';
@@ -63,10 +64,12 @@ export function InboxPage() {
     queryFn: fetchInboxTasks,
     staleTime: 30_000,
   });
-  const { data: preferences } = useQuery({
-    queryKey: ['preferences'],
-    queryFn: fetchPreferences,
-  });
+  const {
+    preferences,
+    isPending: visibilityPreferencesPending,
+    setHideCompletedTasks,
+    setHideOldNotes,
+  } = useTaskVisibilityPreferences();
 
   useEffect(() => {
     if (data?.tasks) {
@@ -297,23 +300,34 @@ export function InboxPage() {
 
   return (
     <div
-      className="max-w-162 cursor-text"
+      className="inbox-page relative w-full cursor-text"
       onClick={(e) => {
         if ((e.target as HTMLElement).closest('input, button, [role="button"]')) return;
         inputRef.current?.focus();
       }}
     >
-      <header className="sticky-page-header">
+      <header className="page-header-copy sticky-page-header max-w-162">
         <h1 className="text-[18px] leading-6 h-6 font-semibold text-ink m-0 p-0">
           Inbox
         </h1>
 
-        <p className="text-[13px] leading-6 h-6 text-ink-light opacity-60 m-0 p-0">
+        <p className="page-header-subtitle text-[13px] leading-6 h-6 text-ink-light opacity-60 m-0 p-0">
           {phrase}
         </p>
       </header>
 
-      <div className="h-6" />
+      <div className="page-header-toolbar inbox-page-header-controls sticky top-6 z-20 -mt-6 ml-auto w-fit">
+        <TaskVisibilityControls
+          hideCompletedTasks={preferences?.hideCompletedTasks ?? false}
+          hideOldNotes={preferences?.hideOldNotes ?? false}
+          disabled={!preferences || visibilityPreferencesPending}
+          onHideCompletedTasksChange={setHideCompletedTasks}
+          onHideOldNotesChange={setHideOldNotes}
+        />
+      </div>
+
+      <div className="max-w-162">
+        <div className="h-6" />
 
       <TaskList
         tasks={tasks}
@@ -332,7 +346,7 @@ export function InboxPage() {
         onConvertType={handleConvertType}
       />
 
-      <form
+        <form
         onSubmit={handleAddAtEnd}
         className="flex items-center h-6"
       >
@@ -362,7 +376,8 @@ export function InboxPage() {
             }
           }}
         />
-      </form>
+        </form>
+      </div>
     </div>
   );
 }

@@ -179,6 +179,24 @@ describe('DailyPage behavior visibility', () => {
     await screen.findByRole('button', { name: 'Hide completed tasks' });
   });
 
+  it('optimistically toggles old-note visibility and rolls back on failure', async () => {
+    const update = deferred<Awaited<ReturnType<typeof apiUpdatePreferences>>>();
+    mockApiUpdatePreferences.mockReturnValueOnce(update.promise);
+    renderPage();
+
+    const hideOldNotes = await screen.findByRole('button', { name: 'Hide old notes' });
+    await waitFor(() => expect(hideOldNotes).not.toBeDisabled());
+    fireEvent.click(hideOldNotes);
+
+    await waitFor(() =>
+      expect(mockApiUpdatePreferences).toHaveBeenCalledWith({ hideOldNotes: true }),
+    );
+    await screen.findByRole('button', { name: 'Show old notes' });
+
+    update.reject(new Error('nope'));
+    await screen.findByRole('button', { name: 'Hide old notes' });
+  });
+
   it('removes a completed task immediately when hide completed tasks is on', async () => {
     renderPage();
 

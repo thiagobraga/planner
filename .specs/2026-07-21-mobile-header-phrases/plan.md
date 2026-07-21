@@ -1,26 +1,30 @@
 # Mobile Header Cleanup and Phrase Adjustment
 
 ## Summary
-Adjust the Monthly and Habits mobile headers so the subtitle no longer collides with the `Today` button. The desktop layout stays as-is.
+Keep page headers structurally and visually consistent. The header contains only the title and phrase, while a sticky toolbar sibling stays right-aligned on the relevant header row.
 
 ## Requirements
-- On narrow screens, the header should stack title, action button, then subtitle.
-- The subtitle should stay secondary and compact through truncation, fade, or both.
-- The `Today` button should remain legible above the textured background.
-- Desktop behavior must not change.
+- Daily, Monthly, and Habits use the same two-line title and phrase treatment.
+- Toolbar buttons remain outside the semantic `<header>` element.
+- Toolbars stay sticky at the main page's right edge rather than a narrower content column.
+- Mobile phrases ellipsize before the toolbar, with a page-colored fade behind transparent controls.
+- Daily, Inbox, and collection detail expose persisted controls for completed tasks and old notes.
+- Existing toolbar actions and desktop content widths remain unchanged.
 
 ## Implementation
-- Update `app/src/pages/MonthlyPage.tsx` to use a mobile-specific header layout.
-- Update `app/src/pages/HabitsPage.tsx` to match the same mobile treatment.
-- Reuse existing button styling where possible; only introduce new wrapper styles if needed.
-- Keep the current desktop header markup and spacing intact.
+- Keep consistent title and phrase markup in `DailyPage.tsx`, `MonthlyPage.tsx`, and `HabitsPage.tsx`.
+- Keep Daily's task list and Monthly's calendar constrained while allowing their header toolbar layer to span the full page width.
+- Add sticky visibility toolbars to Inbox and collection detail.
+- Reuse one visibility-preferences hook and one accessible icon-control component across task-list pages.
+- Reserve mobile phrase space per toolbar width and use the shared toolbar fade from `app/src/index.css`.
 
 ## Risks
-- Mobile-only CSS may accidentally affect desktop spacing if not scoped carefully.
-- The button background treatment must not make the header feel heavier than the rest of the app.
+- Sticky controls must retain their initial row alignment without adding layout height.
+- Preference changes must update the current page immediately and roll back on failure.
+- Header changes must not regress Daily task visibility or Habits view switching.
 
 ## Verification
-- Add or update page tests for Monthly and Habits.
-- Check both pages in a narrow browser viewport.
-- Confirm the subtitle never appears under the `Today` button.
-
+- Add structural tests that keep toolbar controls outside `<header>`.
+- Add preference regression tests for Daily, Inbox, and collection detail.
+- Run targeted page tests and the app production build.
+- Verify right alignment, sticky position, mobile truncation, and preference toggling in the live app.

@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router';
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { CollectionsPage } from '../CollectionsPage';
 import {
   fetchCollectionView,
@@ -11,6 +11,7 @@ import {
   apiToggleTask,
   apiUpdateTask,
   apiDeleteTask,
+  apiUpdatePreferences,
 } from '../../api/client';
 
 const mockFetchCollectionView = vi.mocked(fetchCollectionView);
@@ -20,6 +21,7 @@ const mockApiCreateTask = vi.mocked(apiCreateTask);
 const mockApiToggleTask = vi.mocked(apiToggleTask);
 const mockApiUpdateTask = vi.mocked(apiUpdateTask);
 const mockApiDeleteTask = vi.mocked(apiDeleteTask);
+const mockApiUpdatePreferences = vi.mocked(apiUpdatePreferences);
 
 vi.mock('../../api/client', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../../api/client')>()),
@@ -30,6 +32,7 @@ vi.mock('../../api/client', async (importOriginal) => ({
   apiToggleTask: vi.fn(),
   apiUpdateTask: vi.fn(),
   apiDeleteTask: vi.fn(),
+  apiUpdatePreferences: vi.fn(),
 }));
 
 vi.mock('../../contexts/AuthContext', () => ({
@@ -107,6 +110,7 @@ beforeEach(() => {
   mockApiToggleTask.mockReset();
   mockApiUpdateTask.mockReset();
   mockApiDeleteTask.mockReset();
+  mockApiUpdatePreferences.mockReset();
 
   mockFetchCollectionView.mockResolvedValue(collectionViewData);
   mockFetchCollections.mockResolvedValue([]);
@@ -117,7 +121,27 @@ describe('CollectionsPage', () => {
   it('renders the collection name in the breadcrumb', async () => {
     renderPage();
 
-    expect(await screen.findByText('Test Collection')).toBeInTheDocument();
+    const title = await screen.findByText('Test Collection');
+    const header = title.closest('header');
+
+    expect(header).toBeInTheDocument();
+    expect(header).not.toContainElement(screen.getByRole('button', { name: 'Hide completed tasks' }));
+    expect(header).not.toContainElement(screen.getByRole('button', { name: 'Hide old notes' }));
+    expect(screen.getByRole('button', { name: 'Hide old notes' }).closest('.page-header-toolbar')).toHaveClass('sticky', 'ml-auto');
+  });
+
+  it('updates completed-task visibility from the header toolbar', async () => {
+    mockApiUpdatePreferences.mockResolvedValue({ ...defaultPreferences, hideCompletedTasks: true });
+    renderPage();
+
+    const button = await screen.findByRole('button', { name: 'Hide completed tasks' });
+    await waitFor(() => expect(button).not.toBeDisabled());
+    fireEvent.click(button);
+
+    await waitFor(() =>
+      expect(mockApiUpdatePreferences).toHaveBeenCalledWith({ hideCompletedTasks: true }),
+    );
+    expect(await screen.findByRole('button', { name: 'Show completed tasks' })).toBeInTheDocument();
   });
 
   it('does not render Inbox header', async () => {

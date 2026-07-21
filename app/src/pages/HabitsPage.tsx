@@ -357,17 +357,17 @@ export function HabitsPage() {
   }, [handleMonthChange, today, view]);
 
   return (
-    <div className={`habits-page relative ${view === 'timeline' ? 'max-w-none' : 'max-w-none'}`}>
-      <header className="sticky-page-header w-full" style={{ width: '100%' }}>
-        <div className="habits-page-header-content flex w-full items-start gap-4">
-          <div className="habits-page-header-title flex-1 min-w-0">
-            <h1 className="text-lg leading-6 font-semibold text-ink">Habits</h1>
-            <p className="text-[13px] leading-6 text-ink-light opacity-60">{phrase}</p>
-          </div>
-        </div>
+    <div className="habits-page relative w-full max-w-none">
+      <header className="page-header-copy sticky-page-header max-w-162">
+        <h1 className="m-0 h-6 p-0 text-[18px] leading-6 font-semibold text-ink">
+          Habits
+        </h1>
+        <p className="page-header-subtitle m-0 h-6 p-0 text-[13px] leading-6 text-ink-light opacity-60">
+          {phrase}
+        </p>
       </header>
 
-      <div className="absolute top-6 right-0 z-20 flex items-center gap-2">
+      <div className="page-header-toolbar habits-page-header-controls sticky top-6 z-20 -mt-6 ml-auto flex w-fit items-center gap-2">
         <Button variant="secondary" size="sm" onClick={handleToday}>
           Today
         </Button>

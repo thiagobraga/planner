@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { InboxPage } from '../InboxPage';
@@ -9,6 +9,7 @@ import {
   apiUpdateTask,
   apiToggleTask,
   apiDeleteTask,
+  apiUpdatePreferences,
   fetchPreferences,
   type Preferences,
   type ApiTask,
@@ -19,6 +20,7 @@ const mockApiCreateTask = vi.mocked(apiCreateTask);
 const mockApiUpdateTask = vi.mocked(apiUpdateTask);
 const mockApiToggleTask = vi.mocked(apiToggleTask);
 const mockApiDeleteTask = vi.mocked(apiDeleteTask);
+const mockApiUpdatePreferences = vi.mocked(apiUpdatePreferences);
 const mockFetchPreferences = vi.mocked(fetchPreferences);
 
 const basePreferences: Preferences = {
@@ -80,6 +82,7 @@ vi.mock('../../api/client', async (importOriginal) => ({
   apiUpdateTask: vi.fn(),
   apiToggleTask: vi.fn(),
   apiDeleteTask: vi.fn(),
+  apiUpdatePreferences: vi.fn(),
   fetchPreferences: vi.fn(),
 }));
 
@@ -151,6 +154,7 @@ beforeEach(() => {
   mockApiUpdateTask.mockReset();
   mockApiToggleTask.mockReset();
   mockApiDeleteTask.mockReset();
+  mockApiUpdatePreferences.mockReset();
   mockFetchPreferences.mockReset();
   mockFetchInboxTasks.mockResolvedValue(baseInboxData);
   mockFetchPreferences.mockResolvedValue(basePreferences);
@@ -174,8 +178,25 @@ describe('InboxPage', () => {
   it('renders the header with Inbox title and a phrase', async () => {
     renderPage();
 
-    expect(screen.getByText('Inbox')).toBeInTheDocument();
-    expect(await screen.findByText('Dump it here. Sort it later.')).toBeInTheDocument();
+    const header = screen.getByText('Inbox').closest('header');
+    expect(header).toContainElement(await screen.findByText('Dump it here. Sort it later.'));
+    expect(header).not.toContainElement(screen.getByRole('button', { name: 'Hide completed tasks' }));
+    expect(header).not.toContainElement(screen.getByRole('button', { name: 'Hide old notes' }));
+    expect(screen.getByRole('button', { name: 'Hide old notes' }).closest('.page-header-toolbar')).toHaveClass('sticky', 'ml-auto');
+  });
+
+  it('updates the hide-old-notes preference from the header toolbar', async () => {
+    mockApiUpdatePreferences.mockResolvedValue({ ...basePreferences, hideOldNotes: true });
+    renderPage();
+
+    const button = await screen.findByRole('button', { name: 'Hide old notes' });
+    await waitFor(() => expect(button).not.toBeDisabled());
+    fireEvent.click(button);
+
+    await waitFor(() =>
+      expect(mockApiUpdatePreferences).toHaveBeenCalledWith({ hideOldNotes: true }),
+    );
+    expect(await screen.findByRole('button', { name: 'Show old notes' })).toBeInTheDocument();
   });
 
   it('renders tasks when inbox data arrives', async () => {
