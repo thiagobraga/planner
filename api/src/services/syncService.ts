@@ -4,6 +4,7 @@ import pool from "../db/pool.js";
 import { redisPubClient, redisSubClient } from "../db/redis.js";
 import { CORS_ORIGIN } from "../config.js";
 import { validateSession, buildCookieName } from "./sessionService.js";
+import { currentSourceId } from "../middleware/requestContext.js";
 
 const SYNC_CHANNEL = "sync";
 const SESSION_REVALIDATION_INTERVAL_MS = 60_000;
@@ -26,6 +27,15 @@ export interface SyncEvent {
   collectionId?: string | null;
   payload?: unknown;
   emittedAt: string;
+  /**
+   * The socket whose request caused this event, when it named itself.
+   *
+   * A change is broadcast to every session of the user, the originating one
+   * included. That session has already applied the change optimistically, so
+   * acting on its own echo only costs it a refetch over state that is already
+   * correct - it uses this to tell its own work apart from everyone else's.
+   */
+  sourceId?: string;
 }
 
 function userRoom(userId: string): string {
@@ -90,6 +100,9 @@ export function buildEvent(input: Omit<SyncEvent, "id" | "emittedAt"> & { id?: s
   return {
     id: input.id ?? `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
     emittedAt: new Date().toISOString(),
+    // Read from the request being handled rather than passed in: every service
+    // that emits would otherwise have to carry an id it never looks at.
+    sourceId: currentSourceId(),
     ...input,
   };
 }

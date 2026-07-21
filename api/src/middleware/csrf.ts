@@ -25,6 +25,15 @@ function verifyToken(token: string, hmac: string, sessionId: number | undefined)
   return crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(hmac));
 }
 
+function parseCookie(cookie: string): { token: string; hmac: string } | null {
+  const colonIndex = cookie.lastIndexOf(":");
+  if (colonIndex === -1) return null;
+  return {
+    token: cookie.substring(0, colonIndex),
+    hmac: cookie.substring(colonIndex + 1),
+  };
+}
+
 export function csrfProtection(req: Request, res: Response, next: NextFunction): void {
   const basePath = req.path.split("/").slice(0, 2).join("/");
   if (CSRF_EXEMPT_PREFIXES.has(basePath) || CSRF_EXEMPT_PREFIXES.has(req.path)) {
@@ -33,6 +42,16 @@ export function csrfProtection(req: Request, res: Response, next: NextFunction):
   }
 
   if (SAFE_METHODS.has(req.method)) {
+    const existingCookie = req.cookies?.[COOKIE_NAME] as string | undefined;
+    const existingToken = existingCookie ? parseCookie(existingCookie) : null;
+    if (
+      existingToken &&
+      verifyToken(existingToken.token, existingToken.hmac, req.sessionId)
+    ) {
+      next();
+      return;
+    }
+
     const token = generateToken();
     const hmac = signToken(token, req.sessionId);
     res.cookie(COOKIE_NAME, `${token}:${hmac}`, {
@@ -55,25 +74,22 @@ export function csrfProtection(req: Request, res: Response, next: NextFunction):
     return;
   }
 
-  const colonIndex = cookie.lastIndexOf(":");
-  if (colonIndex === -1) {
+  const parsedCookie = parseCookie(cookie);
+  if (!parsedCookie) {
     res.status(403).json({
       error: { code: "CSRF_INVALID", message: "Malformed CSRF cookie" },
     });
     return;
   }
 
-  const cookieToken = cookie.substring(0, colonIndex);
-  const cookieHmac = cookie.substring(colonIndex + 1);
-
-  if (headerToken !== cookieToken) {
+  if (headerToken !== parsedCookie.token) {
     res.status(403).json({
       error: { code: "CSRF_INVALID", message: "CSRF token mismatch" },
     });
     return;
   }
 
-  if (!verifyToken(headerToken, cookieHmac, req.sessionId)) {
+  if (!verifyToken(headerToken, parsedCookie.hmac, req.sessionId)) {
     res.status(403).json({
       error: { code: "CSRF_INVALID", message: "Invalid CSRF signature" },
     });

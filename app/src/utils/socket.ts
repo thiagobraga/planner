@@ -30,6 +30,18 @@ export function disconnectSocket(): void {
   }
 }
 
+/**
+ * This session's socket id, once connected.
+ *
+ * Sent with every mutation so the server can stamp the events it causes, and
+ * compared against arriving events so a session ignores its own echo. Undefined
+ * while disconnected, which is the safe direction: an unstamped event is
+ * treated as somebody else's and still refetches.
+ */
+export function getSocketId(): string | undefined {
+  return socket?.id;
+}
+
 export function getSyncStatus(): 'connected' | 'disconnected' {
   return socket?.connected ? 'connected' : 'disconnected';
 }

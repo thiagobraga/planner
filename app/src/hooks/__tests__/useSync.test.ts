@@ -5,8 +5,11 @@ import type { SyncEvent } from '../useSync';
 let mockOn: ReturnType<typeof vi.fn>;
 let mockOff: ReturnType<typeof vi.fn>;
 
+let mockSocketId: string | undefined;
+
 vi.mock('../../utils/socket', () => ({
   getSocket: () => ({ on: mockOn, off: mockOff, connected: true }),
+  getSocketId: () => mockSocketId,
 }));
 
 import { useSync } from '../useSync';
@@ -15,6 +18,50 @@ describe('useSync', () => {
   beforeEach(() => {
     mockOn = vi.fn();
     mockOff = vi.fn();
+    mockSocketId = 'socket-self';
+  });
+
+  /** An event as it arrives from the server. */
+  const event = (over: Partial<SyncEvent> = {}): SyncEvent => ({
+    id: 'e1',
+    entityType: 'habit',
+    eventType: 'updated',
+    entityId: 'habit-1',
+    userId: 'user-1',
+    emittedAt: new Date().toISOString(),
+    ...over,
+  });
+
+  it('ignores the echo of a change this session made', () => {
+    const handler = vi.fn();
+    renderHook(() => useSync(handler));
+    const fire = mockOn.mock.calls[0][1] as (e: SyncEvent) => void;
+
+    act(() => fire(event({ sourceId: 'socket-self' })));
+
+    // Already applied optimistically and reconciled from the response; acting on
+    // it would refetch over state that is already correct.
+    expect(handler).not.toHaveBeenCalled();
+  });
+
+  it('handles the same change made by another session', () => {
+    const handler = vi.fn();
+    renderHook(() => useSync(handler));
+    const fire = mockOn.mock.calls[0][1] as (e: SyncEvent) => void;
+
+    act(() => fire(event({ sourceId: 'socket-other' })));
+
+    expect(handler).toHaveBeenCalledTimes(1);
+  });
+
+  it('handles an unstamped event, which may be anyone\'s', () => {
+    const handler = vi.fn();
+    renderHook(() => useSync(handler));
+    const fire = mockOn.mock.calls[0][1] as (e: SyncEvent) => void;
+
+    act(() => fire(event()));
+
+    expect(handler).toHaveBeenCalledTimes(1);
   });
 
   it('subscribes handler to sync event on mount', () => {

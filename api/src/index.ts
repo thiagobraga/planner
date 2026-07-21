@@ -11,6 +11,7 @@ import { connectRedis } from "./db/redis.js";
 import { attachSyncServer } from "./services/syncService.js";
 import { PORT, CORS_ORIGIN, DISABLE_RATE_LIMITS_IN_DEV, IS_PRODUCTION } from "./config.js";
 import { csrfProtection } from "./middleware/csrf.js";
+import { requestContext } from "./middleware/requestContext.js";
 import { originCheck } from "./middleware/origin.js";
 import { authMiddleware } from "./middleware/auth.js";
 import authRoutes from "./routes/auth.js";
@@ -58,7 +59,7 @@ app.use(express.json());
 app.use((_req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", CORS_ORIGIN);
   res.setHeader("Access-Control-Allow-Methods", "GET,POST,PATCH,DELETE,OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type,Authorization,X-XSRF-TOKEN");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type,Authorization,X-XSRF-TOKEN,X-Socket-Id");
   res.setHeader("Access-Control-Allow-Credentials", "true");
   if (_req.method === "OPTIONS") {
     res.sendStatus(204);
@@ -66,6 +67,9 @@ app.use((_req, res, next) => {
   }
   next();
 });
+
+// Binds the calling socket to the request so events can name their origin
+app.use("/api/v1", requestContext);
 
 // Auth routes (mounted before CSRF — login/register don't need tokens)
 // Each auth route handles its own IP + account-based rate limiting via rateLimitService

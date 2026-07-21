@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { getSocket } from '../utils/socket';
+import { getSocket, getSocketId } from '../utils/socket';
 
 export interface SyncEvent {
   id: string;
@@ -10,6 +10,8 @@ export interface SyncEvent {
   collectionId?: string | null;
   payload?: unknown;
   emittedAt: string;
+  /** The socket whose request caused this event, when it named itself. */
+  sourceId?: string;
 }
 
 const MAX_SEEN = 50;
@@ -22,6 +24,11 @@ export function useSync(handler: (event: SyncEvent) => void) {
     const seen = seenRef.current;
 
     const wrapped = (event: SyncEvent) => {
+      // This session's own change, already applied optimistically and reconciled
+      // from the response it is waiting on. Acting on the echo would refetch
+      // over state that is already correct, and make the row it just placed
+      // jump as the answer arrives.
+      if (event.sourceId && event.sourceId === getSocketId()) return;
       if (seen.has(event.id)) return;
       seen.add(event.id);
       if (seen.size > MAX_SEEN) {

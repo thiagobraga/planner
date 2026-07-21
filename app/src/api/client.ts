@@ -1,4 +1,5 @@
 import { isOnline, enqueueMutation, type QueuedMutationMethod } from '../utils/offlineQueue';
+import { getSocketId } from '../utils/socket';
 
 const BASE = '/api/v1';
 
@@ -103,6 +104,14 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   };
   if (xsrfToken) {
     headers['X-XSRF-TOKEN'] = xsrfToken;
+  }
+
+  // Lets the events this request causes come back naming this session, so the
+  // page can tell its own work apart from another session's and skip refetching
+  // over state it has already applied.
+  const socketId = getSocketId();
+  if (socketId) {
+    headers['X-Socket-Id'] = socketId;
   }
 
   const res = await fetch(`${BASE}${path}`, {

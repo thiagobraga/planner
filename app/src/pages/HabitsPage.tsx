@@ -10,6 +10,7 @@ import { isEchoedMove } from '../utils/moveEcho';
 import { Button } from '../components/ui/Button';
 import { startOfDay } from '../utils/date';
 import { flattenHabits, type HabitNode } from '../utils/habitTree';
+import { trackCreate, resolveCreatedId } from '../utils/pendingCreates';
 import {
   loadCollapsedHabitIds,
   pruneCollapsedHabitIds,
@@ -285,15 +286,23 @@ export function HabitsPage() {
       setHabits((prev) => prev.map((h) => (h.id === target.id ? { ...h, name } : h)));
 
       if (isTemp(target.id)) {
-        apiCreateHabit({
-          name,
-          parentId: existing?.parentId ?? null,
-          // A temp group id would not resolve server-side; the group create
-          // reassigns these habits once it returns.
-          groupId: existing?.groupId && !isTemp(existing.groupId) ? existing.groupId : null,
-        })
-          .then((created) => {
-            setHabits((prev) => prev.map((h) => (h.id === target.id ? created : h)));
+        // A sub-habit can be committed while its parent's own create is still in
+        // flight, so the parent id is resolved rather than sent as it stands: a
+        // temp id would be addressed to a habit the server has never seen.
+        const created = resolveCreatedId(existing?.parentId ?? null).then((parentId) =>
+          apiCreateHabit({
+            name,
+            parentId,
+            // A temp group id would not resolve server-side; the group create
+            // reassigns these habits once it returns.
+            groupId: existing?.groupId && !isTemp(existing.groupId) ? existing.groupId : null,
+          }),
+        );
+
+        trackCreate(target.id, created);
+        created
+          .then((habit) => {
+            setHabits((prev) => prev.map((h) => (h.id === target.id ? habit : h)));
           })
           .catch(() => invalidate());
       } else {

@@ -5,6 +5,7 @@ let mockConnected: boolean;
 
 vi.mock('../../utils/socket', () => ({
   getSyncStatus: () => (mockConnected ? 'connected' : 'disconnected'),
+  getSocketId: () => 'socket-test',
 }));
 
 function setNavigatorOnLine(value: boolean) {

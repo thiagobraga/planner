@@ -78,6 +78,32 @@ describe("csrfProtection middleware", () => {
       expect((res.cookie as ReturnType<typeof vi.fn>)).toHaveBeenCalled();
       expect(nextFn).toHaveBeenCalled();
     });
+
+    it("reuses a valid session-bound cookie instead of rotating it", () => {
+      req.method = "GET";
+      req.sessionId = 7;
+      req.cookies = { [COOKIE_NAME]: buildCookie("stable-token", 7) };
+
+      csrfProtection(req as Request, res as Response, nextFn);
+
+      expect((res.cookie as ReturnType<typeof vi.fn>)).not.toHaveBeenCalled();
+      expect(nextFn).toHaveBeenCalled();
+    });
+
+    it("replaces a cookie that belongs to a different session", () => {
+      req.method = "GET";
+      req.sessionId = 8;
+      req.cookies = { [COOKIE_NAME]: buildCookie("old-session-token", 7) };
+
+      csrfProtection(req as Request, res as Response, nextFn);
+
+      expect((res.cookie as ReturnType<typeof vi.fn>)).toHaveBeenCalledWith(
+        COOKIE_NAME,
+        expect.stringMatching(/^[a-f0-9]+:[a-f0-9]+$/),
+        expect.any(Object),
+      );
+      expect(nextFn).toHaveBeenCalled();
+    });
   });
 
   describe("exempt paths", () => {
