@@ -144,6 +144,11 @@ kbd {
   text-align: center;
 }
 
+button,
+[role="button"] {
+  cursor: pointer;
+}
+
 /* Thin, quiet scrollbars for app scroll surfaces */
 * {
   scrollbar-width: thin;
@@ -535,6 +540,35 @@ textarea:focus-visible {
 @media (max-width: 639px) {
   .main-content {
     padding: 24px 12px 24px 24px;
+  }
+
+  .daily-page {
+    --page-header-toolbar-space: 128px;
+  }
+  .monthly-page {
+    --page-header-toolbar-space: 64px;
+  }
+  .habits-page {
+    --page-header-toolbar-space: 120px;
+  }
+  .inbox-page,
+  .collection-detail-page {
+    --page-header-toolbar-space: 64px;
+  }
+  .page-header-copy {
+    width: 100%;
+  }
+  .page-header-subtitle {
+    box-sizing: border-box;
+    width: 100%;
+    padding-right: var(--page-header-toolbar-space);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .page-header-toolbar {
+    padding-left: 8px;
+    background: linear-gradient(to right, transparent, var(--planner-page-bg) 8px);
   }
 
   .sidebar-drawer {
