@@ -9,7 +9,8 @@
     "start": "node dist/index.js",
     "lint": "eslint src/",
     "test": "vitest run",
-    "provision-user": "tsx src/db/provisionUser.ts"
+    "provision-user": "tsx src/db/provisionUser.ts",
+    "audit": "npm audit --production"
   },
   "dependencies": {
     "argon2": "^0.45.0",

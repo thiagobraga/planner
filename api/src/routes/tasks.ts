@@ -1,10 +1,12 @@
 import { Router, type Request, type Response, type NextFunction } from "express";
 import { createTask, updateTask, completeTask, reopenTask, reorderTask, moveTask, deleteTask } from "../services/taskService.js";
+import { validateCreateTask, validateUpdateTask, validateReorderPosition } from "../utils/taskValidation.js";
 
 const router: ReturnType<typeof Router> = Router();
 
 router.post("/", async (req: Request, res: Response, next: NextFunction) => {
   try {
+    validateCreateTask(req.body);
     const task = await createTask(req.userId!, req.body);
     res.status(201).json(task);
   } catch (err) {
@@ -14,6 +16,7 @@ router.post("/", async (req: Request, res: Response, next: NextFunction) => {
 
 router.patch("/:id", async (req: Request, res: Response, next: NextFunction) => {
   try {
+    validateUpdateTask(req.body);
     const task = await updateTask(req.params.id as string, req.userId!, req.body);
     res.json(task);
   } catch (err) {
@@ -41,6 +44,7 @@ router.post("/:id/reopen", async (req: Request, res: Response, next: NextFunctio
 
 router.patch("/:id/reorder", async (req: Request, res: Response, next: NextFunction) => {
   try {
+    validateReorderPosition(req.body.position);
     const task = await reorderTask(req.params.id as string, req.userId!, req.body.position);
     res.json(task);
   } catch (err) {
