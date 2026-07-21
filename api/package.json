@@ -17,21 +17,21 @@
     "bcrypt": "^5.1.1",
     "cookie-parser": "^1.4.7",
     "express": "^4.21.0",
-    "express-rate-limit": "^8.5.2",
+    "express-rate-limit": "^8.6.0",
     "helmet": "^7.1.0",
-    "peggy": "^4.1.1",
+    "peggy": "^5.1.0",
     "pg": "^8.13.0",
     "redis": "^6.1.0",
     "sanitize-html": "^2.17.6",
     "socket.io": "^4.8.0",
-    "uuid": "^11.1.1",
+    "uuid": "^14.0.1",
     "zxcvbn": "^4.4.2"
   },
   "devDependencies": {
     "@types/bcrypt": "^5.0.2",
     "@types/cookie-parser": "^1.4.10",
     "@types/express": "^5.0.0",
-    "@types/node": "^22.7.0",
+    "@types/node": "^26.1.1",
     "@types/pg": "^8.11.10",
     "@types/sanitize-html": "^2.16.1",
     "@types/supertest": "^7.2.1",
@@ -40,10 +40,10 @@
     "eslint": "^9.11.0",
     "fast-check": "^4.9.0",
     "supertest": "^7.2.2",
-    "tsx": "^4.19.0",
+    "tsx": "^4.23.1",
     "typescript": "^5.6.0",
     "typescript-eslint": "^8.64.0",
-    "vitest": "^3.0.5"
+    "vitest": "^4.1.10"
   },
   "overrides": {
     "tar": "^7.5.20",
