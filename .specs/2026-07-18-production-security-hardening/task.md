@@ -199,13 +199,13 @@
 - [x] Update `app/vite.config.ts`
   - [x] Explicitly exclude `/api/` from service-worker caching
   - [x] Explicitly exclude `/socket.io/` from service-worker caching
-- [ ] Add offline security tests
-  - [ ] Account A data never appears in Account B listing/replay
-  - [ ] Logout clears Account A queue
-  - [ ] Failed network logout still clears Account A queue
-  - [ ] Legacy unowned records are deleted
-  - [ ] Unauthenticated enqueue fails
-  - [ ] Owner-specific ID remapping remains correct
+- [x] Add offline security tests
+  - [x] Account A data never appears in Account B listing/replay
+  - [x] Logout clears Account A queue
+  - [x] Failed network logout still clears Account A queue
+  - [x] Legacy unowned records are deleted
+  - [x] Unauthenticated enqueue fails
+  - [x] Owner-specific ID remapping remains correct
 
 ## Phase 5 - Production deployment and encryption
 
@@ -249,27 +249,27 @@
   - [ ] Verify user/collection/task/habit row counts
   - [ ] Log in and read restored task/habit data
   - [ ] Record date, operator, commands, checksums, and result in runbook
-- [ ] Run container security checks
-  - [ ] `docker buildx build --check` passes
-  - [ ] Containers run as non-root
-  - [ ] Containers cannot write outside approved paths
-  - [ ] No high/critical production image finding remains unreviewed
+- [x] Run container security checks (partial — infra-dependent items remain)
+  - [x] `docker buildx build --check` passes (verified on both Dockerfiles)
+  - [x] Containers run as non-root (api: `USER node`, app: `USER nginx`)
+  - [x] Containers cannot write outside approved paths (api: `read_only: true` + `tmpfs: /tmp`; app: `read_only: true` + `tmpfs: /var/cache/nginx /var/run`)
+  - [ ] No high/critical production image finding remains unreviewed (requires full build + container vulnerability scan)
 
 ## Phase 6 - CI, monitoring, and incident readiness
 
-- [ ] Add `.github/workflows/ci.yml`
-  - [ ] Clean install, lint, test, and build API
-  - [ ] Clean install, lint, test, and build app
-  - [ ] Build production containers
-- [ ] Add `.github/workflows/security.yml`
-  - [ ] Production dependency audit
-  - [ ] Secret scan
-  - [ ] CodeQL/static analysis
-  - [ ] Docker build checks
-  - [ ] Container vulnerability scan
-  - [ ] SBOM generation and retention
-  - [ ] Pin every third-party action to a commit SHA
-- [ ] Add `.github/dependabot.yml` or equivalent automated update policy
+- [x] Add `.github/workflows/ci.yml`
+  - [x] Clean install, lint, test, and build API
+  - [x] Clean install, lint, test, and build app
+  - [x] Build production containers
+- [x] Add `.github/workflows/security.yml`
+  - [x] Production dependency audit
+  - [x] Secret scan
+  - [x] CodeQL/static analysis
+  - [x] Docker build checks
+  - [x] Container vulnerability scan
+  - [x] SBOM generation and retention
+  - [x] Pin every third-party action to a commit SHA
+- [x] Add `.github/dependabot.yml` or equivalent automated update policy
 - [x] Add API security regression tests
   - [x] Cookie flags and no-token response
   - [x] Session expiry/revocation across REST and Socket.IO
@@ -293,19 +293,19 @@
   - [x] Backup and restore outcome
   - [x] Request IDs correlate client errors and server logs
   - [x] Add securityLogger.test.ts covering all 18 event types, request context inclusion, metadata
-- [ ] Configure staging alerts
-  - [ ] Repeated authentication failure
-  - [ ] Unexpected registration/reset attempts
-  - [ ] Redis unavailable
-  - [ ] Migration failure
-  - [ ] Backup failure
-  - [ ] Restore verification failure
-- [ ] Complete incident section in `docs/production-runbook.md`
-  - [ ] Incident owner and contacts
-  - [ ] Containment/session revocation steps
-  - [ ] Secret/key rotation steps
-  - [ ] Evidence preservation and five-year incident record handling where applicable
-  - [ ] ANPD/user assessment and notification workflow
+- [x] Configure staging alerts
+  - [x] Repeated authentication failure
+  - [x] Unexpected registration/reset attempts
+  - [x] Redis unavailable
+  - [x] Migration failure
+  - [x] Backup failure
+  - [x] Restore verification failure
+- [x] Complete incident section in `docs/production-runbook.md`
+  - [x] Incident owner and contacts
+  - [x] Containment/session revocation steps
+  - [x] Secret/key rotation steps
+  - [x] Evidence preservation and five-year incident record handling where applicable
+  - [x] ANPD/user assessment and notification workflow
 
 ## P0 Go-Live Verification
 

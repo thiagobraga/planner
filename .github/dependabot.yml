@@ -1,0 +1,58 @@
+version: 2
+updates:
+  - package-ecosystem: 'npm'
+    directory: '/api'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+      time: '06:00'
+      timezone: 'America/Sao_Paulo'
+    open-pull-requests-limit: 10
+    labels:
+      - 'dependencies'
+      - 'api'
+
+  - package-ecosystem: 'npm'
+    directory: '/app'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+      time: '06:00'
+      timezone: 'America/Sao_Paulo'
+    open-pull-requests-limit: 10
+    labels:
+      - 'dependencies'
+      - 'app'
+
+  - package-ecosystem: 'docker'
+    directory: '/.docker/api'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+      time: '06:00'
+      timezone: 'America/Sao_Paulo'
+    labels:
+      - 'dependencies'
+      - 'docker'
+
+  - package-ecosystem: 'docker'
+    directory: '/.docker/app'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+      time: '06:00'
+      timezone: 'America/Sao_Paulo'
+    labels:
+      - 'dependencies'
+      - 'docker'
+
+  - package-ecosystem: 'github-actions'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+      time: '06:00'
+      timezone: 'America/Sao_Paulo'
+    labels:
+      - 'dependencies'
+      - 'ci'

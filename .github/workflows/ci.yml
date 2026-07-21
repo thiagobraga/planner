@@ -1,0 +1,86 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  NODE_VERSION: '22'
+
+jobs:
+  api:
+    name: API — lint, test, build
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: api
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: planner
+          POSTGRES_PASSWORD: planner-test
+          POSTGRES_DB: planner_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+    steps:
+      - uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1b5 # v4
+      - uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8 # v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: api/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+        env:
+          DATABASE_URL: postgres://planner:planner-test@localhost:5432/planner_test
+          REDIS_URL: redis://localhost:6379
+          JWT_SECRET: test-secret-not-for-production
+          CORS_ORIGIN: http://localhost:5173
+          CSRF_SECRET: test-csrf-secret-not-for-production
+          NODE_ENV: test
+      - run: npm run build
+        env:
+          NODE_ENV: production
+
+  app:
+    name: App — lint, test, build
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1b5 # v4
+      - uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8 # v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: app/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+
+  docker:
+    name: Docker — build production images
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1b5 # v4
+      - run: docker compose -f compose.prod.yml build

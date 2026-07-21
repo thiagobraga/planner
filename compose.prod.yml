@@ -5,7 +5,11 @@ services:
       dockerfile: .docker/app/Dockerfile
       target: production
     container_name: planner-prod-app
-    networks: [edge]
+    networks: [edge, backend]
+    read_only: true
+    tmpfs:
+      - /var/cache/nginx
+      - /var/run
     cap_drop: [ALL]
     cap_add: [NET_BIND_SERVICE, CHOWN, SETUID, SETGID]
     security_opt: [no-new-privileges:true]
