@@ -371,6 +371,18 @@ kbd {
 }
 
 /*
+  A habit lifts as a whole timeline row - label column, gutter and day track -
+  which is far wider than any task block and much wider than the label row dnd-kit
+  sizes the overlay from. Both the cap that keeps a task block from sprawling and
+  that inherited width would crop it, so this one sizes to its own content.
+*/
+.planner-drag-overlay--block:has(.habit-timeline-block-preview) {
+  max-width: none;
+  width: max-content;
+  padding: 0;
+}
+
+/*
   A date with no tasks still has to be reachable by a drag: an empty list
   collapses to zero height, which leaves its droppable with no area for the
   pointer to be inside, so an empty date could never be hovered and never drew a

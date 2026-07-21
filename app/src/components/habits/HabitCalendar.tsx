@@ -1,17 +1,21 @@
-import type { ReactNode } from 'react';
+import { useEffect, useMemo, type ReactNode } from 'react';
 import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, useSortable, rectSortingStrategy } from '@dnd-kit/sortable';
 import { MonthSelector } from '../monthly/MonthSelector';
 import { HabitMonthGrid } from './HabitMonthGrid';
 import { HabitNameInput } from './HabitNameInput';
 import { HabitDragHandle } from './HabitDragHandle';
-import { useHabitDragOverlay } from './HabitBlockPreview';
+import { HabitBlockPreview } from './HabitBlockPreview';
+import { usePlannerDrag } from '../../contexts/PlannerDragContext';
 import { dayState, type HabitNode, type HabitSections } from '../../utils/habitTree';
 import { containerForGroup } from '../../utils/habitProjection';
 import type { HabitDragData, HabitGroupDragData, HabitSectionDropData } from '../../types/drag';
 import type { HabitEditTarget } from './HabitTimeline';
 import type { ApiHabitGroup } from '../../api/client';
 import type { WeekStart } from '../../utils/date';
+
+/** One card column, which the grid and the drag preview both size from. */
+const CARD_W = 192;
 
 export interface HabitCalendarProps {
   sections: HabitSections;
@@ -50,7 +54,43 @@ export function HabitCalendar({
   onCommitEdit,
   onCancelEdit,
 }: HabitCalendarProps) {
-  useHabitDragOverlay(sections, activeDragId);
+  const { setOverlayNode } = usePlannerDrag();
+
+  // What travels under the pointer: the card itself for a habit, and the
+  // heading for a group, which has no card of its own.
+  const dragged = useMemo(() => {
+    if (!activeDragId) return null;
+
+    const group = sections.groups.find((s) => s.group.id === activeDragId);
+    if (group) {
+      return (
+        <HabitBlockPreview
+          name={group.group.name}
+          count={group.habits.length}
+          kind="habit-group"
+        />
+      );
+    }
+
+    const node = [...sections.ungrouped, ...sections.groups.flatMap((s) => s.habits)].find(
+      (n) => n.id === activeDragId,
+    );
+    return node ? (
+      <HabitCalendarCardPreview
+        node={node}
+        today={today}
+        year={year}
+        month={month}
+        weekStart={weekStart}
+      />
+    ) : null;
+  }, [sections, activeDragId, today, year, month, weekStart]);
+
+  useEffect(() => {
+    if (!dragged) return;
+    setOverlayNode(dragged);
+    return () => setOverlayNode(null);
+  }, [dragged, setOverlayNode]);
 
   const hasAnything =
     sections.ungrouped.length > 0 || sections.groups.some((s) => s.habits.length > 0);
@@ -225,7 +265,7 @@ function HabitCalendarGrid({
   return (
     <div
       className="habit-calendar-grid mt-6 grid items-start gap-6"
-      style={{ gridTemplateColumns: 'repeat(auto-fill, 192px)' }}
+      style={{ gridTemplateColumns: `repeat(auto-fill, ${CARD_W}px)` }}
     >
       {habits.map((node) => (
         <SortableHabitCard
@@ -297,6 +337,50 @@ function SortableHabitCard({
        */}
       <HabitDragHandle label={node.name} className="absolute right-[-14px] top-0 h-4 w-4" />
       {children}
+    </div>
+  );
+}
+
+/**
+ * The dragged card, drawn as it appears in the grid, for the drag overlay.
+ *
+ * Not the card component itself: that registers sortable hooks and owns edit
+ * state, neither of which belongs to a copy floating under the pointer. A card
+ * is self-contained here - heading and month grid, nothing spanning columns -
+ * so the whole thing travels.
+ */
+function HabitCalendarCardPreview({
+  node,
+  today,
+  year,
+  month,
+  weekStart,
+}: {
+  node: HabitNode;
+  today: Date;
+  year: number;
+  month: number;
+  weekStart: WeekStart;
+}) {
+  return (
+    <div className="habit-calendar-card-preview min-w-0" style={{ width: CARD_W }} aria-hidden>
+      <div className="habit-calendar-item-heading flex h-6 items-center">
+        <span className="flex h-6 w-6 shrink-0 items-center justify-center">
+          <span className="h-2 w-2 rounded-full" style={{ background: 'var(--color-ink-lighter)' }} />
+        </span>
+        <span className="habit-calendar-item-name truncate text-sm leading-6 text-ink">
+          {node.name}
+        </span>
+      </div>
+      <HabitMonthGrid
+        year={year}
+        month={month}
+        weekStart={weekStart}
+        today={today}
+        label={node.name}
+        stateFor={(iso) => dayState(node, iso)}
+        onToggle={() => {}}
+      />
     </div>
   );
 }

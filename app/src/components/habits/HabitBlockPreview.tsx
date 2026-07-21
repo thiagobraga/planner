@@ -1,7 +1,3 @@
-import { useEffect, useMemo } from 'react';
-import { usePlannerDrag } from '../../contexts/PlannerDragContext';
-import type { HabitNode, HabitSections } from '../../utils/habitTree';
-
 interface HabitBlockPreviewProps {
   /** The dragged habit or group name. */
   name: string;
@@ -43,47 +39,4 @@ export function HabitBlockPreview({ name, count, kind }: HabitBlockPreviewProps)
       {count > 0 && <span className="shrink-0 text-[11px] text-ink-light">+{count}</span>}
     </div>
   );
-}
-
-/**
- * Publish the dragged habit or group to the drag overlay.
- *
- * Called by whichever habit view is mounted - timeline and calendar are never
- * both on screen, so neither can overwrite the other's node. Deliberately not
- * gated on `hasMoved`, matching `TaskList`: the overlay draws over the row
- * rather than in the flow, so publishing early reflows nothing and a press no
- * longer shows the fallback chip until the pointer travels.
- */
-export function useHabitDragOverlay(sections: HabitSections, activeDragId?: string | null) {
-  const { setOverlayNode } = usePlannerDrag();
-
-  const dragged = useMemo(() => {
-    if (!activeDragId) return null;
-
-    const group = sections.groups.find((s) => s.group.id === activeDragId);
-    if (group) {
-      return { name: group.group.name, count: group.habits.length, kind: 'habit-group' as const };
-    }
-
-    const roots = [...sections.ungrouped, ...sections.groups.flatMap((s) => s.habits)];
-    const node = findHabit(roots, activeDragId);
-    return node
-      ? { name: node.name, count: node.children.length, kind: 'habit' as const }
-      : null;
-  }, [sections, activeDragId]);
-
-  useEffect(() => {
-    if (!dragged) return;
-    setOverlayNode(<HabitBlockPreview {...dragged} />);
-    return () => setOverlayNode(null);
-  }, [dragged, setOverlayNode]);
-}
-
-function findHabit(nodes: HabitNode[], id: string): HabitNode | null {
-  for (const node of nodes) {
-    if (node.id === id) return node;
-    const found = findHabit(node.children, id);
-    if (found) return found;
-  }
-  return null;
 }

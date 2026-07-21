@@ -9,7 +9,7 @@ import { HabitDot, dotAriaProps } from './HabitDot';
 import { HabitNameInput } from './HabitNameInput';
 import { NO_DRAG_ATTR } from '../dnd/sensors';
 import { HabitDragHandle } from './HabitDragHandle';
-import { useHabitDragOverlay } from './HabitBlockPreview';
+import { HabitBlockPreview } from './HabitBlockPreview';
 import { fmtISO } from '../../utils/date';
 import { dayState, flattenHabits, type HabitNode, type HabitSections } from '../../utils/habitTree';
 import { usePlannerDrag } from '../../contexts/PlannerDragContext';
@@ -86,6 +86,27 @@ interface DayCell {
   isWeekend: boolean;
 }
 
+/**
+ * A day's mark and whether it joins the run either side of it.
+ *
+ * Any day with progress is part of the chain, so a partly-done parent day links
+ * rather than breaking the run. Shared by the live row and the drag preview so
+ * a habit lifted off the list draws the same chain it drew in place.
+ */
+function dayLink(node: HabitNode, days: DayCell[], i: number) {
+  const state = dayState(node, days[i]!.iso);
+  const linked = state !== 'empty';
+  return {
+    state,
+    prevLinked: i > 0 && linked && dayState(node, days[i - 1]!.iso) !== 'empty',
+    nextLinked:
+      i < days.length - 1 &&
+      linked &&
+      !days[i + 1]!.future &&
+      dayState(node, days[i + 1]!.iso) !== 'empty',
+  };
+}
+
 // Horizontal habit tracker for one month: one row per habit, one column per day.
 // Sub-habits sit indented under their parent, and the parent shows their combined
 // state - empty, half, or full.
@@ -114,8 +135,7 @@ export function HabitTimeline({
   const monthSelectorRef = useRef<MonthSelectorHandle>(null);
   const [canPagePrevious, setCanPagePrevious] = useState(false);
   const [canPageNext, setCanPageNext] = useState(false);
-  const { indentSteps, overId } = usePlannerDrag();
-  useHabitDragOverlay(sections, activeDragId);
+  const { indentSteps, overId, setOverlayNode } = usePlannerDrag();
 
   const days = useMemo<DayCell[]>(() => {
     const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -249,6 +269,46 @@ export function HabitTimeline({
     );
     return siblings[projection.position]?.id ?? null;
   }, [projection, activeDragId, dragRows]);
+
+  // What travels under the pointer: the dragged habit drawn as a whole row -
+  // label, marks and all - together with the sub-habits it carries. A group
+  // header has no day track of its own, so it lifts as its heading.
+  const draggedBlock = useMemo(() => {
+    if (!activeDragId) return null;
+
+    const roots = [...sections.ungrouped, ...sections.groups.flatMap((s) => s.habits)];
+    const found = findNodeWithDepth(roots, activeDragId);
+    if (!found) return null;
+
+    // A collapsed parent's sub-habits are not on screen, so they do not travel.
+    const carried = collapsed.has(found.node.id) ? [] : found.node.children;
+    return [found, ...carried.map((child) => ({ node: child, depth: found.depth + 1 }))];
+  }, [sections, activeDragId, collapsed]);
+
+  useEffect(() => {
+    if (!activeDragId) return;
+
+    if (!draggedBlock) {
+      const group = sections.groups.find((s) => s.group.id === activeDragId);
+      if (!group) return;
+      setOverlayNode(
+        <HabitBlockPreview name={group.group.name} count={group.habits.length} kind="habit-group" />,
+      );
+      return () => setOverlayNode(null);
+    }
+
+    const viewport = daysViewportRef.current;
+    setOverlayNode(
+      <HabitTimelineBlockPreview
+        rows={draggedBlock}
+        days={days}
+        dayColClass={dayColClass}
+        scrollLeft={viewport?.scrollLeft ?? 0}
+        trackWidth={viewport?.clientWidth ?? 0}
+      />,
+    );
+    return () => setOverlayNode(null);
+  }, [activeDragId, draggedBlock, sections, days, dayColClass, setOverlayNode]);
 
   useEffect(() => {
     if (todaySignal) {
@@ -547,16 +607,7 @@ export function HabitTimeline({
                       );
                     }
 
-                    const state = dayState(node, d.iso);
-                    // Any day with progress is part of the chain, so partly-done
-                    // parent days link rather than breaking the run.
-                    const linked = state !== 'empty';
-                    const prevLinked = i > 0 && linked && dayState(node, days[i - 1].iso) !== 'empty';
-                    const nextLinked =
-                      i < days.length - 1 &&
-                      linked &&
-                      !days[i + 1].future &&
-                      dayState(node, days[i + 1].iso) !== 'empty';
+                    const { state, prevLinked, nextLinked } = dayLink(node, days, i);
 
                     return (
                       <button
@@ -656,6 +707,123 @@ function TimelineSectionDrop({
       className={`habit-timeline-section ${isOver ? 'habit-timeline-section--drop-target' : ''}`}
     >
       {children}
+    </div>
+  );
+}
+
+/** Locate a habit anywhere in the tree, keeping the depth it renders at. */
+function findNodeWithDepth(
+  nodes: HabitNode[],
+  id: string,
+  depth = 0,
+): { node: HabitNode; depth: number } | null {
+  for (const node of nodes) {
+    if (node.id === id) return { node, depth };
+    const found = findNodeWithDepth(node.children, id, depth + 1);
+    if (found) return found;
+  }
+  return null;
+}
+
+/** The dragged habit and the sub-habits it carries, drawn as whole rows. */
+interface TimelineBlockPreviewProps {
+  rows: { node: HabitNode; depth: number }[];
+  days: DayCell[];
+  dayColClass: (day: DayCell) => string;
+  /** How far the days viewport is scrolled, so the marks line up under the row. */
+  scrollLeft: number;
+  /** Visible width of the days viewport; the track is clipped to it. */
+  trackWidth: number;
+}
+
+/**
+ * The dragged habit rows, drawn as they appear in the timeline, for the overlay.
+ *
+ * Deliberately not the row components: those register sortable hooks and own
+ * edit state, none of which belongs to a copy floating under the pointer. The
+ * day cells are spans rather than buttons here for the same reason.
+ *
+ * The timeline splits one row across two columns - a fixed label column and a
+ * horizontally scrolled days viewport - so the preview rebuilds that geometry
+ * itself: label column, the 24px gutter between them, then the track shifted by
+ * the viewport's own scroll offset and clipped to its width. Without that shift
+ * the marks would sit under the wrong days the moment the month is scrolled.
+ */
+function HabitTimelineBlockPreview({
+  rows,
+  days,
+  dayColClass,
+  scrollLeft,
+  trackWidth,
+}: TimelineBlockPreviewProps) {
+  const base = rows[0]?.depth ?? 0;
+
+  return (
+    <div className="habit-timeline-block-preview" aria-hidden>
+      {rows.map(({ node, depth }) => (
+        <div key={node.id} className="flex h-6 items-start">
+          <div
+            className="habit-timeline-row-label flex h-6 min-w-0 shrink-0 items-center pr-2"
+            // Depths are relative to the block, so a sub-habit dragged out of
+            // level 1 draws flush rather than indented into empty space.
+            style={{ width: LABEL_COL_W, paddingLeft: Math.max(0, depth - base) * INDENT }}
+          >
+            <span className="flex h-6 w-6 shrink-0 items-center justify-center">
+              <span
+                className="habit-timeline-row-color-dot h-2 w-2 rounded-full"
+                style={{ background: 'var(--color-ink-lighter)' }}
+              />
+            </span>
+            <span className="habit-timeline-row-name min-w-0 flex-1 truncate text-sm leading-6 text-ink">
+              {node.name}
+            </span>
+          </div>
+
+          <div className="h-6 w-6 shrink-0" />
+
+          <div className="h-6 overflow-hidden" style={{ width: trackWidth }}>
+            <div
+              className="flex h-6"
+              style={{ width: days.length * CELL_W, transform: `translateX(${-scrollLeft}px)` }}
+            >
+              {days.map((d, i) => {
+                if (d.future) {
+                  return (
+                    <span
+                      key={d.iso}
+                      className={`habit-timeline-day-placeholder h-6 shrink-0 ${dayColClass(d)}`}
+                      style={{ width: CELL_W }}
+                    />
+                  );
+                }
+
+                const { state, prevLinked, nextLinked } = dayLink(node, days, i);
+                return (
+                  <span
+                    key={d.iso}
+                    className={`habit-timeline-day-cell relative h-6 shrink-0 ${dayColClass(d)}`}
+                    style={{ width: CELL_W }}
+                  >
+                    {prevLinked && (
+                      <span
+                        className="habit-timeline-day-connector-prev absolute top-1/2 left-0 h-px -translate-y-1/2"
+                        style={{ width: CELL_W / 2, background: 'var(--color-ink-lighter)' }}
+                      />
+                    )}
+                    {nextLinked && (
+                      <span
+                        className="habit-timeline-day-connector-next absolute top-1/2 right-0 h-px -translate-y-1/2"
+                        style={{ width: CELL_W / 2, background: 'var(--color-ink-lighter)' }}
+                      />
+                    )}
+                    <HabitDot state={state} />
+                  </span>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

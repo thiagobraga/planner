@@ -54,10 +54,16 @@ vi.mock('../../../hooks/useSync', () => ({
   useSync: () => vi.fn(),
 }));
 
+/** The node the timeline hands to the drag overlay, captured as it publishes. */
+let overlayNode: React.ReactNode = null;
+
 vi.mock('../../../contexts/PlannerDragContext', () => ({
   usePlannerDrag: () => ({
     indentSteps: 0,
     overId: null,
+    setOverlayNode: (node: React.ReactNode) => {
+      overlayNode = node;
+    },
   }),
 }));
 
@@ -111,6 +117,45 @@ describe('HabitTimeline', () => {
   it('renders the new group button when there are no groups', () => {
     render(<HabitTimeline {...defaultProps} />, { wrapper: createWrapper() });
     expect(screen.getByText('New group')).toBeInTheDocument();
+  });
+
+  it('lifts a dragged habit as a whole row, carrying its sub-habits', () => {
+    const child: HabitSections['ungrouped'][number] = {
+      id: 'child',
+      name: 'Drink 1L',
+      parentId: 'water',
+      groupId: null,
+      orderValue: 0,
+      completions: new Set(['2026-07-17']),
+      children: [],
+    };
+    const sections: HabitSections = {
+      ungrouped: [
+        {
+          id: 'water',
+          name: 'Drink water',
+          parentId: null,
+          groupId: null,
+          orderValue: 0,
+          completions: new Set(['2026-07-17']),
+          children: [child],
+        },
+      ],
+      groups: [],
+    };
+
+    render(
+      <HabitTimeline {...defaultProps} sections={sections} activeDragId="water" />,
+      { wrapper: createWrapper() },
+    );
+
+    // The overlay is published as a node rather than a title, so the thing under
+    // the pointer is the row itself - name, marks and the sub-habit it carries.
+    const { container } = render(<>{overlayNode}</>, { wrapper: createWrapper() });
+    expect(container.querySelector('.habit-timeline-block-preview')).toBeInTheDocument();
+    expect(screen.getAllByText('Drink water').length).toBeGreaterThan(0);
+    expect(container.textContent).toContain('Drink 1L');
+    expect(container.querySelectorAll('.habit-timeline-day-cell').length).toBeGreaterThan(0);
   });
 
   it('exposes a drag handle on habit rows and group headers', () => {
