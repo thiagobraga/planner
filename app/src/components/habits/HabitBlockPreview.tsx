@@ -1,6 +1,8 @@
 interface HabitBlockPreviewProps {
   /** The dragged habit or group name. */
   name: string;
+  /** Optional group icon occupying one 24px grid cell. */
+  icon?: string | null;
   /** Sub-habits carried along, or habits carried by a dragged group. */
   count: number;
   kind: 'habit' | 'habit-group';
@@ -18,23 +20,30 @@ interface HabitBlockPreviewProps {
  * rows during a drag (its two columns would fall out of step), so a full block
  * here would claim a rearrangement the list is not showing.
  */
-export function HabitBlockPreview({ name, count, kind }: HabitBlockPreviewProps) {
+export function HabitBlockPreview({ name, icon, count, kind }: HabitBlockPreviewProps) {
   return (
     <div className="habit-block-preview flex h-6 min-w-0 items-center gap-1 pr-2" aria-hidden>
       {kind === 'habit' ? (
         <>
           <span className="flex h-6 w-6 shrink-0 items-center justify-center">
             <span
-              className="habit-timeline-row-color-dot h-2 w-2 rounded-full"
+              className="habit-timeline-row-color-dot h-1.5 w-1.5 rounded-full"
               style={{ background: 'var(--color-ink-lighter)' }}
             />
           </span>
           <span className="min-w-0 truncate text-sm leading-6 text-ink">{name}</span>
         </>
       ) : (
-        <span className="min-w-0 truncate text-[10px] font-semibold uppercase leading-6 tracking-[0.1em] text-ink-light">
-          {name}
-        </span>
+        <>
+          {icon && (
+            <span className="flex h-6 w-6 shrink-0 items-center justify-center text-sm leading-6">
+              {icon}
+            </span>
+          )}
+          <span className="min-w-0 truncate text-[10px] font-semibold uppercase leading-6 tracking-[0.1em] text-ink-light">
+            {name}
+          </span>
+        </>
       )}
       {count > 0 && <span className="shrink-0 text-[11px] text-ink-light">+{count}</span>}
     </div>

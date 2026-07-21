@@ -75,6 +75,7 @@ export interface HabitTimelineProps {
   onCancelEdit: (target: HabitEditTarget) => void;
   onAddHabit: (options: { groupId: string | null; parentId?: string }) => void;
   onAddGroup: () => void;
+  onToggleGroupIcon: (id: string) => void;
   onDelete: (target: HabitEditTarget) => void;
 }
 
@@ -127,6 +128,7 @@ export function HabitTimeline({
   onCancelEdit,
   onAddHabit,
   onAddGroup,
+  onToggleGroupIcon,
   onDelete,
 }: HabitTimelineProps) {
   const [menu, setMenu] = useState<{ target: HabitEditTarget; canAddSub: boolean; x: number; y: number } | null>(null);
@@ -292,7 +294,12 @@ export function HabitTimeline({
       const group = sections.groups.find((s) => s.group.id === activeDragId);
       if (!group) return;
       setOverlayNode(
-        <HabitBlockPreview name={group.group.name} count={group.habits.length} kind="habit-group" />,
+        <HabitBlockPreview
+          name={group.group.name}
+          icon={group.group.icon}
+          count={group.habits.length}
+          kind="habit-group"
+        />,
       );
       return () => setOverlayNode(null);
     }
@@ -362,6 +369,10 @@ export function HabitTimeline({
 
   const isEditing = (kind: 'habit' | 'group', id: string) =>
     editing?.kind === kind && editing.id === id;
+
+  const menuGroup = menu?.target.kind === 'group'
+    ? sections.groups.find((section) => section.group.id === menu.target.id)?.group
+    : undefined;
 
   return (
     <div className="habit-timeline">
@@ -476,6 +487,14 @@ export function HabitTimeline({
                   group={row.group}
                   dimmed={activeDragId === row.group.id}
                 >
+                  {row.group.icon && (
+                    <span
+                      aria-hidden="true"
+                      className="habit-group-icon flex h-6 w-6 shrink-0 items-center justify-center text-sm leading-6 normal-case tracking-normal"
+                    >
+                      {row.group.icon}
+                    </span>
+                  )}
                   {isEditing('group', row.group.id) ? (
                     <HabitNameInput
                       defaultValue={row.group.name}
@@ -531,7 +550,7 @@ export function HabitTimeline({
                 ) : (
                   <span className="flex h-6 w-6 shrink-0 items-center justify-center">
                     <span
-                      className="habit-timeline-row-color-dot h-2 w-2 rounded-full"
+                      className="habit-timeline-row-color-dot h-1.5 w-1.5 rounded-full"
                       style={{ background: 'var(--color-ink-lighter)' }}
                       aria-hidden="true"
                     />
@@ -655,6 +674,15 @@ export function HabitTimeline({
           onClose={() => setMenu(null)}
           items={[
             { type: 'item', label: 'Rename', onClick: () => onStartEdit(menu.target) },
+            ...(menu.target.kind === 'group'
+              ? [
+                {
+                  type: 'item' as const,
+                  label: menuGroup?.icon ? 'Remove icon' : 'Add icon',
+                  onClick: () => onToggleGroupIcon(menu.target.id),
+                },
+              ]
+              : []),
             ...(menu.canAddSub
               ? [
                 {
@@ -770,7 +798,7 @@ function HabitTimelineBlockPreview({
           >
             <span className="flex h-6 w-6 shrink-0 items-center justify-center">
               <span
-                className="habit-timeline-row-color-dot h-2 w-2 rounded-full"
+                className="habit-timeline-row-color-dot h-1.5 w-1.5 rounded-full"
                 style={{ background: 'var(--color-ink-lighter)' }}
               />
             </span>
