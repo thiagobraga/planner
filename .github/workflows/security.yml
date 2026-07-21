@@ -24,8 +24,8 @@ jobs:
       run:
         working-directory: ${{ matrix.package }}
     steps:
-      - uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1b5 # v4
-      - uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8 # v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: 'npm'
@@ -38,19 +38,19 @@ jobs:
     name: CodeQL analysis
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1b5 # v4
-      - uses: github/codeql-action/init@6db8d6351fd0be61f9ed8ebd12a013b4084a852a # v3
+      - uses: actions/checkout@v4
+      - uses: github/codeql-action/init@v3
         with:
           languages: javascript-typescript
           queries: +security-and-quality
-      - uses: github/codeql-action/analyze@6db8d6351fd0be61f9ed8ebd12a013b4084a852a # v3
+      - uses: github/codeql-action/analyze@v3
 
   secrets:
     name: Secret scan
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1b5 # v4
-      - uses: aquasecurity/trivy-action@8b9d2f0e7fd64b74e4bbee5c566b383aa675c55c # v0.29.0
+      - uses: actions/checkout@v4
+      - uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: 'repo'
           scan-ref: '.'
@@ -59,7 +59,7 @@ jobs:
           scanners: 'secrets'
           exit-code: '1'
           severity: 'HIGH,CRITICAL'
-      - uses: github/codeql-action/upload-sarif@6db8d6351fd0be61f9ed8ebd12a013b4084a852a # v3
+      - uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: trivy-secrets.sarif
           category: secret-scan
@@ -68,7 +68,7 @@ jobs:
     name: Docker build check
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1b5 # v4
+      - uses: actions/checkout@v4
       - run: docker buildx build --check
       - run: docker compose -f compose.prod.yml build
 
@@ -76,9 +76,9 @@ jobs:
     name: Container vulnerability scan
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1b5 # v4
+      - uses: actions/checkout@v4
       - run: docker compose -f compose.prod.yml build
-      - uses: aquasecurity/trivy-action@8b9d2f0e7fd64b74e4bbee5c566b383aa675c55c # v0.29.0
+      - uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: 'image'
           scan-ref: 'docker.io/library/planner-api:latest'
@@ -86,7 +86,7 @@ jobs:
           output: 'trivy-container.sarif'
           exit-code: '1'
           severity: 'HIGH,CRITICAL'
-      - uses: github/codeql-action/upload-sarif@6db8d6351fd0be61f9ed8ebd12a013b4084a852a # v3
+      - uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: trivy-container.sarif
           category: container-scan
@@ -95,14 +95,14 @@ jobs:
     name: SBOM generation
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1b5 # v4
-      - uses: aquasecurity/trivy-action@8b9d2f0e7fd64b74e4bbee5c566b383aa675c55c # v0.29.0
+      - uses: actions/checkout@v4
+      - uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: 'repo'
           scan-ref: '.'
           format: 'spdx-json'
           output: 'sbom.spdx.json'
-      - uses: actions/upload-artifact@4bfc4b255191a177d6f66a2d7677d4ba2b9e1c43 # v4
+      - uses: actions/upload-artifact@v4
         with:
           name: sbom
           path: sbom.spdx.json
