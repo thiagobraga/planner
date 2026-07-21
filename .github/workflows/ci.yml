@@ -40,8 +40,8 @@ jobs:
         ports:
           - 6379:6379
     steps:
-      - uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1b5 # v4
-      - uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8 # v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
@@ -67,8 +67,8 @@ jobs:
       run:
         working-directory: app
     steps:
-      - uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1b5 # v4
-      - uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8 # v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
@@ -82,5 +82,5 @@ jobs:
     name: Docker — build production images
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1b5 # v4
+      - uses: actions/checkout@v4
       - run: docker compose -f compose.prod.yml build
