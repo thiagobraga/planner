@@ -1,5 +1,6 @@
 import { pointerWithin, closestCenter, type CollisionDetection } from '@dnd-kit/core';
 import type { DragData, DropData, DragKind, DropKind } from '../../types/drag';
+import { containerForGroup } from '../../utils/habitProjection';
 
 /**
  * Which drop kinds each drag kind is allowed to land on.
@@ -43,7 +44,12 @@ function containerKindsFor(activeKind: DragKind): ReadonlySet<DropKind> {
  */
 function containerIdOf(data: DropData | undefined): string | null {
   if (!data) return null;
-  if (data.kind === 'task' || data.kind === 'day') return data.containerId;
+  if (data.kind === 'task' || data.kind === 'day' || data.kind === 'habit') return data.containerId;
+  // A habit section names itself the way its rows name it, so the rows inside
+  // it can be matched against it. Without this the section - which the pointer
+  // is always inside, since it holds the rows - beat every row it contains, and
+  // a habit drop could only ever append at depth 0.
+  if (data.kind === 'habit-section') return containerForGroup(data.groupId);
   return null;
 }
 

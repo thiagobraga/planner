@@ -115,6 +115,76 @@ describe('plannerCollisionDetection: containers with no rows', () => {
   });
 });
 
+/**
+ * Habit rows sit inside a section that is itself a drop target.
+ *
+ * The section is what makes an empty group fillable, but it must not swallow
+ * drops aimed at the rows inside it: a section drop appends at depth 0, so
+ * while the section kept winning, no habit could be nested under another and
+ * every drop landed at the end of the list rather than where it was released.
+ */
+function habitCandidates(pointerY: number): string[] {
+  const row = (id: string, top: number) => ({
+    id,
+    rect: { current: rect(top) },
+    data: {
+      current: {
+        kind: 'habit',
+        habitId: id,
+        parentId: null,
+        groupId: 'morning',
+        containerId: 'morning',
+        childIds: [],
+      },
+    },
+    disabled: false,
+    key: id,
+    node: { current: null },
+  });
+
+  const section = {
+    id: 'section-morning',
+    rect: { current: { top: 0, bottom: 200, left: 0, right: 200, width: 200, height: 200 } },
+    data: { current: { kind: 'habit-section', groupId: 'morning' } },
+    disabled: false,
+    key: 'section-morning',
+    node: { current: null },
+  };
+
+  const collisions = plannerCollisionDetection({
+    active: {
+      id: 'dragged',
+      data: {
+        current: {
+          kind: 'habit',
+          habitId: 'dragged',
+          parentId: null,
+          groupId: 'morning',
+          containerId: 'morning',
+          childIds: [],
+        },
+      },
+      rect: { current: { initial: rect(0), translated: rect(pointerY) } },
+    },
+    collisionRect: rect(pointerY),
+    droppableRects: new Map([
+      ['target', rect(24)],
+      ['section-morning', section.rect.current],
+    ]),
+    droppableContainers: [row('target', 24), section],
+    pointerCoordinates: { x: 10, y: pointerY },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } as any);
+
+  return collisions.map((c) => String(c.id));
+}
+
+describe('plannerCollisionDetection: habit rows inside a section', () => {
+  it('prefers the row the pointer is over to the section holding it', () => {
+    expect(habitCandidates(30)[0]).toBe('target');
+  });
+});
+
 describe('plannerCollisionDetection: the dragged row is its own target', () => {
   it('offers the dragged row itself, so a resting drag moves nothing', () => {
     // Pointer still on the row it picked up.

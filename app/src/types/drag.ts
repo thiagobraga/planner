@@ -56,6 +56,8 @@ export interface RootHabitDragData {
   parentId: null;
   /** Null when ungrouped. */
   groupId: string | null;
+  /** The section this row is rendered in, as `containerForGroup` names it. */
+  containerId: string;
   /** A habit that has children cannot itself become a sub-habit. */
   childIds: string[];
 }
@@ -66,6 +68,11 @@ export interface SubHabitDragData {
   parentId: string;
   /** Always null: a sub-habit inherits its parent's group. */
   groupId: null;
+  /**
+   * The section this row is rendered in. Not derivable from `groupId`, which a
+   * sub-habit always leaves null while still sitting inside its parent's group.
+   */
+  containerId: string;
   /** Always empty: the hierarchy is one level deep. */
   childIds: [];
 }

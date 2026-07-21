@@ -34,6 +34,16 @@ Markers: `[ ]` not started · `[~]` in progress · `[x]` done
 - [x] Wire via `setOverlayNode` in `HabitCalendar.tsx`
 - [x] Tests: `HabitBlockPreview.test.tsx` — both kinds, count 0 and >0
 
+## Defects found after the parity pass (2026-07-21)
+
+- [x] Habit move and rename returned habits with an empty `completions` list, so
+      the client merge blanked every filled day until a reload
+- [x] The habit section always beat the rows inside it in collision detection:
+      `containerIdOf` had no answer for habit rows or sections, so `inside` was
+      always empty. Every habit drop resolved as "append to section" — depth 0,
+      end of list — which is why nesting never previewed and the drop position
+      was ignored
+
 ## Verification
 
 - [x] `docker compose exec app npm run lint` — no new errors (12 pre-existing)

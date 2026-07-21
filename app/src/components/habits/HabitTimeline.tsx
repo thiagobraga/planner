@@ -690,8 +690,24 @@ function SortableHabitLabelRow({
   const childIds = node.children.map((c) => c.id);
   const data = (
     depth === 0
-      ? { kind: 'habit', habitId: node.id, parentId: null, groupId, childIds }
-      : { kind: 'habit', habitId: node.id, parentId: node.parentId!, groupId: null, childIds: [] }
+      ? {
+          kind: 'habit',
+          habitId: node.id,
+          parentId: null,
+          groupId,
+          containerId: containerForGroup(groupId),
+          childIds,
+        }
+      : {
+          kind: 'habit',
+          habitId: node.id,
+          parentId: node.parentId!,
+          groupId: null,
+          // The section is the parent's, which a sub-habit's own null groupId
+          // cannot name.
+          containerId: containerForGroup(groupId),
+          childIds: [],
+        }
   ) as HabitDragData;
 
   const { attributes, listeners, setNodeRef, isDragging } = useSortable({ id: node.id, data });

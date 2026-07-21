@@ -1,9 +1,11 @@
 import { useMemo, useRef, useState, useEffect, useCallback } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Eye, EyeOff } from 'lucide-react';
 import { useSync } from '../hooks/useSync';
 import { isEchoedMove, isStructuralMove } from '../utils/moveEcho';
 import { TaskList } from '../components/TaskList';
 import { CollectionChip } from '../components/ui/Chip';
+import { Button } from '../components/ui/Button';
 import type { Task } from '../components/TaskItem';
 import { buildMonthDays, extractNaturalDate } from '../utils/date';
 import { nextOrderValue } from '../utils/order';
@@ -15,6 +17,7 @@ import {
   apiToggleTask,
   apiUpdateTask,
   apiDeleteTask,
+  apiUpdatePreferences,
   fetchTodayTasks,
   fetchCollections,
   fetchPreferences,
@@ -105,6 +108,7 @@ export function DailyPage() {
   const [editingId, setEditingId] = useState<string>();
   const [input, setInput] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
+  const todaySectionRef = useRef<HTMLDivElement>(null);
   const loadRequestId = useRef(0);
   const sectionsRef = useRef(sections);
   sectionsRef.current = sections;
@@ -112,6 +116,29 @@ export function DailyPage() {
   const { data: preferences } = useQuery({
     queryKey: ['preferences'],
     queryFn: fetchPreferences,
+  });
+
+  const completedVisibilityMutation = useMutation({
+    mutationFn: (hideCompletedTasks: boolean) =>
+      apiUpdatePreferences({ hideCompletedTasks }),
+    onMutate: async (hideCompletedTasks) => {
+      await qc.cancelQueries({ queryKey: ['preferences'] });
+      const previous = qc.getQueryData<Awaited<ReturnType<typeof fetchPreferences>>>(['preferences']);
+      if (previous) {
+        qc.setQueryData(['preferences'], { ...previous, hideCompletedTasks });
+      }
+      return { previous };
+    },
+    onError: (_error, _hideCompletedTasks, context) => {
+      if (context?.previous) {
+        qc.setQueryData(['preferences'], context.previous);
+      }
+    },
+    onSuccess: (nextPreferences) => {
+      qc.setQueryData(['preferences'], nextPreferences);
+      qc.invalidateQueries({ queryKey: ['inbox'] });
+      qc.invalidateQueries({ queryKey: ['collection'] });
+    },
   });
 
   const replaceTodayFromApi = useCallback(() => {
@@ -242,6 +269,17 @@ export function DailyPage() {
       });
     }
   }, [preferences?.hideCompletedTasks, updateSections, replaceTodayFromApi]);
+
+  const handleToday = useCallback(() => {
+    todaySectionRef.current?.scrollIntoView({
+      behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+      block: 'start',
+    });
+  }, []);
+
+  const handleCompletedVisibility = useCallback(() => {
+    completedVisibilityMutation.mutate(!(preferences?.hideCompletedTasks ?? false));
+  }, [completedVisibilityMutation, preferences?.hideCompletedTasks]);
 
   const handleStartEdit = useCallback((id: string) => {
     setEditingId(id);
@@ -470,20 +508,56 @@ export function DailyPage() {
         inputRef.current?.focus();
       }}
     >
-      <header className="sticky-page-header">
-        <h1 className="text-[18px] leading-6 font-semibold text-ink m-0">
+      <header className="sticky-page-header w-full">
+        <h1 className="m-0 text-[18px] leading-6 font-semibold text-ink">
           Daily
         </h1>
-        <p className="text-[13px] leading-6 text-ink-light opacity-60 m-0">
-          {phrase}
-        </p>
+
+        <div className="flex w-full min-w-0 items-center gap-4">
+          <p className="daily-page-header-subtitle m-0 min-w-0 flex-1 text-[13px] leading-6 text-ink-light opacity-60">
+            {phrase}
+          </p>
+
+          <div className="daily-page-header-controls flex shrink-0 items-center gap-2">
+            <Button variant="secondary" size="sm" onClick={handleToday}>
+              Today
+            </Button>
+
+            <div className="inline-flex h-6 items-center overflow-hidden rounded-[2px] border border-border">
+              <button
+                type="button"
+                aria-label={preferences?.hideCompletedTasks ? 'Show completed tasks' : 'Hide completed tasks'}
+                aria-pressed={preferences?.hideCompletedTasks ?? false}
+                title={preferences?.hideCompletedTasks ? 'Show completed tasks' : 'Hide completed tasks'}
+                disabled={!preferences || completedVisibilityMutation.isPending}
+                onClick={handleCompletedVisibility}
+                className={`inline-flex h-6 w-6 items-center justify-center transition-colors duration-[var(--motion-fast)] disabled:cursor-not-allowed disabled:opacity-40 ${
+                  preferences?.hideCompletedTasks
+                    ? 'bg-dot/60 text-ink'
+                    : 'bg-transparent text-ink-light hover:bg-dot/30'
+                }`}
+              >
+                {preferences?.hideCompletedTasks ? (
+                  <Eye size={14} strokeWidth={1.8} />
+                ) : (
+                  <EyeOff size={14} strokeWidth={1.8} />
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
       </header>
 
       {sections.map((section) => {
         const isToday = section.key === todayKey;
         const dimNotes = section.key < todayKey;
         return (
-          <div key={section.key} className="mt-6">
+          <div
+            key={section.key}
+            ref={isToday ? todaySectionRef : undefined}
+            data-day-date={section.key}
+            className={`mt-6 ${isToday ? 'scroll-mt-24' : ''}`}
+          >
             <div className="text-[11px] tracking-[0.08em] uppercase text-ink-light leading-6 h-6 m-0 font-medium">
               {section.label}
             </div>

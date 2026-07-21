@@ -277,6 +277,7 @@ function SortableHabitCard({
     habitId: node.id,
     parentId: null,
     groupId,
+    containerId: containerForGroup(groupId),
     childIds: node.children.map((c) => c.id),
   };
   const { attributes, listeners, setNodeRef, isDragging } = useSortable({ id: node.id, data });
