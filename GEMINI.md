@@ -218,6 +218,11 @@ Full spec: `DESIGN.md`.
 - Comments only for non-obvious WHY - never for WHAT
 - No error handling for impossible cases; trust framework guarantees
 - Commits: Conventional Commits (`feat:`, `fix:`, `chore:`, etc.), many small per file/feature
+- Add `Co-Authored-By` on the last line of every commit body matching the model that wrote the code
+  - For OpenCode: `Co-Authored-By: OpenCode (<real model name and effort>) <noreply@opencode.ai>` (e.g., `Co-Authored-By: OpenCode (DeepSeek V4 Flash Free) <noreply@opencode.ai>`)
+  - For Codex: `Co-Authored-By: Codex (<real model name and effort>) <codex@openai.com>` (e.g., `Co-Authored-By: Codex (gpt-4o) <codex@openai.com>`)
+  - For Antigravity: `Co-Authored-By: Antigravity (<real model name and effort>) <noreply@antigravity.ai>` (e.g., `Co-Authored-By: Antigravity (Gemini 2.5 Pro) <noreply@antigravity.ai>`)
+  - Claude Code already adds its own `Co-Authored-By` trailer automatically
 - No backwards-compat shims for removed code - delete cleanly
 - Tests: Vitest; integration tests hit real DB (no mock-DB pattern)
 - Node ≥ 20 required
