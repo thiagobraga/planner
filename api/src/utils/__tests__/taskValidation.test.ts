@@ -83,6 +83,18 @@ describe("validateUpdateTask", () => {
   it("rejects invalid priority on update", () => {
     expectValidationError(() => validateUpdateTask({ priority: 99 }), "priority", "1 and 4");
   });
+
+  it("rejects non-string title on update", () => {
+    expectValidationError(() => validateUpdateTask({ title: 123 } as never), "title", "string");
+  });
+
+  it("rejects invalid type on update", () => {
+    expectValidationError(() => validateUpdateTask({ type: "bug" }), "type", "task");
+  });
+
+  it("rejects malformed dueDate on update", () => {
+    expectValidationError(() => validateUpdateTask({ dueDate: "not-a-date" }), "dueDate", "ISO date");
+  });
 });
 
 describe("validateReorderPosition", () => {

@@ -49,6 +49,19 @@ introduced or hardened during that phase.
 | Malformed dueDate | Non-ISO date rejected |
 | Reorder position | Negative, non-integer, non-number rejected |
 
+## Coverage metrics
+
+| File | Statements | Branches | Functions | Lines |
+|------|-----------|----------|-----------|-------|
+| `securityLogger.ts` | 100% | 95.83% | 100% | 100% |
+| `taskValidation.ts` | 100% | 100% | 100% | 100% |
+| `requestContext.ts` | 100% | 100% | 100% | 100% |
+| `errorHandler.ts` | 100% | 100% | 100% | 100% |
+
+The one uncovered branch in `securityLogger.ts` (line 42) is the
+`req?.socket?.remoteAddress` fallback — unreachable in Express because
+`req.ip` is always set by the framework.
+
 ## Coverage gaps (deferred)
 
 - Full end-to-end session lifecycle integration tests (require real DB + Redis)
