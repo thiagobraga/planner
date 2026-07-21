@@ -3,7 +3,7 @@ WORKDIR /app
 COPY --chown=node:node app ./
 RUN npm ci && npm run build && npm cache clean --force
 
-FROM nginx:1.27-alpine AS production
+FROM nginx:1.31-alpine AS production
 COPY --from=build /app/dist /usr/share/nginx/html
 COPY .docker/app/nginx.conf /etc/nginx/conf.d/default.conf
 RUN chown -R nginx:nginx /var/cache/nginx /var/run /etc/nginx/conf.d
