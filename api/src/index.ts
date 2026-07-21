@@ -32,9 +32,18 @@ app.use(helmet({
       objectSrc: ["'none'"],
       baseUri: ["'self'"],
       frameAncestors: ["'none'"],
+      reportUri: "/api/v1/csp-violation",
     },
   },
+  crossOriginOpenerPolicy: { policy: "same-origin" },
+  crossOriginEmbedderPolicy: { policy: "require-corp" },
 }));
+
+// Permissions-Policy (Helmet v7 removed built-in support)
+app.use((_req, res, next) => {
+  res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=(), usb=()");
+  next();
+});
 app.use(cookieParser());
 
 // Request ID on every response
@@ -53,7 +62,7 @@ if (!DISABLE_RATE_LIMITS_IN_DEV) {
   app.use(globalLimiter);
 }
 
-app.use(express.json());
+app.use(express.json({ limit: "100kb" }));
 
 // CORS
 app.use((_req, res, next) => {

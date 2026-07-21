@@ -81,9 +81,18 @@ beforeAll(async () => {
         objectSrc: ["'none'"],
         baseUri: ["'self'"],
         frameAncestors: ["'none'"],
+        reportUri: "/api/v1/csp-violation",
       },
     },
+    crossOriginOpenerPolicy: { policy: "same-origin" },
+    crossOriginEmbedderPolicy: { policy: "require-corp" },
   }));
+
+  app.use((_req, res, next) => {
+    res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=(), usb=()");
+    next();
+  });
+
   app.use(cookieParser());
 
   app.use((_req, res, next) => {
@@ -156,6 +165,38 @@ describe("security headers", () => {
   it("includes frame-ancestors CSP directive", async () => {
     const res = await request(app).get("/api/v1/health");
     expect(res.headers["content-security-policy"]).toContain("frame-ancestors 'none'");
+  });
+
+  it("includes CSP report-uri directive", async () => {
+    const res = await request(app).get("/api/v1/health");
+    expect(res.headers["content-security-policy"]).toContain("report-uri /api/v1/csp-violation");
+  });
+
+  it("includes Permissions-Policy header restricting sensitive features", async () => {
+    const res = await request(app).get("/api/v1/health");
+    const pp = res.headers["permissions-policy"] as string;
+    expect(pp).toBeDefined();
+    expect(pp).toContain("camera=()");
+    expect(pp).toContain("microphone=()");
+    expect(pp).toContain("geolocation=()");
+    expect(pp).toContain("payment=()");
+  });
+
+  it("includes Cross-Origin-Opener-Policy: same-origin", async () => {
+    const res = await request(app).get("/api/v1/health");
+    expect(res.headers["cross-origin-opener-policy"]).toBe("same-origin");
+  });
+
+  it("includes Cross-Origin-Embedder-Policy: require-corp", async () => {
+    const res = await request(app).get("/api/v1/health");
+    expect(res.headers["cross-origin-embedder-policy"]).toBe("require-corp");
+  });
+
+  it("rejects oversized request bodies", async () => {
+    const res = await request(app)
+      .post("/api/v1/auth/login")
+      .send({ data: "x".repeat(200 * 1024) });
+    expect(res.status).toBe(413);
   });
 });
 
