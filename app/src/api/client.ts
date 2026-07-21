@@ -405,6 +405,7 @@ export interface ApiHabit {
 export interface ApiHabitGroup {
   id: string;
   name: string;
+  icon: string | null;
   orderValue: number;
 }
 
@@ -463,7 +464,7 @@ export async function apiCreateHabitGroup(input: { name: string }): Promise<ApiH
 
 export async function apiUpdateHabitGroup(
   id: string,
-  updates: { name?: string; orderValue?: number },
+  updates: { name?: string; icon?: string | null; orderValue?: number },
 ): Promise<ApiHabitGroup> {
   return request<ApiHabitGroup>(`/habit-groups/${id}`, {
     method: 'PATCH',

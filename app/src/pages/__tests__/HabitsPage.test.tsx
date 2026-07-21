@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { HabitsPage } from '../HabitsPage';
@@ -7,6 +7,7 @@ import {
   fetchHabits,
   fetchHabitGroups,
   fetchPreferences,
+  apiUpdateHabitGroup,
 } from '../../api/client';
 
 vi.mock('../../api/client', async (importOriginal) => ({
@@ -35,8 +36,26 @@ vi.mock('../../utils/phrases', () => ({
   getPhrase: () => 'Small reps build large lives.',
 }));
 
+vi.mock('../../utils/habitGroupIcon', () => ({
+  randomHabitGroupIcon: () => '☀️',
+}));
+
 vi.mock('../../components/habits/HabitTimeline', () => ({
-  HabitTimeline: () => <div data-testid="habit-timeline" />,
+  HabitTimeline: ({
+    sections,
+    onToggleGroupIcon,
+  }: {
+    sections: { groups: { group: { id: string; name: string } }[] };
+    onToggleGroupIcon: (id: string) => void;
+  }) => (
+    <div data-testid="habit-timeline">
+      {sections.groups.map(({ group }) => (
+        <button key={group.id} type="button" onClick={() => onToggleGroupIcon(group.id)}>
+          Toggle icon for {group.name}
+        </button>
+      ))}
+    </div>
+  ),
 }));
 
 vi.mock('../../components/habits/HabitCalendar', () => ({
@@ -46,6 +65,7 @@ vi.mock('../../components/habits/HabitCalendar', () => ({
 const mockFetchHabits = vi.mocked(fetchHabits);
 const mockFetchHabitGroups = vi.mocked(fetchHabitGroups);
 const mockFetchPreferences = vi.mocked(fetchPreferences);
+const mockApiUpdateHabitGroup = vi.mocked(apiUpdateHabitGroup);
 
 function renderPage() {
   const client = new QueryClient({
@@ -65,8 +85,10 @@ function renderPage() {
 }
 
 beforeEach(() => {
+  vi.clearAllMocks();
   mockFetchHabits.mockResolvedValue([]);
   mockFetchHabitGroups.mockResolvedValue([]);
+  mockApiUpdateHabitGroup.mockReset();
   mockFetchPreferences.mockResolvedValue({
     userId: 'user-1',
     timeZone: 'UTC',
@@ -120,5 +142,24 @@ describe('HabitsPage', () => {
     renderPage();
 
     expect(mockFetchHabits).toHaveBeenCalled();
+  });
+
+  it('adds a temporary random icon to a group and persists it', async () => {
+    mockFetchHabitGroups.mockResolvedValue([
+      { id: 'morning', name: 'Morning routine', icon: null, orderValue: 0 },
+    ]);
+    mockApiUpdateHabitGroup.mockResolvedValue({
+      id: 'morning',
+      name: 'Morning routine',
+      icon: '☀️',
+      orderValue: 0,
+    });
+    renderPage();
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Toggle icon for Morning routine' }));
+
+    await waitFor(() =>
+      expect(mockApiUpdateHabitGroup).toHaveBeenCalledWith('morning', { icon: '☀️' }),
+    );
   });
 });

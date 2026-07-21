@@ -66,6 +66,7 @@ export function HabitCalendar({
       return (
         <HabitBlockPreview
           name={group.group.name}
+          icon={group.group.icon}
           count={group.habits.length}
           kind="habit-group"
         />
@@ -224,10 +225,18 @@ function SortableGroupHeading({
       {...attributes}
       {...listeners}
       style={{ opacity: isDragging || dimmed ? 0.4 : 1 }}
-      className="habit-calendar-group-name h-6 border-b border-border/60 text-[10px] font-semibold uppercase leading-6 tracking-[0.1em] text-ink-light"
+      className="habit-calendar-group-name flex h-6 items-center border-b border-border/60 text-[10px] font-semibold uppercase leading-6 tracking-[0.1em] text-ink-light"
       aria-label={group.name}
     >
       <HabitDragHandle label={group.name} />
+      {group.icon && (
+        <span
+          aria-hidden="true"
+          className="habit-group-icon flex h-6 w-6 shrink-0 items-center justify-center text-sm leading-6 normal-case tracking-normal"
+        >
+          {group.icon}
+        </span>
+      )}
       {children}
     </h2>
   );

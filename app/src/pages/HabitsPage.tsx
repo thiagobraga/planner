@@ -10,6 +10,7 @@ import { isEchoedMove } from '../utils/moveEcho';
 import { Button } from '../components/ui/Button';
 import { startOfDay } from '../utils/date';
 import { flattenHabits, type HabitNode } from '../utils/habitTree';
+import { randomHabitGroupIcon } from '../utils/habitGroupIcon';
 import { trackCreate, resolveCreatedId } from '../utils/pendingCreates';
 import {
   loadCollapsedHabitIds,
@@ -236,7 +237,7 @@ export function HabitsPage() {
     const id = tempId();
     setGroups((prev) => [
       ...prev,
-      { id, name: '', orderValue: prev.reduce((max, g) => Math.max(max, g.orderValue + 1), 0) },
+      { id, name: '', icon: null, orderValue: prev.reduce((max, g) => Math.max(max, g.orderValue + 1), 0) },
     ]);
     setEditing({ kind: 'group', id });
   }, [setGroups]);
@@ -343,6 +344,25 @@ export function HabitsPage() {
     [setGroups, setHabits, removeHabitLocally, invalidate],
   );
 
+  const handleToggleGroupIcon = useCallback(
+    (id: string) => {
+      const group = groups.find((candidate) => candidate.id === id);
+      if (!group) return;
+
+      const icon = group.icon ? null : randomHabitGroupIcon();
+      setGroups((prev) => prev.map((candidate) => (candidate.id === id ? { ...candidate, icon } : candidate)));
+
+      if (!isTemp(id)) {
+        apiUpdateHabitGroup(id, { icon })
+          .then((updated) => {
+            setGroups((prev) => prev.map((candidate) => (candidate.id === id ? updated : candidate)));
+          })
+          .catch(() => invalidate());
+      }
+    },
+    [groups, setGroups, invalidate],
+  );
+
   const handleMonthChange = useCallback((year: number, month: number) => {
     setSelected({ year, month });
   }, []);
@@ -413,6 +433,7 @@ export function HabitsPage() {
           onCancelEdit={handleCancelEdit}
           onAddHabit={handleAddHabit}
           onAddGroup={handleAddGroup}
+          onToggleGroupIcon={handleToggleGroupIcon}
           onDelete={handleDelete}
         />
       ) : (

@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import React from 'react';
@@ -68,7 +68,17 @@ vi.mock('../../../contexts/PlannerDragContext', () => ({
 }));
 
 vi.mock('../../ui/ContextMenu', () => ({
-  ContextMenu: () => null,
+  ContextMenu: ({ items }: { items: { type: string; label?: string; onClick?: () => void }[] }) => (
+    <div data-testid="context-menu">
+      {items
+        .filter((item) => item.type === 'item')
+        .map((item) => (
+          <button key={item.label} type="button" onClick={item.onClick}>
+            {item.label}
+          </button>
+        ))}
+    </div>
+  ),
 }));
 
 vi.mock('../../monthly/MonthSelector', () => ({
@@ -104,6 +114,7 @@ const defaultProps = {
   onCancelEdit: vi.fn(),
   onAddHabit: vi.fn(),
   onAddGroup: vi.fn(),
+  onToggleGroupIcon: vi.fn(),
   onDelete: vi.fn(),
   onToggleCollapse: vi.fn(),
   collapsed: new Set<string>(),
@@ -117,6 +128,71 @@ describe('HabitTimeline', () => {
   it('renders the new group button when there are no groups', () => {
     render(<HabitTimeline {...defaultProps} />, { wrapper: createWrapper() });
     expect(screen.getByText('New group')).toBeInTheDocument();
+  });
+
+  it('renders a group icon in one grid cell before the group name', () => {
+    const sections: HabitSections = {
+      ungrouped: [],
+      groups: [
+        {
+          group: { id: 'morning', name: 'Morning routine', icon: '☀️', orderValue: 0 },
+          habits: [],
+        },
+      ],
+    };
+
+    render(<HabitTimeline {...defaultProps} sections={sections} />, { wrapper: createWrapper() });
+
+    const icon = screen.getByText('☀️');
+    expect(icon).toHaveClass('h-6', 'w-6', 'justify-center');
+    expect(icon.nextElementSibling).toHaveTextContent('Morning routine');
+  });
+
+  it('offers Remove icon immediately after Rename for a group with an icon', () => {
+    const onToggleGroupIcon = vi.fn();
+    const sections: HabitSections = {
+      ungrouped: [],
+      groups: [
+        {
+          group: { id: 'morning', name: 'Morning routine', icon: '☀️', orderValue: 0 },
+          habits: [],
+        },
+      ],
+    };
+
+    render(
+      <HabitTimeline
+        {...defaultProps}
+        sections={sections}
+        onToggleGroupIcon={onToggleGroupIcon}
+      />,
+      { wrapper: createWrapper() },
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Options for Morning routine' }));
+    expect(
+      Array.from(screen.getByTestId('context-menu').querySelectorAll('button')).map(
+        (button) => button.textContent,
+      ),
+    ).toEqual(['Rename', 'Remove icon', 'Delete group']);
+    fireEvent.click(screen.getByRole('button', { name: 'Remove icon' }));
+    expect(onToggleGroupIcon).toHaveBeenCalledWith('morning');
+  });
+
+  it('offers Add icon for a group without an icon', () => {
+    const sections: HabitSections = {
+      ungrouped: [],
+      groups: [
+        {
+          group: { id: 'morning', name: 'Morning routine', icon: null, orderValue: 0 },
+          habits: [],
+        },
+      ],
+    };
+
+    render(<HabitTimeline {...defaultProps} sections={sections} />, { wrapper: createWrapper() });
+    fireEvent.click(screen.getByRole('button', { name: 'Options for Morning routine' }));
+    expect(screen.getByRole('button', { name: 'Add icon' })).toBeInTheDocument();
   });
 
   it('lifts a dragged habit as a whole row, carrying its sub-habits', () => {
@@ -172,7 +248,7 @@ describe('HabitTimeline', () => {
       ungrouped: [water],
       groups: [
         {
-          group: { id: 'morning', name: 'Morning', orderValue: 0 },
+          group: { id: 'morning', name: 'Morning', icon: null, orderValue: 0 },
           habits: [],
         },
       ],

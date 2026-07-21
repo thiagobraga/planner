@@ -17,6 +17,7 @@ vi.mock("../syncService.js", () => ({
 import {
   createHabit,
   updateHabit,
+  updateGroup,
   toggleCompletion,
   deleteGroup,
 } from "../habitService.js";
@@ -35,6 +36,17 @@ function habitRow(overrides: Record<string, unknown> = {}) {
     name: "Beber 4L d'água",
     parent_id: null,
     group_id: null,
+    order_value: 0,
+    ...overrides,
+  };
+}
+
+function groupRow(overrides: Record<string, unknown> = {}) {
+  return {
+    id: "g1",
+    user_id: "u1",
+    name: "Morning routine",
+    icon: null,
     order_value: 0,
     ...overrides,
   };
@@ -179,5 +191,31 @@ describe("deleteGroup", () => {
     // Only the group row is touched; no UPDATE on habits.
     expect(mockQuery).toHaveBeenCalledTimes(1);
     expect(mockQuery.mock.calls[0]?.[0]).toMatch(/DELETE FROM habit_groups/);
+  });
+});
+
+describe("updateGroup", () => {
+  it("persists and returns a group icon", async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [groupRow({ icon: "🌿" })] });
+
+    const group = await updateGroup("u1", "g1", { icon: "🌿" });
+
+    expect(group.icon).toBe("🌿");
+    expect(mockQuery.mock.calls[0]?.[0]).toMatch(/icon = \$1/);
+    expect(mockQuery.mock.calls[0]?.[1]).toEqual(["🌿", "g1", "u1"]);
+  });
+
+  it("removes a group icon with null", async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [groupRow()] });
+
+    const group = await updateGroup("u1", "g1", { icon: null });
+
+    expect(group.icon).toBeNull();
+    expect(mockQuery.mock.calls[0]?.[1]).toEqual([null, "g1", "u1"]);
+  });
+
+  it("rejects an empty group icon", async () => {
+    await expect(updateGroup("u1", "g1", { icon: " " })).rejects.toThrow(AppError);
+    expect(mockQuery).not.toHaveBeenCalled();
   });
 });

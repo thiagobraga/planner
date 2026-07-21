@@ -16,6 +16,7 @@ secrets/
 # Backups
 backups/
 *.sql
+!api/src/db/migrations/*.sql
 *.sql.gz
 *.dump
 

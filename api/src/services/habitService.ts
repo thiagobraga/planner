@@ -16,6 +16,7 @@ interface HabitGroupRow {
   id: string;
   user_id: string;
   name: string;
+  icon: string | null;
   order_value: number;
 }
 
@@ -31,6 +32,7 @@ export interface Habit {
 export interface HabitGroup {
   id: string;
   name: string;
+  icon: string | null;
   orderValue: number;
 }
 
@@ -49,6 +51,7 @@ function formatGroup(row: HabitGroupRow): HabitGroup {
   return {
     id: row.id,
     name: row.name,
+    icon: row.icon ?? null,
     orderValue: row.order_value,
   };
 }
@@ -79,6 +82,14 @@ function validateName(name: unknown): string {
     });
   }
   return name.trim();
+}
+
+function validateGroupIcon(icon: unknown): string | null {
+  if (icon === null) return null;
+  if (typeof icon !== "string" || icon.trim().length === 0 || [...icon.trim()].length > 16) {
+    throw validationError("icon", "icon must be null or a non-empty string of at most 16 characters");
+  }
+  return icon.trim();
 }
 
 async function getOwnedHabit(userId: string, habitId: string): Promise<HabitRow> {
@@ -360,6 +371,7 @@ export async function createGroup(userId: string, name: string): Promise<HabitGr
 
 export interface UpdateHabitGroupInput {
   name?: string;
+  icon?: string | null;
   orderValue?: number;
 }
 
@@ -371,6 +383,10 @@ export async function updateGroup(userId: string, groupId: string, updates: Upda
   if (updates.name !== undefined) {
     setClauses.push(`name = $${paramIndex++}`);
     values.push(validateName(updates.name));
+  }
+  if (updates.icon !== undefined) {
+    setClauses.push(`icon = $${paramIndex++}`);
+    values.push(validateGroupIcon(updates.icon));
   }
   if (updates.orderValue !== undefined) {
     if (typeof updates.orderValue !== "number" || !Number.isInteger(updates.orderValue)) {
