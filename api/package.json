@@ -24,7 +24,7 @@
     "redis": "^4.7.0",
     "sanitize-html": "^2.17.6",
     "socket.io": "^4.8.0",
-    "uuid": "^11.1.1",
+    "uuid": "^14.0.1",
     "zxcvbn": "^4.4.2"
   },
   "devDependencies": {
