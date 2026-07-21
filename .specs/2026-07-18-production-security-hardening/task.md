@@ -24,6 +24,7 @@
   - [x] Remove `JWT_SECRET` after session migration (Phase 2)
   - [x] Fail production startup when Redis is unavailable
 - [x] Add configuration unit tests for every fail-fast branch
+- [x] Add `npm run audit` script for dependency scanning
 
 ## Phase 1 - Single-user identity and password storage
 
@@ -163,11 +164,15 @@
   - [x] Never cache API responses
 - [x] Remove the CSP meta tag from `app/index.html` after header verification
 - [x] Add CSRF and origin middleware unit tests (15 CSRF + 12 origin + 70 route tests)
-- [ ] Harden request size, content-type, and transport security
-  - [ ] Set explicit `express.json({ limit: '100kb' })` to prevent large-payload DOS
-  - [ ] Add HSTS (`Strict-Transport-Security`) to Helmet config or Nginx
-  - [ ] Add global middleware rejecting non-JSON Content-Type on API mutation routes
-  - [ ] Add request-harding tests (oversized body rejected, non-JSON rejected, HSTS header present)
+- [x] Harden request size, content-type, and transport security
+  - [x] Set explicit `express.json({ limit: '100kb' })` to prevent large-payload DOS
+  - [x] Add HSTS (`Strict-Transport-Security`) to Helmet — already enabled by default (max-age=15552000; includeSubDomains)
+  - [x] Add global middleware rejecting non-JSON Content-Type on API mutation routes (exempting /auth)
+  - [x] Add request-hardening tests (oversized body rejected, non-JSON rejected, HSTS header present)
+  - [x] Handle PayloadTooLargeError with structured 413 response
+  - [x] Add Permissions-Policy header (Helmet v7 removed built-in support)
+  - [x] Add CSP report-uri /api/v1/csp-violation
+  - [x] Add crossOriginOpenerPolicy and crossOriginEmbedderPolicy
 
 ## Phase 4 - Offline/shared-device isolation
 
@@ -265,23 +270,29 @@
   - [ ] SBOM generation and retention
   - [ ] Pin every third-party action to a commit SHA
 - [ ] Add `.github/dependabot.yml` or equivalent automated update policy
-- [ ] Add API security regression tests
-  - [ ] Cookie flags and no-token response
-  - [ ] Session expiry/revocation across REST and Socket.IO
-  - [ ] Password change revokes all sessions
-  - [ ] CSRF/origin route matrix
-  - [ ] Durable distributed rate limiting
-  - [ ] Email uniqueness and display-name optionality
-  - [ ] Registration/reset disabled defaults
-  - [ ] Cache/security headers
-  - [ ] Object authorization for all route families
-- [ ] Add structured security event logging
-  - [ ] Authentication success/failure without email or password
-  - [ ] Rate-limit activation
-  - [ ] Session revocation/expiry
-  - [ ] Provisioning and migration outcome
-  - [ ] Backup and restore outcome
-  - [ ] Request IDs correlate client errors and server logs
+- [x] Add API security regression tests
+  - [x] Cookie flags and no-token response
+  - [x] Session expiry/revocation across REST and Socket.IO
+  - [x] Password change revokes all sessions
+  - [x] CSRF/origin route matrix
+  - [x] Durable distributed rate limiting
+  - [x] Email uniqueness and display-name optionality
+  - [x] Registration/reset disabled defaults
+  - [x] Cache/security headers (Permissions-Policy, CSP report-uri, COOP, COEP, HSTS, X-Frame-Options, X-Content-Type-Options)
+  - [x] Request body size enforcement (413 on oversized body)
+  - [x] Content-type enforcement (415 on non-JSON mutation)
+  - [x] securityLogger.test.ts (18 tests, all event types)
+  - [x] requestContext.test.ts (AsyncLocalStorage isolation, X-Socket-Id binding)
+  - [x] taskValidation.test.ts (20 tests, route-level input validation)
+  - [x] Object authorization for all route families
+- [x] Add structured security event logging
+  - [x] Authentication success/failure without email or password
+  - [x] Rate-limit activation
+  - [x] Session revocation/expiry
+  - [x] Provisioning and migration outcome
+  - [x] Backup and restore outcome
+  - [x] Request IDs correlate client errors and server logs
+  - [x] Add securityLogger.test.ts covering all 18 event types, request context inclusion, metadata
 - [ ] Configure staging alerts
   - [ ] Repeated authentication failure
   - [ ] Unexpected registration/reset attempts

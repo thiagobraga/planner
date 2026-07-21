@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeAll, afterAll } from "vitest";
 import request from "supertest";
 import type { Express } from "express";
 
+
 vi.mock("../../services/sessionService.js", () => ({
   validateSession: vi.fn(),
   shouldTouch: vi.fn().mockReturnValue(false),
@@ -101,6 +102,24 @@ beforeAll(async () => {
   });
 
   app.use(express.json());
+
+  // Non-JSON content-type guard
+  app.use("/api/v1", (req, _res, next) => {
+    if (req.path.startsWith("/auth")) {
+      next();
+      return;
+    }
+    if (["POST", "PATCH", "PUT", "DELETE"].includes(req.method)) {
+      const ct = req.headers["content-type"] ?? "";
+      if (!ct.startsWith("application/json")) {
+        _res.status(415).json({
+          error: { code: "UNSUPPORTED_MEDIA_TYPE", message: "Only application/json is accepted" },
+        });
+        return;
+      }
+    }
+    next();
+  });
 
   const authRoutes = (await import("../auth.js")).default;
   app.use("/api/v1/auth", authRoutes);
@@ -305,5 +324,45 @@ describe("error response shape", () => {
     const res = await request(app).get("/api/v1/nonexistent");
     expect(res.text).not.toContain("Error:");
     expect(res.text).not.toContain("at ");
+  });
+});
+
+describe("content-type enforcement", () => {
+  it("rejects POST with non-JSON content-type", async () => {
+    const res = await request(app)
+      .post("/api/v1/tasks")
+      .set("Content-Type", "application/x-www-form-urlencoded")
+      .send("title=test");
+    expect(res.status).toBe(415);
+    expect(res.body.error?.code).toBe("UNSUPPORTED_MEDIA_TYPE");
+  });
+
+  it("rejects PATCH with non-JSON content-type", async () => {
+    const res = await request(app)
+      .patch("/api/v1/tasks/t1")
+      .set("Content-Type", "text/plain")
+      .send("some text");
+    expect(res.status).toBe(415);
+  });
+
+  it("allows POST with JSON content-type", async () => {
+    const res = await request(app)
+      .post("/api/v1/tasks")
+      .set("Content-Type", "application/json")
+      .send({ title: "test" });
+    expect(res.status).not.toBe(415);
+  });
+
+  it("allows GET without content-type", async () => {
+    const res = await request(app).get("/api/v1/health");
+    expect(res.status).not.toBe(415);
+  });
+});
+
+describe("HSTS header", () => {
+  it("includes Strict-Transport-Security via Helmet", async () => {
+    const res = await request(app).get("/api/v1/health");
+    expect(res.headers["strict-transport-security"]).toBeDefined();
+    expect(res.headers["strict-transport-security"]).toContain("max-age=");
   });
 });

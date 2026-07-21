@@ -64,6 +64,27 @@ if (!DISABLE_RATE_LIMITS_IN_DEV) {
 
 app.use(express.json({ limit: "100kb" }));
 
+// Reject non-JSON Content-Type on unsafe methods — prevents CSRF form-encoded bypass
+app.use("/api/v1", (req, res, next) => {
+  if (req.path.startsWith("/auth")) {
+    next();
+    return;
+  }
+  if (["POST", "PATCH", "PUT", "DELETE"].includes(req.method)) {
+    const ct = req.headers["content-type"] ?? "";
+    if (!ct.startsWith("application/json")) {
+      res.status(415).json({
+        error: {
+          code: "UNSUPPORTED_MEDIA_TYPE",
+          message: "Only application/json is accepted on this endpoint",
+        },
+      });
+      return;
+    }
+  }
+  next();
+});
+
 // CORS
 app.use((_req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", CORS_ORIGIN);
