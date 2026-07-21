@@ -58,4 +58,4 @@ export class PlannerKeyboardSensor extends KeyboardSensor {
 }
 
 /** Press-and-hold constraint shared by every pointer drag in the app. */
-export const PRESS_ACTIVATION = { delay: 120, tolerance: 8 } as const;
+export const PRESS_ACTIVATION = { delay: 150, tolerance: 8 } as const;

@@ -25,7 +25,7 @@ vi.mock('@dnd-kit/sortable', () => ({
 vi.mock('../../components/dnd/sensors', () => ({
   PlannerPointerSensor: class {},
   PlannerKeyboardSensor: class {},
-  PRESS_ACTIVATION: { delay: 120, tolerance: 8 },
+  PRESS_ACTIVATION: { delay: 150, tolerance: 8 },
 }));
 
 vi.mock('../../components/dnd/collision', () => ({
