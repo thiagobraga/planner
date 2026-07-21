@@ -55,6 +55,9 @@ app/coverage/
 # antigravitycli
 .antigravitycli/
 
+# Codegraph (regenerated index)
+.codegraph/
+
 # Database
 postgres_data/
 redis_data/
