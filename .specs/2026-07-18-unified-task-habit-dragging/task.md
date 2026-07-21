@@ -490,6 +490,54 @@ Requirements to be confirmed before implementation.
 - [ ] Define collapsed-state behavior as a drag drop target
 - [ ] Keep the toggle keyboard-operable and announced to assistive technology
 
+## Phase 13 - Defects from the recorded walkthrough (2026-07-21)
+
+Source: screen recording with narration, `~/Videos/2026-07-21 10-44-57.mkv`, reproduced
+on the Daily page. Grouped by area; the drag items are the priority.
+
+### 13.1 Drop positions the projection refuses to offer
+
+- [ ] Allow a drop into the **last** position of a day. Every drop resolves to first
+      or middle; the final slot is never offered, on any date
+- [ ] Allow a drop **below a completed task**. Dropping under a struck-through row
+      (e.g. "Buscar bupropiona") is refused and the row is thrown to the top instead
+- [ ] Allow a completed task itself to be dragged anywhere in the order. Stated
+      requirement: any task, complete or not, moves to any position - the user is free
+- [ ] Reconsider the midpoint-crossing threshold: a drop currently needs the pointer
+      past half the target row, which reads as unresponsive (noted as tolerable, not blocking)
+
+### 13.2 Nesting that does not take
+
+- [ ] Dropping below "Pesquisar a vitamina do Luke" applied neither the indent nor the
+      position - the row went to the end of the list instead, and that wrong result persisted
+- [ ] Indentation worked on later attempts in the same session, so this is intermittent:
+      find the state that distinguishes the working case from the failing one
+- [ ] A row dropped as the child of another must persist as its child, at the dropped position
+
+### 13.3 Drag overlay presentation
+
+- [ ] Drop the `border-radius` on the floating card - it should read as the same block
+      that was picked up, not a rounded copy of it
+- [ ] Fix the right edge: the translucency stops short and leaves a strip of opaque cream
+
+### 13.4 Task editing (not drag, found alongside)
+
+- [ ] `-` converts a task to a note only while the input is empty
+      (`TaskItem.tsx:222`, `e.currentTarget.value === ''`). Typing `- ` at the start of
+      an existing line must convert it too. Same gate on `[`, `]`, `*` for note→task
+      (`TaskItem.tsx:225-229`)
+- [ ] Committing with Enter does not keep the row where it sits: the saved row jumps to
+      first position instead of staying under the row it was added below
+- [ ] After a reload, that row had moved to **today** - the date it was created under
+      was not what persisted. It stayed a note, so the type survived and the date did not
+
+### 13.5 Console error, present throughout the recording
+
+- [ ] `NotFoundError: Failed to execute 'index' on 'IDBObjectStore': The specified index
+      was not found` - `offlineQueue.ts:88`, via `getQueuedMutationsForUser`
+      (`offlineQueue.ts:134`) from `useOfflineQueueReplay.ts:13`. Fires on every page load;
+      the offline replay path is broken, so queued mutations are likely never replayed
+
 ## Completion criteria
 
 - [x] Every active task row on Inbox, Daily, and Collection pages can be press-dragged, including completed tasks
