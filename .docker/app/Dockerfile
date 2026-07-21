@@ -1,4 +1,4 @@
-FROM node:22.23.1-alpine3.24 AS build
+FROM node:26.5.0-alpine3.24 AS build
 WORKDIR /app
 COPY --chown=node:node app ./
 RUN npm ci && npm run build && npm cache clean --force
