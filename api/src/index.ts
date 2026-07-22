@@ -101,6 +101,12 @@ app.use((_req, res, next) => {
 // Binds the calling socket to the request so events can name their origin
 app.use("/api/v1", requestContext);
 
+// Liveness probe — must stay ahead of authMiddleware so container healthchecks
+// and the host reverse proxy can reach it without credentials
+app.get("/api/v1/health", (_req, res) => {
+  res.json({ status: "ok" });
+});
+
 // Auth routes (mounted before CSRF — login/register don't need tokens)
 // Each auth route handles its own IP + account-based rate limiting via rateLimitService
 app.use("/api/v1/auth", authRoutes);
