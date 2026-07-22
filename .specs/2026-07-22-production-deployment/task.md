@@ -15,9 +15,9 @@
       leaving them would document a variable the code no longer reads)
 - [x] Fix API healthcheck path in `compose.prod.yml` (`/health` → `/api/v1/health`)
 - [x] `api/src/config.test.ts` passes (28/28)
-- [ ] ~~`npm run lint && npm test && npm run build` green~~ — **blocked, pre-existing.**
-      See "Pre-existing defects" below. Not caused by this spec's changes; verified
-      identical on `main`.
+- [x] `npm run lint && npm test && npm run build` green — was blocked by pre-existing
+      defects (see below), all since fixed. api 621 tests, app 608 tests, lint exit 0,
+      both builds clean.
 
 ## Phase 2 — `compose.prod.yml`: GHCR pull + host-nginx edge
 
@@ -145,7 +145,7 @@ cleared before first deploy.
       and `@types/react-dom` to `^19` alongside `react`/`@types/react`, then consider
       moving eslint-plugin-react-hooks to v7 and working through its 31 React Compiler
       findings.
-- [ ] **Dockerfile `HEALTHCHECK` asserts a 404.** `.docker/api/Dockerfile:28` probes
-      `/health` and passes when the status is 404 — it only proves the process answers
-      HTTP. `compose.prod.yml` overrides it, so this affects plain `docker run` only.
+- [x] ~~**Dockerfile `HEALTHCHECK` asserts a 404.**~~ Fixed — `.docker/api/Dockerfile:28`
+      now probes `/api/v1/health` and asserts 200. The endpoint also moved ahead of
+      `authMiddleware`, so it answers without credentials.
 - [ ] 18 lint warnings in `api`, 28 in `app` (unused vars, exhaustive-deps). Non-blocking.
