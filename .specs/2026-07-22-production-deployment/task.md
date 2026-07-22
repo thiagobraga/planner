@@ -93,28 +93,59 @@
 - [ ] `docs/production-runbook.md` keeps placeholders + a pointer to the local file
 - [ ] Fill in the public runbook's Go-Live Evidence table with outcomes only, no host-identifying values
 
-## Pre-existing defects found during Phase 1 (not caused by this spec)
+## Pre-existing defects found during Phase 1 — all fixed
 
-Both affect what the production image contains. Neither is fixed here — they were
-out of the planned scope and fixing them is its own piece of work.
+Not caused by this spec, but all affected what ships to production, so they were
+cleared before first deploy.
 
-- [ ] **`api` build script cannot fail.** `"build": "tsc && cp ... || true"` — the
-      trailing `|| true` applies to the whole `&&` chain, so `npm run build` exits 0
-      even when `tsc` reports errors. Confirmed: 41 `error TS` diagnostics, exit code 0.
-      Consequence: `ci.yml`'s `npm run build` step and the Dockerfile's `RUN npm run build`
-      are both no-op gates. Type regressions ship silently.
-- [ ] **Test files are compiled into the production image.** `tsconfig.json` has
-      `include: ["src/**/*"]` with no test exclusion, and `tsc` emits despite errors
-      (`noEmitOnError` unset), so `dist/` contains 66 `*.test.js` files plus their
-      `__tests__` fixtures and mocks. These are copied into the `production` stage.
-      This is also why `npm test` runs each suite twice (once from `src/`, once from `dist/`).
-      Fix: add `"exclude": ["**/*.test.ts", "**/__tests__/**"]` to a build-only tsconfig.
-- [ ] **41 pre-existing TS errors** in `src/middleware/__tests__/` (30),
-      `src/routes/__tests__/` (1), `src/db/__tests__/` (2), etc. Mostly Vitest `Mock`
-      types not matching Express `NextFunction`. Must be cleared before the build gate
-      above can be made real.
-- [ ] **`npm run lint` is broken locally** — eslint reports an `.eslintrc`-to-flat-config
-      migration error in the dev container. Same on `main`. Unverified whether CI hits it.
+- [x] **`api` build script could not fail.** `"build": "tsc && cp ... || true"` — the
+      trailing `|| true` applied to the whole `&&` chain, so `npm run build` exited 0
+      even with 41 `error TS` diagnostics. `ci.yml`'s build step and the Dockerfile's
+      `RUN npm run build` were both no-op gates.
+      Fixed: dropped `|| true`; a deliberate type error now exits 2. Dropped the
+      vestigial `seed.ts` copy; the `.peggy` and migrations copies are load-bearing
+      (read at runtime by `filterParser.ts`/`dateParser.ts` and `migrate.ts`) and now
+      fail loudly.
+- [x] **Test files were compiled into the production image.** No test exclusion in
+      `tsconfig.json`, and `tsc` emits despite errors, so `dist/` carried 66 `*.test.js`
+      plus mocks into the `production` stage — and vitest ran every suite twice.
+      Fixed via `tsconfig.build.json`. Shipped image now has 0 test files; api image
+      456MB → 305MB; suite count 132 files/1244 tests → 66/621.
+- [x] **41 TS errors** across `src/middleware/__tests__/`, `src/routes/__tests__/`,
+      `src/db/__tests__/`. Root cause: `ReturnType<typeof vi.fn>` is not assignable to
+      express's `NextFunction`. `Mock<NextFunction>` does not fix it either —
+      `NextFunction` is an overloaded interface, so the generic resolves to the wrong
+      call signature; `NextFunction & Mock<(err?: unknown) => void>` does.
+- [x] **`syncService.server.test.ts` failed (7 tests).** `vi.fn().mockImplementation(() => mockIO)`
+      mocked socket.io's `Server` with an arrow function, which has no `[[Construct]]`
+      slot, so `new IOServer(...)` threw under Vitest 4. Fixed with a function expression.
+- [x] **`api` had no eslint config at all** — it declared eslint, typescript-eslint, and
+      a lint script, but no config file, so `npm run lint` failed outright every run.
+      Added a flat config mirroring `app`'s. Now 0 errors.
+- [x] **`app` react-hooks rules were never active.** The code carries
+      `eslint-disable-next-line react-hooks/exhaustive-deps` comments, but the plugin was
+      never installed, so eslint errored on each one for an unknown rule. Installed v5
+      (not v7 — v7 bundles React Compiler rules targeting React 19 and flags 31 unrelated
+      pre-existing patterns). Now 0 errors.
+- [x] **React was mismatched across the manifest.** `react ^19.2.7` against
+      `react-dom ^18.3.1`, and `@types/react ^19` against `@types/react-dom ^18`. Installed
+      was 18.3.1, which `^19.2.7` cannot resolve to — `node_modules` had drifted from the
+      manifest, so a fresh `npm ci` in CI could have shipped a different React than the
+      tests ran against. Aligned on 18 per decision; **upgrade to 19 is planned as
+      follow-up work.**
+- [x] **`@vitest/coverage-v8 ^3.2.7` peered on `vitest 3.2.7` exactly** while api runs
+      `vitest ^4.1.10`. Bumped to `^4.1.10`.
+- [x] **`--legacy-peer-deps` masked both conflicts above.** Removed from both Dockerfiles;
+      images build without it. The app development stage also used `npm install`, ignoring
+      the lockfile — switched to `npm ci`.
+
+### Still open
+
+- [ ] **Upgrade React 18 → 19** (deliberate follow-up, not a blocker). Bump `react-dom`
+      and `@types/react-dom` to `^19` alongside `react`/`@types/react`, then consider
+      moving eslint-plugin-react-hooks to v7 and working through its 31 React Compiler
+      findings.
 - [ ] **Dockerfile `HEALTHCHECK` asserts a 404.** `.docker/api/Dockerfile:28` probes
       `/health` and passes when the status is 404 — it only proves the process answers
       HTTP. `compose.prod.yml` overrides it, so this affects plain `docker run` only.
+- [ ] 18 lint warnings in `api`, 28 in `app` (unused vars, exhaustive-deps). Non-blocking.
