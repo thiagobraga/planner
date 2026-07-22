@@ -74,7 +74,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: docker buildx build --check
-      - run: docker compose -f compose.prod.yml build
+      - run: |
+          export CORS_ORIGIN=https://planner.thiagobraga.dev
+          docker compose -f compose.prod.yml build
 
   # Container vulnerability scanning lives in deploy.yml, where it scans the
   # exact image digests pushed to GHCR rather than a locally-tagged rebuild.
