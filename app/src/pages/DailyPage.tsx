@@ -7,17 +7,13 @@ import { TaskVisibilityControls } from '../components/TaskVisibilityControls';
 import { CollectionChip } from '../components/ui/Chip';
 import { Button } from '../components/ui/Button';
 import type { Task } from '../components/TaskItem';
-import { buildMonthDays, extractNaturalDate } from '../utils/date';
+import { extractNaturalDate } from '../utils/date';
 import { nextOrderValue } from '../utils/order';
 import { applyIndent, getParentCandidate } from '../utils/taskTree';
 import { useTaskDrag } from '../hooks/useTaskDrag';
 import { useTaskVisibilityPreferences } from '../hooks/useTaskVisibilityPreferences';
 import { getPhrase } from '../utils/phrases';
 import {
-  apiCreateTask,
-  apiToggleTask,
-  apiUpdateTask,
-  apiDeleteTask,
   fetchTodayTasks,
   fetchCollections,
   type ApiTask,

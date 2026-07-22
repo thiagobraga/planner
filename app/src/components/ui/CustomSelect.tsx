@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect, KeyboardEvent } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronDown } from 'lucide-react';
 import { useFloatingPosition } from '../../hooks/useFloatingPosition';

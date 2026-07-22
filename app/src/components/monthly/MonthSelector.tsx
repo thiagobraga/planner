@@ -67,7 +67,6 @@ export const MonthSelector = forwardRef<MonthSelectorHandle, MonthSelectorProps>
     return () => ro.disconnect();
   }, []);
 
-  const visibleSide = isMobileStrip ? 1 : MONTH_WINDOW;
   const renderRange = isMobileStrip ? 2 : MONTH_STRIP_RANGE;
 
   useImperativeHandle(ref, () => ({

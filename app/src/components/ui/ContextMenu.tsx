@@ -340,28 +340,11 @@ function SubMenuWrapper({
 
   useLayoutEffect(() => {
     if (!parentRef.current) return;
-    
-    // Find the DOM node of the parent item
-    const itemNodes = parentRef.current.querySelectorAll('[role="menuitem"]');
-    
-    // The itemIndex might include separators, so we need to account for that.
-    // Actually, in our rendering, we used exact indices from the `items` array, 
-    // so we can't just use `itemNodes[itemIndex]` because separators don't have role="menuitem".
-    // Let's get all children and index them.
-    const children = Array.from(parentRef.current.children);
-    // Find the item with the correct key or index. It's safer to query the exact element.
-    // In our loop, we didn't add a specific ID, but we can assume order matches.
+
     let itemEl: Element | null = null;
-    const nodeIndex = 0;
-    
-    // Since we know the index in the original items array:
-    // We can just get the offset relative to the parent ref.
-    // A simpler way: just approximate by multiplying index * 32px (height of item)
-    // but separators are smaller.
-    
-    // Let's attach a data attribute in MenuPanel to make it easy to find
+
     itemEl = parentRef.current.querySelector(`[data-index="${itemIndex}"]`);
-    
+
     if (itemEl) {
       const rect = itemEl.getBoundingClientRect();
       setPosition({

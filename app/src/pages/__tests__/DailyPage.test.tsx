@@ -7,10 +7,6 @@ import {
   fetchTodayTasks,
   fetchPreferences,
   fetchCollections,
-  apiCreateTask,
-  apiToggleTask,
-  apiUpdateTask,
-  apiDeleteTask,
   type ApiTask,
   type Preferences,
   type ApiCollection,
@@ -19,10 +15,6 @@ import {
 const mockFetchTodayTasks = vi.mocked(fetchTodayTasks);
 const mockFetchPreferences = vi.mocked(fetchPreferences);
 const mockFetchCollections = vi.mocked(fetchCollections);
-const mockCreateTask = vi.mocked(apiCreateTask);
-const mockToggleTask = vi.mocked(apiToggleTask);
-const mockUpdateTask = vi.mocked(apiUpdateTask);
-const mockDeleteTask = vi.mocked(apiDeleteTask);
 
 const basePreferences: Preferences = {
   userId: 'user-1',
