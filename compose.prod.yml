@@ -4,8 +4,14 @@ services:
       context: .
       dockerfile: .docker/app/Dockerfile
       target: production
+    image: ghcr.io/thiagobraga/planner-app:${IMAGE_TAG:-latest}
     container_name: planner-prod-app
+    # `edge` is a non-internal bridge: Docker cannot publish ports for a
+    # container attached only to internal networks. Host nginx reverse-proxies
+    # to the published port below and terminates TLS.
     networks: [edge, backend]
+    ports:
+      - "127.0.0.1:8080:80"
     read_only: true
     tmpfs:
       - /var/cache/nginx
@@ -20,18 +26,13 @@ services:
       timeout: 5s
       retries: 3
       start_period: 10s
-    labels:
-      traefik.enable: true
-      traefik.http.routers.planner-prod-router.rule: Host(`planner.local`)
-      traefik.http.routers.planner-prod-router.entrypoints: websecure
-      traefik.http.routers.planner-prod-router.tls: true
-      traefik.http.services.planner-prod-service.loadbalancer.server.port: 80
 
   api:
     build:
       context: .
       dockerfile: .docker/api/Dockerfile
       target: production
+    image: ghcr.io/thiagobraga/planner-api:${IMAGE_TAG:-latest}
     container_name: planner-prod-api
     networks: [backend]
     environment:
@@ -55,7 +56,7 @@ services:
     security_opt: [no-new-privileges:true]
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:4000/health"]
+      test: ["CMD", "wget", "-qO-", "http://localhost:4000/api/v1/health"]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -73,6 +74,7 @@ services:
       context: .
       dockerfile: .docker/api/Dockerfile
       target: production
+    image: ghcr.io/thiagobraga/planner-api:${IMAGE_TAG:-latest}
     container_name: planner-prod-migrate
     networks: [backend]
     environment:
