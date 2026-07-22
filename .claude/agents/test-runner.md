@@ -43,7 +43,7 @@ docker compose exec app npm exec vitest run src/path/to/file.test.ts        # Si
 
 ## Environment Notes
 
-- Integration/sync tests require `.env` with `POSTGRES_*`, `REDIS_URL`, `JWT_SECRET`
+- Integration/sync tests require `.env` with `POSTGRES_*`, `REDIS_URL`
 - Property tests use fast-check - failures include shrunk counterexample
 - If env missing, report which vars are needed before diagnosing logic failures
 
