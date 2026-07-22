@@ -60,7 +60,7 @@ jobs:
           scan-ref: '.'
           format: 'sarif'
           output: 'trivy-secrets.sarif'
-          scanners: 'secrets'
+          scanners: 'secret'
           exit-code: '1'
           severity: 'HIGH,CRITICAL'
       - uses: github/codeql-action/upload-sarif@v3
