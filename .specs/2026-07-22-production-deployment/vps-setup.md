@@ -150,10 +150,9 @@ server {
 }
 
 server {
-  listen 443 ssl http2;
-  listen [::]:443 ssl http2;
+  listen 443 http2;
+  listen [::]:443 http2;
   server_name planner.thiagobraga.dev;
-  add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
 
   location / {
     proxy_pass http://127.0.0.1:8080;
