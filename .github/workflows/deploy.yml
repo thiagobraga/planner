@@ -107,6 +107,7 @@ jobs:
                cd /opt/planner && \
                git pull --ff-only && \
                export IMAGE_TAG=${{ github.sha }} && \
+               export CORS_ORIGIN=https://planner.thiagobraga.dev && \
                docker compose -f compose.prod.yml pull && \
                docker compose -f compose.prod.yml up -d && \
                docker image prune -f"
