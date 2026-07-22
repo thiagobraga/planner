@@ -75,10 +75,10 @@ ssh-keyscan -t ed25519 <VPS_IP> | gh secret set SSH_KNOWN_HOSTS
 ## 4. Clone the repo (VPS)
 
 ```bash
-sudo mkdir -p /opt/planner
-sudo chown ubuntu:ubuntu /opt/planner
-git clone https://github.com/thiagobraga/planner.git /opt/planner
-cd /opt/planner
+sudo mkdir -p /p/projects/planner
+sudo chown ubuntu:ubuntu /p/projects/planner
+git clone https://github.com/thiagobraga/planner.git /p/projects/planner
+cd /p/projects/planner
 ```
 
 ## 5. Generate secrets (VPS)
@@ -92,7 +92,7 @@ connection URL. Same for Redis. It also uses `openssl rand -base64`, whose `/`,
 Generate each password once, in hex, and reuse it:
 
 ```bash
-cd /opt/planner
+cd /p/projects/planner
 mkdir -p secrets
 umask 077
 
@@ -124,7 +124,7 @@ grep -q "$(cat secrets/redis_password)"    secrets/redis_url    && echo "redis O
 ## 6. Environment (VPS)
 
 ```bash
-echo 'CORS_ORIGIN=https://planner.thiagobraga.dev' > /opt/planner/.env
+echo 'CORS_ORIGIN=https://planner.thiagobraga.dev' > /p/projects/planner/.env
 ```
 
 ## 7. nginx vhost + TLS (VPS)
@@ -207,7 +207,7 @@ Change visibility). Otherwise the VPS needs `docker login ghcr.io`.
 Then, on the VPS:
 
 ```bash
-cd /opt/planner
+cd /p/projects/planner
 docker compose -f compose.prod.yml pull
 docker compose -f compose.prod.yml up -d
 docker compose -f compose.prod.yml ps
@@ -252,12 +252,12 @@ dmesg | grep -i -E 'oom|killed process'   # expect no output
 Every image is tagged with its commit SHA, so redeploying a known-good build is:
 
 ```bash
-cd /opt/planner
+cd /p/projects/planner
 IMAGE_TAG=<previous-sha> docker compose -f compose.prod.yml up -d
 ```
 
 ## Notes
 
 - `docker compose ... pull` needs the GHCR packages public, or a `docker login`.
-- Backups land in `/opt/planner/backups/` on the same disk, so they do not
+- Backups land in `/p/projects/planner/backups/` on the same disk, so they do not
   survive loss of the VPS. Off-box copies are tracked as a fast-follow.

@@ -104,7 +104,7 @@ jobs:
               -o StrictHostKeyChecking=yes \
               "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" \
               "set -euo pipefail && \
-               cd /opt/planner && \
+               cd /p/projects/planner && \
                git pull --ff-only && \
                export IMAGE_TAG=${{ github.sha }} && \
                export CORS_ORIGIN=https://planner.thiagobraga.dev && \
