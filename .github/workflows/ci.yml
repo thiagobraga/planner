@@ -86,4 +86,6 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-      - run: docker compose -f compose.prod.yml build
+      - run: |
+          export CORS_ORIGIN=https://planner.thiagobraga.dev
+          docker compose -f compose.prod.yml build
