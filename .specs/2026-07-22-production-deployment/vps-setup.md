@@ -143,34 +143,34 @@ container's loopback port instead of serving a static root.
 ```bash
 sudo tee /etc/nginx/conf.d/planner.thiagobraga.dev.conf > /dev/null <<'EOF'
 server {
-    listen 80;
-    listen [::]:80;
-    server_name planner.thiagobraga.dev;
-    return 301 https://$host$request_uri;
+  listen 80;
+  listen [::]:80;
+  server_name planner.thiagobraga.dev;
+  return 301 https://$host$request_uri;
 }
 
 server {
-    listen 443 ssl http2;
-    listen [::]:443 ssl http2;
-    server_name planner.thiagobraga.dev;
+  listen 443 ssl http2;
+  listen [::]:443 ssl http2;
+  server_name planner.thiagobraga.dev;
 
-    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+  add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
 
-    location / {
-        proxy_pass http://127.0.0.1:8080;
-        proxy_http_version 1.1;
+  location / {
+    proxy_pass http://127.0.0.1:8080;
+    proxy_http_version 1.1;
 
-        # Required for Socket.IO's websocket upgrade
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection $connection_upgrade;
+    # Required for Socket.IO's websocket upgrade
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection $connection_upgrade;
 
-        proxy_set_header Host              $host;
-        proxy_set_header X-Real-IP         $remote_addr;
-        proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_set_header Host              $host;
+    proxy_set_header X-Real-IP         $remote_addr;
+    proxy_set_header X-Forwarded-For   $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
 
-        proxy_read_timeout 300s;
-    }
+    proxy_read_timeout 300s;
+  }
 }
 EOF
 ```
@@ -180,8 +180,8 @@ EOF
 ```bash
 sudo tee /etc/nginx/conf.d/00-upgrade-map.conf > /dev/null <<'EOF'
 map $http_upgrade $connection_upgrade {
-    default upgrade;
-    ''      close;
+  default upgrade;
+  ''      close;
 }
 EOF
 ```
