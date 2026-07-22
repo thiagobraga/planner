@@ -23,8 +23,6 @@ beforeEach(() => {
   delete process.env.DATABASE_URL_FILE;
   delete process.env.REDIS_URL;
   delete process.env.REDIS_URL_FILE;
-  delete process.env.JWT_SECRET;
-  delete process.env.JWT_SECRET_FILE;
   delete process.env.CSRF_SECRET;
   delete process.env.CSRF_SECRET_FILE;
   delete process.env.CORS_ORIGIN;
@@ -38,7 +36,6 @@ describe("config", () => {
   describe("NODE_ENV validation", () => {
     it("rejects invalid NODE_ENV", async () => {
       process.env.NODE_ENV = "staging";
-      process.env.JWT_SECRET = "any-secret";
       process.env.DATABASE_URL = "postgres://localhost:5432/db";
       process.env.CSRF_SECRET = "a".repeat(32);
       process.env.CORS_ORIGIN = "http://localhost:3000";
@@ -49,7 +46,6 @@ describe("config", () => {
 
     it("accepts production NODE_ENV with valid config", async () => {
       process.env.NODE_ENV = "production";
-      process.env.JWT_SECRET = "a".repeat(32);
       process.env.DATABASE_URL = "postgres://localhost:5432/db";
       process.env.REDIS_URL = "redis://localhost:6379";
       process.env.CSRF_SECRET = "a".repeat(32);
@@ -61,7 +57,6 @@ describe("config", () => {
 
     it("accepts test NODE_ENV", async () => {
       process.env.NODE_ENV = "test";
-      process.env.JWT_SECRET = "any-secret";
       process.env.DATABASE_URL = "postgres://localhost:5432/db";
       process.env.CSRF_SECRET = "a".repeat(32);
       process.env.CORS_ORIGIN = "http://localhost:3000";
@@ -71,7 +66,6 @@ describe("config", () => {
 
     it("defaults to development when NODE_ENV is unset", async () => {
       delete process.env.NODE_ENV;
-      process.env.JWT_SECRET = "any-secret";
       process.env.DATABASE_URL = "postgres://localhost:5432/db";
       process.env.CSRF_SECRET = "a".repeat(32);
       process.env.CORS_ORIGIN = "http://localhost:3000";
@@ -80,34 +74,9 @@ describe("config", () => {
     });
   });
 
-  describe("JWT_SECRET", () => {
-    it("reads JWT_SECRET from environment", async () => {
-      process.env.NODE_ENV = "test";
-      process.env.JWT_SECRET = "my-secret-key";
-      process.env.DATABASE_URL = "postgres://localhost:5432/db";
-      process.env.CSRF_SECRET = "a".repeat(32);
-      process.env.CORS_ORIGIN = "http://localhost:3000";
-      const cfg = await import("./config.js");
-      expect(cfg.JWT_SECRET).toBe("my-secret-key");
-    });
-
-    it("rejects placeholder JWT_SECRET in production", async () => {
-      process.env.NODE_ENV = "production";
-      process.env.JWT_SECRET = "change-me-in-production";
-      process.env.DATABASE_URL = "postgres://localhost:5432/db";
-      process.env.REDIS_URL = "redis://localhost:6379";
-      process.env.CSRF_SECRET = "a".repeat(32);
-      process.env.CORS_ORIGIN = "https://planner.example.com";
-      await expect(() => import("./config.js")).rejects.toThrow(
-        /placeholder/i,
-      );
-    });
-  });
-
   describe("DATABASE_URL", () => {
     it("requires DATABASE_URL in production", async () => {
       process.env.NODE_ENV = "production";
-      process.env.JWT_SECRET = "a".repeat(32);
       process.env.REDIS_URL = "redis://localhost:6379";
       process.env.CSRF_SECRET = "a".repeat(32);
       process.env.CORS_ORIGIN = "https://planner.example.com";
@@ -118,7 +87,6 @@ describe("config", () => {
 
     it("rejects non-postgres DATABASE_URL in production", async () => {
       process.env.NODE_ENV = "production";
-      process.env.JWT_SECRET = "a".repeat(32);
       process.env.DATABASE_URL = "mysql://localhost:3306/db";
       process.env.REDIS_URL = "redis://localhost:6379";
       process.env.CSRF_SECRET = "a".repeat(32);
@@ -133,7 +101,6 @@ describe("config", () => {
       mockFsStore.contents = { "/run/secrets/database_url": `${url}\n` };
       process.env.NODE_ENV = "test";
       process.env.DATABASE_URL_FILE = "/run/secrets/database_url";
-      process.env.JWT_SECRET = "any-secret";
       process.env.CSRF_SECRET = "a".repeat(32);
       process.env.CORS_ORIGIN = "http://localhost:3000";
       const cfg = await import("./config.js");
@@ -145,7 +112,6 @@ describe("config", () => {
   describe("CSRF_SECRET", () => {
     it("rejects short CSRF_SECRET in production", async () => {
       process.env.NODE_ENV = "production";
-      process.env.JWT_SECRET = "a".repeat(32);
       process.env.DATABASE_URL = "postgres://localhost:5432/db";
       process.env.REDIS_URL = "redis://localhost:6379";
       process.env.CSRF_SECRET = "short";
@@ -159,7 +125,6 @@ describe("config", () => {
   describe("CORS_ORIGIN", () => {
     it("rejects invalid URL in production", async () => {
       process.env.NODE_ENV = "production";
-      process.env.JWT_SECRET = "a".repeat(32);
       process.env.DATABASE_URL = "postgres://localhost:5432/db";
       process.env.REDIS_URL = "redis://localhost:6379";
       process.env.CSRF_SECRET = "a".repeat(32);
@@ -173,7 +138,6 @@ describe("config", () => {
   describe("session TTLs", () => {
     it("defaults to 30-minute idle and 12-hour absolute", async () => {
       process.env.NODE_ENV = "test";
-      process.env.JWT_SECRET = "any-secret";
       process.env.DATABASE_URL = "postgres://localhost:5432/db";
       process.env.CSRF_SECRET = "a".repeat(32);
       process.env.CORS_ORIGIN = "http://localhost:3000";
@@ -186,7 +150,6 @@ describe("config", () => {
       process.env.NODE_ENV = "test";
       process.env.SESSION_IDLE_TTL_MINUTES = "15";
       process.env.SESSION_ABSOLUTE_TTL_HOURS = "8";
-      process.env.JWT_SECRET = "any-secret";
       process.env.DATABASE_URL = "postgres://localhost:5432/db";
       process.env.CSRF_SECRET = "a".repeat(32);
       process.env.CORS_ORIGIN = "http://localhost:3000";
@@ -198,7 +161,6 @@ describe("config", () => {
     it("rejects non-positive integer session TTLs", async () => {
       process.env.NODE_ENV = "test";
       process.env.SESSION_IDLE_TTL_MINUTES = "0";
-      process.env.JWT_SECRET = "any-secret";
       process.env.DATABASE_URL = "postgres://localhost:5432/db";
       process.env.CSRF_SECRET = "a".repeat(32);
       process.env.CORS_ORIGIN = "http://localhost:3000";
@@ -211,7 +173,6 @@ describe("config", () => {
   describe("PORT", () => {
     it("defaults to 4000", async () => {
       process.env.NODE_ENV = "test";
-      process.env.JWT_SECRET = "any-secret";
       process.env.DATABASE_URL = "postgres://localhost:5432/db";
       process.env.CSRF_SECRET = "a".repeat(32);
       process.env.CORS_ORIGIN = "http://localhost:3000";
@@ -222,7 +183,6 @@ describe("config", () => {
     it("reads PORT from environment", async () => {
       process.env.NODE_ENV = "test";
       process.env.PORT = "8080";
-      process.env.JWT_SECRET = "any-secret";
       process.env.DATABASE_URL = "postgres://localhost:5432/db";
       process.env.CSRF_SECRET = "a".repeat(32);
       process.env.CORS_ORIGIN = "http://localhost:3000";
@@ -234,7 +194,6 @@ describe("config", () => {
   describe("DISABLE_RATE_LIMITS_IN_DEV", () => {
     it("is true in development", async () => {
       process.env.NODE_ENV = "development";
-      process.env.JWT_SECRET = "any-secret";
       process.env.DATABASE_URL = "postgres://localhost:5432/db";
       process.env.CSRF_SECRET = "a".repeat(32);
       process.env.CORS_ORIGIN = "http://localhost:3000";
@@ -244,7 +203,6 @@ describe("config", () => {
 
     it("is false in production", async () => {
       process.env.NODE_ENV = "production";
-      process.env.JWT_SECRET = "a".repeat(32);
       process.env.DATABASE_URL = "postgres://localhost:5432/db";
       process.env.REDIS_URL = "redis://localhost:6379";
       process.env.CSRF_SECRET = "a".repeat(32);
@@ -255,7 +213,6 @@ describe("config", () => {
 
     it("is true when NODE_ENV is unset", async () => {
       delete process.env.NODE_ENV;
-      process.env.JWT_SECRET = "any-secret";
       process.env.DATABASE_URL = "postgres://localhost:5432/db";
       process.env.CSRF_SECRET = "a".repeat(32);
       process.env.CORS_ORIGIN = "http://localhost:3000";
@@ -267,7 +224,6 @@ describe("config", () => {
   describe("REDIS_URL", () => {
     it("defaults to redis://localhost:6379", async () => {
       process.env.NODE_ENV = "test";
-      process.env.JWT_SECRET = "any-secret";
       process.env.DATABASE_URL = "postgres://localhost:5432/db";
       process.env.CSRF_SECRET = "a".repeat(32);
       process.env.CORS_ORIGIN = "http://localhost:3000";
@@ -280,7 +236,6 @@ describe("config", () => {
       mockFsStore.contents = { "/run/secrets/redis_url": `${url}\n` };
       process.env.NODE_ENV = "test";
       process.env.REDIS_URL_FILE = "/run/secrets/redis_url";
-      process.env.JWT_SECRET = "any-secret";
       process.env.DATABASE_URL = "postgres://localhost:5432/db";
       process.env.CSRF_SECRET = "a".repeat(32);
       process.env.CORS_ORIGIN = "http://localhost:3000";
@@ -291,7 +246,6 @@ describe("config", () => {
 
     it("rejects invalid REDIS_URL scheme in production", async () => {
       process.env.NODE_ENV = "production";
-      process.env.JWT_SECRET = "a".repeat(32);
       process.env.DATABASE_URL = "postgres://localhost:5432/db";
       process.env.REDIS_URL = "mysql://localhost:3306";
       process.env.CSRF_SECRET = "a".repeat(32);
@@ -303,7 +257,6 @@ describe("config", () => {
 
     it("rejects placeholder REDIS_URL in production", async () => {
       process.env.NODE_ENV = "production";
-      process.env.JWT_SECRET = "a".repeat(32);
       process.env.DATABASE_URL = "postgres://localhost:5432/db";
       process.env.REDIS_URL = "redis://change-me:6379";
       process.env.CSRF_SECRET = "a".repeat(32);
@@ -315,7 +268,6 @@ describe("config", () => {
   describe("CORS_ORIGIN", () => {
     it("defaults to http://localhost:5173", async () => {
       process.env.NODE_ENV = "test";
-      process.env.JWT_SECRET = "any-secret";
       process.env.DATABASE_URL = "postgres://localhost:5432/db";
       process.env.CSRF_SECRET = "a".repeat(32);
       const cfg = await import("./config.js");
@@ -324,7 +276,6 @@ describe("config", () => {
 
     it("rejects placeholder CORS_ORIGIN in production", async () => {
       process.env.NODE_ENV = "production";
-      process.env.JWT_SECRET = "a".repeat(32);
       process.env.DATABASE_URL = "postgres://localhost:5432/db";
       process.env.REDIS_URL = "redis://localhost:6379";
       process.env.CSRF_SECRET = "a".repeat(32);
@@ -336,7 +287,6 @@ describe("config", () => {
   describe("CSRF_SECRET", () => {
     it("defaults to 32-char string in test", async () => {
       process.env.NODE_ENV = "test";
-      process.env.JWT_SECRET = "any-secret";
       process.env.DATABASE_URL = "postgres://localhost:5432/db";
       process.env.CORS_ORIGIN = "http://localhost:3000";
       const cfg = await import("./config.js");
@@ -345,7 +295,6 @@ describe("config", () => {
 
     it("rejects placeholder CSRF_SECRET in production", async () => {
       process.env.NODE_ENV = "production";
-      process.env.JWT_SECRET = "a".repeat(32);
       process.env.DATABASE_URL = "postgres://localhost:5432/db";
       process.env.REDIS_URL = "redis://localhost:6379";
       process.env.CSRF_SECRET = "a".repeat(32);
@@ -358,30 +307,27 @@ describe("config", () => {
   describe("readSecret error paths", () => {
     it("throws when _FILE path does not exist", async () => {
       process.env.NODE_ENV = "test";
-      process.env.JWT_SECRET_FILE = "/nonexistent/path";
+      process.env.CSRF_SECRET_FILE = "/nonexistent/path";
       process.env.DATABASE_URL = "postgres://localhost:5432/db";
-      process.env.CSRF_SECRET = "a".repeat(32);
       process.env.CORS_ORIGIN = "http://localhost:3000";
       await expect(() => import("./config.js")).rejects.toThrow(/Cannot read secret file/);
     });
 
-    it("reads JWT_SECRET from _FILE", async () => {
-      mockFsStore.contents = { "/run/secrets/jwt": "my-secret-key\n" };
+    it("reads CSRF_SECRET from _FILE", async () => {
+      mockFsStore.contents = { "/run/secrets/csrf": `${"b".repeat(32)}\n` };
       process.env.NODE_ENV = "test";
-      process.env.JWT_SECRET_FILE = "/run/secrets/jwt";
+      process.env.CSRF_SECRET_FILE = "/run/secrets/csrf";
       process.env.DATABASE_URL = "postgres://localhost:5432/db";
-      process.env.CSRF_SECRET = "a".repeat(32);
       process.env.CORS_ORIGIN = "http://localhost:3000";
       const cfg = await import("./config.js");
       mockFsStore.contents = {};
-      expect(cfg.JWT_SECRET).toBe("my-secret-key");
+      expect(cfg.CSRF_SECRET).toBe("b".repeat(32));
     });
   });
 
   describe("DATABASE_URL defaults", () => {
     it("defaults to test fallback URL in test env", async () => {
       process.env.NODE_ENV = "test";
-      process.env.JWT_SECRET = "any-secret";
       process.env.CSRF_SECRET = "a".repeat(32);
       process.env.CORS_ORIGIN = "http://localhost:3000";
       const cfg = await import("./config.js");

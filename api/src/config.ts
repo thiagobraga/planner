@@ -52,15 +52,6 @@ validateProductionMode();
 export const NODE_ENV = process.env.NODE_ENV || "development";
 export const IS_PRODUCTION = NODE_ENV === "production";
 
-export const JWT_SECRET = (() => {
-  const fallback = NODE_ENV === "test" ? "test-secret-not-for-prod" : undefined;
-  const secret = readSecret("JWT_SECRET", fallback);
-  if (IS_PRODUCTION) {
-    requireNonPlaceholder(secret, "JWT_SECRET");
-  }
-  return secret;
-})();
-
 export const DATABASE_URL = (() => {
   const fallback = NODE_ENV === "test" ? TEST_FALLBACK_URL : undefined;
   const url = readSecret("DATABASE_URL", fallback);
