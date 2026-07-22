@@ -56,12 +56,12 @@ dig +short planner.thiagobraga.dev
 
 Repo → Settings → Secrets and variables → Actions. Four secrets:
 
-| Secret             | Value                                              |
-| ------------------ | -------------------------------------------------- |
-| `SSH_HOST`         | `<VPS_IP>`                                         |
-| `SSH_USER`         | `ubuntu`                                           |
-| `SSH_KEY`          | full contents of `~/.ssh/keys/planner_deploy` (private) |
-| `SSH_KNOWN_HOSTS`  | the `ssh-keyscan` output line from step 1           |
+| Secret            | Value                                                   |
+| ----------------- | ------------------------------------------------------- |
+| `SSH_HOST`        | `<VPS_IP>`                                              |
+| `SSH_USER`        | `ubuntu`                                                |
+| `SSH_KEY`         | full contents of `~/.ssh/keys/planner_deploy` (private) |
+| `SSH_KNOWN_HOSTS` | the `ssh-keyscan` output line from step 1               |
 
 ```bash
 gh secret set SSH_KEY < ~/.ssh/keys/planner_deploy
@@ -153,7 +153,6 @@ server {
   listen 443 ssl http2;
   listen [::]:443 ssl http2;
   server_name planner.thiagobraga.dev;
-
   add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
 
   location / {

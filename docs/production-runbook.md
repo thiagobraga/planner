@@ -2,22 +2,22 @@
 
 ## Encryption Profile
 
-| Resource | Method | Verification |
-|----------|--------|--------------|
-| PostgreSQL data volume | Host LUKS or provider-managed encryption | `lsblk -o NAME, TYPE, FSTYPE, MOUNTPOINTS` + `cryptsetup status` or cloud-provider attestation |
-| Backups | OpenSSL AES-256-CBC with separate key file | Decrypt + `pg_restore --list` |
-| Transport (browser) | Traefik TLS termination | SSL Labs test or `curl -vI https://...` |
-| Transport (API ↔ DB) | Isolated Docker network | `docker network inspect` |
-| Transport (API ↔ Redis) | Isolated Docker network + Redis password | `docker network inspect` + `redis-cli AUTH` test |
+| Resource                | Method                                     | Verification                                                                                   |
+| ----------------------- | ------------------------------------------ | ---------------------------------------------------------------------------------------------- |
+| PostgreSQL data volume  | Host LUKS or provider-managed encryption   | `lsblk -o NAME, TYPE, FSTYPE, MOUNTPOINTS` + `cryptsetup status` or cloud-provider attestation |
+| Backups                 | OpenSSL AES-256-CBC with separate key file | Decrypt + `pg_restore --list`                                                                  |
+| Transport (browser)     | Traefik TLS termination                    | SSL Labs test or `curl -vI https://...`                                                        |
+| Transport (API ↔ DB)    | Isolated Docker network                    | `docker network inspect`                                                                       |
+| Transport (API ↔ Redis) | Isolated Docker network + Redis password   | `docker network inspect` + `redis-cli AUTH` test                                               |
 
 ## Secret Management
 
-| Secret | Source | Rotation | Owner |
-|--------|--------|----------|-------|
-| `DATABASE_URL` | Mounted file or Docker secret | On credential change | Infrastructure operator |
-| `REDIS_URL` | Mounted file or Docker secret | On credential change | Infrastructure operator |
-| `CSRF_SECRET` | Mounted file or Docker secret | Quarterly or incident | Infrastructure operator |
-| `CORS_ORIGIN` | Environment variable | On domain change | Infrastructure operator |
+| Secret                | Source                           | Rotation              | Owner                   |
+| --------------------- | -------------------------------- | --------------------- | ----------------------- |
+| `DATABASE_URL`        | Mounted file or Docker secret    | On credential change  | Infrastructure operator |
+| `REDIS_URL`           | Mounted file or Docker secret    | On credential change  | Infrastructure operator |
+| `CSRF_SECRET`         | Mounted file or Docker secret    | Quarterly or incident | Infrastructure operator |
+| `CORS_ORIGIN`         | Environment variable             | On domain change      | Infrastructure operator |
 | Backup encryption key | Separate file, different storage | Quarterly or incident | Infrastructure operator |
 
 ### Creating Secrets
@@ -142,18 +142,18 @@ docker compose -f compose.prod.yml restart api
 
 ## Go-Live Evidence
 
-| Date | Operator | Item | Command / Result | Artifact |
-|------|----------|------|------------------|----------|
-| | | Storage encryption verified | | |
-| | | Encrypted backup created | | |
-| | | Backup restored in isolation | | |
-| | | Row counts match post-restore | | |
-| | | Login + read smoke test passed | | |
-| | | Security headers verified | | |
-| | | Cookie attributes verified | | |
-| | | CSRF route-matrix passed | | |
-| | | Container vulnerability scan | | |
-| | | Production dependency audit | | |
+| Date | Operator | Item                           | Command / Result | Artifact |
+| ---- | -------- | ------------------------------ | ---------------- | -------- |
+|      |          | Storage encryption verified    |                  |          |
+|      |          | Encrypted backup created       |                  |          |
+|      |          | Backup restored in isolation   |                  |          |
+|      |          | Row counts match post-restore  |                  |          |
+|      |          | Login + read smoke test passed |                  |          |
+|      |          | Security headers verified      |                  |          |
+|      |          | Cookie attributes verified     |                  |          |
+|      |          | CSRF route-matrix passed       |                  |          |
+|      |          | Container vulnerability scan   |                  |          |
+|      |          | Production dependency audit    |                  |          |
 
 ## Monitoring and Alerts
 
@@ -165,17 +165,17 @@ Security events are emitted as newline-delimited JSON via `console.log` by `api/
 
 Configure alerts in your monitoring system for each of the following conditions. Alerts should notify the infrastructure operator (PagerDuty: PD-INFRA) with escalation to the security lead within 30 minutes if unacknowledged.
 
-| Rule | Trigger | Event type(s) | Threshold | Severity |
-|------|---------|---------------|-----------|----------|
-| Repeated auth failure | `auth:login:failure` | `rate-limit:activated`, `rate-limit:exceeded` | ≥5 failures per IP or user within 15 min | P1 — escalate |
-| Unexpected registration | `auth:register:failure` (rate-limited) | `auth:register:success` (when disabled) | Any occurrence with `PUBLIC_REGISTRATION_ENABLED=false` | P1 — escalate |
-| Unexpected password reset | `auth:password:reset:request` | `auth:password:reset:complete` | Any occurrence with `PASSWORD_RESET_ENABLED=false` | P1 — escalate |
-| Redis unavailable | Application logs show connection error | Redis client `error` event | Any occurrence | P1 — escalate |
-| Migration failure | `migration:failed` | `migration:started` without matching `migration:completed` within 5 min | Any occurrence | P0 — immediate |
-| Backup failure | `backup:failed` | Expected `backup:created` not received | Scheduled backup does not complete on time | P1 — next business day |
-| Backup restore failure | `backup:restored` without matching `backup:restore:verified` within 15 min | `backup:restore:verified` | Missing verification event | P1 — escalate |
-| Session revocation | `auth:session:revoked` | Automated mass revocation | >5 revocations within 5 min (possible compromise) | P1 — investigate |
-| Provisioning activity | `provisioning:user:created` | Any occurrence outside planned maintenance | Any occurrence | P1 — investigate |
+| Rule                      | Trigger                                                                    | Event type(s)                                                           | Threshold                                               | Severity               |
+| ------------------------- | -------------------------------------------------------------------------- | ----------------------------------------------------------------------- | ------------------------------------------------------- | ---------------------- |
+| Repeated auth failure     | `auth:login:failure`                                                       | `rate-limit:activated`, `rate-limit:exceeded`                           | ≥5 failures per IP or user within 15 min                | P1 — escalate          |
+| Unexpected registration   | `auth:register:failure` (rate-limited)                                     | `auth:register:success` (when disabled)                                 | Any occurrence with `PUBLIC_REGISTRATION_ENABLED=false` | P1 — escalate          |
+| Unexpected password reset | `auth:password:reset:request`                                              | `auth:password:reset:complete`                                          | Any occurrence with `PASSWORD_RESET_ENABLED=false`      | P1 — escalate          |
+| Redis unavailable         | Application logs show connection error                                     | Redis client `error` event                                              | Any occurrence                                          | P1 — escalate          |
+| Migration failure         | `migration:failed`                                                         | `migration:started` without matching `migration:completed` within 5 min | Any occurrence                                          | P0 — immediate         |
+| Backup failure            | `backup:failed`                                                            | Expected `backup:created` not received                                  | Scheduled backup does not complete on time              | P1 — next business day |
+| Backup restore failure    | `backup:restored` without matching `backup:restore:verified` within 15 min | `backup:restore:verified`                                               | Missing verification event                              | P1 — escalate          |
+| Session revocation        | `auth:session:revoked`                                                     | Automated mass revocation                                               | >5 revocations within 5 min (possible compromise)       | P1 — investigate       |
+| Provisioning activity     | `provisioning:user:created`                                                | Any occurrence outside planned maintenance                              | Any occurrence                                          | P1 — investigate       |
 
 ### Dashboard
 
@@ -199,13 +199,13 @@ The infrastructure operator listed in the secret rotation table is the incident 
 
 **Contacts:**
 
-| Role | Contact |
-|------|---------|
+| Role                    | Contact                                   |
+| ----------------------- | ----------------------------------------- |
 | Infrastructure operator | `infra@planner.app` (PagerDuty: PD-INFRA) |
-| Backup operator | `ops@planner.app` (PagerDuty: PD-OPS) |
-| Security lead | `security@planner.app` |
-| Engineering lead | `eng@planner.app` |
-| DPO (ANPD) | `dpo@planner.app` |
+| Backup operator         | `ops@planner.app` (PagerDuty: PD-OPS)     |
+| Security lead           | `security@planner.app`                    |
+| Engineering lead        | `eng@planner.app`                         |
+| DPO (ANPD)              | `dpo@planner.app`                         |
 
 **Escalation:** Infrastructure operator → Backup operator → Security lead → Engineering lead, with 30-minute acknowledgment SLA for P0 incidents.
 
@@ -244,12 +244,12 @@ Preserve the following for incident analysis:
 
 **Retention:**
 
-| Artifact | Retention | Disposal |
-|----------|-----------|----------|
-| Security logs | 5 years | Secure erase after retention |
-| Database snapshots | 2 years | `shred` or `secure-delete` |
-| Container logs | 1 year | Automatic log rotation |
-| Incident record (markdown) | 5 years | Archive in incident repository |
+| Artifact                   | Retention | Disposal                       |
+| -------------------------- | --------- | ------------------------------ |
+| Security logs              | 5 years   | Secure erase after retention   |
+| Database snapshots         | 2 years   | `shred` or `secure-delete`     |
+| Container logs             | 1 year    | Automatic log rotation         |
+| Incident record (markdown) | 5 years   | Archive in incident repository |
 
 ### Post-Incident Review
 
