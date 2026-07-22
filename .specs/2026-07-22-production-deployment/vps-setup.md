@@ -83,13 +83,9 @@ cd /p/projects/planner
 
 ## 5. Generate secrets (VPS)
 
-**The runbook's existing snippet is wrong — do not use it.** It generates a
-password inline inside `database_url` and never writes the same value to
-`postgres_password`, so Postgres initialises with a different password than the
-connection URL. Same for Redis. It also uses `openssl rand -base64`, whose `/`,
-`+` and `=` characters corrupt a URL when they land in the password field.
-
-Generate each password once, in hex, and reuse it:
+Generate each password once in hex and reuse it across connection string and
+password file to avoid initialization mismatches. Use hex instead of base64 to
+avoid URL-corrupting characters (`/`, `+`, `=`):
 
 ```bash
 cd /p/projects/planner
