@@ -216,6 +216,16 @@ Then, on the VPS:
 
 ```bash
 cd /p/projects/planner
+
+# Point to /etc/planner/secrets
+export POSTGRES_USER_FILE=/etc/planner/secrets/postgres_user
+export POSTGRES_PASSWORD_FILE=/etc/planner/secrets/postgres_password
+export POSTGRES_DB_FILE=/etc/planner/secrets/postgres_db
+export DATABASE_URL_FILE=/etc/planner/secrets/database_url
+export REDIS_URL_FILE=/etc/planner/secrets/redis_url
+export CSRF_SECRET_FILE=/etc/planner/secrets/csrf_secret
+export REDIS_PASSWORD_FILE=/etc/planner/secrets/redis_password
+
 docker compose -f compose.prod.yml pull
 docker compose -f compose.prod.yml up -d
 docker compose -f compose.prod.yml ps
