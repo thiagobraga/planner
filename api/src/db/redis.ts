@@ -1,10 +1,9 @@
 import { createClient, type RedisClientType } from "redis";
+import { REDIS_URL } from "../config.js";
 
-const redisUrl = process.env.REDIS_URL || "redis://localhost:6379";
-
-export const redisClient: RedisClientType = createClient({ url: redisUrl });
-export const redisPubClient: RedisClientType = createClient({ url: redisUrl });
-export const redisSubClient: RedisClientType = createClient({ url: redisUrl });
+export const redisClient: RedisClientType = createClient({ url: REDIS_URL });
+export const redisPubClient: RedisClientType = createClient({ url: REDIS_URL });
+export const redisSubClient: RedisClientType = createClient({ url: REDIS_URL });
 
 export async function connectRedis(): Promise<void> {
   await redisClient.connect();
