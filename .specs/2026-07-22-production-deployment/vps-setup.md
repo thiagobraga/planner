@@ -150,9 +150,8 @@ server {
 }
 
 server {
-    listen 443 ssl;
-    listen [::]:443 ssl;
-    http2 on;
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
     server_name planner.thiagobraga.dev;
 
     add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
