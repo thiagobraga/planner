@@ -352,7 +352,7 @@ function SubMenuWrapper({
     // Find the item with the correct key or index. It's safer to query the exact element.
     // In our loop, we didn't add a specific ID, but we can assume order matches.
     let itemEl: Element | null = null;
-    let nodeIndex = 0;
+    const nodeIndex = 0;
     
     // Since we know the index in the original items array:
     // We can just get the offset relative to the parent ref.

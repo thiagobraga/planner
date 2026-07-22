@@ -160,7 +160,8 @@ export function StyleguidePage() {
   const toggleHabitCell = (iso: string) =>
     setCompletedDays((prev) => {
       const next = new Set(prev);
-      next.has(iso) ? next.delete(iso) : next.add(iso);
+      if (next.has(iso)) next.delete(iso);
+      else next.add(iso);
       return next;
     });
 
