@@ -15,13 +15,14 @@ files — put them in `docs/production-runbook.local.md` (gitignored, Phase 7).
 A dedicated key, not your personal one — it lives in GitHub's secret store.
 
 ```bash
-ssh-keygen -t ed25519 -f ~/.ssh/planner_deploy -C "github-actions-planner-deploy" -N ""
+mkdir -p ~/.ssh/keys
+ssh-keygen -t ed25519 -f ~/.ssh/keys/planner_deploy -C "github-actions-planner-deploy" -N ""
 ```
 
 Install the public half on the VPS:
 
 ```bash
-ssh-copy-id -i ~/.ssh/planner_deploy.pub ubuntu@<VPS_IP>
+ssh-copy-id -i ~/.ssh/keys/planner_deploy.pub ubuntu@<VPS_IP>
 ```
 
 Capture the host key so CI can pin it instead of blindly trusting on first
@@ -34,7 +35,7 @@ ssh-keyscan -t ed25519 <VPS_IP>
 Verify the key works and is restricted to what you expect:
 
 ```bash
-ssh -i ~/.ssh/planner_deploy ubuntu@<VPS_IP> 'echo OK; docker --version'
+ssh -i ~/.ssh/keys/planner_deploy ubuntu@<VPS_IP> 'echo OK; docker --version'
 ```
 
 ## 2. DNS
@@ -57,16 +58,16 @@ Repo → Settings → Secrets and variables → Actions. Four secrets:
 
 | Secret             | Value                                              |
 | ------------------ | -------------------------------------------------- |
-| `VPS_HOST`         | `<VPS_IP>`                                         |
-| `VPS_SSH_USER`     | `ubuntu`                                           |
-| `VPS_SSH_KEY`      | full contents of `~/.ssh/planner_deploy` (private)  |
-| `VPS_SSH_HOST_KEY` | the `ssh-keyscan` output line from step 1           |
+| `SSH_HOST`         | `<VPS_IP>`                                         |
+| `SSH_USER`         | `ubuntu`                                           |
+| `SSH_KEY`          | full contents of `~/.ssh/keys/planner_deploy` (private) |
+| `SSH_KNOWN_HOSTS`  | the `ssh-keyscan` output line from step 1           |
 
 ```bash
-gh secret set VPS_SSH_KEY < ~/.ssh/planner_deploy
-gh secret set VPS_HOST --body '<VPS_IP>'
-gh secret set VPS_SSH_USER --body 'ubuntu'
-ssh-keyscan -t ed25519 <VPS_IP> | gh secret set VPS_SSH_HOST_KEY
+gh secret set SSH_KEY < ~/.ssh/keys/planner_deploy
+gh secret set SSH_HOST --body '<VPS_IP>'
+gh secret set SSH_USER --body 'ubuntu'
+ssh-keyscan -t ed25519 <VPS_IP> | gh secret set SSH_KNOWN_HOSTS
 ```
 
 ---
