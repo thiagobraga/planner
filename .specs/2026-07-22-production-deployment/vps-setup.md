@@ -88,33 +88,45 @@ password file to avoid initialization mismatches. Use hex instead of base64 to
 avoid URL-corrupting characters (`/`, `+`, `=`):
 
 ```bash
-cd /p/projects/planner
-mkdir -p secrets
+sudo mkdir -p /etc/planner/secrets
+cd /etc/planner/secrets
+sudo chown ubuntu:ubuntu .
 umask 077
 
 PG_PASS=$(openssl rand -hex 24)
 RD_PASS=$(openssl rand -hex 24)
 
-printf '%s' 'planner'  > secrets/postgres_user
-printf '%s' 'planner'  > secrets/postgres_db
-printf '%s' "$PG_PASS" > secrets/postgres_password
-printf '%s' "$RD_PASS" > secrets/redis_password
+printf '%s' 'planner'  > postgres_user
+printf '%s' 'planner'  > postgres_db
+printf '%s' "$PG_PASS" > postgres_password
+printf '%s' "$RD_PASS" > redis_password
 
-printf 'postgres://planner:%s@postgres:5432/planner' "$PG_PASS" > secrets/database_url
-printf 'redis://:%s@redis:6379' "$RD_PASS" > secrets/redis_url
+printf 'postgres://planner:%s@postgres:5432/planner' "$PG_PASS" > database_url
+printf 'redis://:%s@redis:6379' "$RD_PASS" > redis_url
 
-openssl rand -hex 32 > secrets/csrf_secret
-openssl rand -hex 32 > secrets/backup_key
+openssl rand -hex 32 > csrf_secret
+openssl rand -hex 32 > backup_key
 
-chmod 600 secrets/*
+chmod 600 ./*
 unset PG_PASS RD_PASS
 ```
 
 Confirm the two passwords actually match their URLs before starting anything:
 
 ```bash
-grep -q "$(cat secrets/postgres_password)" secrets/database_url && echo "postgres OK" || echo "POSTGRES MISMATCH"
-grep -q "$(cat secrets/redis_password)"    secrets/redis_url    && echo "redis OK"    || echo "REDIS MISMATCH"
+grep -q "$(cat /etc/planner/secrets/postgres_password)" /etc/planner/secrets/database_url && echo "postgres OK" || echo "POSTGRES MISMATCH"
+grep -q "$(cat /etc/planner/secrets/redis_password)"    /etc/planner/secrets/redis_url    && echo "redis OK"    || echo "REDIS MISMATCH"
+```
+
+Point compose.prod.yml to `/etc/planner/secrets` in step 8 via environment override:
+
+```bash
+export POSTGRES_USER_FILE=/etc/planner/secrets/postgres_user
+export POSTGRES_PASSWORD_FILE=/etc/planner/secrets/postgres_password
+export POSTGRES_DB_FILE=/etc/planner/secrets/postgres_db
+export DATABASE_URL_FILE=/etc/planner/secrets/database_url
+export REDIS_URL_FILE=/etc/planner/secrets/redis_url
+export CSRF_SECRET_FILE=/etc/planner/secrets/csrf_secret
 ```
 
 ## 6. Environment (VPS)
