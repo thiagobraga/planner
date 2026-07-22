@@ -34,7 +34,7 @@
     "eslint": "^9.11.0",
     "eslint-plugin-react-hooks": "^5.2.0",
     "fake-indexeddb": "^6.2.5",
-    "fast-check": "^3.22.0",
+    "fast-check": "^4.9.0",
     "happy-dom": "^20.9.0",
     "tailwindcss": "^4.3.0",
     "typescript": "^5.6.0",
