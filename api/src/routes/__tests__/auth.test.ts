@@ -2,12 +2,13 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import request from "supertest";
 import { createApp } from "./testUtils.js";
 import { AppError } from "../../utils/AppError.js";
+import type { ValidationError } from "../../utils/validate.js";
 
 const mockRegister = vi.fn();
 const mockLogin = vi.fn();
 const mockRequestPasswordReset = vi.fn();
 const mockConfirmPasswordReset = vi.fn();
-const mockValidate = vi.fn((errors: unknown[]) => {
+const mockValidate = vi.fn((errors: ValidationError[]) => {
   if (errors.length > 0) {
     const err = new Error("Validation failed") as Error & { code: string; statusCode: number };
     err.code = "VALIDATION_ERROR";
@@ -28,7 +29,7 @@ vi.mock("../../services/authService.js", () => ({
 }));
 
 vi.mock("../../utils/validate.js", () => ({
-  validate: (...args: any[]) => mockValidate(...args),
+  validate: (errors: ValidationError[]) => mockValidate(errors),
 }));
 
 vi.mock("../../middleware/auth.js", () => ({
@@ -64,7 +65,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   mockBuildCookieName.mockReturnValue("planner_session");
   mockBuildCookieOptions.mockReturnValue({ httpOnly: true, secure: false, sameSite: "strict", path: "/" });
-  mockValidate.mockImplementation((errors: any[]) => {
+  mockValidate.mockImplementation((errors: ValidationError[]) => {
     if (errors.length > 0) {
       throw new AppError({ code: "VALIDATION_ERROR", message: "Validation failed", statusCode: 400, details: errors });
     }

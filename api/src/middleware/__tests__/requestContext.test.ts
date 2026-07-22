@@ -37,7 +37,7 @@ describe("requestContext middleware", () => {
 
   it("sets undefined sourceId for array header values", () => {
     const req = mockReq({ "x-socket-id": ["a", "b"] } as unknown as Record<string, string>);
-    let stored = "should-be-cleared";
+    let stored: string | undefined = "should-be-cleared";
     const next: NextFunction = () => {
       stored = currentSourceId();
     };

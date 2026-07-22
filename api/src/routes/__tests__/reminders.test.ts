@@ -31,7 +31,7 @@ describe("reminders routes", () => {
     const app = express();
     app.use(express.json());
     app.use(cookieParser());
-    app.use((req, res, next) => { (req as any).userId = "test-user"; next(); });
+    app.use((req, res, next) => { req.userId = "test-user"; next(); });
     app.use("/api/v1/reminders", reminderRoutes);
 
     it("DELETE /api/v1/reminders/:id → calls deleteReminder", async () => {
@@ -46,7 +46,7 @@ describe("reminders routes", () => {
     const app = express();
     app.use(express.json());
     app.use(cookieParser());
-    app.use((req, res, next) => { (req as any).userId = "test-user"; next(); });
+    app.use((req, res, next) => { req.userId = "test-user"; next(); });
     app.use("/api/v1/tasks/:taskId/reminders", taskReminderRouter);
 
     it("GET /api/v1/tasks/:taskId/reminders → calls listRemindersForTask", async () => {

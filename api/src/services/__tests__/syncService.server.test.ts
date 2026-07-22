@@ -21,7 +21,11 @@ vi.mock("http", () => ({
 }));
 
 vi.mock("socket.io", () => ({
-  Server: vi.fn().mockImplementation(() => mockIO),
+  // Must be a function expression, not an arrow: attachSyncServer calls
+  // `new IOServer(...)`, and arrow functions have no [[Construct]] slot.
+  Server: vi.fn(function () {
+    return mockIO;
+  }),
 }));
 
 vi.mock("../../db/pool.js", () => ({
