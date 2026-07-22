@@ -117,7 +117,6 @@ describe('Cross-tab sync: bidirectional simulation', () => {
     const tab2Handler = vi.fn();
 
     renderHook(() => useSync(tab1Handler));
-    const tab1HandlerFn = capturedSyncHandler!;
 
     capturedSyncHandler = null;
     renderHook(() => useSync(tab2Handler));
@@ -144,7 +143,6 @@ describe('Cross-tab sync: bidirectional simulation', () => {
 
     capturedSyncHandler = null;
     renderHook(() => useSync(tab2Handler));
-    const tab2HandlerFn = capturedSyncHandler!;
 
     const createEvent = makeEvent({
       entityType: 'task',

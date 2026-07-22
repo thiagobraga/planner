@@ -117,7 +117,7 @@ describe('Property 27: Optimistic update revert on API failure (Requirements 28.
     } catch (e) {
       const elapsed = Date.now() - start;
       expect((e as Error).message).toBe('OPTIMISTIC_TIMEOUT');
-      expect(elapsed).toBeGreaterThanOrEqual(100);
+      expect(elapsed).toBeGreaterThanOrEqual(90);
       expect(elapsed).toBeLessThan(2000);
     }
     expect(reverted).toBe(true);

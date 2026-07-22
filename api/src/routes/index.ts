@@ -16,9 +16,8 @@ import collaborationRoutes, { collectionCollabRouter } from "./collaboration.js"
 
 const router: RouterType = Router();
 
-router.get("/health", (_req, res) => {
-  res.json({ status: "ok" });
-});
+// /health is mounted in index.ts ahead of authMiddleware; a copy here would be
+// unreachable behind it.
 
 router.use("/tasks", taskRoutes);
 router.use("/labels", labelRoutes);

@@ -2,12 +2,22 @@ import { render, screen, fireEvent, act } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { PlannerDragProvider, usePlannerDrag } from '../PlannerDragContext';
 
+type DragHandler = (event: unknown) => void;
+
+interface DndContextProps {
+  children: React.ReactNode;
+  onDragStart?: DragHandler;
+  onDragMove?: DragHandler;
+  onDragEnd?: DragHandler;
+  onDragCancel?: DragHandler;
+}
+
 const { dndHandlers } = vi.hoisted(() => ({
-  dndHandlers: {} as Record<string, any>,
+  dndHandlers: {} as Record<string, DragHandler | undefined>,
 }));
 
 vi.mock('@dnd-kit/core', () => ({
-  DndContext: ({ children, onDragStart, onDragMove, onDragEnd, onDragCancel }: any) => {
+  DndContext: ({ children, onDragStart, onDragMove, onDragEnd, onDragCancel }: DndContextProps) => {
     Object.assign(dndHandlers, { onDragStart, onDragMove, onDragEnd, onDragCancel });
     return <>{children}</>;
   },

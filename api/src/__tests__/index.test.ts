@@ -1,5 +1,13 @@
 import { describe, it, expect, vi } from "vitest";
 import request from "supertest";
+import type { Request, Response, NextFunction } from "express";
+
+// vi.mock factories are hoisted above the module body, so a shared helper has to
+// be declared with vi.hoisted() to exist by the time a factory runs.
+const { passthrough } = vi.hoisted(() => ({
+  passthrough: () =>
+    vi.fn((_req: Request, _res: Response, next: NextFunction) => next()),
+}));
 
 vi.mock("redis", () => ({
   createClient: vi.fn().mockReturnValue({
@@ -16,7 +24,7 @@ vi.mock("../services/syncService.js", () => ({
 }));
 
 vi.mock("../middleware/auth.js", () => ({
-  authMiddleware: vi.fn((req: any, _res: any, next: any) => {
+  authMiddleware: vi.fn((req: Request, _res: Response, next: NextFunction) => {
     req.userId = "test-user";
     req.sessionId = 1;
     next();
@@ -24,49 +32,55 @@ vi.mock("../middleware/auth.js", () => ({
 }));
 
 vi.mock("../middleware/csrf.js", () => ({
-  csrfProtection: vi.fn((_req: any, _res: any, next: any) => next()),
+  csrfProtection: passthrough(),
 }));
 
 vi.mock("../middleware/origin.js", () => ({
-  originCheck: vi.fn((_req: any, _res: any, next: any) => next()),
+  originCheck: passthrough(),
 }));
 
 vi.mock("../middleware/errorHandler.js", () => ({
-  errorHandler: vi.fn((err: any, _req: any, res: any, _next: any) => {
-    res.status(500).json({ error: { code: "INTERNAL_ERROR" } });
-  }),
+  errorHandler: vi.fn(
+    (_err: unknown, _req: Request, res: Response, _next: NextFunction) => {
+      res.status(500).json({ error: { code: "INTERNAL_ERROR" } });
+    },
+  ),
 }));
 
 vi.mock("../middleware/notFound.js", () => ({
-  notFound: vi.fn((_req: any, res: any) => {
+  notFound: vi.fn((_req: Request, res: Response) => {
     res.status(404).json({ error: { code: "NOT_FOUND" } });
   }),
 }));
 
 vi.mock("../routes/auth.js", () => ({ default: vi.fn() }));
 
-vi.mock("../routes/tasks.js", () => ({ default: vi.fn((_req: any, _res: any, next: any) => next(new Error("Test error"))) }));
-vi.mock("../routes/labels.js", () => ({ default: vi.fn((_req: any, _res: any, next: any) => next()) }));
-vi.mock("../routes/collections.js", () => ({ default: vi.fn((_req: any, _res: any, next: any) => next()) }));
-vi.mock("../routes/sections.js", () => ({ default: vi.fn((_req: any, _res: any, next: any) => next()) }));
-vi.mock("../routes/views.js", () => ({ default: vi.fn((_req: any, _res: any, next: any) => next()) }));
-vi.mock("../routes/filters.js", () => ({ default: vi.fn((_req: any, _res: any, next: any) => next()) }));
-vi.mock("../routes/search.js", () => ({ default: vi.fn((_req: any, _res: any, next: any) => next()) }));
+vi.mock("../routes/tasks.js", () => ({
+  default: vi.fn((_req: Request, _res: Response, next: NextFunction) =>
+    next(new Error("Test error")),
+  ),
+}));
+vi.mock("../routes/labels.js", () => ({ default: passthrough() }));
+vi.mock("../routes/collections.js", () => ({ default: passthrough() }));
+vi.mock("../routes/sections.js", () => ({ default: passthrough() }));
+vi.mock("../routes/views.js", () => ({ default: passthrough() }));
+vi.mock("../routes/filters.js", () => ({ default: passthrough() }));
+vi.mock("../routes/search.js", () => ({ default: passthrough() }));
 vi.mock("../routes/reminders.js", () => ({
-  default: vi.fn((_req: any, _res: any, next: any) => next()),
-  taskReminderRouter: vi.fn((_req: any, _res: any, next: any) => next()),
+  default: passthrough(),
+  taskReminderRouter: passthrough(),
 }));
 vi.mock("../routes/comments.js", () => ({
-  default: vi.fn((_req: any, _res: any, next: any) => next()),
-  taskCommentRouter: vi.fn((_req: any, _res: any, next: any) => next()),
+  default: passthrough(),
+  taskCommentRouter: passthrough(),
 }));
-vi.mock("../routes/preferences.js", () => ({ default: vi.fn((_req: any, _res: any, next: any) => next()) }));
-vi.mock("../routes/habits.js", () => ({ default: vi.fn((_req: any, _res: any, next: any) => next()) }));
-vi.mock("../routes/habitGroups.js", () => ({ default: vi.fn((_req: any, _res: any, next: any) => next()) }));
-vi.mock("../routes/activity.js", () => ({ default: vi.fn((_req: any, _res: any, next: any) => next()) }));
+vi.mock("../routes/preferences.js", () => ({ default: passthrough() }));
+vi.mock("../routes/habits.js", () => ({ default: passthrough() }));
+vi.mock("../routes/habitGroups.js", () => ({ default: passthrough() }));
+vi.mock("../routes/activity.js", () => ({ default: passthrough() }));
 vi.mock("../routes/collaboration.js", () => ({
-  default: vi.fn((_req: any, _res: any, next: any) => next()),
-  collectionCollabRouter: vi.fn((_req: any, _res: any, next: any) => next()),
+  default: passthrough(),
+  collectionCollabRouter: passthrough(),
 }));
 
 import app from "../index.js";

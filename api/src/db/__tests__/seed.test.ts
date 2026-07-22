@@ -24,7 +24,7 @@ vi.mock("bcrypt", () => ({
 
 vi.spyOn(console, "log").mockImplementation(() => {});
 vi.spyOn(console, "error").mockImplementation(() => {});
-vi.spyOn(process, "exit").mockImplementation(() => {});
+vi.spyOn(process, "exit").mockImplementation((() => {}) as (code?: string | number | null) => never);
 
 describe("seed script", () => {
   beforeEach(() => {

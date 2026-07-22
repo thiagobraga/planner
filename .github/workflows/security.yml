@@ -60,7 +60,7 @@ jobs:
           scan-ref: '.'
           format: 'sarif'
           output: 'trivy-secrets.sarif'
-          scanners: 'secrets'
+          scanners: 'secret'
           exit-code: '1'
           severity: 'HIGH,CRITICAL'
       - uses: github/codeql-action/upload-sarif@v3
@@ -73,27 +73,12 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-      - run: docker buildx build --check
-      - run: docker compose -f compose.prod.yml build
+      - run: |
+          export CORS_ORIGIN=https://planner.thiagobraga.dev
+          docker compose -f compose.prod.yml build
 
-  container-scan:
-    name: Container vulnerability scan
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v4
-      - run: docker compose -f compose.prod.yml build
-      - uses: aquasecurity/trivy-action@v0.36.0
-        with:
-          scan-type: 'image'
-          scan-ref: 'docker.io/library/planner-api:latest'
-          format: 'sarif'
-          output: 'trivy-container.sarif'
-          exit-code: '1'
-          severity: 'HIGH,CRITICAL'
-      - uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: trivy-container.sarif
-          category: container-scan
+  # Container vulnerability scanning lives in deploy.yml, where it scans the
+  # exact image digests pushed to GHCR rather than a locally-tagged rebuild.
 
   sbom:
     name: SBOM generation

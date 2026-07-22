@@ -9,8 +9,8 @@ const PlannerIcon64 = () => (
 export function LoginPage() {
   const { login } = useAuth();
   const navigate = useNavigate();
-  const [email, setEmail] = useState(import.meta.env.DEV ? 'dev@planner.local' : '');
-  const [password, setPassword] = useState(import.meta.env.DEV ? 'password123' : '');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -74,12 +74,6 @@ export function LoginPage() {
             {loading ? '…' : 'Sign in'}
           </button>
         </form>
-
-        {import.meta.env.DEV && (
-          <p className="text-[11px] text-ink-light text-center mt-4 italic opacity-70">
-            Dev account: dev@planner.local / password123
-          </p>
-        )}
       </div>
     </div>
   );

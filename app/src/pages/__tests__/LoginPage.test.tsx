@@ -9,8 +9,6 @@ vi.mock('../../contexts/AuthContext', () => ({
   useAuth: () => ({ login: mockLogin }),
 }));
 
-const DEV = import.meta.env.DEV;
-
 beforeEach(() => {
   mockLogin.mockReset();
 });
@@ -37,33 +35,6 @@ describe('LoginPage', () => {
 
     expect(screen.getByText('Planner')).toBeInTheDocument();
     expect(screen.getByText('Bulletjournal online')).toBeInTheDocument();
-  });
-
-  it('pre-fills dev credentials in DEV mode', () => {
-    render(
-      <MemoryRouter>
-        <LoginPage />
-      </MemoryRouter>,
-    );
-
-    const emailInput = screen.getByPlaceholderText('Email') as HTMLInputElement;
-    if (DEV) {
-      expect(emailInput.value).toBe('dev@planner.local');
-      const passwordInput = screen.getByPlaceholderText('Password') as HTMLInputElement;
-      expect(passwordInput.value).toBe('password123');
-    }
-  });
-
-  it('shows dev hint in DEV mode', () => {
-    render(
-      <MemoryRouter>
-        <LoginPage />
-      </MemoryRouter>,
-    );
-
-    if (DEV) {
-      expect(screen.getByText(/Dev account:/)).toBeInTheDocument();
-    }
   });
 
   it('calls login and navigates on successful submit', async () => {
@@ -93,11 +64,15 @@ describe('LoginPage', () => {
       </MemoryRouter>,
     );
 
+    fireEvent.change(screen.getByPlaceholderText('Email'), { target: { value: 'test@example.com' } });
+    fireEvent.change(screen.getByPlaceholderText('Password'), { target: { value: 'password' } });
     fireEvent.click(screen.getByRole('button', { name: 'Sign in' }));
 
-    const button = screen.getByRole('button');
-    expect(button).toBeDisabled();
-    expect(button).toHaveTextContent('…');
+    await waitFor(() => {
+      const button = screen.getByRole('button');
+      expect(button).toBeDisabled();
+      expect(button).toHaveTextContent('…');
+    });
   });
 
   it('shows error message on failed login', async () => {

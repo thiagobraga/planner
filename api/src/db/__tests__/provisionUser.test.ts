@@ -34,10 +34,10 @@ vi.mock("node:fs", () => ({
 
 let exitCodeResult = 0;
 
-vi.spyOn(process, "exit").mockImplementation(((code?: number) => {
-  exitCodeResult = code ?? 0;
+vi.spyOn(process, "exit").mockImplementation(((code?: string | number | null) => {
+  exitCodeResult = typeof code === "number" ? code : 0;
   throw new Error(`process.exit(${code})`);
-}) as (code?: number | undefined) => never);
+}) as (code?: string | number | null) => never);
 
 vi.spyOn(console, "log").mockImplementation(() => {});
 vi.spyOn(console, "error").mockImplementation(() => {});

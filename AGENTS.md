@@ -5,11 +5,11 @@ Task manager with a paper-journal aesthetic (warm cream, Lora serif, dotted grid
 ## Quickstart
 
 ```bash
-cp .env.example .env          # fill POSTGRES_PASSWORD, JWT_SECRET, CORS_ORIGIN
+cp .env.example .env          # fill POSTGRES_PASSWORD, CORS_ORIGIN
 docker compose up -d          # installs deps, runs migrations, starts api (4000) + app (5173)
 ```
 
-Required `.env` vars: `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `JWT_SECRET`, `CORS_ORIGIN`.
+Required `.env` vars: `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `CORS_ORIGIN`.
 
 ### Dev hosts (Traefik on the `proxy` network)
 

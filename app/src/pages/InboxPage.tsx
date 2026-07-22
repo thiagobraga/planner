@@ -212,7 +212,7 @@ export function InboxPage() {
     } else {
       apiUpdateTask(id, { title: trimmed }).catch(() => invalidate());
     }
-  }, [tasks, invalidate]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [tasks, invalidate]);
 
   const handleConvertType = useCallback((taskId: string, type: 'task' | 'note') => {
     setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, type } : t)));
@@ -242,7 +242,7 @@ export function InboxPage() {
     });
     setEditingId(undefined);
     if (!id.startsWith('temp-')) apiDeleteTask(id).catch(() => invalidate());
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleIndent = useCallback((id: string, dir: 1 | -1) => {
     setTasks((prev) => {
@@ -254,7 +254,7 @@ export function InboxPage() {
       }
       return nextFlat.map(t => t.id === id ? { ...t, parentTaskId: parentTaskId ?? undefined } : t);
     });
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleNavigate = useCallback((id: string, dir: 'up' | 'down', col: number) => {
     setTasks((prev) => {
@@ -276,7 +276,7 @@ export function InboxPage() {
       setEditingId(target.id);
       return prev;
     });
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleToggle = useCallback((id: string) => {
     const prevTasks = tasksRef.current;

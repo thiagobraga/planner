@@ -22,11 +22,8 @@ describe("main router (/api/v1)", () => {
   app.use(cookieParser());
   app.use("/api/v1", mainRouter);
 
-  it("GET /api/v1/health returns { status: 'ok' }", async () => {
-    const res = await request(app).get("/api/v1/health");
-    expect(res.status).toBe(200);
-    expect(res.body).toEqual({ status: "ok" });
-  });
+  // /health moved to index.ts, ahead of authMiddleware, so a container
+  // healthcheck can reach it. It is covered by src/__tests__/index.test.ts.
 
   it("sub-routers are mounted (e.g., labels)", async () => {
     const res = await request(app).get("/api/v1/labels");

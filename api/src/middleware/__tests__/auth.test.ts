@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, type Mock } from "vitest";
 import type { Request, Response, NextFunction } from "express";
 
 const mockValidateSession = vi.hoisted(() => vi.fn());
@@ -20,12 +20,15 @@ describe("authMiddleware", () => {
   let res: Partial<Response>;
   let json: ReturnType<typeof vi.fn>;
   let status: ReturnType<typeof vi.fn>;
-  let next: ReturnType<typeof vi.fn>;
+  // express's NextFunction is an overloaded interface, so Mock<NextFunction>
+  // resolves to the wrong call signature. Intersect instead: assignable where a
+  // NextFunction is expected, while keeping the mock assertion helpers.
+  let next: NextFunction & Mock<(err?: unknown) => void>;
 
   beforeEach(() => {
     json = vi.fn();
     status = vi.fn(() => ({ json }));
-    next = vi.fn();
+    next = vi.fn() as NextFunction & Mock<(err?: unknown) => void>;
     req = {
       cookies: {},
     };

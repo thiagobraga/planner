@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect, KeyboardEvent } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronDown } from 'lucide-react';
 import { useFloatingPosition } from '../../hooks/useFloatingPosition';
@@ -116,7 +116,7 @@ export function CustomSelect({
     }
   };
 
-  const handleKeyDown = (e: KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (disabled) return;
 
     if (!isOpen) {
@@ -209,7 +209,7 @@ export function CustomSelect({
         id={id}
         aria-disabled={disabled}
         onClick={toggleOpen}
-        onKeyDown={handleKeyDown as any}
+        onKeyDown={handleKeyDown}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
         aria-controls={isOpen ? `${id}-listbox` : undefined}

@@ -4,12 +4,20 @@ services:
       context: .
       dockerfile: .docker/app/Dockerfile
       target: production
+    image: ghcr.io/thiagobraga/planner-app:${IMAGE_TAG:-latest}
     container_name: planner-prod-app
+    # `edge` is a non-internal bridge: Docker cannot publish ports for a
+    # container attached only to internal networks. Host nginx reverse-proxies
+    # to the published port below and terminates TLS.
     networks: [edge, backend]
+    ports:
+      - "127.0.0.1:8080:80"
     read_only: true
+    # tmpfs mounts default to root:root, which the unprivileged nginx user
+    # cannot write to; uid/gid 101 is nginx in the base image.
     tmpfs:
-      - /var/cache/nginx
-      - /var/run
+      - /var/cache/nginx:uid=101,gid=101
+      - /var/run:uid=101,gid=101
     cap_drop: [ALL]
     cap_add: [NET_BIND_SERVICE, CHOWN, SETUID, SETGID]
     security_opt: [no-new-privileges:true]
@@ -20,20 +28,16 @@ services:
       timeout: 5s
       retries: 3
       start_period: 10s
-    labels:
-      traefik.enable: true
-      traefik.http.routers.planner-prod-router.rule: Host(`planner.local`)
-      traefik.http.routers.planner-prod-router.entrypoints: websecure
-      traefik.http.routers.planner-prod-router.tls: true
-      traefik.http.services.planner-prod-service.loadbalancer.server.port: 80
 
   api:
     build:
       context: .
       dockerfile: .docker/api/Dockerfile
       target: production
+    image: ghcr.io/thiagobraga/planner-api:${IMAGE_TAG:-latest}
     container_name: planner-prod-api
-    networks: [backend]
+    # backend reaches app, data reaches postgres/redis. Both are required.
+    networks: [backend, data]
     environment:
       NODE_ENV: production
       PORT: 4000
@@ -55,7 +59,7 @@ services:
     security_opt: [no-new-privileges:true]
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:4000/health"]
+      test: ["CMD", "wget", "-qO-", "http://localhost:4000/api/v1/health"]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -73,17 +77,25 @@ services:
       context: .
       dockerfile: .docker/api/Dockerfile
       target: production
+    image: ghcr.io/thiagobraga/planner-api:${IMAGE_TAG:-latest}
     container_name: planner-prod-migrate
-    networks: [backend]
+    networks: [data]
     environment:
       NODE_ENV: production
       DATABASE_URL_FILE: /run/secrets/database_url
+      # migrate.js imports config.ts, which validates every secret at module
+      # load, so the migration job needs CSRF_SECRET even though it never uses it.
+      CSRF_SECRET_FILE: /run/secrets/csrf_secret
     secrets:
       - database_url
+      - csrf_secret
     cap_drop: [ALL]
     security_opt: [no-new-privileges:true]
     restart: no
-    command: ["node", "-e", "import('./dist/db/migrate.js').then(m => m.migrate()).then(() => { console.log('Migrations complete'); process.exit(0) }).catch(e => { console.error(e); process.exit(1) })"]
+    # migrate.js already invokes migrate() on import and exits non-zero on
+    # failure. Importing it *and* calling migrate() ran two concurrent
+    # migrations that raced each other creating schema_migrations.
+    command: ["node", "dist/db/migrate.js"]
     depends_on:
       postgres:
         condition: service_healthy
@@ -117,7 +129,9 @@ services:
     container_name: planner-prod-redis
     image: redis:7-alpine
     networks: [data]
-    command: ["redis-server", "--requirepass", "$$(cat /run/secrets/redis_password)", "--appendonly", "yes"]
+    # Shell form is required: the exec form does not invoke a shell, so
+    # $(cat ...) would be passed to redis-server as a literal password string.
+    command: ["sh", "-c", "exec redis-server --requirepass \"$$(cat /run/secrets/redis_password)\" --appendonly yes"]
     secrets:
       - redis_password
     volumes:
@@ -127,7 +141,7 @@ services:
     security_opt: [no-new-privileges:true]
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "$$(cat /run/secrets/redis_password)", "ping"]
+      test: ["CMD-SHELL", "redis-cli -a \"$$(cat /run/secrets/redis_password)\" ping | grep -q PONG"]
       interval: 10s
       timeout: 5s
       retries: 5

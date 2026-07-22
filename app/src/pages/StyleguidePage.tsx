@@ -9,7 +9,6 @@ import { DatePickerSpecimen } from '../components/monthly/DatePickerSpecimen';
 import { HabitSpecimen } from '../components/habits/HabitSpecimen';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
-import { Select } from '../components/ui/Select';
 import { Checkbox } from '../components/ui/Checkbox';
 import { Radio } from '../components/ui/Radio';
 import { Toggle } from '../components/ui/Toggle';
@@ -114,64 +113,6 @@ export function StyleguidePage() {
     queryFn: fetchPreferences,
   });
   const weekStart = preferences?.weekStart ?? 'sunday';
-
-  // Habit chain grid - 4 weeks × 7 days, capsule-fusing borders.
-  const today = useMemo(() => {
-    const d = new Date();
-    d.setHours(0, 0, 0, 0);
-    return d;
-  }, []);
-
-  const [completedDays, setCompletedDays] = useState<Set<string>>(() => {
-    const s = new Set<string>();
-    const iso = (offset: number) => {
-      const d = new Date(today);
-      d.setDate(d.getDate() - offset);
-      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-    };
-    [1, 2, 3, 5, 6].forEach((o) => s.add(iso(o)));
-    return s;
-  });
-
-  const habitCells = useMemo(() => {
-    const todayCol = (today.getDay() + 6) % 7;
-    const lastSunday = new Date(today);
-    lastSunday.setDate(today.getDate() + (6 - todayCol));
-    const total = 4 * 7;
-    const out: { iso: string; col: number; row: number; future: boolean }[] = [];
-    for (let i = 0; i < total; i++) {
-      const date = new Date(lastSunday);
-      date.setDate(lastSunday.getDate() - (total - 1 - i));
-      out.push({
-        iso: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`,
-        col: i % 7,
-        row: Math.floor(i / 7),
-        future: date.getTime() > today.getTime(),
-      });
-    }
-    return out;
-  }, [today]);
-
-  const todayIso = useMemo(
-    () => `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`,
-    [today],
-  );
-
-  const toggleHabitCell = (iso: string) =>
-    setCompletedDays((prev) => {
-      const next = new Set(prev);
-      next.has(iso) ? next.delete(iso) : next.add(iso);
-      return next;
-    });
-
-  const cellShape = (col: number, row: number, completed: boolean) => {
-    if (!completed) return { borderRadius: '50%' };
-    const left = col > 0 && completedDays.has(habitCells[row * 7 + col - 1].iso);
-    const right = col < 6 && completedDays.has(habitCells[row * 7 + col + 1].iso);
-    const l = left ? '0' : '50%';
-    const r = right ? '0' : '50%';
-    return { borderRadius: `${l} ${r} ${r} ${l}` };
-  };
 
   const [radioChoice, setRadioChoice] = useState('a');
   const [toggleOn, setToggleOn] = useState(true);

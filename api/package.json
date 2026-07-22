@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "tsc && cp src/parsers/*.peggy dist/parsers/ 2>/dev/null || true && cp -r src/db/migrations dist/db/ 2>/dev/null || true && cp src/db/seed.ts dist/db/ 2>/dev/null || true",
+    "build": "tsc -p tsconfig.build.json && mkdir -p dist/parsers dist/db && cp src/parsers/*.peggy dist/parsers/ && cp -r src/db/migrations dist/db/",
+    "typecheck": "tsc --noEmit",
     "start": "node dist/index.js",
     "lint": "eslint src/",
     "test": "vitest run",
@@ -36,7 +37,7 @@
     "@types/sanitize-html": "^2.16.1",
     "@types/supertest": "^7.2.1",
     "@types/zxcvbn": "^4.4.5",
-    "@vitest/coverage-v8": "^3.2.7",
+    "@vitest/coverage-v8": "^4.1.10",
     "eslint": "^9.11.0",
     "fast-check": "^4.9.0",
     "supertest": "^7.2.2",

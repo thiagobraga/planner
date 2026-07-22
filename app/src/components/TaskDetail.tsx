@@ -207,7 +207,7 @@ export function TaskDetail({ task, onClose, onUpdate, onDelete }: TaskDetailProp
           </label>
           <select
             id="task-recurrence"
-            value={(recurrenceRule as any)?.type || 'none'}
+            value={(recurrenceRule as { type?: string } | null)?.type || 'none'}
             onChange={(e) => handleRecurrenceChange(e.target.value)}
             className="w-full text-[13px] leading-6 text-ink bg-transparent border border-dot rounded outline-none py-1 px-2"
           >

@@ -56,7 +56,6 @@ jobs:
         env:
           DATABASE_URL: postgres://planner:planner-test@localhost:5432/planner_test
           REDIS_URL: redis://localhost:6379
-          JWT_SECRET: test-secret-not-for-production
           CORS_ORIGIN: http://localhost:5173
           CSRF_SECRET: test-csrf-secret-not-for-production
           NODE_ENV: test
@@ -87,4 +86,6 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-      - run: docker compose -f compose.prod.yml build
+      - run: |
+          export CORS_ORIGIN=https://planner.thiagobraga.dev
+          docker compose -f compose.prod.yml build
