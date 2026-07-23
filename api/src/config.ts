@@ -121,3 +121,15 @@ export const SESSION_ABSOLUTE_TTL_HOURS = (() => {
 })();
 
 export const DISABLE_RATE_LIMITS_IN_DEV = !process.env.NODE_ENV || process.env.NODE_ENV === "development";
+
+// Empty means "no provider configured": emailService falls back to logging
+// reset links to the console so the flow is testable without credentials.
+export const RESEND_API_KEY = readSecret("RESEND_API_KEY", "");
+
+export const EMAIL_FROM = readSecret("EMAIL_FROM", "noreply@planner.thiagobraga.dev");
+
+if (IS_PRODUCTION && !RESEND_API_KEY) {
+  console.warn(
+    "⚠️  RESEND_API_KEY is not set - password reset emails will not be delivered",
+  );
+}
