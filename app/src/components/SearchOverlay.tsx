@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import type { Task } from './TaskItem';
 
 interface SearchResult {
@@ -24,12 +24,16 @@ interface SearchOverlayProps {
   onSelectTask?: (id: string) => void;
 }
 
+const EMPTY_TASKS: Task[] = [];
+const EMPTY_COLLECTIONS: Array<{ id: string; name: string }> = [];
+const EMPTY_LABELS: Array<{ id: string; name: string }> = [];
+
 export function SearchOverlay({
   isOpen,
   onClose,
-  tasks = [],
-  collections = [],
-  labels = [],
+  tasks = EMPTY_TASKS,
+  collections = EMPTY_COLLECTIONS,
+  labels = EMPTY_LABELS,
   onSelectTask,
 }: SearchOverlayProps) {
   const [query, setQuery] = useState('');
@@ -44,25 +48,31 @@ export function SearchOverlay({
     }
   }, [isOpen]);
 
-  const results: SearchResult[] = query.length >= 2
-    ? [
-        ...tasks
-          .filter((t) => t.title.toLowerCase().includes(query.toLowerCase()))
-          .slice(0, 10)
-          .map((t) => ({ type: 'task' as const, id: t.id, title: t.title, subtitle: t.dueDate })),
-        ...collections
-          .filter((p) => p.name.toLowerCase().includes(query.toLowerCase()))
-          .slice(0, 5)
-          .map((p) => ({ type: 'collection' as const, id: p.id, title: p.name })),
-        ...labels
-          .filter((l) => l.name.toLowerCase().includes(query.toLowerCase()))
-          .slice(0, 5)
-          .map((l) => ({ type: 'label' as const, id: l.id, title: l.name })),
-      ]
-    : [];
+  const grouped = useMemo(() => {
+    const normalizedQuery = query.toLowerCase();
+    const results: SearchResult[] = query.length >= 2
+      ? [
+          ...tasks
+            .filter((t) => t.title.toLowerCase().includes(normalizedQuery))
+            .slice(0, 10)
+            .map((t) => ({ type: 'task' as const, id: t.id, title: t.title, subtitle: t.dueDate })),
+          ...collections
+            .filter((p) => p.name.toLowerCase().includes(normalizedQuery))
+            .slice(0, 5)
+            .map((p) => ({ type: 'collection' as const, id: p.id, title: p.name })),
+          ...labels
+            .filter((l) => l.name.toLowerCase().includes(normalizedQuery))
+            .slice(0, 5)
+            .map((l) => ({ type: 'label' as const, id: l.id, title: l.name })),
+        ]
+      : [];
 
-  const grouped = groupResults(results);
-  const flatResults = [...grouped.tasks, ...grouped.collections, ...grouped.labels];
+    return groupResults(results);
+  }, [collections, labels, query, tasks]);
+  const flatResults = useMemo(
+    () => [...grouped.tasks, ...grouped.collections, ...grouped.labels],
+    [grouped],
+  );
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
@@ -148,7 +158,7 @@ export function SearchOverlay({
             placeholder="Search tasks, collections, labels…"
             aria-label="Search"
             role="combobox"
-            aria-expanded={results.length > 0}
+            aria-expanded={flatResults.length > 0}
             aria-autocomplete="list"
             className="flex-1 text-[15px] leading-6 text-ink bg-transparent border-0 outline-none p-0"
           />
@@ -172,7 +182,7 @@ export function SearchOverlay({
             <div className="px-5 py-6 text-[13px] text-ink-light italic">
               Type at least 2 characters to search…
             </div>
-          ) : results.length === 0 ? (
+          ) : flatResults.length === 0 ? (
             <div className="px-5 py-6 text-[13px] text-ink-light italic">
               No results for "{query}"
             </div>
@@ -186,7 +196,7 @@ export function SearchOverlay({
         </div>
 
         {/* Footer hint */}
-        {results.length > 0 && (
+        {flatResults.length > 0 && (
           <div className="px-5 py-2 border-t border-dot text-[11px] text-ink-light flex gap-3">
             <span>↑↓ navigate</span>
             <span>↵ select</span>

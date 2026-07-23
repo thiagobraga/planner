@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 
 const mockQuery = vi.fn();
 const mockClientQuery = vi.fn();
@@ -41,8 +41,6 @@ beforeEach(() => {
 describe("session lifecycle: create → validate → revoke", () => {
   it("full lifecycle: create, validate, revoke, then reject", async () => {
     const userId = "user-lifecycle-1";
-    const tokenHash = hashToken("raw-token");
-
     mockQuery
       .mockResolvedValueOnce({ rows: [] })
       .mockResolvedValueOnce({ rows: [{ id: 1, user_id: userId }] })

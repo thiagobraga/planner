@@ -29,10 +29,6 @@ function daysInMonth(year: number, month: number): number {
   return new Date(year, month, 0).getDate();
 }
 
-function isLeapYear(year: number): boolean {
-  return (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
-}
-
 function addDays(year: number, month: number, day: number, n: number): { year: number; month: number; day: number } {
   const d = new Date(year, month - 1, day + n);
   return { year: d.getFullYear(), month: d.getMonth() + 1, day: d.getDate() };

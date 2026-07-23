@@ -1,6 +1,4 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import fs from "node:fs";
-
 const OLD_ENV = { ...process.env };
 
 const mockFsStore = vi.hoisted(() => ({ contents: {} as Record<string, string> }));

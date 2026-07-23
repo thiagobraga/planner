@@ -89,8 +89,8 @@ export function HabitsPage() {
     queryKey: ['habits'],
     queryFn: fetchHabits,
   });
-  const habits = habitsData?.habits ?? [];
-  const groups = habitsData?.groups ?? [];
+  const habits = useMemo(() => habitsData?.habits ?? [], [habitsData]);
+  const groups = useMemo(() => habitsData?.groups ?? [], [habitsData]);
   const groupsLoaded = habitsLoaded;
   const { data: preferences } = useQuery({
     queryKey: ['preferences'],
