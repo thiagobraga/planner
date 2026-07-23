@@ -5,6 +5,8 @@ import { validate, type ValidationError } from '../utils/validate.js';
 import { securityLog } from '../utils/securityLogger.js';
 import { validatePassword, hashPassword, verifyArgon2id } from './passwordService.js';
 import { createSession } from './sessionService.js';
+import { sendPasswordResetEmail } from './emailService.js';
+import { CORS_ORIGIN } from '../config.js';
 import {
   checkLoginRate,
   incrementLoginAttempts,
@@ -175,13 +177,9 @@ export async function requestPasswordReset(email: string): Promise<{ message: st
     [userId, tokenHash, expiresAt],
   );
 
-  sendPasswordResetEmail(email, rawToken);
+  await sendPasswordResetEmail(email, `${CORS_ORIGIN}/reset-password?token=${rawToken}`);
 
   return { message };
-}
-
-function sendPasswordResetEmail(_email: string, _rawToken: string): void {
-  // Stub: no-op until email service is integrated
 }
 
 export async function confirmPasswordReset(

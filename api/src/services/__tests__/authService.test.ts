@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, beforeAll } from "vitest";
+import { createHash } from "node:crypto";
 import { AppError } from "../../utils/AppError.js";
 
 const mockQuery = vi.fn();
@@ -40,6 +41,17 @@ vi.mock("../rateLimitService.js", () => ({
   getProgressiveDelay: vi.fn().mockReturnValue(0),
 }));
 
+const mockSendPasswordResetEmail = vi.fn().mockResolvedValue(undefined);
+
+vi.mock("../emailService.js", () => ({
+  sendPasswordResetEmail: (...args: unknown[]) => mockSendPasswordResetEmail(...args),
+}));
+
+vi.mock("../../config.js", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../config.js")>()),
+  CORS_ORIGIN: "https://planner.test",
+}));
+
 vi.mock("../../utils/AppError.js", () => ({
   AppError: class AppError extends Error {
     code: string;
@@ -66,6 +78,10 @@ beforeAll(async () => {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  // clearAllMocks leaves queued mockResolvedValueOnce values in place, so an
+  // unconsumed one from an earlier test would be handed to the next one's
+  // first query. Drain the queue explicitly.
+  mockQuery.mockReset();
   mockClientQuery.mockResolvedValue({ rows: [] });
 });
 
@@ -287,5 +303,29 @@ describe("requestPasswordReset", () => {
 
     const result = await requestPasswordReset("nonexistent@example.com");
     expect(result.message).toBe("If an account exists, a reset email has been sent");
+    expect(mockSendPasswordResetEmail).not.toHaveBeenCalled();
+  });
+
+  it("sends a reset link built from CORS_ORIGIN carrying the raw token", async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [{ id: "user-1", email: "user@example.com" }] });
+
+    await requestPasswordReset("user@example.com");
+
+    expect(mockSendPasswordResetEmail).toHaveBeenCalledTimes(1);
+    const [email, link] = mockSendPasswordResetEmail.mock.calls[0] as [string, string];
+    expect(email).toBe("user@example.com");
+    expect(link).toMatch(/^https:\/\/planner\.test\/reset-password\?token=[a-f0-9]{64}$/);
+  });
+
+  it("stores only the hash of the token it emails", async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [{ id: "user-1", email: "user@example.com" }] });
+
+    await requestPasswordReset("user@example.com");
+
+    const [, link] = mockSendPasswordResetEmail.mock.calls[0] as [string, string];
+    const rawToken = new URL(link).searchParams.get("token")!;
+    const insertParams = mockQuery.mock.calls[1][1] as string[];
+    expect(insertParams[1]).toBe(createHash("sha256").update(rawToken).digest("hex"));
+    expect(insertParams).not.toContain(rawToken);
   });
 });
