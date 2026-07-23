@@ -111,36 +111,36 @@ leaves the tree green — run the phase's tests before moving on.
 
 ### 7. `ApiError` in `api/client.ts`
 
-- [ ] `app/src/api/client.ts:122-125` — `request()` currently throws
+- [x] `app/src/api/client.ts:122-125` — `request()` currently throws
       `new Error(body?.error?.message)`, discarding `code`, `details`, and
       `retryAfterSeconds`.
-- [ ] Add and export `class ApiError extends Error` with
+- [x] Add and export `class ApiError extends Error` with
       `code: string`, `status: number`, `details?: unknown`,
       `retryAfterSeconds?: number`. Throw it from the `!res.ok` branch.
       Still `instanceof Error` with a populated `.message`, so every existing
       `catch (err) { err instanceof Error ? err.message : ... }` site keeps
       working untouched — no call-site migration needed.
-- [ ] `apiRegister(email, password, displayName?)` — add the third arg, include
+- [x] `apiRegister(email, password, displayName?)` — add the third arg, include
       it in the body only when provided.
-- [ ] `apiRequestPasswordReset(email)` → `POST /auth/reset-password`.
-- [ ] `apiConfirmPasswordReset(token, newPassword)` → `POST /auth/reset-password/confirm`.
-- [ ] `app/src/api/__tests__/client.test.ts` — a non-OK response with a full
+- [x] `apiRequestPasswordReset(email)` → `POST /auth/reset-password`.
+- [x] `apiConfirmPasswordReset(token, newPassword)` → `POST /auth/reset-password/confirm`.
+- [x] `app/src/api/__tests__/client.test.ts` — a non-OK response with a full
       error envelope yields an `ApiError` carrying `code` / `details` /
       `retryAfterSeconds` / `status`; a body with no parseable JSON still
       yields `HTTP <status>` as the message.
 
 ### 8. `AuthContext.register` — fix the pre-existing bug
 
-- [ ] `AuthContext.tsx:62-67` sets `isAuthenticated: true` after `apiRegister()`,
+- [x] `AuthContext.tsx:62-67` sets `isAuthenticated: true` after `apiRegister()`,
       but `/auth/register` never sets a session cookie — the user would land in
       the app with no session and get bounced on the first API call. Dead code
       today (no Register page exists); live the moment task 10 ships.
-- [ ] Change to: `await apiRegister(email, password, displayName)` then
+- [x] Change to: `await apiRegister(email, password, displayName)` then
       `await login(email, password)` — reuses the one tested code path that
       creates a session. Widen the signature to
       `register: (email, password, displayName?) => Promise<void>` in
       `AuthContextValue`.
-- [ ] `app/src/contexts/__tests__/AuthContext.test.tsx` — register calls
+- [x] `app/src/contexts/__tests__/AuthContext.test.tsx` — register calls
       `apiRegister` then `apiLogin`; auth state only flips after the login
       resolves; a failing `apiRegister` leaves `isAuthenticated` false.
 
