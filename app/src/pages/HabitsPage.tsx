@@ -100,20 +100,26 @@ export function HabitsPage() {
 
   const setHabits = useCallback(
     (updater: (prev: ApiHabit[]) => ApiHabit[]) => {
-      queryClient.setQueryData(['habits'], (prev: any) => ({
-        ...prev,
-        habits: updater(prev?.habits ?? []),
-      }));
+      queryClient.setQueryData(
+        ['habits'],
+        (prev: { habits: ApiHabit[]; groups: ApiHabitGroup[] } | undefined) => ({
+          ...prev,
+          habits: updater(prev?.habits ?? []),
+        }),
+      );
     },
     [queryClient],
   );
 
   const setGroups = useCallback(
     (updater: (prev: ApiHabitGroup[]) => ApiHabitGroup[]) => {
-      queryClient.setQueryData(['habits'], (prev: any) => ({
-        ...prev,
-        groups: updater(prev?.groups ?? []),
-      }));
+      queryClient.setQueryData(
+        ['habits'],
+        (prev: { habits: ApiHabit[]; groups: ApiHabitGroup[] } | undefined) => ({
+          ...prev,
+          groups: updater(prev?.groups ?? []),
+        }),
+      );
     },
     [queryClient],
   );
