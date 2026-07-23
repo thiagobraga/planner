@@ -25,6 +25,9 @@ vi.mock("../../db/redis.js", () => ({
     del: vi.fn().mockResolvedValue(1),
     isReady: true,
   },
+  redisPubClient: {
+    publish: vi.fn(),
+  },
 }));
 
 vi.mock("../sessionService.js", () => ({

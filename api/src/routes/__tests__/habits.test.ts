@@ -10,6 +10,7 @@ vi.mock("../../middleware/auth.js", () => ({
 }));
 
 const mockListHabits = vi.fn();
+const mockListGroups = vi.fn();
 const mockCreateHabit = vi.fn();
 const mockUpdateHabit = vi.fn();
 const mockDeleteHabit = vi.fn();
@@ -18,6 +19,7 @@ const mockMoveHabit = vi.fn();
 
 vi.mock("../../services/habitService.js", () => ({
   listHabits: (...args: unknown[]) => mockListHabits(...args),
+  listGroups: (...args: unknown[]) => mockListGroups(...args),
   createHabit: (...args: unknown[]) => mockCreateHabit(...args),
   updateHabit: (...args: unknown[]) => mockUpdateHabit(...args),
   deleteHabit: (...args: unknown[]) => mockDeleteHabit(...args),
@@ -36,6 +38,7 @@ describe("habits routes", () => {
 
   it("GET /api/v1/habits → calls listHabits", async () => {
     mockListHabits.mockResolvedValue([{ id: "h1", name: "Exercise" }]);
+    mockListGroups.mockResolvedValue([]);
     const res = await request(app).get("/api/v1/habits");
     expect(res.status).toBe(200);
     expect(mockListHabits).toHaveBeenCalledWith("test-user");

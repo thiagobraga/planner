@@ -13,6 +13,9 @@ vi.mock("../../db/redis.js", () => ({
     del: (...args: unknown[]) => mockDel(...args),
     isReady: true,
   },
+  redisPubClient: {
+    publish: vi.fn(),
+  },
 }));
 
 import {

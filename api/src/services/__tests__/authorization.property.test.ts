@@ -19,6 +19,7 @@ vi.mock("../../db/pool.js", () => ({
 
 vi.mock("../../db/redis.js", () => ({
   redisClient: { get: vi.fn(), set: vi.fn(), del: vi.fn(), incr: vi.fn(), expire: vi.fn() },
+  redisPubClient: { publish: vi.fn() },
 }));
 
 vi.mock("uuid", () => ({ v4: () => "uuid-test" }));

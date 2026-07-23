@@ -26,6 +26,9 @@ vi.mock('../../db/redis.js', () => ({
     expire: vi.fn(),
     del: vi.fn(),
   },
+  redisPubClient: {
+    publish: vi.fn(),
+  },
 }));
 
 vi.mock('uuid', () => ({
