@@ -1,5 +1,4 @@
 import crypto from "node:crypto";
-import bcrypt from "bcrypt";
 import argon2 from "argon2";
 import { AppError } from "../utils/AppError.js";
 
@@ -83,32 +82,6 @@ export async function verifyArgon2id(
   password: string,
 ): Promise<boolean> {
   return argon2.verify(hash, password);
-}
-
-async function verifyBcrypt(
-  hash: string,
-  password: string,
-): Promise<boolean> {
-  return bcrypt.compare(password, hash);
-}
-
-function isBcryptHash(hash: string): boolean {
-  return hash.startsWith("$2b$") || hash.startsWith("$2a$") || hash.startsWith("$2y$");
-}
-
-export async function verifyAndUpgrade(
-  storedHash: string,
-  password: string,
-): Promise<{ valid: boolean; newHash: string | null }> {
-  if (isBcryptHash(storedHash)) {
-    const valid = await verifyBcrypt(storedHash, password);
-    if (!valid) return { valid: false, newHash: null };
-    const newHash = await hashPassword(password);
-    return { valid: true, newHash };
-  }
-
-  const valid = await verifyArgon2id(storedHash, password);
-  return { valid, newHash: null };
 }
 
 export function generateResetToken(): string {

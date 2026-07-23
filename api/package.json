@@ -15,7 +15,6 @@
   },
   "dependencies": {
     "argon2": "^0.45.0",
-    "bcrypt": "^5.1.1",
     "cookie-parser": "^1.4.7",
     "express": "^4.21.0",
     "express-rate-limit": "^8.6.0",
@@ -29,7 +28,6 @@
     "zxcvbn": "^4.4.2"
   },
   "devDependencies": {
-    "@types/bcrypt": "^5.0.2",
     "@types/cookie-parser": "^1.4.10",
     "@types/express": "^5.0.0",
     "@types/node": "^26.1.1",

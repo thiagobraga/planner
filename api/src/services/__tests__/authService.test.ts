@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, beforeAll } from "vitest";
 import { AppError } from "../../utils/AppError.js";
 
 const mockQuery = vi.fn();
@@ -23,13 +23,6 @@ vi.mock("../../db/redis.js", () => ({
     expire: vi.fn().mockResolvedValue(true),
     del: vi.fn().mockResolvedValue(1),
     isReady: true,
-  },
-}));
-
-vi.mock("bcrypt", () => ({
-  default: {
-    hash: vi.fn().mockResolvedValue("$2b$mocked_hash"),
-    compare: vi.fn().mockResolvedValue(true),
   },
 }));
 
@@ -62,8 +55,14 @@ vi.mock("../../utils/AppError.js", () => ({
 }));
 
 import { register, login, requestPasswordReset, confirmPasswordReset } from "../authService.js";
+import { hashPassword } from "../passwordService.js";
 
 const STRONG_PASSWORD = "correct-horse-battery-staple";
+let validHash: string;
+
+beforeAll(async () => {
+  validHash = await hashPassword(STRONG_PASSWORD);
+});
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -161,11 +160,9 @@ describe("register - validation", () => {
 
 describe("login", () => {
   it("returns user and raw session token on success", async () => {
-    mockQuery
-      .mockResolvedValueOnce({
-        rows: [{ id: "user-1", email: "user@example.com", password_hash: "$2b$hash", display_name: "User" }],
-      })
-      .mockResolvedValueOnce({ rows: [] });
+    mockQuery.mockResolvedValueOnce({
+      rows: [{ id: "user-1", email: "user@example.com", password_hash: validHash, display_name: "User" }],
+    });
 
     const result = await login("user@example.com", STRONG_PASSWORD);
 
@@ -207,11 +204,9 @@ describe("login - rate limiting", () => {
   });
 
   it("clears rate limit on successful login", async () => {
-    mockQuery
-      .mockResolvedValueOnce({
-        rows: [{ id: "user-1", email: "user@example.com", password_hash: "$2b$hash", display_name: "User" }],
-      })
-      .mockResolvedValueOnce({ rows: [] });
+    mockQuery.mockResolvedValueOnce({
+      rows: [{ id: "user-1", email: "user@example.com", password_hash: validHash, display_name: "User" }],
+    });
 
     const rateLimitMock = await import("../rateLimitService.js");
 

@@ -3,7 +3,7 @@ import pool from '../db/pool.js';
 import { AppError } from '../utils/AppError.js';
 import { validate, type ValidationError } from '../utils/validate.js';
 import { securityLog } from '../utils/securityLogger.js';
-import { validatePassword, hashPassword, verifyAndUpgrade } from './passwordService.js';
+import { validatePassword, hashPassword, verifyArgon2id } from './passwordService.js';
 import { createSession } from './sessionService.js';
 import {
   checkLoginRate,
@@ -128,7 +128,7 @@ export async function login(email: string, password: string, ip?: string): Promi
     });
   }
 
-  const { valid, newHash } = await verifyAndUpgrade(user.password_hash, password);
+  const valid = await verifyArgon2id(user.password_hash, password);
 
   if (!valid) {
     await incrementLoginAttempts(email, clientIp);
@@ -137,10 +137,6 @@ export async function login(email: string, password: string, ip?: string): Promi
       message: 'Invalid email or password.',
       statusCode: 401,
     });
-  }
-
-  if (newHash) {
-    await pool.query('UPDATE users SET password_hash = $1 WHERE id = $2', [newHash, user.id]).catch(() => {});
   }
 
   await clearLoginRate(email, clientIp);

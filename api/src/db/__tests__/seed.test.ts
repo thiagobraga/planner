@@ -16,10 +16,8 @@ vi.mock("../../db/pool.js", () => ({
   },
 }));
 
-vi.mock("bcrypt", () => ({
-  default: {
-    hash: vi.fn().mockResolvedValue("$2b$mocked_hash"),
-  },
+vi.mock("../../services/passwordService.js", () => ({
+  hashPassword: vi.fn().mockResolvedValue("$argon2id$mocked_hash"),
 }));
 
 vi.spyOn(console, "log").mockImplementation(() => {});
@@ -58,7 +56,7 @@ describe("seed script", () => {
       expect.arrayContaining([
         expect.any(String),
         "dev@planner.local",
-        "$2b$mocked_hash",
+        "$argon2id$mocked_hash",
         "Dev User",
       ]),
     );

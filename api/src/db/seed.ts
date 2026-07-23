@@ -1,8 +1,6 @@
-import bcrypt from "bcrypt";
 import { v4 as uuidv4 } from "uuid";
 import pool from "./pool.js";
-
-const BCRYPT_COST = 12;
+import { hashPassword } from "../services/passwordService.js";
 
 async function seed() {
   const email = "dev@planner.local";
@@ -19,7 +17,7 @@ async function seed() {
     process.exit(0);
   }
 
-  const passwordHash = await bcrypt.hash(password, BCRYPT_COST);
+  const passwordHash = await hashPassword(password);
   const userId = uuidv4();
   const collectionId = uuidv4();
 

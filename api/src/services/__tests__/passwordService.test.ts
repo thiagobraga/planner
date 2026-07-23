@@ -1,17 +1,9 @@
-import { describe, it, expect, vi } from "vitest";
-
-vi.mock("bcrypt", () => ({
-  default: {
-    hash: vi.fn().mockResolvedValue("$2b$mocked_hash"),
-    compare: vi.fn().mockResolvedValue(true),
-  },
-}));
+import { describe, it, expect } from "vitest";
 
 import {
   validatePassword,
   hashPassword,
   verifyArgon2id,
-  verifyAndUpgrade,
   generateResetToken,
 } from "../passwordService.js";
 
@@ -66,37 +58,6 @@ describe("hashPassword and verifyArgon2id", () => {
     const hash = await hashPassword("correct horse battery staple");
     const ok = await verifyArgon2id(hash, "wrong password");
     expect(ok).toBe(false);
-  });
-});
-
-describe("verifyAndUpgrade", () => {
-  it("verifies argon2id hash without upgrade", async () => {
-    const hash = await hashPassword("correct horse battery staple");
-    const result = await verifyAndUpgrade(hash, "correct horse battery staple");
-    expect(result.valid).toBe(true);
-    expect(result.newHash).toBeNull();
-  });
-
-  it("rejects wrong argon2id password", async () => {
-    const hash = await hashPassword("correct horse battery staple");
-    const result = await verifyAndUpgrade(hash, "wrong password");
-    expect(result.valid).toBe(false);
-    expect(result.newHash).toBeNull();
-  });
-
-  it("verifies bcrypt hash and upgrades to argon2id", async () => {
-    const result = await verifyAndUpgrade("$2b$mocked_hash", "correct horse battery staple");
-    expect(result.valid).toBe(true);
-    expect(result.newHash).not.toBeNull();
-    expect(result.newHash).toContain("$argon2id$");
-  });
-
-  it("rejects wrong bcrypt password", async () => {
-    const { default: bcrypt } = await import("bcrypt");
-    (bcrypt.compare as ReturnType<typeof vi.fn>).mockResolvedValueOnce(false);
-    const result = await verifyAndUpgrade("$2b$mocked_hash", "wrong password");
-    expect(result.valid).toBe(false);
-    expect(result.newHash).toBeNull();
   });
 });
 
