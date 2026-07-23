@@ -67,9 +67,9 @@ leaves the tree green — run the phase's tests before moving on.
 
 ### 5. `emailService.ts`
 
-- [ ] `npm i resend` in `api/` (not currently a dependency — verified against
+- [x] `npm i resend` in `api/` (not currently a dependency — verified against
       `api/package.json`).
-- [ ] New `api/src/services/emailService.ts`:
+- [x] New `api/src/services/emailService.ts`:
   - `sendPasswordResetEmail(email: string, resetLink: string): Promise<void>`
   - If `RESEND_API_KEY` is unset → `console.info` the link and return.
     Lets the whole flow be exercised locally with no credentials.
@@ -80,28 +80,28 @@ leaves the tree green — run the phase's tests before moving on.
     exists to prevent. Catch, `console.error`, return.
   - Plain-text alternative alongside the HTML body (deliverability; many
     spam filters penalize HTML-only mail).
-- [ ] `api/src/config.ts` — add:
+- [x] `api/src/config.ts` — add:
   - `RESEND_API_KEY` via `readSecret("RESEND_API_KEY", "")` (empty fallback =
     dev console mode; supports `RESEND_API_KEY_FILE` for free via `readSecret`).
   - `EMAIL_FROM` via `readSecret("EMAIL_FROM", "noreply@planner.thiagobraga.dev")`.
   - In production, if `RESEND_API_KEY` is empty, `console.warn` at startup that
     password reset emails will not be delivered. Warn, don't throw — a missing
     email key should not take the whole API down.
-- [ ] `api/src/services/__tests__/emailService.test.ts` — mock the `resend`
+- [x] `api/src/services/__tests__/emailService.test.ts` — mock the `resend`
       module. Cover: dev fallback logs and skips the client; configured path
       calls `emails.send` with the right `from`/`to`/link; a rejecting client
       is swallowed (no throw).
 
 ### 6. Wire the real sender into `authService`
 
-- [ ] `authService.ts:183-185` — delete the `sendPasswordResetEmail` no-op stub
+- [x] `authService.ts:183-185` — delete the `sendPasswordResetEmail` no-op stub
       (no back-compat shim; delete cleanly) and import the real one from
       `emailService.js`.
-- [ ] `authService.ts:178` — build the link as
+- [x] `authService.ts:178` — build the link as
       `${CORS_ORIGIN}/reset-password?token=${rawToken}` and `await` the send.
       Import `CORS_ORIGIN` from `../config.js` — it is the app's public origin,
       no new env var needed.
-- [ ] `api/src/services/__tests__/authService.test.ts` — assert the mocked
+- [x] `api/src/services/__tests__/authService.test.ts` — assert the mocked
       sender receives a link containing the raw token, and that an unknown
       email still returns the same generic message without sending anything.
 
