@@ -27,7 +27,7 @@ jobs:
       run:
         working-directory: ${{ matrix.package }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: actions/setup-node@v7
         with:
           node-version: '24'
@@ -41,7 +41,7 @@ jobs:
     name: CodeQL analysis
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: github/codeql-action/init@v4
         with:
           languages: javascript-typescript
@@ -52,7 +52,7 @@ jobs:
     name: Secret scan
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: 'repo'
@@ -71,7 +71,7 @@ jobs:
     name: Docker build check
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - run: |
           export CORS_ORIGIN=https://planner.thiagobraga.dev
           docker compose -f compose.prod.yml build
@@ -83,7 +83,7 @@ jobs:
     name: SBOM generation
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: 'repo'
