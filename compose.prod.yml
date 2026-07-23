@@ -45,12 +45,15 @@ services:
       DATABASE_URL_FILE: /run/secrets/database_url
       REDIS_URL_FILE: /run/secrets/redis_url
       CSRF_SECRET_FILE: /run/secrets/csrf_secret
+      RESEND_API_KEY_FILE: /run/secrets/resend_api_key
+      EMAIL_FROM: ${EMAIL_FROM:-noreply@planner.thiagobraga.dev}
       SESSION_IDLE_TTL_MINUTES: ${SESSION_IDLE_TTL_MINUTES:-30}
       SESSION_ABSOLUTE_TTL_HOURS: ${SESSION_ABSOLUTE_TTL_HOURS:-12}
     secrets:
       - database_url
       - redis_url
       - csrf_secret
+      - resend_api_key
     read_only: true
     tmpfs:
       - /tmp
@@ -154,6 +157,10 @@ secrets:
     file: ${REDIS_URL_FILE:-./secrets/redis_url}
   csrf_secret:
     file: ${CSRF_SECRET_FILE:-./secrets/csrf_secret}
+  # Must be readable by uid 1000 (the node user): a root-owned secret file
+  # reads as empty and password reset emails silently stop being delivered.
+  resend_api_key:
+    file: ${RESEND_API_KEY_FILE:-./secrets/resend_api_key}
   postgres_user:
     file: ${POSTGRES_USER_FILE:-./secrets/postgres_user}
   postgres_password:

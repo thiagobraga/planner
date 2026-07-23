@@ -18,6 +18,8 @@
 | `REDIS_URL`           | Mounted file or Docker secret    | On credential change  | Infrastructure operator |
 | `CSRF_SECRET`         | Mounted file or Docker secret    | Quarterly or incident | Infrastructure operator |
 | `CORS_ORIGIN`         | Environment variable             | On domain change      | Infrastructure operator |
+| `RESEND_API_KEY`      | Mounted file or Docker secret    | On incident           | Infrastructure operator |
+| `EMAIL_FROM`          | Environment variable             | On domain change      | Infrastructure operator |
 | Backup encryption key | Separate file, different storage | Quarterly or incident | Infrastructure operator |
 
 ### Creating Secrets
@@ -34,11 +36,33 @@ echo "redis://:$(openssl rand -base64 24)@redis:6379" > secrets/redis_url
 
 # Backup encryption key
 openssl rand -base64 32 > secrets/backup_key
+
+# Resend API key (from https://resend.com/api-keys) - password reset email
+printf '%s' 're_xxxxxxxx' > secrets/resend_api_key
 ```
+
+Every secret file must be readable by uid 1000, the non-root `node` user the API
+runs as:
+
+```bash
+chown 1000:1000 secrets/*
+chmod 400 secrets/*
+```
+
+A root-owned secret file reads as empty inside the container rather than
+failing loudly.
 
 ### File-Based Configuration
 
-Set `DATABASE_URL_FILE`, `REDIS_URL_FILE`, or `CSRF_SECRET_FILE` to read secrets from files instead of environment variables. The file path is read at startup and its contents (with trailing newline stripped) used as the secret value. File-based values take precedence over direct environment variables.
+Set `DATABASE_URL_FILE`, `REDIS_URL_FILE`, `CSRF_SECRET_FILE`, or `RESEND_API_KEY_FILE` to read secrets from files instead of environment variables. The file path is read at startup and its contents (with trailing newline stripped) used as the secret value. File-based values take precedence over direct environment variables.
+
+### Email Delivery
+
+`RESEND_API_KEY` is the one secret that is optional. Left empty, the API logs
+password reset links to its own stdout instead of sending them, so the reset
+flow still completes for anyone reading `docker compose logs api` - useful in
+staging, not acceptable in production. `EMAIL_FROM` must sit on a domain
+verified in Resend or every send is rejected.
 
 ## Deployment
 
