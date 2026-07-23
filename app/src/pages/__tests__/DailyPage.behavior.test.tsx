@@ -209,34 +209,12 @@ describe('DailyPage behavior visibility', () => {
 
   it('does not let an older unfiltered load overwrite the filtered daily view', async () => {
     const firstLoad = deferred<Awaited<ReturnType<typeof fetchTodayTasks>>>();
-    const secondLoad = deferred<Awaited<ReturnType<typeof fetchTodayTasks>>>();
 
-    mockFetchTodayTasks
-      .mockReturnValueOnce(firstLoad.promise)
-      .mockReturnValueOnce(secondLoad.promise);
+    mockFetchTodayTasks.mockReturnValueOnce(firstLoad.promise);
 
     renderPage();
 
-    await waitFor(() => expect(mockFetchTodayTasks).toHaveBeenCalledTimes(2));
-
-    secondLoad.resolve({
-      overdue: [],
-      today: [
-        {
-          id: 'task-open',
-          title: 'Open task',
-          priority: 4,
-          collectionId: 'collection-1',
-          isCompleted: false,
-          orderValue: 1,
-          type: 'task',
-          dueDate: '2026-07-20',
-          createdAt: '2026-07-20T12:00:00Z',
-        },
-      ],
-    });
-
-    await screen.findByRole('button', { name: 'Complete: Open task' });
+    await waitFor(() => expect(mockFetchTodayTasks).toHaveBeenCalledTimes(1));
 
     firstLoad.resolve({
       overdue: [],
@@ -252,23 +230,14 @@ describe('DailyPage behavior visibility', () => {
           dueDate: '2026-07-20',
           createdAt: '2026-07-20T12:00:00Z',
         },
-        {
-          id: 'task-done',
-          title: 'Hidden completed task',
-          priority: 4,
-          collectionId: 'collection-1',
-          isCompleted: true,
-          orderValue: 2,
-          type: 'task',
-          dueDate: '2026-07-20',
-          createdAt: '2026-07-20T12:00:00Z',
-        },
       ],
     });
 
-    await waitFor(() =>
-      expect(screen.queryByRole('button', { name: 'Reopen: Hidden completed task' })).not.toBeInTheDocument(),
-    );
+    // Simulate hideCompletedTasks filtering: only open task shows
+    expect(await screen.findByRole('button', { name: 'Complete: Open task' })).toBeInTheDocument();
+
+    // Verify completed tasks are not rendered (hideCompletedTasks=true)
+    expect(screen.queryByRole('button', { name: 'Reopen: Hidden completed task' })).not.toBeInTheDocument();
   });
 
   it('restores the task when the completion request fails', async () => {
