@@ -261,14 +261,14 @@ Shared: all four auth screens use `components/ui/Input` + `components/ui/Button`
 
 ## Phase 6 — Verification
 
-- [ ] `docker compose exec api npm run lint && docker compose exec api npm test`
-- [ ] `docker compose exec app npm run lint && docker compose exec app npm test`
-- [ ] `docker compose exec api npm run build && docker compose exec app npm run build`
-- [ ] Manual, dev (no Resend key): register a new account → lands logged in on
+- [x] `docker compose exec api npm run lint && docker compose exec api npm test`
+- [x] `docker compose exec app npm run lint && docker compose exec app npm test`
+- [x] `docker compose exec api npm run build && docker compose exec app npm run build`
+- [x] Manual, dev (no Resend key): register a new account → lands logged in on
       `/daily`; request a reset → link appears in `docker compose logs api`;
       open it → set a new password → confirm the old password is rejected and
       the new one works.
-- [ ] Manual, production (blocked on the user's Resend account + DNS
+- [~] Manual, production (blocked on the user's Resend account + DNS
       verification, see plan.md "Open follow-up"): same round trip against a
       real inbox. Everything else ships without it.
 
