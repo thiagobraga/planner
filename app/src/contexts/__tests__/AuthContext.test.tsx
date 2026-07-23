@@ -257,9 +257,8 @@ describe('AuthContext', () => {
     expect(mockDisconnectSocket).toHaveBeenCalled();
   });
 
-  it('register() calls apiRegister and sets user', async () => {
+  async function renderLoggedOut() {
     fetchMock.mockRejectedValue(new Error('no session'));
-    mockApiRegister.mockResolvedValue(mockUser);
 
     let captured!: ReturnType<typeof useAuth>;
     function CaptureConsumer() {
@@ -277,14 +276,65 @@ describe('AuthContext', () => {
       expect(screen.getByTestId('auth-state')).toHaveTextContent('"user":null');
     });
 
+    return () => captured;
+  }
+
+  it('register() registers then logs in to obtain a session', async () => {
+    mockApiRegister.mockResolvedValue(mockUser);
+    mockApiLogin.mockResolvedValue(mockUser);
+
+    const auth = await renderLoggedOut();
+
     await act(async () => {
-      await captured.register('new@example.com', 'password');
+      await auth().register('new@example.com', 'password', 'New User');
     });
 
-    expect(mockApiRegister).toHaveBeenCalledWith('new@example.com', 'password');
+    // /auth/register issues no session cookie - only /auth/login does - so the
+    // context must chain the two or the user lands authenticated with no session.
+    expect(mockApiRegister).toHaveBeenCalledWith('new@example.com', 'password', 'New User');
+    expect(mockApiLogin).toHaveBeenCalledWith('new@example.com', 'password');
     expect(mockSetCurrentUserId).toHaveBeenCalledWith('user-1');
     expect(mockConnectSocket).toHaveBeenCalled();
     expect(screen.getByTestId('auth-state')).toHaveTextContent('"user":"user-1"');
     expect(screen.getByTestId('auth-state')).toHaveTextContent('"isAuthenticated":true');
+  });
+
+  it('register() passes undefined displayName through when omitted', async () => {
+    mockApiRegister.mockResolvedValue(mockUser);
+    mockApiLogin.mockResolvedValue(mockUser);
+
+    const auth = await renderLoggedOut();
+
+    await act(async () => {
+      await auth().register('new@example.com', 'password');
+    });
+
+    expect(mockApiRegister).toHaveBeenCalledWith('new@example.com', 'password', undefined);
+  });
+
+  it('register() leaves the user logged out when registration fails', async () => {
+    mockApiRegister.mockRejectedValue(new Error('EMAIL_IN_USE'));
+
+    const auth = await renderLoggedOut();
+
+    await act(async () => {
+      await expect(auth().register('new@example.com', 'password')).rejects.toThrow('EMAIL_IN_USE');
+    });
+
+    expect(mockApiLogin).not.toHaveBeenCalled();
+    expect(screen.getByTestId('auth-state')).toHaveTextContent('"isAuthenticated":false');
+  });
+
+  it('register() leaves the user logged out when the follow-up login fails', async () => {
+    mockApiRegister.mockResolvedValue(mockUser);
+    mockApiLogin.mockRejectedValue(new Error('RATE_LIMITED'));
+
+    const auth = await renderLoggedOut();
+
+    await act(async () => {
+      await expect(auth().register('new@example.com', 'password')).rejects.toThrow('RATE_LIMITED');
+    });
+
+    expect(screen.getByTestId('auth-state')).toHaveTextContent('"isAuthenticated":false');
   });
 });

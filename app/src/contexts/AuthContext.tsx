@@ -9,7 +9,7 @@ interface AuthContextValue {
   user: AuthUser | null;
   isAuthenticated: boolean;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string) => Promise<void>;
+  register: (email: string, password: string, displayName?: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -59,12 +59,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setCurrentUserId(u.id);
   }, []);
 
-  const register = useCallback(async (email: string, password: string) => {
-    const u = await apiRegister(email, password);
-    setUser(u);
-    setIsAuthenticated(true);
-    setCurrentUserId(u.id);
-  }, []);
+  // POST /auth/register deliberately creates no session - /auth/login is the
+  // only path that mints one. Chaining the two here keeps session creation in a
+  // single place instead of growing a second, divergent code path on the server.
+  const register = useCallback(
+    async (email: string, password: string, displayName?: string) => {
+      await apiRegister(email, password, displayName);
+      await login(email, password);
+    },
+    [login],
+  );
 
   const logout = useCallback(() => {
     const uid = user?.id;
