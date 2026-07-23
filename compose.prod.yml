@@ -50,7 +50,8 @@ services:
       REDIS_URL_FILE: /run/secrets/redis_url
       CSRF_SECRET_FILE: /run/secrets/csrf_secret
       RESEND_API_KEY_FILE: /run/secrets/resend_api_key
-      EMAIL_FROM: ${EMAIL_FROM:-noreply@planner.thiagobraga.dev}
+      # Must be on the Resend-verified sending domain (mail.planner.thiagobraga.dev).
+      EMAIL_FROM: ${EMAIL_FROM:-noreply@mail.planner.thiagobraga.dev}
       SESSION_IDLE_TTL_MINUTES: ${SESSION_IDLE_TTL_MINUTES:-30}
       SESSION_ABSOLUTE_TTL_HOURS: ${SESSION_ABSOLUTE_TTL_HOURS:-12}
     secrets:
