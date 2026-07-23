@@ -5,7 +5,10 @@ const BASE = '/api/v1';
 
 const WRITE_METHODS: QueuedMutationMethod[] = ['POST', 'PATCH', 'PUT', 'DELETE'];
 
-const CSRF_COOKIE = 'planner_csrf';
+// Server sets `__Host-planner_csrf` in production, plain `planner_csrf` in
+// dev (csrf.ts:9) - same cookie, same bundle ships to both, so check both
+// names rather than branching on environment.
+const CSRF_COOKIE_NAMES = ['__Host-planner_csrf', 'planner_csrf'];
 
 let currentUserId: string | null = null;
 
@@ -23,7 +26,11 @@ function getCookie(name: string): string | undefined {
 }
 
 function getCsrfToken(): string | undefined {
-  const raw = getCookie(CSRF_COOKIE);
+  let raw: string | undefined;
+  for (const name of CSRF_COOKIE_NAMES) {
+    raw = getCookie(name);
+    if (raw) break;
+  }
   if (!raw) return undefined;
   const colonIndex = raw.lastIndexOf(':');
   return colonIndex === -1 ? raw : raw.substring(0, colonIndex);
