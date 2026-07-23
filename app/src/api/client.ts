@@ -73,6 +73,47 @@ function buildSyntheticResponse<T>(
   return { ...(id ? { id } : {}), ...parsedBody } as T;
 }
 
+export interface ValidationDetail {
+  field: string;
+  message: string;
+}
+
+// Carries the whole error envelope the API returns, so callers can branch on
+// `code` (EMAIL_IN_USE vs WEAK_PASSWORD vs RATE_LIMITED) and place field-level
+// errors from `details`. Still an Error with a populated `message`, so the
+// existing `err instanceof Error ? err.message : ...` call sites keep working.
+export class ApiError extends Error {
+  readonly code: string;
+  readonly status: number;
+  readonly details?: unknown;
+  readonly retryAfterSeconds?: number;
+
+  constructor(opts: {
+    message: string;
+    code: string;
+    status: number;
+    details?: unknown;
+    retryAfterSeconds?: number;
+  }) {
+    super(opts.message);
+    this.name = 'ApiError';
+    this.code = opts.code;
+    this.status = opts.status;
+    this.details = opts.details;
+    this.retryAfterSeconds = opts.retryAfterSeconds;
+  }
+
+  // `details` is unknown because it is whatever the server sent; this narrows
+  // it to the validation shape at the one place that consumes it.
+  fieldErrors(): ValidationDetail[] {
+    if (!Array.isArray(this.details)) return [];
+    return this.details.filter(
+      (d): d is ValidationDetail =>
+        typeof d === 'object' && d !== null && typeof (d as ValidationDetail).field === 'string',
+    );
+  }
+}
+
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   const method = (init.method ?? 'GET').toUpperCase() as QueuedMutationMethod;
 
@@ -121,7 +162,13 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   });
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
-    throw new Error(body?.error?.message ?? `HTTP ${res.status}`);
+    throw new ApiError({
+      message: body?.error?.message ?? `HTTP ${res.status}`,
+      code: body?.error?.code ?? 'HTTP_ERROR',
+      status: res.status,
+      details: body?.error?.details,
+      retryAfterSeconds: body?.error?.retryAfterSeconds,
+    });
   }
   return res.json() as Promise<T>;
 }
@@ -136,10 +183,14 @@ export interface AuthUser {
   displayName: string | null;
 }
 
-export async function apiRegister(email: string, password: string): Promise<AuthUser> {
+export async function apiRegister(
+  email: string,
+  password: string,
+  displayName?: string,
+): Promise<AuthUser> {
   const data = await request<{ user: AuthUser }>('/auth/register', {
     method: 'POST',
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify(displayName ? { email, password, displayName } : { email, password }),
   });
   return data.user;
 }
@@ -154,6 +205,23 @@ export async function apiLogin(email: string, password: string): Promise<AuthUse
 
 export async function apiLogout(): Promise<void> {
   await request<{ success: boolean }>('/auth/logout', { method: 'POST' });
+}
+
+export async function apiRequestPasswordReset(email: string): Promise<{ message: string }> {
+  return request<{ message: string }>('/auth/reset-password', {
+    method: 'POST',
+    body: JSON.stringify({ email }),
+  });
+}
+
+export async function apiConfirmPasswordReset(
+  token: string,
+  newPassword: string,
+): Promise<{ success: boolean }> {
+  return request<{ success: boolean }>('/auth/reset-password/confirm', {
+    method: 'POST',
+    body: JSON.stringify({ token, newPassword }),
+  });
 }
 
 // ── Tasks ─────────────────────────────────────────────────────────────────────
