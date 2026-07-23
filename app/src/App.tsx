@@ -5,6 +5,9 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { AppShell } from './components/AppShell';
 import { OfflineIndicator } from './components/OfflineIndicator';
 import { LoginPage } from './pages/LoginPage';
+import { RegisterPage } from './pages/RegisterPage';
+import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
+import { ResetPasswordPage } from './pages/ResetPasswordPage';
 import { InboxPage } from './pages/InboxPage';
 import { CollectionsPage } from './pages/CollectionsPage';
 import { DailyPage } from './pages/DailyPage';
@@ -21,6 +24,9 @@ function AppRoutes() {
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={isAuthenticated ? <Navigate to="/daily" replace /> : <LoginPage />} />
+        <Route path="/register" element={isAuthenticated ? <Navigate to="/daily" replace /> : <RegisterPage />} />
+        <Route path="/forgot-password" element={isAuthenticated ? <Navigate to="/daily" replace /> : <ForgotPasswordPage />} />
+        <Route path="/reset-password" element={isAuthenticated ? <Navigate to="/daily" replace /> : <ResetPasswordPage />} />
         <Route element={isAuthenticated ? <AppShell /> : <Navigate to="/login" replace />}>
           <Route path="/" element={<Navigate to="/daily" replace />} />
           <Route path="/today" element={<Navigate to="/daily" replace />} />

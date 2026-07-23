@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useAuth } from '../contexts/AuthContext';
-
-const PlannerIcon64 = () => (
-  <img src="/images/bulletjournal-planner-64x64.png" width={64} height={64} alt="" className="block mx-auto" />
-);
+import { AuthShell, AuthLink, AuthFormError } from '../components/AuthShell';
+import { Input } from '../components/ui/Input';
+import { Button } from '../components/ui/Button';
+import { ApiError } from '../api/client';
+import { useCountdown, formatCountdown } from '../hooks/useCountdown';
 
 export function LoginPage() {
   const { login } = useAuth();
@@ -13,6 +14,7 @@ export function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const { secondsLeft, start } = useCountdown();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,61 +24,55 @@ export function LoginPage() {
       await login(email, password);
       navigate('/daily', { replace: true });
     } catch (err) {
+      if (err instanceof ApiError && err.code === 'RATE_LIMITED') {
+        start(err.retryAfterSeconds ?? 0);
+      }
       setError(err instanceof Error ? err.message : 'Something went wrong');
     } finally {
       setLoading(false);
     }
   };
 
-  const inputClassName = "block w-full box-border p-3 text-sm text-ink bg-cream border border-dot rounded outline-none leading-6 h-12";
+  const throttled = secondsLeft > 0;
 
   return (
-    <div className="flex min-h-dvh items-center justify-center px-4 py-6">
-      <div className="w-full max-w-80">
-        <div className="text-center mb-6">
-          <PlannerIcon64 />
-          <h1 className="text-lg leading-6 font-semibold text-ink mt-2">
-            Planner
-          </h1>
-          <p className="text-[13px] leading-6 text-ink-light opacity-60">
-            Bulletjournal online
-          </p>
-        </div>
+    <AuthShell>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+        <Input
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+          autoFocus
+          autoComplete="username"
+          aria-label="Email"
+        />
+        <Input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+          autoComplete="current-password"
+          aria-label="Password"
+        />
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-          <input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            className={inputClassName}
-            autoFocus
-            autoComplete="username"
-          />
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            className={inputClassName}
-            autoComplete="current-password"
-          />
+        {error && (
+          <AuthFormError>
+            {throttled ? `${error} Try again in ${formatCountdown(secondsLeft)}.` : error}
+          </AuthFormError>
+        )}
 
-          {error && (
-            <p className="text-[13px] text-accent">{error}</p>
-          )}
+        <Button type="submit" variant="primary" disabled={loading || throttled}>
+          {loading ? '…' : 'Sign in'}
+        </Button>
+      </form>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className={`h-12 px-3 text-sm font-semibold text-cream bg-ink border-none rounded ${loading ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
-          >
-            {loading ? '…' : 'Sign in'}
-          </button>
-        </form>
+      <div className="mt-6 flex flex-col items-center gap-1">
+        <AuthLink to="/forgot-password">Forgot password?</AuthLink>
+        <AuthLink to="/register">Don't have an account? Register</AuthLink>
       </div>
-    </div>
+    </AuthShell>
   );
 }
