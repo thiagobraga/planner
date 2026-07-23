@@ -187,6 +187,31 @@ describe("moveTask structural rules", () => {
     ).rejects.toThrow(AppError);
   });
 
+  it("rejects a move when access to the current destination collection was revoked", async () => {
+    (pool.query as ReturnType<typeof vi.fn>)
+      // The task remains reachable through its user_id, but collection access is gone.
+      .mockResolvedValueOnce({ rows: [taskRow()] })
+      .mockResolvedValueOnce({ rows: [] });
+    const tx = mockTransaction([
+      [/WITH RECURSIVE/, [{ id: taskId, parent_task_id: null, depth: 0, collection_id: collectionId, section_id: null, due_date: null }]],
+    ]);
+
+    await expect(
+      moveTask(taskId, userId, {
+        parentTaskId: null,
+        scope: scopeCollection,
+        position: 0,
+      }),
+    ).rejects.toMatchObject({ code: "NOT_FOUND" });
+
+    expect(pool.query).toHaveBeenNthCalledWith(
+      2,
+      expect.stringContaining("SELECT id FROM collections"),
+      [collectionId, userId],
+    );
+    expect(tx.calls.some((call) => /UPDATE tasks/.test(call.sql))).toBe(false);
+  });
+
   it("rejects a move under a parent the user cannot reach", async () => {
     (pool.query as ReturnType<typeof vi.fn>)
       .mockResolvedValueOnce({ rows: [taskRow()] })
