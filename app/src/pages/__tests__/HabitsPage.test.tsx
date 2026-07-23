@@ -86,7 +86,7 @@ function renderPage() {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  mockFetchHabits.mockResolvedValue([]);
+  mockFetchHabits.mockResolvedValue({ habits: [], groups: [] });
   mockFetchHabitGroups.mockResolvedValue([]);
   mockApiUpdateHabitGroup.mockReset();
   mockFetchPreferences.mockResolvedValue({
@@ -145,9 +145,10 @@ describe('HabitsPage', () => {
   });
 
   it('adds a temporary random icon to a group and persists it', async () => {
-    mockFetchHabitGroups.mockResolvedValue([
-      { id: 'morning', name: 'Morning routine', icon: null, orderValue: 0 },
-    ]);
+    mockFetchHabits.mockResolvedValue({
+      habits: [],
+      groups: [{ id: 'morning', name: 'Morning routine', icon: null, orderValue: 0 }],
+    });
     mockApiUpdateHabitGroup.mockResolvedValue({
       id: 'morning',
       name: 'Morning routine',
