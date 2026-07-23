@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import React from 'react';
@@ -128,6 +128,42 @@ describe('HabitTimeline', () => {
   it('renders the new group button when there are no groups', () => {
     render(<HabitTimeline {...defaultProps} />, { wrapper: createWrapper() });
     expect(screen.getByText('New group')).toBeInTheDocument();
+  });
+
+  it('shrinks the habit name column to keep three day columns visible on iPhone-sized screens', async () => {
+    const originalResizeObserver = window.ResizeObserver;
+    class MockResizeObserver {
+      constructor(private readonly callback: ResizeObserverCallback) {}
+
+      observe(target: Element) {
+        const width = target.classList.contains('habit-timeline') ? 291 : 0;
+        this.callback(
+          [{ contentRect: { width } } as ResizeObserverEntry],
+          this as unknown as ResizeObserver,
+        );
+      }
+
+      disconnect() {}
+
+      unobserve() {}
+    }
+
+    Object.defineProperty(window, 'ResizeObserver', {
+      configurable: true,
+      value: MockResizeObserver,
+    });
+
+    try {
+      const { container } = render(<HabitTimeline {...defaultProps} />, { wrapper: createWrapper() });
+      await waitFor(() => {
+        expect(container.querySelector('.habit-timeline-labels')).toHaveStyle({ width: '171px' });
+      });
+    } finally {
+      Object.defineProperty(window, 'ResizeObserver', {
+        configurable: true,
+        value: originalResizeObserver,
+      });
+    }
   });
 
   it('renders a group icon in one grid cell before the group name', () => {

@@ -132,12 +132,20 @@ export function HabitTimeline({
   onDelete,
 }: HabitTimelineProps) {
   const [menu, setMenu] = useState<{ target: HabitEditTarget; canAddSub: boolean; x: number; y: number } | null>(null);
+  const rootRef = useRef<HTMLDivElement>(null);
   const daysViewportRef = useRef<HTMLDivElement>(null);
   const daysHeaderViewportRef = useRef<HTMLDivElement>(null);
   const monthSelectorRef = useRef<MonthSelectorHandle>(null);
+  const [timelineWidth, setTimelineWidth] = useState<number | null>(null);
   const [canPagePrevious, setCanPagePrevious] = useState(false);
   const [canPageNext, setCanPageNext] = useState(false);
   const { indentSteps, overId, setOverlayNode } = usePlannerDrag();
+  const labelColWidth = useMemo(() => {
+    if (timelineWidth == null) return LABEL_COL_W;
+    if (timelineWidth < 390) return Math.max(0, Math.min(LABEL_COL_W, timelineWidth - CELL_W * 5));
+    if (timelineWidth < 480) return Math.max(0, Math.min(LABEL_COL_W, timelineWidth - CELL_W * 7));
+    return LABEL_COL_W;
+  }, [timelineWidth]);
 
   const days = useMemo<DayCell[]>(() => {
     const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -155,6 +163,20 @@ export function HabitTimeline({
   }, [year, month, today]);
 
   const todayISO = fmtISO(today);
+
+  useEffect(() => {
+    const node = rootRef.current;
+    if (!node) return;
+
+    const syncTimelineWidth = (width: number) => setTimelineWidth(width);
+    const resizeObserver = new ResizeObserver((entries) => {
+      const width = entries[0]?.contentRect.width;
+      if (width) syncTimelineWidth(width);
+    });
+
+    resizeObserver.observe(node);
+    return () => resizeObserver.disconnect();
+  }, []);
 
   // Weekend/today tint always applies; future columns additionally dim so every
   // future day - weekend or not - fades by the same uniform amount.
@@ -305,17 +327,18 @@ export function HabitTimeline({
     }
 
     const viewport = daysViewportRef.current;
-    setOverlayNode(
-      <HabitTimelineBlockPreview
-        rows={draggedBlock}
-        days={days}
-        dayColClass={dayColClass}
-        scrollLeft={viewport?.scrollLeft ?? 0}
-        trackWidth={viewport?.clientWidth ?? 0}
-      />,
+      setOverlayNode(
+        <HabitTimelineBlockPreview
+          rows={draggedBlock}
+          days={days}
+          dayColClass={dayColClass}
+          labelColWidth={labelColWidth}
+          scrollLeft={viewport?.scrollLeft ?? 0}
+          trackWidth={viewport?.clientWidth ?? 0}
+        />,
     );
     return () => setOverlayNode(null);
-  }, [activeDragId, draggedBlock, sections, days, dayColClass, setOverlayNode]);
+  }, [activeDragId, draggedBlock, sections, days, dayColClass, labelColWidth, setOverlayNode]);
 
   useEffect(() => {
     if (todaySignal) {
@@ -375,7 +398,7 @@ export function HabitTimeline({
     : undefined;
 
   return (
-    <div className="habit-timeline">
+    <div ref={rootRef} className="habit-timeline">
       <div className="habit-timeline-selectors-sticky">
         <MonthSelector
           ref={monthSelectorRef}
@@ -385,7 +408,7 @@ export function HabitTimeline({
         />
 
         <div className="habit-timeline-day-selector mt-6 flex min-w-0 items-start gap-0">
-          <div className="h-12 shrink-0 min-w-0" style={{ width: LABEL_COL_W }} aria-hidden="true" />
+          <div className="h-12 shrink-0 min-w-0" style={{ width: labelColWidth }} aria-hidden="true" />
 
           <StripNavigator
             direction="previous"
@@ -434,7 +457,7 @@ export function HabitTimeline({
 
       <div className="habit-timeline-table min-w-0">
         <div className="habit-timeline-body flex min-w-0 items-start gap-0">
-          <div className="habit-timeline-labels shrink-0 min-w-0" style={{ width: LABEL_COL_W }}>
+          <div className="habit-timeline-labels shrink-0 min-w-0" style={{ width: labelColWidth }}>
             <SortableContext items={sortableIds} strategy={verticalListSortingStrategy}>
             {timelineSections.map((section) => (
               <TimelineSectionDrop
@@ -758,6 +781,7 @@ interface TimelineBlockPreviewProps {
   rows: { node: HabitNode; depth: number }[];
   days: DayCell[];
   dayColClass: (day: DayCell) => string;
+  labelColWidth: number;
   /** How far the days viewport is scrolled, so the marks line up under the row. */
   scrollLeft: number;
   /** Visible width of the days viewport; the track is clipped to it. */
@@ -781,6 +805,7 @@ function HabitTimelineBlockPreview({
   rows,
   days,
   dayColClass,
+  labelColWidth,
   scrollLeft,
   trackWidth,
 }: TimelineBlockPreviewProps) {
@@ -794,7 +819,7 @@ function HabitTimelineBlockPreview({
             className="habit-timeline-row-label flex h-6 min-w-0 shrink-0 items-center pr-2"
             // Depths are relative to the block, so a sub-habit dragged out of
             // level 1 draws flush rather than indented into empty space.
-            style={{ width: LABEL_COL_W, paddingLeft: Math.max(0, depth - base) * INDENT }}
+            style={{ width: labelColWidth, paddingLeft: Math.max(0, depth - base) * INDENT }}
           >
             <span className="flex h-6 w-6 shrink-0 items-center justify-center">
               <span
