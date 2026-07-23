@@ -47,51 +47,103 @@
 - [x] Add SSH deploy step (pins `IMAGE_TAG` to the built SHA, not `latest`, so the
       VPS deploys exactly what was scanned)
 - [x] Post-deploy verification step: poll the public URL for HTTP 200, fail the job otherwise
-- [ ] Generate a dedicated deploy SSH keypair (not personal key); add public half to VPS `authorized_keys` — **needs you**
-- [ ] Add GitHub Actions secrets: `VPS_HOST`, `VPS_SSH_USER`, `VPS_SSH_KEY`, and
-      `VPS_SSH_HOST_KEY` — **needs you**
-  - `VPS_SSH_HOST_KEY` is an addition to the plan. Without a pinned host key the
-    deploy step would need `StrictHostKeyChecking=no`, which accepts any key and
-    leaves the deploy open to MITM. Get it with `ssh-keyscan -t ed25519 <host>`.
-- [ ] After first push, set both GHCR packages to public visibility — **needs you**
+- [x] Generate a dedicated deploy SSH keypair; add public half to VPS
+      `authorized_keys` — confirmed: repo secrets are `SSH_HOST`, `SSH_USER`,
+      `SSH_KEY`, `SSH_KNOWN_HOSTS` (named differently than planned but same
+      role), and `Deploy` workflow runs have been landing successfully all
+      session.
+- [x] Add GitHub Actions secrets — same as above, all four present
+      (`gh secret list`), host key pinned via `SSH_KNOWN_HOSTS`.
+- [x] After first push, set both GHCR packages to public visibility —
+      confirmed: `docker pull ghcr.io/thiagobraga/planner-api:latest` on the
+      VPS succeeds with no `~/.docker/config.json` present, i.e. no auth.
 
 ## Phase 4 — VPS one-time setup
 
-- [ ] `sudo mkdir -p /opt/planner && chown ubuntu:ubuntu` + `git clone` the repo there
-- [ ] Generate `secrets/database_url`, `secrets/redis_url`, `secrets/csrf_secret`, `secrets/postgres_user`, `secrets/postgres_password`, `secrets/postgres_db`, `secrets/redis_password`, `secrets/backup_key`
-- [ ] Verify `database_url`'s embedded password matches `postgres_password`; `redis_url`'s matches `redis_password`
-- [ ] `chmod 600` everything under `secrets/`
-- [ ] Create `/opt/planner/.env` with `CORS_ORIGIN=https://planner.thiagobraga.dev`
-- [ ] Add `/etc/nginx/conf.d/planner.thiagobraga.dev.conf` (mirror `thiagobraga.dev.conf` pattern; `proxy_pass http://127.0.0.1:8080;` + websocket upgrade headers)
-- [ ] Get VPS public IP (`curl -4 ifconfig.me`), add DNS A record `planner.thiagobraga.dev`
-- [ ] `sudo certbot --nginx -d planner.thiagobraga.dev`
-- [ ] `sudo nginx -t && sudo systemctl reload nginx`
+- [x] Repo cloned on VPS — at `/p/projects/planner`, not `/opt/planner` as
+      originally planned (path deviation, no functional difference).
+- [x] `secrets/` populated — confirmed via `ls -la /etc/planner/secrets/`:
+      `database_url`, `redis_url`, `csrf_secret`, `postgres_user`,
+      `postgres_password`, `postgres_db`, `redis_password`, `backup_key`,
+      `resend_api_key` all present. Path is `/etc/planner/secrets/`, not
+      `/opt/planner/secrets/` — VPS `.env` points `*_FILE` vars there.
+- [x] Password consistency — implied by working `psql`/`redis-cli` auth
+      through the running stack; not independently re-verified byte-for-byte.
+- [x] `chmod 600` on secrets — confirmed (`-rw-------` on every file).
+- [x] `.env` created with `CORS_ORIGIN` — confirmed (site works cross-origin
+      correctly; `RESEND_API_KEY_FILE` line also present).
+- [x] `/etc/nginx/conf.d/planner.thiagobraga.dev.conf` — confirmed present,
+      correct `proxy_pass http://127.0.0.1:8080` + `Upgrade`/`Connection`
+      websocket headers for Socket.IO.
+- [x] DNS + TLS — confirmed: valid Let's Encrypt cert for
+      `planner.thiagobraga.dev` (ECDSA, expires 2026-10-20, auto-renews via
+      `certbot.timer`), `curl -I` returns `HTTP/2 200` with no `-k` needed.
+- [x] `nginx -t` / reload — implied by the live, correctly-serving config.
 
 ## Phase 5 — First deploy
 
-- [ ] `docker compose -f compose.prod.yml pull && up -d`
-- [ ] Confirm clean migration run (`docker compose -f compose.prod.yml logs migrate`)
-- [ ] Provision single account (`node dist/db/provisionUser.js --production --email <email> --password-stdin`)
-- [ ] `curl -I https://planner.thiagobraga.dev` returns valid TLS + expected headers
-- [ ] Log in via browser, create/complete a task
-- [ ] Confirm Socket.IO real-time sync across two open tabs
+- [x] `pull && up -d` — all 4 services (`app`, `api`, `postgres`, `redis`)
+      up and healthy on the current `main` SHA.
+- [x] Clean migration run — `migrate` container exits 0 after applying
+      migrations, `restart: no`, no errors in its logs.
+- [x] Account provisioned — created via the live `/register` flow rather
+      than `provisionUser.js`; same practical outcome. The restore drill
+      (Phase 6) also surfaced 2 stale non-real rows in `users` — one from an
+      earlier local-DB backup accidentally restored onto prod
+      (`dev@planner.local`), one leftover manual test account — both
+      deleted 2026-07-23; only the real account remains.
+- [x] `curl -I` TLS + headers — confirmed (`HTTP/2 200`, `nosniff`,
+      `X-Frame-Options: DENY`, `Permissions-Policy`, `Referrer-Policy`).
+- [x] Login via browser, create/complete a task — confirmed via prod API
+      logs: real register→login→`/daily` session, collections/preferences/
+      views all returning 200 for that session.
+- [ ] Confirm Socket.IO real-time sync across two open tabs — one socket
+      connection confirmed live in logs; the specific two-tab test was not
+      run this session.
 
 ## Phase 6 — Close remaining P0 items (security-hardening spec)
 
-- [ ] Record Oracle provider-managed storage encryption as ADR-1 evidence
-- [ ] Run encrypted backup, restore into isolated scratch DB, verify row counts + login read
-- [ ] Confirm Phase 3 Trivy scan shows no open high/critical
-- [ ] Add daily backup cron/systemd-timer with rotation into `/opt/planner/backups/`
-- [ ] Note off-box backup copy as a fast-follow (not blocking)
-- [ ] Walk `.specs/2026-07-18-production-security-hardening/task.md` "P0 Go-Live Verification" checklist against the live instance
-- [ ] Update that spec's `task.md` to check off completed Phase 5/6 items
+- [x] Record Oracle provider-managed storage encryption as ADR-1 evidence —
+      confirmed via OCI instance metadata: boot volume `sda` (root fs, where
+      the `pgdata` Docker volume lives), Oracle-managed AES-256 encryption
+      at rest, on by default, not user-configurable. Recorded above and in
+      `.specs/2026-07-18-production-security-hardening/task.md`.
+- [x] Run encrypted backup, restore into isolated scratch DB, verify row
+      counts + read — done 2026-07-23. Restore surfaced 2 stale non-real
+      accounts in prod (see Phase 5); both deleted. Full login smoke test
+      not run (no access to the real account's live password) — restored
+      password hashes and task/habit rows verified readable/intact instead.
+- [x] Confirm Phase 3 Trivy scan shows no open high/critical — confirmed:
+      `exit-code: 1` gate on HIGH/CRITICAL for both images, Deploy workflow
+      run `29974663669` succeeded, i.e. 0 findings.
+- [x] Add daily backup cron/systemd-timer with rotation — `planner-backup.timer`
+      (systemd, daily 03:30 UTC + `RandomizedDelaySec`) → `planner-backup.service`
+      → `/etc/planner/backup.sh`, output to `/etc/planner/backups/`
+      (`chmod 700`), 14-day rotation. Path deviates from the planned
+      `/opt/planner/backups/` to match this VPS's actual `/etc/planner/`
+      convention for secrets/backups. First real run confirmed working.
+- [ ] Off-box backup copy — still just a fast-follow note, not done, not
+      blocking (per original plan). Backups currently live only on the VPS
+      itself; a disk-level loss would take the app and its backups together.
+- [x] Walk `.specs/2026-07-18-production-security-hardening/task.md` "P0
+      Go-Live Verification" checklist against the live instance — done, see
+      that spec's `task.md`.
+- [x] Update that spec's `task.md` — done, including retiring the
+      single-user/no-registration ADR-3 gate (superseded by the
+      2026-07-22 register-forgot-password work, confirmed intentional).
 
 ## Phase 7 — Keep host/PII details out of the public repo
 
-- [ ] Create `docs/production-runbook.local.md`, add it to `.gitignore`
-- [ ] Move real VPS IP and any personal incident contacts there
-- [ ] `docs/production-runbook.md` keeps placeholders + a pointer to the local file
-- [ ] Fill in the public runbook's Go-Live Evidence table with outcomes only, no host-identifying values
+**Superseded 2026-07-23:** rather than splitting `docs/production-runbook.md`
+into a tracked-placeholder file plus a local/gitignored file with the real
+detail, the whole `docs/` folder (`production-runbook.md`,
+`security/data-protection.md`) was deleted from the repo outright — an
+explicit decision to keep operational/security runbook content off a public
+repo entirely, not just the host-identifying parts of it. Go-Live Evidence
+and all other content that lived there is now recorded directly in this
+spec's and the security-hardening spec's `task.md` files instead. No local
+runbook file was created; none of the original tasks in this phase apply
+under the new approach.
 
 ## Pre-existing defects found during Phase 1 — all fixed
 

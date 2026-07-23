@@ -121,6 +121,18 @@ Every authenticated request performs a session lookup, which the current middlew
 - Require 15-128 Unicode characters, normalize NFC before hashing, allow spaces/paste/password managers, and reject a versioned local blocklist of common/compromised and Planner-specific passwords.
 - Public signup, email verification, real password recovery, passkeys, and MFA require a follow-up authentication spec before multi-user launch.
 
+**Superseded 2026-07-22 (`.specs/2026-07-22-register-forgot-password/`):** the
+product direction changed to multi-user before this ADR's
+`PUBLIC_REGISTRATION_ENABLED`/`PASSWORD_RESET_ENABLED` flags were ever
+implemented — `/auth/register` and `/auth/reset-password*` ship unconditionally
+enabled in production, with no toggle. This was a deliberate product decision
+(confirmed 2026-07-23), not an accidental regression, but it retires this
+ADR's "single-user, no public registration" launch gate. Real password
+recovery and email verification were already delivered as part of that later
+spec (Resend-backed reset email, domain-verified sending). Passkeys/MFA
+remain a genuine follow-up. The P0 Go-Live item "no development email/password
+or registration UI" (task.md:320) is retired by this decision, not failing.
+
 ### ADR-4: Serve one hardened same-origin application edge
 
 **Decision**

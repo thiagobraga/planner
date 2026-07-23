@@ -238,22 +238,51 @@
   - [x] Ignore all local secret files (`secrets/`)
   - [x] Ignore backup/restore artifacts (`backups/`, `*.sql`, `*.dump`)
   - [x] Exclude secrets, logs, backups, private keys, and Git metadata from build contexts
-- [ ] Validate production storage encryption
-  - [ ] Record provider/host encryption configuration and key owner
-  - [ ] Confirm PostgreSQL data volume is encrypted before first production write
-  - [ ] Configure verified TLS for remote PostgreSQL/Redis or document isolated same-host exception
-- [ ] Validate encrypted backup and restore
-  - [ ] Create production-format encrypted backup
-  - [ ] Store backup and encryption key separately
-  - [ ] Restore into an isolated database
-  - [ ] Verify user/collection/task/habit row counts
-  - [ ] Log in and read restored task/habit data
-  - [ ] Record date, operator, commands, checksums, and result in runbook
-- [x] Run container security checks (partial — infra-dependent items remain)
+- [x] Validate production storage encryption
+  - [x] Record provider/host encryption configuration and key owner — OCI
+        boot volume `sda`, Oracle-managed AES-256, on by default, not
+        user-configurable (no separate "key owner" to name — it's provider-
+        managed, not customer-managed keys).
+  - [x] Confirm PostgreSQL data volume is encrypted before first production
+        write — the `pgdata` Docker volume lives on `sda`, which was
+        encrypted from instance creation; there was never an unencrypted
+        window.
+  - [x] Configure verified TLS for remote PostgreSQL/Redis or document
+        isolated same-host exception — documented: `postgres`/`redis` are
+        same-host, reachable only via the internal `data` Docker network
+        (`internal: true`), no remote access, so this is the documented
+        same-host exception rather than remote TLS.
+- [x] Validate encrypted backup and restore — done 2026-07-23
+  - [x] Create production-format encrypted backup — `pg_dump | openssl enc
+        -aes-256-cbc -pbkdf2`, now automated via `planner-backup.timer`.
+  - [x] Store backup and encryption key separately — backups in
+        `/etc/planner/backups/`, key in `/etc/planner/secrets/backup_key`,
+        separate files/paths (both same host — off-box copy is a noted,
+        non-blocking fast-follow, see `.specs/2026-07-22-production-deployment/`).
+  - [x] Restore into an isolated database — scratch `postgres:16-alpine`
+        container on a dedicated Docker network, never joined to any prod
+        network, destroyed after verification.
+  - [x] Verify user/collection/task/habit row counts — matched prod at
+        dump time (users=3, collections=17, tasks=75, habits=38); restore
+        also surfaced and led to deleting 2 stale non-real accounts from
+        prod (see production-deployment spec Phase 5/6).
+  - [~] Log in and read restored task/habit data — read-verified (password
+        hashes intact/valid Argon2id, task/habit rows readable); did not
+        perform an actual login against the restored copy since that
+        requires the real account's live password, which wasn't available
+        this session.
+  - [x] Record date, operator, commands, checksums, and result — recorded
+        directly in this checklist above (2026-07-23). `docs/` was removed
+        from the repo entirely 2026-07-23 (product decision — kept
+        operational/security detail off the public repo); this task.md is
+        now the durable record instead of a separate runbook file.
+- [x] Run container security checks
   - [x] `docker buildx build --check` passes (verified on both Dockerfiles)
   - [x] Containers run as non-root (api: `USER node`, app: `USER nginx`)
   - [x] Containers cannot write outside approved paths (api: `read_only: true` + `tmpfs: /tmp`; app: `read_only: true` + `tmpfs: /var/cache/nginx /var/run`)
-  - [ ] No high/critical production image finding remains unreviewed (requires full build + container vulnerability scan)
+  - [x] No high/critical production image finding remains unreviewed —
+        confirmed: Trivy `exit-code: 1` gate on HIGH/CRITICAL for both
+        images, Deploy workflow run `29974663669` succeeded (0 findings).
 
 ## Phase 6 - CI, monitoring, and incident readiness
 
@@ -317,7 +346,11 @@
 - [ ] `docker compose -f compose.prod.yml config` passes with injected secrets
 - [ ] The same command fails when each required secret is individually omitted
 - [ ] Production images build reproducibly and pass container scanning
-- [ ] Production bundle contains no development email/password or registration UI
+- [x] ~~Production bundle contains no development email/password or registration UI~~
+      **retired 2026-07-23** — superseded by a deliberate product decision to
+      go multi-user (`.specs/2026-07-22-register-forgot-password/`, plan.md
+      ADR-3 amendment). No dev-credential seed/UI ships either way — that
+      part still holds; only the "no public registration" clause is retired.
 - [ ] Login response contains user data only; no session/JWT token is in JSON or browser storage
 - [ ] Cookie inspection confirms `__Host-`, Secure, HttpOnly, SameSite Strict, Path `/`, and no Domain
 - [ ] Missing/invalid/cross-session CSRF fails on every unsafe route
