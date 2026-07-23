@@ -231,7 +231,7 @@ Full spec: `DESIGN.md`.
   - Claude Code already adds its own `Co-Authored-By` trailer automatically
 - No backwards-compat shims for removed code - delete cleanly
 - Tests: Vitest; integration tests hit real DB (no mock-DB pattern)
-- Node ≥ 20 required
+- Node ≥ 24 required
 
 ## Plan Mode — Specs Convention
 
