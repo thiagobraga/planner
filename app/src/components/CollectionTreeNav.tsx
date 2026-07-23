@@ -389,7 +389,7 @@ export function CollectionTreeNav() {
       )}
 
       {flat.length === 0 && !adding && (
-        <div className="text-xs leading-6 text-ink-light px-3 italic opacity-60">
+        <div className="text-xs leading-6 text-ink-light px-3 opacity-60">
           No collections yet
         </div>
       )}
