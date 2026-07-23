@@ -26,6 +26,11 @@ supports both (`POST /auth/register`, `POST /auth/reset-password`,
 - `api/client.ts`'s `request()` throws a plain `Error` with only `message`, discarding
   `error.code`/`details`/`retryAfterSeconds` — needed to distinguish `EMAIL_IN_USE` vs
   `WEAK_PASSWORD` vs `RATE_LIMITED` etc. in the UI.
+- **Found after this plan was written:** `rateLimitService.ts` exports
+  `incrementRegistrationAttempts(ip)` but nothing calls it. `/register` checks
+  the counter and never increments it, so `checkRegistrationRate()` always reads
+  0 and the 3-per-hour cap never fires. Fixed alongside the `retryAfterSeconds`
+  work (task.md task 3).
 - `LoginPage.tsx` uses raw inline Tailwind classes; a newer `ui/Input`+`ui/Button`
   component pair (used in `StyleguidePage.tsx`) already implements the DESIGN.md
   input/error-state spec. New pages use the newer components; `LoginPage` gets

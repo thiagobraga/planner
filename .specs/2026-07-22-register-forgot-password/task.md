@@ -235,25 +235,25 @@ Shared: all four auth screens use `components/ui/Input` + `components/ui/Button`
 
 ### 15. Secrets plumbing
 
-- [ ] `.env.example` — document `RESEND_API_KEY` and `EMAIL_FROM` (commented,
+- [x] `.env.example` — document `RESEND_API_KEY` and `EMAIL_FROM` (commented,
       with a note that leaving the key empty logs reset links to the API
       console instead of sending mail).
-- [ ] `compose.prod.yml` — add a `resend_api_key` secret
+- [x] `compose.prod.yml` — add a `resend_api_key` secret
       (`file: ${RESEND_API_KEY_FILE:-./secrets/resend_api_key}`), mount it on
       the `api` service, and set `RESEND_API_KEY_FILE: /run/secrets/resend_api_key`
       + `EMAIL_FROM` in that service's `environment` — same shape as
       `csrf_secret` (`compose.prod.yml:47,156`).
-- [ ] VPS: create `/etc/planner/secrets/resend_api_key`, `chown 1000:1000`,
+- [~] VPS: create `/etc/planner/secrets/resend_api_key`, `chown 1000:1000`,
       `chmod 400`. Ownership matters — a root-owned secret is unreadable by the
       non-root node user and produced tonight's production incident.
-- [ ] `compose.yml` (dev) — pass `RESEND_API_KEY`/`EMAIL_FROM` through from
+- [x] `compose.yml` (dev) — pass `RESEND_API_KEY`/`EMAIL_FROM` through from
       `.env` if set; absent is the supported default.
 
 ### 16. Docs
 
-- [ ] `CLAUDE.md` — add `services/emailService.ts` to the backend service list;
+- [x] `CLAUDE.md` — add `services/emailService.ts` to the backend service list;
       note the new auth routes in the Pages & Routes table.
-- [ ] `.specs/2026-07-22-register-forgot-password/plan.md` — append the
+- [x] `.specs/2026-07-22-register-forgot-password/plan.md` — append the
       registration-rate-limit bug (task 3) to "Findings from research"; it was
       discovered after the plan was written.
 

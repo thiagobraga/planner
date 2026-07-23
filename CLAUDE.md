@@ -55,6 +55,7 @@ Add to `/etc/hosts`: `planner.local`, `api.planner.local`, `db.planner.local`.
 - `middleware/errorHandler.ts` - `AppError` vs generic; returns `{ error: { code, message, details? } }`
 - `services/syncService.ts` - `publishEvent(event)` is the single broadcast entry point
 - `services/authService.ts` - register/login (Redis rate-limit: 10 attempts/15 min), 7-day JWT
+- `services/emailService.ts` - Resend wrapper; logs reset links to console when `RESEND_API_KEY` is unset
 - `services/taskService.ts` - CRUD, completion, recurrence
 - `services/viewService.ts` - today/upcoming/inbox aggregations
 - `services/filterService.ts` - saved filter CRUD + evaluation via Peggy DSL parser
@@ -103,6 +104,11 @@ All routes under `/api/v1/`. Route files: `auth`, `tasks`, `collections`, `label
 | `/styleguide`      | `StyleguidePage` | Design system reference                |
 
 `AppShell` wraps all routes: sidebar, keyboard dispatch, QuickAdd/Search dialogs.
+
+Logged-out routes sit outside `AppShell` and share `components/AuthShell.tsx`:
+`/login`, `/register`, `/forgot-password`, `/reset-password?token=`.
+`/auth/register` creates no session - `AuthContext.register()` chains into
+`login()` so session creation stays in one place.
 
 ## Key Files
 
