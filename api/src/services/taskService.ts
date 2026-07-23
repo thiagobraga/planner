@@ -870,9 +870,9 @@ export async function moveTask(taskId: string, userId: string, input: MoveTaskIn
       : (input.collectionId ?? task.collection_id);
     const destSectionId = destParent ? destParent.section_id : null;
 
-    if (!destParent && input.collectionId && input.collectionId !== task.collection_id) {
-      await verifyCollectionAccess(input.collectionId, userId);
-    }
+    // Task ownership can outlive collaboration membership, so task access alone
+    // does not prove the user still has access to the resolved destination.
+    await verifyCollectionAccess(destCollectionId, userId);
 
     // `undefined` keeps the current date - that is what makes a sidebar drop
     // file a dated task into a collection without knocking it off its day.
