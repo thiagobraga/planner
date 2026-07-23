@@ -246,7 +246,7 @@ export function InboxPage() {
     });
     setEditingId(undefined);
     if (!id.startsWith('temp-')) apiDeleteTask(id).catch(() => invalidate());
-  }, []);
+  }, [invalidate]);
 
   const handleIndent = useCallback((id: string, dir: 1 | -1) => {
     setTasks((prev) => {
@@ -258,7 +258,7 @@ export function InboxPage() {
       }
       return nextFlat.map(t => t.id === id ? { ...t, parentTaskId: parentTaskId ?? undefined } : t);
     });
-  }, []);
+  }, [invalidate]);
 
   const handleNavigate = useCallback((id: string, dir: 'up' | 'down', col: number) => {
     setTasks((prev) => {
