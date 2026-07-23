@@ -62,8 +62,6 @@ The one uncovered branch in `securityLogger.ts` (line 42) is the
 `req?.socket?.remoteAddress` fallback — unreachable in Express because
 `req.ip` is always set by the framework.
 
-## Coverage gaps (deferred)
+## Coverage gaps
 
-- Full end-to-end session lifecycle integration tests (require real DB + Redis)
-- Offline queue security tests (Account A/B isolation)
-- Playwright e2e tests for production hardening scenarios
+These have been moved to `.specs/2026-07-23-test-coverage-phase2/` for the next phase.

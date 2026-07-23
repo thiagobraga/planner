@@ -318,7 +318,7 @@ function MenuPanel({
 
 interface SubMenuWrapperProps {
   parentItem: ContextMenuItem;
-  parentRef: React.RefObject<HTMLDivElement>;
+  parentRef: React.RefObject<HTMLDivElement | null>;
   itemIndex: number;
   level: number;
   activePath: number[];
