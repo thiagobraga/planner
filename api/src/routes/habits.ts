@@ -7,13 +7,18 @@ import {
   deleteHabit,
   toggleCompletion,
   moveHabit,
+  listGroups,
 } from "../services/habitService.js";
 
 const router: ReturnType<typeof Router> = Router();
 
 router.get("/", async (req: Request, res: Response, next: NextFunction) => {
   try {
-    res.json(await listHabits(req.userId!));
+    const [habits, groups] = await Promise.all([
+      listHabits(req.userId!),
+      listGroups(req.userId!),
+    ]);
+    res.json({ habits, groups });
   } catch (err) {
     next(err);
   }

@@ -484,7 +484,12 @@ export interface ApiHabitGroup {
   orderValue: number;
 }
 
-export async function fetchHabits(): Promise<ApiHabit[]> {
+export interface HabitsResponse {
+  habits: ApiHabit[];
+  groups: ApiHabitGroup[];
+}
+
+export async function fetchHabits(): Promise<HabitsResponse> {
   return request('/habits');
 }
 

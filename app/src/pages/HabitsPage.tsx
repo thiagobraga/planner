@@ -26,7 +26,6 @@ import type { LucideProps } from 'lucide-react';
 
 import {
   fetchHabits,
-  fetchHabitGroups,
   fetchPreferences,
   apiCreateHabit,
   apiUpdateHabit,
@@ -86,11 +85,13 @@ export function HabitsPage() {
     month: today.getMonth(),
   }));
 
-  const { data: habits = [], isSuccess: habitsLoaded } = useQuery({ queryKey: ['habits'], queryFn: fetchHabits });
-  const { data: groups = [], isSuccess: groupsLoaded } = useQuery({
-    queryKey: ['habitGroups'],
-    queryFn: fetchHabitGroups,
+  const { data: habitsData, isSuccess: habitsLoaded } = useQuery({
+    queryKey: ['habits'],
+    queryFn: fetchHabits,
   });
+  const habits = habitsData?.habits ?? [];
+  const groups = habitsData?.groups ?? [];
+  const groupsLoaded = habitsLoaded;
   const { data: preferences } = useQuery({
     queryKey: ['preferences'],
     queryFn: fetchPreferences,
@@ -99,21 +100,26 @@ export function HabitsPage() {
 
   const setHabits = useCallback(
     (updater: (prev: ApiHabit[]) => ApiHabit[]) => {
-      queryClient.setQueryData<ApiHabit[]>(['habits'], (prev) => updater(prev ?? []));
+      queryClient.setQueryData(['habits'], (prev: any) => ({
+        ...prev,
+        habits: updater(prev?.habits ?? []),
+      }));
     },
     [queryClient],
   );
 
   const setGroups = useCallback(
     (updater: (prev: ApiHabitGroup[]) => ApiHabitGroup[]) => {
-      queryClient.setQueryData<ApiHabitGroup[]>(['habitGroups'], (prev) => updater(prev ?? []));
+      queryClient.setQueryData(['habits'], (prev: any) => ({
+        ...prev,
+        groups: updater(prev?.groups ?? []),
+      }));
     },
     [queryClient],
   );
 
   const invalidate = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: ['habits'] });
-    queryClient.invalidateQueries({ queryKey: ['habitGroups'] });
   }, [queryClient]);
 
   useSync(
