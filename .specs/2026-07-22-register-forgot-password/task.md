@@ -154,78 +154,78 @@ Shared: all four auth screens use `components/ui/Input` + `components/ui/Button`
 
 ### 9. Extract the shared auth shell
 
-- [ ] `app/src/components/AuthShell.tsx` — the icon + "Planner" +
+- [x] `app/src/components/AuthShell.tsx` — the icon + "Planner" +
       "Bulletjournal online" header and the centered layout wrapper, lifted
       verbatim out of `LoginPage.tsx:5-44`. Four screens repeating it is the
       point at which extraction pays for itself.
-- [ ] Props: `children`, optional `title` / `subtitle` override.
+- [x] Props: `children`, optional `title` / `subtitle` override.
 
 ### 10. `RegisterPage.tsx`
 
-- [ ] Fields: email (`autoComplete="username"`), display name
+- [x] Fields: email (`autoComplete="username"`), display name
       (`autoComplete="name"`, optional), password
       (`autoComplete="new-password"`).
-- [ ] Submit → `register(email, password, displayName || undefined)` →
+- [x] Submit → `register(email, password, displayName || undefined)` →
       `navigate('/daily', { replace: true })`.
-- [ ] Error branches off `ApiError.code`:
+- [x] Error branches off `ApiError.code`:
   - `VALIDATION_ERROR` → map `details` (array of `{ field, message }`, see
     `utils/validate.ts`) onto the matching field's `errorText`
   - `EMAIL_IN_USE` → error on the email field
   - `RATE_LIMITED` → form-level message with a live countdown from
     `retryAfterSeconds`; disable submit until it hits zero
   - anything else → generic form-level message
-- [ ] Link: "Already have an account? Sign in" → `/login`.
-- [ ] `app/src/pages/__tests__/RegisterPage.test.tsx` — render, success path,
+- [x] Link: "Already have an account? Sign in" → `/login`.
+- [x] `app/src/pages/__tests__/RegisterPage.test.tsx` — render, success path,
       one test per error branch, countdown renders and re-enables submit
       (fake timers).
 
 ### 11. `ForgotPasswordPage.tsx`
 
-- [ ] Single email field → `apiRequestPasswordReset(email)`.
-- [ ] On success **and on any non-rate-limit error**, render the same generic
+- [x] Single email field → `apiRequestPasswordReset(email)`.
+- [x] On success **and on any non-rate-limit error**, render the same generic
       confirmation ("If an account exists, a reset email has been sent"). The
       backend deliberately never reveals whether the account exists
       (`authService.ts:159`); the UI must not leak it either by branching
       differently. `RATE_LIMITED` is the one exception — that reveals nothing
       about the account, only about the IP, so show the countdown.
-- [ ] Links: back to `/login`.
-- [ ] `__tests__/ForgotPasswordPage.test.tsx` — success and server-error both
+- [x] Links: back to `/login`.
+- [x] `__tests__/ForgotPasswordPage.test.tsx` — success and server-error both
       produce the identical confirmation text; `RATE_LIMITED` shows a countdown.
 
 ### 12. `ResetPasswordPage.tsx`
 
-- [ ] Read `token` from `useSearchParams()`. No token in the URL → render the
+- [x] Read `token` from `useSearchParams()`. No token in the URL → render the
       "link is invalid" state immediately, without a submittable form.
-- [ ] One new-password field (`autoComplete="new-password"`) →
+- [x] One new-password field (`autoComplete="new-password"`) →
       `apiConfirmPasswordReset(token, newPassword)`.
-- [ ] Error branches:
+- [x] Error branches:
   - `TOKEN_INVALID` → "This link has expired or has already been used" +
     link to `/forgot-password`
   - `VALIDATION_ERROR` / weak password → field-level error text
-- [ ] Success → confirmation + link to `/login`. Do **not** auto-login: the
+- [x] Success → confirmation + link to `/login`. Do **not** auto-login: the
       confirm endpoint deletes every session for that user
       (`authService.ts:239`), which is the correct security behavior, so the
       user must sign in fresh.
-- [ ] `__tests__/ResetPasswordPage.test.tsx` — missing token, success,
+- [x] `__tests__/ResetPasswordPage.test.tsx` — missing token, success,
       `TOKEN_INVALID`, weak password.
 
 ### 13. `LoginPage` restyle + cross-links
 
-- [ ] Swap the raw `inputClassName` inputs (`LoginPage.tsx:31`, 47-65) and the
+- [x] Swap the raw `inputClassName` inputs (`LoginPage.tsx:31`, 47-65) and the
       hand-rolled button (71-77) for `ui/Input` / `ui/Button`; wrap in
       `AuthShell`.
-- [ ] Add "Forgot password?" → `/forgot-password` and "Don't have an account?
+- [x] Add "Forgot password?" → `/forgot-password` and "Don't have an account?
       Register" → `/register`.
-- [ ] Surface `RATE_LIMITED` countdown here too, now that the 429 carries
+- [x] Surface `RATE_LIMITED` countdown here too, now that the 429 carries
       `retryAfterSeconds`.
-- [ ] Update `app/src/pages/__tests__/LoginPage.test.tsx` — it queries by
+- [x] Update `app/src/pages/__tests__/LoginPage.test.tsx` — it queries by
       `getByPlaceholderText('Email' | 'Password')`, which still works if the
       placeholders are preserved; verify and adjust the button query if the
       accessible name changes.
 
 ### 14. Routes
 
-- [ ] `app/src/App.tsx:23` — add `/register`, `/forgot-password`,
+- [x] `app/src/App.tsx:23` — add `/register`, `/forgot-password`,
       `/reset-password` beside `/login`, each with the same
       `isAuthenticated ? <Navigate to="/daily" replace /> : <Page />` guard.
 
