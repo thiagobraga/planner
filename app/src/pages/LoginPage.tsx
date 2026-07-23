@@ -52,6 +52,7 @@ export function LoginPage() {
             required
             className={inputClassName}
             autoFocus
+            autoComplete="username"
           />
           <input
             type="password"
@@ -60,6 +61,7 @@ export function LoginPage() {
             onChange={(e) => setPassword(e.target.value)}
             required
             className={inputClassName}
+            autoComplete="current-password"
           />
 
           {error && (
