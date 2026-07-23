@@ -136,14 +136,14 @@ describe("config", () => {
   });
 
   describe("session TTLs", () => {
-    it("defaults to 30-minute idle and 12-hour absolute", async () => {
+    it("defaults to 30-day idle and 1-year absolute", async () => {
       process.env.NODE_ENV = "test";
       process.env.DATABASE_URL = "postgres://localhost:5432/db";
       process.env.CSRF_SECRET = "a".repeat(32);
       process.env.CORS_ORIGIN = "http://localhost:3000";
       const cfg = await import("./config.js");
-      expect(cfg.SESSION_IDLE_TTL_MINUTES).toBe(30);
-      expect(cfg.SESSION_ABSOLUTE_TTL_HOURS).toBe(12);
+      expect(cfg.SESSION_IDLE_TTL_MINUTES).toBe(43200);
+      expect(cfg.SESSION_ABSOLUTE_TTL_HOURS).toBe(8760);
     });
 
     it("reads session TTLs from environment", async () => {

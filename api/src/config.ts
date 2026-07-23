@@ -103,7 +103,7 @@ export const CORS_ORIGIN = (() => {
 export const PORT = process.env.PORT || "4000";
 
 export const SESSION_IDLE_TTL_MINUTES = (() => {
-  const raw = process.env.SESSION_IDLE_TTL_MINUTES || "30";
+  const raw = process.env.SESSION_IDLE_TTL_MINUTES || "43200";
   const val = parseInt(raw, 10);
   if (isNaN(val) || val < 1) {
     throw new Error("SESSION_IDLE_TTL_MINUTES must be a positive integer");
@@ -112,7 +112,7 @@ export const SESSION_IDLE_TTL_MINUTES = (() => {
 })();
 
 export const SESSION_ABSOLUTE_TTL_HOURS = (() => {
-  const raw = process.env.SESSION_ABSOLUTE_TTL_HOURS || "12";
+  const raw = process.env.SESSION_ABSOLUTE_TTL_HOURS || "8760";
   const val = parseInt(raw, 10);
   if (isNaN(val) || val < 1) {
     throw new Error("SESSION_ABSOLUTE_TTL_HOURS must be a positive integer");
