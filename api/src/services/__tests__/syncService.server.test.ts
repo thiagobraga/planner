@@ -50,8 +50,7 @@ vi.mock("../sessionService.js", () => ({
   buildCookieName: vi.fn().mockReturnValue("planner_session"),
 }));
 
-import { attachSyncServer, getIO, publishEvent } from "../syncService.js";
-import { redisSubClient } from "../../db/redis.js";
+import { attachSyncServer, publishEvent } from "../syncService.js";
 import { validateSession } from "../sessionService.js";
 
 function captureConnectionHandler(): (...args: unknown[]) => void {

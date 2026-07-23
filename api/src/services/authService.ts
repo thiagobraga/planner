@@ -11,7 +11,6 @@ import {
   checkLoginRate,
   incrementLoginAttempts,
   clearLoginRate,
-  getProgressiveDelay,
 } from './rateLimitService.js';
 
 const EMAIL_REGEX =

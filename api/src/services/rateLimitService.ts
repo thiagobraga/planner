@@ -74,9 +74,8 @@ export async function checkLoginRate(
   const accountKey = `rl:acct:${emailHash}`;
   const ipKey = `rl:login:ip:${ip}`;
 
-  const [accountCount, ipCount] = await getCounts(accountKey, ipKey, LOGIN_ACCOUNT_WINDOW);
+  const [accountCount, ipCount] = await getCounts(accountKey, ipKey);
 
-  const maxAccount = Math.max(accountCount, ipCount > 0 ? ipCount : 0);
   const effectiveCount = Math.max(accountCount, ipCount);
 
   if (effectiveCount >= LOCKOUT_THRESHOLD || accountCount >= LOCKOUT_THRESHOLD || ipCount >= LOGIN_IP_MAX) {
@@ -98,7 +97,6 @@ export async function checkLoginRate(
 async function getCounts(
   accountKey: string,
   ipKey: string,
-  windowSeconds: number,
 ): Promise<[number, number]> {
   if (redisClient.isReady) {
     try {

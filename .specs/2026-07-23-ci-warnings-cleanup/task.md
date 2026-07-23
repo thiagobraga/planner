@@ -22,6 +22,15 @@
 - [x] `.github/workflows/security.yml` — bump `codeql-action/init@v3`→`v4`, `codeql-action/analyze@v3`→`v4`, `codeql-action/upload-sarif@v3`→`v4`
 - [x] `.github/workflows/deploy.yml` — bump `codeql-action/upload-sarif@v3`→`v4`
 
+## CI annotation follow-up
+- [x] `app/src/pages/InboxPage.tsx:249,261` — add `invalidate` to `useCallback` dependencies
+- [x] `api/src/services/taskService.ts:6` — remove unused `addDaysISO` import
+- [x] `api/src/services/sessionService.ts:3` — remove unused `AppError` import
+- [x] `api/src/services/rateLimitService.ts:79,101` — remove unused `maxAccount` and `windowSeconds`
+- [x] `api/src/services/authService.ts:14` — remove unused `getProgressiveDelay` import
+- [x] `api/src/services/__tests__/taskService.property.test.ts:381` — mark generated `numDescendants` value intentionally unused
+- [x] `api/src/services/__tests__/syncService.server.test.ts:53-54` — remove unused `getIO` and `redisSubClient` imports
+
 ## Tracked, no action yet
 - [x] `actions/checkout@v4` Node.js 20 deprecation — upgraded all workflow uses to Node 24-native `actions/checkout@v5`
 - [ ] Remaining Node.js 20 deprecation warnings (`setup-node`, `upload-artifact`, `docker/*`) — GitHub runners auto-force Node 24 compat; revisit when Node-24-native majors ship

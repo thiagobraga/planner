@@ -378,7 +378,7 @@ describe('Property 11: Subtask cycle detection', () => {
 describe('Property 12: Parent completion cascades to all descendants', () => {
   it('completing parent triggers cascade update on all descendants', async () => {
     await fc.assert(
-      fc.asyncProperty(fc.integer({ min: 1, max: 10 }), async (numDescendants) => {
+      fc.asyncProperty(fc.integer({ min: 1, max: 10 }), async (_numDescendants) => {
         vi.clearAllMocks();
         mockClientQuery.mockResolvedValue({ rows: [] });
 

@@ -1,6 +1,5 @@
 import crypto from "node:crypto";
 import pool from "../db/pool.js";
-import { AppError } from "../utils/AppError.js";
 import { securityLog } from "../utils/securityLogger.js";
 import { SESSION_IDLE_TTL_MINUTES, SESSION_ABSOLUTE_TTL_HOURS } from "../config.js";
 
