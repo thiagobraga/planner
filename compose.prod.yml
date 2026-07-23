@@ -23,7 +23,9 @@ services:
     security_opt: [no-new-privileges:true]
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:80/"]
+      # `localhost` resolves to ::1 first on musl (Alpine); nginx only binds
+      # IPv4, so that lookup order made this healthcheck always fail.
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:80/"]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -36,8 +38,10 @@ services:
       target: production
     image: ghcr.io/thiagobraga/planner-api:${IMAGE_TAG:-latest}
     container_name: planner-prod-api
-    # backend reaches app, data reaches postgres/redis. Both are required.
-    networks: [backend, data]
+    # backend reaches app, data reaches postgres/redis, egress is the only
+    # route out to the internet (Resend). backend/data stay internal so
+    # nothing else on the stack gets outbound access.
+    networks: [backend, data, egress]
     environment:
       NODE_ENV: production
       PORT: 4000
@@ -186,3 +190,8 @@ networks:
     name: planner-prod-data
     driver: bridge
     internal: true
+  # Non-internal on purpose: api's only path to the internet (Resend).
+  # No other service is attached to this network.
+  egress:
+    name: planner-prod-egress
+    driver: bridge
