@@ -1,0 +1,23 @@
+name: Pipeline
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  quality:
+    name: Quality
+    uses: ./.github/workflows/quality.yml
+    secrets: inherit
+
+  security:
+    name: Security
+    needs: quality
+    uses: ./.github/workflows/security.yml
+    secrets: inherit
+
+  deploy:
+    name: Deploy
+    needs: security
+    uses: ./.github/workflows/deploy.yml
+    secrets: inherit
