@@ -9,6 +9,7 @@ import { setPendingColumn } from '../components/TaskItem';
 import type { Task } from '../components/TaskItem';
 import {
   fetchCollectionView,
+  fetchPreferences,
   apiCreateTask,
   apiUpdateTask,
   apiToggleTask,
@@ -64,12 +65,15 @@ export function CollectionsPage() {
     staleTime: 30_000,
     enabled: !!id,
   });
+  const { data: preferences } = useQuery({
+    queryKey: ['preferences'],
+    queryFn: fetchPreferences,
+  });
   const {
-    preferences,
     isPending: visibilityPreferencesPending,
     setHideCompletedTasks,
     setHideOldNotes,
-  } = useTaskVisibilityPreferences();
+  } = useTaskVisibilityPreferences(preferences);
 
   useEffect(() => {
     if (data?.tasks) {

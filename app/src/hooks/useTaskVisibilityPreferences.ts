@@ -1,7 +1,6 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   apiUpdatePreferences,
-  fetchPreferences,
   type Preferences,
 } from '../api/client';
 
@@ -12,12 +11,8 @@ interface VisibilityPreferenceUpdate {
   value: boolean;
 }
 
-export function useTaskVisibilityPreferences(onUpdated?: () => void) {
+export function useTaskVisibilityPreferences(preferences: Preferences | undefined, onUpdated?: () => void) {
   const queryClient = useQueryClient();
-  const { data: preferences } = useQuery({
-    queryKey: ['preferences'],
-    queryFn: fetchPreferences,
-  });
 
   const mutation = useMutation({
     mutationFn: ({ key, value }: VisibilityPreferenceUpdate) =>

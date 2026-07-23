@@ -16,6 +16,7 @@ import { getPhrase } from '../utils/phrases';
 import {
   fetchTodayTasks,
   fetchCollections,
+  fetchPreferences,
   apiToggleTask,
   apiCreateTask,
   apiUpdateTask,
@@ -125,16 +126,20 @@ export function DailyPage() {
     });
   }, []);
 
+  const { data: prefs } = useQuery({
+    queryKey: ['preferences'],
+    queryFn: fetchPreferences,
+  });
+
   const {
-    preferences,
     isPending: visibilityPreferencesPending,
     setHideCompletedTasks,
     setHideOldNotes,
-  } = useTaskVisibilityPreferences(replaceTodayFromApi);
+  } = useTaskVisibilityPreferences(prefs, replaceTodayFromApi);
 
   useEffect(() => {
     replaceTodayFromApi();
-  }, [replaceTodayFromApi, preferences?.timeZone, preferences?.hideCompletedTasks, preferences?.hideOldNotes]);
+  }, [replaceTodayFromApi]);
 
   useSync(useCallback((event) => {
     if (event.entityType !== 'task') return;
@@ -143,7 +148,7 @@ export function DailyPage() {
     // Another session moved a subtree. Its date, collection, depth and every
     // sibling's order may have changed at once, so patching the one row named by
     // the event would leave it in the section it just left. Refetch instead.
-    if (isStructuralMove(event) || preferences?.hideCompletedTasks || preferences?.hideOldNotes) {
+    if (isStructuralMove(event) || prefs?.hideCompletedTasks || prefs?.hideOldNotes) {
       replaceTodayFromApi();
       return;
     }
@@ -173,7 +178,7 @@ export function DailyPage() {
         }))
       );
     }
-  }, [replaceTodayFromApi, preferences?.hideCompletedTasks, preferences?.hideOldNotes]));
+  }, [replaceTodayFromApi, prefs?.hideCompletedTasks, prefs?.hideOldNotes]));
 
   const updateSections = useCallback((updater: (prev: DaySection[]) => DaySection[]) => {
     setSections(updater);
@@ -226,7 +231,7 @@ export function DailyPage() {
     const prevSections = sectionsRef.current;
     const task = prevSections.flatMap((s) => s.tasks).find((t) => t.id === id);
     const wasCompleted = task?.isCompleted ?? false;
-    const hideCompleted = preferences?.hideCompletedTasks ?? false;
+    const hideCompleted = prefs?.hideCompletedTasks ?? false;
     const removeOnComplete = hideCompleted && !wasCompleted;
 
     updateSections((prev) =>
@@ -246,7 +251,7 @@ export function DailyPage() {
         replaceTodayFromApi();
       });
     }
-  }, [preferences?.hideCompletedTasks, updateSections, replaceTodayFromApi]);
+  }, [prefs?.hideCompletedTasks, updateSections, replaceTodayFromApi]);
 
   const handleToday = useCallback(() => {
     todaySectionRef.current?.scrollIntoView({
@@ -496,9 +501,9 @@ export function DailyPage() {
           Today
         </Button>
         <TaskVisibilityControls
-          hideCompletedTasks={preferences?.hideCompletedTasks ?? false}
-          hideOldNotes={preferences?.hideOldNotes ?? false}
-          disabled={!preferences || visibilityPreferencesPending}
+          hideCompletedTasks={prefs?.hideCompletedTasks ?? false}
+          hideOldNotes={prefs?.hideOldNotes ?? false}
+          disabled={!prefs || visibilityPreferencesPending}
           onHideCompletedTasksChange={setHideCompletedTasks}
           onHideOldNotesChange={setHideOldNotes}
         />

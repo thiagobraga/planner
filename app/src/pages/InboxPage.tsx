@@ -6,6 +6,7 @@ import { setPendingColumn } from '../components/TaskItem';
 import type { Task } from '../components/TaskItem';
 import {
   fetchInboxTasks,
+  fetchPreferences,
   apiCreateTask,
   apiUpdateTask,
   apiToggleTask,
@@ -64,12 +65,15 @@ export function InboxPage() {
     queryFn: fetchInboxTasks,
     staleTime: 30_000,
   });
+  const { data: preferences } = useQuery({
+    queryKey: ['preferences'],
+    queryFn: fetchPreferences,
+  });
   const {
-    preferences,
     isPending: visibilityPreferencesPending,
     setHideCompletedTasks,
     setHideOldNotes,
-  } = useTaskVisibilityPreferences();
+  } = useTaskVisibilityPreferences(preferences);
 
   useEffect(() => {
     if (data?.tasks) {
