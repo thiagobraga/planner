@@ -36,4 +36,4 @@
 
 ## Tracked, no action yet
 - [x] `actions/checkout@v4` Node.js 20 deprecation — upgraded all workflow uses to Node 24-native `actions/checkout@v5`
-- [ ] Remaining Node.js 20 deprecation warnings (`setup-node`, `upload-artifact`, `docker/*`) — GitHub runners auto-force Node 24 compat; revisit when Node-24-native majors ship
+- [x] Remaining Node.js 20 deprecation warnings — upgraded `upload-artifact`, `setup-buildx-action`, and `build-push-action` to Node 24-native majors
