@@ -24,8 +24,8 @@ interface FloatingResult {
 }
 
 export function useFloatingPosition(
-  triggerRef: RefObject<HTMLElement> | null,
-  floatingRef: RefObject<HTMLElement>,
+  triggerRef: RefObject<HTMLElement | null> | null,
+  floatingRef: RefObject<HTMLElement | null>,
   options: FloatingOptions,
   isOpen: boolean
 ): FloatingResult {
