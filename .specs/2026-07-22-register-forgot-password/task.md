@@ -243,9 +243,14 @@ Shared: all four auth screens use `components/ui/Input` + `components/ui/Button`
       the `api` service, and set `RESEND_API_KEY_FILE: /run/secrets/resend_api_key`
       + `EMAIL_FROM` in that service's `environment` — same shape as
       `csrf_secret` (`compose.prod.yml:47,156`).
-- [~] VPS: create `/etc/planner/secrets/resend_api_key`, `chown 1000:1000`,
-      `chmod 400`. Ownership matters — a root-owned secret is unreadable by the
-      non-root node user and produced tonight's production incident.
+- [x] VPS: create `/etc/planner/secrets/resend_api_key` — the VPS-side
+      `/p/projects/planner/.env` (untracked, not in this repo) sets
+      `DATABASE_URL_FILE`/`CSRF_SECRET_FILE`/etc to `/etc/planner/secrets/...`,
+      overriding compose.prod.yml's `./secrets/` default; matches the other
+      live secrets there. Populated with the real key, ownership matched to
+      the already-working `database_url` secret. Needs a
+      `RESEND_API_KEY_FILE=/etc/planner/secrets/resend_api_key` line added to
+      that same VPS `.env` or compose still falls back to `./secrets/`.
 - [x] `compose.yml` (dev) — pass `RESEND_API_KEY`/`EMAIL_FROM` through from
       `.env` if set; absent is the supported default.
 
@@ -268,9 +273,24 @@ Shared: all four auth screens use `components/ui/Input` + `components/ui/Button`
       `/daily`; request a reset → link appears in `docker compose logs api`;
       open it → set a new password → confirm the old password is rejected and
       the new one works.
-- [~] Manual, production (blocked on the user's Resend account + DNS
-      verification, see plan.md "Open follow-up"): same round trip against a
-      real inbox. Everything else ships without it.
+- [x] Manual, production: full round trip confirmed working. Chain of
+      issues found and fixed along the way:
+  1. `api` had no internet route at all (`backend`/`data` both
+     `internal: true`) — Resend calls failed with `fetch failed` / DNS
+     `ESERVFAIL`, swallowed by design so it shipped silently. Fixed with a
+     dedicated non-internal `egress` network attached only to `api`
+     (`compose.prod.yml`, commit `e37ac0b`).
+  2. `EMAIL_FROM` defaulted to `noreply@planner.thiagobraga.dev`, but the
+     domain actually verified in Resend is the `mail.` subdomain
+     (`mail.planner.thiagobraga.dev`) — every send was rejected with
+     "domain is not verified" even with egress fixed. Fixed the default in
+     `config.ts` + `compose.prod.yml` (commit `ac5e5f3`).
+  3. Same commit fixed the unrelated `app` healthcheck (`localhost`
+     resolving to `::1` on musl, nginx IPv4-only) — was permanently
+     `(unhealthy)`, now `(healthy)`.
+      Re-ran the round trip against prod after both fixes: reset email
+      received in a real inbox, reset link worked, new password set, old
+      password confirmed rejected. Confirmed by the user.
 
 ---
 

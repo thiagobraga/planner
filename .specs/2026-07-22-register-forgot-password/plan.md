@@ -136,7 +136,22 @@ logged-out "I forgot my password" flow).
 
 ## Open follow-up (not blocking this work)
 
-- Resend account creation + `planner.thiagobraga.dev` (or a subdomain) DNS
-  verification is on the user — needed before the email actually sends in
-  production. Code ships with the dev-console fallback either way, so this
-  work isn't blocked on it.
+- Resend account created, sending domain verified, API key live on the VPS
+  secret file. Code ships with the dev-console fallback either way, so this
+  work was never blocked on it.
+- **New finding (2026-07-22, production round trip) — fixed:** the manual
+  prod round trip first failed because `api` had no internet route at all
+  (`backend`/`data` both `internal: true`) — every Resend call failed with
+  `fetch failed` / DNS `ESERVFAIL`, swallowed silently by `emailService.ts`'s
+  no-throw design. Fixed by adding a dedicated non-internal `egress` network
+  attached only to `api` (`compose.prod.yml`, commit `e37ac0b`); `backend`/
+  `data` stay internal. Confirmed post-deploy: `api` reaches
+  `api.resend.com` (HTTP 200).
+- **Resolved:** with egress fixed, Resend rejected the send with
+  `The planner.thiagobraga.dev domain is not verified` — turned out
+  `EMAIL_FROM` was defaulting to the bare domain while the domain actually
+  verified in Resend is the `mail.` subdomain
+  (`mail.planner.thiagobraga.dev`). Fixed the default in both `config.ts`
+  and `compose.prod.yml` (commit `ac5e5f3`). Round trip confirmed working
+  end to end against a real inbox: reset email received, link worked, new
+  password set, old password rejected. This spec is fully complete.
