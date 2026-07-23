@@ -59,7 +59,7 @@ export function TaskDetail({ task, onClose, onUpdate, onDelete }: TaskDetailProp
       setPriority(task.priority);
       setConfirmDelete(false);
     }
-  }, [task?.id]);
+  }, [task]);
 
   const handleTitleBlur = () => {
     if (task && title.trim() && title !== task.title) {

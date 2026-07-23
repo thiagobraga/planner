@@ -79,7 +79,7 @@ export function CustomSelect({
 
     document.addEventListener('mousedown', handleMouseDown);
     return () => document.removeEventListener('mousedown', handleMouseDown);
-  }, [isOpen]);
+  }, [isOpen, alwaysOpen]);
 
   // Scroll highlighted item into view
   useEffect(() => {

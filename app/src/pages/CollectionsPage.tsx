@@ -243,7 +243,7 @@ export function CollectionsPage() {
     });
     setEditingId(undefined);
     if (!taskId.startsWith('temp-')) apiDeleteTask(taskId).catch(() => invalidate());
-  }, []);
+  }, [invalidate]);
   const handleIndent = useCallback((taskId: string, dir: 1 | -1) => {
     setTasks((prev) => {
       const flatNodes = flattenTasks(prev).map((r) => ({ ...r.task, indent: r.depth }));
@@ -254,7 +254,7 @@ export function CollectionsPage() {
       }
       return nextFlat.map(t => t.id === taskId ? { ...t, parentTaskId: parentTaskId ?? undefined } : t);
     });
-  }, []);
+  }, [invalidate]);
   const handleNavigate = useCallback((taskId: string, dir: 'up' | 'down', col: number) => {
     setTasks((prev) => {
       const idx = prev.findIndex((t) => t.id === taskId);

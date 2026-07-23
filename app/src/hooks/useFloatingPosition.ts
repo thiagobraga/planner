@@ -133,7 +133,7 @@ export function useFloatingPosition(
       window.removeEventListener('scroll', updatePosition, true);
       window.removeEventListener('resize', updatePosition);
     };
-  }, [isOpen, triggerRef, floatingRef, options.position?.x, options.position?.y, options.placement, options.align, options.padding, options.offset]);
+  }, [isOpen, triggerRef, floatingRef, options.position, options.placement, options.align, options.padding, options.offset]);
 
   return result;
 }

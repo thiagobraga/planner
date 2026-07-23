@@ -57,8 +57,6 @@ vi.mock("../../db/pool.js", () => ({
 
 import { login } from "../../services/authService.js";
 import { checkLoginRate } from "../../services/rateLimitService.js";
-import { buildCookieName, buildCookieOptions } from "../../services/sessionService.js";
-
 let app: Express;
 
 beforeAll(async () => {
