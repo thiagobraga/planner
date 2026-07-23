@@ -55,6 +55,7 @@ vi.mock("../../services/rateLimitService.js", () => ({
   checkRegistrationRate: vi.fn().mockResolvedValue({ allowed: true, remaining: 3, retryAfterSeconds: 0 }),
   checkPasswordResetRate: vi.fn().mockResolvedValue({ allowed: true, remaining: 5, retryAfterSeconds: 0 }),
   incrementPasswordResetAttempts: vi.fn().mockResolvedValue(undefined),
+  incrementRegistrationAttempts: vi.fn().mockResolvedValue(undefined),
 }));
 
 import authRoutes from "../auth.js";
@@ -78,6 +79,60 @@ describe("auth routes", () => {
     const res = await request(app).post("/api/v1/auth/register").send({ email: "a@b.com", password: "test123" });
     expect(res.status).toBe(201);
     expect(res.body.user.id).toBe("u1");
+  });
+
+  it("POST /api/v1/auth/register → forwards displayName to register()", async () => {
+    mockRegister.mockResolvedValue({ id: "u1", email: "a@b.com", displayName: "Alice" });
+    const res = await request(app)
+      .post("/api/v1/auth/register")
+      .send({ email: "a@b.com", password: "test123", displayName: "Alice" });
+    expect(res.status).toBe(201);
+    expect(mockRegister).toHaveBeenCalledWith({
+      email: "a@b.com",
+      password: "test123",
+      displayName: "Alice",
+    });
+  });
+
+  it("POST /api/v1/auth/register without displayName → forwards undefined", async () => {
+    mockRegister.mockResolvedValue({ id: "u1", email: "a@b.com", displayName: null });
+    await request(app).post("/api/v1/auth/register").send({ email: "a@b.com", password: "test123" });
+    expect(mockRegister).toHaveBeenCalledWith({
+      email: "a@b.com",
+      password: "test123",
+      displayName: undefined,
+    });
+  });
+
+  it("POST /api/v1/auth/register → counts the attempt only on success", async () => {
+    const rateLimitMock = await import("../../services/rateLimitService.js");
+    const increment = rateLimitMock.incrementRegistrationAttempts as ReturnType<typeof vi.fn>;
+
+    mockRegister.mockResolvedValue({ id: "u1", email: "a@b.com" });
+    await request(app).post("/api/v1/auth/register").send({ email: "a@b.com", password: "test123" });
+    expect(increment).toHaveBeenCalledTimes(1);
+
+    increment.mockClear();
+    mockRegister.mockRejectedValueOnce(
+      new AppError({ code: "EMAIL_IN_USE", message: "taken", statusCode: 409 }),
+    );
+    await request(app).post("/api/v1/auth/register").send({ email: "a@b.com", password: "test123" });
+    expect(increment).not.toHaveBeenCalled();
+  });
+
+  it("POST /api/v1/auth/register → 429 carries retryAfterSeconds", async () => {
+    const rateLimitMock = await import("../../services/rateLimitService.js");
+    (rateLimitMock.checkRegistrationRate as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      allowed: false,
+      remaining: 0,
+      retryAfterSeconds: 3600,
+    });
+
+    const res = await request(app).post("/api/v1/auth/register").send({ email: "a@b.com", password: "test123" });
+    expect(res.status).toBe(429);
+    expect(res.body.error.code).toBe("RATE_LIMITED");
+    expect(res.body.error.retryAfterSeconds).toBe(3600);
+    expect(res.headers["retry-after"]).toBe("3600");
   });
 
   it("POST /api/v1/auth/login → calls login, sets cookie", async () => {
@@ -104,6 +159,8 @@ describe("auth routes", () => {
     const res = await request(app).post("/api/v1/auth/login").send({ email: "a@b.com", password: "test123" });
     expect(res.status).toBe(429);
     expect(res.body.error.code).toBe("RATE_LIMITED");
+    expect(res.body.error.retryAfterSeconds).toBe(900);
+    expect(res.headers["retry-after"]).toBe("900");
   });
 
   it("POST /api/v1/auth/logout → calls revokeSession, clears cookie", async () => {
@@ -118,6 +175,21 @@ describe("auth routes", () => {
     const res = await request(app).post("/api/v1/auth/reset-password").send({ email: "a@b.com" });
     expect(res.status).toBe(200);
     expect(mockRequestPasswordReset).toHaveBeenCalledWith("a@b.com");
+  });
+
+  it("POST /api/v1/auth/reset-password → 429 carries retryAfterSeconds", async () => {
+    const rateLimitMock = await import("../../services/rateLimitService.js");
+    (rateLimitMock.checkPasswordResetRate as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      allowed: false,
+      remaining: 0,
+      retryAfterSeconds: 3600,
+    });
+
+    const res = await request(app).post("/api/v1/auth/reset-password").send({ email: "a@b.com" });
+    expect(res.status).toBe(429);
+    expect(res.body.error.retryAfterSeconds).toBe(3600);
+    expect(res.headers["retry-after"]).toBe("3600");
+    expect(mockRequestPasswordReset).not.toHaveBeenCalled();
   });
 
   it("POST /api/v1/auth/reset-password/confirm → calls confirmPasswordReset", async () => {

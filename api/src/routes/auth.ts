@@ -9,23 +9,39 @@ import {
   checkRegistrationRate,
   checkPasswordResetRate,
   incrementPasswordResetAttempts,
+  incrementRegistrationAttempts,
 } from "../services/rateLimitService.js";
 
 const router: ReturnType<typeof Router> = Router();
 
+function sendRateLimited(res: Response, message: string, retryAfterSeconds: number): void {
+  res.setHeader("Retry-After", String(retryAfterSeconds));
+  res.status(429).json({
+    error: { code: "RATE_LIMITED", message, retryAfterSeconds },
+  });
+}
+
+// Deliberately returns 201 without a session: /login is the only path that
+// mints one, so cookie flags, TTL, rate limiting and the security log all live
+// in one place. Clients register then log in.
 router.post("/register", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const rateResult = await checkRegistrationRate(req.ip ?? "unknown");
     if (!rateResult.allowed) {
       securityLog.rateLimitExceeded(req, `register:${req.ip}`, 3);
-      res.status(429).json({
-        error: { code: "RATE_LIMITED", message: "Too many registration attempts. Please try again later." },
-      });
+      sendRateLimited(
+        res,
+        "Too many registration attempts. Please try again later.",
+        rateResult.retryAfterSeconds,
+      );
       return;
     }
 
-    const { email, password } = req.body;
-    const user = await register({ email, password });
+    const { email, password, displayName } = req.body;
+    const user = await register({ email, password, displayName });
+    // Counted on success only - a rejected attempt (typo, weak password) should
+    // not burn a legitimate user's quota.
+    await incrementRegistrationAttempts(req.ip ?? "unknown");
     securityLog.authRegisterSuccess(req, user.id);
     res.status(201).json({ user });
   } catch (err) {
@@ -52,9 +68,11 @@ router.post("/login", async (req: Request, res: Response, next: NextFunction) =>
     const rateResult = await checkLoginRate(email, req.ip ?? "unknown");
     if (!rateResult.allowed) {
       securityLog.authLoginFailure(req, "rate-limited");
-      res.status(429).json({
-        error: { code: "RATE_LIMITED", message: "Too many failed login attempts. Please try again later." },
-      });
+      sendRateLimited(
+        res,
+        "Too many failed login attempts. Please try again later.",
+        rateResult.retryAfterSeconds,
+      );
       return;
     }
 
@@ -84,9 +102,11 @@ router.post("/reset-password", async (req: Request, res: Response, next: NextFun
   try {
     const rateResult = await checkPasswordResetRate(req.ip ?? "unknown");
     if (!rateResult.allowed) {
-      res.status(429).json({
-        error: { code: "RATE_LIMITED", message: "Too many password reset requests. Please try again later." },
-      });
+      sendRateLimited(
+        res,
+        "Too many password reset requests. Please try again later.",
+        rateResult.retryAfterSeconds,
+      );
       return;
     }
 
