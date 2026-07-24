@@ -20,7 +20,7 @@
 - [x] Run `docker compose exec app npm run lint` — 43 findings (31 errors, 12 warnings) from v7's new React-Compiler-oriented rules on pre-existing patterns (this app doesn't use the Compiler). Downgraded those specific rules to `warn` in `eslint.config.js` (user decision) rather than fixing all 31 in this PR — lint now passes with 0 errors. Also fixed the config itself: v7's top-level `configs` are legacy-eslintrc-shaped; flat config needs `reactHooks.configs.flat["recommended-latest"]`.
 - [x] Run `docker compose exec app npm test` — 635/635 passed, no `act()`-timing failures
 - [x] Manual smoke test in browser: registered a throwaway account, task create + complete on Daily page, Habits page (12-week grid) — no console errors, design system intact, real-time socket connected. Logged out/revoked the test session after. Also caught a **real production build break**: `RefObject<HTMLDivElement>` (non-nullable) no longer matches React 19's `useRef` return type — fixed in `useFloatingPosition.ts` and `ContextMenu.tsx`'s `parentRef` prop type (widened to `RefObject<T | null>`). `npm run build` (used by the Docker production stage) now succeeds; verified by building and scanning the actual `production`-target images (0 CVEs).
-- [ ] Optional: `app/src/components/monthly/MonthSelector.tsx` — simplify `forwardRef` + `useImperativeHandle` to plain ref-as-prop (React 19 feature, not required for correctness) — left as-is, optional/out of scope
+- [x] Optional: `app/src/components/monthly/MonthSelector.tsx` — simplify `forwardRef` + `useImperativeHandle` to plain ref-as-prop (React 19 feature, not required for correctness) — completed.
 
 ## Vulnerability sweep
 - [x] `api`: confirm clean — `docker compose exec api npm audit` → 0 vulnerabilities

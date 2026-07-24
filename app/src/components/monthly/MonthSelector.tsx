@@ -38,8 +38,13 @@ export interface MonthSelectorHandle {
   animateTo: (year: number, month: number) => void;
 }
 
-export const MonthSelector = forwardRef<MonthSelectorHandle, MonthSelectorProps>(
-  ({ year: selectedYear, month: selectedMonth, onChange, className = '' }, ref) => {
+export const MonthSelector = ({
+  year: selectedYear,
+  month: selectedMonth,
+  onChange,
+  className = '',
+  ref,
+}: MonthSelectorProps & { ref?: React.Ref<MonthSelectorHandle> }) => {
   const [isMobileStrip, setIsMobileStrip] = useState(() => window.innerWidth < 640);
   const [pendingMonth, setPendingMonth] = useState<MonthTile | null>(null);
   const [suppressStripTransition, setSuppressStripTransition] = useState(false);
@@ -178,4 +183,4 @@ export const MonthSelector = forwardRef<MonthSelectorHandle, MonthSelectorProps>
       />
     </div>
   );
-});
+};
