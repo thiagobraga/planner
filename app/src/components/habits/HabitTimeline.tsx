@@ -356,11 +356,34 @@ export function HabitTimeline({
     const viewport = daysViewportRef.current;
     if (!viewport) return;
 
+    // Read every layout value up front, before the header's scrollLeft write
+    // below - writing then reading again would force a synchronous reflow.
+    const { scrollLeft, clientWidth, scrollWidth } = viewport;
+
     if (daysHeaderViewportRef.current) {
-      daysHeaderViewportRef.current.scrollLeft = viewport.scrollLeft;
+      daysHeaderViewportRef.current.scrollLeft = scrollLeft;
     }
-    setCanPagePrevious(viewport.scrollLeft > 1);
-    setCanPageNext(viewport.scrollLeft + viewport.clientWidth < viewport.scrollWidth - 1);
+    setCanPagePrevious(scrollLeft > 1);
+    setCanPageNext(scrollLeft + clientWidth < scrollWidth - 1);
+  }, []);
+
+  // Native scroll fires on every tick (dozens/sec during a fling or the
+  // smooth-scroll paging animation); coalesce to one update per frame so the
+  // read/write above and the resulting re-render don't run at scroll-event
+  // frequency.
+  const pagingRafRef = useRef<number | null>(null);
+  const handleDaysScroll = useCallback(() => {
+    if (pagingRafRef.current != null) return;
+    pagingRafRef.current = requestAnimationFrame(() => {
+      pagingRafRef.current = null;
+      updatePagingState();
+    });
+  }, [updatePagingState]);
+
+  useEffect(() => {
+    return () => {
+      if (pagingRafRef.current != null) cancelAnimationFrame(pagingRafRef.current);
+    };
   }, []);
 
   useEffect(() => {
@@ -613,7 +636,7 @@ export function HabitTimeline({
 
           <div
             ref={daysViewportRef}
-            onScroll={updatePagingState}
+            onScroll={handleDaysScroll}
             className="habit-timeline-days-viewport min-w-0 flex-1 overflow-x-auto overscroll-x-contain scroll-smooth snap-x snap-mandatory"
           >
             <div className="habit-timeline-table-inner" style={{ width: days.length * CELL_W }}>

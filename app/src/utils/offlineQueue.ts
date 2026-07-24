@@ -1,7 +1,7 @@
 import { getSyncStatus } from './socket';
 
 const DB_NAME = 'planner-offline-queue';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 const STORE_NAME = 'mutations';
 
 export type QueuedMutationMethod = 'POST' | 'PATCH' | 'PUT' | 'DELETE';
@@ -30,13 +30,17 @@ function openDB(): Promise<IDBDatabase> {
     dbPromise = new Promise((resolve, reject) => {
       const request = indexedDB.open(DB_NAME, DB_VERSION);
 
-      request.onupgradeneeded = (event: IDBVersionChangeEvent) => {
+      request.onupgradeneeded = () => {
         const db = request.result;
         if (!db.objectStoreNames.contains(STORE_NAME)) {
           const store = db.createObjectStore(STORE_NAME, { keyPath: 'id' });
           store.createIndex('ownerUserId', 'ownerUserId', { unique: false });
         }
-        if (event.oldVersion < 2 && db.objectStoreNames.contains(STORE_NAME)) {
+        // Not gated on `event.oldVersion` - a db can already be sitting at the
+        // current DB_VERSION but still missing the index (e.g. a build that
+        // bumped the version before this index-creation code existed), and
+        // onupgradeneeded only fires again once DB_VERSION is bumped further.
+        if (db.objectStoreNames.contains(STORE_NAME)) {
           const store = request.transaction?.objectStore(STORE_NAME);
           if (store) {
             if (!store.indexNames.contains('ownerUserId')) {

@@ -142,9 +142,9 @@ describe('offline queue legacy migration', () => {
     expect(all.some((m) => m.ownerUserId === 'user-2')).toBe(true);
   });
 
-  it('Database v2 store has ownerUserId index', async () => {
+  it('Database store has ownerUserId index', async () => {
     const db = await new Promise<IDBDatabase>((resolve, reject) => {
-      const req = indexedDB.open('planner-offline-queue', 2);
+      const req = indexedDB.open('planner-offline-queue');
       req.onsuccess = () => resolve(req.result);
       req.onerror = () => reject(req.error);
     });
