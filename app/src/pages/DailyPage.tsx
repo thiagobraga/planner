@@ -108,7 +108,7 @@ export function DailyPage() {
   const qc = useQueryClient();
   const [sections, setSections] = useState<DaySection[]>([]);
   const [editingId, setEditingId] = useState<string>();
-  const [selectedId, setSelectedId] = useState<string>();
+  const [, setSelectedId] = useState<string>();
   const [contextMenu, setContextMenu] = useState<{ taskId: string; position: { x: number; y: number } } | null>(null);
   const [input, setInput] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
