@@ -376,7 +376,7 @@ export interface MovedTaskSummary {
 export interface TaskMoveResponse {
   /** The dragged task and every descendant, with updated depth/collection/date. */
   moved: MovedTaskSummary[];
-  /** Siblings in the source and target scopes whose order value shifted. */
+  /** Rows in the target scope whose order value was written - the moved task itself, plus any sibling touched by a collision fallback. Source-scope siblings are never reported. */
   reordered: MovedTaskSummary[];
 }
 

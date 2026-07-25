@@ -339,9 +339,6 @@ export function resolveMove({
   // Dropped on another task row.
   if (active.subtreeIds.includes(over.taskId)) return null;
 
-  const overIndex = rows.findIndex((r) => r.id === over.taskId);
-  if (overIndex === -1) return null;
-
   // On Daily the row underneath defines which day's ordering applies, so the
   // page's own scope is only a fallback for a target with no date of its own.
   const targetDay = scope.kind === 'day' ? (over.dueDate ?? scope.dueDate) : null;
