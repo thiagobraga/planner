@@ -363,11 +363,21 @@ export interface TaskMoveInput {
   position: number;
 }
 
+/** The trimmed per-task fields `moveTask` reports back - not a full task row. */
+export interface MovedTaskSummary {
+  id: string;
+  parentTaskId: string | null;
+  collectionId: string;
+  dueDate: string | null;
+  orderValue: number;
+  depth: number;
+}
+
 export interface TaskMoveResponse {
   /** The dragged task and every descendant, with updated depth/collection/date. */
-  moved: ApiTask[];
+  moved: MovedTaskSummary[];
   /** Siblings in the source and target scopes whose order value shifted. */
-  reordered: ApiTask[];
+  reordered: MovedTaskSummary[];
 }
 
 export async function apiMoveTask(id: string, input: TaskMoveInput): Promise<TaskMoveResponse> {

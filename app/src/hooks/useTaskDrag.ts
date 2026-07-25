@@ -202,13 +202,31 @@ export function useTaskDrag({ tasks, setTasks, scope, onError, onMoved }: UseTas
             return prev.map((t) => {
               const authoritative = byId.get(t.id);
               if (!authoritative) return t;
+
+              const parentTaskId = authoritative.parentTaskId ?? undefined;
+              const dueDate = toISODate(authoritative.dueDate);
+              const indent = authoritative.depth ?? t.indent;
+
+              // Same reference when nothing actually changed, so TaskItem's
+              // React.memo can skip re-rendering this row - the trimmed payload
+              // is wasted if every patched task still gets a fresh reference.
+              if (
+                parentTaskId === t.parentTaskId &&
+                authoritative.collectionId === t.collectionId &&
+                dueDate === t.dueDate &&
+                authoritative.orderValue === t.orderValue &&
+                indent === t.indent
+              ) {
+                return t;
+              }
+
               return {
                 ...t,
-                parentTaskId: authoritative.parentTaskId ?? undefined,
+                parentTaskId,
                 collectionId: authoritative.collectionId,
-                dueDate: toISODate(authoritative.dueDate),
+                dueDate,
                 orderValue: authoritative.orderValue,
-                indent: authoritative.depth ?? t.indent,
+                indent,
               };
             });
           });
