@@ -347,12 +347,11 @@ export function DailyPage() {
   }, [replaceTodayFromApi, updateSections]);
 
   const calculateMidpointOrder = (tasks: Task[], index: number, type: 'above' | 'below') => {
+    const current = tasks[index].orderValue;
     if (type === 'below') {
-      const current = tasks[index].orderValue;
       const next = index < tasks.length - 1 ? tasks[index + 1].orderValue : current + 2000;
       return Math.floor((current + next) / 2);
     } else {
-      const current = tasks[index].orderValue;
       const prev = index > 0 ? tasks[index - 1].orderValue : current - 2000;
       return Math.floor((prev + current) / 2);
     }
