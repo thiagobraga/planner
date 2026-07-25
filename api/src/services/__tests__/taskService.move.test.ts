@@ -317,16 +317,26 @@ describe("moveTask ordering scopes", () => {
   });
 
   it("falls back to seeding the whole day when a target-position neighbor is unseeded", async () => {
-    (pool.query as ReturnType<typeof vi.fn>).mockResolvedValue({ rows: [taskRow({ due_date: "2026-07-18" })] });
     const tx = stubSuccessfulMove([
       [/WITH RECURSIVE/, [{ id: taskId, parent_task_id: null, depth: 0, collection_id: collectionId, section_id: null, due_date: "2026-07-18" }]],
       // The day's current order is read from tasks joined to task_order, so a
       // task that has never been dragged in Daily is seeded alongside those
       // that have. Neither row here carries a `position` - both unseeded.
-      [/LEFT JOIN task_order/, [{ task_id: "other-1" }, { task_id: "other-2" }]],
+      // `order_value` is deliberately distinct from the day positions the
+      // fallback is about to write (0/1000/2000), so a reported orderValue
+      // would fail this test if it ever leaked the day position instead.
+      [/LEFT JOIN task_order/, [
+        { task_id: "other-1", collection_id: collectionId, parent_task_id: null, depth: 0, order_value: 5000 },
+        { task_id: "other-2", collection_id: collectionId, parent_task_id: null, depth: 0, order_value: 9000 },
+      ]],
     ]);
+    // The moved task's own order_value (untouched by a day-scope move) must
+    // also differ from the day position (0) it is about to be seeded at.
+    (pool.query as ReturnType<typeof vi.fn>).mockResolvedValue({
+      rows: [taskRow({ due_date: "2026-07-18", order_value: 47000 })],
+    });
 
-    await moveTask(taskId, userId, {
+    const result = await moveTask(taskId, userId, {
       parentTaskId: null,
       scope: { kind: "day", dueDate: "2026-07-18" },
       position: 0,
@@ -341,10 +351,20 @@ describe("moveTask ordering scopes", () => {
     // The whole point of the separate table: a Daily drag must not renumber the
     // collection's ordering.
     expect(tx.calls.some((c) => /SET order_value/.test(c.sql))).toBe(false);
+
+    // `orderValue` in the response must report each row's real
+    // tasks.order_value, not the task_order.position just written above -
+    // DailyPage sorts by orderValue against every other task's untouched
+    // tasks.order_value, so leaking the day position here reintroduces the
+    // mixed-number-space bug this branch exists to fix.
+    expect(result.reordered.map((r) => ({ id: r.id, orderValue: r.orderValue }))).toEqual([
+      { id: taskId, orderValue: 47000 },
+      { id: "other-1", orderValue: 5000 },
+      { id: "other-2", orderValue: 9000 },
+    ]);
   });
 
   it("writes a single midpoint day position when both neighbors are already seeded", async () => {
-    (pool.query as ReturnType<typeof vi.fn>).mockResolvedValue({ rows: [taskRow({ due_date: "2026-07-18" })] });
     const tx = stubSuccessfulMove([
       [/WITH RECURSIVE/, [{ id: taskId, parent_task_id: null, depth: 0, collection_id: collectionId, section_id: null, due_date: "2026-07-18" }]],
       // Both neighbors already carry a real task_order position.
@@ -353,8 +373,14 @@ describe("moveTask ordering scopes", () => {
         { task_id: "other-2", position: 1000 },
       ]],
     ]);
+    // order_value (47000) deliberately differs from the midpoint position
+    // (500) about to be written, so the assertion below would fail if the
+    // response ever reported the day position instead.
+    (pool.query as ReturnType<typeof vi.fn>).mockResolvedValue({
+      rows: [taskRow({ due_date: "2026-07-18", order_value: 47000 })],
+    });
 
-    await moveTask(taskId, userId, {
+    const result = await moveTask(taskId, userId, {
       parentTaskId: null,
       scope: { kind: "day", dueDate: "2026-07-18" },
       position: 1,
@@ -364,6 +390,19 @@ describe("moveTask ordering scopes", () => {
     // Between other-1 (0) and other-2 (1000): only the moved task is written.
     expect(dayWrites).toEqual([[userId, taskId, "2026-07-18", 500]]);
     expect(tx.calls.some((c) => /SET order_value/.test(c.sql))).toBe(false);
+
+    // The reported orderValue is the moved task's real tasks.order_value
+    // (47000), not the task_order.position (500) just written.
+    expect(result.reordered).toEqual([
+      {
+        id: taskId,
+        parentTaskId: null,
+        collectionId,
+        dueDate: "2026-07-18",
+        orderValue: 47000,
+        depth: 0,
+      },
+    ]);
   });
 });
 

@@ -985,6 +985,7 @@ export async function moveTask(taskId: string, userId: string, input: MoveTaskIn
         movedCollectionId: destCollectionId,
         movedParentTaskId: input.parentTaskId,
         movedDepth: rootNewDepth,
+        movedOrderValue: task.order_value,
       });
     }
 
@@ -1149,6 +1150,7 @@ async function renumberDayScope(
     movedCollectionId: string;
     movedParentTaskId: string | null;
     movedDepth: number;
+    movedOrderValue: number;
   },
 ): Promise<MovedTaskSummary[]> {
   // Read every task on this day, not only those already carrying a day
@@ -1156,7 +1158,7 @@ async function renumberDayScope(
   // alongside those that have. The LEFT JOIN's NULL `position` is also how a
   // seeded/unseeded neighbor is told apart for the fast-path check below.
   const result = await client.query(
-    `SELECT t.id AS task_id, t.collection_id, t.parent_task_id, t.depth, o.position
+    `SELECT t.id AS task_id, t.collection_id, t.parent_task_id, t.depth, t.order_value, o.position
      FROM tasks t
      LEFT JOIN task_order o
        ON o.task_id = t.id AND o.scope_type = 'day' AND o.scope_id = $2
@@ -1169,12 +1171,17 @@ async function renumberDayScope(
     collection_id: string;
     parent_task_id: string | null;
     depth: number;
+    order_value: number;
     position: number | null | undefined;
   }[];
 
+  // `orderValue` here always reports `tasks.order_value` - day-scope moves
+  // only ever write `task_order.position`, never `tasks.order_value` - so
+  // callers sorting a day's list (e.g. DailyPage) can compare it against
+  // every other task's untouched `order_value` without a number-space clash.
   const summarize = (
     id: string,
-    dayPosition: number,
+    orderValue: number,
     collectionId: string,
     parentTaskId: string | null,
     depth: number,
@@ -1183,7 +1190,7 @@ async function renumberDayScope(
     parentTaskId,
     collectionId,
     dueDate: opts.date,
-    orderValue: dayPosition,
+    orderValue,
     depth,
   });
 
@@ -1210,7 +1217,13 @@ async function renumberDayScope(
         [opts.userId, opts.movedTaskId, opts.date, midpoint],
       );
       return [
-        summarize(opts.movedTaskId, midpoint, opts.movedCollectionId, opts.movedParentTaskId, opts.movedDepth),
+        summarize(
+          opts.movedTaskId,
+          opts.movedOrderValue,
+          opts.movedCollectionId,
+          opts.movedParentTaskId,
+          opts.movedDepth,
+        ),
       ];
     }
   }
@@ -1239,7 +1252,7 @@ async function renumberDayScope(
     written.push(
       summarize(
         ids[i],
-        position,
+        sib ? sib.order_value : opts.movedOrderValue,
         sib ? sib.collection_id : opts.movedCollectionId,
         sib ? sib.parent_task_id : opts.movedParentTaskId,
         sib ? sib.depth : opts.movedDepth,
