@@ -1,4 +1,5 @@
 import { Eye, EyeOff, FileClock } from 'lucide-react';
+import { useI18n } from '../i18n/I18nContext';
 
 interface TaskVisibilityControlsProps {
   hideCompletedTasks: boolean;
@@ -23,8 +24,13 @@ export function TaskVisibilityControls({
   onHideCompletedTasksChange,
   onHideOldNotesChange,
 }: TaskVisibilityControlsProps) {
-  const completedLabel = hideCompletedTasks ? 'Show completed tasks' : 'Hide completed tasks';
-  const oldNotesLabel = hideOldNotes ? 'Show old notes' : 'Hide old notes';
+  const { t } = useI18n();
+  const completedLabel = hideCompletedTasks
+    ? t('visibility.showCompleted')
+    : t('visibility.hideCompleted');
+  const oldNotesLabel = hideOldNotes
+    ? t('visibility.showOldNotes')
+    : t('visibility.hideOldNotes');
 
   return (
     <div className="task-visibility-controls inline-flex h-6 items-center overflow-hidden rounded-[2px] border border-border">

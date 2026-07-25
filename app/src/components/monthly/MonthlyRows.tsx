@@ -2,8 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { fetchMonthNotes, type ApiTask } from '../../api/client';
 import { useSync } from '../../hooks/useSync';
 import { MonthSelector } from './MonthSelector';
-
-const WEEKDAYS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+import { useI18n } from '../../i18n/I18nContext';
 
 function dateKey(year: number, month: number, day: number): string {
   return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
@@ -25,6 +24,7 @@ export interface MonthlyRowsProps {
 }
 
 export function MonthlyRows({ year: selectedYear, month: selectedMonth, onMonthChange }: MonthlyRowsProps) {
+  const { locale } = useI18n();
   const [notesByDate, setNotesByDate] = useState<Record<string, string[]>>({});
 
   const loadMonthNotes = useCallback(() => {
@@ -74,7 +74,9 @@ export function MonthlyRows({ year: selectedYear, month: selectedMonth, onMonthC
 
     return {
       day,
-      weekday: WEEKDAYS[dayOfWeekIndex],
+      weekday: new Intl.DateTimeFormat(locale, { weekday: 'narrow' }).format(
+        new Date(selectedYear, selectedMonth, day),
+      ),
       isWeekend: dayOfWeekIndex === 0 || dayOfWeekIndex === 6,
       isToday: dateKey(selectedYear, selectedMonth, day) === todayKey,
       isFuture,

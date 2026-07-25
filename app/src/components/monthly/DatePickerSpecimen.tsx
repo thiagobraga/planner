@@ -6,23 +6,10 @@ import {
   weekdayInitials,
   type WeekStart,
 } from '../../utils/date';
-
-const MONTHS = [
-  'January',
-  'February',
-  'March',
-  'April',
-  'May',
-  'June',
-  'July',
-  'August',
-  'September',
-  'October',
-  'November',
-  'December',
-] as const;
+import { useI18n } from '../../i18n/I18nContext';
 
 export function DatePickerSpecimen({ weekStart }: { weekStart: WeekStart }) {
+  const { locale, t } = useI18n();
   const today = useMemo(() => startOfDay(new Date()), []);
   const todayISO = fmtISO(today);
   const [viewDate, setViewDate] = useState(() => new Date(today.getFullYear(), today.getMonth(), 1));
@@ -32,7 +19,7 @@ export function DatePickerSpecimen({ weekStart }: { weekStart: WeekStart }) {
   const month = viewDate.getMonth();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const firstDayColumn = weekdayColumnIndex(new Date(year, month, 1).getDay(), weekStart);
-  const dayLabels = weekdayInitials(weekStart);
+  const dayLabels = weekdayInitials(weekStart, locale);
 
   const cells = Array.from({ length: daysInMonth }, (_, index) => {
     const date = new Date(year, month, index + 1);
@@ -48,7 +35,7 @@ export function DatePickerSpecimen({ weekStart }: { weekStart: WeekStart }) {
       <div className="mb-3 flex items-center justify-between" style={{ width: 7 * 24 }}>
         <button
           type="button"
-          aria-label="Previous month"
+          aria-label={t('page.previousMonth')}
           onClick={() => setViewDate(new Date(year, month - 1, 1))}
           className="flex h-6 w-6 cursor-pointer items-center justify-center rounded-[4px] border-none bg-transparent text-ink-light transition-colors hover:bg-dot/30 hover:text-ink"
         >
@@ -57,11 +44,11 @@ export function DatePickerSpecimen({ weekStart }: { weekStart: WeekStart }) {
           </svg>
         </button>
         <span className="text-[11px] font-medium tracking-[0.04em] text-ink">
-          {MONTHS[month]} {year}
+          {new Intl.DateTimeFormat(locale, { month: 'long', year: 'numeric' }).format(viewDate)}
         </span>
         <button
           type="button"
-          aria-label="Next month"
+          aria-label={t('page.nextMonth')}
           onClick={() => setViewDate(new Date(year, month + 1, 1))}
           className="flex h-6 w-6 cursor-pointer items-center justify-center rounded-[4px] border-none bg-transparent text-ink-light transition-colors hover:bg-dot/30 hover:text-ink"
         >

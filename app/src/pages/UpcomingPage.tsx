@@ -4,8 +4,9 @@ import type { Task } from '../components/TaskItem';
 import { flattenTasks } from '../utils/taskProjection';
 import { getPhrase } from '../utils/phrases';
 import { applyIndent } from '../utils/taskTree';
+import { useI18n } from '../i18n/I18nContext';
 
-function getUpcomingDays(count: number) {
+function getUpcomingDays(count: number, locale: 'en' | 'pt-BR' = 'en') {
   const days = [];
   const base = new Date();
   for (let i = 1; i <= count; i++) {
@@ -13,7 +14,7 @@ function getUpcomingDays(count: number) {
     d.setDate(base.getDate() + i);
     days.push({
       key: d.toISOString().slice(0, 10),
-      label: `${d.toLocaleDateString('en-US', { month: 'short' }).toUpperCase()} ${d.getDate()} ${d.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase()}`,
+      label: `${d.toLocaleDateString(locale, { month: 'short' }).toLocaleUpperCase(locale)} ${d.getDate()} ${d.toLocaleDateString(locale, { weekday: 'short' }).toLocaleUpperCase(locale)}`,
     });
   }
   return days;
@@ -42,8 +43,9 @@ const makeSeed = (): Record<string, Task[]> => {
 };
 
 export function UpcomingPage() {
-  const days = getUpcomingDays(7);
-  const phrase = useMemo(() => getPhrase('upcoming'), []);
+  const { locale, t } = useI18n();
+  const days = getUpcomingDays(7, locale);
+  const phrase = useMemo(() => getPhrase('upcoming', locale), [locale]);
   const [tasksByDay, setTasksByDay] = useState<Record<string, Task[]>>(makeSeed);
 
   const handleToggle = useCallback((id: string) => {
@@ -77,7 +79,7 @@ export function UpcomingPage() {
     <div className="max-w-162">
       <header className="sticky-page-header">
         <h1 className="text-[18px] leading-6 font-semibold text-ink m-0">
-          Upcoming
+          {t('page.upcoming')}
         </h1>
         <p className="text-[13px] leading-6 text-ink-light opacity-60 m-0">
           {phrase}

@@ -1,0 +1,33 @@
+# Remaining tasks
+
+- [x] Add locale support plumbing in the app shell
+  - [x] Introduce a translation provider and lookup helper
+  - [x] Load `en` and `pt-BR` catalogs
+  - [x] Resolve the active locale from preferences, with a safe fallback
+  - [x] Update `document.documentElement.lang` when the locale changes
+- [x] Extend the preferences model for locale persistence
+  - [x] Add the locale field to the API type and validation
+  - [x] Add the database migration and default value
+  - [x] Ensure register/bootstrap paths create a usable default locale
+- [x] Add a language control to Settings
+  - [x] Expose locale selection alongside existing preferences
+  - [x] Keep optimistic update and sync behavior consistent
+  - [x] Verify the selector survives reloads and sync events
+- [x] Localize all visible app copy
+  - [x] Auth screens
+  - [x] Sidebar, help, search, quick add, and settings text
+  - [x] Empty states, buttons, tooltips, and dialog labels
+  - [x] Error copy shown to users
+- [x] Localize locale-sensitive date text and parsing
+  - [x] Replace hardcoded `en-US` date formatting
+  - [x] Format date previews and labels from the active locale
+  - [x] Add pt-BR natural-language date phrases
+  - [x] Keep English phrases working as fallback
+- [x] Update tests for translated behavior
+  - [x] Add unit coverage for i18n helpers and preference handling
+  - [x] Update page/component tests that assert copy
+  - [x] Add regression coverage for pt-BR parsing and formatting
+- [x] Verify the implementation
+  - [x] Run the app build
+  - [x] Run the app test suite
+  - [x] Fix any snapshot or text expectation drift caused by the new locale layer

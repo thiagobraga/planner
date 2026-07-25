@@ -12,6 +12,7 @@ import { nextOrderValue } from '../utils/order';
 import { applyIndent, getParentCandidate } from '../utils/taskTree';
 import { useTaskDrag } from '../hooks/useTaskDrag';
 import { useTaskVisibilityPreferences } from '../hooks/useTaskVisibilityPreferences';
+import { useI18n } from '../i18n/I18nContext';
 import { getPhrase } from '../utils/phrases';
 import {
   fetchTodayTasks,
@@ -39,10 +40,10 @@ function dateKey(d: Date): string {
   return `${year}-${month}-${day}`;
 }
 
-function dayLabel(d: Date): string {
-  const month = d.toLocaleDateString('en-US', { month: 'short' }).toUpperCase();
+function dayLabel(d: Date, locale: 'en' | 'pt-BR'): string {
+  const month = d.toLocaleDateString(locale, { month: 'short' }).toLocaleUpperCase(locale);
   const day = String(d.getDate()).padStart(2, '0');
-  const weekday = d.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase();
+  const weekday = d.toLocaleDateString(locale, { weekday: 'short' }).toLocaleUpperCase(locale);
   return `${month} ${day} ${weekday}`;
 }
 
@@ -70,7 +71,7 @@ function apiToTask(t: ApiTask): Task {
   };
 }
 
-function buildSections(overdueTasks: Task[], todayTasks: Task[]): DaySection[] {
+function buildSections(overdueTasks: Task[], todayTasks: Task[], locale: 'en' | 'pt-BR'): DaySection[] {
   const byDate = new Map<string, Task[]>();
 
   // Tolerate a missing list rather than throwing. This renders the whole page,
@@ -95,7 +96,7 @@ function buildSections(overdueTasks: Task[], todayTasks: Task[]): DaySection[] {
   const sortedDates = Array.from(byDate.keys()).sort().reverse();
   return sortedDates.map((date) => ({
     key: date,
-    label: dayLabel(dateFromISO(date)),
+    label: dayLabel(dateFromISO(date), locale),
     tasks: (byDate.get(date) ?? []).sort((a, b) => a.orderValue - b.orderValue || (a.createdAt ?? '').localeCompare(b.createdAt ?? '')),
   }));
 }
@@ -104,7 +105,8 @@ let tempCounter = 0;
 function tempId() { return `temp-daily-${++tempCounter}`; }
 
 export function DailyPage() {
-  const phrase = useMemo(() => getPhrase('daily'), []);
+  const { locale, t } = useI18n();
+  const phrase = useMemo(() => getPhrase('daily', locale), [locale]);
   const qc = useQueryClient();
   const [sections, setSections] = useState<DaySection[]>([]);
   const [editingId, setEditingId] = useState<string>();
@@ -123,12 +125,12 @@ export function DailyPage() {
       if (requestId !== loadRequestId.current) return;
       const overdueTasks = (response.overdue || []).map(apiToTask);
       const todayTasks = (response.today || []).map(apiToTask);
-      setSections(buildSections(overdueTasks, todayTasks));
+      setSections(buildSections(overdueTasks, todayTasks, locale));
     }).catch(() => {
       if (requestId !== loadRequestId.current) return;
-      setSections(buildSections([], []));
+      setSections(buildSections([], [], locale));
     });
-  }, []);
+  }, [locale]);
 
   const { data: prefs } = useQuery({
     queryKey: ['preferences'],
@@ -168,7 +170,7 @@ export function DailyPage() {
         const key = created.dueDate && /^\d{4}-\d{2}-\d{2}$/.test(created.dueDate) ? created.dueDate : todayKey;
         const existingIdx = prev.findIndex((s) => s.key === key);
         if (existingIdx === -1) {
-          const next = [...prev, { key, label: dayLabel(dateFromISO(key)), tasks: [created] }];
+          const next = [...prev, { key, label: dayLabel(dateFromISO(key), locale), tasks: [created] }];
           return next.sort((a, b) => (a.key < b.key ? 1 : -1));
         }
         return prev.map((s, i) => (i === existingIdx ? { ...s, tasks: [...s.tasks, created] } : s));
@@ -182,7 +184,7 @@ export function DailyPage() {
         }))
       );
     }
-  }, [replaceTodayFromApi, prefs?.hideCompletedTasks, prefs?.hideOldNotes]));
+  }, [locale, replaceTodayFromApi, prefs?.hideCompletedTasks, prefs?.hideOldNotes]));
 
   const updateSections = useCallback((updater: (prev: DaySection[]) => DaySection[]) => {
     setSections(updater);
@@ -196,9 +198,9 @@ export function DailyPage() {
   const allTasks = useMemo(() => sections.flatMap((s) => s.tasks), [sections]);
   const setAllTasks = useCallback(
     (updater: (prev: Task[]) => Task[]) => {
-      setSections((prev) => buildSections([], updater(prev.flatMap((s) => s.tasks))));
+      setSections((prev) => buildSections([], updater(prev.flatMap((s) => s.tasks)), locale));
     },
-    [],
+    [locale],
   );
 
   const { activeDragId } = useTaskDrag({
@@ -208,7 +210,7 @@ export function DailyPage() {
     onError: () => {
       fetchTodayTasks().then((response) => {
         setSections(
-          buildSections((response.overdue || []).map(apiToTask), (response.today || []).map(apiToTask)),
+          buildSections((response.overdue || []).map(apiToTask), (response.today || []).map(apiToTask), locale),
         );
       });
     },
@@ -298,7 +300,7 @@ export function DailyPage() {
           parentTaskId = getParentCandidate(section.tasks, idx, currentIndent) ?? undefined;
         }
       }
-      const extracted = extractNaturalDate(trimmed, todayKey);
+      const extracted = extractNaturalDate(trimmed, todayKey, locale);
       
       apiCreateTask({ 
         title: extracted.title, 
@@ -327,7 +329,7 @@ export function DailyPage() {
     } else {
       apiUpdateTask(id, { title: trimmed }).catch(() => replaceTodayFromApi());
     }
-  }, [replaceTodayFromApi, updateSections]);
+  }, [locale, replaceTodayFromApi, updateSections]);
 
   const handleEditCancel = useCallback((id: string) => {
     setEditingId(undefined);
@@ -466,7 +468,7 @@ export function DailyPage() {
           : s
       )
     );
-    const extracted = extractNaturalDate(trimmed, todayKey);
+    const extracted = extractNaturalDate(trimmed, todayKey, locale);
 
     apiCreateTask({ 
       title: extracted.title, 
@@ -501,7 +503,7 @@ export function DailyPage() {
     updateSections((prev) => {
       const withToday = prev.some((s) => s.key === todayKey)
         ? prev
-        : [...prev, { key: todayKey, label: dayLabel(dateFromISO(todayKey)), tasks: [] }];
+        : [...prev, { key: todayKey, label: dayLabel(dateFromISO(todayKey), locale), tasks: [] }];
 
       return withToday.map((s) =>
         s.key === todayKey
@@ -582,7 +584,7 @@ export function DailyPage() {
     >
       <header className="page-header-copy sticky-page-header max-w-162">
         <h1 className="m-0 h-6 p-0 text-[18px] leading-6 font-semibold text-ink">
-          Daily
+          {t('page.daily')}
         </h1>
         <p className="page-header-subtitle daily-page-header-subtitle m-0 h-6 p-0 text-[13px] leading-6 text-ink-light opacity-60">
           {phrase}
@@ -591,7 +593,7 @@ export function DailyPage() {
 
       <div className="page-header-toolbar daily-page-header-controls sticky top-6 z-20 -mt-6 ml-auto flex w-fit items-center gap-2">
         <Button variant="secondary" size="sm" onClick={handleToday}>
-          Today
+          {t('page.today')}
         </Button>
         <TaskVisibilityControls
           hideCompletedTasks={prefs?.hideCompletedTasks ?? false}
@@ -651,7 +653,7 @@ export function DailyPage() {
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={handleAddTodayKeyDown}
-                  placeholder="Add task…"
+                  placeholder={t('common.addTask')}
                   className="task-input task-add-input flex-1 text-[14px] leading-6 text-ink bg-transparent border-none outline-none p-0"
                   spellCheck={false}
                 />

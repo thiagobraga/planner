@@ -2,9 +2,11 @@ import { useMemo, useState } from 'react';
 import { MonthlyRows } from '../components/monthly/MonthlyRows';
 import { Button } from '../components/ui/Button';
 import { getPhrase } from '../utils/phrases';
+import { useI18n } from '../i18n/I18nContext';
 
 export function MonthlyPage() {
-  const phrase = useMemo(() => getPhrase('monthly'), []);
+  const { locale, t } = useI18n();
+  const phrase = useMemo(() => getPhrase('monthly', locale), [locale]);
   const today = useMemo(() => new Date(), []);
   const [selected, setSelected] = useState(() => ({
     year: today.getFullYear(),
@@ -15,7 +17,7 @@ export function MonthlyPage() {
     <div className="monthly-page relative w-full">
       <header className="page-header-copy sticky-page-header max-w-162">
         <h1 className="text-[18px] leading-6 h-6 font-semibold text-ink m-0 p-0">
-          Monthly
+          {t('page.monthly')}
         </h1>
         <p className="page-header-subtitle text-[13px] leading-6 h-6 text-ink-light opacity-60 m-0 p-0">
           {phrase}
@@ -28,7 +30,7 @@ export function MonthlyPage() {
           size="sm"
           onClick={() => setSelected({ year: today.getFullYear(), month: today.getMonth() })}
         >
-          Today
+          {t('page.today')}
         </Button>
       </div>
 

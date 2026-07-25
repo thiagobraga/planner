@@ -13,6 +13,7 @@ vi.mock('../../api/client', async (importOriginal) => ({
 
 const basePreferences: Preferences = {
   userId: 'user-1',
+  locale: 'en',
   timeZone: 'UTC',
   weekStart: 'sunday',
   theme: 'system',

@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import type { Task } from './TaskItem';
+import { useI18n } from '../i18n/I18nContext';
 
 const PRIORITIES = [
-  { value: 1, label: 'P1 - Critical' },
-  { value: 2, label: 'P2 - High' },
-  { value: 3, label: 'P3 - Medium' },
-  { value: 4, label: 'P4 - Normal' },
+  { value: 1, key: 'task.priorityCritical' as const },
+  { value: 2, key: 'task.priorityHigh' as const },
+  { value: 3, key: 'task.priorityMedium' as const },
+  { value: 4, key: 'task.priorityNormal' as const },
 ];
 
 // Tailwind classes for the selected-state border + background of each priority button.
@@ -38,6 +39,7 @@ interface TaskDetailProps {
 }
 
 export function TaskDetail({ task, onClose, onUpdate, onDelete }: TaskDetailProps) {
+  const { locale, t } = useI18n();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [dueDate, setDueDate] = useState('');
@@ -109,7 +111,7 @@ export function TaskDetail({ task, onClose, onUpdate, onDelete }: TaskDetailProp
     if (!t) return;
     setComments((prev) => [
       ...prev,
-      { id: Date.now().toString(), text: t, createdAt: new Date().toLocaleTimeString() },
+      { id: Date.now().toString(), text: t, createdAt: new Date().toLocaleTimeString(locale) },
     ]);
     setNewComment('');
   };
@@ -130,18 +132,18 @@ export function TaskDetail({ task, onClose, onUpdate, onDelete }: TaskDetailProp
 
   return (
     <aside
-      aria-label="Task detail"
+      aria-label={t('task.detail')}
       className="w-[360px] min-w-[320px] h-full border-l border-dot bg-cream flex flex-col overflow-hidden"
     >
       {/* Header */}
       <div className="flex items-center justify-between px-5 py-4 border-b border-dot shrink-0">
         <span className="text-[11px] tracking-[0.08em] uppercase text-ink-light">
-          Task
+          {t('task.task')}
         </span>
         <button
           type="button"
           onClick={onClose}
-          aria-label="Close task detail"
+          aria-label={t('task.closeDetail')}
           className="bg-transparent border-0 text-ink-light cursor-pointer text-xl leading-none"
         >
           ×
@@ -157,22 +159,22 @@ export function TaskDetail({ task, onClose, onUpdate, onDelete }: TaskDetailProp
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           onBlur={handleTitleBlur}
-          aria-label="Task title"
+          aria-label={t('task.title')}
           className="w-full text-lg leading-7 font-semibold text-ink bg-transparent border-0 border-b border-dot outline-none px-0 pt-0 pb-2 mb-5"
         />
 
         {/* Description */}
         <div className="mb-5">
           <label className="block text-[11px] tracking-[0.08em] uppercase text-ink-light mb-1.5">
-            Description
+            {t('task.description')}
           </label>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             onBlur={handleDescBlur}
             rows={3}
-            placeholder="Add notes…"
-            aria-label="Task description"
+            placeholder={t('task.descriptionPlaceholder')}
+            aria-label={t('task.descriptionAria')}
             className="w-full text-[13px] leading-5 text-ink bg-transparent border border-dot rounded outline-none p-2 resize-y"
           />
         </div>
@@ -183,7 +185,7 @@ export function TaskDetail({ task, onClose, onUpdate, onDelete }: TaskDetailProp
             htmlFor="task-due-date"
             className="block text-[11px] tracking-[0.08em] uppercase text-ink-light mb-1.5"
           >
-            Due Date
+            {t('task.dueDate')}
           </label>
           <input
             id="task-due-date"
@@ -191,8 +193,8 @@ export function TaskDetail({ task, onClose, onUpdate, onDelete }: TaskDetailProp
             value={dueDate}
             onChange={(e) => setDueDate(e.target.value)}
             onBlur={handleDueDateBlur}
-            placeholder="e.g. today, tomorrow, 2025-12-31"
-            aria-label="Due date"
+            placeholder={t('task.dueDatePlaceholder')}
+            aria-label={t('task.dueDateAria')}
             className="w-full text-[13px] leading-6 text-ink bg-transparent border border-dot rounded outline-none py-1 px-2"
           />
         </div>
@@ -203,7 +205,7 @@ export function TaskDetail({ task, onClose, onUpdate, onDelete }: TaskDetailProp
             htmlFor="task-recurrence"
             className="block text-[11px] tracking-[0.08em] uppercase text-ink-light mb-1.5"
           >
-            Repeat
+            {t('task.repeat')}
           </label>
           <select
             id="task-recurrence"
@@ -211,18 +213,18 @@ export function TaskDetail({ task, onClose, onUpdate, onDelete }: TaskDetailProp
             onChange={(e) => handleRecurrenceChange(e.target.value)}
             className="w-full text-[13px] leading-6 text-ink bg-transparent border border-dot rounded outline-none py-1 px-2"
           >
-            <option value="none">None</option>
-            <option value="daily">Daily</option>
-            <option value="weekly">Weekly</option>
-            <option value="monthly">Monthly</option>
-            <option value="yearly">Yearly</option>
+            <option value="none">{t('common.none')}</option>
+            <option value="daily">{t('task.daily')}</option>
+            <option value="weekly">{t('task.weekly')}</option>
+            <option value="monthly">{t('task.monthly')}</option>
+            <option value="yearly">{t('task.yearly')}</option>
           </select>
         </div>
 
         {/* Priority */}
         <div className="mb-5">
           <div className="text-[11px] tracking-[0.08em] uppercase text-ink-light mb-1.5">
-            Priority
+            {t('task.priority')}
           </div>
           <div className="flex gap-1.5 flex-wrap">
             {PRIORITIES.map((p) => (
@@ -236,19 +238,22 @@ export function TaskDetail({ task, onClose, onUpdate, onDelete }: TaskDetailProp
                     : 'border-dot bg-transparent text-ink'
                   }`}
               >
-                {p.label.split(' ')[0]}
+                {t(p.key).split(' ')[0]}
               </button>
             ))}
           </div>
           <div className={`mt-1.5 text-xs ${priorityTextClasses[priority]}`}>
-            {priorityInfo.label}
+            {t(priorityInfo.key)}
           </div>
         </div>
 
         {/* Subtasks */}
         <div className="mb-5">
           <div className="text-[11px] tracking-[0.08em] uppercase text-ink-light mb-2">
-            Subtasks ({subtasks.filter((s) => s.isCompleted).length}/{subtasks.length})
+            {t('task.subtasks', {
+              completed: subtasks.filter((subtask) => subtask.isCompleted).length,
+              total: subtasks.length,
+            })}
           </div>
 
           {subtasks.map((sub) => (
@@ -264,7 +269,7 @@ export function TaskDetail({ task, onClose, onUpdate, onDelete }: TaskDetailProp
                     prev.map((s) => (s.id === sub.id ? { ...s, isCompleted: !s.isCompleted } : s)),
                   )
                 }
-                aria-label={`Subtask: ${sub.title}`}
+                aria-label={t('task.subtask', { title: sub.title })}
                 className="cursor-pointer accent-accent"
               />
               <span
@@ -280,8 +285,8 @@ export function TaskDetail({ task, onClose, onUpdate, onDelete }: TaskDetailProp
               type="text"
               value={newSubtask}
               onChange={(e) => setNewSubtask(e.target.value)}
-              placeholder="Add subtask…"
-              aria-label="New subtask"
+              placeholder={t('task.addSubtask')}
+              aria-label={t('task.newSubtask')}
               className="flex-1 text-[13px] leading-6 text-ink bg-transparent border border-dashed border-dot rounded outline-none py-[2px] px-2"
             />
             <button
@@ -297,7 +302,7 @@ export function TaskDetail({ task, onClose, onUpdate, onDelete }: TaskDetailProp
         {/* Comments */}
         <div className="mb-5">
           <div className="text-[11px] tracking-[0.08em] uppercase text-ink-light mb-2">
-            Comments
+            {t('task.comments')}
           </div>
 
           {comments.map((c) => (
@@ -318,8 +323,8 @@ export function TaskDetail({ task, onClose, onUpdate, onDelete }: TaskDetailProp
             <textarea
               value={newComment}
               onChange={(e) => setNewComment(e.target.value)}
-              placeholder="Write a comment…"
-              aria-label="New comment"
+              placeholder={t('task.writeComment')}
+              aria-label={t('task.newComment')}
               rows={2}
               className="text-[13px] text-ink bg-transparent border border-dot rounded outline-none py-1.5 px-2 resize-y"
             />
@@ -328,7 +333,7 @@ export function TaskDetail({ task, onClose, onUpdate, onDelete }: TaskDetailProp
               disabled={!newComment.trim()}
               className={`self-end py-[3px] px-3 border-0 rounded text-xs ${newComment.trim() ? 'bg-ink text-cream cursor-pointer' : 'bg-dot text-ink-light cursor-default'}`}
             >
-              Add comment
+              {t('task.addComment')}
             </button>
           </form>
         </div>
@@ -341,7 +346,7 @@ export function TaskDetail({ task, onClose, onUpdate, onDelete }: TaskDetailProp
           onClick={handleDeleteConfirm}
           className={`py-1 px-3.5 bg-transparent border rounded text-xs cursor-pointer transition-all duration-[120ms] ${confirmDelete ? 'border-accent text-accent' : 'border-dot text-ink-light'}`}
         >
-          {confirmDelete ? 'Confirm delete' : 'Delete'}
+          {confirmDelete ? t('task.confirmDelete') : t('common.delete')}
         </button>
       </div>
     </aside>

@@ -113,7 +113,35 @@ const PHRASES: Record<PhraseSection, string[]> = {
   ],
 };
 
-export function getPhrase(section: PhraseSection): string {
-  const list = PHRASES[section];
+const PT_BR_PHRASES: Record<PhraseSection, string[]> = {
+  daily: [
+    'Trabalho pequeno e honesto, bem feito hoje.',
+    'Comece antes de se sentir pronto.',
+    'Uma hora focada vence uma tarde agitada.',
+  ],
+  inbox: [
+    'Coloque aqui. Organize depois.',
+    'Uma mente vazia pensa com mais clareza.',
+    'Tire da cabeça e confie na lista.',
+  ],
+  habits: [
+    'Pequenas repetições constroem grandes vidas.',
+    'Consistência acima de intensidade.',
+    'Cada promessa cumprida é um voto no seu futuro.',
+  ],
+  upcoming: [
+    'O futuro é um rascunho. Desenhe com leveza.',
+    'Planeje os dias e viva um de cada vez.',
+    'Veja a semana antes que ela veja você.',
+  ],
+  monthly: [
+    'O mês é um mapa. Trace sua rota.',
+    'Dê um passo atrás e o padrão aparece.',
+    'Uma página. Trinta dias. Você no comando.',
+  ],
+};
+
+export function getPhrase(section: PhraseSection, locale: 'en' | 'pt-BR' = 'en'): string {
+  const list = locale === 'pt-BR' ? PT_BR_PHRASES[section] : PHRASES[section];
   return list[Math.floor(Math.random() * list.length)];
 }

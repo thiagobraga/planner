@@ -16,6 +16,7 @@ import { MonthlyPage } from './pages/MonthlyPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { StyleguidePage } from './pages/StyleguidePage';
 import { HelpPage } from './pages/HelpPage';
+import { I18nProvider } from './i18n/I18nContext';
 
 function AppRoutes() {
   const { isAuthenticated } = useAuth();
@@ -48,10 +49,12 @@ function AppRoutes() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <AppRoutes />
-        <OfflineIndicator />
-      </AuthProvider>
+      <I18nProvider>
+        <AuthProvider>
+          <AppRoutes />
+          <OfflineIndicator />
+        </AuthProvider>
+      </I18nProvider>
     </QueryClientProvider>
   );
 }

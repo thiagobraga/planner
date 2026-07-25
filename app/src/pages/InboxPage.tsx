@@ -26,6 +26,7 @@ import { extractNaturalDate } from '../utils/date';
 import { applyIndent } from '../utils/taskTree';
 import { useSync } from '../hooks/useSync';
 import { isEchoedMove } from '../utils/moveEcho';
+import { useI18n } from '../i18n/I18nContext';
 
 function apiToTask(t: ApiTask): Task {
   return {
@@ -49,9 +50,10 @@ let tempCounter = 0;
 function tempId() { return `temp-${++tempCounter}`; }
 
 export function InboxPage() {
+  const { locale, t } = useI18n();
   const qc = useQueryClient();
   const { logout } = useAuth();
-  const phrase = useMemo(() => getPhrase('inbox'), []);
+  const phrase = useMemo(() => getPhrase('inbox', locale), [locale]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [input, setInput] = useState('');
   const [editingId, setEditingId] = useState<string | undefined>();
@@ -122,7 +124,7 @@ export function InboxPage() {
     if (!trimmed) return;
     const tid = tempId();
     setInput('');
-    const extracted = extractNaturalDate(trimmed);
+    const extracted = extractNaturalDate(trimmed, undefined, locale);
     
     setTasks((prev) => [
       ...prev,
@@ -239,7 +241,7 @@ export function InboxPage() {
       const parentTaskId = currentTask?.parentTaskId ?? undefined;
       const currentIndent = currentTask?.indent ?? 0;
       
-      const extracted = extractNaturalDate(trimmed);
+      const extracted = extractNaturalDate(trimmed, undefined, locale);
       
       // was a new row - create it, keeping whichever type it was opened as
       apiCreateTask({
@@ -261,7 +263,7 @@ export function InboxPage() {
     } else {
       apiUpdateTask(id, { title: trimmed }).catch(() => invalidate());
     }
-  }, [tasks, invalidate]);
+  }, [tasks, invalidate, locale]);
 
   const handleConvertType = useCallback((taskId: string, type: 'task' | 'note') => {
     setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, type } : t)));
@@ -404,7 +406,7 @@ export function InboxPage() {
     >
       <header className="page-header-copy sticky-page-header max-w-162">
         <h1 className="text-[18px] leading-6 h-6 font-semibold text-ink m-0 p-0">
-          Inbox
+          {t('page.inbox')}
         </h1>
 
         <p className="page-header-subtitle text-[13px] leading-6 h-6 text-ink-light opacity-60 m-0 p-0">
@@ -454,7 +456,7 @@ export function InboxPage() {
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Add task…"
+          placeholder={t('common.addTask')}
           className="task-input task-add-input flex-1 text-[14px] leading-6 text-ink bg-transparent border-none outline-none p-0"
           spellCheck={false}
           onKeyDown={(e) => {

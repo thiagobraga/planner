@@ -37,6 +37,7 @@ const prefsRow = {
   small_caps: false,
   hide_completed_tasks: false,
   hide_old_notes: false,
+  locale: "en",
 };
 
 describe("validatePreferences", () => {
@@ -76,6 +77,15 @@ describe("validatePreferences", () => {
     expect(() => validatePreferences({ hideOldNotes: "yes" as unknown as boolean })).toThrow(AppError);
   });
 
+  it("rejects unsupported locale", () => {
+    expect(() => validatePreferences({ locale: "es" })).toThrow(AppError);
+  });
+
+  it("accepts supported locales", () => {
+    expect(() => validatePreferences({ locale: "en" })).not.toThrow();
+    expect(() => validatePreferences({ locale: "pt-BR" })).not.toThrow();
+  });
+
   it("aggregates multiple errors", () => {
     try {
       validatePreferences({ timeZone: "x", theme: "y", weekStart: "z" });
@@ -97,6 +107,7 @@ describe("getPreferences", () => {
     expect(p.notificationsEnabled).toBe(true);
     expect(p.hideCompletedTasks).toBe(false);
     expect(p.hideOldNotes).toBe(false);
+    expect(p.locale).toBe("en");
   });
 
   it("404s when no preferences", async () => {
@@ -157,6 +168,16 @@ describe("updatePreferences", () => {
     expect(sql).toMatch(/hide_completed_tasks = \$1/);
     expect(sql).toMatch(/hide_old_notes = \$2/);
     expect(mockBuildEvent).toHaveBeenCalledWith(expect.objectContaining({ payload: p }));
+  });
+
+  it("updates locale and persists the locale field", async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [{ ...prefsRow, locale: "pt-BR" }] });
+
+    const p = await updatePreferences("u1", { locale: "pt-BR" });
+
+    expect(p.locale).toBe("pt-BR");
+    const sql = mockQuery.mock.calls[0][0] as string;
+    expect(sql).toMatch(/locale = \$1/);
   });
 
   it("rejects invalid input before db call", async () => {

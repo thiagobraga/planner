@@ -23,6 +23,7 @@ import {
   parentToggleTarget,
 } from '../utils/habitTree';
 import type { LucideProps } from 'lucide-react';
+import { useI18n } from '../i18n/I18nContext';
 
 import {
   fetchHabits,
@@ -72,7 +73,8 @@ function isTemp(id: string) {
 }
 
 export function HabitsPage() {
-  const phrase = useMemo(() => getPhrase('habits'), []);
+  const { locale, t } = useI18n();
+  const phrase = useMemo(() => getPhrase('habits', locale), [locale]);
   const today = useMemo(() => startOfDay(new Date()), []);
   const queryClient = useQueryClient();
 
@@ -393,7 +395,7 @@ export function HabitsPage() {
     <div className="habits-page relative w-full max-w-none">
       <header className="page-header-copy sticky-page-header max-w-162">
         <h1 className="m-0 h-6 p-0 text-[18px] leading-6 font-semibold text-ink">
-          Habits
+          {t('page.habits')}
         </h1>
         <p className="page-header-subtitle m-0 h-6 p-0 text-[13px] leading-6 text-ink-light opacity-60">
           {phrase}
@@ -402,14 +404,14 @@ export function HabitsPage() {
 
       <div className="page-header-toolbar habits-page-header-controls sticky top-6 z-20 -mt-6 ml-auto flex w-fit items-center gap-2">
         <Button variant="secondary" size="sm" onClick={handleToday}>
-          Today
+          {t('page.today')}
         </Button>
 
         <div className="habits-page-view-toggle inline-flex items-center rounded-[2px] border border-border h-6 overflow-hidden">
           {(
             [
-              { mode: 'timeline' as const, label: 'Timeline view', Icon: DotsConnectedIcon },
-              { mode: 'calendar' as const, label: 'Calendar view', Icon: Calendar },
+              { mode: 'timeline' as const, label: t('page.timelineView'), Icon: DotsConnectedIcon },
+              { mode: 'calendar' as const, label: t('page.calendarView'), Icon: Calendar },
             ]
           ).map(({ mode, label, Icon }, i) => (
             <button

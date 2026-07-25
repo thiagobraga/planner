@@ -4,8 +4,10 @@ import { AuthShell, AuthLink, AuthFormError } from '../components/AuthShell';
 import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
 import { ApiError, apiConfirmPasswordReset } from '../api/client';
+import { useI18n } from '../i18n/I18nContext';
 
 export function ResetPasswordPage() {
+  const { t } = useI18n();
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');
   const [password, setPassword] = useState('');
@@ -36,7 +38,7 @@ export function ResetPasswordPage() {
           setFormError(err.message);
         }
       } else {
-        setFormError(err instanceof Error ? err.message : 'Something went wrong');
+        setFormError(err instanceof Error ? err.message : t('auth.somethingWrong'));
       }
     } finally {
       setLoading(false);
@@ -45,12 +47,12 @@ export function ResetPasswordPage() {
 
   if (!token || expired) {
     return (
-      <AuthShell subtitle="Link no longer valid">
+      <AuthShell subtitle={t('auth.linkInvalid')}>
         <p className="text-[13px] leading-6 text-ink text-center">
-          This reset link has expired or has already been used. Request a new one to continue.
+          {t('auth.linkInvalidMessage')}
         </p>
         <p className="mt-6 text-center">
-          <AuthLink to="/forgot-password">Request a new link</AuthLink>
+          <AuthLink to="/forgot-password">{t('auth.requestNewLink')}</AuthLink>
         </p>
       </AuthShell>
     );
@@ -58,31 +60,31 @@ export function ResetPasswordPage() {
 
   if (done) {
     return (
-      <AuthShell subtitle="Password updated">
+      <AuthShell subtitle={t('auth.passwordUpdated')}>
         {/* Confirming a reset deletes every session for the account, so there is
             nothing to resume - the user signs in fresh with the new password. */}
         <p className="text-[13px] leading-6 text-ink text-center">
-          Your password has been updated. You've been signed out everywhere else.
+          {t('auth.passwordUpdatedMessage')}
         </p>
         <p className="mt-6 text-center">
-          <AuthLink to="/login">Sign in</AuthLink>
+          <AuthLink to="/login">{t('auth.signIn')}</AuthLink>
         </p>
       </AuthShell>
     );
   }
 
   return (
-    <AuthShell subtitle="Choose a new password">
+    <AuthShell subtitle={t('auth.chooseNewPassword')}>
       <form onSubmit={handleSubmit} className="flex flex-col gap-3">
         <Input
           type="password"
-          placeholder="New password"
+          placeholder={t('auth.newPassword')}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
           autoFocus
           autoComplete="new-password"
-          aria-label="New password"
+          aria-label={t('auth.newPassword')}
           error={Boolean(passwordError)}
           errorText={passwordError}
         />
@@ -90,12 +92,12 @@ export function ResetPasswordPage() {
         {formError && <AuthFormError>{formError}</AuthFormError>}
 
         <Button type="submit" variant="primary" disabled={loading}>
-          {loading ? '…' : 'Set new password'}
+          {loading ? '…' : t('auth.setNewPassword')}
         </Button>
       </form>
 
       <p className="mt-6 text-center">
-        <AuthLink to="/login">Back to sign in</AuthLink>
+        <AuthLink to="/login">{t('auth.backToSignIn')}</AuthLink>
       </p>
     </AuthShell>
   );

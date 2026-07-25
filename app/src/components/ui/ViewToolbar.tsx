@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { SlidersHorizontal, List, LayoutGrid, MoreHorizontal } from 'lucide-react';
 import { Button } from './Button';
 import { Checkbox } from './Checkbox';
+import { useI18n } from '../../i18n/I18nContext';
 
 export type ViewMode = 'list' | 'kanban';
 
@@ -27,6 +28,7 @@ export function ViewToolbar({
   onFilter,
   className = '',
 }: ViewToolbarProps) {
+  const { t } = useI18n();
   const [viewState, setViewState] = useState<ViewMode>('list');
   const [showState, setShowState] = useState(true);
   const [moveState, setMoveState] = useState(true);
@@ -42,25 +44,25 @@ export function ViewToolbar({
   return (
     <div className={`flex flex-wrap items-center gap-2.5 pr-1 ${className}`}>
       <Button variant="secondary" leftIcon={<SlidersHorizontal />} onClick={onFilter}>
-        Filter
+        {t('common.filter')}
       </Button>
 
       <Checkbox
         checked={showCompleted}
         onChange={(e) => setShow(e.target.checked)}
-        label="Show completed"
+        label={t('toolbar.showCompleted')}
       />
       <Checkbox
         checked={moveCompleted}
         onChange={(e) => setMove(e.target.checked)}
-        label="Move completed to end"
+        label={t('toolbar.moveCompleted')}
       />
 
       {/* Segmented List / Kanban toggle */}
       <div className="ml-auto inline-flex items-center rounded-[8px] border border-border overflow-hidden mr-2.5">
         {([
-          { mode: 'list' as const, label: 'List', Icon: List },
-          { mode: 'kanban' as const, label: 'Kanban', Icon: LayoutGrid },
+          { mode: 'list' as const, label: t('toolbar.list'), Icon: List },
+          { mode: 'kanban' as const, label: t('toolbar.kanban'), Icon: LayoutGrid },
         ]).map(({ mode, label, Icon }, i) => (
           <button
             key={mode}
@@ -79,7 +81,7 @@ export function ViewToolbar({
 
       <button
         type="button"
-        aria-label="More options"
+        aria-label={t('toolbar.moreOptions')}
         className="inline-flex items-center justify-center w-9 h-9 rounded-[8px] text-ink-light hover:bg-dot/30 transition-colors duration-[var(--motion-fast)] mr-1"
       >
         <MoreHorizontal size={18} strokeWidth={1.5} />
