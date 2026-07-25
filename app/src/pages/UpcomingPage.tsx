@@ -101,7 +101,7 @@ export function UpcomingPage() {
                 onIndent={handleIndent}
               />
             ) : (
-              <div className="h-6 leading-6 text-[12px] text-ink-light opacity-40 italic">
+              <div className="h-6 leading-6 text-[12px] text-ink-light opacity-40">
                 -
               </div>
             )}

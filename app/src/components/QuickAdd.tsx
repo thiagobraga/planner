@@ -89,7 +89,7 @@ export function QuickAdd({ isOpen, onClose, onSubmit }: QuickAddProps) {
               className="mt-2 flex items-center gap-1.5 text-xs text-ink-light"
             >
               <span className="text-[10px]">📅</span>
-              <span className="italic">
+              <span>
                 Recognized: <strong className="text-ink">{parsed.preview}</strong>
               </span>
             </div>

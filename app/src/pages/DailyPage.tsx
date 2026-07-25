@@ -570,7 +570,7 @@ export function DailyPage() {
     });
 
     return items;
-  }, [collections, contextMenu?.taskId, replaceTodayFromApi]);
+  }, [collections, contextMenu, replaceTodayFromApi]);
 
   return (
     <div
