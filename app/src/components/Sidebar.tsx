@@ -1,7 +1,7 @@
 import { NavLink, useNavigate } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import { useDroppable } from '@dnd-kit/core';
-import { ChevronRight, Repeat2, Settings, HelpCircle, LogOut, type LucideIcon } from 'lucide-react';
+import { ChevronRight, Repeat2, Settings, HelpCircle, LogOut, FolderOpen, type LucideIcon } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { usePlannerDrag } from '../contexts/PlannerDragContext';
 import { CollectionTreeNav } from './CollectionTreeNav';
@@ -133,6 +133,13 @@ export function Sidebar({ isOpen, onClose, collapsed = false }: SidebarProps) {
               <entry.Icon size={16} strokeWidth={1.5} />
             </NavLink>
           ))}
+          <NavLink
+            to="/collections"
+            title={t('nav.collections')}
+            className={({ isActive }) => (isActive ? 'sidebar-icon-link sidebar-icon-link--active' : 'sidebar-icon-link')}
+          >
+            <FolderOpen size={16} strokeWidth={1.5} />
+          </NavLink>
         </nav>
 
         <div className="mt-auto flex flex-col gap-0.5 w-full items-center pb-6">

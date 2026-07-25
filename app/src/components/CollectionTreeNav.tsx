@@ -319,9 +319,13 @@ export function CollectionTreeNav() {
   return (
     <div className="mt-6 flex-1">
       <div className="flex items-center justify-between px-3">
-        <span className="text-[10px] leading-6 tracking-[0.1em] uppercase text-ink-light font-medium">
+        <a
+          href="/collections"
+          onClick={(e) => { e.preventDefault(); navigate('/collections'); }}
+          className="text-[10px] leading-6 tracking-[0.1em] uppercase text-ink-light font-medium hover:text-ink transition-colors no-underline"
+        >
           {t('nav.collections')}
-        </span>
+        </a>
         <button
           type="button"
           aria-label={t('page.addCollection')}
