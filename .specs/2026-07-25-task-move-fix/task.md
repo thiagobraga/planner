@@ -17,7 +17,23 @@
 - [x] `api/src/services/__tests__/taskService.move.test.ts`: update gap-write assertions, add collision-fallback test, split day-scope seeded/unseeded test cases
 - [x] Optional: migration `031_task_collection_scope_index.sql` adding `idx_tasks_collection_scope_ordered` (use `db-migration` skill)
 - [x] Run `docker compose exec api npm test && docker compose exec app npm test`, both builds
-- [ ] Manual verification: wrong-position repro, response payload size in Network tab, React Profiler re-render check, cross-collection/cross-date drags
+- [~] Manual verification: wrong-position repro, response payload size in Network tab, React Profiler re-render check, cross-collection/cross-date drags
+  - [x] Wrong-position repro (Daily): registered a throwaway test account against
+    the running isolated stack (localhost:5174/4001, shared dev DB), created 3
+    day-scoped tasks A/B/C, dragged A past C. Confirmed directly in Postgres
+    (not just the UI) that the result is `B, A, C` — A landed immediately
+    before C, matching the fix, not past it. Test account and its data were
+    deleted afterward.
+  - [ ] Response payload size in Network tab / React Profiler re-render check /
+    cross-collection drag: not completed. The MCP browser-automation `drag`
+    tool doesn't reliably trigger this app's dnd-kit pointer sensor (the one
+    keyboard-driven drop that did fire a move request also intermittently
+    toggled task completion via a colliding Space-key shortcut, unrelated to
+    this branch) — a tooling limitation of this verification pass, not a
+    finding against the fix. The two independent whole-branch code reviews
+    traced the payload-size and orderValue-correctness claims through the
+    actual code and pinned them with tests instead; a human should still spot
+    check this in a real browser before/after merging if that matters.
 
 ## Migrated from .specs/2026-07-25-drag-polish-defects/task.md
 
