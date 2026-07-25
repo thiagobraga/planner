@@ -29,7 +29,7 @@ vi.mock('../../utils/offlineQueue', () => ({
 }));
 
 vi.mock('../../api/queryClient', () => ({
-  queryClient: { clear: vi.fn() },
+  queryClient: { clear: vi.fn(), cancelQueries: vi.fn() },
 }));
 
 const mockUser: AuthUser = {
