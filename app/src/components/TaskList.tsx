@@ -12,6 +12,7 @@ import {
 import { usePlannerDrag } from '../contexts/PlannerDragContext';
 import { TaskBlockPreview } from './TaskBlockPreview';
 import type { DayDropData } from '../types/drag';
+import { useI18n } from '../i18n/I18nContext';
 
 type TaskCallbacks = Pick<
   TaskItemProps,
@@ -66,6 +67,7 @@ export function TaskList({
   onConvertType,
   onRightClick,
 }: TaskListProps) {
+  const { t } = useI18n();
   const { activeDrag, indentSteps, overId, hasMoved, setOverlayNode } = usePlannerDrag();
 
   const dropData: DayDropData | undefined = dayDate
@@ -163,7 +165,7 @@ export function TaskList({
       <div
         ref={setNodeRef}
         role="list"
-        aria-label="task list"
+        aria-label={t('task.list')}
         // An empty list claims a row of drop area while a drag is in flight, so
         // an empty date can be hovered at all. The class cancels its own height
         // with a negative margin - see the note on the rule for why it has to

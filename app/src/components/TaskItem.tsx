@@ -4,6 +4,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { Repeat } from 'lucide-react';
 import { NO_DRAG_ATTR, DRAG_HANDLE_ATTR } from './dnd/sensors';
 import type { TaskDragData } from '../types/drag';
+import { useI18n } from '../i18n/I18nContext';
 
 let _pendingCol: number | null = null;
 export function setPendingColumn(col: number | null): void { _pendingCol = col; }
@@ -75,14 +76,14 @@ export const priorityClasses: Record<number, string> = {
   4: 'text-ink',
 };
 
-function formatDueDate(value: string): string {
+function formatDueDate(value: string, locale: 'en' | 'pt-BR'): string {
   const match = value.match(/^(\d{4})-(\d{2})-(\d{2})/);
   if (!match) return value;
 
   const [, year, month, day] = match;
   const date = new Date(Number(year), Number(month) - 1, Number(day));
   const currentYear = new Date().getFullYear();
-  return date.toLocaleDateString('en-US', {
+  return date.toLocaleDateString(locale, {
     month: 'short',
     day: 'numeric',
     ...(Number(year) !== currentYear ? { year: 'numeric' } : {}),
@@ -125,6 +126,7 @@ export const TaskItem = memo(function TaskItem({
   onConvertType,
   onRightClick,
 }: TaskItemProps) {
+  const { locale, t } = useI18n();
   const dragData: TaskDragData = {
     kind: 'task',
     taskId: task.id,
@@ -269,7 +271,7 @@ export const TaskItem = memo(function TaskItem({
         tabIndex={isEditing ? -1 : 0}
         role="button"
         className="task-item-drag-handle drag-handle absolute left-[-18px] w-4 cursor-grab flex items-center justify-center opacity-0 text-ink-light text-[10px] select-none"
-        aria-label={`Reorder ${task.title}`}
+        aria-label={t('task.reorder', { title: task.title })}
       >
         ⠿
       </span>
@@ -285,7 +287,9 @@ export const TaskItem = memo(function TaskItem({
         <button
           type="button"
           {...{ [NO_DRAG_ATTR]: '' }}
-          aria-label={task.isCompleted ? `Reopen: ${task.title}` : `Complete: ${task.title}`}
+          aria-label={task.isCompleted
+            ? t('task.reopen', { title: task.title })
+            : t('task.complete', { title: task.title })}
           aria-pressed={task.isCompleted}
           onClick={(e) => { e.stopPropagation(); handleCheckClick(e); }}
           onDoubleClick={(e) => e.stopPropagation()}
@@ -332,7 +336,7 @@ export const TaskItem = memo(function TaskItem({
             {task.dueDate && !hideDueDate && (
               <span className={`task-item-due-date inline-flex items-baseline gap-1 text-xs leading-6 text-ink-light ml-1.5 whitespace-nowrap`}>
                 {task.recurrenceRule && <Repeat className="w-3 h-3 self-center" />}
-                {formatDueDate(task.dueDate)}
+                {formatDueDate(task.dueDate, locale)}
               </span>
             )}
 

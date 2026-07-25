@@ -8,6 +8,8 @@ import { CollectionTreeNav } from './CollectionTreeNav';
 import { SidebarNavItem } from './SidebarNavItem';
 import { fetchCollections } from '../api/client';
 import type { CollectionDropData } from '../types/drag';
+import { useI18n } from '../i18n/I18nContext';
+import type { TranslationKey } from '../i18n/catalogs';
 
 interface SidebarProps {
   isOpen?: boolean;
@@ -41,25 +43,28 @@ export const StyleguideIcon = ({ size = 15 }: { size?: number }) => (
   </svg>
 );
 
-export const PlannerIcon = ({ width, height, className = '' }: { width: number; height: number; className?: string }) => (
-  <img
-    src={`/images/bulletjournal-planner-${width}x${height}.png`}
-    width={width}
-    height={height}
-    className={`block shrink-0 ${className}`}
-    alt="Icon of the app, a nice planner icon beside the app name."
-  />
-);
+export const PlannerIcon = ({ width, height, className = '' }: { width: number; height: number; className?: string }) => {
+  const { t } = useI18n();
+  return (
+    <img
+      src={`/images/bulletjournal-planner-${width}x${height}.png`}
+      width={width}
+      height={height}
+      className={`block shrink-0 ${className}`}
+      alt={t('nav.navigation')}
+    />
+  );
+};
 
 type ReactNode = React.ReactNode;
 
-type NavItem = { to: string; label: string; Icon: LucideIcon | React.ComponentType<{ size?: number }> };
+type NavItem = { to: string; labelKey: TranslationKey; Icon: LucideIcon | React.ComponentType<{ size?: number }> };
 
 const NAV_ITEMS: NavItem[] = [
-  { to: '/daily', label: 'Daily', Icon: BjTask },
-  { to: '/inbox', label: 'Inbox', Icon: ChevronRight },
-  { to: '/monthly', label: 'Monthly', Icon: MonthlyIcon },
-  { to: '/habits', label: 'Habits', Icon: Repeat2 },
+  { to: '/daily', labelKey: 'nav.daily', Icon: BjTask },
+  { to: '/inbox', labelKey: 'nav.inbox', Icon: ChevronRight },
+  { to: '/monthly', labelKey: 'nav.monthly', Icon: MonthlyIcon },
+  { to: '/habits', labelKey: 'nav.habits', Icon: Repeat2 },
 ];
 
 /**
@@ -98,6 +103,7 @@ function InboxNavItem({ label, icon }: { label: string; icon: ReactNode }) {
 }
 
 export function Sidebar({ isOpen, onClose, collapsed = false }: SidebarProps) {
+  const { t } = useI18n();
   const { logout } = useAuth();
   const navigate = useNavigate();
 
@@ -109,19 +115,19 @@ export function Sidebar({ isOpen, onClose, collapsed = false }: SidebarProps) {
     return (
       <aside
         className="sidebar sidebar-collapsed w-12 h-full flex flex-col items-center border-r border-dot bg-[var(--planner-sidebar-bg)] py-6 shrink-0 overflow-y-auto"
-        aria-label="Navigation"
+        aria-label={t('nav.navigation')}
       >
         {/* Logo mark */}
         <div className="sidebar-logo mb-6" title="Planner">
           <PlannerIcon width={16} height={16} className="mt-1" />
         </div>
 
-        <nav aria-label="Main navigation" className="sidebar-nav flex flex-col gap-0.5 w-full items-center">
+        <nav aria-label={t('nav.main')} className="sidebar-nav flex flex-col gap-0.5 w-full items-center">
           {NAV_ITEMS.map((entry) => (
             <NavLink
               key={entry.to}
               to={entry.to}
-              title={entry.label}
+              title={t(entry.labelKey)}
               className={({ isActive }) => (isActive ? 'sidebar-icon-link sidebar-icon-link--active' : 'sidebar-icon-link')}
             >
               <entry.Icon size={16} strokeWidth={1.5} />
@@ -132,7 +138,7 @@ export function Sidebar({ isOpen, onClose, collapsed = false }: SidebarProps) {
         <div className="mt-auto flex flex-col gap-0.5 w-full items-center pb-6">
           <NavLink
             to="/settings"
-            title="Settings"
+            title={t('common.settings')}
             className={({ isActive }) => (isActive ? 'sidebar-icon-link sidebar-icon-link--active' : 'sidebar-icon-link')}
           >
             <Settings size={16} strokeWidth={1.5} />
@@ -140,7 +146,7 @@ export function Sidebar({ isOpen, onClose, collapsed = false }: SidebarProps) {
 
           <NavLink
             to="/styleguide"
-            title="Styleguide"
+            title={t('nav.styleguide')}
             className={({ isActive }) => (isActive ? 'sidebar-icon-link sidebar-icon-link--active' : 'sidebar-icon-link')}
           >
             <StyleguideIcon size={16} />
@@ -148,7 +154,7 @@ export function Sidebar({ isOpen, onClose, collapsed = false }: SidebarProps) {
 
           <NavLink
             to="/help"
-            title="Help"
+            title={t('nav.help')}
             className={({ isActive }) => (isActive ? 'sidebar-icon-link sidebar-icon-link--active' : 'sidebar-icon-link')}
           >
             <HelpCircle size={16} strokeWidth={1.5} />
@@ -163,7 +169,7 @@ export function Sidebar({ isOpen, onClose, collapsed = false }: SidebarProps) {
               e.preventDefault();
               handleLogout();
             }}
-            title="Logout"
+            title={t('nav.logout')}
             className="sidebar-icon-link"
           >
             <LogOut size={16} strokeWidth={1.5} />
@@ -176,7 +182,7 @@ export function Sidebar({ isOpen, onClose, collapsed = false }: SidebarProps) {
   const sidebarContent = (
     <aside
       className={`sidebar-drawer ${isOpen !== false ? 'sidebar-drawer--open' : ''} w-[220px] h-full flex flex-col border-r border-dot bg-[var(--planner-sidebar-bg)] relative overflow-y-auto shrink-0`}
-      aria-label="Navigation"
+      aria-label={t('nav.navigation')}
     >
       {/* Logo */}
       <div className="mb-6 ml-3">
@@ -196,15 +202,15 @@ export function Sidebar({ isOpen, onClose, collapsed = false }: SidebarProps) {
       </div>
 
       {/* Main nav */}
-      <nav aria-label="Main navigation" className="flex flex-col">
+      <nav aria-label={t('nav.main')} className="flex flex-col">
         {NAV_ITEMS.map((entry) =>
           entry.to === '/inbox' ? (
-            <InboxNavItem key={entry.to} label={entry.label} icon={<entry.Icon size={15} strokeWidth={1.5} />} />
+            <InboxNavItem key={entry.to} label={t(entry.labelKey)} icon={<entry.Icon size={15} strokeWidth={1.5} />} />
           ) : (
             <SidebarNavItem
               key={entry.to}
               to={entry.to}
-              label={entry.label}
+              label={t(entry.labelKey)}
               icon={<entry.Icon size={15} strokeWidth={1.5} />}
             />
           ),
@@ -216,14 +222,14 @@ export function Sidebar({ isOpen, onClose, collapsed = false }: SidebarProps) {
 
       {/* Footer utilities */}
       <div className="mt-auto pt-4">
-        <nav aria-label="Settings" className="flex flex-col">
-          <SidebarNavItem to="/settings" label="Settings" icon={<Settings size={15} strokeWidth={1.5} />} />
-          <SidebarNavItem to="/styleguide" label="Styleguide" icon={<StyleguideIcon size={15} />} />
-          <SidebarNavItem to="/help" label="Help" icon={<HelpCircle size={15} strokeWidth={1.5} />} />
+        <nav aria-label={t('common.settings')} className="flex flex-col">
+          <SidebarNavItem to="/settings" label={t('common.settings')} icon={<Settings size={15} strokeWidth={1.5} />} />
+          <SidebarNavItem to="/styleguide" label={t('nav.styleguide')} icon={<StyleguideIcon size={15} />} />
+          <SidebarNavItem to="/help" label={t('nav.help')} icon={<HelpCircle size={15} strokeWidth={1.5} />} />
 
           <div className="border-t border-dot my-4 mx-0"></div>
 
-          <SidebarNavItem label="Logout" icon={<LogOut size={15} strokeWidth={1.5} />} onClick={handleLogout} />
+          <SidebarNavItem label={t('nav.logout')} icon={<LogOut size={15} strokeWidth={1.5} />} onClick={handleLogout} />
         </nav>
       </div>
     </aside>

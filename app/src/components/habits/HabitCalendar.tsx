@@ -13,6 +13,7 @@ import type { HabitDragData, HabitGroupDragData, HabitSectionDropData } from '..
 import type { HabitEditTarget } from './HabitTimeline';
 import type { ApiHabitGroup } from '../../api/client';
 import type { WeekStart } from '../../utils/date';
+import { useI18n } from '../../i18n/I18nContext';
 
 /** One card column, which the grid and the drag preview both size from. */
 const CARD_W = 192;
@@ -407,6 +408,7 @@ function HabitCalendarHeading({
   onCommitEdit: (name: string) => void;
   onCancelEdit: () => void;
 }) {
+  const { t } = useI18n();
   return (
     <div className="habit-calendar-item-heading flex h-6 items-center">
       <span aria-hidden="true" className="flex h-6 w-6 shrink-0 items-center justify-center">
@@ -418,7 +420,7 @@ function HabitCalendarHeading({
       {isEditing ? (
         <HabitNameInput
           defaultValue={node.name}
-          placeholder="Habit name"
+          placeholder={t('page.habitName')}
           onCommit={onCommitEdit}
           onCancel={onCancelEdit}
         />

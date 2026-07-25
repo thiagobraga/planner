@@ -4,11 +4,10 @@ import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
 import { ApiError, apiRequestPasswordReset } from '../api/client';
 import { useCountdown, formatCountdown } from '../hooks/useCountdown';
-
-const GENERIC_CONFIRMATION =
-  'If an account exists for that address, a reset link is on its way. Check your inbox.';
+import { useI18n } from '../i18n/I18nContext';
 
 export function ForgotPasswordPage() {
+  const { t } = useI18n();
   const [email, setEmail] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [formError, setFormError] = useState('');
@@ -41,10 +40,12 @@ export function ForgotPasswordPage() {
 
   if (submitted) {
     return (
-      <AuthShell subtitle="Check your inbox">
-        <p className="text-[13px] leading-6 text-ink text-center">{GENERIC_CONFIRMATION}</p>
+      <AuthShell subtitle={t('auth.checkInbox')}>
+        <p className="text-[13px] leading-6 text-ink text-center">
+          {t('auth.checkInboxMessage')}
+        </p>
         <p className="mt-6 text-center">
-          <AuthLink to="/login">Back to sign in</AuthLink>
+          <AuthLink to="/login">{t('auth.backToSignIn')}</AuthLink>
         </p>
       </AuthShell>
     );
@@ -53,35 +54,35 @@ export function ForgotPasswordPage() {
   const throttled = secondsLeft > 0;
 
   return (
-    <AuthShell subtitle="Reset your password">
+    <AuthShell subtitle={t('auth.resetPassword')}>
       <form onSubmit={handleSubmit} className="flex flex-col gap-3">
         <p className="text-[13px] leading-6 text-ink-light">
-          Enter your email and we'll send you a link to choose a new password.
+          {t('auth.resetIntro')}
         </p>
         <Input
           type="email"
-          placeholder="Email"
+          placeholder={t('auth.email')}
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
           autoFocus
           autoComplete="username"
-          aria-label="Email"
+          aria-label={t('auth.email')}
         />
 
         {formError && (
           <AuthFormError>
-            {throttled ? `${formError} Try again in ${formatCountdown(secondsLeft)}.` : formError}
+            {throttled ? `${formError} ${t('auth.retryIn', { time: formatCountdown(secondsLeft) })}` : formError}
           </AuthFormError>
         )}
 
         <Button type="submit" variant="primary" disabled={loading || throttled}>
-          {loading ? '…' : 'Send reset link'}
+          {loading ? '…' : t('auth.sendResetLink')}
         </Button>
       </form>
 
       <p className="mt-6 text-center">
-        <AuthLink to="/login">Back to sign in</AuthLink>
+        <AuthLink to="/login">{t('auth.backToSignIn')}</AuthLink>
       </p>
     </AuthShell>
   );

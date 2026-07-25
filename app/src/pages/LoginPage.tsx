@@ -6,8 +6,10 @@ import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
 import { ApiError } from '../api/client';
 import { useCountdown, formatCountdown } from '../hooks/useCountdown';
+import { useI18n } from '../i18n/I18nContext';
 
 export function LoginPage() {
+  const { t } = useI18n();
   const { login } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
@@ -27,7 +29,7 @@ export function LoginPage() {
       if (err instanceof ApiError && err.code === 'RATE_LIMITED') {
         start(err.retryAfterSeconds ?? 0);
       }
-      setError(err instanceof Error ? err.message : 'Something went wrong');
+      setError(err instanceof Error ? err.message : t('auth.somethingWrong'));
     } finally {
       setLoading(false);
     }
@@ -40,38 +42,38 @@ export function LoginPage() {
       <form onSubmit={handleSubmit} className="flex flex-col gap-3">
         <Input
           type="email"
-          placeholder="Email"
+          placeholder={t('auth.email')}
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
           autoFocus
           autoComplete="username"
-          aria-label="Email"
+          aria-label={t('auth.email')}
         />
         <Input
           type="password"
-          placeholder="Password"
+          placeholder={t('auth.password')}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
           autoComplete="current-password"
-          aria-label="Password"
+          aria-label={t('auth.password')}
         />
 
         {error && (
           <AuthFormError>
-            {throttled ? `${error} Try again in ${formatCountdown(secondsLeft)}.` : error}
+            {throttled ? `${error} ${t('auth.retryIn', { time: formatCountdown(secondsLeft) })}` : error}
           </AuthFormError>
         )}
 
         <Button type="submit" variant="primary" disabled={loading || throttled}>
-          {loading ? '…' : 'Sign in'}
+          {loading ? '…' : t('auth.signIn')}
         </Button>
       </form>
 
       <div className="mt-6 flex flex-col items-center gap-1">
-        <AuthLink to="/forgot-password">Forgot password?</AuthLink>
-        <AuthLink to="/register">Don't have an account? Register</AuthLink>
+        <AuthLink to="/forgot-password">{t('auth.forgotPassword')}</AuthLink>
+        <AuthLink to="/register">{t('auth.noAccount')}</AuthLink>
       </div>
     </AuthShell>
   );

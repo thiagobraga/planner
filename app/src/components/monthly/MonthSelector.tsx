@@ -1,7 +1,7 @@
-import { useEffect, useState, useRef, useLayoutEffect, forwardRef, useImperativeHandle, type CSSProperties } from 'react';
+import { useEffect, useState, useRef, useLayoutEffect, useImperativeHandle, type CSSProperties } from 'react';
 import { StripNavigator } from '../ui/StripNavigator';
+import { useI18n } from '../../i18n/I18nContext';
 
-const MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
 const MONTH_WINDOW = 3;
 const MONTH_STRIP_RANGE = MONTH_WINDOW * 2;
 const MONTH_STRIP_GAP = 24;
@@ -45,6 +45,7 @@ export const MonthSelector = ({
   className = '',
   ref,
 }: MonthSelectorProps & { ref?: React.Ref<MonthSelectorHandle> }) => {
+  const { locale, t } = useI18n();
   const [isMobileStrip, setIsMobileStrip] = useState(() => window.innerWidth < 640);
   const [pendingMonth, setPendingMonth] = useState<MonthTile | null>(null);
   const [suppressStripTransition, setSuppressStripTransition] = useState(false);
@@ -125,7 +126,7 @@ export const MonthSelector = ({
     <div className={`monthly-strip flex w-full min-w-0 items-start gap-(--dot-grid) ${className}`}>
       <StripNavigator
         direction="previous"
-        aria-label="Previous month"
+        aria-label={t('page.previousMonth')}
         onClick={() => selectMonth(shiftMonth(selectedYear, selectedMonth, -1), -1)}
         className="month-strip-nav-prev"
       />
@@ -164,7 +165,9 @@ export const MonthSelector = ({
                 }
               >
                 <span className={`month-strip-card-month text-[11px] leading-5 tracking-[0.08em] sm:text-[11px] sm:tracking-widest ${isSelected ? 'font-semibold' : 'font-medium'}`}>
-                  {MONTHS[month]}
+                  {new Intl.DateTimeFormat(locale, { month: 'short' })
+                    .format(new Date(year, month, 1))
+                    .toLocaleUpperCase(locale)}
                 </span>
                 <span className={`month-strip-card-year text-[11px] leading-5 tracking-[0.08em] sm:text-[11px] sm:tracking-widest ${isSelected ? 'font-semibold' : 'font-medium'}`}>
                   {yearLabel}
@@ -177,7 +180,7 @@ export const MonthSelector = ({
 
       <StripNavigator
         direction="next"
-        aria-label="Next month"
+        aria-label={t('page.nextMonth')}
         onClick={() => selectMonth(shiftMonth(selectedYear, selectedMonth, 1), 1)}
         className="month-strip-nav-next"
       />

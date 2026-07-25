@@ -16,6 +16,7 @@ const originalDateTimeFormat = Intl.DateTimeFormat;
 
 const basePreferences: Preferences = {
   userId: 'user-1',
+  locale: 'en',
   timeZone: 'Europe/London',
   weekStart: 'sunday',
   theme: 'system',
@@ -176,6 +177,16 @@ describe('SettingsPage', () => {
 
     await waitFor(() => expect(mockUpdatePreferences).toHaveBeenCalledWith({ weekStart: 'monday' }));
     expect(monday).toBeChecked();
+  });
+
+  it('persists the selected application language through preferences', async () => {
+    renderPage();
+
+    const portuguese = await screen.findByRole('radio', { name: 'Português (Brasil)' });
+    fireEvent.click(portuguese);
+
+    await waitFor(() => expect(mockUpdatePreferences).toHaveBeenCalledWith({ locale: 'pt-BR' }));
+    expect(portuguese).toBeChecked();
   });
 
   it('keeps appearance controls working and rolls back failed optimistic updates', async () => {

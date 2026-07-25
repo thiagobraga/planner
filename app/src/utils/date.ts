@@ -20,11 +20,22 @@ const MONDAY_FIRST_INITIALS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'] as const;
 const SUNDAY_FIRST_SHORT_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;
 const MONDAY_FIRST_SHORT_NAMES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const;
 
-export function weekdayInitials(weekStart: WeekStart): readonly string[] {
+const SUNDAY_FIRST_PT_BR_INITIALS = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'] as const;
+const MONDAY_FIRST_PT_BR_INITIALS = ['S', 'T', 'Q', 'Q', 'S', 'S', 'D'] as const;
+const SUNDAY_FIRST_PT_BR_SHORT_NAMES = ['dom.', 'seg.', 'ter.', 'qua.', 'qui.', 'sex.', 'sáb.'] as const;
+const MONDAY_FIRST_PT_BR_SHORT_NAMES = ['seg.', 'ter.', 'qua.', 'qui.', 'sex.', 'sáb.', 'dom.'] as const;
+
+export function weekdayInitials(weekStart: WeekStart, locale: 'en' | 'pt-BR' = 'en'): readonly string[] {
+  if (locale === 'pt-BR') {
+    return weekStart === 'monday' ? MONDAY_FIRST_PT_BR_INITIALS : SUNDAY_FIRST_PT_BR_INITIALS;
+  }
   return weekStart === 'monday' ? MONDAY_FIRST_INITIALS : SUNDAY_FIRST_INITIALS;
 }
 
-export function weekdayShortNames(weekStart: WeekStart): readonly string[] {
+export function weekdayShortNames(weekStart: WeekStart, locale: 'en' | 'pt-BR' = 'en'): readonly string[] {
+  if (locale === 'pt-BR') {
+    return weekStart === 'monday' ? MONDAY_FIRST_PT_BR_SHORT_NAMES : SUNDAY_FIRST_PT_BR_SHORT_NAMES;
+  }
   return weekStart === 'monday' ? MONDAY_FIRST_SHORT_NAMES : SUNDAY_FIRST_SHORT_NAMES;
 }
 
@@ -65,104 +76,102 @@ export interface ParsedDate {
   recurrenceRule?: object | null;
 }
 
-export function parseNaturalDate(input: string): ParsedDate | null {
+export function parseNaturalDate(input: string, locale: 'en' | 'pt-BR' = 'en'): ParsedDate | null {
   const today = new Date();
-  const lower = input.toLowerCase();
+  const lower = input.toLocaleLowerCase(locale);
+  const englishDays = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+  const portugueseDays = ['domingo', 'segunda', 'terça', 'quarta', 'quinta', 'sexta', 'sábado'];
+  const dayNames = locale === 'pt-BR' ? portugueseDays : englishDays;
+  const weekdayPattern = locale === 'pt-BR'
+    ? '(domingo|segunda(?:-feira)?|terça(?:-feira)?|terca(?:-feira)?|quarta(?:-feira)?|quinta(?:-feira)?|sexta(?:-feira)?|sábado|sabado)'
+    : '(monday|tuesday|wednesday|thursday|friday|saturday|sunday)';
+  const weekdayIndex = (value: string) => {
+    const normalized = value
+      .replace('-feira', '')
+      .replace('terca', 'terça')
+      .replace('sabado', 'sábado');
+    return dayNames.indexOf(normalized);
+  };
 
-  const patterns: Array<{ 
-    re: RegExp; 
-    resolve: (m: RegExpMatchArray) => Date | null; 
-    recurrence?: object | ((m: RegExpMatchArray) => object); 
-    label: string 
+  const patterns: Array<{
+    re: RegExp;
+    resolve: (m: RegExpMatchArray) => Date | null;
+    recurrence?: object | ((m: RegExpMatchArray) => object);
   }> = [
     {
-      re: /\bevery day\b/,
+      re: locale === 'pt-BR' ? /(?:\btodo dia\b|\btodos os dias\b)/u : /\bevery day\b/,
       resolve: () => today,
       recurrence: { type: 'daily', interval: 1 },
-      label: 'Every day',
     },
     {
-      re: /\bevery week\b/,
+      re: locale === 'pt-BR' ? /\btoda semana\b/u : /\bevery week\b/,
       resolve: () => today,
       recurrence: { type: 'weekly', interval: 1 },
-      label: 'Every week',
     },
     {
-      re: /\bevery month\b/,
+      re: locale === 'pt-BR' ? /\btodo (?:mês|mes)\b/u : /\bevery month\b/,
       resolve: () => today,
       recurrence: { type: 'monthly', interval: 1 },
-      label: 'Every month',
     },
     {
-      re: /\bevery (monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b/,
+      re: new RegExp(locale === 'pt-BR' ? `\\btod[oa] ${weekdayPattern}` : `\\bevery ${weekdayPattern}`, 'u'),
       resolve: (m) => {
-        const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-        const target = days.indexOf(m[1]);
+        const target = weekdayIndex(m[1]);
         const d = new Date(today);
         const diff = (target + 7 - d.getDay()) % 7;
         d.setDate(d.getDate() + (diff === 0 ? 0 : diff));
         return d;
       },
       recurrence: (m) => {
-        const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-        return { type: 'weekly', interval: 1, weekdays: [days.indexOf(m[1])] };
+        return { type: 'weekly', interval: 1, weekdays: [weekdayIndex(m[1])] };
       },
-      label: 'Every week',
     },
     {
-      re: /\btoday\b/,
+      re: locale === 'pt-BR' ? /\bhoje\b/u : /\btoday\b/,
       resolve: () => today,
-      label: 'Today',
     },
     {
-      re: /\btomorrow\b/,
+      re: locale === 'pt-BR' ? /\b(?:amanhã|amanha)/u : /\btomorrow\b/,
       resolve: () => {
         const d = new Date(today);
         d.setDate(d.getDate() + 1);
         return d;
       },
-      label: 'Tomorrow',
     },
     {
-      re: /\bnext (monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b/,
+      re: new RegExp(locale === 'pt-BR' ? `\\bpr[oó]xim[oa] ${weekdayPattern}` : `\\bnext ${weekdayPattern}`, 'u'),
       resolve: (m) => {
-        const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-        const target = days.indexOf(m[1]);
+        const target = weekdayIndex(m[1]);
         const d = new Date(today);
         d.setDate(d.getDate() + ((target + 7 - d.getDay()) % 7 || 7));
         return d;
       },
-      label: 'Next',
     },
     {
-      re: /\b(monday|tuesday|wednesday|thursday|friday|saturday|sunday)\b/,
+      re: new RegExp(`\\b${weekdayPattern}`, 'u'),
       resolve: (m) => {
-        const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-        const target = days.indexOf(m[1]);
+        const target = weekdayIndex(m[1]);
         const d = new Date(today);
         const diff = (target + 7 - d.getDay()) % 7 || 7;
         d.setDate(d.getDate() + diff);
         return d;
       },
-      label: '',
     },
     {
-      re: /\bin (\d+) days?\b/,
+      re: locale === 'pt-BR' ? /\bem (\d+) dias?\b/u : /\bin (\d+) days?\b/,
       resolve: (m) => {
         const d = new Date(today);
         d.setDate(d.getDate() + parseInt(m[1]));
         return d;
       },
-      label: '',
     },
     {
-      re: /\bnext week\b/,
+      re: locale === 'pt-BR' ? /\bpr[oó]xima semana\b/u : /\bnext week\b/,
       resolve: () => {
         const d = new Date(today);
         d.setDate(d.getDate() + 7);
         return d;
       },
-      label: 'Next week',
     },
   ];
 
@@ -180,7 +189,8 @@ export function parseNaturalDate(input: string): ParsedDate | null {
         const isoDate = fmtISO(date);
         return {
           text: m[0],
-          preview: date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) + (recRule ? ' (Recurring)' : ''),
+          preview: new Intl.DateTimeFormat(locale, { weekday: 'short', month: 'short', day: 'numeric' }).format(date)
+            + (recRule ? ` (${locale === 'pt-BR' ? 'Recorrente' : 'Recurring'})` : ''),
           isoDate,
           recurrenceRule: recRule,
         };
@@ -192,13 +202,15 @@ export function parseNaturalDate(input: string): ParsedDate | null {
 
 export function extractNaturalDate(
   input: string,
-  fallbackDueDate?: string
+  fallbackDueDate?: string,
+  locale: 'en' | 'pt-BR' = 'en',
 ): { title: string; dueDate?: string; recurrenceRule?: object | null } {
-  const parsed = parseNaturalDate(input);
+  const parsed = parseNaturalDate(input, locale);
   if (!parsed) {
     return { title: input, dueDate: fallbackDueDate };
   }
-  const stripped = input.replace(new RegExp(`\\b${parsed.text}\\b`, 'i'), '').replace(/\s+/g, ' ').trim();
+  const start = input.toLocaleLowerCase(locale).indexOf(parsed.text.toLocaleLowerCase(locale));
+  const stripped = `${input.slice(0, start)} ${input.slice(start + parsed.text.length)}`.replace(/\s+/g, ' ').trim();
   return {
     title: stripped || input,
     dueDate: parsed.isoDate,

@@ -1,4 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
+import { useI18n } from '../i18n/I18nContext';
+import type { TranslationKey } from '../i18n/catalogs';
 
 // Simple syntax highlighting token types
 type TokenType = 'keyword' | 'operator' | 'string' | 'error' | 'text';
@@ -90,7 +92,7 @@ function tokenize(input: string): Token[] {
   return tokens;
 }
 
-function validateFilter(input: string): string | null {
+function validateFilter(input: string): TranslationKey | null {
   const trimmed = input.trim();
   if (!trimmed) return null;
 
@@ -99,15 +101,15 @@ function validateFilter(input: string): string | null {
   for (const ch of trimmed) {
     if (ch === '(') depth++;
     else if (ch === ')') depth--;
-    if (depth < 0) return 'Unmatched closing parenthesis';
+    if (depth < 0) return 'filter.unmatchedClosing';
   }
-  if (depth > 0) return 'Unclosed parenthesis';
+  if (depth > 0) return 'filter.unclosed';
 
   // Check for empty groups like ()
-  if (/\(\s*\)/.test(trimmed)) return 'Empty group ()';
+  if (/\(\s*\)/.test(trimmed)) return 'filter.emptyGroup';
 
   // Check consecutive ops
-  if (/[&|]{2,}/.test(trimmed)) return 'Consecutive operators';
+  if (/[&|]{2,}/.test(trimmed)) return 'filter.consecutiveOperators';
 
   return null;
 }
@@ -130,13 +132,14 @@ interface FilterBarProps {
 }
 
 export function FilterBar({ value: externalValue, onChange, onApply }: FilterBarProps) {
+  const { t } = useI18n();
   const [internalValue, setInternalValue] = useState(externalValue ?? '');
   const [isFocused, setIsFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const value = externalValue ?? internalValue;
   const tokens = tokenize(value);
-  const error = validateFilter(value);
+  const errorKey = validateFilter(value);
 
   useEffect(() => {
     if (externalValue !== undefined) setInternalValue(externalValue);
@@ -152,7 +155,7 @@ export function FilterBar({ value: externalValue, onChange, onApply }: FilterBar
   );
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && !error && value.trim()) {
+    if (e.key === 'Enter' && !errorKey && value.trim()) {
       onApply?.(value.trim());
     }
   };
@@ -167,7 +170,7 @@ export function FilterBar({ value: externalValue, onChange, onApply }: FilterBar
   return (
     <div className="relative flex flex-col gap-1">
       <div
-        className={`flex items-center gap-2 py-1.5 px-3 border rounded bg-[var(--planner-control-bg)] transition-[border-color] duration-[120ms] ${error ? 'border-accent' : isFocused ? 'border-ink' : 'border-dot'}`}
+        className={`flex items-center gap-2 py-1.5 px-3 border rounded bg-[var(--planner-control-bg)] transition-[border-color] duration-[120ms] ${errorKey ? 'border-accent' : isFocused ? 'border-ink' : 'border-dot'}`}
       >
         {/* Filter icon */}
         <span className="text-xs text-ink-light shrink-0">⊟</span>
@@ -193,10 +196,10 @@ export function FilterBar({ value: externalValue, onChange, onApply }: FilterBar
           onKeyDown={handleKeyDown}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
-          placeholder="Filter: #collection @label p1 today overdue…"
-          aria-label="Filter tasks"
-          aria-invalid={!!error}
-          aria-describedby={error ? 'filter-error' : undefined}
+          placeholder={t('filter.placeholder')}
+          aria-label={t('filter.tasks')}
+          aria-invalid={!!errorKey}
+          aria-describedby={errorKey ? 'filter-error' : undefined}
           className={`flex-1 text-[13px] leading-[22px] border-0 outline-none bg-transparent p-0 caret-ink ${isFocused && value ? 'text-transparent' : 'text-ink'}`}
         />
 
@@ -204,7 +207,7 @@ export function FilterBar({ value: externalValue, onChange, onApply }: FilterBar
           <button
             type="button"
             onClick={handleClear}
-            aria-label="Clear filter"
+            aria-label={t('filter.clear')}
             className="bg-transparent border-0 text-ink-light cursor-pointer text-sm leading-none px-0.5 shrink-0"
           >
             ×
@@ -213,13 +216,13 @@ export function FilterBar({ value: externalValue, onChange, onApply }: FilterBar
       </div>
 
       {/* Validation error */}
-      {error && (
+      {errorKey && (
         <div
           id="filter-error"
           role="alert"
           className="text-[11px] text-accent pl-3 leading-4"
         >
-          {error}
+          {t(errorKey)}
         </div>
       )}
     </div>

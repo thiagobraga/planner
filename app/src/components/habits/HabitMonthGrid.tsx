@@ -3,6 +3,7 @@ import { buildMonthDays, fmtISO, weekdayInitials, type WeekStart } from '../../u
 import type { DayState } from '../../utils/habitTree';
 import { HabitDot, dotAriaProps } from './HabitDot';
 import { NO_DRAG_ATTR } from '../dnd/sensors';
+import { useI18n } from '../../i18n/I18nContext';
 
 const CELL = 24;
 export interface HabitMonthGridProps {
@@ -31,11 +32,12 @@ export function HabitMonthGrid({
   label,
   readOnly = false,
 }: HabitMonthGridProps) {
+  const { locale } = useI18n();
   const days = useMemo(
     () => buildMonthDays(year, month, today, weekStart),
     [year, month, today, weekStart],
   );
-  const dayLabels = weekdayInitials(weekStart);
+  const dayLabels = weekdayInitials(weekStart, locale);
   const todayISO = fmtISO(today);
   const leadingBlanks = days[0]?.dow ?? 0;
 

@@ -53,7 +53,7 @@ describe('QuickAdd', () => {
     fireEvent.change(input, { target: { value: 'buy groceries' } });
     fireEvent.click(screen.getByRole('button', { name: 'Add Task' }));
 
-    expect(dateUtils.extractNaturalDate).toHaveBeenCalledWith('buy groceries');
+    expect(dateUtils.extractNaturalDate).toHaveBeenCalledWith('buy groceries', undefined, 'en');
     expect(onSubmit).toHaveBeenCalledWith('buy groceries', undefined, undefined);
     expect(onClose).toHaveBeenCalled();
   });

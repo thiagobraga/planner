@@ -4,6 +4,7 @@ import { queryClient } from '../api/queryClient';
 import { connectSocket, disconnectSocket } from '../utils/socket';
 import { useOfflineQueueReplay } from '../hooks/useOfflineQueueReplay';
 import { clearUserMutations } from '../utils/offlineQueue';
+import { useI18n } from '../i18n/I18nContext';
 
 interface AuthContextValue {
   user: AuthUser | null;
@@ -27,6 +28,7 @@ async function fetchCurrentUser(): Promise<AuthUser | null> {
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const { t } = useI18n();
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [initializing, setInitializing] = useState(true);
@@ -89,7 +91,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [user]);
 
   if (initializing) {
-    return <div className="flex items-center justify-center h-screen text-ink-light">Loading...</div>;
+    return <div className="flex items-center justify-center h-screen text-ink-light">{t('settings.loading')}</div>;
   }
 
   return (

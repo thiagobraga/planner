@@ -14,6 +14,7 @@ interface PreferencesRow {
   small_caps: boolean;
   hide_completed_tasks: boolean;
   hide_old_notes: boolean;
+  locale: string;
 }
 
 function formatPreferences(row: PreferencesRow) {
@@ -29,6 +30,7 @@ function formatPreferences(row: PreferencesRow) {
     smallCaps: row.small_caps,
     hideCompletedTasks: row.hide_completed_tasks,
     hideOldNotes: row.hide_old_notes,
+    locale: row.locale,
   };
 }
 
@@ -36,6 +38,7 @@ const VALID_WEEK_STARTS = ["sunday", "monday"] as const;
 const VALID_THEMES = ["light", "dark", "system"] as const;
 const VALID_FONTS = ["lora", "playpen", "hubballi"] as const;
 const VALID_BACKGROUNDS = ["beige", "white"] as const;
+const VALID_LOCALES = ["en", "pt-BR"] as const;
 
 function isValidIanaTimezone(tz: string): boolean {
   try {
@@ -57,6 +60,7 @@ export interface UpdatePreferencesInput {
   smallCaps?: boolean;
   hideCompletedTasks?: boolean;
   hideOldNotes?: boolean;
+  locale?: string;
 }
 
 export function validatePreferences(input: UpdatePreferencesInput): UpdatePreferencesInput {
@@ -102,6 +106,10 @@ export function validatePreferences(input: UpdatePreferencesInput): UpdatePrefer
 
   if (input.hideOldNotes !== undefined && typeof input.hideOldNotes !== "boolean") {
     errors.push({ field: "hideOldNotes", message: "hideOldNotes must be a boolean" });
+  }
+
+  if (input.locale !== undefined && !VALID_LOCALES.includes(input.locale as (typeof VALID_LOCALES)[number])) {
+    errors.push({ field: "locale", message: "locale must be one of: en, pt-BR" });
   }
 
   if (errors.length > 0) {
@@ -179,6 +187,10 @@ export async function updatePreferences(userId: string, input: UpdatePreferences
   if (input.hideOldNotes !== undefined) {
     setClauses.push(`hide_old_notes = $${paramIndex++}`);
     values.push(input.hideOldNotes);
+  }
+  if (input.locale !== undefined) {
+    setClauses.push(`locale = $${paramIndex++}`);
+    values.push(input.locale);
   }
 
   if (setClauses.length === 0) {

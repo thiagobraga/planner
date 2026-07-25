@@ -251,6 +251,7 @@ export interface ApiTask {
 
 export interface Preferences {
   userId: string;
+  locale: 'en' | 'pt-BR';
   timeZone: string;
   weekStart: 'sunday' | 'monday';
   theme: 'light' | 'dark' | 'system';

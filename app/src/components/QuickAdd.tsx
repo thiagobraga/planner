@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 
 import { parseNaturalDate, extractNaturalDate } from '../utils/date';
+import { useI18n } from '../i18n/I18nContext';
 
 interface QuickAddProps {
   isOpen: boolean;
@@ -9,9 +10,10 @@ interface QuickAddProps {
 }
 
 export function QuickAdd({ isOpen, onClose, onSubmit }: QuickAddProps) {
+  const { locale, t } = useI18n();
   const [value, setValue] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
-  const parsed = value ? parseNaturalDate(value) : null;
+  const parsed = value ? parseNaturalDate(value, locale) : null;
 
   useEffect(() => {
     if (isOpen) {
@@ -34,7 +36,7 @@ export function QuickAdd({ isOpen, onClose, onSubmit }: QuickAddProps) {
     e.preventDefault();
     const trimmed = value.trim();
     if (!trimmed) return;
-    const extracted = extractNaturalDate(trimmed);
+    const extracted = extractNaturalDate(trimmed, undefined, locale);
     onSubmit(extracted.title, extracted.dueDate, extracted.recurrenceRule);
     onClose();
   };
@@ -49,7 +51,7 @@ export function QuickAdd({ isOpen, onClose, onSubmit }: QuickAddProps) {
     <div
       role="dialog"
       aria-modal="true"
-      aria-label="Quick add task"
+      aria-label={t('shell.quickAddTask')}
       onClick={handleOverlayClick}
       className="fixed inset-0 z-[100] bg-[rgba(44,44,44,0.3)] backdrop-blur-[2px] flex items-start justify-center pt-[120px]"
     >
@@ -57,12 +59,12 @@ export function QuickAdd({ isOpen, onClose, onSubmit }: QuickAddProps) {
         {/* Header */}
         <div className="px-5 pt-4 pb-2 border-b border-dot flex items-center justify-between">
           <span className="text-xs tracking-[0.08em] uppercase text-ink-light font-medium">
-            Quick Add
+            {t('quickAdd.title')}
           </span>
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close"
+            aria-label={t('quickAdd.close')}
             className="bg-transparent border-0 text-ink-light cursor-pointer text-lg leading-none px-0.5"
           >
             ×
@@ -77,8 +79,8 @@ export function QuickAdd({ isOpen, onClose, onSubmit }: QuickAddProps) {
             value={value}
             onChange={(e) => setValue(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Task name. Try 'call mom today' or 'buy groceries tomorrow'"
-            aria-label="Task title"
+            placeholder={t('quickAdd.placeholder')}
+            aria-label={t('quickAdd.taskTitle')}
             className="w-full text-[15px] leading-6 text-ink bg-transparent border-0 outline-none p-0 caret-ink box-border"
           />
 
@@ -90,7 +92,7 @@ export function QuickAdd({ isOpen, onClose, onSubmit }: QuickAddProps) {
             >
               <span className="text-[10px]">📅</span>
               <span>
-                Recognized: <strong className="text-ink">{parsed.preview}</strong>
+                {t('quickAdd.recognized')} <strong className="text-ink">{parsed.preview}</strong>
               </span>
             </div>
           )}
@@ -99,14 +101,14 @@ export function QuickAdd({ isOpen, onClose, onSubmit }: QuickAddProps) {
           <div className="mt-3 flex justify-between items-center h-6">
             <span className="text-[11px] text-ink-light">
               <kbd>Esc</kbd>
-              {' '}to close
+              {' '}{t('quickAdd.toClose')}
             </span>
             <button
               type="submit"
               disabled={!value.trim()}
               className={`py-1 px-4 border-0 rounded text-[13px] leading-6 transition-colors duration-[120ms] ${value.trim() ? 'bg-ink text-cream cursor-pointer' : 'bg-dot text-ink-light cursor-default'}`}
             >
-              Add Task
+              {t('quickAdd.add')}
             </button>
           </div>
         </form>

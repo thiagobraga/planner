@@ -21,6 +21,7 @@ import {
   type ApiCollection,
 } from '../api/client';
 import { ConfirmModal } from './ConfirmModal';
+import { useI18n } from '../i18n/I18nContext';
 
 const INDENT = 22;
 const MAX_DEPTH = 4; // backend enforces nesting depth of 4
@@ -156,6 +157,7 @@ function getProjection(
 const overIdRef: { current: string | null } = { current: null };
 
 export function CollectionTreeNav() {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const location = useLocation();
   const qc = useQueryClient();
@@ -318,12 +320,12 @@ export function CollectionTreeNav() {
     <div className="mt-6 flex-1">
       <div className="flex items-center justify-between px-3">
         <span className="text-[10px] leading-6 tracking-[0.1em] uppercase text-ink-light font-medium">
-          Collections
+          {t('nav.collections')}
         </span>
         <button
           type="button"
-          aria-label="Add collection"
-          title="Add collection"
+          aria-label={t('page.addCollection')}
+          title={t('page.addCollection')}
           onClick={() => { setAdding(true); setNewName(''); }}
           className="bg-transparent border-0 cursor-pointer text-ink-light flex items-center p-0"
         >
@@ -362,7 +364,7 @@ export function CollectionTreeNav() {
                         setSubNewName('');
                       }
                     }}
-                    placeholder="Collection name…"
+                    placeholder={t('page.collectionName')}
                     className="flex-1 min-w-0 h-6 text-[13px] leading-6 text-ink bg-transparent border-0 border-b border-dot outline-none px-0 focus:outline-none focus-visible:outline-none focus-visible:ring-0"
                   />
                 </div>
@@ -382,7 +384,7 @@ export function CollectionTreeNav() {
               if (e.key === 'Enter') handleCommitNewCollection();
               if (e.key === 'Escape') setAdding(false);
             }}
-            placeholder="Collection name…"
+            placeholder={t('page.collectionName')}
             className="w-full h-6 text-[13px] leading-6 text-ink bg-transparent border-0 border-b border-dot outline-none px-0 focus:outline-none focus-visible:outline-none focus-visible:ring-0"
           />
         </div>
@@ -390,16 +392,16 @@ export function CollectionTreeNav() {
 
       {flat.length === 0 && !adding && (
         <div className="text-xs leading-6 text-ink-light px-3 opacity-60">
-          No collections yet
+          {t('page.noCollections')}
         </div>
       )}
 
       <ConfirmModal
         isOpen={deletingCollection !== null}
-        title="Delete Collection"
-        message={`Delete collection "${deletingCollection?.name}" and all its tasks? This cannot be undone.`}
-        confirmLabel="Delete"
-        cancelLabel="Cancel"
+        title={t('page.deleteCollection')}
+        message={t('page.deleteCollectionMessage', { name: deletingCollection?.name ?? '' })}
+        confirmLabel={t('common.delete')}
+        cancelLabel={t('common.cancel')}
         onConfirm={() => {
           if (deletingCollection) {
             setCollectionsCache((prev) => prev.filter((p) => p.id !== deletingCollection.id));
@@ -444,6 +446,7 @@ function SortableCollectionRow({
   onAddSub,
   onDelete,
 }: RowProps) {
+  const { t } = useI18n();
   // One payload serves both roles: this row is a peer to drag against when a
   // collection is moving, and a container to file into when a task is.
   const data: CollectionDragData & CollectionDropData = {
@@ -508,8 +511,8 @@ function SortableCollectionRow({
           <button
             type="button"
             className="collection-row__action bg-transparent border-0 cursor-pointer text-ink-light text-sm leading-none py-0 px-0.5 shrink-0"
-            aria-label={`Add sub-collection to ${item.name}`}
-            title="Add sub-collection"
+            aria-label={`${t('page.addSubCollection')} ${item.name}`}
+            title={t('page.addSubCollection')}
             onClick={onAddSub}
           >
             +
@@ -517,8 +520,8 @@ function SortableCollectionRow({
           <button
             type="button"
             className="collection-row__action bg-transparent border-0 cursor-pointer text-ink-light text-sm leading-none py-0 px-0.5 shrink-0"
-            aria-label={`Delete ${item.name}`}
-            title="Delete collection"
+            aria-label={t('page.deleteNamed', { name: item.name })}
+            title={t('page.deleteCollection')}
             onClick={onDelete}
           >
             ×

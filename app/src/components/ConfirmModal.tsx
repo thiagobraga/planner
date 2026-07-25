@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { Button } from './ui/Button';
+import { useI18n } from '../i18n/I18nContext';
 
 interface ConfirmModalProps {
   isOpen: boolean;
@@ -15,11 +16,12 @@ export function ConfirmModal({
   isOpen,
   title,
   message,
-  confirmLabel = 'Confirm',
-  cancelLabel = 'Cancel',
+  confirmLabel,
+  cancelLabel,
   onConfirm,
   onCancel,
 }: ConfirmModalProps) {
+  const { t } = useI18n();
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -57,10 +59,10 @@ export function ConfirmModal({
         </p>
         <div className="flex justify-end gap-3">
           <Button variant="secondary" onClick={onCancel}>
-            {cancelLabel}
+            {cancelLabel ?? t('common.cancel')}
           </Button>
           <Button variant="primary" onClick={onConfirm}>
-            {confirmLabel}
+            {confirmLabel ?? t('common.confirm')}
           </Button>
         </div>
       </div>

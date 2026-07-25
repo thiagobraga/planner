@@ -10,7 +10,8 @@ import { HabitNameInput } from './HabitNameInput';
 import { NO_DRAG_ATTR } from '../dnd/sensors';
 import { HabitDragHandle } from './HabitDragHandle';
 import { HabitBlockPreview } from './HabitBlockPreview';
-import { fmtISO } from '../../utils/date';
+import { fmtISO, weekdayInitials } from '../../utils/date';
+import { useI18n } from '../../i18n/I18nContext';
 import { dayState, flattenHabits, type HabitNode, type HabitSections } from '../../utils/habitTree';
 import { usePlannerDrag } from '../../contexts/PlannerDragContext';
 import {
@@ -28,7 +29,6 @@ const CELL_W = 24;
 // app's dotted paper background.
 const LABEL_COL_W = 216;
 const INDENT = 24;
-const DAY_LETTERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
 export type HabitEditTarget = { kind: 'habit' | 'group'; id: string };
 
@@ -131,6 +131,7 @@ export function HabitTimeline({
   onToggleGroupIcon,
   onDelete,
 }: HabitTimelineProps) {
+  const { locale, t } = useI18n();
   const [menu, setMenu] = useState<{ target: HabitEditTarget; canAddSub: boolean; x: number; y: number } | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const daysViewportRef = useRef<HTMLDivElement>(null);
@@ -147,6 +148,7 @@ export function HabitTimeline({
     return LABEL_COL_W;
   }, [timelineWidth]);
 
+  const dayLetters = weekdayInitials('sunday', locale);
   const days = useMemo<DayCell[]>(() => {
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     return Array.from({ length: daysInMonth }, (_, i) => {
@@ -154,13 +156,13 @@ export function HabitTimeline({
       const dow = date.getDay();
       return {
         iso: fmtISO(date),
-        letter: DAY_LETTERS[dow],
+        letter: dayLetters[dow]!,
         dayOfMonth: i + 1,
         future: date.getTime() > today.getTime(),
         isWeekend: dow === 0 || dow === 6,
       };
     });
-  }, [year, month, today]);
+  }, [dayLetters, year, month, today]);
 
   const todayISO = fmtISO(today);
 
@@ -435,7 +437,7 @@ export function HabitTimeline({
 
           <StripNavigator
             direction="previous"
-            aria-label="Previous days"
+            aria-label={t('page.previousDays')}
             disabled={!canPagePrevious}
             onClick={() => pageDays(-1)}
             className="habit-timeline-days-prev"
@@ -470,7 +472,7 @@ export function HabitTimeline({
 
           <StripNavigator
             direction="next"
-            aria-label="Next days"
+            aria-label={t('page.nextDays')}
             disabled={!canPageNext}
             onClick={() => pageDays(1)}
             className="habit-timeline-days-next"
@@ -504,7 +506,7 @@ export function HabitTimeline({
                   <span className="flex h-6 w-6 shrink-0 items-center justify-center">
                     <Plus size={14} strokeWidth={2} />
                   </span>
-                  <span className="min-w-0 flex-1 truncate text-left text-sm leading-6">New group</span>
+                  <span className="min-w-0 flex-1 truncate text-left text-sm leading-6">{t('page.newGroup')}</span>
                 </button>
               );
             }
@@ -520,7 +522,7 @@ export function HabitTimeline({
                   <span className="flex h-6 w-6 shrink-0 items-center justify-center">
                     <Plus size={14} strokeWidth={2} />
                   </span>
-                  <span className="min-w-0 flex-1 truncate text-left text-sm leading-6">New habit</span>
+                  <span className="min-w-0 flex-1 truncate text-left text-sm leading-6">{t('page.newHabit')}</span>
                 </button>
               );
             }
@@ -557,7 +559,7 @@ export function HabitTimeline({
                         {row.group.name}
                       </span>
                       <RowOptionsButton
-                        label={`Options for ${row.group.name}`}
+                      label={t('habit.optionsFor', { name: row.group.name })}
                         onOpen={(x, y) => setMenu({ target, canAddSub: false, x, y })}
                       />
                     </>
@@ -606,7 +608,7 @@ export function HabitTimeline({
                 {isEditing('habit', node.id) ? (
                   <HabitNameInput
                     defaultValue={node.name}
-                    placeholder="Habit name"
+                    placeholder={t('page.habitName')}
                     onCommit={(name) => onCommitEdit(target, name)}
                     onCancel={() => onCancelEdit(target)}
                   />
@@ -619,7 +621,7 @@ export function HabitTimeline({
                       {node.name}
                     </span>
                     <RowOptionsButton
-                      label={`Options for ${node.name}`}
+                      label={t('habit.optionsFor', { name: node.name })}
                       onOpen={(x, y) => setMenu({ target, canAddSub: depth === 0, x, y })}
                     />
                   </>
@@ -719,12 +721,12 @@ export function HabitTimeline({
           position={{ x: menu.x, y: menu.y }}
           onClose={() => setMenu(null)}
           items={[
-            { type: 'item', label: 'Rename', onClick: () => onStartEdit(menu.target) },
+            { type: 'item', label: t('common.rename'), onClick: () => onStartEdit(menu.target) },
             ...(menu.target.kind === 'group'
               ? [
                 {
                   type: 'item' as const,
-                  label: menuGroup?.icon ? 'Remove icon' : 'Add icon',
+                  label: menuGroup?.icon ? t('habit.removeIcon') : t('habit.addIcon'),
                   onClick: () => onToggleGroupIcon(menu.target.id),
                 },
               ]
@@ -733,7 +735,7 @@ export function HabitTimeline({
               ? [
                 {
                   type: 'item' as const,
-                  label: 'Add sub-habit',
+                  label: t('habit.addSubHabit'),
                   onClick: () => onAddHabit({ groupId: null, parentId: menu.target.id }),
                 },
               ]
@@ -741,7 +743,7 @@ export function HabitTimeline({
             { type: 'separator' },
             {
               type: 'item',
-              label: menu.target.kind === 'group' ? 'Delete group' : 'Delete',
+              label: menu.target.kind === 'group' ? t('habit.deleteGroup') : t('common.delete'),
               destructive: true,
               onClick: () => onDelete(menu.target),
             },

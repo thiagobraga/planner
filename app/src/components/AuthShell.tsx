@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router';
+import { useI18n } from '../i18n/I18nContext';
 
 const PlannerIcon64 = () => (
   <img
@@ -19,14 +20,17 @@ export interface AuthShellProps {
 
 // Shared frame for the four logged-out screens: login, register, forgot
 // password, reset password.
-export function AuthShell({ children, title = 'Planner', subtitle = 'Bulletjournal online' }: AuthShellProps) {
+export function AuthShell({ children, title = 'Planner', subtitle }: AuthShellProps) {
+  const { t } = useI18n();
   return (
     <div className="flex min-h-dvh items-center justify-center px-4 py-6">
       <div className="w-full max-w-80">
         <div className="text-center mb-6">
           <PlannerIcon64 />
           <h1 className="text-lg leading-6 font-semibold text-ink mt-2">{title}</h1>
-          <p className="text-[13px] leading-6 text-ink-light opacity-60">{subtitle}</p>
+          <p className="text-[13px] leading-6 text-ink-light opacity-60">
+            {subtitle ?? t('auth.bulletJournalOnline')}
+          </p>
         </div>
         {children}
       </div>

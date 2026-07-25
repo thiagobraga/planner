@@ -23,6 +23,7 @@ import { flattenTasks } from '../utils/taskProjection';
 import { applyIndent } from '../utils/taskTree';
 import { fetchCollections, paletteColorHex } from '../api/client';
 import { ContextMenu, type ContextMenuItem } from '../components/ui/ContextMenu';
+import { useI18n } from '../i18n/I18nContext';
 
 function apiToTask(t: ApiTask): Task {
   return {
@@ -48,6 +49,7 @@ let tempCounter = 0;
 function tempId() { return `temp-${++tempCounter}`; }
 
 export function CollectionsPage() {
+  const { locale, t } = useI18n();
   const { id = '' } = useParams();
   const qc = useQueryClient();
   const { logout } = useAuth();
@@ -114,7 +116,7 @@ export function CollectionsPage() {
     if (!trimmed) return;
     const tid = tempId();
     setInput('');
-    const extracted = extractNaturalDate(trimmed);
+    const extracted = extractNaturalDate(trimmed, undefined, locale);
     
     setTasks((prev) => [
       ...prev,
@@ -232,7 +234,7 @@ export function CollectionsPage() {
       const parentTaskId = currentTask?.parentTaskId ?? undefined;
       const currentIndent = currentTask?.indent ?? 0;
       
-      const extracted = extractNaturalDate(trimmed);
+      const extracted = extractNaturalDate(trimmed, undefined, locale);
       
       // was a new row - create it, keeping whichever type it was opened as
       apiCreateTask({
@@ -255,7 +257,7 @@ export function CollectionsPage() {
     } else {
       apiUpdateTask(taskId, { title: trimmed }).catch(() => invalidate());
     }
-  }, [id, tasks, invalidate]);
+  }, [id, tasks, invalidate, locale]);
   const handleConvertType = useCallback((taskId: string, type: 'task' | 'note') => {
     setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, type } : t)));
     if (!taskId.startsWith('temp-')) {
@@ -490,7 +492,7 @@ export function CollectionsPage() {
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Add task…"
+          placeholder={t('common.addTask')}
           className="task-input task-add-input flex-1 text-sm leading-6 text-ink bg-transparent border-none outline-none p-0"
           spellCheck={false}
           onKeyDown={(e) => {

@@ -12,6 +12,7 @@ import { fetchPreferences, type Preferences, apiCreateTask } from '../api/client
 import { ensureFontLoaded, type FontOption } from '../utils/fontLoader';
 import { updateDocumentThemeColor } from '../utils/theme';
 import { PlannerDragProvider } from '../contexts/PlannerDragContext';
+import { useI18n } from '../i18n/I18nContext';
 
 const FONT_CLASSES: Record<FontOption, string> = {
   lora: 'font-journal',
@@ -20,6 +21,7 @@ const FONT_CLASSES: Record<FontOption, string> = {
 };
 
 export function AppShell() {
+  const { setLocale, t } = useI18n();
   const navigate = useNavigate();
   const qc = useQueryClient();
   const { data: preferences, isPending: preferencesLoading } = useQuery({
@@ -76,6 +78,12 @@ export function AppShell() {
       ensureFontLoaded(preferences.font);
     }
   }, [preferences?.font]);
+
+  useEffect(() => {
+    if (preferences?.locale) {
+      setLocale(preferences.locale);
+    }
+  }, [preferences?.locale, setLocale]);
 
   useEffect(() => {
     updateDocumentThemeColor(isWhiteBackground ? 'white' : 'beige');
@@ -155,7 +163,7 @@ export function AppShell() {
       {!sidebarCollapsed && (
         <button
           type="button"
-          aria-label="Open navigation"
+          aria-label={t('nav.open')}
           onClick={() => setSidebarOpen(true)}
           className="app-shell-mobile-menu-btn mobile-menu-btn hidden fixed top-3 left-3 z-[60] bg-cream border border-dot rounded py-1 px-2 text-base cursor-pointer"
         >
@@ -165,7 +173,7 @@ export function AppShell() {
 
       {preferencesLoading ? (
         <div className="flex-1 flex items-center justify-center text-ink-light">
-          Loading…
+          {t('common.loading')}
         </div>
       ) : (
         <PlannerDragProvider>
@@ -212,7 +220,7 @@ export function AppShell() {
         <div
           role="dialog"
           aria-modal="true"
-          aria-label="Keyboard shortcuts"
+          aria-label={t('shell.keyboardShortcuts')}
           onClick={() => setHelpOpen(false)}
           className="app-shell-help-dialog fixed inset-0 z-[100] bg-[rgba(44,44,44,0.3)] backdrop-blur-[2px] flex items-center justify-center"
         >
@@ -221,26 +229,26 @@ export function AppShell() {
             className="app-shell-help-dialog-content bg-cream border border-dot rounded-md py-6 px-8 min-w-[320px] shadow-[0_8px_32px_rgba(44,44,44,0.15)]"
           >
             <h2 className="app-shell-help-title text-base font-semibold text-ink mb-4">
-              Keyboard Shortcuts
+              {t('shell.keyboardShortcuts')}
             </h2>
             <table className="app-shell-help-shortcuts w-full border-collapse text-[13px]">
               <tbody>
                 {[
-                  ['q', 'Quick add task'],
-                  ['/', 'Search'],
-                  ['?', 'Toggle this panel'],
-                  ['g i', 'Go to Inbox'],
-                  ['g t', 'Go to Today'],
-                  ['g u', 'Go to Upcoming'],
-                  ['Enter', 'Edit selected task'],
-                  ['Delete', 'Delete selected task'],
-                  ['Esc', 'Close dialog'],
+                  ['q', t('shell.quickAddTask')],
+                  ['/', t('common.search')],
+                  ['?', t('shell.togglePanel')],
+                  ['g i', t('shell.goInbox')],
+                  ['g t', t('shell.goToday')],
+                  ['g u', t('shell.goUpcoming')],
+                  ['Enter', t('shell.editSelected')],
+                  ['Delete', t('shell.deleteSelected')],
+                  ['Esc', t('shell.closeDialog')],
                 ].map(([key, desc]) => (
                   <tr key={key}>
                     <td className="py-1 px-0 w-20">
                       {key.split(' ').map((k, i) => (
                         <span key={i}>
-                          {i > 0 && <span className="mx-1 text-ink-light">then</span>}
+                          {i > 0 && <span className="mx-1 text-ink-light">{t('shell.then')}</span>}
                           <kbd>{k}</kbd>
                         </span>
                       ))}
@@ -252,7 +260,7 @@ export function AppShell() {
             </table>
             <div className="app-shell-help-footer mt-4 text-right">
               <Button variant="primary" onClick={() => setHelpOpen(false)}>
-                Close
+                {t('common.close')}
               </Button>
             </div>
           </div>

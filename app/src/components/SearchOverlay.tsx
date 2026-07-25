@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import type { Task } from './TaskItem';
+import { useI18n } from '../i18n/I18nContext';
 
 interface SearchResult {
   type: 'task' | 'collection' | 'label';
@@ -36,6 +37,7 @@ export function SearchOverlay({
   labels = EMPTY_LABELS,
   onSelectTask,
 }: SearchOverlayProps) {
+  const { t } = useI18n();
   const [query, setQuery] = useState('');
   const [activeIdx, setActiveIdx] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -141,7 +143,7 @@ export function SearchOverlay({
     <div
       role="dialog"
       aria-modal="true"
-      aria-label="Search"
+      aria-label={t('common.search')}
       onClick={(e) => e.target === e.currentTarget && onClose()}
       className="fixed inset-0 z-[100] bg-[rgba(44,44,44,0.3)] backdrop-blur-[2px] flex items-start justify-center pt-20"
     >
@@ -155,8 +157,8 @@ export function SearchOverlay({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Search tasks, collections, labels…"
-            aria-label="Search"
+            placeholder={t('search.placeholder')}
+            aria-label={t('common.search')}
             role="combobox"
             aria-expanded={flatResults.length > 0}
             aria-autocomplete="list"
@@ -165,7 +167,7 @@ export function SearchOverlay({
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close search"
+            aria-label={t('search.close')}
             className="bg-transparent border-0 text-ink-light cursor-pointer text-lg leading-none"
           >
             ×
@@ -175,22 +177,22 @@ export function SearchOverlay({
         {/* Results */}
         <div
           role="listbox"
-          aria-label="search results"
+          aria-label={t('search.results')}
           className="overflow-y-auto flex-1"
         >
           {query.length < 2 ? (
             <div className="px-5 py-6 text-[13px] text-ink-light">
-              Type at least 2 characters to search…
+              {t('search.minimum')}
             </div>
           ) : flatResults.length === 0 ? (
             <div className="px-5 py-6 text-[13px] text-ink-light">
-              No results for "{query}"
+              {t('search.noResults', { query })}
             </div>
           ) : (
             <>
-              {renderGroup('Tasks', grouped.tasks, 0)}
-              {renderGroup('Collections', grouped.collections, grouped.tasks.length)}
-              {renderGroup('Labels', grouped.labels, grouped.tasks.length + grouped.collections.length)}
+              {renderGroup(t('search.tasks'), grouped.tasks, 0)}
+              {renderGroup(t('search.collections'), grouped.collections, grouped.tasks.length)}
+              {renderGroup(t('search.labels'), grouped.labels, grouped.tasks.length + grouped.collections.length)}
             </>
           )}
         </div>
@@ -198,9 +200,9 @@ export function SearchOverlay({
         {/* Footer hint */}
         {flatResults.length > 0 && (
           <div className="px-5 py-2 border-t border-dot text-[11px] text-ink-light flex gap-3">
-            <span>↑↓ navigate</span>
-            <span>↵ select</span>
-            <span>Esc close</span>
+            <span>{t('search.navigate')}</span>
+            <span>{t('search.select')}</span>
+            <span>{t('search.closeHint')}</span>
           </div>
         )}
       </div>

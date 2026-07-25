@@ -6,8 +6,10 @@ import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
 import { ApiError } from '../api/client';
 import { useCountdown, formatCountdown } from '../hooks/useCountdown';
+import { useI18n } from '../i18n/I18nContext';
 
 export function RegisterPage() {
+  const { t } = useI18n();
   const { register } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
@@ -39,7 +41,7 @@ export function RegisterPage() {
           setFormError(err.message);
         }
       } else {
-        setFormError(err instanceof Error ? err.message : 'Something went wrong');
+        setFormError(err instanceof Error ? err.message : t('auth.somethingWrong'));
       }
     } finally {
       setLoading(false);
@@ -49,55 +51,55 @@ export function RegisterPage() {
   const throttled = secondsLeft > 0;
 
   return (
-    <AuthShell subtitle="Create your account">
+    <AuthShell subtitle={t('auth.createAccount')}>
       <form onSubmit={handleSubmit} className="flex flex-col gap-3">
         <Input
           type="email"
-          placeholder="Email"
+          placeholder={t('auth.email')}
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
           autoFocus
           autoComplete="username"
-          aria-label="Email"
+          aria-label={t('auth.email')}
           error={Boolean(fieldErrors.email)}
           errorText={fieldErrors.email}
         />
         <Input
           type="text"
-          placeholder="Display name (optional)"
+          placeholder={t('auth.displayName')}
           value={displayName}
           onChange={(e) => setDisplayName(e.target.value)}
           autoComplete="name"
-          aria-label="Display name"
+          aria-label={t('auth.displayName')}
           error={Boolean(fieldErrors.displayName)}
           errorText={fieldErrors.displayName}
         />
         <Input
           type="password"
-          placeholder="Password"
+          placeholder={t('auth.password')}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
           autoComplete="new-password"
-          aria-label="Password"
+          aria-label={t('auth.password')}
           error={Boolean(fieldErrors.password)}
           errorText={fieldErrors.password}
         />
 
         {formError && (
           <AuthFormError>
-            {throttled ? `${formError} Try again in ${formatCountdown(secondsLeft)}.` : formError}
+            {throttled ? `${formError} ${t('auth.retryIn', { time: formatCountdown(secondsLeft) })}` : formError}
           </AuthFormError>
         )}
 
         <Button type="submit" variant="primary" disabled={loading || throttled}>
-          {loading ? '…' : 'Create account'}
+          {loading ? '…' : t('auth.createAccountButton')}
         </Button>
       </form>
 
       <p className="mt-6 text-center">
-        <AuthLink to="/login">Already have an account? Sign in</AuthLink>
+        <AuthLink to="/login">{t('auth.signInExisting')}</AuthLink>
       </p>
     </AuthShell>
   );

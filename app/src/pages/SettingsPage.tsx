@@ -7,6 +7,7 @@ import { Radio } from '../components/ui/Radio';
 import { Input } from '../components/ui/Input';
 import { fetchPreferences, apiUpdatePreferences, type Preferences } from '../api/client';
 import { ensureFontLoaded, type FontOption } from '../utils/fontLoader';
+import { useI18n } from '../i18n/I18nContext';
 
 type SettingsSection = 'general' | 'appearance';
 
@@ -16,11 +17,10 @@ function isSettingsSection(value: string | undefined): value is SettingsSection 
 
 const SETTINGS_SECTIONS: Array<{
   key: SettingsSection;
-  label: string;
   icon: typeof Settings2;
 }> = [
-  { key: 'general', label: 'General', icon: Settings2 },
-  { key: 'appearance', label: 'Appearance', icon: Palette },
+  { key: 'general', icon: Settings2 },
+  { key: 'appearance', icon: Palette },
 ];
 
 const FONT_OPTIONS: Array<{
@@ -194,6 +194,7 @@ function SettingsTabList({
   inverted?: boolean;
   onChange: (section: SettingsSection) => void;
 }) {
+  const { t } = useI18n();
   const tabRefs = useRef<Record<SettingsSection, HTMLButtonElement | null>>({
     general: null,
     appearance: null,
@@ -229,11 +230,12 @@ function SettingsTabList({
     <div
       role="tablist"
       aria-orientation={compact ? 'horizontal' : 'vertical'}
-      aria-label="Settings sections"
+      aria-label={t('settings.sections')}
       className={compact ? 'grid grid-cols-2 gap-2' : 'flex flex-col gap-1'}
     >
-      {SETTINGS_SECTIONS.map(({ key, label, icon: Icon }, index) => {
+      {SETTINGS_SECTIONS.map(({ key, icon: Icon }, index) => {
         const selected = activeSection === key;
+        const label = t(key === 'general' ? 'settings.general' : 'settings.appearance');
         const panelId = `settings-panel-${key}`;
         const tabId = `${idPrefix}-settings-tab-${key}`;
 
@@ -279,6 +281,7 @@ function SettingsTabList({
 }
 
 export function SettingsPage() {
+  const { t } = useI18n();
   const qc = useQueryClient();
   const navigate = useNavigate();
   const { section } = useParams<{ section?: string }>();
@@ -322,6 +325,7 @@ export function SettingsPage() {
         Pick<
           Preferences,
           | 'font'
+          | 'locale'
           | 'showDots'
           | 'background'
           | 'smallCaps'
@@ -354,6 +358,7 @@ export function SettingsPage() {
   });
 
   const font = preferences?.font ?? 'lora';
+  const locale = preferences?.locale ?? 'en';
   const showDots = preferences?.showDots ?? true;
   const background = preferences?.background ?? 'beige';
   const smallCaps = preferences?.smallCaps ?? false;
@@ -366,6 +371,10 @@ export function SettingsPage() {
   const handleFontChange = (nextFont: FontOption) => {
     ensureFontLoaded(nextFont);
     updateMutation.mutate({ font: nextFont });
+  };
+
+  const handleLocaleChange = (nextLocale: Preferences['locale']) => {
+    updateMutation.mutate({ locale: nextLocale });
   };
 
   const handleDotsChange = (nextShowDots: boolean) => {
@@ -412,8 +421,8 @@ export function SettingsPage() {
   if (isLoading) {
     return (
       <div className="max-w-5xl pb-24 text-ink">
-        <h1 className="text-[18px] leading-6 font-semibold text-ink m-0">Settings</h1>
-        <p className="text-sm leading-6 text-ink opacity-75 m-0">Loading...</p>
+        <h1 className="text-[18px] leading-6 font-semibold text-ink m-0">{t('settings.title')}</h1>
+        <p className="text-sm leading-6 text-ink opacity-75 m-0">{t('settings.loading')}</p>
       </div>
     );
   }
@@ -421,9 +430,9 @@ export function SettingsPage() {
   return (
     <div className="flex min-h-[calc(100dvh-48px)] max-w-5xl flex-col text-ink">
       <header className="sticky-page-header">
-        <h1 className="text-[18px] leading-6 font-semibold text-ink m-0">Settings</h1>
+        <h1 className="text-[18px] leading-6 font-semibold text-ink m-0">{t('settings.title')}</h1>
         <p className="text-[13px] leading-6 text-ink-light opacity-60 m-0">
-          Customize your Planner experience. Changes are saved automatically.
+          {t('settings.subtitle')}
         </p>
       </header>
 
@@ -432,7 +441,7 @@ export function SettingsPage() {
           <div className="min-w-0 p-[var(--dot-grid)]">
             <div className="mb-6 md:hidden">
               <p className="px-1 pb-2 text-[10px] leading-5 tracking-[0.12em] uppercase text-ink-light font-medium">
-                SETTINGS
+                {t('settings.title').toUpperCase()}
               </p>
               <div className="rounded-[8px] border border-dot bg-[var(--planner-sidebar-bg)] p-3 shadow-subtle">
                 <SettingsTabList activeSection={activeSection} compact idPrefix="mobile" onChange={handleSectionChange} />
@@ -447,21 +456,50 @@ export function SettingsPage() {
             >
               {activeSection === 'general' ? (
                 <SettingsCard
-                  title="General"
-                  description="Set how Planner handles dates and your calendar."
+                  title={t('settings.general')}
+                  description={t('settings.generalDescription')}
                   headingId={panelHeadingId}
                 >
                   <div className="space-y-8">
                     <section className="space-y-3">
+                      <div>
+                        <h3 className="text-[10px] leading-5 tracking-[0.12em] uppercase text-ink-light font-medium">
+                          {t('settings.language')}
+                        </h3>
+                        <p className="text-xs leading-5 text-ink-light">{t('settings.languageDescription')}</p>
+                      </div>
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2" role="radiogroup" aria-label={t('settings.language')}>
+                        {([
+                          ['en', t('settings.english')],
+                          ['pt-BR', t('settings.portugueseBrazil')],
+                        ] as const).map(([value, label]) => (
+                          <Radio
+                            key={value}
+                            name="locale"
+                            checked={locale === value}
+                            onChange={() => handleLocaleChange(value)}
+                            disabled={disabled}
+                            label={label}
+                            className={`w-full rounded-[6px] border px-3 py-3 transition-colors duration-[var(--motion-fast)] ${
+                              locale === value
+                                ? 'border-ink-light bg-[var(--planner-control-bg-hover)]'
+                                : 'border-border bg-[var(--planner-control-bg)] hover:bg-[var(--planner-control-bg-hover)]'
+                            }`}
+                          />
+                        ))}
+                      </div>
+                    </section>
+
+                    <section className="space-y-3 border-t border-[var(--planner-settings-separator)] pt-8">
                       <div className="flex items-baseline justify-between gap-3">
                         <label
                           htmlFor={timeZoneInputId}
                           className="text-[10px] leading-5 tracking-[0.12em] uppercase text-ink-light font-medium"
                         >
-                          Time zone
+                          {t('settings.timeZone')}
                         </label>
                         <p className="text-[11px] leading-5 text-ink-light opacity-70">
-                          Detected: {detectedTimeZone}
+                          {t('settings.detected', { zone: detectedTimeZone })}
                         </p>
                       </div>
                       <Input
@@ -471,13 +509,13 @@ export function SettingsPage() {
                         onChange={(event) => handleTimeZoneChange(event.target.value)}
                         onBlur={handleTimeZoneBlur}
                         disabled={disabled}
-                        placeholder="Search time zones"
+                        placeholder={t('settings.searchTimeZones')}
                         list={`${timeZoneInputId}-options`}
                         aria-describedby={timeZoneHintId}
                         autoComplete="off"
                       />
                       <p id={timeZoneHintId} className="text-xs leading-5 text-ink-light">
-                        UTC, your browser zone, and the saved value remain available as suggestions.
+                        {t('settings.timeZoneHint')}
                       </p>
                       <datalist id={`${timeZoneInputId}-options`}>
                         {filteredTimeZones.map((zone) => (
@@ -488,17 +526,17 @@ export function SettingsPage() {
 
                     <section className="space-y-3 border-t border-[var(--planner-settings-separator)] pt-8">
                       <h3 className="text-[10px] leading-5 tracking-[0.12em] uppercase text-ink-light font-medium">
-                        Week starts on
+                        {t('settings.weekStartsOn')}
                       </h3>
                       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                        {WEEK_START_OPTIONS.map(({ value, label }) => (
+                        {WEEK_START_OPTIONS.map(({ value }) => (
                           <Radio
                             key={value}
                             name="week-start"
                             checked={weekStart === value}
                             onChange={() => handleWeekStartChange(value)}
                             disabled={disabled}
-                            label={label}
+                            label={t(value === 'sunday' ? 'settings.sunday' : 'settings.monday')}
                             className={`w-full rounded-[6px] border px-3 py-3 transition-colors duration-[var(--motion-fast)] ${
                               weekStart === value
                                 ? 'border-ink-light bg-[var(--planner-control-bg-hover)]'
@@ -515,8 +553,8 @@ export function SettingsPage() {
                         checked={hideCompletedTasks}
                         onChange={handleHideCompletedTasksChange}
                         disabled={disabled}
-                        title="Hide completed tasks"
-                        description="Completed rows disappear from Daily, Inbox, and Collection views."
+                        title={t('settings.hideCompleted')}
+                        description={t('settings.hideCompletedDescription')}
                       />
 
                       <PreferenceToggle
@@ -524,24 +562,24 @@ export function SettingsPage() {
                         checked={hideOldNotes}
                         onChange={handleHideOldNotesChange}
                         disabled={disabled}
-                        title="Hide old notes"
-                        description="Notes dated before your local today disappear from Daily, Inbox, and Collection views."
+                        title={t('settings.hideOldNotes')}
+                        description={t('settings.hideOldNotesDescription')}
                       />
                     </section>
                   </div>
                 </SettingsCard>
               ) : (
                 <SettingsCard
-                  title="Appearance"
-                  description="Adjust how Planner looks and feels."
+                  title={t('settings.appearance')}
+                  description={t('settings.appearanceDescription')}
                   headingId={panelHeadingId}
                 >
                   <div className="flex flex-col gap-10">
                     <section className="space-y-4">
                       <h3 className="text-[10px] leading-5 tracking-[0.12em] uppercase text-ink-light font-medium">
-                        Typography
+                        {t('settings.typography')}
                       </h3>
-                      <div className="grid max-w-[420px] grid-cols-1 gap-3" role="radiogroup" aria-label="Font">
+                      <div className="grid max-w-[420px] grid-cols-1 gap-3" role="radiogroup" aria-label={t('settings.font')}>
                         {FONT_OPTIONS.map(({ value, label, previewClass }) => {
                           const selected = font === value;
                           return (
@@ -564,17 +602,17 @@ export function SettingsPage() {
                         checked={smallCaps}
                         onChange={handleSmallCapsChange}
                         disabled={disabled}
-                        label={<span className="text-sm leading-6 text-ink">Small caps</span>}
+                        label={<span className="text-sm leading-6 text-ink">{t('settings.smallCaps')}</span>}
                         className="[&_button]:!p-0"
                       />
                     </section>
 
                     <section className="space-y-4 border-t border-[var(--planner-settings-separator)] pt-8">
                       <h3 className="text-[10px] leading-5 tracking-[0.12em] uppercase text-ink-light font-medium">
-                        Theme
+                        {t('settings.theme')}
                       </h3>
-                      <div className="grid max-w-[284px] grid-cols-2 gap-6" role="radiogroup" aria-label="Theme">
-                        {BACKGROUND_OPTIONS.map(({ value, label, previewClass }) => {
+                      <div className="grid max-w-[284px] grid-cols-2 gap-6" role="radiogroup" aria-label={t('settings.theme')}>
+                        {BACKGROUND_OPTIONS.map(({ value, previewClass }) => {
                           const selected = background === value;
                           return (
                             <button
@@ -595,7 +633,9 @@ export function SettingsPage() {
                               >
                                 <SelectionMark selected={selected} />
                               </span>
-                              <span className="text-base leading-6 text-ink opacity-80">{label}</span>
+                              <span className="text-base leading-6 text-ink opacity-80">
+                                {t(value === 'beige' ? 'settings.beige' : 'settings.white')}
+                              </span>
                             </button>
                           );
                         })}
@@ -604,7 +644,7 @@ export function SettingsPage() {
                         checked={showDots}
                         onChange={handleDotsChange}
                         disabled={disabled}
-                        label={<span className="text-sm leading-6 text-ink">Show background dots</span>}
+                        label={<span className="text-sm leading-6 text-ink">{t('settings.showDots')}</span>}
                         className="[&_button]:!p-0"
                       />
                     </section>

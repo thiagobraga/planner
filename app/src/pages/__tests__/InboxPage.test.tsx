@@ -25,6 +25,7 @@ const mockFetchPreferences = vi.mocked(fetchPreferences);
 
 const basePreferences: Preferences = {
   userId: 'user-1',
+  locale: 'en',
   timeZone: 'Europe/London',
   weekStart: 'monday',
   theme: 'light',
