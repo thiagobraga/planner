@@ -246,3 +246,25 @@ All AI agents (Claude, Codex, Antigravity, Opencode) must follow this when enter
    - `[x]` completed
 4. **Update `task.md`** as work progresses — mark tasks `[~]` when started, `[x]` when done.
 5. Refer to existing `.specs/` folders for naming patterns.
+
+## "Work on this spec" Workflow
+
+When instructed to "work on this specs <some spec>", you must:
+
+1. **Read the Spec:** Start by carefully reading the provided `<spec path>`.
+2. **Isolate the Environment:**
+   - Create a new Git worktree in `/p/projects/planner/.git/worktrees/<feature-name>`.
+   - Create and check out a new branch for the feature within that worktree.
+3. **Local Development Setup:**
+   - Configure the frontend and backend to run on *different* ports to avoid collisions with the main environment.
+   - You may reuse the existing database if appropriate.
+   - Since the main branch runs on `https://planner.local`, use `http://localhost:<new-port>` to test your isolated implementation.
+4. **Implementation & Verification:**
+   - Implement the feature according to the spec.
+   - Take screenshots of the implemented feature for review. Do *not* commit these screenshots to version control.
+5. **Cleanup & PR:**
+   - Once complete, clean up any temporary containers you created.
+   - Create a Pull Request against the `main` branch.
+   - Insert (upload or paste) the screenshots directly into the PR comments.
+   - Provide the PR link to the user.
+   - Always do your best and ask for clarification if any requirements are unclear.
