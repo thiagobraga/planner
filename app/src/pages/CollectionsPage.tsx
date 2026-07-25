@@ -54,7 +54,7 @@ export function CollectionsPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [input, setInput] = useState('');
   const [editingId, setEditingId] = useState<string | undefined>();
-  const [selectedId, setSelectedId] = useState<string>();
+  const [, setSelectedId] = useState<string>();
   const [contextMenu, setContextMenu] = useState<{ taskId: string; position: { x: number; y: number } } | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -383,7 +383,7 @@ export function CollectionsPage() {
     });
 
     return items;
-  }, [collections, contextMenu?.taskId, invalidate]);
+  }, [collections, contextMenu, invalidate]);
 
   // A sub-collection reads as a breadcrumb of its ancestors, so its place in the
   // tree is visible from the page itself. Falls back to the view payload when the

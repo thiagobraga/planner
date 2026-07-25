@@ -55,11 +55,13 @@ export function InboxPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [input, setInput] = useState('');
   const [editingId, setEditingId] = useState<string | undefined>();
-  const [selectedId, setSelectedId] = useState<string>();
+  const [, setSelectedId] = useState<string>();
   const [contextMenu, setContextMenu] = useState<{ taskId: string; position: { x: number; y: number } } | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const tasksRef = useRef(tasks);
-  tasksRef.current = tasks;
+  useEffect(() => {
+    tasksRef.current = tasks;
+  }, [tasks]);
 
   useEffect(() => {
     inputRef.current?.focus();
@@ -390,7 +392,7 @@ export function InboxPage() {
     });
 
     return items;
-  }, [collections, contextMenu?.taskId, invalidate]);
+  }, [collections, contextMenu, invalidate]);
 
   return (
     <div
