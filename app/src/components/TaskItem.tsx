@@ -32,7 +32,7 @@ export interface TaskItemProps {
   isEditing?: boolean;
   dimmed?: boolean;
   hideDueDate?: boolean;
-  italicDueDate?: boolean;
+  dimNotes?: boolean;
   /** The list this row renders in - a collection list, or one Daily date section. */
   containerId?: string;
   /** `[task.id, ...descendantIds]`, so a drop inside the dragged block is detectable. */
@@ -107,7 +107,7 @@ export const TaskItem = memo(function TaskItem({
   isEditing,
   dimmed,
   hideDueDate,
-  italicDueDate = true,
+  dimNotes = true,
   containerId = '',
   subtreeIds,
   projectedDepth,
@@ -154,25 +154,11 @@ export const TaskItem = memo(function TaskItem({
     }
   }, [isEditing]);
 
-  // Only dnd-kit runtime values + computed indent remain inline. While dragging,
-  // the projected depth replaces the stored one so the row sits where it would
-  // land, not where it came from.
-  //
-  // `renderedDepth` is the row's depth *within the list being rendered*, which
-  // is not the same as `task.indent` - that carries depth in the whole task
-  // tree. Daily renders one date at a time, so a task parented to a task on
-  // another date has an ancestor that is nowhere on screen, and indenting by the
-  // global depth drew it one level in with nothing above it to belong to.
   const depth = projectedDepth ?? renderedDepth ?? task.indent ?? 0;
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
     paddingLeft: `${depth * 24}px`,
-    // Published for the placeholder slot. An absolutely positioned ::after is
-    // laid out against the padding box, so `left: 0` sits at the row's outer
-    // edge and ignores this indent entirely - the slot drew flush no matter how
-    // deep the drop would land, which is exactly what a depth preview must not
-    // do. The slot reads this instead.
     ['--row-indent' as string]: `${depth * 24}px`,
   };
 
@@ -262,20 +248,10 @@ export const TaskItem = memo(function TaskItem({
       ref={setNodeRef}
       style={style}
       data-task-id={task.id}
-      // `attributes` carries dnd-kit's screen-reader instructions and
-      // aria-roledescription; role and tabIndex are re-stated below because this
-      // row is a button in its own right.
       {...attributes}
-      // Listeners sit on the row, not only the handle, so the whole row is
-      // press-draggable. The pointer sensor skips [data-no-drag] descendants and
-      // the keyboard sensor only fires from the handle, so this costs neither
-      // the controls nor Space-to-toggle.
       {...listeners}
       className={`task-item group ${isEditing ? 'task-item--editing' : ''} ${departed ? 'task-item--departed' : isDragging ? 'task-item--placeholder' : task.isCompleted || dimmed ? 'opacity-[0.35]' : ''}`}
       aria-label={task.title}
-      // A quick click does nothing; editing is opened deliberately by
-      // double-click, which leaves single clicks free and removes the need for
-      // any selection state.
       onDoubleClick={isEditing ? undefined : () => onStartEdit?.(task.id)}
       onContextMenu={(e) => {
         e.preventDefault();
@@ -288,7 +264,6 @@ export const TaskItem = memo(function TaskItem({
       role="button"
       tabIndex={isEditing ? -1 : 0}
     >
-      {/* Drag handle: the keyboard activator, and the visible hover affordance. */}
       <span
         {...{ [DRAG_HANDLE_ATTR]: '' }}
         tabIndex={isEditing ? -1 : 0}
@@ -299,7 +274,6 @@ export const TaskItem = memo(function TaskItem({
         ⠿
       </span>
 
-      {/* Toggle button */}
       {task.type === 'note' ? (
         <span
           aria-hidden="true"
@@ -313,8 +287,6 @@ export const TaskItem = memo(function TaskItem({
           {...{ [NO_DRAG_ATTR]: '' }}
           aria-label={task.isCompleted ? `Reopen: ${task.title}` : `Complete: ${task.title}`}
           aria-pressed={task.isCompleted}
-          // stopPropagation keeps the row's double-click from turning a quick
-          // double toggle into an edit.
           onClick={(e) => { e.stopPropagation(); handleCheckClick(e); }}
           onDoubleClick={(e) => e.stopPropagation()}
           style={task.isCompleted ? {
@@ -330,10 +302,8 @@ export const TaskItem = memo(function TaskItem({
         >
           {task.isCompleted ? '×' : '•'}
         </button>
-
       )}
 
-      {/* Title area */}
       <span style={{ lineHeight: 'var(--task-line-height, 24px)' }} className="task-item-title-area flex-1 flex flex-wrap items-baseline min-w-0">
         {isEditing ? (
           <input
@@ -350,7 +320,7 @@ export const TaskItem = memo(function TaskItem({
           <>
             <span
               style={{ lineHeight: 'var(--task-line-height, 24px)' }}
-              className={`task-item-title-text text-sm break-words ${task.isCompleted ? 'line-through text-ink-light' : 'text-ink'}`}
+              className={`task-item-title-text text-sm break-words ${task.isCompleted ? 'line-through text-ink-light' : 'text-ink'} ${task.type === 'note' && dimNotes ? 'text-ink-light' : ''}`}
             >
               {task.title}
             </span>
@@ -360,7 +330,7 @@ export const TaskItem = memo(function TaskItem({
             )}
 
             {task.dueDate && !hideDueDate && (
-              <span className={`task-item-due-date inline-flex items-baseline gap-1 text-xs leading-6 text-ink-light ml-1.5 whitespace-nowrap ${italicDueDate ? 'italic' : ''}`}>
+              <span className={`task-item-due-date inline-flex items-baseline gap-1 text-xs leading-6 text-ink-light ml-1.5 whitespace-nowrap`}>
                 {task.recurrenceRule && <Repeat className="w-3 h-3 self-center" />}
                 {formatDueDate(task.dueDate)}
               </span>

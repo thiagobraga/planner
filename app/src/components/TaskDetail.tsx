@@ -240,7 +240,7 @@ export function TaskDetail({ task, onClose, onUpdate, onDelete }: TaskDetailProp
               </button>
             ))}
           </div>
-          <div className={`mt-1.5 text-xs italic ${priorityTextClasses[priority]}`}>
+          <div className={`mt-1.5 text-xs ${priorityTextClasses[priority]}`}>
             {priorityInfo.label}
           </div>
         </div>
@@ -308,7 +308,7 @@ export function TaskDetail({ task, onClose, onUpdate, onDelete }: TaskDetailProp
               <div className="text-[13px] text-ink leading-5">
                 {c.text}
               </div>
-              <div className="text-[10px] text-ink-light mt-1 italic">
+              <div className="text-[10px] text-ink-light mt-1">
                 {c.createdAt}
               </div>
             </div>

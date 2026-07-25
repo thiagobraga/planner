@@ -23,7 +23,6 @@ interface TaskListProps extends TaskCallbacks {
   editingId?: string;
   dimNotes?: boolean;
   hideDueDate?: boolean;
-  italicDueDate?: boolean;
   /** Stable id for this list, used as the drag container and droppable id. */
   containerId: string;
   /**
@@ -52,7 +51,6 @@ export function TaskList({
   editingId,
   dimNotes,
   hideDueDate,
-  italicDueDate,
   containerId,
   dayDate,
   activeDragId,
@@ -195,7 +193,6 @@ export function TaskList({
               isEditing={task.id === editingId}
               dimmed={dimNotes && task.type === 'note'}
               hideDueDate={hideDueDate}
-              italicDueDate={italicDueDate}
               onToggle={onTaskToggle}
               onStartEdit={onStartEdit}
               onEditCommit={onEditCommit}

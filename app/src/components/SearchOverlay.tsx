@@ -126,7 +126,7 @@ export function SearchOverlay({
                 {item.title}
               </span>
               {item.subtitle && (
-                <span className="text-[11px] text-ink-light italic leading-6">
+                <span className="text-[11px] text-ink-light leading-6">
                   {item.subtitle}
                 </span>
               )}
@@ -179,11 +179,11 @@ export function SearchOverlay({
           className="overflow-y-auto flex-1"
         >
           {query.length < 2 ? (
-            <div className="px-5 py-6 text-[13px] text-ink-light italic">
+            <div className="px-5 py-6 text-[13px] text-ink-light">
               Type at least 2 characters to search…
             </div>
           ) : flatResults.length === 0 ? (
-            <div className="px-5 py-6 text-[13px] text-ink-light italic">
+            <div className="px-5 py-6 text-[13px] text-ink-light">
               No results for "{query}"
             </div>
           ) : (

@@ -11,8 +11,11 @@ import {
   apiUpdateTask,
   apiToggleTask,
   apiDeleteTask,
+  fetchCollections,
+  paletteColorHex,
   type ApiTask,
 } from '../api/client';
+import { ContextMenu, type ContextMenuItem } from '../components/ui/ContextMenu';
 import { useAuth } from '../contexts/AuthContext';
 import { useTaskDrag } from '../hooks/useTaskDrag';
 import { useTaskVisibilityPreferences } from '../hooks/useTaskVisibilityPreferences';
@@ -52,6 +55,8 @@ export function InboxPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [input, setInput] = useState('');
   const [editingId, setEditingId] = useState<string | undefined>();
+  const [selectedId, setSelectedId] = useState<string>();
+  const [contextMenu, setContextMenu] = useState<{ taskId: string; position: { x: number; y: number } } | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const tasksRef = useRef(tasks);
   tasksRef.current = tasks;
@@ -157,24 +162,61 @@ export function InboxPage() {
     return true;
   };
 
+  const calculateMidpointOrder = (taskList: Task[], index: number, type: 'above' | 'below') => {
+    const current = taskList[index].orderValue;
+    if (type === 'below') {
+      const next = index < taskList.length - 1 ? taskList[index + 1].orderValue : current + 2000;
+      return Math.floor((current + next) / 2);
+    } else {
+      const prev = index > 0 ? taskList[index - 1].orderValue : current - 2000;
+      return Math.floor((prev + current) / 2);
+    }
+  };
+
   const handleAddBelow = useCallback((afterId: string) => {
     const tid = tempId();
     setTasks((prev) => {
       const idx = prev.findIndex((t) => t.id === afterId);
+      if (idx === -1) return prev;
+      const computedOrderValue = calculateMidpointOrder(prev, idx, 'below');
       const next = [...prev];
       next.splice(idx + 1, 0, {
         id: tid,
         title: '',
         priority: 4,
         isCompleted: false,
-        orderValue: 0,
+        orderValue: computedOrderValue,
         indent: prev[idx]?.indent,
         parentTaskId: prev[idx]?.parentTaskId,
         type: 'task',
       });
-      return next.map((t, i) => ({ ...t, orderValue: i + 1 }));
+      return next;
     });
     setEditingId(tid);
+    setSelectedId(tid);
+  }, []);
+
+  const handleAddAbove = useCallback((beforeId: string) => {
+    const tid = tempId();
+    setTasks((prev) => {
+      const idx = prev.findIndex((t) => t.id === beforeId);
+      if (idx === -1) return prev;
+      const computedOrderValue = calculateMidpointOrder(prev, idx, 'above');
+      const next = [...prev];
+      next.splice(idx, 0, {
+        id: tid,
+        title: '',
+        priority: 4,
+        isCompleted: false,
+        orderValue: computedOrderValue,
+        indent: prev[idx]?.indent,
+        parentTaskId: prev[idx]?.parentTaskId,
+        type: 'task',
+      });
+      return next;
+    });
+    setEditingId(tid);
+    setSelectedId(tid);
   }, []);
 
   const handleStartEdit = useCallback((id: string) => {
@@ -206,6 +248,7 @@ export function InboxPage() {
         type: currentTask?.type ?? 'task',
         dueDate: extracted.dueDate,
         recurrenceRule: extracted.recurrenceRule,
+        orderValue: currentTask?.orderValue ?? 0,
       })
         .then((created) => {
           setTasks((prev) => prev.map((t) => (t.id === id ? { ...apiToTask(created), orderValue: t.orderValue } : t)));
@@ -302,6 +345,53 @@ export function InboxPage() {
     }
   }, [invalidate, preferences?.hideCompletedTasks]);
 
+  const { data: collections = [] } = useQuery({ queryKey: ['collections'], queryFn: fetchCollections });
+
+  const handleRightClick = useCallback((taskId: string, position: { x: number; y: number }) => {
+    setSelectedId(taskId);
+    setContextMenu({ taskId, position });
+  }, []);
+
+  const projectSubmenuItems = useMemo<ContextMenuItem[]>(() => {
+    const items: ContextMenuItem[] = collections
+      .filter((c) => !c.isInbox)
+      .map((c) => ({
+        type: 'item',
+        label: c.name,
+        icon: (
+          <span
+            className="w-2 h-2 rounded-full inline-block"
+            style={{ backgroundColor: paletteColorHex(c.color) }}
+          />
+        ),
+        onClick: () => {
+          if (contextMenu?.taskId) {
+            apiUpdateTask(contextMenu.taskId, { collectionId: c.id }).catch(() => invalidate());
+          }
+        },
+      }));
+
+    items.push({
+      type: 'item',
+      label: 'No project',
+      icon: (
+        <span
+          className="w-2 h-2 rounded-full inline-block bg-transparent border border-ink/20"
+        />
+      ),
+      onClick: () => {
+        if (contextMenu?.taskId) {
+          const inbox = collections.find((c) => c.isInbox);
+          if (inbox) {
+            apiUpdateTask(contextMenu.taskId, { collectionId: inbox.id }).catch(() => invalidate());
+          }
+        }
+      },
+    });
+
+    return items;
+  }, [collections, contextMenu?.taskId, invalidate]);
+
   return (
     <div
       className="inbox-page relative w-full cursor-text"
@@ -338,7 +428,6 @@ export function InboxPage() {
         containerId="inbox"
         activeDragId={activeDragId}
         editingId={editingId}
-        italicDueDate={false}
         onTaskToggle={handleToggle}
         onStartEdit={handleStartEdit}
         onEditCommit={handleEditCommit}
@@ -348,6 +437,7 @@ export function InboxPage() {
         onIndent={handleIndent}
         onNavigate={handleNavigate}
         onConvertType={handleConvertType}
+        onRightClick={handleRightClick}
       />
 
         <form
@@ -382,6 +472,24 @@ export function InboxPage() {
         />
         </form>
       </div>
+
+      {contextMenu && (
+        <ContextMenu
+          position={contextMenu.position}
+          onClose={() => setContextMenu(null)}
+          items={[
+            { type: 'item', label: 'Date', disabled: true },
+            { type: 'item', label: 'Priority', disabled: true },
+            { type: 'item', label: 'Project', submenu: projectSubmenuItems },
+            { type: 'item', label: 'Tags', disabled: true },
+            { type: 'separator' },
+            { type: 'item', label: 'Add above', onClick: () => handleAddAbove(contextMenu.taskId) },
+            { type: 'item', label: 'Add below', onClick: () => handleAddBelow(contextMenu.taskId) },
+            { type: 'separator' },
+            { type: 'item', label: 'Delete', destructive: true, onClick: () => handleDelete(contextMenu.taskId) },
+          ]}
+        />
+      )}
     </div>
   );
 }
