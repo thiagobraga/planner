@@ -64,6 +64,7 @@ export interface TaskItemProps {
   onIndent?: (id: string, dir: 1 | -1) => void;
   onNavigate?: (id: string, dir: 'up' | 'down', col: number) => void;
   onConvertType?: (id: string, type: 'task' | 'note') => void;
+  onRightClick?: (id: string, position: { x: number; y: number }) => void;
 }
 
 /** Shared with the drag preview, so a lifted row keeps its priority colour. */
@@ -122,6 +123,7 @@ export const TaskItem = memo(function TaskItem({
   onIndent,
   onNavigate,
   onConvertType,
+  onRightClick,
 }: TaskItemProps) {
   const dragData: TaskDragData = {
     kind: 'task',
@@ -275,6 +277,10 @@ export const TaskItem = memo(function TaskItem({
       // double-click, which leaves single clicks free and removes the need for
       // any selection state.
       onDoubleClick={isEditing ? undefined : () => onStartEdit?.(task.id)}
+      onContextMenu={(e) => {
+        e.preventDefault();
+        onRightClick?.(task.id, { x: e.clientX, y: e.clientY });
+      }}
       onKeyDown={(e) => {
         listeners?.onKeyDown?.(e);
         handleRowKeyDown(e);

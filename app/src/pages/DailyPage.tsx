@@ -21,8 +21,10 @@ import {
   apiCreateTask,
   apiUpdateTask,
   apiDeleteTask,
+  paletteColorHex,
   type ApiTask,
 } from '../api/client';
+import { ContextMenu, type ContextMenuItem } from '../components/ui/ContextMenu';
 
 interface DaySection {
   key: string;
@@ -106,6 +108,8 @@ export function DailyPage() {
   const qc = useQueryClient();
   const [sections, setSections] = useState<DaySection[]>([]);
   const [editingId, setEditingId] = useState<string>();
+  const [selectedId, setSelectedId] = useState<string>();
+  const [contextMenu, setContextMenu] = useState<{ taskId: string; position: { x: number; y: number } } | null>(null);
   const [input, setInput] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
   const todaySectionRef = useRef<HTMLDivElement>(null);
@@ -303,7 +307,8 @@ export function DailyPage() {
         type: currentType, 
         parentTaskId, 
         depth: currentIndent,
-        recurrenceRule: extracted.recurrenceRule
+        recurrenceRule: extracted.recurrenceRule,
+        orderValue: currentTask?.orderValue ?? 0
       }).then((created) => {
         const createdTask = apiToTask(created);
         updateSections((prev) =>
@@ -341,26 +346,66 @@ export function DailyPage() {
     if (!id.startsWith('temp-')) apiDeleteTask(id).catch(() => replaceTodayFromApi());
   }, [replaceTodayFromApi, updateSections]);
 
+  const calculateMidpointOrder = (tasks: Task[], index: number, type: 'above' | 'below') => {
+    if (type === 'below') {
+      const current = tasks[index].orderValue;
+      const next = index < tasks.length - 1 ? tasks[index + 1].orderValue : current + 2000;
+      return Math.floor((current + next) / 2);
+    } else {
+      const current = tasks[index].orderValue;
+      const prev = index > 0 ? tasks[index - 1].orderValue : current - 2000;
+      return Math.floor((prev + current) / 2);
+    }
+  };
+
   const handleAddBelow = useCallback((afterId: string) => {
     const tid = tempId();
+    let computedOrderValue = 0;
     updateSections((prev) =>
       prev.map((s) => {
         const idx = s.tasks.findIndex((t) => t.id === afterId);
         if (idx === -1) return s;
+        computedOrderValue = calculateMidpointOrder(s.tasks, idx, 'below');
         const next = [...s.tasks];
         next.splice(idx + 1, 0, {
           id: tid,
           title: '',
           priority: 4,
           isCompleted: false,
-          orderValue: 0,
+          orderValue: computedOrderValue,
           indent: s.tasks[idx]?.indent,
           type: 'task',
         });
-        return { ...s, tasks: next.map((t, i) => ({ ...t, orderValue: i + 1 })) };
+        return { ...s, tasks: next };
       })
     );
     setEditingId(tid);
+    setSelectedId(tid);
+  }, [updateSections]);
+
+  const handleAddAbove = useCallback((beforeId: string) => {
+    const tid = tempId();
+    let computedOrderValue = 0;
+    updateSections((prev) =>
+      prev.map((s) => {
+        const idx = s.tasks.findIndex((t) => t.id === beforeId);
+        if (idx === -1) return s;
+        computedOrderValue = calculateMidpointOrder(s.tasks, idx, 'above');
+        const next = [...s.tasks];
+        next.splice(idx, 0, {
+          id: tid,
+          title: '',
+          priority: 4,
+          isCompleted: false,
+          orderValue: computedOrderValue,
+          indent: s.tasks[idx]?.indent,
+          type: 'task',
+        });
+        return { ...s, tasks: next };
+      })
+    );
+    setEditingId(tid);
+    setSelectedId(tid);
   }, [updateSections]);
 
   const handleConvertType = useCallback((id: string, type: 'task' | 'note') => {
@@ -399,6 +444,9 @@ export function DailyPage() {
     const tid = tempId();
     setInput('');
 
+    const todaySection = sectionsRef.current.find(s => s.key === todayKey);
+    const newOrderValue = nextOrderValue(todaySection ? todaySection.tasks : []);
+
     updateSections((prev) =>
       prev.map((s) =>
         s.key === todayKey
@@ -411,7 +459,7 @@ export function DailyPage() {
                 title: trimmed,
                 priority: 4,
                 isCompleted: false,
-                orderValue: nextOrderValue(s.tasks),
+                orderValue: newOrderValue,
                 type: 'task',
               },
             ],
@@ -426,7 +474,8 @@ export function DailyPage() {
       priority: 4, 
       dueDate: extracted.dueDate, 
       type: 'task',
-      recurrenceRule: extracted.recurrenceRule
+      recurrenceRule: extracted.recurrenceRule,
+      orderValue: newOrderValue
     }).then((created) => {
       const createdTask = apiToTask(created);
       updateSections((prev) =>
@@ -478,6 +527,51 @@ export function DailyPage() {
 
     setEditingId(tid);
   };
+
+  const handleRightClick = useCallback((id: string, position: { x: number; y: number }) => {
+    setSelectedId(id);
+    setContextMenu({ taskId: id, position });
+  }, []);
+
+  const projectSubmenuItems = useMemo<ContextMenuItem[]>(() => {
+    const items: ContextMenuItem[] = collections
+      .filter((c) => !c.isInbox)
+      .map((c) => ({
+        type: 'item',
+        label: c.name,
+        icon: (
+          <span
+            className="w-2 h-2 rounded-full inline-block"
+            style={{ backgroundColor: paletteColorHex(c.color) }}
+          />
+        ),
+        onClick: () => {
+          if (contextMenu?.taskId) {
+            apiUpdateTask(contextMenu.taskId, { collectionId: c.id }).catch(() => replaceTodayFromApi());
+          }
+        },
+      }));
+
+    items.push({
+      type: 'item',
+      label: 'No project',
+      icon: (
+        <span
+          className="w-2 h-2 rounded-full inline-block bg-transparent border border-ink/20"
+        />
+      ),
+      onClick: () => {
+        if (contextMenu?.taskId) {
+          const inbox = collections.find((c) => c.isInbox);
+          if (inbox) {
+            apiUpdateTask(contextMenu.taskId, { collectionId: inbox.id }).catch(() => replaceTodayFromApi());
+          }
+        }
+      },
+    });
+
+    return items;
+  }, [collections, contextMenu?.taskId, replaceTodayFromApi]);
 
   return (
     <div
@@ -541,6 +635,7 @@ export function DailyPage() {
               onAddBelow={handleAddBelow}
               onIndent={handleIndent}
               onConvertType={handleConvertType}
+              onRightClick={handleRightClick}
             />
 
             {isToday && (
@@ -567,6 +662,24 @@ export function DailyPage() {
           );
         })}
       </div>
+
+      {contextMenu && (
+        <ContextMenu
+          position={contextMenu.position}
+          onClose={() => setContextMenu(null)}
+          items={[
+            { type: 'item', label: 'Date', disabled: true },
+            { type: 'item', label: 'Priority', disabled: true },
+            { type: 'item', label: 'Project', submenu: projectSubmenuItems },
+            { type: 'item', label: 'Tags', disabled: true },
+            { type: 'separator' },
+            { type: 'item', label: 'Add above', onClick: () => handleAddAbove(contextMenu.taskId) },
+            { type: 'item', label: 'Add below', onClick: () => handleAddBelow(contextMenu.taskId) },
+            { type: 'separator' },
+            { type: 'item', label: 'Delete', destructive: true, onClick: () => handleDelete(contextMenu.taskId) },
+          ]}
+        />
+      )}
     </div>
   );
 }

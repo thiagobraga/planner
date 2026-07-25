@@ -303,6 +303,7 @@ export async function apiCreateTask(input: {
   depth?: number;
   type?: 'task' | 'note';
   recurrenceRule?: object | null;
+  orderValue?: number;
 }): Promise<ApiTask> {
   return request<ApiTask>('/tasks', {
     method: 'POST',
@@ -312,7 +313,7 @@ export async function apiCreateTask(input: {
 
 export async function apiUpdateTask(
   id: string,
-  updates: Partial<Pick<ApiTask, 'title' | 'priority' | 'dueDate' | 'depth' | 'type'>> & {
+  updates: Partial<Pick<ApiTask, 'title' | 'priority' | 'dueDate' | 'depth' | 'type' | 'collectionId'>> & {
     parentTaskId?: string | null;
   },
 ): Promise<ApiTask> {

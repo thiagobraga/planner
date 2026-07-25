@@ -237,6 +237,7 @@ export interface CreateTaskInput {
   dueDate?: string | null;
   recurrenceRule?: object | null;
   type?: 'task' | 'note';
+  orderValue?: number;
 }
 
 export async function createTask(userId: string, input: CreateTaskInput) {
@@ -326,8 +327,8 @@ export async function createTask(userId: string, input: CreateTaskInput) {
   const type = input.type ?? 'task';
 
   const result = await pool.query(
-    `INSERT INTO tasks (id, user_id, collection_id, section_id, parent_task_id, title, description, priority, due_date, recurrence_rule, depth, type)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+    `INSERT INTO tasks (id, user_id, collection_id, section_id, parent_task_id, title, description, priority, due_date, recurrence_rule, depth, type, order_value)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
      RETURNING *`,
     [
       id,
@@ -342,6 +343,7 @@ export async function createTask(userId: string, input: CreateTaskInput) {
       input.recurrenceRule ?? null,
       depth,
       type,
+      input.orderValue ?? 0,
     ],
   );
 
