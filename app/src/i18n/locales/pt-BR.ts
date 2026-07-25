@@ -135,6 +135,7 @@ export const portugueseBrazilCatalog = {
   'page.noTasksToday': 'Nenhuma tarefa para hoje.',
   'page.noUpcoming': 'Nenhuma tarefa próxima.',
   'page.noCollections': 'Nenhuma coleção ainda',
+  'page.collectionsSubtitle': 'Seus projetos em um relance',
   'page.addCollection': 'Adicionar coleção',
   'page.collectionName': 'Nome da coleção…',
   'page.deleteCollection': 'Excluir coleção',

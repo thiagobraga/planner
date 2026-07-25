@@ -23,6 +23,7 @@ vi.mock('../pages/SettingsPage', () => ({ SettingsPage: () => <div>SettingsPage<
 vi.mock('../pages/StyleguidePage', () => ({ StyleguidePage: () => <div>StyleguidePage</div> }));
 vi.mock('../pages/HelpPage', () => ({ HelpPage: () => <div>HelpPage</div> }));
 vi.mock('../pages/CollectionsPage', () => ({ CollectionsPage: () => <div>CollectionsPage</div> }));
+vi.mock('../pages/CollectionsIndexPage', () => ({ CollectionsIndexPage: () => <div>CollectionsIndexPage</div> }));
 vi.mock('../pages/LoginPage', () => ({ LoginPage: () => <div>LoginPage</div> }));
 
 vi.mock('../components/AppShell', async () => {
@@ -70,6 +71,13 @@ describe('App', () => {
     testRoute.current = '/daily';
     render(<App />);
     expect(screen.getByText('DailyPage')).toBeInTheDocument();
+  });
+
+  it('renders CollectionsIndexPage when authenticated on /collections', () => {
+    authState.isAuthenticated = true;
+    testRoute.current = '/collections';
+    render(<App />);
+    expect(screen.getByText('CollectionsIndexPage')).toBeInTheDocument();
   });
 
   it('redirects to /login when not authenticated on protected route', () => {
