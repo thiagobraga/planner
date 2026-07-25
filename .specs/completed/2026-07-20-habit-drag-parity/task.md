@@ -2,7 +2,7 @@
 
 Source plan: `plan.md` (6 gaps closing habit-vs-task drag parity).
 
-Markers: `[ ]` not started · `[~]` in progress · `[x]` done
+Markers: `[<]` not started · `[<]` in progress · `[x]` done
 
 ## Step 1 — `useHabitDrag.ts` correctness (gaps 1 + 5)
 
@@ -48,4 +48,4 @@ Markers: `[ ]` not started · `[~]` in progress · `[x]` done
 
 - [x] `docker compose exec app npm run lint` — no new errors (12 pre-existing)
 - [x] `docker compose exec app npm test` — 579 passed; api 563 passed
-- [ ] Manual browser check, steps 1-8 in `plan.md` § Verification
+- [<] Manual browser check, steps 1-8 in `plan.md` § Verification

@@ -223,7 +223,7 @@
   - [x] Keep Sidebar and routed page inside the shared drag provider
   - [x] Preserve collection-tree drag behavior and horizontal collection projection
   - [x] Filter collision targets so task and collection drags cannot interfere
-- [~] Implement mobile edge-open — MOVED to Phase 12 on 2026-07-19. Superseded by manual
+- [<] Implement mobile edge-open — MOVED to Phase 12 on 2026-07-19. Superseded by manual
   sidebar toggle: a user who can pin the sidebar open does not need an edge-hold gesture
   to reach a drop target mid-drag. Desktop sidebar drops ship without either.
 - [x] Add integration tests for named collection, sub-collection, Inbox, same-collection promotion and invalid target (mobile edge-open deferred)
@@ -338,28 +338,28 @@
   - [x] API TypeScript production build
   - [x] Full app test suite
   - [x] Full API test suite
-- [ ] Verify desktop behavior in Chromium DevTools
-  - [ ] Reorder top-level tasks and subtasks
-  - [ ] Reparent through horizontal drag
-  - [ ] Drag a parent and confirm descendants follow
-  - [ ] Move completed tasks between open tasks and reload
-  - [ ] Move open and completed tasks between rendered Daily dates and reload
-  - [ ] Drop tasks onto Inbox, root collections, and sub-collections
-  - [ ] Move a subtask to its current collection and confirm top-level promotion
-  - [ ] Move Journaling into Morning Routine
-  - [ ] Reorder sub-habits and habit groups
-  - [ ] Rename task, habit, sub-habit, and Calendar habit by double-click
-  - [ ] Confirm single click does not select a task
-- [ ] Verify mobile behavior at representative narrow widths
-  - [ ] Long-press reorder without blocking normal vertical scroll
-  - [ ] Long-press completed task and move it between Daily dates
-  - [~] Hold at left edge, auto-open sidebar, and drop on a collection — N/A, see Phase 12
-  - [ ] Cancel drag and confirm sidebar/state restoration
-  - [ ] Double-tap edit remains distinct from long-press drag
-- [ ] Verify accessibility
+- [<] Verify desktop behavior in Chromium DevTools
+  - [<] Reorder top-level tasks and subtasks
+  - [<] Reparent through horizontal drag
+  - [<] Drag a parent and confirm descendants follow
+  - [<] Move completed tasks between open tasks and reload
+  - [<] Move open and completed tasks between rendered Daily dates and reload
+  - [<] Drop tasks onto Inbox, root collections, and sub-collections
+  - [<] Move a subtask to its current collection and confirm top-level promotion
+  - [<] Move Journaling into Morning Routine
+  - [<] Reorder sub-habits and habit groups
+  - [<] Rename task, habit, sub-habit, and Calendar habit by double-click
+  - [<] Confirm single click does not select a task
+- [<] Verify mobile behavior at representative narrow widths
+  - [<] Long-press reorder without blocking normal vertical scroll
+  - [<] Long-press completed task and move it between Daily dates
+  - [<] Hold at left edge, auto-open sidebar, and drop on a collection — N/A, see Phase 12
+  - [<] Cancel drag and confirm sidebar/state restoration
+  - [<] Double-tap edit remains distinct from long-press drag
+- [<] Verify accessibility
   - [x] Keyboard reorder remains operable — verified 2026-07-19 on Daily: space/ArrowUp/space
         moved a task up one slot, order survived reload, restored cleanly with ArrowDown
-  - [ ] Keyboard hierarchy movement (reparent via arrow keys) remains operable
+  - [<] Keyboard hierarchy movement (reparent via arrow keys) remains operable
   - [x] Task drag handles have descriptive labels — `Reorder <task name>` on all 34 main-region handles
   - [x] Sidebar collection handles have descriptive labels — was a generic `Drag to reorder`;
         FIXED to `Reorder <collection name>` in CollectionTreeNav
@@ -375,9 +375,9 @@
     - [x] Invalid target — `That is not a valid place to drop this task.`
     - [x] Cancel — polite: `Move cancelled.`, verified live via Escape
   - [x] Focus returns to the moved row after drop — verified, focus landed on the moved handle
-  - [ ] Reduced-motion preference removes nonessential drag transitions
-- [~] Verify performance and optimize based on trace analysis (2026-07-20)
-  - [~] HIGH: Reduce nesting phase layout recalculations
+  - [<] Reduced-motion preference removes nonessential drag transitions
+- [<] Verify performance and optimize based on trace analysis (2026-07-20)
+  - [<] HIGH: Reduce nesting phase layout recalculations
     - [x] Profile indentation depth calculation during drag
     - [x] Cache nesting level; update only on threshold change — already the case:
           `createIndentTracker` + `PlannerDragProvider` quantise `delta.x` to whole
@@ -386,8 +386,8 @@
     - [x] Replace per-move `getComputedStyle()` — N/A: no `getComputedStyle` call
           exists in app source, and @dnd-kit does not call it per move either. Depth
           already travels as the `--row-indent` custom property.
-    - [ ] Target: 10 layouts → 3 layouts, eliminate 1.4ms overhead — NOT re-traced
-  - [~] HIGH: Memoize parent components to reduce commit frequency
+    - [<] Target: 10 layouts → 3 layouts, eliminate 1.4ms overhead — NOT re-traced
+  - [<] HIGH: Memoize parent components to reduce commit frequency
     - [x] Profile React renders during drag
     - [x] Identify parent containers re-rendering on every child state change —
           `TaskList` was the hot one. It re-runs on every drag frame (indentSteps,
@@ -399,30 +399,30 @@
           `subtreeIdsOf` (now the O(n·depth) `buildSubtreeIndex`), `badges`, `rows`
           and `draggedBlock` are memoised on `tasks`, so row props keep their
           identity across drag frames and untouched rows stop re-rendering
-    - [ ] Target: 159 commits/sec → 90 commits/sec — NOT re-traced
+    - [<] Target: 159 commits/sec → 90 commits/sec — NOT re-traced
   - [x] HIGH: Reduce IntersectionObserver throttling — N/A. No `IntersectionObserver`
         exists in app source (only HelpPage) and none in @dnd-kit; the 964 calls in
         the trace did not come from this app's own code.
-  - [ ] MEDIUM: Investigate and fix jank frames
-    - [ ] Identify 47 frames exceeding 16.67ms budget (3% jank rate)
-    - [ ] Determine cause: layout, paint, JavaScript, or GC
-    - [ ] Batch work to separate frames; use `will-change: transform` hints
-    - [ ] Target: <1% jank rate
-  - [ ] MEDIUM: Optimize memory allocations to reduce GC pauses
-    - [ ] Profile heap allocations with Chrome DevTools Memory tab
-    - [ ] Identify high-frequency temporary objects in drag path
-    - [ ] Implement object pooling for event objects, state clones
-    - [ ] Avoid spread operators in hot paths
-    - [ ] Target: 92ms GC pause → <20ms
-  - [ ] MEDIUM: Validate and optimize drop-target detection logic
-    - [ ] Review collision-detection efficiency (O(n) vs O(log n))
-    - [ ] Cache drop-zone bounding rectangles at drag start
-    - [ ] Update cache only on scroll/resize, not per mouse move
-    - [ ] Confirm spatial indexing or zone-based detection if needed
-  - [ ] LOW: Mobile/low-end device testing
-    - [ ] Test on throttled device (CPU 4x slowdown, 4G network)
-    - [ ] Verify 60 FPS target is achieved
-    - [ ] Adjust task batching if needed
+  - [<] MEDIUM: Investigate and fix jank frames
+    - [<] Identify 47 frames exceeding 16.67ms budget (3% jank rate)
+    - [<] Determine cause: layout, paint, JavaScript, or GC
+    - [<] Batch work to separate frames; use `will-change: transform` hints
+    - [<] Target: <1% jank rate
+  - [<] MEDIUM: Optimize memory allocations to reduce GC pauses
+    - [<] Profile heap allocations with Chrome DevTools Memory tab
+    - [<] Identify high-frequency temporary objects in drag path
+    - [<] Implement object pooling for event objects, state clones
+    - [<] Avoid spread operators in hot paths
+    - [<] Target: 92ms GC pause → <20ms
+  - [<] MEDIUM: Validate and optimize drop-target detection logic
+    - [<] Review collision-detection efficiency (O(n) vs O(log n))
+    - [<] Cache drop-zone bounding rectangles at drag start
+    - [<] Update cache only on scroll/resize, not per mouse move
+    - [<] Confirm spatial indexing or zone-based detection if needed
+  - [<] LOW: Mobile/low-end device testing
+    - [<] Test on throttled device (CPU 4x slowdown, 4G network)
+    - [<] Verify 60 FPS target is achieved
+    - [<] Adjust task batching if needed
   - [x] LOW: Validate GPU acceleration (verify complete)
     - [x] Confirm drag ghost uses `transform` not `left`/`top` — dnd-kit's
           `DragOverlay` positions by `transform`; no `left`/`top` animation
@@ -484,11 +484,11 @@ Reported from live use while the performance pass was under way.
 Requested 2026-07-19. Replaces the mobile edge-open approach dropped from Phase 6.
 Requirements to be confirmed before implementation.
 
-- [ ] Let the user manually collapse and expand the sidebar
-- [ ] Persist the collapsed/expanded state across reloads and sessions
-- [ ] Decide whether state is per-device (localStorage) or per-account (preferences service)
-- [ ] Define collapsed-state behavior as a drag drop target
-- [ ] Keep the toggle keyboard-operable and announced to assistive technology
+- [<] Let the user manually collapse and expand the sidebar
+- [<] Persist the collapsed/expanded state across reloads and sessions
+- [<] Decide whether state is per-device (localStorage) or per-account (preferences service)
+- [<] Define collapsed-state behavior as a drag drop target
+- [<] Keep the toggle keyboard-operable and announced to assistive technology
 
 ## Phase 13 - Defects from the recorded walkthrough (2026-07-21)
 
@@ -497,43 +497,43 @@ on the Daily page. Grouped by area; the drag items are the priority.
 
 ### 13.1 Drop positions the projection refuses to offer
 
-- [ ] Allow a drop into the **last** position of a day. Every drop resolves to first
+- [<] Allow a drop into the **last** position of a day. Every drop resolves to first
       or middle; the final slot is never offered, on any date
-- [ ] Allow a drop **below a completed task**. Dropping under a struck-through row
+- [<] Allow a drop **below a completed task**. Dropping under a struck-through row
       (e.g. "Buscar bupropiona") is refused and the row is thrown to the top instead
-- [ ] Allow a completed task itself to be dragged anywhere in the order. Stated
+- [<] Allow a completed task itself to be dragged anywhere in the order. Stated
       requirement: any task, complete or not, moves to any position - the user is free
-- [ ] Reconsider the midpoint-crossing threshold: a drop currently needs the pointer
+- [<] Reconsider the midpoint-crossing threshold: a drop currently needs the pointer
       past half the target row, which reads as unresponsive (noted as tolerable, not blocking)
 
 ### 13.2 Nesting that does not take
 
-- [ ] Dropping below "Pesquisar a vitamina do Luke" applied neither the indent nor the
+- [<] Dropping below "Pesquisar a vitamina do Luke" applied neither the indent nor the
       position - the row went to the end of the list instead, and that wrong result persisted
-- [ ] Indentation worked on later attempts in the same session, so this is intermittent:
+- [<] Indentation worked on later attempts in the same session, so this is intermittent:
       find the state that distinguishes the working case from the failing one
-- [ ] A row dropped as the child of another must persist as its child, at the dropped position
+- [<] A row dropped as the child of another must persist as its child, at the dropped position
 
 ### 13.3 Drag overlay presentation
 
-- [ ] Drop the `border-radius` on the floating card - it should read as the same block
+- [<] Drop the `border-radius` on the floating card - it should read as the same block
       that was picked up, not a rounded copy of it
-- [ ] Fix the right edge: the translucency stops short and leaves a strip of opaque cream
+- [<] Fix the right edge: the translucency stops short and leaves a strip of opaque cream
 
 ### 13.4 Task editing (not drag, found alongside)
 
-- [ ] `-` converts a task to a note only while the input is empty
+- [<] `-` converts a task to a note only while the input is empty
       (`TaskItem.tsx:222`, `e.currentTarget.value === ''`). Typing `- ` at the start of
       an existing line must convert it too. Same gate on `[`, `]`, `*` for note→task
       (`TaskItem.tsx:225-229`)
-- [ ] Committing with Enter does not keep the row where it sits: the saved row jumps to
+- [<] Committing with Enter does not keep the row where it sits: the saved row jumps to
       first position instead of staying under the row it was added below
-- [ ] After a reload, that row had moved to **today** - the date it was created under
+- [<] After a reload, that row had moved to **today** - the date it was created under
       was not what persisted. It stayed a note, so the type survived and the date did not
 
 ### 13.5 Console error, present throughout the recording
 
-- [ ] `NotFoundError: Failed to execute 'index' on 'IDBObjectStore': The specified index
+- [<] `NotFoundError: Failed to execute 'index' on 'IDBObjectStore': The specified index
       was not found` - `offlineQueue.ts:88`, via `getQueuedMutationsForUser`
       (`offlineQueue.ts:134`) from `useOfflineQueueReplay.ts:13`. Fires on every page load;
       the offline replay path is broken, so queued mutations are likely never replayed
@@ -542,9 +542,9 @@ on the Daily page. Grouped by area; the drag items are the priority.
 
 - [x] Every active task row on Inbox, Daily, and Collection pages can be press-dragged, including completed tasks
 - [x] Task hierarchy, Daily date, collection, subtree, and exact manual order persist after reload
-- [ ] Every visible habit can be press-dragged in both Habit modes within the mode's visibility constraints
-- [ ] Sub-habits and habit groups can be manually reordered and persist after reload
-- [ ] Sidebar collection and Inbox drops work on desktop (mobile edge-open half moved to Phase 12)
+- [<] Every visible habit can be press-dragged in both Habit modes within the mode's visibility constraints
+- [<] Sub-habits and habit groups can be manually reordered and persist after reload
+- [<] Sidebar collection and Inbox drops work on desktop (mobile edge-open half moved to Phase 12)
 - [x] No task row selection remains; double-click/double-tap edits directly
 - [x] No unrelated dirty worktree files are reverted or included in implementation commits
-- [ ] All automated and browser acceptance checks pass
+- [<] All automated and browser acceptance checks pass
