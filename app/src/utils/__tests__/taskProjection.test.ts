@@ -142,19 +142,21 @@ describe('projectMove depth clamping', () => {
   const rows = flattenTasks(sample);
 
   it('nests under the row above when dragged one step right', () => {
-    // Drop `c` (last) just after `a2`, pushed one indent right.
-    expect(projectMove(rows, 'c', 3, INDENT_WIDTH)).toMatchObject({ parentId: 'a', depth: 1 });
+    // Drop `c` (last) just before `b`, pushed one indent right.
+    expect(projectMove(rows, 'c', 'b', INDENT_WIDTH)).toMatchObject({ parentId: 'a', depth: 1 });
   });
 
   it('cannot skip a level, however far right it is dragged', () => {
-    const p = projectMove(rows, 'c', 3, INDENT_WIDTH * 10);
+    const p = projectMove(rows, 'c', 'b', INDENT_WIDTH * 10);
     // Row above is `a2` at depth 1, so the deepest legal landing is depth 2.
     expect(p.depth).toBe(2);
     expect(p.parentId).toBe('a2');
   });
 
   it('outdents to the root at the far left', () => {
-    expect(projectMove(rows, 'a2', 2, -INDENT_WIDTH * 10)).toMatchObject({
+    // `a2` is the id of the dragged task itself, so it is not present in `rest`
+    // and resolves like any other not-found id: append at the end.
+    expect(projectMove(rows, 'a2', 'a2', -INDENT_WIDTH * 10)).toMatchObject({
       parentId: null,
       depth: 0,
     });
@@ -168,22 +170,24 @@ describe('projectMove depth clamping', () => {
     }
     deep.push(t('mover', null, 9000));
     const deepRows = flattenTasks(deep);
-    const p = projectMove(deepRows, 'mover', deepRows.length - 1, INDENT_WIDTH * 20);
+    // 'mover' is the dragged task's own id (the last row) - not found in
+    // `rest`, so this resolves to append, same as before.
+    const p = projectMove(deepRows, 'mover', 'mover', INDENT_WIDTH * 20);
     expect(p.depth).toBeLessThanOrEqual(MAX_DEPTH);
   });
 
   it('stays at least as deep as the row below, so it cannot orphan it', () => {
     // Landing above `a1` (depth 1) at depth 0 would leave `a1` parentless.
-    const p = projectMove(rows, 'c', 1, -INDENT_WIDTH * 5);
+    const p = projectMove(rows, 'c', 'a1', -INDENT_WIDTH * 5);
     expect(p.depth).toBeGreaterThanOrEqual(1);
   });
 
   it('never projects into the dragged task’s own subtree', () => {
-    // Every landing index for a parent drag must resolve to a parent outside it.
+    // Every landing target for a parent drag must resolve to a parent outside it.
     const block = new Set(getSubtreeBlock(rows, 'b').map((r) => r.id));
-    for (let i = 0; i <= rows.length; i++) {
+    for (const overId of [null, ...rows.map((r) => r.id)]) {
       for (const offset of [-INDENT_WIDTH * 3, 0, INDENT_WIDTH * 3]) {
-        const p = projectMove(rows, 'b', i, offset);
+        const p = projectMove(rows, 'b', overId, offset);
         expect(p.parentId === null || !block.has(p.parentId)).toBe(true);
       }
     }
@@ -195,36 +199,54 @@ describe('projectMove sibling position', () => {
     const rows = flattenTasks(sample);
     // Dropping at the very end at root level: roots are a, b, c; b is being
     // dragged, so the remaining roots are a and c and the tail index is 2.
-    const p = projectMove(rows, 'b', rows.length, 0);
+    const p = projectMove(rows, 'b', null, 0);
     expect(p).toMatchObject({ parentId: null, depth: 0, position: 2 });
   });
 
   it('gives position 0 at the top of the list', () => {
     const rows = flattenTasks(sample);
-    expect(projectMove(rows, 'c', 0, 0)).toMatchObject({ position: 0, parentId: null });
+    expect(projectMove(rows, 'c', 'a', 0)).toMatchObject({ position: 0, parentId: null });
   });
 
   it('reorders a leaf at every boundary of its sibling list', () => {
     const flat = [t('x', null, 0), t('y', null, 1000), t('z', null, 2000)];
     const rows = flattenTasks(flat);
-    expect(projectMove(rows, 'z', 0, 0).position).toBe(0); // to the front
-    expect(projectMove(rows, 'z', 1, 0).position).toBe(1); // between x and y
-    // Dragging x to the end: with x lifted out, [y, z] remain, so the tail is 2.
-    expect(projectMove(rows, 'x', 2, 0).position).toBe(2);
+    expect(projectMove(rows, 'z', 'x', 0).position).toBe(0); // to the front
+    expect(projectMove(rows, 'z', 'y', 0).position).toBe(1); // between x and y
+    // Dragging x (earlier in the list) onto z: x is lifted out first, so z
+    // shifts left in `rest` and x lands directly ahead of it, not past it -
+    // this is the exact shift the drop-position bug got wrong.
+    expect(projectMove(rows, 'x', 'z', 0).position).toBe(1);
   });
 });
 
 describe('applyProjection', () => {
   it('moves a parent block into another branch intact', () => {
     const rows = flattenTasks(sample);
-    const { rows: out } = applyProjection(rows, 'b', 1, INDENT_WIDTH);
+    const { rows: out } = applyProjection(rows, 'b', 'a1', INDENT_WIDTH);
     expect(shape(out)).toEqual(['a', '  b', '    b1', '      b1x', '  a1', '  a2', 'c']);
   });
 
   it('keeps every id exactly once after a move', () => {
     const rows = flattenTasks(sample);
-    const { rows: out } = applyProjection(rows, 'b', 6, 0);
+    const { rows: out } = applyProjection(rows, 'b', 'c', 0);
     expect(out.map((r) => r.id).sort()).toEqual(rows.map((r) => r.id).sort());
+  });
+});
+
+describe('regression: dropping before a later sibling lands ahead of it, not past it', () => {
+  it('drags `a` to just before `c` and lands it directly ahead, not after', () => {
+    // The bug: `overIndex` was a pre-removal index reused directly against the
+    // post-removal list. Dragging `a` (earlier in the list) onto `c` used to
+    // resolve `overIndex` to `c`'s *pre-removal* index (2 in `[a, b, c]`), which
+    // is `rest.length` once `a` is lifted out - so `a` landed appended after
+    // `c` instead of immediately before it. Resolving `overId: 'c'` against
+    // `rest` directly fixes that: `c` is found at index 1 in `rest`, wherever
+    // it actually sits post-removal.
+    const flat = [t('a', null, 0), t('b', null, 1000), t('c', null, 2000)];
+    const rows = flattenTasks(flat);
+    const { rows: out } = applyProjection(rows, 'a', 'c', 0);
+    expect(out.map((r) => r.id)).toEqual(['b', 'a', 'c']);
   });
 });
 
@@ -240,7 +262,7 @@ describe('cross-container root move', () => {
     const rows = flattenTasks(incoming);
 
     // Dropped onto 'y', with no horizontal offset: a sibling of the target roots.
-    const projection = projectMove(rows, 'moved', 2, 0);
+    const projection = projectMove(rows, 'moved', 'y', 0);
 
     expect(projection.parentId).toBeNull();
     expect(projection.depth).toBe(0);
@@ -252,7 +274,7 @@ describe('cross-container root move', () => {
     const rows = flattenTasks(incoming);
 
     // Nest the arriving root under 'x' by dragging one indent step right.
-    const { rows: next, projection } = applyProjection(rows, 'moved', 2, INDENT_WIDTH);
+    const { rows: next, projection } = applyProjection(rows, 'moved', 'y', INDENT_WIDTH);
 
     expect(projection.parentId).toBe('x');
     expect(projection.depth).toBe(1);
@@ -262,7 +284,9 @@ describe('cross-container root move', () => {
 
   it('appends to an empty target container', () => {
     const rows = flattenTasks([t('moved', null, 0)]);
-    const projection = projectMove(rows, 'moved', 0, 0);
+    // 'moved' is the dragged task's own id, so it is absent from `rest` -
+    // the not-found fallback appends, same as `null` would.
+    const projection = projectMove(rows, 'moved', 'moved', 0);
 
     expect(projection).toEqual({ parentId: null, depth: 0, position: 0 });
   });
@@ -275,14 +299,14 @@ describe('property: structural invariants hold for every move', () => {
 
   it('preserves every task, loses none and duplicates none, at every destination', () => {
     for (const id of ids) {
-      for (let index = 0; index <= rows.length; index++) {
+      for (const overId of [null, ...ids]) {
         for (const offset of offsets) {
-          const { rows: out } = applyProjection(rows, id, index, offset);
+          const { rows: out } = applyProjection(rows, id, overId, offset);
           const outIds = out.map((r) => r.id);
-          expect(new Set(outIds).size, `duplicate after moving ${id} to ${index}@${offset}`).toBe(
+          expect(new Set(outIds).size, `duplicate after moving ${id} to ${overId}@${offset}`).toBe(
             outIds.length,
           );
-          expect(outIds.slice().sort(), `lost a task moving ${id} to ${index}@${offset}`).toEqual(
+          expect(outIds.slice().sort(), `lost a task moving ${id} to ${overId}@${offset}`).toEqual(
             ids.slice().sort(),
           );
         }
@@ -292,13 +316,13 @@ describe('property: structural invariants hold for every move', () => {
 
   it('always renders every descendant after its ancestor, at a legal depth', () => {
     for (const id of ids) {
-      for (let index = 0; index <= rows.length; index++) {
+      for (const overId of [null, ...ids]) {
         for (const offset of offsets) {
-          const { rows: out } = applyProjection(rows, id, index, offset);
+          const { rows: out } = applyProjection(rows, id, overId, offset);
           const seen = new Set<string>();
           let prevDepth = -1;
           for (const row of out) {
-            const where = `moving ${id} to ${index}@${offset}`;
+            const where = `moving ${id} to ${overId}@${offset}`;
             // Depth may only ever grow one step at a time going down the list.
             expect(row.depth, `depth jump ${where}`).toBeLessThanOrEqual(prevDepth + 1);
             expect(row.depth, `negative depth ${where}`).toBeGreaterThanOrEqual(0);

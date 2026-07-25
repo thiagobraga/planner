@@ -182,6 +182,27 @@ export interface Projection {
 }
 
 /**
+ * Resolve a drop target id to an index into `rest` - the row list *after* the
+ * dragged block has been removed.
+ *
+ * The caller only ever has an id (the row the pointer is over), never a raw
+ * index: an index promised before removal and read after it silently drifts
+ * by the length of the removed block whenever the drag moves a row earlier in
+ * the list than its target, landing the drop past where the user pointed.
+ * Resolving against `rest` itself is what keeps `projectMove` and
+ * `applyProjection` reading the same post-removal geometry.
+ *
+ * `overId === null`, or an id no longer present in `rest` (dropped nowhere in
+ * particular, or it was part of the dragged block that was just removed),
+ * both mean "append at the end of this scope".
+ */
+function resolveAt<T extends TaskLike>(rest: FlatRow<T>[], overId: string | null): number {
+  if (overId === null) return rest.length;
+  const index = rest.findIndex((r) => r.id === overId);
+  return index === -1 ? rest.length : index;
+}
+
+/**
  * Where a drag would land: the vertical destination decides *between which rows*,
  * the horizontal offset decides *how deeply nested*.
  *
@@ -192,13 +213,13 @@ export interface Projection {
 export function projectMove<T extends TaskLike>(
   rows: FlatRow<T>[],
   activeId: string,
-  overIndex: number,
+  overId: string | null,
   offsetX: number,
 ): Projection {
   const { rest, block } = removeBlock(rows, activeId);
   if (block.length === 0) return { parentId: null, depth: 0, position: 0 };
 
-  const at = Math.max(0, Math.min(overIndex, rest.length));
+  const at = resolveAt(rest, overId);
   const above = rest[at - 1] ?? null;
   const below = rest[at] ?? null;
 
@@ -235,12 +256,12 @@ export function projectMove<T extends TaskLike>(
 export function applyProjection<T extends TaskLike>(
   rows: FlatRow<T>[],
   activeId: string,
-  overIndex: number,
+  overId: string | null,
   offsetX: number,
 ): { rows: FlatRow<T>[]; projection: Projection } {
-  const projection = projectMove(rows, activeId, overIndex, offsetX);
+  const projection = projectMove(rows, activeId, overId, offsetX);
   const { rest, block } = removeBlock(rows, activeId);
-  const at = Math.max(0, Math.min(overIndex, rest.length));
+  const at = resolveAt(rest, overId);
   return {
     rows: insertBlock(rest, block, at, projection.parentId, projection.depth),
     projection,

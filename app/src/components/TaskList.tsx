@@ -118,7 +118,7 @@ export function TaskList({
   // different one.
   const projection =
     holdsActiveRow && overIndex !== -1
-      ? projectMove(rows, activeDragId!, overIndex, indentSteps * INDENT_WIDTH)
+      ? projectMove(rows, activeDragId!, overId, indentSteps * INDENT_WIDTH)
       : null;
 
   // Daily renders each date as its own list, so a row dragged across dates stays

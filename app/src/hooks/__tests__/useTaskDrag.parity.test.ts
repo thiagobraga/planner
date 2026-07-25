@@ -64,8 +64,7 @@ describe('useTaskDrag: the drop lands where the slot said it would', () => {
     for (const steps of [0, 1, 2]) {
       it(`${activeId} onto ${overId}, ${steps} indent step(s)`, () => {
         const rows = oneDate(DAY);
-        const previewIndex = rows.findIndex((r) => r.id === overId);
-        const preview = projectMove(rows, activeId, previewIndex, steps * INDENT_WIDTH);
+        const preview = projectMove(rows, activeId, overId, steps * INDENT_WIDTH);
 
         const commit = resolveMove({
           rows: everyDate,
@@ -78,6 +77,12 @@ describe('useTaskDrag: the drop lands where the slot said it would', () => {
         expect(commit).not.toBeNull();
         expect(commit!.depth).toBe(preview.depth);
         expect(commit!.parentTaskId).toBe(preview.parentId);
+        // Position was the field the old index-based contract silently got
+        // wrong: 'a' onto 'b' drags a row from earlier in the list to later,
+        // the exact shape that used to land past its target once the dragged
+        // block was removed and the stale pre-removal index reused against
+        // the shrunk list.
+        expect(commit!.input.position).toBe(preview.position);
       });
     }
   }

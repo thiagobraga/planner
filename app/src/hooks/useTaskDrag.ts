@@ -338,10 +338,9 @@ export function resolveMove({
   const scopedRows = targetDay
     ? rows.filter((r) => r.task.dueDate === targetDay || active.subtreeIds.includes(r.id))
     : rows;
-  const scopedIndex = scopedRows.findIndex((r) => r.id === over.taskId);
-  if (scopedIndex === -1) return null;
+  if (!scopedRows.some((r) => r.id === over.taskId)) return null;
 
-  const projected = projectMove(scopedRows, active.taskId, scopedIndex, offsetX);
+  const projected = projectMove(scopedRows, active.taskId, over.taskId, offsetX);
 
   // Moving to another date is a coarse gesture: it covers a lot of vertical
   // distance, and the pointer drifts sideways on the way. Read as nesting
