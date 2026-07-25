@@ -72,6 +72,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(() => {
     const uid = user?.id;
+    // Cancel all pending queries before logging out to avoid 401 errors
+    // on requests that complete after auth state changes.
+    queryClient.cancelQueries();
     apiLogout()
       .catch(() => {})
       .finally(() => {

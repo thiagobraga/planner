@@ -1,6 +1,6 @@
 ---
 name: Frontend Builder
-description: Use when creating or modifying React components and pages. Reads existing components for patterns then implements with correct design tokens, React Query wiring, and optimistic updates. NOT for backend changes, test writing, or design system questions.
+description: Use when creating or modifying React components and pages. Reads existing components for patterns then implements with correct design tokens, React Query wiring, and optimistic updates. NOT for backend changes or design system questions.
 model: claude-sonnet-4-6
 tools: Bash, Read, Edit, Write, Grep, Glob
 ---
@@ -78,6 +78,7 @@ import { apiClient } from '../api/client';
 4. Ensure keyboard accessibility (focus management, aria labels).
 5. Wire React Query + optimistic updates if the component mutates data.
 6. Check: no sans-serif, no white bg, no box-shadow on cards, accent ≤10%.
+7. Always write unit tests and e2e tests if possible for each new feature or bugfix to maintain high test coverage.
 
 ## File Conventions
 

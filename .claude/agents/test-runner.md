@@ -1,6 +1,6 @@
 ---
 name: Test Runner
-description: Use when running tests, diagnosing test failures, or checking test coverage. Executes test commands via docker compose exec, reads failure output, traces failing tests to source, and identifies root causes. NOT for writing new tests or adding test coverage.
+description: Use when running tests, diagnosing test failures, or checking test coverage. Executes test commands via docker compose exec, reads failure output, traces failing tests to source, and identifies root causes. Also use when writing unit tests and e2e tests for new features and bugfixes to maintain high test coverage.
 model: claude-haiku-4-5-20251001
 tools: Bash, Read, Grep, Glob
 ---
@@ -32,6 +32,7 @@ docker compose exec app npm exec vitest run src/path/to/file.test.ts        # Si
 3. Grep for the implementation being tested to understand the contract.
 4. Identify the root cause: assertion mismatch, missing mock, wrong return shape, async timing, missing env var, etc.
 5. Report: failing test path:line, expected vs actual, likely cause, suggested fix.
+6. Always write unit tests and e2e tests if possible for each new feature or bugfix to maintain high test coverage.
 
 ## Key Paths
 

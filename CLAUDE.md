@@ -231,6 +231,7 @@ Full spec: `DESIGN.md`.
   - Claude Code already adds its own `Co-Authored-By` trailer automatically
 - No backwards-compat shims for removed code - delete cleanly
 - Tests: Vitest; integration tests hit real DB (no mock-DB pattern)
+- Always write unit tests and e2e tests if possible for each new feature or bugfix. The goal is to always keep app with high test coverage as possible.
 - Node ≥ 24 required
 
 ## Plan Mode — Specs Convention

@@ -24,6 +24,7 @@ Review the code changes in this session (or $ARGUMENTS if provided) against thes
 ## Testing Checks
 
 - New services have unit tests in `api/src/services/__tests__/`
+- Always write unit tests and e2e tests if possible for each new feature or bugfix. The goal is to always keep app with high test coverage as possible.
 - Edge cases covered by property-based tests (fast-check) where applicable - recurrence, filters, auth
 - Frontend hooks/components tested in `app/src/hooks/__tests__/` or `app/src/components/__tests__/`
 
