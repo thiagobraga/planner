@@ -49,6 +49,11 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/trivy
+          key: trivy-db-${{ github.run_id }}
+          restore-keys: trivy-db-
       - uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: 'repo'
@@ -58,19 +63,15 @@ jobs:
           scanners: 'secret'
           exit-code: '1'
           severity: 'HIGH,CRITICAL'
+          cache-dir: ~/.cache/trivy
       - uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: trivy-secrets.sarif
           category: secret-scan
 
-  docker:
-    name: Docker build check
-    runs-on: ubuntu-24.04
-    steps:
-      - uses: actions/checkout@v5
-      - run: |
-          export CORS_ORIGIN=https://planner.thiagobraga.dev
-          docker compose -f compose.prod.yml build
+  # Docker build check lives in quality.yml (needs: [api, app]), which also
+  # warms the type=gha buildx cache that deploy.yml's push build reuses -
+  # building it again here would just duplicate that work uncached.
 
   # Container vulnerability scanning lives in deploy.yml, where it scans the
   # exact image digests pushed to GHCR rather than a locally-tagged rebuild.
@@ -80,12 +81,18 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v5
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/trivy
+          key: trivy-db-${{ github.run_id }}
+          restore-keys: trivy-db-
       - uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: 'repo'
           scan-ref: '.'
           format: 'spdx-json'
           output: 'sbom.spdx.json'
+          cache-dir: ~/.cache/trivy
       - uses: actions/upload-artifact@v6
         with:
           name: sbom

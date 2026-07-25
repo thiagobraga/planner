@@ -15,7 +15,7 @@ import type { DayDropData } from '../types/drag';
 
 type TaskCallbacks = Pick<
   TaskItemProps,
-  'onStartEdit' | 'onEditCommit' | 'onEditCancel' | 'onDelete' | 'onAddBelow' | 'onIndent' | 'onNavigate' | 'onConvertType'
+  'onStartEdit' | 'onEditCommit' | 'onEditCancel' | 'onDelete' | 'onAddBelow' | 'onIndent' | 'onNavigate' | 'onConvertType' | 'onRightClick'
 >;
 
 interface TaskListProps extends TaskCallbacks {
@@ -66,6 +66,7 @@ export function TaskList({
   onIndent,
   onNavigate,
   onConvertType,
+  onRightClick,
 }: TaskListProps) {
   const { activeDrag, indentSteps, overId, hasMoved, setOverlayNode } = usePlannerDrag();
 
@@ -204,6 +205,7 @@ export function TaskList({
               onIndent={onIndent}
               onNavigate={onNavigate}
               onConvertType={onConvertType}
+              onRightClick={onRightClick}
             />
           </div>
         ))}

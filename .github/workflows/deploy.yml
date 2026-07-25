@@ -64,6 +64,12 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/trivy
+          key: trivy-db-${{ github.run_id }}
+          restore-keys: trivy-db-
+
       - uses: aquasecurity/trivy-action@v0.36.0
         env:
           TRIVY_USERNAME: ${{ github.actor }}
@@ -75,6 +81,7 @@ jobs:
           output: 'trivy-${{ matrix.component }}.sarif'
           exit-code: '1'
           severity: 'HIGH,CRITICAL'
+          cache-dir: ~/.cache/trivy
 
       - uses: github/codeql-action/upload-sarif@v4
         if: always()

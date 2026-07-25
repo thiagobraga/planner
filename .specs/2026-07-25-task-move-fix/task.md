@@ -1,7 +1,27 @@
-# Remaining tasks
+# Task Move Fix — Tasks
 
+- [ ] `app/src/utils/taskProjection.ts`: change `projectMove`/`applyProjection` to take `overId: string | null`, resolve index internally via shared `resolveAt(rest, overId)` helper
+- [ ] `app/src/hooks/useTaskDrag.ts`: update `resolveMove` to pass `over.taskId` instead of pre-removal `scopedIndex`
+- [ ] `app/src/components/TaskList.tsx`: update `projectMove` call to pass `overId` directly instead of derived `overIndex`
+- [ ] `app/src/utils/__tests__/taskProjection.test.ts`: migrate call sites to `overId`; add regression test for dragging an earlier sibling down past a later one
+- [ ] `app/src/hooks/__tests__/useTaskDrag.parity.test.ts`: migrate call site; add `position` parity assertion
+- [ ] `api/src/services/taskService.ts`: add `midpointOrFallback()` helper
+- [ ] `api/src/services/taskService.ts`: rewrite `renumberCollectionScope` for midpoint insertion + full-renumber collision fallback
+- [ ] `api/src/services/taskService.ts`: delete `normalizeCollectionScope` and its call site (`sourceDiffers` branch)
+- [ ] `api/src/services/taskService.ts`: rewrite `renumberDayScope` for midpoint insertion (seeded-neighbors fast path) + existing full-seed fallback
+- [ ] `api/src/services/taskService.ts`: delete `normalizeDayScope` and its call site
+- [ ] `api/src/services/taskService.ts`: replace `reorderedResult` re-query in `moveTask` with direct use of renumber helpers' return values
+- [ ] `api/src/services/taskService.ts`: add `MovedTaskSummary` type, map `moved`/`reordered` to it before returning
+- [ ] `app/src/api/client.ts`: change `TaskMoveResponse.moved`/`.reordered` to `MovedTaskSummary[]`
+- [ ] `app/src/hooks/useTaskDrag.ts`: update `.then()` handler types; add no-op-diff guard to preserve object identity for unchanged tasks
+- [ ] `api/src/services/__tests__/taskService.move.test.ts`: update gap-write assertions, add collision-fallback test, split day-scope seeded/unseeded test cases
+- [ ] Optional: migration `031_task_collection_scope_index.sql` adding `idx_tasks_collection_scope_ordered` (use `db-migration` skill)
+- [ ] Run `docker compose exec api npm test && docker compose exec app npm test`, both builds
+- [ ] Manual verification: wrong-position repro, response payload size in Network tab, React Profiler re-render check, cross-collection/cross-date drags
 
-## From .specs/2026-07-18-unified-task-habit-dragging/task.md
+## Migrated from .specs/2026-07-25-drag-polish-defects/task.md
+
+### From .specs/2026-07-18-unified-task-habit-dragging/task.md
 
 - [ ] Implement mobile edge-open — MOVED to Phase 12 on 2026-07-19. Superseded by manual
 - [ ] Verify desktop behavior in Chromium DevTools
@@ -73,7 +93,7 @@
 - [ ] Sidebar collection and Inbox drops work on desktop (mobile edge-open half moved to Phase 12)
 - [ ] All automated and browser acceptance checks pass
 
-## From .specs/2026-07-20-habit-drag-parity/task.md
+### From .specs/2026-07-20-habit-drag-parity/task.md
 
 Markers: `[ ]` not started · `[ ]` in progress · `[x]` done
 - [ ] Manual browser check, steps 1-8 in `plan.md` § Verification
