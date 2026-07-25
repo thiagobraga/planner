@@ -7,14 +7,20 @@ export interface RecurrenceRule {
 }
 
 export interface DueDate {
-  date: string; // YYYY-MM-DD
+  date: string | Date; // YYYY-MM-DD or Date object
   time?: string; // HH:MM (24h)
   timezone?: string; // IANA timezone
   recurrence?: RecurrenceRule;
 }
 
-function parseDate(dateStr: string): { year: number; month: number; day: number } {
-  const [year, month, day] = dateStr.split('-').map(Number);
+function parseDate(dateStr: string | Date): { year: number; month: number; day: number } {
+  let dateString: string;
+  if (dateStr instanceof Date) {
+    dateString = dateStr.toISOString().split('T')[0];
+  } else {
+    dateString = dateStr;
+  }
+  const [year, month, day] = dateString.split('-').map(Number);
   return { year, month, day };
 }
 
