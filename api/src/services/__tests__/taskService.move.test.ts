@@ -260,11 +260,14 @@ describe("moveTask ordering scopes", () => {
     return tx;
   }
 
-  it("writes collection order values with 1000-unit gaps in the target order", async () => {
+  it("writes a single midpoint order value between the flanking siblings", async () => {
     (pool.query as ReturnType<typeof vi.fn>).mockResolvedValue({ rows: [taskRow()] });
     const tx = stubSuccessfulMove([
       [/WITH RECURSIVE/, [{ id: taskId, parent_task_id: null, depth: 0, collection_id: collectionId, section_id: null, due_date: null }]],
-      [/SELECT id FROM tasks/, [{ id: "sib-a" }, { id: "sib-b" }]],
+      [/SELECT id, order_value, due_date FROM tasks/, [
+        { id: "sib-a", order_value: 0, due_date: null },
+        { id: "sib-b", order_value: 1000, due_date: null },
+      ]],
     ]);
 
     await moveTask(taskId, userId, { parentTaskId: null, scope: scopeCollection, position: 1 });
@@ -272,7 +275,40 @@ describe("moveTask ordering scopes", () => {
     const orderWrites = tx.calls
       .filter((c) => /SET order_value/.test(c.sql))
       .map((c) => c.params);
-    // Dragged task requested index 1, so: sib-a, task-1, sib-b.
+    // Dragged task requested index 1, between sib-a (0) and sib-b (1000): only
+    // the moved task is written, at their midpoint.
+    expect(orderWrites).toEqual([[500, taskId]]);
+  });
+
+  it("clamps a position past the end of the list to a single append write", async () => {
+    (pool.query as ReturnType<typeof vi.fn>).mockResolvedValue({ rows: [taskRow()] });
+    const tx = stubSuccessfulMove([
+      [/WITH RECURSIVE/, [{ id: taskId, parent_task_id: null, depth: 0, collection_id: collectionId, section_id: null, due_date: null }]],
+      [/SELECT id, order_value, due_date FROM tasks/, [{ id: "sib-a", order_value: 0, due_date: null }]],
+    ]);
+
+    await moveTask(taskId, userId, { parentTaskId: null, scope: scopeCollection, position: 99 });
+
+    const orderWrites = tx.calls.filter((c) => /SET order_value/.test(c.sql)).map((c) => c.params);
+    // No sibling after the append slot, so the moved task lands 1000 past
+    // sib-a; sib-a itself is never rewritten.
+    expect(orderWrites).toEqual([[1000, taskId]]);
+  });
+
+  it("falls back to a full renumber when the target siblings' order values collide", async () => {
+    (pool.query as ReturnType<typeof vi.fn>).mockResolvedValue({ rows: [taskRow()] });
+    const tx = stubSuccessfulMove([
+      [/WITH RECURSIVE/, [{ id: taskId, parent_task_id: null, depth: 0, collection_id: collectionId, section_id: null, due_date: null }]],
+      // sib-a and sib-b sit at adjacent values - no integer room between them.
+      [/SELECT id, order_value, due_date FROM tasks/, [
+        { id: "sib-a", order_value: 0, due_date: null },
+        { id: "sib-b", order_value: 1, due_date: null },
+      ]],
+    ]);
+
+    await moveTask(taskId, userId, { parentTaskId: null, scope: scopeCollection, position: 1 });
+
+    const orderWrites = tx.calls.filter((c) => /SET order_value/.test(c.sql)).map((c) => c.params);
     expect(orderWrites).toEqual([
       [0, "sib-a"],
       [1000, taskId],
@@ -280,28 +316,13 @@ describe("moveTask ordering scopes", () => {
     ]);
   });
 
-  it("clamps a position past the end of the list", async () => {
-    (pool.query as ReturnType<typeof vi.fn>).mockResolvedValue({ rows: [taskRow()] });
-    const tx = stubSuccessfulMove([
-      [/WITH RECURSIVE/, [{ id: taskId, parent_task_id: null, depth: 0, collection_id: collectionId, section_id: null, due_date: null }]],
-      [/SELECT id FROM tasks/, [{ id: "sib-a" }]],
-    ]);
-
-    await moveTask(taskId, userId, { parentTaskId: null, scope: scopeCollection, position: 99 });
-
-    const orderWrites = tx.calls.filter((c) => /SET order_value/.test(c.sql)).map((c) => c.params);
-    expect(orderWrites).toEqual([
-      [0, "sib-a"],
-      [1000, taskId],
-    ]);
-  });
-
-  it("reorders a day through task_order, leaving collection order_value untouched", async () => {
+  it("falls back to seeding the whole day when a target-position neighbor is unseeded", async () => {
     (pool.query as ReturnType<typeof vi.fn>).mockResolvedValue({ rows: [taskRow({ due_date: "2026-07-18" })] });
     const tx = stubSuccessfulMove([
       [/WITH RECURSIVE/, [{ id: taskId, parent_task_id: null, depth: 0, collection_id: collectionId, section_id: null, due_date: "2026-07-18" }]],
       // The day's current order is read from tasks joined to task_order, so a
-      // task that has never been dragged in Daily is seeded alongside those that have.
+      // task that has never been dragged in Daily is seeded alongside those
+      // that have. Neither row here carries a `position` - both unseeded.
       [/LEFT JOIN task_order/, [{ task_id: "other-1" }, { task_id: "other-2" }]],
     ]);
 
@@ -319,6 +340,29 @@ describe("moveTask ordering scopes", () => {
     ]);
     // The whole point of the separate table: a Daily drag must not renumber the
     // collection's ordering.
+    expect(tx.calls.some((c) => /SET order_value/.test(c.sql))).toBe(false);
+  });
+
+  it("writes a single midpoint day position when both neighbors are already seeded", async () => {
+    (pool.query as ReturnType<typeof vi.fn>).mockResolvedValue({ rows: [taskRow({ due_date: "2026-07-18" })] });
+    const tx = stubSuccessfulMove([
+      [/WITH RECURSIVE/, [{ id: taskId, parent_task_id: null, depth: 0, collection_id: collectionId, section_id: null, due_date: "2026-07-18" }]],
+      // Both neighbors already carry a real task_order position.
+      [/LEFT JOIN task_order/, [
+        { task_id: "other-1", position: 0 },
+        { task_id: "other-2", position: 1000 },
+      ]],
+    ]);
+
+    await moveTask(taskId, userId, {
+      parentTaskId: null,
+      scope: { kind: "day", dueDate: "2026-07-18" },
+      position: 1,
+    });
+
+    const dayWrites = tx.calls.filter((c) => /INSERT INTO task_order/.test(c.sql)).map((c) => c.params);
+    // Between other-1 (0) and other-2 (1000): only the moved task is written.
+    expect(dayWrites).toEqual([[userId, taskId, "2026-07-18", 500]]);
     expect(tx.calls.some((c) => /SET order_value/.test(c.sql))).toBe(false);
   });
 });
@@ -365,6 +409,14 @@ describe("moveTask onto a sidebar collection", () => {
     expect(depth).toBe(0);
     // ...but still sitting on the day it was already scheduled for.
     expect(dueDate).toBe("2026-07-18");
+
+    // This move crosses both collection and parent, so it used to trigger a
+    // second full-rewrite query against the *source* list (normalizeCollectionScope).
+    // Gap numbering makes that unnecessary: the only order_value write is the
+    // single midpoint write for the moved task in its new (empty) destination list.
+    const orderWrites = tx.calls.filter((c) => /SET order_value/.test(c.sql));
+    expect(orderWrites).toHaveLength(1);
+    expect(orderWrites[0].params).toEqual([0, taskId]);
   });
 });
 
