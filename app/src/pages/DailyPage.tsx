@@ -114,10 +114,7 @@ export function DailyPage() {
   });
   const preferencesUserId = prefs?.userId;
   const [rolloverVersion, setRolloverVersion] = useState(0);
-  const todayKey = useMemo(
-    () => fmtISOInTimeZone(new Date(), prefs?.timeZone),
-    [prefs?.timeZone, rolloverVersion],
-  );
+  const todayKey = fmtISOInTimeZone(new Date(), prefs?.timeZone);
   const [sections, setSections] = useState<DaySection[]>([]);
   const [activeDate, setActiveDate] = useState(todayKey);
   const [timelineReady, setTimelineReady] = useState(false);
