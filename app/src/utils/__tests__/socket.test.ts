@@ -15,6 +15,21 @@ vi.mock('socket.io-client', () => ({
   io: mockIo,
 }));
 
+const mockNotifyUnauthorized = vi.fn();
+vi.mock('../authEvents', () => ({
+  notifyUnauthorized: () => mockNotifyUnauthorized(),
+}));
+
+// `mockSocket.on` records every listener so tests can invoke the one
+// registered for a given event name, the way the real socket would.
+function trigger(event: string, ...args: unknown[]) {
+  for (const call of mockSocket.on.mock.calls) {
+    if (call[0] === event) {
+      (call[1] as (...a: unknown[]) => void)(...args);
+    }
+  }
+}
+
 describe('socket utilities', () => {
   beforeEach(async () => {
     vi.clearAllMocks();
@@ -24,6 +39,7 @@ describe('socket utilities', () => {
     mockSocket.connect.mockClear();
     mockSocket.disconnect.mockClear();
     mockSocket.on.mockClear();
+    mockNotifyUnauthorized.mockClear();
 
     vi.resetModules();
   });
@@ -107,6 +123,28 @@ describe('socket utilities', () => {
     it('returns disconnected when socket is not initialized', async () => {
       const { getSyncStatus } = await import('../socket');
       expect(getSyncStatus()).toBe('disconnected');
+    });
+  });
+
+  describe('connect_error handling', () => {
+    it('disconnects and reports a dead session on an UNAUTHORIZED connect_error', async () => {
+      const { getSocket } = await import('../socket');
+      getSocket();
+
+      trigger('connect_error', new Error('UNAUTHORIZED'));
+
+      expect(mockSocket.disconnect).toHaveBeenCalledTimes(1);
+      expect(mockNotifyUnauthorized).toHaveBeenCalledTimes(1);
+    });
+
+    it('leaves reconnection alone for a plain network error, so it keeps retrying', async () => {
+      const { getSocket } = await import('../socket');
+      getSocket();
+
+      trigger('connect_error', new Error('xhr poll error'));
+
+      expect(mockSocket.disconnect).not.toHaveBeenCalled();
+      expect(mockNotifyUnauthorized).not.toHaveBeenCalled();
     });
   });
 });

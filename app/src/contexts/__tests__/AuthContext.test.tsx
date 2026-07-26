@@ -6,6 +6,7 @@ import type { AuthUser } from '../../api/client';
 import { connectSocket, disconnectSocket } from '../../utils/socket';
 import { clearUserMutations } from '../../utils/offlineQueue';
 import { queryClient } from '../../api/queryClient';
+import { notifyUnauthorized, setUnauthorizedHandler } from '../../utils/authEvents';
 
 vi.mock('../../api/client', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../../api/client')>()),
@@ -77,6 +78,7 @@ describe('AuthContext', () => {
 
   afterEach(() => {
     vi.unstubAllGlobals();
+    setUnauthorizedHandler(null);
   });
 
   it('shows loading state initially before /me resolves', async () => {
@@ -255,6 +257,95 @@ describe('AuthContext', () => {
     expect(queryClient.clear).toHaveBeenCalled();
     expect(mockClearUserMutations).toHaveBeenCalledWith('user-1');
     expect(mockDisconnectSocket).toHaveBeenCalled();
+  });
+
+  it('logout() is a no-op once already logged out, so a stray notifyUnauthorized cannot loop', async () => {
+    fetchMock.mockResolvedValue(
+      new Response(mockUserJson, {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      }),
+    );
+
+    let captured!: ReturnType<typeof useAuth>;
+    function CaptureConsumer() {
+      captured = useAuth();
+      return <TestConsumer />;
+    }
+
+    render(
+      <TestWrapper>
+        <CaptureConsumer />
+      </TestWrapper>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('auth-state')).toHaveTextContent('"user":"user-1"');
+    });
+
+    act(() => {
+      captured.logout();
+    });
+    await waitFor(() => {
+      expect(screen.getByTestId('auth-state')).toHaveTextContent('"user":null');
+    });
+    expect(mockApiLogout).toHaveBeenCalledTimes(1);
+
+    act(() => {
+      captured.logout();
+    });
+
+    expect(mockApiLogout).toHaveBeenCalledTimes(1);
+  });
+
+  it('logs out when authEvents reports a dead session (401 or socket UNAUTHORIZED)', async () => {
+    fetchMock.mockResolvedValue(
+      new Response(mockUserJson, {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      }),
+    );
+
+    render(
+      <TestWrapper>
+        <TestConsumer />
+      </TestWrapper>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('auth-state')).toHaveTextContent('"user":"user-1"');
+    });
+
+    act(() => {
+      notifyUnauthorized();
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('auth-state')).toHaveTextContent('"user":null');
+      expect(screen.getByTestId('auth-state')).toHaveTextContent('"isAuthenticated":false');
+    });
+    expect(mockApiLogout).toHaveBeenCalled();
+    expect(mockDisconnectSocket).toHaveBeenCalled();
+  });
+
+  it('does not react to a dead-session report before any user is authenticated', async () => {
+    fetchMock.mockRejectedValue(new Error('no session'));
+
+    render(
+      <TestWrapper>
+        <TestConsumer />
+      </TestWrapper>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('auth-state')).toHaveTextContent('"user":null');
+    });
+
+    act(() => {
+      notifyUnauthorized();
+    });
+
+    expect(mockApiLogout).not.toHaveBeenCalled();
   });
 
   async function renderLoggedOut() {

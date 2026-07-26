@@ -1,10 +1,11 @@
-import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect, useRef, type ReactNode } from 'react';
 import { apiLogin, apiRegister, apiLogout, setCurrentUserId, type AuthUser } from '../api/client';
 import { queryClient } from '../api/queryClient';
 import { connectSocket, disconnectSocket } from '../utils/socket';
 import { useOfflineQueueReplay } from '../hooks/useOfflineQueueReplay';
 import { clearUserMutations } from '../utils/offlineQueue';
 import { useI18n } from '../i18n/I18nContext';
+import { setUnauthorizedHandler } from '../utils/authEvents';
 
 interface AuthContextValue {
   user: AuthUser | null;
@@ -73,7 +74,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const logout = useCallback(() => {
-    const uid = user?.id;
+    // Already logged out - without this guard, a dead session reported via
+    // notifyUnauthorized() (below) would re-enter here on every subsequent
+    // 401, and apiLogout() itself 401s once there's no session left, looping.
+    if (!user) return;
+    const uid = user.id;
     // Cancel all pending queries before logging out to avoid 401 errors
     // on requests that complete after auth state changes.
     queryClient.cancelQueries();
@@ -84,11 +89,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setIsAuthenticated(false);
         setCurrentUserId(null);
         queryClient.clear();
-        if (uid) {
-          clearUserMutations(uid).catch(() => {});
-        }
+        clearUserMutations(uid).catch(() => {});
       });
   }, [user]);
+
+  // notifyUnauthorized() fires from client.ts (401 REST response) and
+  // socket.ts (UNAUTHORIZED connect_error) - neither can import this context
+  // directly, so they report through the authEvents registry instead. The
+  // ref keeps the registered callback pointed at the latest `logout` closure
+  // (which captures `user`) without re-registering on every render.
+  const logoutRef = useRef(logout);
+  useEffect(() => {
+    logoutRef.current = logout;
+  }, [logout]);
+
+  useEffect(() => {
+    setUnauthorizedHandler(() => logoutRef.current());
+    return () => setUnauthorizedHandler(null);
+  }, []);
 
   if (initializing) {
     return <div className="flex items-center justify-center h-screen text-ink-light">{t('settings.loading')}</div>;

@@ -1,5 +1,6 @@
 import { isOnline, enqueueMutation, type QueuedMutationMethod } from '../utils/offlineQueue';
 import { getSocketId } from '../utils/socket';
+import { notifyUnauthorized } from '../utils/authEvents';
 
 const BASE = '/api/v1';
 
@@ -169,6 +170,12 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   });
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
+    // A dead session (expired/revoked) surfaces as 401 on whatever request
+    // happens to run next. Auth endpoints are excluded: a failed login/register
+    // legitimately returns 401 for wrong credentials and isn't a session death.
+    if (res.status === 401 && !path.startsWith('/auth/')) {
+      notifyUnauthorized();
+    }
     throw new ApiError({
       message: body?.error?.message ?? `HTTP ${res.status}`,
       code: body?.error?.code ?? 'HTTP_ERROR',

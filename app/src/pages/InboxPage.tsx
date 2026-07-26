@@ -16,7 +16,6 @@ import {
   type ApiTask,
 } from '../api/client';
 import { ContextMenu, type ContextMenuItem } from '../components/ui/ContextMenu';
-import { useAuth } from '../contexts/AuthContext';
 import { useTaskDrag } from '../hooks/useTaskDrag';
 import { useTaskVisibilityPreferences } from '../hooks/useTaskVisibilityPreferences';
 import { flattenTasks } from '../utils/taskProjection';
@@ -52,7 +51,6 @@ function tempId() { return `temp-${++tempCounter}`; }
 export function InboxPage() {
   const { locale, t } = useI18n();
   const qc = useQueryClient();
-  const { logout } = useAuth();
   const phrase = useMemo(() => getPhrase('inbox', locale), [locale]);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [input, setInput] = useState('');
@@ -69,7 +67,7 @@ export function InboxPage() {
     inputRef.current?.focus();
   }, []);
 
-  const { data, error } = useQuery({
+  const { data } = useQuery({
     queryKey: ['inbox'],
     queryFn: fetchInboxTasks,
     staleTime: 30_000,
@@ -89,13 +87,6 @@ export function InboxPage() {
       setTasks(data.tasks.map(apiToTask));
     }
   }, [data]);
-
-  // If 401, log out
-  useEffect(() => {
-    if (error && (error as Error).message?.includes('401')) {
-      logout();
-    }
-  }, [error, logout]);
 
   const invalidate = useCallback(() => qc.invalidateQueries({ queryKey: ['inbox'] }), [qc]);
 

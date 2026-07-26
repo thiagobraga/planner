@@ -16,7 +16,6 @@ import {
   apiDeleteTask,
   type ApiTask,
 } from '../api/client';
-import { useAuth } from '../contexts/AuthContext';
 import { useTaskDrag } from '../hooks/useTaskDrag';
 import { useTaskVisibilityPreferences } from '../hooks/useTaskVisibilityPreferences';
 import { flattenTasks } from '../utils/taskProjection';
@@ -52,7 +51,6 @@ export function CollectionsPage() {
   const { locale, t } = useI18n();
   const { id = '' } = useParams();
   const qc = useQueryClient();
-  const { logout } = useAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [input, setInput] = useState('');
   const [editingId, setEditingId] = useState<string | undefined>();
@@ -64,7 +62,7 @@ export function CollectionsPage() {
     inputRef.current?.focus();
   }, [id]);
 
-  const { data, error } = useQuery({
+  const { data } = useQuery({
     queryKey: ['collection', id],
     queryFn: () => fetchCollectionView(id),
     staleTime: 30_000,
@@ -85,13 +83,6 @@ export function CollectionsPage() {
       setTasks(data.tasks.map(apiToTask));
     }
   }, [data]);
-
-  // If 401, log out
-  useEffect(() => {
-    if (error && (error as Error).message?.includes('401')) {
-      logout();
-    }
-  }, [error, logout]);
 
   const invalidate = useCallback(
     () => qc.invalidateQueries({ queryKey: ['collection', id] }),
