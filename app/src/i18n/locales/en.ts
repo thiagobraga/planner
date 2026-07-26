@@ -204,4 +204,6 @@ export const englishCatalog = {
   'habit.addSubHabit': 'Add sub-habit',
   'habit.deleteGroup': 'Delete group',
   'habit.optionsFor': 'Options for {{name}}',
+  'update.available': 'New version available',
+  'update.refresh': 'Refresh',
 } as const;

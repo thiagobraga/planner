@@ -206,4 +206,6 @@ export const portugueseBrazilCatalog = {
   'habit.addSubHabit': 'Adicionar sub-hábito',
   'habit.deleteGroup': 'Excluir grupo',
   'habit.optionsFor': 'Opções para {{name}}',
+  'update.available': 'Nova versão disponível',
+  'update.refresh': 'Atualizar',
 } satisfies TranslationCatalog;
