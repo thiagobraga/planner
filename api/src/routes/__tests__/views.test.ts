@@ -10,6 +10,7 @@ vi.mock("../../middleware/auth.js", () => ({
 }));
 
 const mockGetTodayView = vi.fn();
+const mockGetDailyTimelineView = vi.fn();
 const mockGetUpcomingView = vi.fn();
 const mockGetInboxView = vi.fn();
 const mockGetCollectionView = vi.fn();
@@ -17,6 +18,7 @@ const mockGetMonthView = vi.fn();
 
 vi.mock("../../services/viewService.js", () => ({
   getTodayView: (...args: unknown[]) => mockGetTodayView(...args),
+  getDailyTimelineView: (...args: unknown[]) => mockGetDailyTimelineView(...args),
   getUpcomingView: (...args: unknown[]) => mockGetUpcomingView(...args),
   getInboxView: (...args: unknown[]) => mockGetInboxView(...args),
   getCollectionView: (...args: unknown[]) => mockGetCollectionView(...args),
@@ -37,6 +39,28 @@ describe("views routes", () => {
     const res = await request(app).get("/api/v1/views/today");
     expect(res.status).toBe(200);
     expect(mockGetTodayView).toHaveBeenCalledWith("test-user");
+  });
+
+  it("GET /api/v1/views/timeline → calls getDailyTimelineView with the inclusive range", async () => {
+    mockGetDailyTimelineView.mockResolvedValue({
+      days: [{ date: "2026-07-20", tasks: [] }],
+      start: "2026-07-20",
+      end: "2026-07-20",
+    });
+    const res = await request(app).get(
+      "/api/v1/views/timeline?start=2026-07-20&end=2026-07-20",
+    );
+    expect(res.status).toBe(200);
+    expect(mockGetDailyTimelineView).toHaveBeenCalledWith(
+      "test-user",
+      "2026-07-20",
+      "2026-07-20",
+    );
+    expect(res.body).toEqual({
+      days: [{ date: "2026-07-20", tasks: [] }],
+      start: "2026-07-20",
+      end: "2026-07-20",
+    });
   });
 
   it("GET /api/v1/views/upcoming?days=7 → calls getUpcomingView with 7", async () => {

@@ -1,39 +1,18 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
+import type { ReactNode } from 'react';
 import { MemoryRouter } from 'react-router';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DailyPage } from '../DailyPage';
-import {
-  fetchTodayTasks,
-  fetchPreferences,
-  fetchCollections,
-  type ApiTask,
-  type Preferences,
-  type ApiCollection,
-} from '../../api/client';
+import { fetchCollections, fetchDailyTimeline, fetchPreferences, type ApiTask, type Preferences } from '../../api/client';
 
-const mockFetchTodayTasks = vi.mocked(fetchTodayTasks);
+const mockFetchDailyTimeline = vi.mocked(fetchDailyTimeline);
 const mockFetchPreferences = vi.mocked(fetchPreferences);
 const mockFetchCollections = vi.mocked(fetchCollections);
 
-const basePreferences: Preferences = {
-  userId: 'user-1',
-  locale: 'en',
-  timeZone: 'UTC',
-  weekStart: 'monday',
-  theme: 'light',
-  notificationsEnabled: true,
-  font: 'lora',
-  showDots: true,
-  background: 'beige',
-  smallCaps: false,
-  hideCompletedTasks: false,
-  hideOldNotes: false,
-};
-
 vi.mock('../../api/client', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../../api/client')>()),
-  fetchTodayTasks: vi.fn(),
+  fetchDailyTimeline: vi.fn(),
   fetchPreferences: vi.fn(),
   fetchCollections: vi.fn(),
   apiCreateTask: vi.fn(),
@@ -44,10 +23,6 @@ vi.mock('../../api/client', async (importOriginal) => ({
 
 vi.mock('../../contexts/AuthContext', () => ({
   useAuth: () => ({ logout: vi.fn() }),
-}));
-
-vi.mock('../../hooks/useTaskDrag', () => ({
-  useTaskDrag: () => ({ activeDragId: null }),
 }));
 
 vi.mock('../../hooks/useSync', () => ({
@@ -61,14 +36,59 @@ vi.mock('../../hooks/useMidnightTimer', () => ({
   }),
 }));
 
+vi.mock('../../hooks/useTaskDrag', () => ({
+  useTaskDrag: () => ({ activeDragId: null }),
+}));
+
 vi.mock('../../components/TaskList', () => ({
-  TaskList: ({ tasks }: { tasks: { id: string; title: string }[] }) => (
+  TaskList: ({
+    tasks,
+    onTaskToggle,
+  }: {
+    tasks: Array<{ id: string; title: string; isCompleted?: boolean }>;
+    onTaskToggle?: (id: string) => void;
+  }) => (
     <div data-testid="task-list">
-      {tasks.map((t) => (
-        <div key={t.id} data-testid={`task-${t.id}`}>
-          {t.title}
+      {tasks.map((task) => (
+        <div key={task.id}>
+          <span>{task.title}</span>
+          {onTaskToggle && (
+            <button
+              type="button"
+              aria-label={`${task.isCompleted ? 'Reopen' : 'Complete'}: ${task.title}`}
+              onClick={() => onTaskToggle(task.id)}
+            />
+          )}
         </div>
       ))}
+    </div>
+  ),
+}));
+
+vi.mock('../../components/CalendarWidget', () => ({
+  CalendarWidget: () => <div data-testid="calendar-widget" />,
+}));
+
+vi.mock('../../components/VirtualDay', () => ({
+  VirtualDay: ({
+    date,
+    children,
+    keepMounted = false,
+    className = '',
+  }: {
+    date: string;
+    children: ReactNode;
+    keepMounted?: boolean;
+    className?: string;
+  }) => (
+    <div
+      id={`daily-day-${date}`}
+      data-testid="virtual-day"
+      data-date={date}
+      data-keep-mounted={String(keepMounted)}
+      className={className}
+    >
+      {children}
     </div>
   ),
 }));
@@ -77,66 +97,52 @@ vi.mock('../../utils/phrases', () => ({
   getPhrase: () => 'Make today count',
 }));
 
-const today = new Date();
-const yesterday = new Date(today);
-yesterday.setDate(yesterday.getDate() - 1);
+const basePreferences: Preferences = {
+  userId: 'user-1',
+  locale: 'en',
+  timeZone: 'UTC',
+  weekStart: 'sunday',
+  theme: 'light',
+  notificationsEnabled: true,
+  font: 'lora',
+  showDots: true,
+  background: 'beige',
+  smallCaps: false,
+  hideCompletedTasks: false,
+  hideOldNotes: false,
+};
 
-function dateKey(d: Date): string {
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
+function fmtISO(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
 }
 
-function dayLabel(d: Date): string {
-  const month = d.toLocaleDateString('en-US', { month: 'short' }).toUpperCase();
-  const day = String(d.getDate()).padStart(2, '0');
-  const weekday = d.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase();
-  return `${month} ${day} ${weekday}`;
+function addDays(date: Date, amount: number): string {
+  const next = new Date(date);
+  next.setDate(next.getDate() + amount);
+  return fmtISO(next);
 }
 
-const todayKey = dateKey(today);
-const yesterdayKey = dateKey(yesterday);
+const today = fmtISO(new Date());
+const initialStart = addDays(new Date(), -14);
+const futureStart = addDays(new Date(), 1);
+const futureEnd = addDays(new Date(), 15);
 
-const overdueTask: ApiTask = {
-  id: 'task-overdue-1',
-  title: 'Overdue task',
-  priority: 4,
-  collectionId: 'col-1',
-  isCompleted: false,
-  orderValue: 0,
-  depth: 0,
-  type: 'task',
-  dueDate: yesterdayKey,
-};
-
-const todayTask: ApiTask = {
-  id: 'task-today-1',
-  title: 'Today task',
-  priority: 4,
-  collectionId: 'col-1',
-  isCompleted: false,
-  orderValue: 0,
-  depth: 0,
-  type: 'task',
-  dueDate: todayKey,
-  createdAt: new Date().toISOString(),
-};
-
-const mockCollections: ApiCollection[] = [
-  {
-    id: 'col-1',
-    userId: 'user-1',
-    parentId: null,
-    name: 'Work',
-    color: 'blue',
-    isInbox: false,
-    isArchived: false,
+function task(id: string, title: string, dueDate: string, isCompleted = false): ApiTask {
+  return {
+    id,
+    title,
+    priority: 4,
+    collectionId: 'collection-1',
+    isCompleted,
     orderValue: 0,
-    createdAt: '',
-    updatedAt: '',
-  },
-];
+    type: 'task',
+    dueDate,
+    createdAt: `${dueDate}T12:00:00Z`,
+  };
+}
 
 function renderPage() {
   const client = new QueryClient({
@@ -156,14 +162,25 @@ function renderPage() {
 }
 
 beforeEach(() => {
-  vi.clearAllMocks();
-  mockFetchTodayTasks.mockResolvedValue({ overdue: [overdueTask], today: [todayTask] });
+  capturedMidnightCb = null;
+  mockFetchDailyTimeline.mockReset();
+  mockFetchPreferences.mockReset();
+  mockFetchCollections.mockReset();
+
   mockFetchPreferences.mockResolvedValue(basePreferences);
-  mockFetchCollections.mockResolvedValue(mockCollections);
+  mockFetchCollections.mockResolvedValue([]);
 });
 
 describe('DailyPage', () => {
   it('renders header with "Daily" title and phrase', async () => {
+    mockFetchDailyTimeline.mockResolvedValue({
+      start: initialStart,
+      end: today,
+      days: [
+        { date: today, tasks: [] },
+      ],
+    });
+
     renderPage();
 
     const title = await screen.findByText('Daily');
@@ -177,21 +194,44 @@ describe('DailyPage', () => {
     expect(screen.getByRole('button', { name: 'Today' }).closest('.page-header-toolbar')).toHaveClass('sticky');
   });
 
-  it('renders overdue section label', async () => {
+  it('renders the timeline in descending future, today, and past order on first load', async () => {
+    mockFetchDailyTimeline
+      .mockResolvedValueOnce({
+        start: initialStart,
+        end: today,
+        days: [
+          { date: '2026-07-24', tasks: [task('task-past', 'Past task', '2026-07-24')] },
+          { date: today, tasks: [task('task-today', 'Today task', today)] },
+        ],
+      })
+      .mockResolvedValueOnce({
+        start: futureStart,
+        end: futureEnd,
+        days: [
+          { date: '2026-07-27', tasks: [task('task-future', 'Future task', '2026-07-27')] },
+        ],
+      });
+
     renderPage();
 
-    const overdueLabel = dayLabel(yesterday);
-    expect(await screen.findByText(overdueLabel)).toBeInTheDocument();
-  });
+    await screen.findByText('Future task');
 
-  it('renders today section label', async () => {
-    renderPage();
-
-    const todayLabel = dayLabel(today);
-    expect(await screen.findByText(todayLabel)).toBeInTheDocument();
+    expect(mockFetchDailyTimeline).toHaveBeenNthCalledWith(1, initialStart, today);
+    expect(mockFetchDailyTimeline).toHaveBeenNthCalledWith(2, futureStart, futureEnd);
+    expect([...screen.getAllByTestId('virtual-day')].map((node) => node.getAttribute('data-date'))).toEqual([
+      '2026-07-27',
+      today,
+      '2026-07-24',
+    ]);
   });
 
   it('renders "Add task" input', async () => {
+    mockFetchDailyTimeline.mockResolvedValue({
+      start: initialStart,
+      end: today,
+      days: [{ date: today, tasks: [] }],
+    });
+
     renderPage();
 
     expect(await screen.findByPlaceholderText('Add task…')).toBeInTheDocument();
@@ -200,17 +240,21 @@ describe('DailyPage', () => {
   it('triggers refetch and scrolls to today section when midnight timer fires', async () => {
     const scrollIntoViewMock = vi.fn();
     window.HTMLElement.prototype.scrollIntoView = scrollIntoViewMock;
+    mockFetchDailyTimeline.mockResolvedValue({
+      start: initialStart,
+      end: futureEnd,
+      days: [{ date: today, tasks: [] }],
+    });
 
     renderPage();
 
     await screen.findByText('Daily');
-    expect(mockFetchTodayTasks).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(mockFetchDailyTimeline).toHaveBeenCalledTimes(2));
 
     expect(capturedMidnightCb).toBeTypeOf('function');
-    capturedMidnightCb!();
+    act(() => capturedMidnightCb!());
 
-    expect(mockFetchTodayTasks).toHaveBeenCalledTimes(2);
-    expect(scrollIntoViewMock).toHaveBeenCalled();
+    await waitFor(() => expect(mockFetchDailyTimeline).toHaveBeenCalledTimes(4));
+    await waitFor(() => expect(scrollIntoViewMock).toHaveBeenCalled());
   });
 });
-
