@@ -243,18 +243,32 @@ When instructed to "work on this specs <some spec>", you must:
 
 1. **Read the Spec:** Start by carefully reading the provided `<spec path>`.
 2. **Isolate the Environment:**
-   - Create a new Git worktree in `/p/projects/planner/.git/worktrees/<feature-name>`.
-   - Create and check out a new branch for the feature within that worktree.
-3. **Local Development Setup:**
-   - Configure the frontend and backend to run on *different* ports to avoid collisions with the main environment.
-   - You may reuse the existing database if appropriate.
-   - Since the main branch runs on `https://planner.local`, use `http://localhost:<new-port>` to test your isolated implementation.
+   - Pick a short kebab-case slug for the feature (e.g. `task-filters`).
+   - Create a new Git worktree and branch:
+     ```bash
+     cd /p/projects/planner
+     git worktree add ../planner-<slug> -b feat/<slug>
+     cd ../planner-<slug>
+     ```
+3. **Local Development Setup (Compose isolation):**
+   - Copy `.env.example` to `.env` in the worktree root and fill in the required values.
+   - Add the following two variables to `.env` to isolate Docker resources:
+     ```bash
+     COMPOSE_PROJECT_NAME=planner-<slug>
+     APP_SUBDOMAIN=<slug>
+     ```
+   - Add `<slug>.local` and `api.<slug>.local` to `/etc/hosts` (pointing to `127.0.0.1`).
+   - Start the isolated stack: `docker compose up -d`.
+   - The feature instance is now reachable at `https://<slug>.local`, fully isolated from the main `https://planner.local`. Traefik routes, container names, and volumes are all namespaced automatically.
 4. **Implementation & Verification:**
    - Implement the feature according to the spec.
-   - Take screenshots of the implemented feature for review. Do *not* commit these screenshots to version control.
+   - **Open a browser** at `https://<slug>.local` to visually verify the implementation so the user can see it. Take screenshots for the PR.
+   - Do *not* commit screenshots to version control.
 5. **Cleanup & PR:**
-   - Once complete, clean up any temporary containers you created.
+   - Once complete, tear down the isolated stack: `docker compose down -v` (from the worktree directory).
+   - Remove the worktree: `cd /p/projects/planner && git worktree remove ../planner-<slug>`.
    - Create a Pull Request against the `main` branch.
    - Insert (upload or paste) the screenshots directly into the PR comments.
    - Provide the PR link to the user.
    - Always do your best and ask for clarification if any requirements are unclear.
+
