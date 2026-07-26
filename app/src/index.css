@@ -373,15 +373,21 @@ button,
 
 /* The block travelling under the pointer: the rows themselves, lifted. */
 .planner-drag-overlay--block {
-  border-radius: 6px;
   /*
-    Outline, not border, and no vertical padding: both add to the box, and a
-    lifted row that stands 6px taller than the one it came from reads as a
-    different object rather than the same row picked up.
+    Square, like every row in the list. A rounded lift reads as a copy of the
+    block rather than the block itself.
+  */
+  border-radius: 0;
+  /*
+    Outline, not border, and no padding on any side: all of them add to the box,
+    and a lifted row that stands taller or wider than the one it came from reads
+    as a different object rather than the same row picked up. The right padding
+    in particular painted the overlay's own cream past the end of the rows,
+    leaving a strip that the translucency never appeared to reach.
   */
   outline: 1px solid var(--color-dot);
   background: var(--color-cream);
-  padding: 0 8px 0 0;
+  padding: 0;
   box-shadow: 0 4px 16px rgba(44, 44, 44, 0.18);
   max-width: 420px;
   /* Translucent, so the rows the block is passing over stay readable beneath it. */
@@ -398,7 +404,6 @@ button,
 .planner-drag-overlay--block:has(.habit-timeline-block-preview) {
   max-width: none;
   width: max-content;
-  padding: 0;
 }
 
 /*
