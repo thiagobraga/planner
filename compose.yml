@@ -7,6 +7,11 @@ services:
     container_name: ${COMPOSE_PROJECT_NAME:-planner}-app
     networks: [default, proxy]
     volumes: [./app:/app]
+    # /app is bind-mounted, so anything the container writes there (Vite's
+    # dep cache, node_modules) lands on the host owned by whoever the container
+    # runs as. Without this the dev server runs as root and leaves files the
+    # host user cannot delete - `git worktree remove` then fails on cleanup.
+    user: "${DOCKER_USER:-1000:1000}"
     environment:
       VITE_API_URL: http://api:4000
     depends_on: [api]
@@ -25,6 +30,10 @@ services:
     container_name: ${COMPOSE_PROJECT_NAME:-planner}-api
     networks: [default, proxy]
     volumes: [./api:/app]
+    # Same bind-mount reasoning as app. The image already runs as `node`, which
+    # happens to be uid 1000; naming it here keeps the two services consistent
+    # and lets a host whose uid is not 1000 override both at once.
+    user: "${DOCKER_USER:-1000:1000}"
     environment:
       PORT: 4000
       DATABASE_URL: postgres://${POSTGRES_USER:-planner}:${POSTGRES_PASSWORD:-planner}@postgres:5432/${POSTGRES_DB:-planner}

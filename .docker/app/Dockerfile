@@ -5,9 +5,10 @@ RUN npm ci && npm run build && npm cache clean --force
 
 FROM node:24.18.0-alpine3.24 AS development
 WORKDIR /app
+COPY --chown=node:node --chmod=755 .docker/app/entrypoint.sh /entrypoint.sh
 COPY --chown=node:node app ./
-RUN npm ci
 EXPOSE 5173
+ENTRYPOINT ["/entrypoint.sh"]
 CMD ["npm", "run", "dev"]
 
 FROM nginx:1.31-alpine AS production
