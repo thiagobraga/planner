@@ -252,17 +252,18 @@ When instructed to "work on this specs <some spec>", you must:
      ```
 3. **Local Development Setup (Compose isolation):**
    - Copy `.env.example` to `.env` in the worktree root and fill in the required values.
-   - Add the following two variables to `.env` to isolate Docker resources:
+   - Use your agent's pre-configured subdomain (`claude.planner`, `codex.planner`, or `antigravity.planner`) in `.env` to isolate Docker resources:
      ```bash
-     COMPOSE_PROJECT_NAME=planner-<slug>
-     APP_SUBDOMAIN=<slug>
+     COMPOSE_PROJECT_NAME=planner-<agent>
+     APP_SUBDOMAIN=<agent>.planner
      ```
-   - Add `<slug>.local` and `api.<slug>.local` to `/etc/hosts` (pointing to `127.0.0.1`).
+     *(Substitute `<agent>` with `claude`, `codex`, or `antigravity` depending on which AI agent model you are).*
+   - Note: `/etc/hosts` and SSL certificates are pre-configured for `claude.planner.local`, `codex.planner.local`, and `antigravity.planner.local`.
    - Start the isolated stack: `docker compose up -d`.
-   - The feature instance is now reachable at `https://<slug>.local`, fully isolated from the main `https://planner.local`. Traefik routes, container names, and volumes are all namespaced automatically.
+   - The feature instance is now reachable at `https://<agent>.planner.local`, fully isolated from the main `https://planner.local`. Traefik routes, container names, and volumes are all namespaced automatically.
 4. **Implementation & Verification:**
    - Implement the feature according to the spec.
-   - **Open a browser** at `https://<slug>.local` to visually verify the implementation so the user can see it. Take screenshots for the PR.
+   - **Open a browser** at `https://<agent>.planner.local` to visually verify the implementation so the user can see it. Take screenshots for the PR.
    - Do *not* commit screenshots to version control.
 5. **Cleanup & PR:**
    - Once complete, tear down the isolated stack: `docker compose down -v` (from the worktree directory).
