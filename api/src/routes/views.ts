@@ -1,12 +1,32 @@
 import { Router, type Request, type Response, type NextFunction } from "express";
 
-import { getTodayView, getUpcomingView, getInboxView, getCollectionView, getMonthView } from "../services/viewService.js";
+import {
+  getTodayView,
+  getDailyTimelineView,
+  getUpcomingView,
+  getInboxView,
+  getCollectionView,
+  getMonthView,
+} from "../services/viewService.js";
 
 const router: ReturnType<typeof Router> = Router();
 
 router.get("/today", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const view = await getTodayView(req.userId!);
+    res.json(view);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get("/timeline", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const view = await getDailyTimelineView(
+      req.userId!,
+      String(req.query.start ?? ""),
+      String(req.query.end ?? ""),
+    );
     res.json(view);
   } catch (err) {
     next(err);

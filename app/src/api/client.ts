@@ -279,6 +279,17 @@ export async function fetchTodayTasks(): Promise<{ overdue: ApiTask[]; today: Ap
   return request('/views/today');
 }
 
+export interface DailyTimelineView {
+  days: Array<{ date: string; tasks: ApiTask[] }>;
+  start: string;
+  end: string;
+}
+
+export async function fetchDailyTimeline(start: string, end: string): Promise<DailyTimelineView> {
+  const query = new URLSearchParams({ start, end });
+  return request(`/views/timeline?${query.toString()}`);
+}
+
 export async function fetchUpcomingTasks(): Promise<Array<{ date: string; tasks: ApiTask[] }>> {
   return request('/views/upcoming');
 }
