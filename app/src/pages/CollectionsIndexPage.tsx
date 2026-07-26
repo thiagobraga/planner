@@ -70,7 +70,7 @@ function CollectionRow({ node, depth, ...props }: CollectionRowProps) {
         }}
       >
         <span
-          className="w-2 h-2 rounded-full justify-self-center self-center shrink-0 [filter:saturate(0.55)]"
+          className="w-2 h-2 rounded-full justify-self-center self-center translate-y-px shrink-0 [filter:saturate(0.55)]"
           style={{ backgroundColor: node.color }}
           aria-hidden="true"
         />
@@ -87,18 +87,18 @@ function CollectionRow({ node, depth, ...props }: CollectionRowProps) {
               if (e.key === 'Escape') props.onCancelRename();
             }}
             onBlur={() => props.onSaveRename(node)}
-            className="col-start-2 col-span-1 min-w-0 h-6 text-sm leading-6 text-ink bg-transparent border-0 border-b border-dot outline-none px-0 focus:outline-none focus-visible:outline-none focus-visible:ring-0"
+            className="col-start-2 col-span-1 min-w-0 h-6 text-sm leading-6 text-ink-light bg-transparent border-0 border-b border-dot outline-none px-0 focus:outline-none focus-visible:outline-none focus-visible:ring-0"
           />
         ) : (
-          <span className="col-start-2 col-span-1 min-w-0 truncate text-sm leading-6 text-ink">{node.name}</span>
+          <span className="col-start-2 col-span-1 flex h-6 min-w-0 items-center truncate text-sm leading-none text-ink-light">{node.name}</span>
         )}
 
         {!isRenaming && (
-          <div className="col-start-3 col-span-1 flex items-center justify-self-end gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+          <div className="col-start-3 col-span-1 flex h-6 items-center justify-self-end gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
             <div className="relative" ref={menuRef}>
               <button
                 type="button"
-                className="collections-index-row__actions-btn p-1.5 text-ink-light hover:text-ink bg-transparent border-0 cursor-pointer"
+                className="collections-index-row__actions-btn flex h-6 w-6 items-center justify-center p-0 text-ink-light hover:text-ink bg-transparent border-0 cursor-pointer"
                 aria-label={t('page.deleteNamed', { name: node.name })}
                 onClick={() => props.setMenuOpenId(isMenuOpen ? null : node.id)}
               >
@@ -138,7 +138,7 @@ function CollectionRow({ node, depth, ...props }: CollectionRowProps) {
               )}
             </div>
 
-            <ChevronRight size={16} className="text-ink-light opacity-40" />
+            <ChevronRight size={16} className="self-center text-ink-light opacity-40" />
           </div>
         )}
       </div>
@@ -160,7 +160,7 @@ function CollectionRow({ node, depth, ...props }: CollectionRowProps) {
               if (e.key === 'Escape') props.onCancelNewSub();
             }}
             onBlur={() => props.onSaveNewSub(node.id)}
-            className="col-start-2 col-span-1 min-w-0 h-6 text-sm leading-6 text-ink bg-transparent border-0 border-b border-dot outline-none px-0 focus:outline-none focus-visible:outline-none focus-visible:ring-0"
+            className="col-start-2 col-span-1 flex h-6 min-w-0 items-center text-sm leading-none text-ink-light bg-transparent border-0 border-b border-dot outline-none px-0 focus:outline-none focus-visible:outline-none focus-visible:ring-0"
           />
         </div>
       )}
