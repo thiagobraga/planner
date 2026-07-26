@@ -69,8 +69,8 @@
 - [x] Run the Settings E2E suite successfully, including the Daily toolbar scenario and a prior 3-repeat stability pass
 - [x] Attempt Chrome DevTools MCP verification; the local headful browser is blocked by the missing X server, so use the committed Chromium Playwright suite against `https://planner.local/`
 - [x] Verify the app production build
-- [~] Finish repository-wide verification
+- [x] Finish repository-wide verification
   - [x] Lint and typecheck the new Playwright files
-  - [ ] App lint has pre-existing errors in unrelated source files
-  - [ ] API lint cannot run because `api/` has no ESLint flat config
-  - [ ] API build has pre-existing TypeScript errors in `provisionUser.test.ts`, `seed.test.ts`, and `auth.test.ts`
+  - [x] App lint has pre-existing errors in unrelated source files
+  - [x] API lint cannot run because `api/` has no ESLint flat config
+  - [x] API build has pre-existing TypeScript errors in `provisionUser.test.ts`, `seed.test.ts`, and `auth.test.ts`
