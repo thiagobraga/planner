@@ -536,6 +536,66 @@ textarea:focus-visible {
   opacity: 0.7;
 }
 
+/* Collections index page */
+.collections-index-page {
+  --page-header-toolbar-space: 48px;
+}
+.collections-index-row {
+  border-radius: 6px;
+  transition: background 120ms ease;
+
+  &:hover {
+    background: var(--planner-sidebar-hover-bg);
+  }
+}
+.collections-index-row__actions-btn {
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+.collections-index-row:hover .collections-index-row__actions-btn {
+  opacity: 0.7;
+}
+/* On touch devices, always show the actions button */
+@media (hover: none) {
+  .collections-index-row__actions-btn {
+    opacity: 0.5;
+  }
+}
+.collections-index-menu {
+  position: absolute;
+  right: 8px;
+  top: 100%;
+  z-index: 40;
+  min-width: 160px;
+  background: var(--planner-page-bg, var(--color-cream));
+  border: 1px solid var(--color-dot);
+  border-radius: 6px;
+  padding: 4px 0;
+  box-shadow: 0 8px 32px rgba(44, 44, 44, 0.15);
+}
+.collections-index-menu button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 12px;
+  font: inherit;
+  font-size: 13px;
+  line-height: 24px;
+  color: var(--color-ink);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+
+  &:hover {
+    background: var(--planner-sidebar-hover-bg);
+  }
+}
+.collections-index-menu button[data-destructive] {
+  color: var(--color-accent);
+}
+
 /* Mobile sidebar drawer - below 640px the collapsed sidebar is shown instead, no drawer needed */
 @media (max-width: 639px) {
   .main-content {

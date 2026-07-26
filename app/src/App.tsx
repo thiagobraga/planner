@@ -11,6 +11,7 @@ import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
 import { ResetPasswordPage } from './pages/ResetPasswordPage';
 import { InboxPage } from './pages/InboxPage';
 import { CollectionsPage } from './pages/CollectionsPage';
+import { CollectionsIndexPage } from './pages/CollectionsIndexPage';
 import { DailyPage } from './pages/DailyPage';
 import { HabitsPage } from './pages/HabitsPage';
 import { MonthlyPage } from './pages/MonthlyPage';
@@ -40,6 +41,7 @@ function AppRoutes() {
           <Route path="/settings/:section" element={<SettingsPage />} />
           <Route path="/styleguide" element={<StyleguidePage />} />
           <Route path="/help" element={<HelpPage />} />
+          <Route path="/collections" element={<CollectionsIndexPage />} />
           <Route path="/collection/:id" element={<CollectionsPage />} />
         </Route>
       </Routes>
