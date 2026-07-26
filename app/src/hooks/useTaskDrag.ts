@@ -202,13 +202,31 @@ export function useTaskDrag({ tasks, setTasks, scope, onError, onMoved }: UseTas
             return prev.map((t) => {
               const authoritative = byId.get(t.id);
               if (!authoritative) return t;
+
+              const parentTaskId = authoritative.parentTaskId ?? undefined;
+              const dueDate = toISODate(authoritative.dueDate);
+              const indent = authoritative.depth ?? t.indent;
+
+              // Same reference when nothing actually changed, so TaskItem's
+              // React.memo can skip re-rendering this row - the trimmed payload
+              // is wasted if every patched task still gets a fresh reference.
+              if (
+                parentTaskId === t.parentTaskId &&
+                authoritative.collectionId === t.collectionId &&
+                dueDate === t.dueDate &&
+                authoritative.orderValue === t.orderValue &&
+                indent === t.indent
+              ) {
+                return t;
+              }
+
               return {
                 ...t,
-                parentTaskId: authoritative.parentTaskId ?? undefined,
+                parentTaskId,
                 collectionId: authoritative.collectionId,
-                dueDate: toISODate(authoritative.dueDate),
+                dueDate,
                 orderValue: authoritative.orderValue,
-                indent: authoritative.depth ?? t.indent,
+                indent,
               };
             });
           });
@@ -321,9 +339,6 @@ export function resolveMove({
   // Dropped on another task row.
   if (active.subtreeIds.includes(over.taskId)) return null;
 
-  const overIndex = rows.findIndex((r) => r.id === over.taskId);
-  if (overIndex === -1) return null;
-
   // On Daily the row underneath defines which day's ordering applies, so the
   // page's own scope is only a fallback for a target with no date of its own.
   const targetDay = scope.kind === 'day' ? (over.dueDate ?? scope.dueDate) : null;
@@ -338,10 +353,9 @@ export function resolveMove({
   const scopedRows = targetDay
     ? rows.filter((r) => r.task.dueDate === targetDay || active.subtreeIds.includes(r.id))
     : rows;
-  const scopedIndex = scopedRows.findIndex((r) => r.id === over.taskId);
-  if (scopedIndex === -1) return null;
+  if (!scopedRows.some((r) => r.id === over.taskId)) return null;
 
-  const projected = projectMove(scopedRows, active.taskId, scopedIndex, offsetX);
+  const projected = projectMove(scopedRows, active.taskId, over.taskId, offsetX);
 
   // Moving to another date is a coarse gesture: it covers a lot of vertical
   // distance, and the pointer drifts sideways on the way. Read as nesting

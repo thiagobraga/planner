@@ -1,23 +1,39 @@
 # Task Move Fix — Tasks
 
-- [ ] `app/src/utils/taskProjection.ts`: change `projectMove`/`applyProjection` to take `overId: string | null`, resolve index internally via shared `resolveAt(rest, overId)` helper
-- [ ] `app/src/hooks/useTaskDrag.ts`: update `resolveMove` to pass `over.taskId` instead of pre-removal `scopedIndex`
-- [ ] `app/src/components/TaskList.tsx`: update `projectMove` call to pass `overId` directly instead of derived `overIndex`
-- [ ] `app/src/utils/__tests__/taskProjection.test.ts`: migrate call sites to `overId`; add regression test for dragging an earlier sibling down past a later one
-- [ ] `app/src/hooks/__tests__/useTaskDrag.parity.test.ts`: migrate call site; add `position` parity assertion
-- [ ] `api/src/services/taskService.ts`: add `midpointOrFallback()` helper
-- [ ] `api/src/services/taskService.ts`: rewrite `renumberCollectionScope` for midpoint insertion + full-renumber collision fallback
-- [ ] `api/src/services/taskService.ts`: delete `normalizeCollectionScope` and its call site (`sourceDiffers` branch)
-- [ ] `api/src/services/taskService.ts`: rewrite `renumberDayScope` for midpoint insertion (seeded-neighbors fast path) + existing full-seed fallback
-- [ ] `api/src/services/taskService.ts`: delete `normalizeDayScope` and its call site
-- [ ] `api/src/services/taskService.ts`: replace `reorderedResult` re-query in `moveTask` with direct use of renumber helpers' return values
-- [ ] `api/src/services/taskService.ts`: add `MovedTaskSummary` type, map `moved`/`reordered` to it before returning
-- [ ] `app/src/api/client.ts`: change `TaskMoveResponse.moved`/`.reordered` to `MovedTaskSummary[]`
-- [ ] `app/src/hooks/useTaskDrag.ts`: update `.then()` handler types; add no-op-diff guard to preserve object identity for unchanged tasks
-- [ ] `api/src/services/__tests__/taskService.move.test.ts`: update gap-write assertions, add collision-fallback test, split day-scope seeded/unseeded test cases
-- [ ] Optional: migration `031_task_collection_scope_index.sql` adding `idx_tasks_collection_scope_ordered` (use `db-migration` skill)
-- [ ] Run `docker compose exec api npm test && docker compose exec app npm test`, both builds
-- [ ] Manual verification: wrong-position repro, response payload size in Network tab, React Profiler re-render check, cross-collection/cross-date drags
+- [x] `app/src/utils/taskProjection.ts`: change `projectMove`/`applyProjection` to take `overId: string | null`, resolve index internally via shared `resolveAt(rest, overId)` helper
+- [x] `app/src/hooks/useTaskDrag.ts`: update `resolveMove` to pass `over.taskId` instead of pre-removal `scopedIndex`
+- [x] `app/src/components/TaskList.tsx`: update `projectMove` call to pass `overId` directly instead of derived `overIndex`
+- [x] `app/src/utils/__tests__/taskProjection.test.ts`: migrate call sites to `overId`; add regression test for dragging an earlier sibling down past a later one
+- [x] `app/src/hooks/__tests__/useTaskDrag.parity.test.ts`: migrate call site; add `position` parity assertion
+- [x] `api/src/services/taskService.ts`: add `midpointOrFallback()` helper
+- [x] `api/src/services/taskService.ts`: rewrite `renumberCollectionScope` for midpoint insertion + full-renumber collision fallback
+- [x] `api/src/services/taskService.ts`: delete `normalizeCollectionScope` and its call site (`sourceDiffers` branch)
+- [x] `api/src/services/taskService.ts`: rewrite `renumberDayScope` for midpoint insertion (seeded-neighbors fast path) + existing full-seed fallback
+- [x] `api/src/services/taskService.ts`: delete `normalizeDayScope` and its call site
+- [x] `api/src/services/taskService.ts`: replace `reorderedResult` re-query in `moveTask` with direct use of renumber helpers' return values
+- [x] `api/src/services/taskService.ts`: add `MovedTaskSummary` type, map `moved`/`reordered` to it before returning
+- [x] `app/src/api/client.ts`: change `TaskMoveResponse.moved`/`.reordered` to `MovedTaskSummary[]`
+- [x] `app/src/hooks/useTaskDrag.ts`: update `.then()` handler types; add no-op-diff guard to preserve object identity for unchanged tasks
+- [x] `api/src/services/__tests__/taskService.move.test.ts`: update gap-write assertions, add collision-fallback test, split day-scope seeded/unseeded test cases
+- [x] Optional: migration `031_task_collection_scope_index.sql` adding `idx_tasks_collection_scope_ordered` (use `db-migration` skill)
+- [x] Run `docker compose exec api npm test && docker compose exec app npm test`, both builds
+- [~] Manual verification: wrong-position repro, response payload size in Network tab, React Profiler re-render check, cross-collection/cross-date drags
+  - [x] Wrong-position repro (Daily): registered a throwaway test account against
+    the running isolated stack (localhost:5174/4001, shared dev DB), created 3
+    day-scoped tasks A/B/C, dragged A past C. Confirmed directly in Postgres
+    (not just the UI) that the result is `B, A, C` — A landed immediately
+    before C, matching the fix, not past it. Test account and its data were
+    deleted afterward.
+  - [ ] Response payload size in Network tab / React Profiler re-render check /
+    cross-collection drag: not completed. The MCP browser-automation `drag`
+    tool doesn't reliably trigger this app's dnd-kit pointer sensor (the one
+    keyboard-driven drop that did fire a move request also intermittently
+    toggled task completion via a colliding Space-key shortcut, unrelated to
+    this branch) — a tooling limitation of this verification pass, not a
+    finding against the fix. The two independent whole-branch code reviews
+    traced the payload-size and orderValue-correctness claims through the
+    actual code and pinned them with tests instead; a human should still spot
+    check this in a real browser before/after merging if that matters.
 
 ## Migrated from .specs/2026-07-25-drag-polish-defects/task.md
 

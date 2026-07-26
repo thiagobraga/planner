@@ -800,6 +800,27 @@ interface SubtreeRow {
   due_date: string | null;
 }
 
+/** The fields a client needs to patch one task's position/place in the tree. */
+interface MovedTaskSummary {
+  id: string;
+  parentTaskId: string | null;
+  collectionId: string;
+  dueDate: string | null;
+  orderValue: number;
+  depth: number;
+}
+
+function toMovedTaskSummary(task: ReturnType<typeof formatTask>): MovedTaskSummary {
+  return {
+    id: task.id,
+    parentTaskId: task.parentTaskId,
+    collectionId: task.collectionId,
+    dueDate: task.dueDate,
+    orderValue: task.orderValue,
+    depth: task.depth,
+  };
+}
+
 /**
  * Structurally move a task, carrying its entire descendant subtree.
  *
@@ -939,77 +960,49 @@ export async function moveTask(taskId: string, userId: string, input: MoveTaskIn
           await appendToDayScope(client, task.user_id, id, destDueDate);
         }
       }
-      if (task.due_date) {
-        await normalizeDayScope(client, task.user_id, task.due_date);
-      }
     }
 
     // ── Reposition within the target ordering scope ────────────────────────────
+    // Sibling order values are already gap-spaced 1000 apart, so a single-row
+    // drag usually needs one midpoint write, not a renumber of the whole list.
+    // Removing the task from its old list needs no separate cleanup: gap
+    // numbering tolerates a slightly bigger hole where it used to sit.
+    let reordered: MovedTaskSummary[];
     if (input.scope.kind === 'collection') {
-      await renumberCollectionScope(client, {
+      reordered = await renumberCollectionScope(client, {
         collectionId: destCollectionId,
         sectionId: destSectionId,
         parentTaskId: input.parentTaskId,
         movedTaskId: taskId,
         position: input.position,
+        depth: rootNewDepth,
+        movedDueDate: destDueDate,
       });
     } else {
-      await renumberDayScope(client, {
+      reordered = await renumberDayScope(client, {
         userId: task.user_id,
         date: input.scope.dueDate,
         movedTaskId: taskId,
         position: input.position,
-      });
-    }
-
-    // The source list closes the gap the task left behind, but only when it is a
-    // different list - otherwise this would undo the renumbering just applied.
-    const sourceDiffers =
-      crossesCollection ||
-      (task.parent_task_id ?? null) !== (input.parentTaskId ?? null) ||
-      (task.section_id ?? null) !== (destSectionId ?? null);
-    if (sourceDiffers) {
-      await normalizeCollectionScope(client, {
-        collectionId: task.collection_id,
-        sectionId: task.section_id,
-        parentTaskId: task.parent_task_id,
+        movedCollectionId: destCollectionId,
+        movedParentTaskId: input.parentTaskId,
+        movedDepth: rootNewDepth,
+        movedOrderValue: task.order_value,
       });
     }
 
     await client.query('COMMIT');
 
     // ── Report every record the client must patch ──────────────────────────────
+    // Scoped to just the dragged subtree - not bloated, no change needed here.
     const movedResult = await pool.query(
       `SELECT * FROM tasks WHERE id = ANY($1::uuid[]) ORDER BY depth ASC, order_value ASC`,
       [subtreeIds],
     );
-    const moved = (movedResult.rows as TaskRow[]).map(formatTask);
+    const movedTasks = (movedResult.rows as TaskRow[]).map(formatTask);
+    const moved = movedTasks.map(toMovedTaskSummary);
 
-    const reorderedResult = await pool.query(
-      `SELECT DISTINCT t.* FROM tasks t
-       LEFT JOIN task_order o ON o.task_id = t.id AND o.scope_type = 'day'
-       WHERE t.id <> ALL($1::uuid[])
-         AND (
-           (t.collection_id = $2 AND t.section_id IS NOT DISTINCT FROM $3
-              AND t.parent_task_id IS NOT DISTINCT FROM $4)
-           OR (t.collection_id = $5 AND t.section_id IS NOT DISTINCT FROM $6
-              AND t.parent_task_id IS NOT DISTINCT FROM $7)
-           OR o.scope_id = ANY($8::varchar[])
-         )`,
-      [
-        subtreeIds,
-        destCollectionId,
-        destSectionId,
-        input.parentTaskId,
-        task.collection_id,
-        task.section_id,
-        task.parent_task_id,
-        [destDueDate, task.due_date].filter(Boolean),
-      ],
-    );
-    const reordered = (reorderedResult.rows as TaskRow[]).map(formatTask);
-
-    const root = moved.find((t) => t.id === taskId)!;
+    const root = movedTasks.find((t) => t.id === taskId)!;
     publishEvent(
       buildEvent({
         entityType: 'task',
@@ -1049,7 +1042,31 @@ async function verifyCollectionAccess(collectionId: string, userId: string): Pro
 
 type Client = PoolClient;
 
-/** Place `movedTaskId` at `position` among its new siblings, gap-numbered. */
+/**
+ * The order value that sits strictly between two flanking siblings (or beyond
+ * a missing side, following the existing 1000-unit gap convention: siblings
+ * are spaced ~1000 apart and the first sits near 0), or `null` if the gap has
+ * collapsed and there is no integer room left - e.g. adjacent values `0` and
+ * `1`, or prepending before a sibling already sitting at `0`.
+ */
+function midpointOrFallback(prev: number | null, next: number | null): number | null {
+  if (prev === null && next === null) return 0;
+  if (prev === null) {
+    const candidate = next! - 1000;
+    return candidate >= 0 ? candidate : null;
+  }
+  if (next === null) return prev + 1000;
+  const mid = Math.floor((prev + next) / 2);
+  return mid > prev && mid < next ? mid : null;
+}
+
+/**
+ * Place `movedTaskId` at `position` among its new siblings, gap-numbered.
+ * Siblings are already spaced ~1000 apart, so the common case is a single
+ * midpoint write for the moved task alone; only a collapsed gap falls back to
+ * renumbering the whole list. Returns the rows actually written, mappable to
+ * `MovedTaskSummary` by the caller without a second query.
+ */
 async function renumberCollectionScope(
   client: Client,
   opts: {
@@ -1058,10 +1075,12 @@ async function renumberCollectionScope(
     parentTaskId: string | null;
     movedTaskId: string;
     position: number;
+    depth: number;
+    movedDueDate: string | null;
   },
-): Promise<void> {
+): Promise<MovedTaskSummary[]> {
   const siblingsResult = await client.query(
-    `SELECT id FROM tasks
+    `SELECT id, order_value, due_date FROM tasks
      WHERE collection_id = $1
        AND section_id IS NOT DISTINCT FROM $2
        AND parent_task_id IS NOT DISTINCT FROM $3
@@ -1070,52 +1089,78 @@ async function renumberCollectionScope(
      FOR UPDATE`,
     [opts.collectionId, opts.sectionId, opts.parentTaskId, opts.movedTaskId],
   );
-  const ids = (siblingsResult.rows as { id: string }[]).map((r) => r.id);
-  ids.splice(Math.min(opts.position, ids.length), 0, opts.movedTaskId);
+  const siblings = siblingsResult.rows as { id: string; order_value: number; due_date: string | null }[];
 
-  for (let i = 0; i < ids.length; i++) {
+  const summarize = (id: string, orderValue: number, dueDate: string | null): MovedTaskSummary => ({
+    id,
+    parentTaskId: opts.parentTaskId,
+    collectionId: opts.collectionId,
+    dueDate,
+    orderValue,
+    depth: opts.depth,
+  });
+
+  const clampedPosition = Math.min(opts.position, siblings.length);
+  const prevValue = clampedPosition > 0 ? siblings[clampedPosition - 1].order_value : null;
+  const nextValue = clampedPosition < siblings.length ? siblings[clampedPosition].order_value : null;
+  const midpoint = midpointOrFallback(prevValue, nextValue);
+
+  if (midpoint !== null) {
     await client.query(`UPDATE tasks SET order_value = $1, updated_at = NOW() WHERE id = $2`, [
-      i * 1000,
-      ids[i],
+      midpoint,
+      opts.movedTaskId,
     ]);
+    return [summarize(opts.movedTaskId, midpoint, opts.movedDueDate)];
   }
+
+  // Collision: the gap at the target slot has collapsed. Fall back to the
+  // full splice-and-rewrite so every sibling stays 1000 apart again.
+  const ordered: { id: string; due_date: string | null }[] = siblings.map((s) => ({
+    id: s.id,
+    due_date: s.due_date,
+  }));
+  ordered.splice(clampedPosition, 0, { id: opts.movedTaskId, due_date: opts.movedDueDate });
+
+  const written: MovedTaskSummary[] = [];
+  for (let i = 0; i < ordered.length; i++) {
+    const orderValue = i * 1000;
+    await client.query(`UPDATE tasks SET order_value = $1, updated_at = NOW() WHERE id = $2`, [
+      orderValue,
+      ordered[i].id,
+    ]);
+    written.push(summarize(ordered[i].id, orderValue, ordered[i].due_date));
+  }
+  return written;
 }
 
-/** Close gaps left in a list a task moved out of, preserving relative order. */
-async function normalizeCollectionScope(
-  client: Client,
-  opts: { collectionId: string; sectionId: string | null; parentTaskId: string | null },
-): Promise<void> {
-  const result = await client.query(
-    `SELECT id FROM tasks
-     WHERE collection_id = $1
-       AND section_id IS NOT DISTINCT FROM $2
-       AND parent_task_id IS NOT DISTINCT FROM $3
-     ORDER BY order_value ASC, created_at ASC
-     FOR UPDATE`,
-    [opts.collectionId, opts.sectionId, opts.parentTaskId],
-  );
-  const ids = (result.rows as { id: string }[]).map((r) => r.id);
-  for (let i = 0; i < ids.length; i++) {
-    await client.query(`UPDATE tasks SET order_value = $1, updated_at = NOW() WHERE id = $2`, [
-      i * 1000,
-      ids[i],
-    ]);
-  }
-}
-
-/** Place a task at `position` within one day's list, gap-numbered. */
+/**
+ * Place a task at `position` within one day's list, gap-numbered. A midpoint
+ * write for the moved task alone is only valid once both flanking neighbors
+ * already carry a materialized `task_order` row for this day - an unseeded
+ * neighbor has no `position` to compute a midpoint from. Otherwise falls back
+ * to seeding the whole day from its current rendered order and rewriting it,
+ * which is what makes the first drag into a day stick. Returns the rows
+ * actually written, mappable to `MovedTaskSummary` by the caller.
+ */
 async function renumberDayScope(
   client: Client,
-  opts: { userId: string; date: string; movedTaskId: string; position: number },
-): Promise<void> {
-  // Seed from every task on this day, not only those already carrying a day
-  // position. The first drag into a day would otherwise renumber a list of one
-  // and rank the moved task above tasks it was dropped below - they hold no
-  // position to compare against. Reading the day in its current rendered order
-  // and writing the whole list back is what makes the first drag stick.
+  opts: {
+    userId: string;
+    date: string;
+    movedTaskId: string;
+    position: number;
+    movedCollectionId: string;
+    movedParentTaskId: string | null;
+    movedDepth: number;
+    movedOrderValue: number;
+  },
+): Promise<MovedTaskSummary[]> {
+  // Read every task on this day, not only those already carrying a day
+  // position - a task that has never been dragged in Daily is seeded
+  // alongside those that have. The LEFT JOIN's NULL `position` is also how a
+  // seeded/unseeded neighbor is told apart for the fast-path check below.
   const result = await client.query(
-    `SELECT t.id AS task_id
+    `SELECT t.id AS task_id, t.collection_id, t.parent_task_id, t.depth, t.order_value, o.position
      FROM tasks t
      LEFT JOIN task_order o
        ON o.task_id = t.id AND o.scope_type = 'day' AND o.scope_id = $2
@@ -1123,23 +1168,100 @@ async function renumberDayScope(
      ORDER BY o.position ASC NULLS LAST, t.order_value ASC, t.created_at ASC`,
     [opts.userId, opts.date, opts.movedTaskId],
   );
-  const ids = (result.rows as { task_id: string }[]).map((r) => r.task_id);
-  ids.splice(Math.min(opts.position, ids.length), 0, opts.movedTaskId);
+  const siblings = result.rows as {
+    task_id: string;
+    collection_id: string;
+    parent_task_id: string | null;
+    depth: number;
+    order_value: number;
+    position: number | null | undefined;
+  }[];
+
+  // `orderValue` here always reports `tasks.order_value` - day-scope moves
+  // only ever write `task_order.position`, never `tasks.order_value` - so
+  // callers sorting a day's list (e.g. DailyPage) can compare it against
+  // every other task's untouched `order_value` without a number-space clash.
+  const summarize = (
+    id: string,
+    orderValue: number,
+    collectionId: string,
+    parentTaskId: string | null,
+    depth: number,
+  ): MovedTaskSummary => ({
+    id,
+    parentTaskId,
+    collectionId,
+    dueDate: opts.date,
+    orderValue,
+    depth,
+  });
+
+  const clampedPosition = Math.min(opts.position, siblings.length);
+  const prevSibling = clampedPosition > 0 ? siblings[clampedPosition - 1] : null;
+  const nextSibling = clampedPosition < siblings.length ? siblings[clampedPosition] : null;
+  // Loose check: a real unseeded neighbor comes back as SQL NULL, but treat a
+  // missing `position` the same way either side.
+  const bothSeeded =
+    (prevSibling === null || prevSibling.position != null) &&
+    (nextSibling === null || nextSibling.position != null);
+
+  if (bothSeeded) {
+    const midpoint = midpointOrFallback(
+      prevSibling ? prevSibling.position! : null,
+      nextSibling ? nextSibling.position! : null,
+    );
+    if (midpoint !== null) {
+      await client.query(
+        `INSERT INTO task_order (user_id, task_id, scope_type, scope_id, position)
+         VALUES ($1, $2, 'day', $3, $4)
+         ON CONFLICT (task_id, scope_type, scope_id)
+         DO UPDATE SET position = EXCLUDED.position, updated_at = NOW()`,
+        [opts.userId, opts.movedTaskId, opts.date, midpoint],
+      );
+      return [
+        summarize(
+          opts.movedTaskId,
+          opts.movedOrderValue,
+          opts.movedCollectionId,
+          opts.movedParentTaskId,
+          opts.movedDepth,
+        ),
+      ];
+    }
+  }
+
+  // Fallback: seed from every task on this day and rewrite the whole list.
+  const ids = siblings.map((s) => s.task_id);
+  ids.splice(clampedPosition, 0, opts.movedTaskId);
 
   await client.query(
     `DELETE FROM task_order WHERE task_id = $1 AND scope_type = 'day' AND scope_id = $2`,
     [opts.movedTaskId, opts.date],
   );
 
+  const byId = new Map(siblings.map((s) => [s.task_id, s]));
+  const written: MovedTaskSummary[] = [];
   for (let i = 0; i < ids.length; i++) {
+    const position = i * 1000;
     await client.query(
       `INSERT INTO task_order (user_id, task_id, scope_type, scope_id, position)
        VALUES ($1, $2, 'day', $3, $4)
        ON CONFLICT (task_id, scope_type, scope_id)
        DO UPDATE SET position = EXCLUDED.position, updated_at = NOW()`,
-      [opts.userId, ids[i], opts.date, i * 1000],
+      [opts.userId, ids[i], opts.date, position],
+    );
+    const sib = byId.get(ids[i]);
+    written.push(
+      summarize(
+        ids[i],
+        sib ? sib.order_value : opts.movedOrderValue,
+        sib ? sib.collection_id : opts.movedCollectionId,
+        sib ? sib.parent_task_id : opts.movedParentTaskId,
+        sib ? sib.depth : opts.movedDepth,
+      ),
     );
   }
+  return written;
 }
 
 /** Add a task to the end of a day's list, if it is not already in it. */
@@ -1160,25 +1282,6 @@ async function appendToDayScope(
      ON CONFLICT (task_id, scope_type, scope_id) DO NOTHING`,
     [userId, taskId, date],
   );
-}
-
-/** Close gaps in a day's list after tasks left it. */
-async function normalizeDayScope(client: Client, userId: string, date: string): Promise<void> {
-  const result = await client.query(
-    `SELECT task_id FROM task_order
-     WHERE user_id = $1 AND scope_type = 'day' AND scope_id = $2
-     ORDER BY position ASC
-     FOR UPDATE`,
-    [userId, date],
-  );
-  const ids = (result.rows as { task_id: string }[]).map((r) => r.task_id);
-  for (let i = 0; i < ids.length; i++) {
-    await client.query(
-      `UPDATE task_order SET position = $1, updated_at = NOW()
-       WHERE task_id = $2 AND scope_type = 'day' AND scope_id = $3`,
-      [i * 1000, ids[i], date],
-    );
-  }
 }
 
 export async function deleteTask(taskId: string, userId: string): Promise<{ success: true }> {

@@ -174,4 +174,32 @@ describe('dropping a task on a sidebar collection', () => {
 
     expect(moveTask).not.toHaveBeenCalled();
   });
+
+  it('keeps the same task reference for a row the server reports unchanged, but not for one that changed', async () => {
+    moveTask.mockResolvedValue({
+      moved: [
+        { id: 'root', parentTaskId: null, collectionId: HOME, dueDate: null, orderValue: 0, depth: 0 },
+      ],
+      reordered: [
+        { id: 'child', parentTaskId: 'root', collectionId: HOME, dueDate: null, orderValue: 5000, depth: 1 },
+      ],
+    });
+
+    const emitted = mount();
+    drop(taskDrag(), collectionDrop({ collectionId: HOME }));
+
+    await waitFor(() => expect(emitted.length).toBeGreaterThan(1));
+
+    const patched = emitted[emitted.length - 1]!;
+    const patchedRoot = patched.find((t) => t.id === 'root');
+    const patchedChild = patched.find((t) => t.id === 'child');
+
+    // 'root' round-trips with every field identical to its current state - the
+    // guard must hand back the exact same object so React.memo can skip it.
+    expect(patchedRoot).toBe(tasks[0]);
+    // 'child' genuinely changed (orderValue 1000 -> 5000), so it must get a
+    // fresh reference carrying the new value.
+    expect(patchedChild).not.toBe(tasks[1]);
+    expect(patchedChild?.orderValue).toBe(5000);
+  });
 });

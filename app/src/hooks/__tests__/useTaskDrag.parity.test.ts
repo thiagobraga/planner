@@ -64,8 +64,7 @@ describe('useTaskDrag: the drop lands where the slot said it would', () => {
     for (const steps of [0, 1, 2]) {
       it(`${activeId} onto ${overId}, ${steps} indent step(s)`, () => {
         const rows = oneDate(DAY);
-        const previewIndex = rows.findIndex((r) => r.id === overId);
-        const preview = projectMove(rows, activeId, previewIndex, steps * INDENT_WIDTH);
+        const preview = projectMove(rows, activeId, overId, steps * INDENT_WIDTH);
 
         const commit = resolveMove({
           rows: everyDate,
@@ -78,6 +77,14 @@ describe('useTaskDrag: the drop lands where the slot said it would', () => {
         expect(commit).not.toBeNull();
         expect(commit!.depth).toBe(preview.depth);
         expect(commit!.parentTaskId).toBe(preview.parentId);
+        // Position parity, alongside depth/parentTaskId. For these same-day
+        // cases `scopedRows` inside resolveMove is structurally identical to
+        // the `rows` this preview call uses, so this specific assertion holds
+        // regardless of whether the underlying formula is correct - it is not
+        // on its own a regression guard for the drop-position bug. The
+        // dedicated case below ('position parity survives...') is the one
+        // built to actually distinguish the fixed formula from the old one.
+        expect(commit!.input.position).toBe(preview.position);
       });
     }
   }
@@ -93,5 +100,56 @@ describe('useTaskDrag: the drop lands where the slot said it would', () => {
     });
 
     expect(dateOf(commit!.parentTaskId)).not.toBe('2026-07-18');
+  });
+});
+
+describe('useTaskDrag: position parity survives when the commit scope carries a row the preview never sees', () => {
+  // 'p' has a real child 'p1' due on a *different* day than 'p' itself.
+  // TaskList's own preview never renders 'p1' at all (it only ever sees its
+  // own day's rows), but resolveMove's `scopedRows` legitimately pulls 'p1'
+  // in via `active.subtreeIds` - dropping it would fragment the block being
+  // dragged. That makes the row list `resolveMove` projects against bigger,
+  // by one row, than the row list this test's standalone preview call uses -
+  // which is exactly the condition the "position parity" assertion above
+  // cannot exercise, since there every list preview and commit project
+  // against is identical.
+  //
+  // Dragging 'p' (earlier in the list) onto 'n' (later) is the bug's shape.
+  // Reverting `resolveAt` to the old `Math.max(0, Math.min(overIndex,
+  // rest.length))` math reproduces the original bug here: with 'tail' after
+  // 'n' so neither call saturates against its own list length, the extra
+  // 'p1' row inflates commit's pre-removal index by one without inflating
+  // `rest.length` by a matching amount (its own row is absorbed into the
+  // removed block instead), so old-code preview computes position 2 while
+  // old-code commit computes position 3 - they disagree. The id-based fix
+  // resolves both to 1: 'p' lands directly after 'mid' and ahead of 'n' by
+  // finding 'n' wherever it actually sits post-removal, regardless of how
+  // many extra rows preceded it pre-removal.
+  const day2 = '2026-07-19';
+  const positionTasks: Task[] = [
+    task('p', day2, 1000),
+    task('p1', '2026-07-18', 1100, 'p'),
+    task('mid', day2, 1500),
+    task('n', day2, 2000),
+    task('tail', day2, 2500),
+  ];
+  const everyDate2 = flattenTasks(positionTasks);
+  const rows2 = flattenTasks(positionTasks.filter((t) => t.dueDate === day2));
+
+  it('matches the commit position even though scopedRows carries a row the preview list omits', () => {
+    const preview = projectMove(rows2, 'p', 'n', 0);
+
+    const commit = resolveMove({
+      rows: everyDate2,
+      active: dragData('p', day2, ['p', 'p1']),
+      over: dragData('n', day2, ['n']),
+      offsetX: 0,
+      scope: { kind: 'day', dueDate: day2 },
+    });
+
+    expect(commit).not.toBeNull();
+    expect(commit!.input.position).toBe(preview.position);
+    // Pinned, not just compared: 'p' lands right after 'mid', right before 'n'.
+    expect(commit!.input.position).toBe(1);
   });
 });
