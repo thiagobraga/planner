@@ -42,7 +42,7 @@ export default defineConfig({
   server: {
     port: 5173,
     host: true,
-    allowedHosts: ["planner.local"],
+    allowedHosts: [".planner.local", "planner.local"],
     watch: {
       usePolling: true,
     },
