@@ -93,12 +93,19 @@ vi.mock('../HabitNameInput', () => ({
   HabitNameInput: () => null,
 }));
 
+import { I18nProvider } from '../../../i18n/I18nContext';
+
 function createWrapper() {
+  window.localStorage.setItem('planner_locale', 'en');
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
   return function Wrapper({ children }: { children: React.ReactNode }) {
-    return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
+    return (
+      <QueryClientProvider client={queryClient}>
+        <I18nProvider>{children}</I18nProvider>
+      </QueryClientProvider>
+    );
   };
 }
 
