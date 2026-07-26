@@ -7,6 +7,82 @@ export function fmtISO(d: Date): string {
   return `${y}-${m}-${day}`;
 }
 
+export function getDetectedTimeZone(): string {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+  } catch {
+    return 'UTC';
+  }
+}
+
+export function fmtISOInTimeZone(d: Date = new Date(), timeZone?: string): string {
+  const tz = timeZone || getDetectedTimeZone();
+  try {
+    const parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone: tz,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).formatToParts(d);
+    const y = parts.find((p) => p.type === 'year')?.value;
+    const m = parts.find((p) => p.type === 'month')?.value;
+    const day = parts.find((p) => p.type === 'day')?.value;
+    return `${y}-${m}-${day}`;
+  } catch {
+    return fmtISO(d);
+  }
+}
+
+export function getTimeZoneOffsetMs(d: Date, timeZone: string): number {
+  try {
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone,
+      year: 'numeric',
+      month: 'numeric',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: 'numeric',
+      second: 'numeric',
+      fractionalSecondDigits: 3,
+      hourCycle: 'h23',
+    }).formatToParts(d);
+
+    let y = 0, m = 0, day = 0, h = 0, min = 0, s = 0, ms = 0;
+    for (const p of parts) {
+      if (p.type === 'year') y = parseInt(p.value, 10);
+      else if (p.type === 'month') m = parseInt(p.value, 10);
+      else if (p.type === 'day') day = parseInt(p.value, 10);
+      else if (p.type === 'hour') h = parseInt(p.value, 10);
+      else if (p.type === 'minute') min = parseInt(p.value, 10);
+      else if (p.type === 'second') s = parseInt(p.value, 10);
+      else if (p.type === 'fractionalSecond') ms = parseInt(p.value.padEnd(3, '0').slice(0, 3), 10);
+    }
+    const localUtcAsMs = Date.UTC(y, m - 1, day, h, min, s, ms);
+    return localUtcAsMs - d.getTime();
+  } catch {
+    return -d.getTimezoneOffset() * 60 * 1000;
+  }
+}
+
+export function getMsUntilMidnight(now: Date = new Date(), timeZone?: string): number {
+  const tz = timeZone || getDetectedTimeZone();
+  const todayISO = fmtISOInTimeZone(now, tz);
+  const [y, m, d] = todayISO.split('-').map(Number);
+
+  const nextDayUtcEstimate = Date.UTC(y, m - 1, d + 1, 0, 0, 0, 0);
+  const offset = getTimeZoneOffsetMs(new Date(nextDayUtcEstimate), tz);
+  let midnightTimestamp = nextDayUtcEstimate - offset;
+
+  const offset2 = getTimeZoneOffsetMs(new Date(midnightTimestamp), tz);
+  if (offset2 !== offset) {
+    midnightTimestamp = nextDayUtcEstimate - offset2;
+  }
+
+  const ms = midnightTimestamp - now.getTime();
+  return Math.max(0, ms);
+}
+
+
 export function startOfDay(d: Date): Date {
   const x = new Date(d);
   x.setHours(0, 0, 0, 0);

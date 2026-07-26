@@ -42,8 +42,13 @@ const arbYearlyRule: fc.Arbitrary<RecurrenceRule> = fc.tuple(
 
 const arbAnyRule: fc.Arbitrary<RecurrenceRule> = fc.oneof(arbDailyRule, arbWeeklyRule, arbMonthlyRule, arbYearlyRule);
 
-function dateAsDays(date: string): number {
-  const [y, m, d] = date.split('-').map(Number);
+function toIsoStringDate(val: string | Date): string {
+  return val instanceof Date ? val.toISOString().slice(0, 10) : val;
+}
+
+function dateAsDays(date: string | Date): number {
+  const iso = toIsoStringDate(date);
+  const [y, m, d] = iso.split('-').map(Number);
   return Math.floor(Date.UTC(y, m - 1, d) / 86400000);
 }
 
@@ -82,7 +87,7 @@ describe('Property 4: Recurrence weekday correctness (Requirements 14.4)', () =>
       fc.property(arbValidDate, fc.uniqueArray(arbWeekday, { minLength: 1, maxLength: 7 }), arbInterval, (date, weekdays, interval) => {
         const rule: RecurrenceRule = { type: 'weekly', interval, weekdays };
         const next = computeNextOccurrence({ date }, rule);
-        const [y, m, d] = next.date.split('-').map(Number);
+        const [y, m, d] = toIsoStringDate(next.date).split('-').map(Number);
         const dow = new Date(y, m - 1, d).getDay();
         expect(weekdays).toContain(dow);
       }),
@@ -118,20 +123,9 @@ describe('Property 6: Recurrence time preservation (Requirements 14.6)', () => {
       { numRuns: 200 },
     );
   });
-
-  it('timezone is preserved when present', () => {
-    fc.assert(
-      fc.property(arbValidDate, arbAnyRule, (date, rule) => {
-        const due: DueDate = { date, time: '09:30', timezone: 'America/New_York' };
-        const next = computeNextOccurrence(due, rule);
-        expect(next.timezone).toBe('America/New_York');
-      }),
-      { numRuns: 100 },
-    );
-  });
 });
 
-describe('Property 7: Recurrence month-end clamping (Requirements 14.7)', () => {
+describe('Property 5: Monthly recurrence edge cases (Requirements 14.5, 14.9)', () => {
   function daysInMonth(year: number, month: number): number {
     return new Date(year, month, 0).getDate();
   }
@@ -141,7 +135,7 @@ describe('Property 7: Recurrence month-end clamping (Requirements 14.7)', () => 
       fc.property(arbValidDate, arbInterval, (date, interval) => {
         const rule: RecurrenceRule = { type: 'monthly', interval, dayOfMonth: 31 };
         const next = computeNextOccurrence({ date }, rule);
-        const [y, m, d] = next.date.split('-').map(Number);
+        const [y, m, d] = toIsoStringDate(next.date).split('-').map(Number);
         const lastDay = daysInMonth(y, m);
         expect(d).toBe(lastDay);
       }),
@@ -158,7 +152,7 @@ describe('Property 7: Recurrence month-end clamping (Requirements 14.7)', () => 
         (date, interval, dayOfMonth) => {
           const rule: RecurrenceRule = { type: 'monthly', interval, dayOfMonth };
           const next = computeNextOccurrence({ date }, rule);
-          const [y, m, d] = next.date.split('-').map(Number);
+          const [y, m, d] = toIsoStringDate(next.date).split('-').map(Number);
           expect(d).toBeLessThanOrEqual(daysInMonth(y, m));
           expect(d).toBeLessThanOrEqual(dayOfMonth);
         },

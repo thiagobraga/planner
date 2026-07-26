@@ -54,6 +54,13 @@ vi.mock('../../hooks/useSync', () => ({
   useSync: vi.fn(),
 }));
 
+let capturedMidnightCb: (() => void) | null = null;
+vi.mock('../../hooks/useMidnightTimer', () => ({
+  useMidnightTimer: vi.fn((cb) => {
+    capturedMidnightCb = cb;
+  }),
+}));
+
 vi.mock('../../components/TaskList', () => ({
   TaskList: ({ tasks }: { tasks: { id: string; title: string }[] }) => (
     <div data-testid="task-list">
@@ -189,4 +196,21 @@ describe('DailyPage', () => {
 
     expect(await screen.findByPlaceholderText('Add task…')).toBeInTheDocument();
   });
+
+  it('triggers refetch and scrolls to today section when midnight timer fires', async () => {
+    const scrollIntoViewMock = vi.fn();
+    window.HTMLElement.prototype.scrollIntoView = scrollIntoViewMock;
+
+    renderPage();
+
+    await screen.findByText('Daily');
+    expect(mockFetchTodayTasks).toHaveBeenCalledTimes(1);
+
+    expect(capturedMidnightCb).toBeTypeOf('function');
+    capturedMidnightCb!();
+
+    expect(mockFetchTodayTasks).toHaveBeenCalledTimes(2);
+    expect(scrollIntoViewMock).toHaveBeenCalled();
+  });
 });
+

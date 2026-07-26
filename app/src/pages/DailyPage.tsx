@@ -7,11 +7,12 @@ import { TaskVisibilityControls } from '../components/TaskVisibilityControls';
 import { CollectionChip } from '../components/ui/Chip';
 import { Button } from '../components/ui/Button';
 import type { Task } from '../components/TaskItem';
-import { extractNaturalDate } from '../utils/date';
+import { extractNaturalDate, fmtISOInTimeZone } from '../utils/date';
 import { nextOrderValue } from '../utils/order';
 import { applyIndent, getParentCandidate } from '../utils/taskTree';
 import { useTaskDrag } from '../hooks/useTaskDrag';
 import { useTaskVisibilityPreferences } from '../hooks/useTaskVisibilityPreferences';
+import { useMidnightTimer } from '../hooks/useMidnightTimer';
 import { useI18n } from '../i18n/I18nContext';
 import { getPhrase } from '../utils/phrases';
 import {
@@ -33,13 +34,6 @@ interface DaySection {
   tasks: Task[];
 }
 
-function dateKey(d: Date): string {
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
-
 function dayLabel(d: Date, locale: 'en' | 'pt-BR'): string {
   const month = d.toLocaleDateString(locale, { month: 'short' }).toLocaleUpperCase(locale);
   const day = String(d.getDate()).padStart(2, '0');
@@ -51,8 +45,6 @@ function dateFromISO(iso: string): Date {
   const [y, m, d] = iso.split('-').map(Number);
   return new Date(y, m - 1, d);
 }
-
-const todayKey = dateKey(new Date());
 
 function apiToTask(t: ApiTask): Task {
   return {
@@ -71,7 +63,12 @@ function apiToTask(t: ApiTask): Task {
   };
 }
 
-function buildSections(overdueTasks: Task[], todayTasks: Task[], locale: 'en' | 'pt-BR'): DaySection[] {
+function buildSections(
+  overdueTasks: Task[],
+  todayTasks: Task[],
+  locale: 'en' | 'pt-BR',
+  currentTodayKey: string = fmtISOInTimeZone(new Date()),
+): DaySection[] {
   const byDate = new Map<string, Task[]>();
 
   // Tolerate a missing list rather than throwing. This renders the whole page,
@@ -84,14 +81,14 @@ function buildSections(overdueTasks: Task[], todayTasks: Task[], locale: 'en' | 
     // last resort for a genuinely undated task, not something a full ISO
     // timestamp should ever trigger - that would drag unrelated rows into today.
     const date = t.dueDate?.slice(0, 10);
-    const key = date && /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : todayKey;
+    const key = date && /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : currentTodayKey;
     const bucket = byDate.get(key) ?? [];
     bucket.push(t);
     byDate.set(key, bucket);
   }
 
   // Always include today even if empty (for the add-task form)
-  if (!byDate.has(todayKey)) byDate.set(todayKey, []);
+  if (!byDate.has(currentTodayKey)) byDate.set(currentTodayKey, []);
 
   const sortedDates = Array.from(byDate.keys()).sort().reverse();
   return sortedDates.map((date) => ({
@@ -117,25 +114,51 @@ export function DailyPage() {
   const todaySectionRef = useRef<HTMLDivElement>(null);
   const loadRequestId = useRef(0);
   const sectionsRef = useRef(sections);
-  sectionsRef.current = sections;
-
-  const replaceTodayFromApi = useCallback(() => {
-    const requestId = ++loadRequestId.current;
-    fetchTodayTasks().then((response) => {
-      if (requestId !== loadRequestId.current) return;
-      const overdueTasks = (response.overdue || []).map(apiToTask);
-      const todayTasks = (response.today || []).map(apiToTask);
-      setSections(buildSections(overdueTasks, todayTasks, locale));
-    }).catch(() => {
-      if (requestId !== loadRequestId.current) return;
-      setSections(buildSections([], [], locale));
-    });
-  }, [locale]);
+  useEffect(() => {
+    sectionsRef.current = sections;
+  }, [sections]);
 
   const { data: prefs } = useQuery({
     queryKey: ['preferences'],
     queryFn: fetchPreferences,
   });
+
+  const prefsRef = useRef(prefs);
+  useEffect(() => {
+    prefsRef.current = prefs;
+  }, [prefs]);
+
+  const todayKey = useMemo(() => fmtISOInTimeZone(new Date(), prefs?.timeZone), [prefs?.timeZone]);
+
+  const replaceTodayFromApi = useCallback(() => {
+    const requestId = ++loadRequestId.current;
+    const currentToday = fmtISOInTimeZone(new Date(), prefsRef.current?.timeZone);
+    fetchTodayTasks().then((response) => {
+      if (requestId !== loadRequestId.current) return;
+      const overdueTasks = (response.overdue || []).map(apiToTask);
+      const todayTasks = (response.today || []).map(apiToTask);
+      setSections(buildSections(overdueTasks, todayTasks, locale, currentToday));
+    }).catch(() => {
+      if (requestId !== loadRequestId.current) return;
+      setSections(buildSections([], [], locale, currentToday));
+    });
+  }, [locale]);
+
+  const handleToday = useCallback(() => {
+    todaySectionRef.current?.scrollIntoView({
+      behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+      block: 'start',
+    });
+  }, []);
+
+  useMidnightTimer(
+    useCallback(() => {
+      qc.invalidateQueries({ queryKey: ['today'] });
+      replaceTodayFromApi();
+      handleToday();
+    }, [qc, replaceTodayFromApi, handleToday]),
+    prefs?.timeZone,
+  );
 
   const {
     isPending: visibilityPreferencesPending,
@@ -184,7 +207,7 @@ export function DailyPage() {
         }))
       );
     }
-  }, [locale, replaceTodayFromApi, prefs?.hideCompletedTasks, prefs?.hideOldNotes]));
+  }, [locale, replaceTodayFromApi, prefs?.hideCompletedTasks, prefs?.hideOldNotes, todayKey]));
 
   const updateSections = useCallback((updater: (prev: DaySection[]) => DaySection[]) => {
     setSections(updater);
@@ -198,9 +221,9 @@ export function DailyPage() {
   const allTasks = useMemo(() => sections.flatMap((s) => s.tasks), [sections]);
   const setAllTasks = useCallback(
     (updater: (prev: Task[]) => Task[]) => {
-      setSections((prev) => buildSections([], updater(prev.flatMap((s) => s.tasks)), locale));
+      setSections((prev) => buildSections([], updater(prev.flatMap((s) => s.tasks)), locale, todayKey));
     },
-    [locale],
+    [locale, todayKey],
   );
 
   const { activeDragId } = useTaskDrag({
@@ -210,7 +233,7 @@ export function DailyPage() {
     onError: () => {
       fetchTodayTasks().then((response) => {
         setSections(
-          buildSections((response.overdue || []).map(apiToTask), (response.today || []).map(apiToTask), locale),
+          buildSections((response.overdue || []).map(apiToTask), (response.today || []).map(apiToTask), locale, todayKey),
         );
       });
     },
@@ -258,13 +281,6 @@ export function DailyPage() {
       });
     }
   }, [prefs?.hideCompletedTasks, updateSections, replaceTodayFromApi]);
-
-  const handleToday = useCallback(() => {
-    todaySectionRef.current?.scrollIntoView({
-      behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
-      block: 'start',
-    });
-  }, []);
 
   const handleStartEdit = useCallback((id: string) => {
     setEditingId(id);
@@ -329,7 +345,7 @@ export function DailyPage() {
     } else {
       apiUpdateTask(id, { title: trimmed }).catch(() => replaceTodayFromApi());
     }
-  }, [locale, replaceTodayFromApi, updateSections]);
+  }, [locale, replaceTodayFromApi, updateSections, todayKey]);
 
   const handleEditCancel = useCallback((id: string) => {
     setEditingId(undefined);

@@ -7,6 +7,7 @@ import { Radio } from '../components/ui/Radio';
 import { Input } from '../components/ui/Input';
 import { fetchPreferences, apiUpdatePreferences, type Preferences } from '../api/client';
 import { ensureFontLoaded, type FontOption } from '../utils/fontLoader';
+import { getDetectedTimeZone } from '../utils/date';
 import { useI18n } from '../i18n/I18nContext';
 
 type SettingsSection = 'general' | 'appearance';
@@ -69,10 +70,6 @@ const WEEK_START_OPTIONS: Array<{
   { value: 'sunday', label: 'Sunday' },
   { value: 'monday', label: 'Monday' },
 ];
-
-function getDetectedTimeZone() {
-  return Intl.DateTimeFormat().resolvedOptions().timeZone ?? 'UTC';
-}
 
 function getBrowserSupportedTimeZones() {
   try {

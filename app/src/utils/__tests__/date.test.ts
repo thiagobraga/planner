@@ -6,7 +6,48 @@ import {
   weekdayShortNames,
   extractNaturalDate,
   parseNaturalDate,
+  getDetectedTimeZone,
+  fmtISOInTimeZone,
+  getTimeZoneOffsetMs,
+  getMsUntilMidnight,
 } from '../date';
+
+describe('timezone & midnight date helpers', () => {
+  it('getDetectedTimeZone returns a valid timezone string', () => {
+    const tz = getDetectedTimeZone();
+    expect(typeof tz).toBe('string');
+    expect(tz.length).toBeGreaterThan(0);
+  });
+
+  it('fmtISOInTimeZone formats date according to target timezone', () => {
+    const d = new Date('2026-07-26T23:30:00Z');
+    expect(fmtISOInTimeZone(d, 'UTC')).toBe('2026-07-26');
+    expect(fmtISOInTimeZone(d, 'Asia/Tokyo')).toBe('2026-07-27');
+
+    const earlyUTC = new Date('2026-07-26T03:30:00Z');
+    expect(fmtISOInTimeZone(earlyUTC, 'America/New_York')).toBe('2026-07-25');
+  });
+
+  it('getTimeZoneOffsetMs calculates exact offset for standard timezones', () => {
+    const d = new Date('2026-07-26T12:00:00Z');
+    expect(getTimeZoneOffsetMs(d, 'UTC')).toBe(0);
+    expect(getTimeZoneOffsetMs(d, 'Asia/Tokyo')).toBe(9 * 3600 * 1000);
+    expect(getTimeZoneOffsetMs(d, 'America/New_York')).toBe(-4 * 3600 * 1000);
+  });
+
+  it('getMsUntilMidnight calculates remaining milliseconds to next midnight', () => {
+    const oneMinBeforeUtcMidnight = new Date('2026-07-26T23:59:00.000Z');
+    expect(getMsUntilMidnight(oneMinBeforeUtcMidnight, 'UTC')).toBe(60000);
+
+    const oneMinBeforeTokyoMidnight = new Date('2026-07-26T14:59:00.000Z');
+    expect(getMsUntilMidnight(oneMinBeforeTokyoMidnight, 'Asia/Tokyo')).toBe(60000);
+
+    const morningInNY = new Date('2026-07-26T14:59:00.000Z'); // 10:59 EDT
+    const msToMidnightNY = 13 * 3600 * 1000 + 60 * 1000;
+    expect(getMsUntilMidnight(morningInNY, 'America/New_York')).toBe(msToMidnightNY);
+  });
+});
+
 
 describe('week start date helpers', () => {
   it('orders weekday labels from the configured first day', () => {
