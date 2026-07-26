@@ -301,6 +301,20 @@ button,
 }
 
 /*
+ * On a touchscreen there's no hover to reveal .drag-handle, and touch/pen
+ * drags are scoped to it (see PlannerPointerSensor in dnd/sensors.ts) since
+ * the row itself has to stay a plain scroll surface there. touch-action: none
+ * keeps the browser's native scroll gesture from racing dnd-kit's own
+ * activation and cancelling the drag before it starts.
+ */
+@media (hover: none), (pointer: coarse) {
+  .drag-handle {
+    opacity: 0.5 !important;
+    touch-action: none;
+  }
+}
+
+/*
  * The dragged row, left behind as dnd-kit moves it to the drop position while
  * the block itself follows the pointer. Its content is hidden and it renders as
  * an empty slot instead, indented to the projected nesting level - so the gap

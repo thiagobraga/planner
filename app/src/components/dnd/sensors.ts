@@ -23,6 +23,16 @@ function isWithin(target: EventTarget | null, attr: string): boolean {
  * tolerance is what keeps the page scrollable - moving more than 8px before the
  * delay elapses cancels the pending drag and hands the gesture back to the
  * browser, rather than blocking the scroll while waiting.
+ *
+ * That tolerance-based scroll fallback only works for mice: dnd-kit doesn't
+ * call preventDefault() until a drag is fully activated (see handleMove in
+ * @dnd-kit/core), so on a real touchscreen the browser's own scroll-gesture
+ * recognizer can see the same touchmove first, decide the gesture is a scroll,
+ * and fire pointercancel - killing the pending drag before the delay or
+ * tolerance ever gets evaluated. Whole-row dragging is safe on a mouse (there's
+ * no competing native gesture) but not on touch/pen, so those are scoped to
+ * the handle, which is kept always visible and non-scrolling for them - see
+ * the `(hover: none), (pointer: coarse)` rule for `.drag-handle` in index.css.
  */
 export class PlannerPointerSensor extends PointerSensor {
   static activators = [
@@ -32,6 +42,9 @@ export class PlannerPointerSensor extends PointerSensor {
         // Only the primary button drags; right-click opens context menus.
         if (!event.isPrimary || event.button !== 0) return false;
         if (isWithin(event.target, NO_DRAG_ATTR)) return false;
+        if (event.pointerType !== 'mouse' && !isWithin(event.target, DRAG_HANDLE_ATTR)) {
+          return false;
+        }
         return true;
       },
     },
