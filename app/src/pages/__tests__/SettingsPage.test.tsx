@@ -121,12 +121,19 @@ describe('SettingsPage', () => {
 
     expect(generalTab).toHaveAttribute('aria-selected', 'true');
     expect(appearanceTab).toHaveAttribute('aria-selected', 'false');
-    expect(screen.getByRole('heading', { name: 'General' })).toBeInTheDocument();
+    const generalHeading = screen.getByRole('heading', { name: 'General' });
+    const languageHeading = screen.getByRole('heading', { name: 'Language' });
+
+    expect(generalHeading).toBeInTheDocument();
     expect(screen.getByTestId('settings-location')).toHaveTextContent('/settings/general');
     expect(appearanceTab).toHaveAttribute('title', 'Appearance');
     expect(generalTab).toHaveAttribute('title', 'General');
     expect(screen.getByRole('switch', { name: /Hide completed tasks/ })).toBeInTheDocument();
+    expect(screen.getByText('It affects Daily, Inbox, and Collections.')).toBeInTheDocument();
     expect(screen.getByRole('switch', { name: /Hide old notes/ })).toBeInTheDocument();
+    expect(screen.getByText('Hide notes before today')).toBeInTheDocument();
+    expect(generalHeading.parentElement?.querySelector('p')).not.toBeInTheDocument();
+    expect(languageHeading.parentElement?.querySelector('p')).not.toBeInTheDocument();
   });
 
   it('switches panels and URLs with keyboard tab navigation', async () => {
@@ -139,10 +146,13 @@ describe('SettingsPage', () => {
     fireEvent.keyDown(generalTab, { key: 'ArrowRight' });
 
     await waitFor(() => expect(appearanceTab).toHaveAttribute('aria-selected', 'true'));
-    expect(screen.getByRole('heading', { name: 'Appearance' })).toBeInTheDocument();
+    const appearanceHeading = screen.getByRole('heading', { name: 'Appearance' });
+
+    expect(appearanceHeading).toBeInTheDocument();
     expect(screen.getByTestId('settings-location')).toHaveTextContent('/settings/appearance');
     expect(appearanceTab).toHaveFocus();
     expect(generalTab).toHaveAttribute('aria-selected', 'false');
+    expect(appearanceHeading.parentElement?.querySelector('p')).not.toBeInTheDocument();
   });
 
   it('redirects the legacy behavior route to General', async () => {

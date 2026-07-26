@@ -104,12 +104,10 @@ function buildTimeZoneOptions(savedTimeZone: string | undefined, detectedTimeZon
 
 function SettingsCard({
   title,
-  description,
   headingId,
   children,
 }: {
   title: string;
-  description: string;
   headingId: string;
   children: ReactNode;
 }) {
@@ -119,7 +117,6 @@ function SettingsCard({
         <h2 id={headingId} className="text-lg leading-6 font-semibold text-ink">
           {title}
         </h2>
-        <p className="mt-1 text-[13px] leading-6 text-ink-light opacity-60">{description}</p>
       </div>
       <div className="pt-8">{children}</div>
     </section>
@@ -150,7 +147,7 @@ function PreferenceToggle({
       className="items-start"
       label={
         <span className="flex flex-col gap-0.5">
-          <span className="text-sm leading-6 text-ink">{title}</span>
+          <span className="text-sm leading-5 text-ink">{title}</span>
           <span className="text-[12px] leading-5 text-ink-light opacity-70">{description}</span>
         </span>
       }
@@ -457,7 +454,6 @@ export function SettingsPage() {
               {activeSection === 'general' ? (
                 <SettingsCard
                   title={t('settings.general')}
-                  description={t('settings.generalDescription')}
                   headingId={panelHeadingId}
                 >
                   <div className="space-y-8">
@@ -466,7 +462,6 @@ export function SettingsPage() {
                         <h3 className="text-[10px] leading-5 tracking-[0.12em] uppercase text-ink-light font-medium">
                           {t('settings.language')}
                         </h3>
-                        <p className="text-xs leading-5 text-ink-light">{t('settings.languageDescription')}</p>
                       </div>
                       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2" role="radiogroup" aria-label={t('settings.language')}>
                         {([
@@ -571,7 +566,6 @@ export function SettingsPage() {
               ) : (
                 <SettingsCard
                   title={t('settings.appearance')}
-                  description={t('settings.appearanceDescription')}
                   headingId={panelHeadingId}
                 >
                   <div className="flex flex-col gap-10">
