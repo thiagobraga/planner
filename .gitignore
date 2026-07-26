@@ -59,6 +59,9 @@ app/coverage/
 # Codegraph (regenerated index)
 .codegraph/
 
+# Superpowers
+.superpowers/
+
 # Database
 postgres_data/
 redis_data/
