@@ -68,6 +68,69 @@ describe('TaskItem - task/note conversion', () => {
     expect(onConvertType).not.toHaveBeenCalled();
   });
 
+  it('converts a task with existing text when space follows a leading "-"', () => {
+    const onConvertType = vi.fn();
+    renderTaskItem({ ...baseTask, title: '-Buy milk' }, { onConvertType });
+
+    const input = screen.getByRole('textbox') as HTMLInputElement;
+    input.setSelectionRange(1, 1);
+    fireEvent.keyDown(input, { key: ' ' });
+
+    expect(onConvertType).toHaveBeenCalledWith('t1', 'note');
+    expect(input.value).toBe('Buy milk');
+  });
+
+  it.each(['[', ']', '*'])(
+    'converts a note with existing text when space follows a leading "%s"',
+    (marker) => {
+      const onConvertType = vi.fn();
+      renderTaskItem({ ...baseTask, type: 'note', title: `${marker}Buy milk` }, { onConvertType });
+
+      const input = screen.getByRole('textbox') as HTMLInputElement;
+      input.setSelectionRange(1, 1);
+      fireEvent.keyDown(input, { key: ' ' });
+
+      expect(onConvertType).toHaveBeenCalledWith('t1', 'task');
+      expect(input.value).toBe('Buy milk');
+    },
+  );
+
+  it('leaves the marker alone when it is not the start of the line', () => {
+    const onConvertType = vi.fn();
+    renderTaskItem({ ...baseTask, title: 'Buy - milk' }, { onConvertType });
+
+    const input = screen.getByRole('textbox') as HTMLInputElement;
+    input.setSelectionRange(5, 5);
+    fireEvent.keyDown(input, { key: ' ' });
+
+    expect(onConvertType).not.toHaveBeenCalled();
+    expect(input.value).toBe('Buy - milk');
+  });
+
+  it('does not strip a leading "-" that would convert a note into itself', () => {
+    const onConvertType = vi.fn();
+    renderTaskItem({ ...baseTask, type: 'note', title: '-Buy milk' }, { onConvertType });
+
+    const input = screen.getByRole('textbox') as HTMLInputElement;
+    input.setSelectionRange(1, 1);
+    fireEvent.keyDown(input, { key: ' ' });
+
+    expect(onConvertType).not.toHaveBeenCalled();
+    expect(input.value).toBe('-Buy milk');
+  });
+
+  it('ignores the prefix while part of the line is selected', () => {
+    const onConvertType = vi.fn();
+    renderTaskItem({ ...baseTask, title: '-Buy milk' }, { onConvertType });
+
+    const input = screen.getByRole('textbox') as HTMLInputElement;
+    input.setSelectionRange(1, 4);
+    fireEvent.keyDown(input, { key: ' ' });
+
+    expect(onConvertType).not.toHaveBeenCalled();
+    expect(input.value).toBe('-Buy milk');
+  });
+
   it('renders a plain non-interactive dash bullet for notes, no checkbox', () => {
     renderTaskItem({ ...baseTask, type: 'note', title: 'A note' }, { isEditing: false });
 

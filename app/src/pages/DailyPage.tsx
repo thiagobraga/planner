@@ -292,15 +292,15 @@ export function DailyPage() {
     );
 
     if (id.startsWith('temp-')) {
+      const section = sectionsRef.current.find((s) => s.tasks.some((t) => t.id === id));
       let parentTaskId: string | undefined;
-      if (currentIndent > 0) {
-        const section = sectionsRef.current.find((s) => s.tasks.some((t) => t.id === id));
-        if (section) {
-          const idx = section.tasks.findIndex((t) => t.id === id);
-          parentTaskId = getParentCandidate(section.tasks, idx, currentIndent) ?? undefined;
-        }
+      if (currentIndent > 0 && section) {
+        const idx = section.tasks.findIndex((t) => t.id === id);
+        parentTaskId = getParentCandidate(section.tasks, idx, currentIndent) ?? undefined;
       }
-      const extracted = extractNaturalDate(trimmed, todayKey, locale);
+      // A row belongs to the day it was written under, so that day - not today -
+      // is what a title without any date phrase falls back to.
+      const extracted = extractNaturalDate(trimmed, section?.key ?? todayKey, locale);
       
       apiCreateTask({ 
         title: extracted.title, 

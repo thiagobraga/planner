@@ -1,8 +1,8 @@
 import { getSyncStatus } from './socket';
 
 const DB_NAME = 'planner-offline-queue';
-const DB_VERSION = 3;
 const STORE_NAME = 'mutations';
+const INDEX_NAME = 'ownerUserId';
 
 export type QueuedMutationMethod = 'POST' | 'PATCH' | 'PUT' | 'DELETE';
 
@@ -25,43 +25,70 @@ export interface QueuedMutation {
 
 let dbPromise: Promise<IDBDatabase> | null = null;
 
+function createSchema(db: IDBDatabase, tx: IDBTransaction | null): void {
+  const store = db.objectStoreNames.contains(STORE_NAME)
+    ? tx?.objectStore(STORE_NAME)
+    : db.createObjectStore(STORE_NAME, { keyPath: 'id' });
+  if (!store || store.indexNames.contains(INDEX_NAME)) {
+    return;
+  }
+  store.createIndex(INDEX_NAME, INDEX_NAME, { unique: false });
+  // Records written before the index existed carry no ownerUserId, so they can
+  // never be matched to a user or replayed - drop them rather than leave them
+  // stranded in the store forever.
+  const cursorReq = store.openCursor();
+  cursorReq.onsuccess = () => {
+    const cursor = cursorReq.result;
+    if (!cursor) {
+      return;
+    }
+    const value = cursor.value as Partial<QueuedMutation>;
+    if (!value.ownerUserId) {
+      store.delete(cursor.primaryKey);
+    }
+    cursor.continue();
+  };
+}
+
+function open(version?: number): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    const request =
+      version === undefined ? indexedDB.open(DB_NAME) : indexedDB.open(DB_NAME, version);
+    request.onupgradeneeded = () => createSchema(request.result, request.transaction);
+    request.onsuccess = () => {
+      const db = request.result;
+      // Another tab upgrading or deleting the database blocks on every open
+      // connection until it closes.
+      db.onversionchange = () => {
+        db.close();
+        dbPromise = null;
+      };
+      resolve(db);
+    };
+    request.onerror = () => reject(request.error);
+  });
+}
+
+function hasIndex(db: IDBDatabase): boolean {
+  if (!db.objectStoreNames.contains(STORE_NAME)) {
+    return false;
+  }
+  return db.transaction(STORE_NAME, 'readonly').objectStore(STORE_NAME).indexNames.contains(INDEX_NAME);
+}
+
 function openDB(): Promise<IDBDatabase> {
   if (!dbPromise) {
-    dbPromise = new Promise((resolve, reject) => {
-      const request = indexedDB.open(DB_NAME, DB_VERSION);
-
-      request.onupgradeneeded = () => {
-        const db = request.result;
-        if (!db.objectStoreNames.contains(STORE_NAME)) {
-          const store = db.createObjectStore(STORE_NAME, { keyPath: 'id' });
-          store.createIndex('ownerUserId', 'ownerUserId', { unique: false });
-        }
-        // Not gated on `event.oldVersion` - a db can already be sitting at the
-        // current DB_VERSION but still missing the index (e.g. a build that
-        // bumped the version before this index-creation code existed), and
-        // onupgradeneeded only fires again once DB_VERSION is bumped further.
-        if (db.objectStoreNames.contains(STORE_NAME)) {
-          const store = request.transaction?.objectStore(STORE_NAME);
-          if (store) {
-            if (!store.indexNames.contains('ownerUserId')) {
-              store.createIndex('ownerUserId', 'ownerUserId', { unique: false });
-            }
-            const cursorReq = store.openCursor();
-            cursorReq.onsuccess = () => {
-              const cursor = cursorReq.result;
-              if (cursor) {
-                const value = cursor.value as Partial<QueuedMutation>;
-                if (!value.ownerUserId) {
-                  store.delete(cursor.primaryKey);
-                }
-                cursor.continue();
-              }
-            };
-          }
-        }
-      };
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(request.error);
+    // Opening without a version yields whatever already exists, which is what
+    // makes a drifted database repairable: one that reached the current
+    // version without the index can be detected here and upgraded past it,
+    // since onupgradeneeded only fires when the version actually increases.
+    dbPromise = open().then((db) => {
+      if (hasIndex(db)) {
+        return db;
+      }
+      const next = db.version + 1;
+      db.close();
+      return open(next);
     });
   }
   return dbPromise;
@@ -89,7 +116,7 @@ function withStoreAndIndex<T>(
       new Promise<T>((resolve, reject) => {
         const tx = db.transaction(STORE_NAME, mode);
         const store = tx.objectStore(STORE_NAME);
-        const index = store.index('ownerUserId');
+        const index = store.index(INDEX_NAME);
         const req = run(store, index);
         req.onsuccess = () => resolve(req.result);
         req.onerror = () => reject(req.error);

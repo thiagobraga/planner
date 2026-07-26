@@ -103,6 +103,17 @@ function focusAdjacent(currentId: string, dir: 'up' | 'down') {
   }
 }
 
+/**
+ * Markdown-style prefixes that switch a row's type when typed at the start of
+ * the line, mirroring how the same characters read in the journal itself.
+ */
+const CONVERSION_MARKERS: Record<string, 'task' | 'note'> = {
+  '-': 'note',
+  '[': 'task',
+  ']': 'task',
+  '*': 'task',
+};
+
 export const TaskItem = memo(function TaskItem({
   task,
   isEditing,
@@ -219,6 +230,17 @@ export const TaskItem = memo(function TaskItem({
     ) {
       e.preventDefault();
       onConvertType?.(task.id, 'task');
+    } else if (e.key === ' ') {
+      // Same conversion, but on a row that already has text: the marker only
+      // counts as a prefix when it is the whole of what precedes the caret.
+      const input = e.currentTarget;
+      const target = CONVERSION_MARKERS[input.value[0]];
+      if (input.selectionStart === 1 && input.selectionEnd === 1 && target && task.type !== target) {
+        e.preventDefault();
+        input.value = input.value.slice(1);
+        input.setSelectionRange(0, 0);
+        onConvertType?.(task.id, target);
+      }
     } else if (e.key === 'Tab') {
       e.preventDefault();
       onIndent?.(task.id, e.shiftKey ? -1 : 1);
