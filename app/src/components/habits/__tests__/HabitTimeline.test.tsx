@@ -303,16 +303,30 @@ describe('HabitTimeline', () => {
   });
 
   it('renders a visible option button affordance for habits', () => {
-    const { container } = render(
-      <HabitTimeline {...defaultProps} />,
+    const sections: HabitSections = {
+      ungrouped: [
+        {
+          id: 'water',
+          name: 'Drink water',
+          parentId: null,
+          groupId: null,
+          orderValue: 0,
+          completions: new Set(),
+          children: [],
+        },
+      ],
+      groups: [],
+    };
+
+    render(
+      <HabitTimeline {...defaultProps} sections={sections} />,
       { wrapper: createWrapper() },
     );
 
     const button = screen.getByLabelText('Options for Drink water');
     expect(button).toBeInTheDocument();
-    
-    // Check that it has the icon or visible styling (it should have opacity-0 but group-hover:opacity-100 and focus:opacity-100)
-    // The test mainly ensures the button is in the DOM and has the correct classes applied.
+    // The button is transparent until the row is hovered or it takes focus, so
+    // the class is what carries that reveal.
     expect(button).toHaveClass('habit-timeline-row-options');
   });
 });
