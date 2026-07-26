@@ -207,7 +207,7 @@ export function DailyPage() {
         }))
       );
     }
-  }, [locale, replaceTodayFromApi, prefs?.hideCompletedTasks, prefs?.hideOldNotes]));
+  }, [locale, replaceTodayFromApi, prefs?.hideCompletedTasks, prefs?.hideOldNotes, todayKey]));
 
   const updateSections = useCallback((updater: (prev: DaySection[]) => DaySection[]) => {
     setSections(updater);
@@ -345,7 +345,7 @@ export function DailyPage() {
     } else {
       apiUpdateTask(id, { title: trimmed }).catch(() => replaceTodayFromApi());
     }
-  }, [locale, replaceTodayFromApi, updateSections]);
+  }, [locale, replaceTodayFromApi, updateSections, todayKey]);
 
   const handleEditCancel = useCallback((id: string) => {
     setEditingId(undefined);
