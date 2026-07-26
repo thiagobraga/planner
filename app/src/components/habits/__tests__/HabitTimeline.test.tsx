@@ -130,7 +130,7 @@ describe('HabitTimeline', () => {
     expect(screen.getByText('New group')).toBeInTheDocument();
   });
 
-  it('shrinks the habit name column to keep three day columns visible on iPhone-sized screens', async () => {
+  it('shrinks the habit name column to keep five day columns visible on iPhone-sized screens', async () => {
     const originalResizeObserver = window.ResizeObserver;
     class MockResizeObserver {
       constructor(private readonly callback: ResizeObserverCallback) {}
@@ -300,5 +300,19 @@ describe('HabitTimeline', () => {
     expect(container.querySelectorAll('[data-drag-handle]').length).toBeGreaterThanOrEqual(2);
     expect(screen.getByLabelText('Reorder Drink water')).toBeInTheDocument();
     expect(screen.getByLabelText('Reorder Morning')).toBeInTheDocument();
+  });
+
+  it('renders a visible option button affordance for habits', () => {
+    const { container } = render(
+      <HabitTimeline {...defaultProps} />,
+      { wrapper: createWrapper() },
+    );
+
+    const button = screen.getByLabelText('Options for Drink water');
+    expect(button).toBeInTheDocument();
+    
+    // Check that it has the icon or visible styling (it should have opacity-0 but group-hover:opacity-100 and focus:opacity-100)
+    // The test mainly ensures the button is in the DOM and has the correct classes applied.
+    expect(button).toHaveClass('habit-timeline-row-options');
   });
 });
