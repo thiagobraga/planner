@@ -128,10 +128,13 @@ describe('AuthContext', () => {
     await waitFor(() => {
       expect(screen.getByTestId('auth-state')).toHaveTextContent('"user":"user-1"');
       expect(screen.getByTestId('auth-state')).toHaveTextContent('"isAuthenticated":true');
+      // connectSocket() runs in a passive effect keyed on isAuthenticated -
+      // it can commit a tick after the DOM text above, so it has to be
+      // inside the same retrying waitFor, not asserted right after it.
+      expect(mockConnectSocket).toHaveBeenCalled();
     });
 
     expect(mockSetCurrentUserId).toHaveBeenCalledWith('user-1');
-    expect(mockConnectSocket).toHaveBeenCalled();
   });
 
   it('sets user to null and isAuthenticated to false when /me rejects', async () => {
@@ -250,13 +253,13 @@ describe('AuthContext', () => {
     await waitFor(() => {
       expect(screen.getByTestId('auth-state')).toHaveTextContent('"user":null');
       expect(screen.getByTestId('auth-state')).toHaveTextContent('"isAuthenticated":false');
+      expect(mockDisconnectSocket).toHaveBeenCalled();
     });
 
     expect(mockApiLogout).toHaveBeenCalled();
     expect(mockSetCurrentUserId).toHaveBeenCalledWith(null);
     expect(queryClient.clear).toHaveBeenCalled();
     expect(mockClearUserMutations).toHaveBeenCalledWith('user-1');
-    expect(mockDisconnectSocket).toHaveBeenCalled();
   });
 
   it('logout() is a no-op once already logged out, so a stray notifyUnauthorized cannot loop', async () => {
@@ -323,9 +326,9 @@ describe('AuthContext', () => {
     await waitFor(() => {
       expect(screen.getByTestId('auth-state')).toHaveTextContent('"user":null');
       expect(screen.getByTestId('auth-state')).toHaveTextContent('"isAuthenticated":false');
+      expect(mockDisconnectSocket).toHaveBeenCalled();
     });
     expect(mockApiLogout).toHaveBeenCalled();
-    expect(mockDisconnectSocket).toHaveBeenCalled();
   });
 
   it('does not react to a dead-session report before any user is authenticated', async () => {
