@@ -1,16 +1,16 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import type { ReactNode } from 'react';
 import { MemoryRouter } from 'react-router';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DailyPage } from '../DailyPage';
-import { PlannerDragProvider } from '../../contexts/PlannerDragContext';
-import {
-  apiToggleTask,
-  apiUpdatePreferences,
-  fetchCollections,
-  fetchPreferences,
-  fetchTodayTasks,
-} from '../../api/client';
+import { fetchCollections, fetchDailyTimeline, fetchPreferences, apiToggleTask, apiUpdatePreferences } from '../../api/client';
+
+const mockFetchDailyTimeline = vi.mocked(fetchDailyTimeline);
+const mockFetchCollections = vi.mocked(fetchCollections);
+const mockFetchPreferences = vi.mocked(fetchPreferences);
+const mockApiToggleTask = vi.mocked(apiToggleTask);
+const mockApiUpdatePreferences = vi.mocked(apiUpdatePreferences);
 
 vi.mock('../../utils/socket', () => ({
   getSocket: () => ({
@@ -22,19 +22,101 @@ vi.mock('../../utils/socket', () => ({
 
 vi.mock('../../api/client', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../../api/client')>()),
-  fetchTodayTasks: vi.fn(),
+  fetchDailyTimeline: vi.fn(),
   fetchCollections: vi.fn(),
   fetchPreferences: vi.fn(),
   apiToggleTask: vi.fn(),
   apiUpdatePreferences: vi.fn(),
 }));
 
-const mockFetchTodayTasks = vi.mocked(fetchTodayTasks);
-const mockFetchCollections = vi.mocked(fetchCollections);
-const mockFetchPreferences = vi.mocked(fetchPreferences);
-const mockApiToggleTask = vi.mocked(apiToggleTask);
-const mockApiUpdatePreferences = vi.mocked(apiUpdatePreferences);
-const scrollIntoView = vi.fn();
+vi.mock('../../contexts/AuthContext', () => ({
+  useAuth: () => ({ logout: vi.fn() }),
+}));
+
+vi.mock('../../hooks/useSync', () => ({
+  useSync: vi.fn(),
+}));
+
+vi.mock('../../hooks/useTaskDrag', () => ({
+  useTaskDrag: () => ({ activeDragId: null }),
+}));
+
+vi.mock('../../components/TaskList', () => ({
+  TaskList: ({
+    tasks,
+    onTaskToggle,
+  }: {
+    tasks: Array<{ id: string; title: string; isCompleted?: boolean }>;
+    onTaskToggle?: (id: string) => void;
+  }) => (
+    <div data-testid="task-list">
+      {tasks.map((task) => (
+        <div key={task.id}>
+          <span>{task.title}</span>
+          {onTaskToggle && (
+            <button
+              type="button"
+              aria-label={`${task.isCompleted ? 'Reopen' : 'Complete'}: ${task.title}`}
+              onClick={() => onTaskToggle(task.id)}
+            />
+          )}
+        </div>
+      ))}
+    </div>
+  ),
+}));
+
+vi.mock('../../components/CalendarWidget', () => ({
+  CalendarWidget: () => <div data-testid="calendar-widget" />,
+}));
+
+vi.mock('../../components/VirtualDay', () => ({
+  VirtualDay: ({
+    date,
+    children,
+    keepMounted = false,
+  }: {
+    date: string;
+    children: ReactNode;
+    keepMounted?: boolean;
+  }) => (
+    <div
+      id={`daily-day-${date}`}
+      data-testid="virtual-day"
+      data-date={date}
+      data-keep-mounted={String(keepMounted)}
+    >
+      {children}
+    </div>
+  ),
+}));
+
+function fmtISO(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function addDays(date: Date, amount: number): string {
+  const next = new Date(date);
+  next.setDate(next.getDate() + amount);
+  return fmtISO(next);
+}
+
+const today = fmtISO(new Date());
+const initialStart = addDays(new Date(), -14);
+const visibleTask = {
+  id: 'task-1',
+  title: 'Visible task',
+  priority: 4,
+  collectionId: 'collection-1',
+  isCompleted: false,
+  orderValue: 1,
+  type: 'task' as const,
+  dueDate: today,
+  createdAt: `${today}T12:00:00Z`,
+};
 
 function deferred<T>() {
   let resolve!: (value: T | PromiseLike<T>) => void;
@@ -57,34 +139,37 @@ function renderPage() {
   return render(
     <QueryClientProvider client={client}>
       <MemoryRouter>
-        <PlannerDragProvider>
-          <DailyPage />
-        </PlannerDragProvider>
+        <DailyPage />
       </MemoryRouter>
     </QueryClientProvider>,
   );
 }
 
 beforeEach(() => {
-  mockFetchTodayTasks.mockReset();
+  mockFetchDailyTimeline.mockReset();
   mockFetchCollections.mockReset();
   mockFetchPreferences.mockReset();
   mockApiToggleTask.mockReset();
   mockApiUpdatePreferences.mockReset();
-  scrollIntoView.mockReset();
 
   Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
     configurable: true,
-    value: scrollIntoView,
+    value: vi.fn(),
   });
   Object.defineProperty(window, 'matchMedia', {
     configurable: true,
     value: vi.fn(() => ({ matches: false })),
   });
+  vi.stubGlobal('requestAnimationFrame', (callback: FrameRequestCallback) => {
+    callback(0);
+    return 1;
+  });
+  vi.stubGlobal('cancelAnimationFrame', vi.fn());
 
   mockFetchCollections.mockResolvedValue([]);
   mockFetchPreferences.mockResolvedValue({
     userId: 'user-1',
+    locale: 'en',
     timeZone: 'UTC',
     weekStart: 'sunday',
     theme: 'system',
@@ -96,35 +181,28 @@ beforeEach(() => {
     hideCompletedTasks: true,
     hideOldNotes: false,
   });
-  mockFetchTodayTasks.mockResolvedValue({
-    overdue: [],
-    today: [
-      {
-        id: 'task-1',
-        title: 'Visible task',
-        priority: 4,
-        collectionId: 'collection-1',
-        isCompleted: false,
-        orderValue: 1,
-        type: 'task',
-        dueDate: '2026-07-20',
-        createdAt: '2026-07-20T12:00:00Z',
-      },
-    ],
+  mockFetchDailyTimeline.mockImplementation((start, end) => {
+    if (start === initialStart && end === today) {
+      return Promise.resolve({
+        start,
+        end,
+        days: [{ date: today, tasks: [visibleTask] }],
+      });
+    }
+
+    return Promise.resolve({
+      start,
+      end,
+      days: [],
+    });
   });
   mockApiToggleTask.mockResolvedValue({
-    id: 'task-1',
-    title: 'Visible task',
-    priority: 4,
-    collectionId: 'collection-1',
+    ...visibleTask,
     isCompleted: true,
-    orderValue: 1,
-    type: 'task',
-    dueDate: '2026-07-20',
-    createdAt: '2026-07-20T12:00:00Z',
   });
   mockApiUpdatePreferences.mockImplementation(async (patch) => ({
     userId: 'user-1',
+    locale: 'en',
     timeZone: 'UTC',
     weekStart: 'sunday',
     theme: 'system',
@@ -134,8 +212,12 @@ beforeEach(() => {
     background: 'beige',
     smallCaps: false,
     hideCompletedTasks: patch.hideCompletedTasks ?? true,
-    hideOldNotes: false,
+    hideOldNotes: patch.hideOldNotes ?? false,
   }));
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
 });
 
 describe('DailyPage behavior visibility', () => {
@@ -145,12 +227,15 @@ describe('DailyPage behavior visibility', () => {
     await screen.findByRole('button', { name: 'Complete: Visible task' });
     fireEvent.click(screen.getByRole('button', { name: 'Today' }));
 
-    expect(scrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth', block: 'start' });
+    await waitFor(() =>
+      expect(HTMLElement.prototype.scrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth', block: 'start' }),
+    );
   });
 
   it('optimistically toggles completed-task visibility and rolls back on failure', async () => {
     mockFetchPreferences.mockResolvedValueOnce({
       userId: 'user-1',
+      locale: 'en',
       timeZone: 'UTC',
       weekStart: 'sunday',
       theme: 'system',
@@ -208,40 +293,97 @@ describe('DailyPage behavior visibility', () => {
   });
 
   it('does not let an older unfiltered load overwrite the filtered daily view', async () => {
-    const firstLoad = deferred<Awaited<ReturnType<typeof fetchTodayTasks>>>();
+    const firstLoad = deferred<Awaited<ReturnType<typeof fetchDailyTimeline>>>();
 
-    mockFetchTodayTasks.mockReturnValueOnce(firstLoad.promise);
+    mockFetchDailyTimeline.mockReset();
+    mockFetchDailyTimeline
+      .mockReturnValueOnce(firstLoad.promise)
+      .mockResolvedValueOnce({
+        start: initialStart,
+        end: today,
+        days: [
+          {
+            date: today,
+            tasks: [{ ...visibleTask, id: 'task-open', title: 'Open task', isCompleted: false }],
+          },
+        ],
+      });
+
+    mockFetchPreferences.mockResolvedValueOnce({
+      userId: 'user-1',
+      locale: 'en',
+      timeZone: 'UTC',
+      weekStart: 'sunday',
+      theme: 'system',
+      notificationsEnabled: true,
+      font: 'lora',
+      showDots: true,
+      background: 'beige',
+      smallCaps: false,
+      hideCompletedTasks: false,
+      hideOldNotes: false,
+    });
+
+    const update = deferred<Awaited<ReturnType<typeof apiUpdatePreferences>>>();
+    mockApiUpdatePreferences.mockReturnValueOnce(update.promise);
 
     renderPage();
 
-    await waitFor(() => expect(mockFetchTodayTasks).toHaveBeenCalledTimes(1));
+    const hideCompleted = await screen.findByRole('button', { name: 'Hide completed tasks' });
+    await waitFor(() => expect(hideCompleted).not.toBeDisabled());
+    fireEvent.click(hideCompleted);
+
+    await waitFor(() =>
+      expect(mockApiUpdatePreferences).toHaveBeenCalledWith({ hideCompletedTasks: true }),
+    );
+    update.resolve({
+      userId: 'user-1',
+      locale: 'en',
+      timeZone: 'UTC',
+      weekStart: 'sunday',
+      theme: 'system',
+      notificationsEnabled: true,
+      font: 'lora',
+      showDots: true,
+      background: 'beige',
+      smallCaps: false,
+      hideCompletedTasks: true,
+      hideOldNotes: false,
+    });
+
+    await waitFor(() => expect(mockFetchDailyTimeline).toHaveBeenCalledTimes(2));
+    await screen.findByRole('button', { name: 'Complete: Open task' });
 
     firstLoad.resolve({
-      overdue: [],
-      today: [
+      start: initialStart,
+      end: today,
+      days: [
         {
-          id: 'task-open',
-          title: 'Open task',
-          priority: 4,
-          collectionId: 'collection-1',
-          isCompleted: false,
-          orderValue: 1,
-          type: 'task',
-          dueDate: '2026-07-20',
-          createdAt: '2026-07-20T12:00:00Z',
+          date: today,
+          tasks: [
+            {
+              ...visibleTask,
+              title: 'Hidden completed task',
+              isCompleted: true,
+            },
+          ],
         },
       ],
     });
 
-    // Simulate hideCompletedTasks filtering: only open task shows
-    expect(await screen.findByRole('button', { name: 'Complete: Open task' })).toBeInTheDocument();
-
-    // Verify completed tasks are not rendered (hideCompletedTasks=true)
-    expect(screen.queryByRole('button', { name: 'Reopen: Hidden completed task' })).not.toBeInTheDocument();
+    await waitFor(() =>
+      expect(screen.queryByRole('button', { name: 'Reopen: Hidden completed task' })).not.toBeInTheDocument(),
+    );
+    expect(screen.getByRole('button', { name: 'Complete: Open task' })).toBeInTheDocument();
   });
 
   it('restores the task when the completion request fails', async () => {
     mockApiToggleTask.mockRejectedValueOnce(new Error('nope'));
+    mockFetchDailyTimeline.mockImplementation((start, end) => Promise.resolve({
+      start,
+      end,
+      days: start <= today && today <= end ? [{ date: today, tasks: [visibleTask] }] : [],
+    }));
     renderPage();
 
     const completeButton = await screen.findByRole('button', { name: 'Complete: Visible task' });

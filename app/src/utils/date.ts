@@ -89,6 +89,17 @@ export function startOfDay(d: Date): Date {
   return x;
 }
 
+export function dateFromISO(iso: string): Date {
+  const [year, month, day] = iso.split('-').map(Number);
+  return new Date(year, month - 1, day);
+}
+
+export function addDaysToISO(iso: string, amount: number): string {
+  const date = dateFromISO(iso);
+  date.setDate(date.getDate() + amount);
+  return fmtISO(date);
+}
+
 export type WeekStart = 'sunday' | 'monday';
 
 const SUNDAY_FIRST_INITIALS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'] as const;
