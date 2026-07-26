@@ -3,8 +3,30 @@ name: Pipeline
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - '**.md'
+      - '.specs/**'
+      - '.claude/**'
+      - '.claudeignore'
+      - '.superpowers/**'
+      - '.omx/**'
+      - '.vscode/**'
+      - '.codegraph/**'
+      - 'backups/**'
+      - '.gitignore'
   pull_request:
     branches: [main]
+    paths-ignore:
+      - '**.md'
+      - '.specs/**'
+      - '.claude/**'
+      - '.claudeignore'
+      - '.superpowers/**'
+      - '.omx/**'
+      - '.vscode/**'
+      - '.codegraph/**'
+      - 'backups/**'
+      - '.gitignore'
   schedule:
     - cron: '0 6 * * 1' # every Monday 06:00 UTC
 

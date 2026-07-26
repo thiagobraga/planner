@@ -63,14 +63,14 @@ function CollectionRow({ node, depth, ...props }: CollectionRowProps) {
   return (
     <>
       <div
-        className="collections-index-row flex items-center h-12 pr-3 cursor-pointer relative"
-        style={{ paddingLeft: `${16 + depth * 16}px` }}
+        className="collections-index-row grid h-6 cursor-pointer relative"
+        style={{ gridTemplateColumns: `24px minmax(0, 1fr) 24px`, paddingLeft: `${depth * 24}px` }}
         onClick={() => {
           if (!isRenaming && !isMenuOpen) navigate(`/collection/${node.id}`);
         }}
       >
         <span
-          className="w-2.5 h-2.5 rounded-full mr-3 shrink-0 [filter:saturate(0.55)]"
+          className="w-2 h-2 rounded-full justify-self-center self-center shrink-0 [filter:saturate(0.55)]"
           style={{ backgroundColor: node.color }}
           aria-hidden="true"
         />
@@ -87,14 +87,14 @@ function CollectionRow({ node, depth, ...props }: CollectionRowProps) {
               if (e.key === 'Escape') props.onCancelRename();
             }}
             onBlur={() => props.onSaveRename(node)}
-            className="flex-1 min-w-0 h-6 text-sm leading-6 text-ink bg-transparent border-0 border-b border-dot outline-none px-0 focus:outline-none focus-visible:outline-none focus-visible:ring-0"
+            className="col-start-2 col-span-1 min-w-0 h-6 text-sm leading-6 text-ink bg-transparent border-0 border-b border-dot outline-none px-0 focus:outline-none focus-visible:outline-none focus-visible:ring-0"
           />
         ) : (
-          <span className="flex-1 min-w-0 truncate text-sm leading-6 text-ink">{node.name}</span>
+          <span className="col-start-2 col-span-1 min-w-0 truncate text-sm leading-6 text-ink">{node.name}</span>
         )}
 
         {!isRenaming && (
-          <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+          <div className="col-start-3 col-span-1 flex items-center justify-self-end gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
             <div className="relative" ref={menuRef}>
               <button
                 type="button"
@@ -145,10 +145,10 @@ function CollectionRow({ node, depth, ...props }: CollectionRowProps) {
 
       {isAddingSub && (
         <div
-          className="flex items-center h-12 pr-3"
-          style={{ paddingLeft: `${16 + (depth + 1) * 16}px` }}
+          className="grid h-6"
+          style={{ gridTemplateColumns: `24px minmax(0, 1fr) 24px`, paddingLeft: `${(depth + 1) * 24}px` }}
         >
-          <span className="w-2.5 h-2.5 rounded-full mr-3 shrink-0 bg-dot" aria-hidden="true" />
+          <span className="w-2 h-2 rounded-full justify-self-center self-center shrink-0 bg-dot" aria-hidden="true" />
           <input
             autoFocus
             type="text"
@@ -160,7 +160,7 @@ function CollectionRow({ node, depth, ...props }: CollectionRowProps) {
               if (e.key === 'Escape') props.onCancelNewSub();
             }}
             onBlur={() => props.onSaveNewSub(node.id)}
-            className="flex-1 min-w-0 h-6 text-sm leading-6 text-ink bg-transparent border-0 border-b border-dot outline-none px-0 focus:outline-none focus-visible:outline-none focus-visible:ring-0"
+            className="col-start-2 col-span-1 min-w-0 h-6 text-sm leading-6 text-ink bg-transparent border-0 border-b border-dot outline-none px-0 focus:outline-none focus-visible:outline-none focus-visible:ring-0"
           />
         </div>
       )}

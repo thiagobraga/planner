@@ -181,6 +181,14 @@ describe('CollectionsIndexPage', () => {
     expect(chevrons.length).toBeGreaterThanOrEqual(2);
   });
 
+  it('keeps collection rows on the 24px grid step', async () => {
+    renderPage();
+
+    await screen.findByText('Work');
+    const row = document.querySelector('.collections-index-row');
+    expect(row).toHaveClass('h-6');
+  });
+
   it('creates a collection when Enter is pressed in the add input', async () => {
     mockApiCreateCollection.mockResolvedValue({
       id: 'new-1',
