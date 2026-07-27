@@ -11,9 +11,14 @@ import { useAuth } from '../contexts/AuthContext';
  * still render unconditionally on both the login screen and the
  * authenticated app shell.
  *
- * Debounces the display: only shows after 500ms offline to avoid flashing
- * during initial auth/socket connection.
+ * Debounces the display, by cause. A browser-level outage is real and shows
+ * quickly; a socket-only outage waits long enough for a reconnect (see
+ * `utils/socket.ts`) to land, so routine drops - a deploy, a session
+ * revalidation sweep, a resumed tab - never paint a banner at all.
  */
+const BROWSER_OFFLINE_DELAY_MS = 500;
+const SOCKET_OFFLINE_DELAY_MS = 3000;
+
 export function OfflineIndicator() {
   const { isAuthenticated } = useAuth();
   const isOnline = useOnlineStatus(isAuthenticated);
@@ -21,7 +26,8 @@ export function OfflineIndicator() {
 
   useEffect(() => {
     if (!isOnline) {
-      const timer = setTimeout(() => setShowOffline(true), 500);
+      const delay = navigator.onLine ? SOCKET_OFFLINE_DELAY_MS : BROWSER_OFFLINE_DELAY_MS;
+      const timer = setTimeout(() => setShowOffline(true), delay);
       return () => clearTimeout(timer);
     } else {
       setShowOffline(false);
