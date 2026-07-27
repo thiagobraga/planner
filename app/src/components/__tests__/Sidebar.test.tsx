@@ -3,6 +3,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Sidebar } from '../Sidebar';
 
 const mockLogout = vi.hoisted(() => vi.fn());
+// Mutable so a test can hand the sidebar an admin, a plain user, or nobody.
+const authState = vi.hoisted(() => ({ user: null as { role: string } | null }));
 
 vi.mock('react-router', () => ({
   NavLink: vi.fn(({ to, children, className, title, ...rest }) => {
@@ -18,7 +20,7 @@ vi.mock('react-router', () => ({
 }));
 
 vi.mock('../../contexts/AuthContext', () => ({
-  useAuth: vi.fn(() => ({ logout: mockLogout })),
+  useAuth: vi.fn(() => ({ logout: mockLogout, user: authState.user })),
 }));
 
 vi.mock('../../contexts/PlannerDragContext', () => ({
@@ -40,6 +42,7 @@ vi.mock('../CollectionTreeNav', () => ({
 describe('Sidebar', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    authState.user = { role: 'user' };
   });
 
   it('renders navigation links in expanded mode', () => {
@@ -110,5 +113,38 @@ describe('Sidebar', () => {
   it('renders CollectionTreeNav in expanded mode', () => {
     render(<Sidebar />);
     expect(screen.getByTestId('collection-tree-nav')).toBeInTheDocument();
+  });
+
+  it('hides the admin links from a regular user', () => {
+    render(<Sidebar />);
+    expect(screen.queryByText('Admin')).not.toBeInTheDocument();
+    expect(screen.queryByText('Users')).not.toBeInTheDocument();
+  });
+
+  it('shows the admin links to an admin in expanded mode', () => {
+    authState.user = { role: 'admin' };
+    render(<Sidebar />);
+    expect(screen.getByText('Admin')).toBeInTheDocument();
+    expect(screen.getByText('Users')).toBeInTheDocument();
+  });
+
+  it('links the admin entries to the admin routes', () => {
+    authState.user = { role: 'admin' };
+    render(<Sidebar />);
+    expect(screen.getByText('Admin').closest('a')).toHaveAttribute('href', '/admin/dashboard');
+    expect(screen.getByText('Users').closest('a')).toHaveAttribute('href', '/admin/users');
+  });
+
+  it('shows the admin links to an admin in collapsed mode', () => {
+    authState.user = { role: 'admin' };
+    render(<Sidebar collapsed />);
+    expect(screen.getByTitle('Dashboard')).toBeInTheDocument();
+    expect(screen.getByTitle('Users')).toBeInTheDocument();
+  });
+
+  it('hides the admin links from a regular user in collapsed mode', () => {
+    render(<Sidebar collapsed />);
+    expect(screen.queryByTitle('Dashboard')).not.toBeInTheDocument();
+    expect(screen.queryByTitle('Users')).not.toBeInTheDocument();
   });
 });

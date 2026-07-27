@@ -1,7 +1,7 @@
 import { NavLink, useNavigate } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import { useDroppable } from '@dnd-kit/core';
-import { ChevronRight, Repeat2, Settings, HelpCircle, LogOut, FolderOpen, type LucideIcon } from 'lucide-react';
+import { ChevronRight, Repeat2, Settings, HelpCircle, LogOut, FolderOpen, ShieldCheck, Users, type LucideIcon } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { usePlannerDrag } from '../contexts/PlannerDragContext';
 import { CollectionTreeNav } from './CollectionTreeNav';
@@ -104,8 +104,9 @@ function InboxNavItem({ label, icon }: { label: string; icon: ReactNode }) {
 
 export function Sidebar({ isOpen, onClose, collapsed = false }: SidebarProps) {
   const { t } = useI18n();
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   const navigate = useNavigate();
+  const isAdmin = user?.role === 'admin';
 
   const handleLogout = () => {
     logout();
@@ -143,6 +144,25 @@ export function Sidebar({ isOpen, onClose, collapsed = false }: SidebarProps) {
         </nav>
 
         <div className="mt-auto flex flex-col gap-0.5 w-full items-center pb-6">
+          {isAdmin && (
+            <>
+              <NavLink
+                to="/admin/dashboard"
+                title={t('nav.adminDashboard')}
+                className={({ isActive }) => (isActive ? 'sidebar-icon-link sidebar-icon-link--active' : 'sidebar-icon-link')}
+              >
+                <ShieldCheck size={16} strokeWidth={1.5} />
+              </NavLink>
+              <NavLink
+                to="/admin/users"
+                title={t('nav.adminUsers')}
+                className={({ isActive }) => (isActive ? 'sidebar-icon-link sidebar-icon-link--active' : 'sidebar-icon-link')}
+              >
+                <Users size={16} strokeWidth={1.5} />
+              </NavLink>
+            </>
+          )}
+
           <NavLink
             to="/settings"
             title={t('common.settings')}
@@ -230,6 +250,20 @@ export function Sidebar({ isOpen, onClose, collapsed = false }: SidebarProps) {
       {/* Footer utilities */}
       <div className="mt-auto pt-4">
         <nav aria-label={t('common.settings')} className="flex flex-col">
+          {isAdmin && (
+            <>
+              <SidebarNavItem
+                to="/admin/dashboard"
+                label={t('nav.admin')}
+                icon={<ShieldCheck size={15} strokeWidth={1.5} />}
+              />
+              <SidebarNavItem
+                to="/admin/users"
+                label={t('nav.adminUsers')}
+                icon={<Users size={15} strokeWidth={1.5} />}
+              />
+            </>
+          )}
           <SidebarNavItem to="/settings" label={t('common.settings')} icon={<Settings size={15} strokeWidth={1.5} />} />
           <SidebarNavItem to="/styleguide" label={t('nav.styleguide')} icon={<StyleguideIcon size={15} />} />
           <SidebarNavItem to="/help" label={t('nav.help')} icon={<HelpCircle size={15} strokeWidth={1.5} />} />
