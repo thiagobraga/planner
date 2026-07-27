@@ -100,6 +100,31 @@ See [DESIGN.md](./DESIGN.md) for detailed design system specification, component
 
 Contributions are welcome.
 
+### Git hooks
+
+Optional but recommended — they run the same checks CI does, so a red
+pipeline shows up locally instead of on GitHub. Enable once per clone:
+
+```bash
+./scripts/setup-hooks.sh     # sets core.hooksPath to .githooks/
+```
+
+| Hook | Runs | Typical time |
+| ---------- | ------------------------ | ------------ |
+| pre-commit | `lint`                   | 2–8s         |
+| pre-push   | `lint`, `test`, `build`  | ~30s/package |
+
+Both only check the packages your change actually touches, so a docs-only
+commit does no work and an `api/` change never waits on the app suite.
+Commands run natively when `node_modules` is present, otherwise through the
+running compose service; with neither available they warn and skip rather
+than blocking you.
+
+Bypass a single run with `--no-verify`, or `export SKIP_HOOKS=1` for a
+session. Disable entirely with `git config --unset core.hooksPath`.
+
+### Workflow
+
 1. Fork the repository.
 2. Create a branch:
 
