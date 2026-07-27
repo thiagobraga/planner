@@ -13,11 +13,18 @@ import habitRoutes from "./habits.js";
 import habitGroupRoutes from "./habitGroups.js";
 import activityRoutes from "./activity.js";
 import collaborationRoutes, { collectionCollabRouter } from "./collaboration.js";
+import adminUserRoutes from "./adminUsers.js";
+import adminStatsRoutes from "./adminStats.js";
+import { adminAuthMiddleware } from "../middleware/adminAuth.js";
 
 const router: RouterType = Router();
 
 // /health is mounted in index.ts ahead of authMiddleware; a copy here would be
 // unreachable behind it.
+
+// authMiddleware already ran globally in index.ts; adminAuth adds the role check.
+router.use("/admin/users", adminAuthMiddleware, adminUserRoutes);
+router.use("/admin/stats", adminAuthMiddleware, adminStatsRoutes);
 
 router.use("/tasks", taskRoutes);
 router.use("/labels", labelRoutes);
