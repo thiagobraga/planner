@@ -1,6 +1,7 @@
 import { Router, type Request, type Response, type NextFunction } from "express";
 import { login, register, requestPasswordReset, confirmPasswordReset } from "../services/authService.js";
 import { validate, type ValidationError } from "../utils/validate.js";
+import { AppError } from "../utils/AppError.js";
 import { authMiddleware } from "../middleware/auth.js";
 import { buildCookieName, buildCookieOptions, revokeSession } from "../services/sessionService.js";
 import { securityLog } from "../utils/securityLogger.js";
@@ -81,6 +82,19 @@ router.post("/login", async (req: Request, res: Response, next: NextFunction) =>
     res.cookie(buildCookieName(), rawToken, buildCookieOptions());
     res.json({ user });
   } catch (err) {
+    // A disabled account must look exactly like a wrong password to the
+    // client; the real reason only reaches the security log.
+    if (err instanceof AppError && err.code === "ACCOUNT_DISABLED") {
+      securityLog.authLoginFailure(req, "account-disabled");
+      next(
+        new AppError({
+          code: "INVALID_CREDENTIALS",
+          message: "Invalid email or password.",
+          statusCode: 401,
+        }),
+      );
+      return;
+    }
     next(err);
   }
 });
@@ -140,17 +154,24 @@ router.get("/me", authMiddleware, async (req: Request, res: Response, next: Next
   try {
     const pool = (await import("../db/pool.js")).default;
     const result = await pool.query(
-      "SELECT id, email, display_name FROM users WHERE id = $1",
+      "SELECT id, email, display_name, role, disabled_at FROM users WHERE id = $1",
       [req.userId],
     );
-    if (result.rows.length === 0) {
+    if (result.rows.length === 0 || result.rows[0].disabled_at) {
       res.status(401).json({
         error: { code: "UNAUTHORIZED", message: "User not found" },
       });
       return;
     }
     const user = result.rows[0];
-    res.json({ user: { id: user.id, email: user.email, displayName: user.display_name } });
+    res.json({
+      user: {
+        id: user.id,
+        email: user.email,
+        displayName: user.display_name,
+        role: user.role,
+      },
+    });
   } catch (err) {
     next(err);
   }

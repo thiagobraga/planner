@@ -18,10 +18,13 @@ import { MonthlyPage } from './pages/MonthlyPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { StyleguidePage } from './pages/StyleguidePage';
 import { HelpPage } from './pages/HelpPage';
+import { AdminUsersPage } from './pages/admin/AdminUsersPage';
+import { AdminDashboardPage } from './pages/admin/AdminDashboardPage';
 import { I18nProvider } from './i18n/I18nContext';
 
 function AppRoutes() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
+  const isAdmin = user?.role === 'admin';
 
   return (
     <BrowserRouter>
@@ -43,6 +46,15 @@ function AppRoutes() {
           <Route path="/help" element={<HelpPage />} />
           <Route path="/collections" element={<CollectionsIndexPage />} />
           <Route path="/collection/:id" element={<CollectionsPage />} />
+          <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
+          <Route
+            path="/admin/dashboard"
+            element={isAdmin ? <AdminDashboardPage /> : <Navigate to="/daily" replace />}
+          />
+          <Route
+            path="/admin/users"
+            element={isAdmin ? <AdminUsersPage /> : <Navigate to="/daily" replace />}
+          />
         </Route>
       </Routes>
     </BrowserRouter>
