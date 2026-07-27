@@ -52,7 +52,10 @@ export const securityLog = {
     log({ ...baseEvent(req), type: "auth:login:success", userId, metadata: { method: "password" } });
   },
 
-  authLoginFailure(req: Request, reason: "invalid-credentials" | "account-locked" | "rate-limited"): void {
+  authLoginFailure(
+    req: Request,
+    reason: "invalid-credentials" | "account-locked" | "rate-limited" | "account-disabled",
+  ): void {
     log({ ...baseEvent(req), type: "auth:login:failure", metadata: { reason } });
   },
 

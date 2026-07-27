@@ -180,13 +180,95 @@ describe("register - validation", () => {
 describe("login", () => {
   it("returns user and raw session token on success", async () => {
     mockQuery.mockResolvedValueOnce({
-      rows: [{ id: "user-1", email: "user@example.com", password_hash: validHash, display_name: "User" }],
+      rows: [
+        {
+          id: "user-1",
+          email: "user@example.com",
+          password_hash: validHash,
+          display_name: "User",
+          role: "user",
+          disabled_at: null,
+        },
+      ],
     });
 
     const result = await login("user@example.com", STRONG_PASSWORD);
 
-    expect(result.user).toEqual({ id: "user-1", email: "user@example.com", displayName: "User" });
+    expect(result.user).toEqual({
+      id: "user-1",
+      email: "user@example.com",
+      displayName: "User",
+      role: "user",
+    });
     expect(result.rawToken).toBe("mock-raw-session-token");
+  });
+
+  it("carries the admin role through to the caller", async () => {
+    mockQuery.mockResolvedValueOnce({
+      rows: [
+        {
+          id: "user-1",
+          email: "admin@example.com",
+          password_hash: validHash,
+          display_name: null,
+          role: "admin",
+          disabled_at: null,
+        },
+      ],
+    });
+
+    const result = await login("admin@example.com", STRONG_PASSWORD);
+
+    expect(result.user.role).toBe("admin");
+  });
+});
+
+describe("login - disabled accounts", () => {
+  it("rejects a disabled account with the invalid-credentials message", async () => {
+    mockQuery.mockResolvedValueOnce({
+      rows: [
+        {
+          id: "user-1",
+          email: "user@example.com",
+          password_hash: validHash,
+          display_name: "User",
+          role: "user",
+          disabled_at: new Date("2026-01-01T00:00:00Z"),
+        },
+      ],
+    });
+
+    try {
+      await login("user@example.com", STRONG_PASSWORD);
+      expect.fail("should throw");
+    } catch (err) {
+      const e = err as AppError;
+      expect(e.code).toBe("ACCOUNT_DISABLED");
+      expect(e.statusCode).toBe(401);
+      // Same wording as a wrong password: the client must not be able to tell
+      // a disabled account from a bad credential.
+      expect(e.message).toBe("Invalid email or password.");
+    }
+  });
+
+  it("does not mint a session for a disabled account", async () => {
+    mockQuery.mockResolvedValueOnce({
+      rows: [
+        {
+          id: "user-1",
+          email: "user@example.com",
+          password_hash: validHash,
+          display_name: "User",
+          role: "user",
+          disabled_at: new Date("2026-01-01T00:00:00Z"),
+        },
+      ],
+    });
+
+    const sessionMock = await import("../sessionService.js");
+
+    await expect(login("user@example.com", STRONG_PASSWORD)).rejects.toThrow();
+    expect(sessionMock.createSession).not.toHaveBeenCalled();
   });
 });
 

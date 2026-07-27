@@ -16,10 +16,13 @@ import {
 const EMAIL_REGEX =
   /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
 
+export type UserRole = 'user' | 'admin';
+
 export interface UserData {
   id: string;
   email: string;
   displayName: string | null;
+  role: UserRole;
 }
 
 export interface RegisterInput {
@@ -97,7 +100,7 @@ export async function register(input: RegisterInput): Promise<UserData> {
     client.release();
   }
 
-  return { id: userId, email: input.email, displayName: input.displayName ?? null };
+  return { id: userId, email: input.email, displayName: input.displayName ?? null, role: 'user' };
 }
 
 export async function login(email: string, password: string, ip?: string): Promise<{ user: UserData; rawToken: string }> {
@@ -114,7 +117,7 @@ export async function login(email: string, password: string, ip?: string): Promi
   }
 
   const result = await pool.query(
-    'SELECT id, email, password_hash, display_name FROM users WHERE LOWER(email) = LOWER($1)',
+    'SELECT id, email, password_hash, display_name, role, disabled_at FROM users WHERE LOWER(email) = LOWER($1)',
     [email],
   );
 
@@ -140,6 +143,18 @@ export async function login(email: string, password: string, ip?: string): Promi
     });
   }
 
+  // Checked after the password verification so a disabled account is
+  // indistinguishable from a wrong password in both timing and response. The
+  // route maps this code back to INVALID_CREDENTIALS before it reaches the
+  // client; it exists only so the failure can be logged with a real reason.
+  if (user.disabled_at) {
+    throw new AppError({
+      code: 'ACCOUNT_DISABLED',
+      message: 'Invalid email or password.',
+      statusCode: 401,
+    });
+  }
+
   await clearLoginRate(email, clientIp);
 
   const rawToken = await createSession(user.id);
@@ -149,6 +164,7 @@ export async function login(email: string, password: string, ip?: string): Promi
       id: user.id,
       email: user.email,
       displayName: user.display_name,
+      role: user.role,
     },
     rawToken,
   };
