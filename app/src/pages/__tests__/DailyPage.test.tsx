@@ -112,16 +112,18 @@ const basePreferences: Preferences = {
   hideOldNotes: false,
 };
 
+// UTC, not local time, because the preferences mock above reports
+// timeZone: 'UTC' and DailyPage derives its own todayKey from that preference.
+// Reading local parts here makes the fixtures disagree with the component for
+// every developer whose date differs from UTC's - west of Greenwich each
+// evening, east of it each morning.
 function fmtISO(date: Date): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
+  return date.toISOString().slice(0, 10);
 }
 
 function addDays(date: Date, amount: number): string {
   const next = new Date(date);
-  next.setDate(next.getDate() + amount);
+  next.setUTCDate(next.getUTCDate() + amount);
   return fmtISO(next);
 }
 
@@ -129,6 +131,12 @@ const today = fmtISO(new Date());
 const initialStart = addDays(new Date(), -14);
 const futureStart = addDays(new Date(), 1);
 const futureEnd = addDays(new Date(), 15);
+
+// Relative to the clock, never literals: a fixture date written as
+// '2026-07-27' silently becomes today, then the past, as real time passes,
+// and the timeline collapses the duplicate day out from under the assertion.
+const pastDay = addDays(new Date(), -3);
+const futureDay = addDays(new Date(), 3);
 
 function task(id: string, title: string, dueDate: string, isCompleted = false): ApiTask {
   return {
@@ -200,7 +208,7 @@ describe('DailyPage', () => {
         start: initialStart,
         end: today,
         days: [
-          { date: '2026-07-24', tasks: [task('task-past', 'Past task', '2026-07-24')] },
+          { date: pastDay, tasks: [task('task-past', 'Past task', pastDay)] },
           { date: today, tasks: [task('task-today', 'Today task', today)] },
         ],
       })
@@ -208,7 +216,7 @@ describe('DailyPage', () => {
         start: futureStart,
         end: futureEnd,
         days: [
-          { date: '2026-07-27', tasks: [task('task-future', 'Future task', '2026-07-27')] },
+          { date: futureDay, tasks: [task('task-future', 'Future task', futureDay)] },
         ],
       });
 
@@ -219,9 +227,9 @@ describe('DailyPage', () => {
     expect(mockFetchDailyTimeline).toHaveBeenNthCalledWith(1, initialStart, today);
     expect(mockFetchDailyTimeline).toHaveBeenNthCalledWith(2, futureStart, futureEnd);
     expect([...screen.getAllByTestId('virtual-day')].map((node) => node.getAttribute('data-date'))).toEqual([
-      '2026-07-27',
+      futureDay,
       today,
-      '2026-07-24',
+      pastDay,
     ]);
   });
 
