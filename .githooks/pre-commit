@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# Lints the packages this commit touches. Deliberately lint-only: the project
+# convention is many small commits, so tests and builds wait for pre-push.
+
+set -uo pipefail
+# shellcheck source=./_lib.sh
+. "$(dirname "$0")/_lib.sh"
+
+hook_name="pre-commit"
+
+if hooks_disabled; then
+  warn "SKIP_HOOKS=1 - skipping"
+  exit 0
+fi
+
+staged="$(git diff --cached --name-only --diff-filter=ACMR)"
+[ -n "$staged" ] || exit 0
+
+pkgs=()
+while IFS= read -r pkg; do
+  [ -n "$pkg" ] && pkgs+=("$pkg")
+done <<< "$(packages_touched_by "$staged")"
+
+run_all "lint" ${pkgs[@]+"${pkgs[@]}"} -- lint

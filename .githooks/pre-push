@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+# Runs what CI runs - lint, test, build - against the packages this push
+# touches, so a red pipeline is caught here instead of on GitHub.
+#
+# git feeds this hook one line per ref on stdin:
+#   <local ref> <local sha> <remote ref> <remote sha>
+
+set -uo pipefail
+# shellcheck source=./_lib.sh
+. "$(dirname "$0")/_lib.sh"
+
+hook_name="pre-push"
+
+if hooks_disabled; then
+  warn "SKIP_HOOKS=1 - skipping"
+  exit 0
+fi
+
+readonly ZERO="0000000000000000000000000000000000000000"
+
+# Every file this push would add to the remote. A brand-new branch has no
+# remote sha to diff against, so fall back to the merge base with the default
+# branch rather than replaying the repository's entire history.
+changed=""
+while read -r _local_ref local_sha _remote_ref remote_sha; do
+  # Branch deletion - nothing to check.
+  [ "$local_sha" = "$ZERO" ] && continue
+
+  if [ "$remote_sha" = "$ZERO" ]; then
+    base="$(git merge-base "$local_sha" origin/main 2>/dev/null || true)"
+    range="${base:+$base..}$local_sha"
+  else
+    range="${remote_sha}..${local_sha}"
+  fi
+
+  changed+="$(git diff --name-only "$range" 2>/dev/null)"$'\n'
+done
+
+# Run straight from the terminal (no stdin from git) - check the working branch
+# against the default branch so `bash .githooks/pre-push` is a useful dry run.
+if [ -z "${changed//[[:space:]]/}" ]; then
+  base="$(git merge-base HEAD origin/main 2>/dev/null || true)"
+  [ -n "$base" ] && changed="$(git diff --name-only "${base}..HEAD")"
+fi
+
+[ -n "${changed//[[:space:]]/}" ] || { log "nothing to check"; exit 0; }
+
+pkgs=()
+while IFS= read -r pkg; do
+  [ -n "$pkg" ] && pkgs+=("$pkg")
+done <<< "$(packages_touched_by "$changed")"
+
+run_all "lint + test + build" ${pkgs[@]+"${pkgs[@]}"} -- lint test build
