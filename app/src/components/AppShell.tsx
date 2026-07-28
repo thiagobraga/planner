@@ -14,6 +14,7 @@ import { updateDocumentThemeColor } from '../utils/theme';
 import { getDetectedTimeZone } from '../utils/date';
 import { PlannerDragProvider } from '../contexts/PlannerDragContext';
 import { useI18n } from '../i18n/I18nContext';
+import { useVersionCheck } from '../hooks/useVersionCheck';
 
 const FONT_CLASSES: Record<FontOption, string> = {
   lora: 'font-journal',
@@ -23,6 +24,7 @@ const FONT_CLASSES: Record<FontOption, string> = {
 
 export function AppShell() {
   const { setLocale, t } = useI18n();
+  const updateAvailable = useVersionCheck();
   const navigate = useNavigate();
   const qc = useQueryClient();
   const { data: preferences, isPending: preferencesLoading } = useQuery({
@@ -192,6 +194,7 @@ export function AppShell() {
             isOpen={sidebarOpen}
             onClose={() => setSidebarOpen(false)}
             collapsed={sidebarCollapsed}
+            updateAvailable={updateAvailable}
           />
 
           <main

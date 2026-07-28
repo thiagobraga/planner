@@ -313,7 +313,12 @@ export interface CompletionResult {
   isCompleted: boolean;
 }
 
-export async function toggleCompletion(userId: string, habitId: string, date: string, isCompleted: boolean): Promise<CompletionResult> {
+export async function toggleCompletion(
+  userId: string,
+  habitId: string,
+  date: string,
+  isCompleted: boolean,
+): Promise<CompletionResult | CompletionResult[]> {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
     throw new AppError({ code: "VALIDATION_ERROR", message: "date must be YYYY-MM-DD", statusCode: 400 });
   }
@@ -322,30 +327,40 @@ export async function toggleCompletion(userId: string, habitId: string, date: st
   }
 
   await getOwnedHabit(userId, habitId);
-
-  // A parent's state is derived from its sub-habits, never stored. Writing a row
-  // here would create a second source of truth that the UI never reads.
-  if (await hasChildren(habitId)) {
-    throw new AppError({
-      code: "VALIDATION_ERROR",
-      message: "parent habit completion is derived from its sub-habits",
-      statusCode: 400,
-    });
-  }
+  const childrenResult = await pool.query(
+    `SELECT id FROM habits WHERE parent_id = $1 AND user_id = $2 ORDER BY order_value, created_at`,
+    [habitId, userId],
+  );
+  const habitIds = childrenResult.rows.length > 0
+    ? (childrenResult.rows as { id: string }[]).map((row) => row.id)
+    : [habitId];
 
   if (isCompleted) {
     await pool.query(
-      `INSERT INTO habit_completions (habit_id, completed_date) VALUES ($1, $2)
+      `INSERT INTO habit_completions (habit_id, completed_date)
+       SELECT habit_id, $2::date
+       FROM unnest($1::uuid[]) AS completion_habit(habit_id)
        ON CONFLICT (habit_id, completed_date) DO NOTHING`,
-      [habitId, date],
+      [habitIds, date],
     );
   } else {
-    await pool.query(`DELETE FROM habit_completions WHERE habit_id = $1 AND completed_date = $2`, [habitId, date]);
+    await pool.query(
+      `DELETE FROM habit_completions WHERE habit_id = ANY($1::uuid[]) AND completed_date = $2`,
+      [habitIds, date],
+    );
   }
 
-  const payload: CompletionResult = { habitId, date, isCompleted };
-  emit(userId, "habit_completion", isCompleted ? "created" : "deleted", `${habitId}:${date}`, payload);
-  return payload;
+  const payload = habitIds.map((id) => ({ habitId: id, date, isCompleted }));
+  for (const completion of payload) {
+    emit(
+      userId,
+      "habit_completion",
+      isCompleted ? "created" : "deleted",
+      `${completion.habitId}:${date}`,
+      completion,
+    );
+  }
+  return payload.length === 1 ? payload[0]! : payload;
 }
 
 export async function listGroups(userId: string): Promise<HabitGroup[]> {

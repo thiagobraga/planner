@@ -4,7 +4,6 @@ import { queryClient } from './api/queryClient';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { AppShell } from './components/AppShell';
 import { OfflineIndicator } from './components/OfflineIndicator';
-import { UpdateToast } from './components/UpdateToast';
 import { LoginPage } from './pages/LoginPage';
 import { RegisterPage } from './pages/RegisterPage';
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
@@ -68,7 +67,6 @@ function App() {
         <AuthProvider>
           <AppRoutes />
           <OfflineIndicator />
-          <UpdateToast />
         </AuthProvider>
       </I18nProvider>
     </QueryClientProvider>

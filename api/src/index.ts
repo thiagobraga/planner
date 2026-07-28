@@ -15,7 +15,7 @@ import { requestContext } from "./middleware/requestContext.js";
 import { originCheck } from "./middleware/origin.js";
 import { authMiddleware } from "./middleware/auth.js";
 import authRoutes from "./routes/auth.js";
-import { BUILD_VERSION } from "./utils/buildInfo.js";
+import { BUILD_VERSION, LATEST_VERSION } from "./utils/buildInfo.js";
 
 const app: Express = express();
 app.set("trust proxy", IS_PRODUCTION ? 1 : 0);
@@ -111,7 +111,7 @@ app.get("/api/v1/health", (_req, res) => {
 // Public so the frontend's new-version check works even for a logged-out
 // tab (login screen) and doesn't itself trigger a 401.
 app.get("/api/v1/version", (_req, res) => {
-  res.json({ version: BUILD_VERSION });
+  res.json({ currentVersion: BUILD_VERSION, latestVersion: LATEST_VERSION });
 });
 
 // Auth routes (mounted before CSRF — login/register don't need tokens)

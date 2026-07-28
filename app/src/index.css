@@ -535,6 +535,14 @@ textarea:focus-visible {
   padding: 24px 12px;
 }
 
+.update-indicator-mobile {
+  display: none;
+}
+
+.update-indicator-desktop {
+  display: flex;
+}
+
 /* Collection rows - reveal row actions on hover */
 .collection-row {
   border-radius: 4px;
@@ -840,6 +848,20 @@ textarea:focus-visible {
 
 /* Mobile sidebar drawer - below 640px the collapsed sidebar is shown instead, no drawer needed */
 @media (max-width: 639px) {
+  .sidebar-collapsed {
+    overflow: visible;
+  }
+
+  .update-indicator-mobile {
+    display: block;
+    position: relative;
+    height: 32px;
+  }
+
+  .update-indicator-desktop {
+    display: none;
+  }
+
   .main-content {
     padding: 24px 12px 24px 24px;
   }

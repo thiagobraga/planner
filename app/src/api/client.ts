@@ -551,13 +551,16 @@ export async function apiDeleteHabit(id: string): Promise<void> {
   await request<unknown>(`/habits/${id}`, { method: 'DELETE' });
 }
 
-// Only leaf habits accept completions. A parent's state is derived from its
-// sub-habits, and the API rejects a write here for a habit that has children.
+// A leaf completion stays a single-item response. A parent completion resolves
+// its sub-habits server-side and returns one result per affected child.
 export async function apiToggleHabitCompletion(
   id: string,
   date: string,
   isCompleted: boolean,
-): Promise<{ habitId: string; date: string; isCompleted: boolean }> {
+): Promise<
+  | { habitId: string; date: string; isCompleted: boolean }
+  | { habitId: string; date: string; isCompleted: boolean }[]
+> {
   return request(`/habits/${id}/completions`, {
     method: 'PUT',
     body: JSON.stringify({ date, isCompleted }),
