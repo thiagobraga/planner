@@ -113,22 +113,27 @@ describe("createHabit", () => {
 });
 
 describe("toggleCompletion", () => {
-  it("refuses to store a completion on a habit that has sub-habits", async () => {
+  it("completes all sub-habits in one database write", async () => {
     mockQuery
       .mockResolvedValueOnce({ rows: [habitRow()] }) // getOwnedHabit
-      .mockResolvedValueOnce({ rows: [{ "?column?": 1 }] }); // hasChildren -> yes
+      .mockResolvedValueOnce({ rows: [{ id: "h2" }, { id: "h3" }] }) // children
+      .mockResolvedValueOnce({ rows: [] }); // insert
 
-    await expect(toggleCompletion("u1", "h1", "2026-07-18", true)).rejects.toThrow(
-      /derived from its sub-habits/,
-    );
-    // No INSERT was attempted.
-    expect(mockQuery).toHaveBeenCalledTimes(2);
+    const result = await toggleCompletion("u1", "h1", "2026-07-18", true);
+
+    expect(result).toEqual([
+      { habitId: "h2", date: "2026-07-18", isCompleted: true },
+      { habitId: "h3", date: "2026-07-18", isCompleted: true },
+    ]);
+    expect(mockQuery).toHaveBeenCalledTimes(3);
+    expect(mockQuery.mock.calls[2]?.[0]).toMatch(/INSERT INTO habit_completions/);
+    expect(mockQuery.mock.calls[2]?.[1]).toEqual([["h2", "h3"], "2026-07-18"]);
   });
 
   it("stores a completion for a leaf habit", async () => {
     mockQuery
       .mockResolvedValueOnce({ rows: [habitRow({ id: "h3", parent_id: "h1" })] }) // getOwnedHabit
-      .mockResolvedValueOnce({ rows: [] }) // hasChildren -> no
+      .mockResolvedValueOnce({ rows: [] }) // children -> none
       .mockResolvedValueOnce({ rows: [] }); // insert
 
     const result = await toggleCompletion("u1", "h3", "2026-07-18", true);

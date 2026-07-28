@@ -211,12 +211,12 @@ export function HabitsPage() {
         }),
       );
 
-      // A temp row has no server id yet; its completion is applied on create.
-      Promise.all(
-        leaves
-          .filter((leaf) => !isTemp(leaf.id))
-          .map((leaf) => apiToggleHabitCompletion(leaf.id, iso, target)),
-      ).catch(() => invalidate());
+      // The API resolves a parent's children and writes them in one request.
+      // A leaf still uses the same endpoint, so individual sub-habit clicks do
+      // not change behavior.
+      if (!isTemp(node.id)) {
+        apiToggleHabitCompletion(node.id, iso, target).catch(() => invalidate());
+      }
     },
     [setHabits, invalidate],
   );

@@ -95,7 +95,10 @@ describe("Express app setup", () => {
   it("GET /api/v1/version returns the build version with no auth required", async () => {
     const res = await request(app).get("/api/v1/version");
     expect(res.status).toBe(200);
-    expect(res.body).toEqual({ version: expect.any(String) });
+    expect(res.body).toEqual({
+      currentVersion: expect.any(String),
+      latestVersion: expect.any(String),
+    });
   });
 
   it("GET /api/v1/nonexistent returns 404", async () => {

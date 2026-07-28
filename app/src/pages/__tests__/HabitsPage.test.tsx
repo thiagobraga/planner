@@ -8,7 +8,9 @@ import {
   fetchHabitGroups,
   fetchPreferences,
   apiUpdateHabitGroup,
+  apiToggleHabitCompletion,
 } from '../../api/client';
+import type { HabitNode } from '../../utils/habitTree';
 
 vi.mock('../../api/client', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../../api/client')>()),
@@ -44,11 +46,21 @@ vi.mock('../../components/habits/HabitTimeline', () => ({
   HabitTimeline: ({
     sections,
     onToggleGroupIcon,
+    onToggleDay,
   }: {
-    sections: { groups: { group: { id: string; name: string } }[] };
+    sections: {
+      ungrouped: HabitNode[];
+      groups: { group: { id: string; name: string } }[];
+    };
     onToggleGroupIcon: (id: string) => void;
+    onToggleDay: (node: HabitNode, iso: string) => void;
   }) => (
     <div data-testid="habit-timeline">
+      {sections.ungrouped[0] && (
+        <button type="button" onClick={() => onToggleDay(sections.ungrouped[0]!, '2026-07-26')}>
+          Toggle first habit day
+        </button>
+      )}
       {sections.groups.map(({ group }) => (
         <button key={group.id} type="button" onClick={() => onToggleGroupIcon(group.id)}>
           Toggle icon for {group.name}
@@ -66,6 +78,7 @@ const mockFetchHabits = vi.mocked(fetchHabits);
 const mockFetchHabitGroups = vi.mocked(fetchHabitGroups);
 const mockFetchPreferences = vi.mocked(fetchPreferences);
 const mockApiUpdateHabitGroup = vi.mocked(apiUpdateHabitGroup);
+const mockApiToggleHabitCompletion = vi.mocked(apiToggleHabitCompletion);
 
 function renderPage() {
   const client = new QueryClient({
@@ -89,6 +102,7 @@ beforeEach(() => {
   mockFetchHabits.mockResolvedValue({ habits: [], groups: [] });
   mockFetchHabitGroups.mockResolvedValue([]);
   mockApiUpdateHabitGroup.mockReset();
+  mockApiToggleHabitCompletion.mockReset();
   mockFetchPreferences.mockResolvedValue({
     userId: 'user-1',
     timeZone: 'UTC',
@@ -162,5 +176,25 @@ describe('HabitsPage', () => {
     await waitFor(() =>
       expect(mockApiUpdateHabitGroup).toHaveBeenCalledWith('morning', { icon: '☀️' }),
     );
+  });
+
+  it('marks a parent and its sub-habits with one completion request', async () => {
+    mockFetchHabits.mockResolvedValue({
+      habits: [
+        { id: 'parent', name: 'Morning', parentId: null, groupId: null, orderValue: 0, completions: [] },
+        { id: 'child-1', name: 'Water', parentId: 'parent', groupId: null, orderValue: 0, completions: [] },
+        { id: 'child-2', name: 'Stretch', parentId: 'parent', groupId: null, orderValue: 1, completions: [] },
+      ],
+      groups: [],
+    });
+    mockApiToggleHabitCompletion.mockResolvedValue({ habitId: 'parent', date: '2026-07-26', isCompleted: true });
+
+    renderPage();
+    fireEvent.click(await screen.findByRole('button', { name: 'Toggle first habit day' }));
+
+    await waitFor(() =>
+      expect(mockApiToggleHabitCompletion).toHaveBeenCalledWith('parent', '2026-07-26', true),
+    );
+    expect(mockApiToggleHabitCompletion).toHaveBeenCalledTimes(1);
   });
 });

@@ -14,3 +14,8 @@ export const BUILD_VERSION: string = (() => {
     return "dev";
   }
 })();
+
+// Deployments can advertise a newer build before all instances have rotated.
+// In development, or when no advertised value is configured, the running build
+// is also the latest known build.
+export const LATEST_VERSION = process.env.LATEST_VERSION?.trim() || BUILD_VERSION;

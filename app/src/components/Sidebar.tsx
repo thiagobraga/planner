@@ -10,11 +10,13 @@ import { fetchCollections } from '../api/client';
 import type { CollectionDropData } from '../types/drag';
 import { useI18n } from '../i18n/I18nContext';
 import type { TranslationKey } from '../i18n/catalogs';
+import { UpdateToast } from './UpdateToast';
 
 interface SidebarProps {
   isOpen?: boolean;
   onClose?: () => void;
   collapsed?: boolean;
+  updateAvailable?: boolean;
 }
 
 export const BjTask = ({ size = 15 }: { size?: number }) => (
@@ -102,7 +104,7 @@ function InboxNavItem({ label, icon }: { label: string; icon: ReactNode }) {
   );
 }
 
-export function Sidebar({ isOpen, onClose, collapsed = false }: SidebarProps) {
+export function Sidebar({ isOpen, onClose, collapsed = false, updateAvailable = false }: SidebarProps) {
   const { t } = useI18n();
   const { logout, user } = useAuth();
   const navigate = useNavigate();
@@ -163,6 +165,7 @@ export function Sidebar({ isOpen, onClose, collapsed = false }: SidebarProps) {
             </>
           )}
 
+          <UpdateToast updateAvailable={updateAvailable} />
           <NavLink
             to="/settings"
             title={t('common.settings')}
@@ -264,6 +267,7 @@ export function Sidebar({ isOpen, onClose, collapsed = false }: SidebarProps) {
               />
             </>
           )}
+          <UpdateToast updateAvailable={updateAvailable} />
           <SidebarNavItem to="/settings" label={t('common.settings')} icon={<Settings size={15} strokeWidth={1.5} />} />
           <SidebarNavItem to="/styleguide" label={t('nav.styleguide')} icon={<StyleguideIcon size={15} />} />
           <SidebarNavItem to="/help" label={t('nav.help')} icon={<HelpCircle size={15} strokeWidth={1.5} />} />
