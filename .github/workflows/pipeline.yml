@@ -82,7 +82,7 @@ jobs:
           # into the cache that deploy.yml's push build later reads from.
           cache-from: type=gha,scope=${{ matrix.component }}
 
-      - uses: actions/cache@v4
+      - uses: actions/cache@v6
         with:
           path: ~/.cache/trivy
           key: trivy-db-${{ github.run_id }}
