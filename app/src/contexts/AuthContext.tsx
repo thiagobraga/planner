@@ -73,38 +73,52 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [login],
   );
 
-  const logout = useCallback(() => {
-    // Already logged out - without this guard, a dead session reported via
-    // notifyUnauthorized() (below) would re-enter here on every subsequent
-    // 401, and apiLogout() itself 401s once there's no session left, looping.
-    if (!user) return;
-    const uid = user.id;
-    // Cancel all pending queries before logging out to avoid 401 errors
-    // on requests that complete after auth state changes.
+  // Keeps the callbacks registered below pointed at the current user without
+  // re-registering them on every render.
+  const userRef = useRef(user);
+  useEffect(() => {
+    userRef.current = user;
+  }, [user]);
+
+  // Tears down everything this tab holds for the signed-in user. Idempotent, so
+  // repeated 401s from requests already in flight collapse into one teardown.
+  const endLocalSession = useCallback(() => {
+    const uid = userRef.current?.id;
+    if (!uid) return;
+    // Cancel pending queries first so requests that land after the auth state
+    // changes don't report their own 401s back through here.
     queryClient.cancelQueries();
+    setUser(null);
+    setIsAuthenticated(false);
+    setCurrentUserId(null);
+    queryClient.clear();
+    clearUserMutations(uid).catch(() => {});
+  }, []);
+
+  const logout = useCallback(() => {
+    if (!userRef.current) return;
+    queryClient.cancelQueries();
+    // Revoking server-side is best-effort: the local teardown below is what the
+    // user sees, and it must happen whether or not the network call lands.
     apiLogout()
       .catch(() => {})
-      .finally(() => {
-        setUser(null);
-        setIsAuthenticated(false);
-        setCurrentUserId(null);
-        queryClient.clear();
-        clearUserMutations(uid).catch(() => {});
-      });
-  }, [user]);
+      .finally(endLocalSession);
+  }, [endLocalSession]);
 
   // notifyUnauthorized() fires from client.ts (401 REST response) and
   // socket.ts (UNAUTHORIZED connect_error) - neither can import this context
-  // directly, so they report through the authEvents registry instead. The
-  // ref keeps the registered callback pointed at the latest `logout` closure
-  // (which captures `user`) without re-registering on every render.
-  const logoutRef = useRef(logout);
+  // directly, so they report through the authEvents registry instead.
+  //
+  // It clears local state only. The session is already gone server-side by
+  // definition - that is what the 401 said - so calling POST /auth/logout here
+  // would only add a second, guaranteed-to-fail request on top of the first.
+  const endLocalSessionRef = useRef(endLocalSession);
   useEffect(() => {
-    logoutRef.current = logout;
-  }, [logout]);
+    endLocalSessionRef.current = endLocalSession;
+  }, [endLocalSession]);
 
   useEffect(() => {
-    setUnauthorizedHandler(() => logoutRef.current());
+    setUnauthorizedHandler(() => endLocalSessionRef.current());
     return () => setUnauthorizedHandler(null);
   }, []);
 

@@ -328,7 +328,10 @@ describe('AuthContext', () => {
       expect(screen.getByTestId('auth-state')).toHaveTextContent('"isAuthenticated":false');
       expect(mockDisconnectSocket).toHaveBeenCalled();
     });
-    expect(mockApiLogout).toHaveBeenCalled();
+    // A dead session is what got reported here, so there is nothing left on the
+    // server to revoke. Posting to /auth/logout would only add a second
+    // guaranteed-401 request behind the one that raised the alarm.
+    expect(mockApiLogout).not.toHaveBeenCalled();
   });
 
   it('does not react to a dead-session report before any user is authenticated', async () => {
