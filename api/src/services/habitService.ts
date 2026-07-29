@@ -519,7 +519,7 @@ export async function moveHabit(userId: string, habitId: string, input: MoveHabi
   }
 
   const client = await pool.connect();
-  let reorderedIds: string[] = [];
+  let reorderedIds: string[];
   let reordered: Habit[] = [];
   try {
     await client.query("BEGIN");
@@ -652,7 +652,7 @@ export async function moveHabitGroup(
   await getOwnedGroup(userId, groupId);
 
   const client = await pool.connect();
-  let reordered: HabitGroup[] = [];
+  let reordered: HabitGroup[];
   try {
     await client.query("BEGIN");
 

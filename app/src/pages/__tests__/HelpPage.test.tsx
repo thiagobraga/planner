@@ -7,7 +7,7 @@ let observers: IntersectionObserver[] = [];
 beforeAll(() => {
   vi.stubGlobal(
     'IntersectionObserver',
-    vi.fn(() => {
+    vi.fn(function () {
       const instance = {
         observe: vi.fn(),
         disconnect: vi.fn(),

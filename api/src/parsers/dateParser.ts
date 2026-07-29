@@ -54,8 +54,8 @@ export function parseDueDate(input: string, options?: ParserOptions): DueDate {
     const pegError = e as { location?: { start?: { offset?: number } }; message?: string };
     if (pegError.location?.start?.offset !== undefined) {
       const unrecognized = trimmed.slice(pegError.location.start.offset);
-      throw new Error(`Unrecognized date expression: "${unrecognized}"`);
+      throw new Error(`Unrecognized date expression: "${unrecognized}"`, { cause: e });
     }
-    throw new Error(`Unrecognized date expression: "${trimmed}"`);
+    throw new Error(`Unrecognized date expression: "${trimmed}"`, { cause: e });
   }
 }

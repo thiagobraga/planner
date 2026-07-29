@@ -220,7 +220,7 @@ describe("security headers", () => {
 describe("auth route security", () => {
   it("login returns user data only (no token in JSON)", async () => {
     vi.mocked(login).mockResolvedValueOnce({
-      user: { id: "u1", email: "a@b.com", displayName: null },
+      user: { id: "u1", email: "a@b.com", displayName: null, role: "user" },
       rawToken: "session-abc",
     });
 
@@ -238,7 +238,7 @@ describe("auth route security", () => {
 
   it("login sets a session cookie", async () => {
     vi.mocked(login).mockResolvedValueOnce({
-      user: { id: "u1", email: "a@b.com", displayName: null },
+      user: { id: "u1", email: "a@b.com", displayName: null, role: "user" },
       rawToken: "session-abc",
     });
 
@@ -282,7 +282,7 @@ describe("CSRF protection", () => {
 describe("rate limiting", () => {
   it("login route checks rate limit before processing", async () => {
     vi.mocked(login).mockResolvedValueOnce({
-      user: { id: "u1", email: "a@b.com", displayName: null },
+      user: { id: "u1", email: "a@b.com", displayName: null, role: "user" },
       rawToken: "session-abc",
     });
 

@@ -341,9 +341,7 @@ function SubMenuWrapper({
   useLayoutEffect(() => {
     if (!parentRef.current) return;
 
-    let itemEl: Element | null = null;
-
-    itemEl = parentRef.current.querySelector(`[data-index="${itemIndex}"]`);
+    const itemEl = parentRef.current.querySelector(`[data-index="${itemIndex}"]`);
 
     if (itemEl) {
       const rect = itemEl.getBoundingClientRect();
