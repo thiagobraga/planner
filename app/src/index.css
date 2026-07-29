@@ -659,12 +659,6 @@ textarea:focus-visible {
   font-size: 9px;
   letter-spacing: 0.12em;
 }
-.daily-timeline-day--today .daily-timeline-day__heading::before {
-  content: '';
-  width: 12px;
-  height: 1px;
-  background: var(--color-accent);
-}
 .daily-timeline-sidebar {
   grid-column: 2;
   grid-row: 1 / span 2;
