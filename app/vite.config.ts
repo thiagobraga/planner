@@ -38,11 +38,12 @@ export default defineConfig({
     environment: 'happy-dom',
     globals: true,
     setupFiles: ['./src/test/setup.ts'],
+    include: ['src/**/*.{test,spec}.{ts,tsx}'],
   },
   server: {
     port: 5173,
     host: true,
-    allowedHosts: [".planner.local", "planner.local"],
+    allowedHosts: true,
     watch: {
       usePolling: true,
     },

@@ -42,10 +42,14 @@ logs/
 npm-debug.log*
 pnpm-debug.log*
 
-# Coverage
+# Coverage & Test Output
 coverage/
 api/coverage/
 app/coverage/
+test-results/
+app/test-results/
+playwright-report/
+app/playwright-report/
 
 # Cache
 .pnpm-store/
