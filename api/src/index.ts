@@ -111,7 +111,7 @@ app.get("/api/v1/health", (_req, res) => {
 // Public so the frontend's new-version check works even for a logged-out
 // tab (login screen) and doesn't itself trigger a 401.
 app.get("/api/v1/version", (_req, res) => {
-  res.json({ currentVersion: BUILD_VERSION, latestVersion: LATEST_VERSION });
+  res.json({ current: BUILD_VERSION, latest: LATEST_VERSION });
 });
 
 // Auth routes (mounted before CSRF — login/register don't need tokens)

@@ -41,7 +41,7 @@ afterEach(() => {
 
 describe('useVersionCheck', () => {
   it('reports no update while the version stays the same across polls', async () => {
-    fetchMock.mockResolvedValue(jsonResponse({ currentVersion: 'v1', latestVersion: 'v1' }));
+    fetchMock.mockResolvedValue(jsonResponse({ current: 'v1', latest: 'v1' }));
     const useVersionCheck = await importHook();
 
     const { result } = renderHook(() => useVersionCheck());
@@ -57,8 +57,8 @@ describe('useVersionCheck', () => {
   });
 
   it('reports an update once a later poll sees a different version', async () => {
-    fetchMock.mockResolvedValueOnce(jsonResponse({ currentVersion: 'v1', latestVersion: 'v1' }));
-    fetchMock.mockResolvedValueOnce(jsonResponse({ currentVersion: 'v1', latestVersion: 'v2' }));
+    fetchMock.mockResolvedValueOnce(jsonResponse({ current: 'v1', latest: 'v1' }));
+    fetchMock.mockResolvedValueOnce(jsonResponse({ current: 'v1', latest: 'v2' }));
     const useVersionCheck = await importHook();
 
     const { result } = renderHook(() => useVersionCheck());
@@ -74,7 +74,7 @@ describe('useVersionCheck', () => {
   });
 
   it('ignores a failed poll instead of falsely flagging an update', async () => {
-    fetchMock.mockResolvedValueOnce(jsonResponse({ currentVersion: 'v1', latestVersion: 'v1' }));
+    fetchMock.mockResolvedValueOnce(jsonResponse({ current: 'v1', latest: 'v1' }));
     fetchMock.mockRejectedValueOnce(new Error('network down'));
     const useVersionCheck = await importHook();
 
@@ -90,7 +90,7 @@ describe('useVersionCheck', () => {
   });
 
   it('issues one request for several mounted consumers', async () => {
-    fetchMock.mockResolvedValue(jsonResponse({ currentVersion: 'v1', latestVersion: 'v1' }));
+    fetchMock.mockResolvedValue(jsonResponse({ current: 'v1', latest: 'v1' }));
     const useVersionCheck = await importHook();
 
     renderHook(() => useVersionCheck());
@@ -107,7 +107,7 @@ describe('useVersionCheck', () => {
   });
 
   it('does not re-request when a consumer remounts right away', async () => {
-    fetchMock.mockResolvedValue(jsonResponse({ currentVersion: 'v1', latestVersion: 'v1' }));
+    fetchMock.mockResolvedValue(jsonResponse({ current: 'v1', latest: 'v1' }));
     const useVersionCheck = await importHook();
 
     const first = renderHook(() => useVersionCheck());
@@ -123,7 +123,7 @@ describe('useVersionCheck', () => {
   });
 
   it('skips polling while the tab is hidden and catches up when it is shown', async () => {
-    fetchMock.mockResolvedValue(jsonResponse({ currentVersion: 'v1', latestVersion: 'v1' }));
+    fetchMock.mockResolvedValue(jsonResponse({ current: 'v1', latest: 'v1' }));
     setDocumentHidden(true);
     const useVersionCheck = await importHook();
 
@@ -144,7 +144,7 @@ describe('useVersionCheck', () => {
   });
 
   it('skips polling while offline and catches up when connectivity returns', async () => {
-    fetchMock.mockResolvedValue(jsonResponse({ currentVersion: 'v1', latestVersion: 'v1' }));
+    fetchMock.mockResolvedValue(jsonResponse({ current: 'v1', latest: 'v1' }));
     setNavigatorOnLine(false);
     const useVersionCheck = await importHook();
 
@@ -165,7 +165,7 @@ describe('useVersionCheck', () => {
   });
 
   it('rate-limits polls triggered by rapid tab switching', async () => {
-    fetchMock.mockResolvedValue(jsonResponse({ currentVersion: 'v1', latestVersion: 'v1' }));
+    fetchMock.mockResolvedValue(jsonResponse({ current: 'v1', latest: 'v1' }));
     const useVersionCheck = await importHook();
 
     renderHook(() => useVersionCheck());
@@ -181,7 +181,7 @@ describe('useVersionCheck', () => {
   });
 
   it('stops polling once an update has been found', async () => {
-    fetchMock.mockResolvedValueOnce(jsonResponse({ currentVersion: 'v1', latestVersion: 'v2' }));
+    fetchMock.mockResolvedValueOnce(jsonResponse({ current: 'v1', latest: 'v2' }));
     const useVersionCheck = await importHook();
 
     const { result } = renderHook(() => useVersionCheck());

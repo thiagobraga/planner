@@ -7,8 +7,8 @@ const POLL_INTERVAL_MS = 5 * 60 * 1000;
 const MIN_POLL_GAP_MS = 60 * 1000;
 
 interface VersionResponse {
-  currentVersion: string;
-  latestVersion: string;
+  current: string;
+  latest: string;
 }
 
 /**
@@ -28,8 +28,8 @@ async function fetchVersion(): Promise<VersionResponse | null> {
     const res = await fetch('/api/v1/version', { cache: 'no-store' });
     if (!res.ok) return null;
     const data = await res.json();
-    return typeof data.currentVersion === 'string' && typeof data.latestVersion === 'string'
-      ? { currentVersion: data.currentVersion, latestVersion: data.latestVersion }
+    return typeof data.current === 'string' && typeof data.latest === 'string'
+      ? { current: data.current, latest: data.latest }
       : null;
   } catch {
     return null;
@@ -47,9 +47,9 @@ function poll(): Promise<void> {
     const version = await fetchVersion();
     if (version === null) return;
     if (initialVersion === null) {
-      initialVersion = version.currentVersion;
+      initialVersion = version.current;
     }
-    if (version.latestVersion !== initialVersion) {
+    if (version.latest !== initialVersion) {
       updateAvailable = true;
       // Nothing left to learn - the banner is up and only a reload clears it.
       stopPolling();
