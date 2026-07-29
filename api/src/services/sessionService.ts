@@ -1,19 +1,25 @@
 import crypto from "node:crypto";
 import pool from "../db/pool.js";
 import { securityLog } from "../utils/securityLogger.js";
-import { SESSION_IDLE_TTL_MINUTES, SESSION_ABSOLUTE_TTL_HOURS } from "../config.js";
+import {
+  SESSION_IDLE_TTL_MINUTES,
+  SESSION_ABSOLUTE_TTL_HOURS,
+  SESSION_TOUCH_INTERVAL_SECONDS,
+} from "../config.js";
 
 const RAW_TOKEN_BYTES = 32;
-const TOUCH_EVERY_N_REQUESTS = 10;
 
 export interface SessionContext {
   userId: string;
   sessionId: number;
+  /** Null only on rows written before migration 027 added the column. */
+  lastSeenAt: Date | null;
 }
 
 interface SessionRow {
   id: number;
   user_id: string;
+  last_seen_at: Date | null;
 }
 
 export function generateRawToken(): string {
@@ -30,18 +36,48 @@ export function buildCookieName(): string {
     : "planner_session";
 }
 
-export function buildCookieOptions(): {
+export interface SessionCookieOptions {
   httpOnly: boolean;
   secure: boolean;
-  sameSite: "strict";
+  sameSite: "lax";
   path: string;
-} {
+  maxAge: number;
+}
+
+export function buildCookieOptions(): SessionCookieOptions {
   return {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "strict" as const,
+    // `lax`, not `strict`. A strict cookie is withheld on top-level navigation
+    // that originates anywhere else - a link in a mail client, a chat message,
+    // a search result - so the first page load renders logged-out even though
+    // the session is alive and the next in-app request would have worked.
+    // Cross-site writes are already blocked by originCheck plus the signed
+    // double-submit token in csrf.ts; neither leans on SameSite.
+    sameSite: "lax" as const,
     path: "/",
+    // Without an explicit lifetime this is a browser-session cookie: it dies
+    // when the browser closes no matter how long the server-side session is
+    // good for. Match the idle window, and re-issue it on every touch (see
+    // authMiddleware) so it slides forward with the session rather than
+    // expiring at the fixed date it was minted with.
+    maxAge: SESSION_IDLE_TTL_MINUTES * 60 * 1000,
   };
+}
+
+/**
+ * `res.clearCookie` only removes a cookie when the attributes it sends match
+ * the ones the cookie was set with, and the `__Host-` prefix additionally
+ * requires Secure - so a mismatched clear is rejected outright by the browser
+ * and the dead cookie survives logout.
+ */
+export function buildClearCookieOptions(): Omit<SessionCookieOptions, "maxAge"> {
+  const options: Omit<SessionCookieOptions, "maxAge"> & { maxAge?: number } =
+    buildCookieOptions();
+  // express writes its own past expiry when clearing; carrying a positive
+  // Max-Age alongside it is contradictory.
+  delete options.maxAge;
+  return options;
 }
 
 export async function createSession(userId: string): Promise<string> {
@@ -70,7 +106,7 @@ export async function validateSession(
   const tokenHash = hashToken(rawToken);
 
   const result = await pool.query(
-    `SELECT id, user_id
+    `SELECT id, user_id, last_seen_at
      FROM sessions
      WHERE token_hash_sha256 = $1
        AND (revoked_at IS NULL)
@@ -82,7 +118,11 @@ export async function validateSession(
   if (result.rows.length === 0) return null;
 
   const row = result.rows[0] as SessionRow;
-  return { userId: row.user_id, sessionId: row.id };
+  return {
+    userId: row.user_id,
+    sessionId: row.id,
+    lastSeenAt: row.last_seen_at ? new Date(row.last_seen_at) : null,
+  };
 }
 
 export async function touchSession(sessionId: number): Promise<void> {
@@ -99,15 +139,26 @@ export async function touchSession(sessionId: number): Promise<void> {
   );
 }
 
-let touchCounter = 0;
-
-export function shouldTouch(): boolean {
-  touchCounter = (touchCounter + 1) % TOUCH_EVERY_N_REQUESTS;
-  return touchCounter === 0;
-}
-
-export function resetTouchCounter(): void {
-  touchCounter = 0;
+/**
+ * Whether this session's idle window is stale enough to be worth a write.
+ *
+ * This replaced a module-level "every Nth request" counter. That counter was
+ * shared by every session on the process and reset on restart, so whether a
+ * given session got its idle window slid depended on how many requests other
+ * sessions happened to make - a user could browse for an hour without a single
+ * touch landing on their row and be logged out mid-use. Comparing against the
+ * `last_seen_at` the validate query already returned is per-session, needs no
+ * extra query, and still bounds writes to one per interval.
+ */
+export function needsTouch(
+  session: SessionContext,
+  now: Date = new Date(),
+): boolean {
+  if (!session.lastSeenAt) return true;
+  return (
+    now.getTime() - session.lastSeenAt.getTime() >=
+    SESSION_TOUCH_INTERVAL_SECONDS * 1000
+  );
 }
 
 export async function revokeSession(sessionId: number): Promise<void> {

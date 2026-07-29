@@ -121,6 +121,25 @@ export const SESSION_ABSOLUTE_TTL_HOURS = (() => {
   return val;
 })();
 
+// How stale a session's last_seen_at has to be before a request is worth an
+// UPDATE. Every authenticated request slides the idle window; writing on each
+// one would mean a write per API call, so the slide is batched to this cadence.
+// Must stay far below SESSION_IDLE_TTL_MINUTES or sessions expire between
+// slides.
+export const SESSION_TOUCH_INTERVAL_SECONDS = (() => {
+  const raw = process.env.SESSION_TOUCH_INTERVAL_SECONDS || "300";
+  const val = parseInt(raw, 10);
+  if (isNaN(val) || val < 1) {
+    throw new Error("SESSION_TOUCH_INTERVAL_SECONDS must be a positive integer");
+  }
+  if (val >= SESSION_IDLE_TTL_MINUTES * 60) {
+    throw new Error(
+      "SESSION_TOUCH_INTERVAL_SECONDS must be shorter than SESSION_IDLE_TTL_MINUTES",
+    );
+  }
+  return val;
+})();
+
 export const DISABLE_RATE_LIMITS_IN_DEV = !process.env.NODE_ENV || process.env.NODE_ENV === "development";
 
 // Empty means "no provider configured": emailService falls back to logging

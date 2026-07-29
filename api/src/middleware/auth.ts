@@ -1,5 +1,11 @@
 import type { Request, Response, NextFunction } from "express";
-import { validateSession, buildCookieName, shouldTouch, touchSession } from "../services/sessionService.js";
+import {
+  validateSession,
+  buildCookieName,
+  buildCookieOptions,
+  needsTouch,
+  touchSession,
+} from "../services/sessionService.js";
 
 export async function authMiddleware(
   req: Request,
@@ -28,8 +34,12 @@ export async function authMiddleware(
   req.userId = session.userId;
   req.sessionId = session.sessionId;
 
-  if (shouldTouch()) {
+  if (needsTouch(session)) {
     touchSession(session.sessionId).catch(() => {});
+    // Re-issue the cookie alongside the server-side slide. The cookie carries
+    // its own fixed expiry, so without this it would eventually be dropped by
+    // the browser while the session it points at was still perfectly valid.
+    res.cookie(cookieName, rawToken, buildCookieOptions());
   }
 
   next();

@@ -3,13 +3,15 @@ import type { Request, Response, NextFunction } from "express";
 
 const mockValidateSession = vi.hoisted(() => vi.fn());
 const mockBuildCookieName = vi.hoisted(() => vi.fn());
-const mockShouldTouch = vi.hoisted(() => vi.fn());
+const mockBuildCookieOptions = vi.hoisted(() => vi.fn());
+const mockNeedsTouch = vi.hoisted(() => vi.fn());
 const mockTouchSession = vi.hoisted(() => vi.fn());
 
 vi.mock("../../services/sessionService.js", () => ({
   validateSession: mockValidateSession,
   buildCookieName: mockBuildCookieName,
-  shouldTouch: mockShouldTouch,
+  buildCookieOptions: mockBuildCookieOptions,
+  needsTouch: mockNeedsTouch,
   touchSession: mockTouchSession,
 }));
 
@@ -24,27 +26,33 @@ describe("authMiddleware", () => {
   // resolves to the wrong call signature. Intersect instead: assignable where a
   // NextFunction is expected, while keeping the mock assertion helpers.
   let next: NextFunction & Mock<(err?: unknown) => void>;
+  let cookie: ReturnType<typeof vi.fn>;
+
+  const COOKIE_OPTS = { httpOnly: true, secure: false, sameSite: "lax", path: "/", maxAge: 1000 };
 
   beforeEach(() => {
     json = vi.fn();
     status = vi.fn(() => ({ json }));
+    cookie = vi.fn();
     next = vi.fn() as NextFunction & Mock<(err?: unknown) => void>;
     req = {
       cookies: {},
     };
     res = {
       status: status as unknown as Response["status"],
+      cookie: cookie as unknown as Response["cookie"],
     };
     mockBuildCookieName.mockReturnValue("planner_session");
+    mockBuildCookieOptions.mockReturnValue(COOKIE_OPTS);
     mockValidateSession.mockReset();
-    mockShouldTouch.mockReset();
+    mockNeedsTouch.mockReset();
     mockTouchSession.mockReset();
   });
 
   it("sets req.userId and req.sessionId and calls next for valid session", async () => {
     req.cookies = { planner_session: "valid-token" };
-    mockValidateSession.mockResolvedValue({ userId: "u1", sessionId: 42 });
-    mockShouldTouch.mockReturnValue(false);
+    mockValidateSession.mockResolvedValue({ userId: "u1", sessionId: 42, lastSeenAt: new Date() });
+    mockNeedsTouch.mockReturnValue(false);
 
     await authMiddleware(req as Request, res as Response, next);
 
@@ -78,10 +86,10 @@ describe("authMiddleware", () => {
     expect(next).not.toHaveBeenCalled();
   });
 
-  it("touches session when shouldTouch returns true", async () => {
+  it("touches session when needsTouch returns true", async () => {
     req.cookies = { planner_session: "valid-token" };
-    mockValidateSession.mockResolvedValue({ userId: "u1", sessionId: 42 });
-    mockShouldTouch.mockReturnValue(true);
+    mockValidateSession.mockResolvedValue({ userId: "u1", sessionId: 42, lastSeenAt: null });
+    mockNeedsTouch.mockReturnValue(true);
     mockTouchSession.mockResolvedValue(undefined);
 
     await authMiddleware(req as Request, res as Response, next);
@@ -90,14 +98,52 @@ describe("authMiddleware", () => {
     expect(next).toHaveBeenCalled();
   });
 
-  it("does not touch session when shouldTouch returns false", async () => {
+  it("does not touch session when needsTouch returns false", async () => {
     req.cookies = { planner_session: "valid-token" };
-    mockValidateSession.mockResolvedValue({ userId: "u1", sessionId: 42 });
-    mockShouldTouch.mockReturnValue(false);
+    mockValidateSession.mockResolvedValue({ userId: "u1", sessionId: 42, lastSeenAt: new Date() });
+    mockNeedsTouch.mockReturnValue(false);
 
     await authMiddleware(req as Request, res as Response, next);
 
     expect(mockTouchSession).not.toHaveBeenCalled();
     expect(next).toHaveBeenCalled();
+  });
+
+  // The cookie carries its own fixed expiry. Sliding the server-side session
+  // without re-issuing it leaves the browser dropping a cookie whose session is
+  // still perfectly valid.
+  it("re-issues the session cookie whenever it slides the session", async () => {
+    req.cookies = { planner_session: "valid-token" };
+    mockValidateSession.mockResolvedValue({ userId: "u1", sessionId: 42, lastSeenAt: null });
+    mockNeedsTouch.mockReturnValue(true);
+    mockTouchSession.mockResolvedValue(undefined);
+
+    await authMiddleware(req as Request, res as Response, next);
+
+    expect(cookie).toHaveBeenCalledWith("planner_session", "valid-token", COOKIE_OPTS);
+  });
+
+  it("leaves the cookie alone when the session was not slid", async () => {
+    req.cookies = { planner_session: "valid-token" };
+    mockValidateSession.mockResolvedValue({ userId: "u1", sessionId: 42, lastSeenAt: new Date() });
+    mockNeedsTouch.mockReturnValue(false);
+
+    await authMiddleware(req as Request, res as Response, next);
+
+    expect(cookie).not.toHaveBeenCalled();
+  });
+
+  // A touch failure must not take the request down with it - the session is
+  // valid, the slide is an optimization.
+  it("still serves the request when the touch write fails", async () => {
+    req.cookies = { planner_session: "valid-token" };
+    mockValidateSession.mockResolvedValue({ userId: "u1", sessionId: 42, lastSeenAt: null });
+    mockNeedsTouch.mockReturnValue(true);
+    mockTouchSession.mockRejectedValue(new Error("db down"));
+
+    await authMiddleware(req as Request, res as Response, next);
+
+    expect(next).toHaveBeenCalled();
+    expect(status).not.toHaveBeenCalled();
   });
 });

@@ -4,13 +4,21 @@ import type { Express } from "express";
 
 
 vi.mock("../../services/sessionService.js", () => ({
-  validateSession: vi.fn(),
-  shouldTouch: vi.fn().mockReturnValue(false),
+  validateSession: vi.fn().mockResolvedValue(null),
+  needsTouch: vi.fn().mockReturnValue(false),
+  touchSession: vi.fn(),
   buildCookieName: vi.fn().mockReturnValue("planner_session"),
   buildCookieOptions: vi.fn().mockReturnValue({
     httpOnly: true,
     secure: false,
-    sameSite: "strict" as const,
+    sameSite: "lax" as const,
+    path: "/",
+    maxAge: 43200 * 60 * 1000,
+  }),
+  buildClearCookieOptions: vi.fn().mockReturnValue({
+    httpOnly: true,
+    secure: false,
+    sameSite: "lax" as const,
     path: "/",
   }),
   createSession: vi.fn(),
@@ -250,7 +258,11 @@ describe("auth route security", () => {
     const sessionCookie = cookies.find((c: string) => c.startsWith("planner_session"));
     expect(sessionCookie).toBeDefined();
     expect(sessionCookie).toContain("HttpOnly");
-    expect(sessionCookie).toContain("SameSite=Strict");
+    // Lax, not Strict: Strict withholds the cookie on top-level navigation from
+    // any other origin, so arriving from a link renders the app logged-out.
+    // Cross-site writes are stopped by originCheck and the CSRF token instead.
+    expect(sessionCookie).toContain("SameSite=Lax");
+    expect(sessionCookie).toContain("Max-Age=");
   });
 
   it("logout clears the session cookie", async () => {
