@@ -10,6 +10,7 @@ function readSecret(name: string, fallback?: string): string {
     } catch (err) {
       throw new Error(
         `Cannot read secret file ${filePath} for ${name}: ${(err as Error).message}`,
+        { cause: err },
       );
     }
   }
