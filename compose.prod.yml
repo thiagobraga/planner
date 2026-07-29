@@ -52,8 +52,14 @@ services:
       RESEND_API_KEY_FILE: /run/secrets/resend_api_key
       # Must be on the Resend-verified sending domain (mail.planner.thiagobraga.dev).
       EMAIL_FROM: ${EMAIL_FROM:-noreply@mail.planner.thiagobraga.dev}
-      SESSION_IDLE_TTL_MINUTES: ${SESSION_IDLE_TTL_MINUTES:-30}
-      SESSION_ABSOLUTE_TTL_HOURS: ${SESSION_ABSOLUTE_TTL_HOURS:-12}
+      # Planner is a personal journal, not a bank. These previously defaulted to
+      # 30 minutes idle / 12 hours absolute, which logged the user out mid-use
+      # roughly every half hour. 30 days idle keeps a returning user signed in;
+      # a year absolute means the only routine re-login is an explicit one.
+      # Sessions stay individually revocable (logout, password change, the admin
+      # revoke-sessions action), which is the control that actually matters here.
+      SESSION_IDLE_TTL_MINUTES: ${SESSION_IDLE_TTL_MINUTES:-43200}
+      SESSION_ABSOLUTE_TTL_HOURS: ${SESSION_ABSOLUTE_TTL_HOURS:-8760}
     secrets:
       - database_url
       - redis_url
