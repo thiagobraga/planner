@@ -17,8 +17,10 @@ const mockValidate = vi.fn((errors: ValidationError[]) => {
   }
 });
 const mockRevokeSession = vi.fn();
+const mockValidateSession = vi.fn();
 const mockBuildCookieName = vi.fn();
 const mockBuildCookieOptions = vi.fn();
+const mockBuildClearCookieOptions = vi.fn();
 const mockPoolQuery = vi.fn();
 
 vi.mock("../../services/authService.js", () => ({
@@ -42,8 +44,10 @@ vi.mock("../../middleware/auth.js", () => ({
 
 vi.mock("../../services/sessionService.js", () => ({
   revokeSession: (...args: unknown[]) => mockRevokeSession(...args),
+  validateSession: (...args: unknown[]) => mockValidateSession(...args),
   buildCookieName: (...args: unknown[]) => mockBuildCookieName(...args),
   buildCookieOptions: (...args: unknown[]) => mockBuildCookieOptions(...args),
+  buildClearCookieOptions: (...args: unknown[]) => mockBuildClearCookieOptions(...args),
 }));
 
 vi.mock("../../db/pool.js", () => ({
@@ -65,7 +69,9 @@ const app = createApp(authRoutes, "/api/v1/auth");
 beforeEach(() => {
   vi.clearAllMocks();
   mockBuildCookieName.mockReturnValue("planner_session");
-  mockBuildCookieOptions.mockReturnValue({ httpOnly: true, secure: false, sameSite: "strict", path: "/" });
+  mockBuildCookieOptions.mockReturnValue({ httpOnly: true, secure: false, sameSite: "lax", path: "/", maxAge: 1000 });
+  mockBuildClearCookieOptions.mockReturnValue({ httpOnly: true, secure: false, sameSite: "lax", path: "/" });
+  mockValidateSession.mockResolvedValue({ userId: "test-user", sessionId: 42, lastSeenAt: null });
   mockValidate.mockImplementation((errors: ValidationError[]) => {
     if (errors.length > 0) {
       throw new AppError({ code: "VALIDATION_ERROR", message: "Validation failed", statusCode: 400, details: errors });
@@ -165,9 +171,57 @@ describe("auth routes", () => {
 
   it("POST /api/v1/auth/logout → calls revokeSession, clears cookie", async () => {
     mockRevokeSession.mockResolvedValue(undefined);
-    const res = await request(app).post("/api/v1/auth/logout");
+    const res = await request(app)
+      .post("/api/v1/auth/logout")
+      .set("Cookie", "planner_session=raw-token");
     expect(res.status).toBe(200);
     expect(mockRevokeSession).toHaveBeenCalledWith(42);
+  });
+
+  // The whole point of logging out is to end a session. A dead one is already
+  // in the desired state, and returning 401 there made the browser log an error
+  // on every expiry - on the one request meant to clean that expiry up.
+  it("POST /api/v1/auth/logout → 200 when the session has already expired", async () => {
+    mockValidateSession.mockResolvedValue(null);
+
+    const res = await request(app)
+      .post("/api/v1/auth/logout")
+      .set("Cookie", "planner_session=stale-token");
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ success: true });
+    expect(mockRevokeSession).not.toHaveBeenCalled();
+  });
+
+  it("POST /api/v1/auth/logout → 200 when no session cookie was sent at all", async () => {
+    const res = await request(app).post("/api/v1/auth/logout");
+
+    expect(res.status).toBe(200);
+    expect(mockValidateSession).not.toHaveBeenCalled();
+    expect(mockRevokeSession).not.toHaveBeenCalled();
+  });
+
+  it("POST /api/v1/auth/logout → clears the session cookie with the attributes it was set with", async () => {
+    const res = await request(app)
+      .post("/api/v1/auth/logout")
+      .set("Cookie", "planner_session=raw-token");
+
+    const cookies = (res.headers["set-cookie"] ?? []) as unknown as string[];
+    const cleared = cookies.find((c) => c.startsWith("planner_session=;"));
+    expect(cleared).toBeDefined();
+    expect(cleared).toContain("HttpOnly");
+    expect(cleared).toContain("Path=/");
+  });
+
+  // Left behind, it keeps being echoed in X-XSRF-TOKEN and stays bound to a
+  // session id that no longer exists.
+  it("POST /api/v1/auth/logout → clears the CSRF cookie too", async () => {
+    const res = await request(app)
+      .post("/api/v1/auth/logout")
+      .set("Cookie", "planner_session=raw-token");
+
+    const cookies = (res.headers["set-cookie"] ?? []) as unknown as string[];
+    expect(cookies.some((c) => c.startsWith("planner_csrf=;"))).toBe(true);
   });
 
   it("POST /api/v1/auth/reset-password → calls requestPasswordReset", async () => {

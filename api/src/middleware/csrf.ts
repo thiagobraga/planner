@@ -10,6 +10,29 @@ const COOKIE_NAME = IS_PRODUCTION ? "__Host-planner_csrf" : "planner_csrf";
 
 const TOKEN_BYTES = 32;
 
+/** Exported so logout can clear the same cookie this middleware sets. */
+export const CSRF_COOKIE_NAME = COOKIE_NAME;
+
+/**
+ * The attribute set the CSRF cookie is written with. `clearCookie` has to be
+ * handed the identical attributes or the browser ignores the removal, and the
+ * `__Host-` prefix makes Secure mandatory on top of that.
+ */
+export function buildCsrfCookieOptions(): {
+  httpOnly: boolean;
+  secure: boolean;
+  sameSite: "strict";
+  path: string;
+} {
+  return {
+    // Readable by client.ts, which echoes it back in the X-XSRF-TOKEN header.
+    httpOnly: false,
+    secure: IS_PRODUCTION,
+    sameSite: "strict" as const,
+    path: "/",
+  };
+}
+
 function generateToken(): string {
   return crypto.randomBytes(TOKEN_BYTES).toString("hex");
 }
@@ -54,12 +77,7 @@ export function csrfProtection(req: Request, res: Response, next: NextFunction):
 
     const token = generateToken();
     const hmac = signToken(token, req.sessionId);
-    res.cookie(COOKIE_NAME, `${token}:${hmac}`, {
-      httpOnly: false,
-      secure: IS_PRODUCTION,
-      sameSite: "strict",
-      path: "/",
-    });
+    res.cookie(COOKIE_NAME, `${token}:${hmac}`, buildCsrfCookieOptions());
     next();
     return;
   }
