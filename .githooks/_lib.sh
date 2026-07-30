@@ -41,16 +41,35 @@ packages_touched_by() {
   done
 }
 
-# How to run npm for a package: natively when its node_modules is present,
-# otherwise through the compose service if that container happens to be up.
+# Which compose services are up. Resolved once per hook run: `docker compose ps`
+# costs a few hundred ms and the answer cannot change mid-hook.
+running_services_cache=""
+running_services() {
+  if [ -z "$running_services_cache" ]; then
+    running_services_cache="$(docker compose -f "${REPO_ROOT}/compose.yml" ps --status running --services 2>/dev/null)"$'\n'
+  fi
+  printf '%s' "$running_services_cache"
+}
+
+# How to run npm for a package: through its compose service when that container
+# is up, and only otherwise on the host.
+#
+# The container wins because compose.yml bind-mounts ./api and ./app straight in
+# with no separate node_modules volume, so host and container share a single
+# install - and it is the container that populates it. From an Alpine image that
+# means musl native bindings, which a glibc host cannot load: vitest dies at
+# startup on a missing @rolldown/binding-linux-x64-gnu before a single test runs.
+# Preferring the host here made every push fail on an environment mismatch that
+# had nothing to do with the diff.
+#
 # Returning 1 means "no runtime available" - the caller warns and skips rather
 # than blocking a commit on an environment the developer may not have set up.
 runner_for() {
   local pkg="$1"
-  if [ -d "${REPO_ROOT}/${pkg}/node_modules" ]; then
-    printf 'host'
-  elif docker compose -f "${REPO_ROOT}/compose.yml" ps --status running --services 2>/dev/null | grep -qx "$pkg"; then
+  if running_services | grep -qx "$pkg"; then
     printf 'docker'
+  elif [ -d "${REPO_ROOT}/${pkg}/node_modules" ]; then
+    printf 'host'
   else
     return 1
   fi
@@ -65,8 +84,8 @@ runner_for() {
 run_script() {
   local pkg="$1" script="$2" runner status output
   if ! runner="$(runner_for "$pkg")"; then
-    warn "skipping ${pkg} ${script}: no ${pkg}/node_modules and no running ${pkg} container"
-    warn "  fix with: (cd ${pkg} && npm ci)   or: docker compose up -d ${pkg}"
+    warn "skipping ${pkg} ${script}: no running ${pkg} container and no ${pkg}/node_modules"
+    warn "  fix with: docker compose up -d ${pkg}   or: (cd ${pkg} && npm ci)"
     skipped=$((skipped + 1))
     return 0
   fi
