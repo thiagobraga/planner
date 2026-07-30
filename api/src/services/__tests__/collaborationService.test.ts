@@ -37,6 +37,23 @@ describe("inviteToCollection", () => {
     await expect(inviteToCollection("p1", "u1", "not-an-email")).rejects.toBeInstanceOf(AppError);
   });
 
+  it("rejects an oversized email without querying the database", async () => {
+    const oversized = `${"a".repeat(300)}@example.com`;
+    await expect(inviteToCollection("p1", "u1", oversized)).rejects.toMatchObject({
+      statusCode: 400,
+    });
+    expect(mockQuery).not.toHaveBeenCalled();
+  });
+
+  it("rejects the ReDoS payload shape quickly", async () => {
+    const payload = `!@!.${"!.".repeat(20000)}`;
+    const started = performance.now();
+    await expect(inviteToCollection("p1", "u1", payload)).rejects.toMatchObject({
+      statusCode: 400,
+    });
+    expect(performance.now() - started).toBeLessThan(100);
+  });
+
   it("verifies owner before inserting invitation", async () => {
     mockQuery.mockResolvedValueOnce({ rows: [] }); // not owner
     await expect(inviteToCollection("p1", "u1", "a@b.com")).rejects.toMatchObject({ statusCode: 403 });

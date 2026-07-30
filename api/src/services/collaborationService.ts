@@ -2,6 +2,7 @@ import { v4 as uuidv4 } from "uuid";
 import { createHash, randomBytes } from "crypto";
 import pool from "../db/pool.js";
 import { AppError } from "../utils/AppError.js";
+import { isValidEmail } from "../utils/email.js";
 
 interface InvitationRow {
   id: string;
@@ -57,7 +58,7 @@ async function verifyCollectionOwnership(collectionId: string, userId: string): 
 }
 
 export async function inviteToCollection(collectionId: string, ownerId: string, email: string) {
-  if (typeof email !== "string" || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+  if (!isValidEmail(email)) {
     throw new AppError({
       code: "VALIDATION_ERROR",
       message: "Validation failed",
