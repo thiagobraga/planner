@@ -2,6 +2,7 @@ import crypto from 'node:crypto';
 import pool from '../db/pool.js';
 import { AppError } from '../utils/AppError.js';
 import { validate, type ValidationError } from '../utils/validate.js';
+import { isValidEmail } from '../utils/email.js';
 import { securityLog } from '../utils/securityLogger.js';
 import { validatePassword, hashPassword, verifyArgon2id } from './passwordService.js';
 import { createSession } from './sessionService.js';
@@ -12,9 +13,6 @@ import {
   incrementLoginAttempts,
   clearLoginRate,
 } from './rateLimitService.js';
-
-const EMAIL_REGEX =
-  /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
 
 export type UserRole = 'user' | 'admin';
 
@@ -34,7 +32,7 @@ export interface RegisterInput {
 export async function register(input: RegisterInput): Promise<UserData> {
   const errors: ValidationError[] = [];
 
-  if (!input.email || !EMAIL_REGEX.test(input.email)) {
+  if (!isValidEmail(input.email)) {
     errors.push({ field: 'email', message: 'Email must be a valid RFC 5322 address' });
   }
 
