@@ -13,6 +13,16 @@ export default defineConfig({
       manifest: false,
       injectRegister: false,
       workbox: {
+        // vite-plugin-pwa only auto-sets skipWaiting/clientsClaim for
+        // registerType "autoUpdate" when injectRegister is left at its
+        // default - injectRegister: false (needed so main.tsx can call
+        // registerSW itself) silently opts back out of that wiring. Without
+        // it, a new SW installs but sits in "waiting" forever: the old SW
+        // stays active and keeps intercepting every navigation, so no
+        // number of plain reloads picks up a new deploy, only a hard
+        // refresh (which bypasses the SW's fetch handler outright).
+        skipWaiting: true,
+        clientsClaim: true,
         // html excluded: precaching index.html makes navigations resolve
         // against the SW's precache (revision bumps only on SW activation),
         // so a plain reload right after deploy can still serve the old
