@@ -13,8 +13,14 @@ export default defineConfig({
       manifest: false,
       injectRegister: false,
       workbox: {
-        globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
-        navigateFallbackDenylist: [/^\/api\//, /^\/socket\.io\//],
+        // html excluded: precaching index.html makes navigations resolve
+        // against the SW's precache (revision bumps only on SW activation),
+        // so a plain reload right after deploy can still serve the old
+        // shell from a not-yet-activated SW. Leaving html out sends every
+        // navigation to the network, where nginx's no-cache header on /
+        // already guarantees a fresh index.html.
+        globPatterns: ['**/*.{js,css,svg,png,ico,woff2}'],
+        navigateFallback: null,
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
