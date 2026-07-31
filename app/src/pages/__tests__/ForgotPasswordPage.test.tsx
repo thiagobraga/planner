@@ -34,6 +34,7 @@ describe('ForgotPasswordPage', () => {
   it('renders the email field and submit button', () => {
     renderPage();
 
+    expect(screen.getByText('Enter your email for a reset link.')).toBeInTheDocument();
     expect(screen.getByPlaceholderText('Email')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Send reset link' })).toBeInTheDocument();
   });

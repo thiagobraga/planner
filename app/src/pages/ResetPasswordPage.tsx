@@ -5,12 +5,15 @@ import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
 import { ApiError, apiConfirmPasswordReset } from '../api/client';
 import { useI18n } from '../i18n/I18nContext';
+import { PasswordRequirements } from '../components/PasswordRequirements';
+import { Eye, EyeOff } from 'lucide-react';
 
 export function ResetPasswordPage() {
   const { t } = useI18n();
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [passwordError, setPasswordError] = useState('');
   const [formError, setFormError] = useState('');
   const [expired, setExpired] = useState(false);
@@ -77,7 +80,7 @@ export function ResetPasswordPage() {
     <AuthShell subtitle={t('auth.chooseNewPassword')}>
       <form onSubmit={handleSubmit} className="flex flex-col gap-3">
         <Input
-          type="password"
+          type={showPassword ? 'text' : 'password'}
           placeholder={t('auth.newPassword')}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
@@ -87,7 +90,19 @@ export function ResetPasswordPage() {
           aria-label={t('auth.newPassword')}
           error={Boolean(passwordError)}
           errorText={passwordError}
+          trailing={(
+            <button
+              type="button"
+              className="flex h-6 w-6 items-center justify-center border-0 bg-transparent text-ink-light hover:text-ink"
+              aria-label={t(showPassword ? 'auth.hidePassword' : 'auth.showPassword')}
+              title={t(showPassword ? 'auth.hidePassword' : 'auth.showPassword')}
+              onClick={() => setShowPassword((visible) => !visible)}
+            >
+              {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+            </button>
+          )}
         />
+        <PasswordRequirements password={password} />
 
         {formError && <AuthFormError>{formError}</AuthFormError>}
 

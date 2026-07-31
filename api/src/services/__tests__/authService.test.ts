@@ -72,7 +72,7 @@ vi.mock("../../utils/AppError.js", () => ({
 import { register, login, requestPasswordReset, confirmPasswordReset } from "../authService.js";
 import { hashPassword } from "../passwordService.js";
 
-const STRONG_PASSWORD = "correct-horse-battery-staple";
+const STRONG_PASSWORD = "Correct-horse-battery-staple-2";
 let validHash: string;
 
 beforeAll(async () => {

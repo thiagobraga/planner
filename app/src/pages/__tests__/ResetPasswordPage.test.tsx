@@ -19,7 +19,7 @@ function renderPage(search = '?token=reset-token') {
   );
 }
 
-function submit(password = 'correct-horse-battery-staple') {
+function submit(password = 'Correct-horse-battery-staple-2') {
   fireEvent.change(screen.getByPlaceholderText('New password'), { target: { value: password } });
   fireEvent.click(screen.getByRole('button', { name: 'Set new password' }));
 }
@@ -34,6 +34,33 @@ describe('ResetPasswordPage', () => {
 
     expect(screen.getByPlaceholderText('New password')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Set new password' })).toBeInTheDocument();
+    expect(screen.getByRole('list', { name: 'Password requirements' })).toBeInTheDocument();
+  });
+
+  it('updates the password requirements while typing', () => {
+    renderPage();
+
+    fireEvent.change(screen.getByPlaceholderText('New password'), {
+      target: { value: 'Correct-horse-battery-staple-2' },
+    });
+
+    expect(screen.getByRole('listitem', { name: 'At least 15 characters: met' })).toHaveTextContent('×');
+    expect(
+      screen.getByRole('listitem', { name: 'Avoid passwords like planner, password, admin...: met' }),
+    ).toHaveTextContent('×');
+    expect(screen.getByRole('listitem', { name: 'At least one number: met' })).toHaveTextContent('×');
+    expect(screen.getByRole('listitem', { name: 'At least one symbol: met' })).toHaveTextContent('×');
+  });
+
+  it('shows and hides the new password', () => {
+    renderPage();
+
+    const passwordInput = screen.getByPlaceholderText('New password');
+    fireEvent.click(screen.getByRole('button', { name: 'Show password' }));
+    expect(passwordInput).toHaveAttribute('type', 'text');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Hide password' }));
+    expect(passwordInput).toHaveAttribute('type', 'password');
   });
 
   it('shows the invalid-link state and no form when the token is missing', () => {
@@ -51,7 +78,7 @@ describe('ResetPasswordPage', () => {
     submit();
 
     expect(await screen.findByText(/Your password has been updated/)).toBeInTheDocument();
-    expect(mockConfirm).toHaveBeenCalledWith('reset-token', 'correct-horse-battery-staple');
+    expect(mockConfirm).toHaveBeenCalledWith('reset-token', 'Correct-horse-battery-staple-2');
     // Confirming deletes every session for the account, so there is no session
     // to resume - the page must not pretend the user is logged in.
     expect(screen.getByRole('link', { name: 'Sign in' })).toBeInTheDocument();
