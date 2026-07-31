@@ -95,12 +95,13 @@ const basePreferences: Preferences = {
 
 const today = new Date();
 const yesterday = new Date(today);
-yesterday.setUTCDate(yesterday.getUTCDate() - 1);
+yesterday.setDate(yesterday.getDate() - 1);
 
-// UTC, not local time: the preferences mock reports timeZone: 'UTC' and
-// DailyPage derives its todayKey from that preference. See DailyPage.test.tsx.
 function dateKey(d: Date): string {
-  return d.toISOString().slice(0, 10);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 const todayKey = dateKey(today);

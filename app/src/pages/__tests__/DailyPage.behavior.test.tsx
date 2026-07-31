@@ -91,15 +91,16 @@ vi.mock('../../components/VirtualDay', () => ({
   ),
 }));
 
-// UTC, not local time: the preferences mock reports timeZone: 'UTC' and
-// DailyPage derives its todayKey from that preference. See DailyPage.test.tsx.
 function fmtISO(date: Date): string {
-  return date.toISOString().slice(0, 10);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 function addDays(date: Date, amount: number): string {
   const next = new Date(date);
-  next.setUTCDate(next.getUTCDate() + amount);
+  next.setDate(next.getDate() + amount);
   return fmtISO(next);
 }
 
