@@ -4,7 +4,7 @@ import { MemoryRouter } from 'react-router';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { DailyPage } from '../DailyPage';
 import {
-  fetchDailyTimeline,
+  fetchTodayTasks,
   fetchPreferences,
   fetchCollections,
   apiCreateTask,
@@ -13,14 +13,14 @@ import {
   type ApiCollection,
 } from '../../api/client';
 
-const mockFetchDailyTimeline = vi.mocked(fetchDailyTimeline);
+const mockFetchTodayTasks = vi.mocked(fetchTodayTasks);
 const mockFetchPreferences = vi.mocked(fetchPreferences);
 const mockFetchCollections = vi.mocked(fetchCollections);
 const mockCreateTask = vi.mocked(apiCreateTask);
 
 vi.mock('../../api/client', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../../api/client')>()),
-  fetchDailyTimeline: vi.fn(),
+  fetchTodayTasks: vi.fn(),
   fetchPreferences: vi.fn(),
   fetchCollections: vi.fn(),
   apiCreateTask: vi.fn(),
@@ -162,18 +162,7 @@ function renderPage() {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  mockFetchDailyTimeline.mockImplementation((start, end) => Promise.resolve({
-    start,
-    end,
-    days: [
-      ...(start <= yesterdayKey && yesterdayKey <= end
-        ? [{ date: yesterdayKey, tasks: [overdueTask] }]
-        : []),
-      ...(start <= todayKey && todayKey <= end
-        ? [{ date: todayKey, tasks: [todayTask] }]
-        : []),
-    ],
-  }));
+  mockFetchTodayTasks.mockResolvedValue({ overdue: [overdueTask], today: [todayTask] });
   mockFetchPreferences.mockResolvedValue(basePreferences);
   mockFetchCollections.mockResolvedValue(mockCollections);
   mockCreateTask.mockResolvedValue({ ...todayTask, id: 'created-1' });

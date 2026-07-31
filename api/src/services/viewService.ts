@@ -106,32 +106,6 @@ function toDateKey(value: string | Date): string {
   return value instanceof Date ? value.toISOString().slice(0, 10) : String(value).slice(0, 10);
 }
 
-const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
-const DAY_IN_MS = 24 * 60 * 60 * 1000;
-const MAX_TIMELINE_DAYS = 31;
-
-function timelineValidationError(field: string, message: string): AppError {
-  return new AppError({
-    code: "VALIDATION_ERROR",
-    message: "Validation failed",
-    statusCode: 400,
-    details: [{ field, message }],
-  });
-}
-
-function parseISODate(value: string, field: "start" | "end"): number {
-  const timestamp = Date.parse(`${value}T00:00:00.000Z`);
-  if (
-    !ISO_DATE.test(value) ||
-    value.startsWith("0000-") ||
-    !Number.isFinite(timestamp) ||
-    new Date(timestamp).toISOString().slice(0, 10) !== value
-  ) {
-    throw timelineValidationError(field, `${field} must be a valid ISO date (YYYY-MM-DD)`);
-  }
-  return timestamp;
-}
-
 export interface TodayView {
   overdue: ReturnType<typeof formatTask>[];
   today: ReturnType<typeof formatTask>[];
@@ -175,72 +149,6 @@ export async function getTodayView(userId: string, now: Date = new Date()): Prom
   }
 
   return { overdue, today, date: settings.todayDate };
-}
-
-export interface DailyTimelineView {
-  days: { date: string; tasks: ReturnType<typeof formatTask>[] }[];
-  start: string;
-  end: string;
-}
-
-export async function getDailyTimelineView(
-  userId: string,
-  startDate: string,
-  endDate: string,
-  now: Date = new Date(),
-): Promise<DailyTimelineView> {
-  const startTimestamp = parseISODate(startDate, "start");
-  const endTimestamp = parseISODate(endDate, "end");
-  if (startTimestamp > endTimestamp) {
-    throw timelineValidationError("end", "end must be on or after start");
-  }
-
-  const dayCount = Math.round((endTimestamp - startTimestamp) / DAY_IN_MS) + 1;
-  if (dayCount > MAX_TIMELINE_DAYS) {
-    throw timelineValidationError("end", `date range must not exceed ${MAX_TIMELINE_DAYS} days`);
-  }
-
-  const settings = await getViewPreferences(userId, now);
-  const result = await pool.query(
-    `SELECT t.* FROM tasks t
-     JOIN collections p ON p.id = t.collection_id
-     LEFT JOIN task_order o
-       ON o.task_id = t.id
-      AND o.scope_type = 'day'
-      AND o.scope_id = to_char(t.due_date, 'YYYY-MM-DD')
-     WHERE t.user_id = $1
-       AND t.due_date IS NOT NULL
-       AND t.due_date >= $2::date
-       AND t.due_date <= $3::date
-       AND p.is_archived = false
-       AND ($4::boolean = false OR t.is_completed = false)
-       AND ($5::boolean = false OR NOT (t.type = 'note' AND t.due_date < $6::date))
-     ORDER BY t.due_date ASC, o.position ASC NULLS LAST, t.order_value ASC, t.created_at ASC`,
-    [
-      userId,
-      startDate,
-      endDate,
-      settings.hideCompletedTasks,
-      settings.hideOldNotes,
-      settings.todayDate,
-    ],
-  );
-
-  const grouped = new Map<string, ReturnType<typeof formatTask>[]>();
-  for (let timestamp = startTimestamp; timestamp <= endTimestamp; timestamp += DAY_IN_MS) {
-    grouped.set(new Date(timestamp).toISOString().slice(0, 10), []);
-  }
-
-  for (const row of result.rows as TaskRow[]) {
-    if (!row.due_date) continue;
-    grouped.get(toDateKey(row.due_date))?.push(formatTask(row));
-  }
-
-  return {
-    days: Array.from(grouped.entries()).map(([date, tasks]) => ({ date, tasks })),
-    start: startDate,
-    end: endDate,
-  };
 }
 
 export interface UpcomingView {

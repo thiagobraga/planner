@@ -9,16 +9,7 @@ vi.mock("../../db/pool.js", () => ({
   },
 }));
 
-import {
-  getTodayView,
-  getDailyTimelineView,
-  getUpcomingView,
-  getInboxView,
-  getMonthView,
-  getCollectionView,
-  localDateInTimezone,
-  addDaysISO,
-} from "../viewService.js";
+import { getTodayView, getUpcomingView, getInboxView, getMonthView, getCollectionView, localDateInTimezone, addDaysISO } from "../viewService.js";
 
 const userId = "user-1";
 const visibilityPrefsRow = { rows: [{ time_zone: "UTC", hide_completed_tasks: false, hide_old_notes: false }] };
@@ -131,118 +122,6 @@ describe("getTodayView", () => {
 
     const view = await getTodayView(userId, new Date("2024-06-15T12:00:00Z"));
     expect(view.date).toBe("2024-06-15");
-  });
-});
-
-describe("getDailyTimelineView", () => {
-  it.each([
-    ["", "2024-02-02", "start"],
-    ["2024-2-01", "2024-02-02", "start"],
-    ["2024-02-30", "2024-03-01", "start"],
-    ["2024-02-01", "2024-02-30", "end"],
-    ["0000-01-01", "0000-01-02", "start"],
-  ])("rejects an invalid ISO range %s to %s", async (start, end, field) => {
-    await expect(getDailyTimelineView(userId, start, end)).rejects.toMatchObject({
-      code: "VALIDATION_ERROR",
-      details: [expect.objectContaining({ field })],
-    });
-    expect(mockQuery).not.toHaveBeenCalled();
-  });
-
-  it("rejects reversed ranges and ranges longer than 31 inclusive days", async () => {
-    await expect(getDailyTimelineView(userId, "2024-06-16", "2024-06-15")).rejects.toMatchObject({
-      code: "VALIDATION_ERROR",
-      details: [expect.objectContaining({ field: "end" })],
-    });
-    await expect(getDailyTimelineView(userId, "2024-06-01", "2024-07-02")).rejects.toMatchObject({
-      code: "VALIDATION_ERROR",
-      details: [expect.objectContaining({ field: "end" })],
-    });
-    expect(mockQuery).not.toHaveBeenCalled();
-  });
-
-  it("accepts a 31-day inclusive range", async () => {
-    mockQuery.mockResolvedValueOnce(visibilityPrefsRow).mockResolvedValueOnce({ rows: [] });
-
-    const view = await getDailyTimelineView(userId, "2024-06-01", "2024-07-01");
-
-    expect(view.days).toHaveLength(31);
-    expect(view.days[0].date).toBe("2024-06-01");
-    expect(view.days[30].date).toBe("2024-07-01");
-  });
-
-  it("returns every day in the inclusive range and keeps tasks on their actual dates", async () => {
-    mockQuery
-      .mockResolvedValueOnce(visibilityPrefsRow)
-      .mockResolvedValueOnce({
-        rows: [
-          taskRow({ id: "past", due_date: "2024-06-14" }),
-          taskRow({ id: "first-today", due_date: new Date("2024-06-15T00:00:00.000Z") }),
-          taskRow({ id: "second-today", due_date: "2024-06-15", order_value: 5000 }),
-        ],
-      });
-
-    const view = await getDailyTimelineView(
-      userId,
-      "2024-06-14",
-      "2024-06-16",
-      new Date("2024-06-15T12:00:00.000Z"),
-    );
-
-    expect(view).toMatchObject({ start: "2024-06-14", end: "2024-06-16" });
-    expect(view.days.map((day) => day.date)).toEqual([
-      "2024-06-14",
-      "2024-06-15",
-      "2024-06-16",
-    ]);
-    expect(view.days[0].tasks.map((task) => task.id)).toEqual(["past"]);
-    expect(view.days[1].tasks.map((task) => task.id)).toEqual(["first-today", "second-today"]);
-    expect(view.days[2].tasks).toEqual([]);
-
-    const sql = mockQuery.mock.calls[1][0] as string;
-    expect(sql).toMatch(/JOIN collections p ON p\.id = t\.collection_id/);
-    expect(sql).toMatch(/p\.is_archived = false/);
-    expect(sql).toMatch(/LEFT JOIN task_order o/);
-    expect(sql).toMatch(/o\.scope_type = 'day'/);
-    expect(sql).toMatch(
-      /ORDER BY t\.due_date ASC, o\.position ASC NULLS LAST, t\.order_value ASC, t\.created_at ASC/,
-    );
-    expect(sql).not.toMatch(/ORDER BY[^`]*priority/);
-    expect(mockQuery.mock.calls[1][1]).toEqual([
-      userId,
-      "2024-06-14",
-      "2024-06-16",
-      false,
-      false,
-      "2024-06-15",
-    ]);
-  });
-
-  it("applies Daily visibility preferences using the user's local today", async () => {
-    mockQuery
-      .mockResolvedValueOnce({
-        rows: [{ time_zone: "America/New_York", hide_completed_tasks: true, hide_old_notes: true }],
-      })
-      .mockResolvedValueOnce({ rows: [] });
-
-    await getDailyTimelineView(
-      userId,
-      "2024-06-13",
-      "2024-06-15",
-      new Date("2024-06-15T03:00:00.000Z"),
-    );
-
-    const sql = mockQuery.mock.calls[1][0] as string;
-    expect(sql).toMatch(/t\.is_completed = false/);
-    expect(sql).toMatch(/t\.type = 'note'/);
-    expect(mockQuery.mock.calls[1][1]).toEqual([
-      userId,
-      "2024-06-13",
-      "2024-06-15",
-      true,
-      true,
-      "2024-06-14",
-    ]);
   });
 });
 
