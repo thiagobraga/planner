@@ -204,10 +204,16 @@ export async function apiRegister(
   email: string,
   password: string,
   displayName?: string,
+  timeZone?: string,
 ): Promise<AuthUser> {
   const data = await request<{ user: AuthUser }>('/auth/register', {
     method: 'POST',
-    body: JSON.stringify(displayName ? { email, password, displayName } : { email, password }),
+    body: JSON.stringify({
+      email,
+      password,
+      ...(displayName ? { displayName } : {}),
+      ...(timeZone ? { timeZone } : {}),
+    }),
   });
   return data.user;
 }

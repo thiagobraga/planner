@@ -8,10 +8,9 @@ import { Button } from './ui/Button';
 import { matchKey, createMatcherState, DEFAULT_BINDINGS } from '../hooks/shortcuts';
 import type { MatcherState } from '../hooks/shortcuts';
 import { useSync } from '../hooks/useSync';
-import { fetchPreferences, apiUpdatePreferences, type Preferences, apiCreateTask } from '../api/client';
+import { fetchPreferences, type Preferences, apiCreateTask } from '../api/client';
 import { ensureFontLoaded, type FontOption } from '../utils/fontLoader';
 import { updateDocumentThemeColor } from '../utils/theme';
-import { getDetectedTimeZone } from '../utils/date';
 import { PlannerDragProvider } from '../contexts/PlannerDragContext';
 import { useI18n } from '../i18n/I18nContext';
 import { useVersionCheck } from '../hooks/useVersionCheck';
@@ -32,16 +31,6 @@ export function AppShell() {
     queryFn: fetchPreferences,
     retry: 2,
   });
-
-  useEffect(() => {
-    if (preferences && !preferences.timeZone) {
-      const detected = getDetectedTimeZone();
-      apiUpdatePreferences({ timeZone: detected }).then((updated) => {
-        qc.setQueryData<Preferences>(['preferences'], updated);
-      });
-    }
-  }, [preferences, qc]);
-
 
   useSync(useCallback((event) => {
     if (event.entityType === 'collection') {

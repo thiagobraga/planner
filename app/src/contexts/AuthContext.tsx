@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useCallback, useEffect, useRef, type ReactNode } from 'react';
 import { apiLogin, apiRegister, apiLogout, setCurrentUserId, type AuthUser } from '../api/client';
+import { getDetectedTimeZone } from '../utils/date';
 import { queryClient } from '../api/queryClient';
 import { connectSocket, disconnectSocket } from '../utils/socket';
 import { useOfflineQueueReplay } from '../hooks/useOfflineQueueReplay';
@@ -67,7 +68,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // single place instead of growing a second, divergent code path on the server.
   const register = useCallback(
     async (email: string, password: string, displayName?: string) => {
-      await apiRegister(email, password, displayName);
+      await apiRegister(email, password, displayName, getDetectedTimeZone());
       await login(email, password);
     },
     [login],
