@@ -135,4 +135,56 @@ describe('offlineQueue index recovery', () => {
     expect(queued).toHaveLength(1);
     expect(await readVersion()).toBe(versionAfterFirstOpen);
   });
+
+  it('preserves FIFO ordering in fallback mode (no index)', async () => {
+    await seedDatabaseWithoutIndex(3, [
+      { id: 'c', method: 'DELETE', path: '/tasks/3', body: '', createdAt: 30, ownerUserId: 'user-1' },
+      { id: 'a', method: 'POST', path: '/tasks', body: '{}', createdAt: 10, ownerUserId: 'user-1' },
+      { id: 'b', method: 'PATCH', path: '/tasks/1', body: '{}', createdAt: 20, ownerUserId: 'user-1' },
+    ]);
+
+    const { getQueuedMutationsForUser } = await import('../offlineQueue');
+    const queued = await getQueuedMutationsForUser('user-1');
+
+    expect(queued.map((m) => m.id)).toEqual(['a', 'b', 'c']);
+  });
+
+  it('does not throw when getQueuedMutationsForUser is called on a no-index DB', async () => {
+    await seedDatabaseWithoutIndex(3);
+
+    const { getQueuedMutationsForUser } = await import('../offlineQueue');
+
+    // This previously threw NotFoundError; now it must resolve gracefully.
+    await expect(getQueuedMutationsForUser('user-1')).resolves.toEqual([]);
+  });
+
+  it('filters correctly per user in fallback mode (no index)', async () => {
+    await seedDatabaseWithoutIndex(3, [
+      { id: 'u1-a', method: 'POST', path: '/tasks', body: '{}', createdAt: 1, ownerUserId: 'user-1' },
+      { id: 'u2-a', method: 'POST', path: '/tasks', body: '{}', createdAt: 2, ownerUserId: 'user-2' },
+      { id: 'u1-b', method: 'PATCH', path: '/tasks/1', body: '{}', createdAt: 3, ownerUserId: 'user-1' },
+    ]);
+
+    const { getQueuedMutationsForUser } = await import('../offlineQueue');
+
+    const user1 = await getQueuedMutationsForUser('user-1');
+    expect(user1.map((m) => m.id)).toEqual(['u1-a', 'u1-b']);
+
+    const user2 = await getQueuedMutationsForUser('user-2');
+    expect(user2.map((m) => m.id)).toEqual(['u2-a']);
+  });
+
+  it('clearUserMutations works even when the index is missing', async () => {
+    await seedDatabaseWithoutIndex(3, [
+      { id: 'u1-a', method: 'POST', path: '/tasks', body: '{}', createdAt: 1, ownerUserId: 'user-1' },
+      { id: 'u2-a', method: 'POST', path: '/tasks', body: '{}', createdAt: 2, ownerUserId: 'user-2' },
+    ]);
+
+    const { clearUserMutations, getQueuedMutations } = await import('../offlineQueue');
+
+    await clearUserMutations('user-1');
+
+    const remaining = await getQueuedMutations();
+    expect(remaining.map((m) => m.id)).toEqual(['u2-a']);
+  });
 });
