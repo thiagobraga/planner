@@ -40,7 +40,7 @@ const VALID_FONTS = ["lora", "playpen", "hubballi"] as const;
 const VALID_BACKGROUNDS = ["beige", "white"] as const;
 const VALID_LOCALES = ["en", "pt-BR"] as const;
 
-function isValidIanaTimezone(tz: string): boolean {
+export function isValidIanaTimezone(tz: string): boolean {
   try {
     new Intl.DateTimeFormat("en-US", { timeZone: tz });
     return true;

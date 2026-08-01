@@ -4,6 +4,7 @@ import { AppError } from '../utils/AppError.js';
 import { validate, type ValidationError } from '../utils/validate.js';
 import { isValidEmail } from '../utils/email.js';
 import { securityLog } from '../utils/securityLogger.js';
+import { isValidIanaTimezone } from './preferencesService.js';
 import { validatePassword, hashPassword, verifyArgon2id } from './passwordService.js';
 import { createSession } from './sessionService.js';
 import { sendPasswordResetEmail } from './emailService.js';
@@ -27,6 +28,7 @@ export interface RegisterInput {
   email: string;
   password: string;
   displayName?: string;
+  timeZone?: string;
 }
 
 export async function register(input: RegisterInput): Promise<UserData> {
@@ -88,7 +90,8 @@ export async function register(input: RegisterInput): Promise<UserData> {
       [collectionId, userId],
     );
 
-    await client.query(`INSERT INTO preferences (user_id) VALUES ($1)`, [userId]);
+    const timeZone = input.timeZone && isValidIanaTimezone(input.timeZone) ? input.timeZone : 'UTC';
+    await client.query(`INSERT INTO preferences (user_id, time_zone) VALUES ($1, $2)`, [userId, timeZone]);
 
     await client.query('COMMIT');
   } catch (err) {

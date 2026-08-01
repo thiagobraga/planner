@@ -45,8 +45,8 @@ router.post("/register", async (req: Request, res: Response, next: NextFunction)
       return;
     }
 
-    const { email, password, displayName } = req.body;
-    const user = await register({ email, password, displayName });
+    const { email, password, displayName, timeZone } = req.body;
+    const user = await register({ email, password, displayName, timeZone });
     // Counted on success only - a rejected attempt (typo, weak password) should
     // not burn a legitimate user's quota.
     await incrementRegistrationAttempts(req.ip ?? "unknown");
