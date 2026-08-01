@@ -388,7 +388,7 @@ describe('AuthContext', () => {
 
     // /auth/register issues no session cookie - only /auth/login does - so the
     // context must chain the two or the user lands authenticated with no session.
-    expect(mockApiRegister).toHaveBeenCalledWith('new@example.com', 'password', 'New User');
+    expect(mockApiRegister).toHaveBeenCalledWith('new@example.com', 'password', 'New User', expect.any(String));
     expect(mockApiLogin).toHaveBeenCalledWith('new@example.com', 'password');
     expect(mockSetCurrentUserId).toHaveBeenCalledWith('user-1');
     expect(mockConnectSocket).toHaveBeenCalled();
@@ -396,7 +396,7 @@ describe('AuthContext', () => {
     expect(screen.getByTestId('auth-state')).toHaveTextContent('"isAuthenticated":true');
   });
 
-  it('register() passes undefined displayName through when omitted', async () => {
+  it('register() passes undefined displayName and the browser-detected time zone through when omitted', async () => {
     mockApiRegister.mockResolvedValue(mockUser);
     mockApiLogin.mockResolvedValue(mockUser);
 
@@ -406,7 +406,7 @@ describe('AuthContext', () => {
       await auth().register('new@example.com', 'password');
     });
 
-    expect(mockApiRegister).toHaveBeenCalledWith('new@example.com', 'password', undefined);
+    expect(mockApiRegister).toHaveBeenCalledWith('new@example.com', 'password', undefined, expect.any(String));
   });
 
   it('register() leaves the user logged out when registration fails', async () => {
