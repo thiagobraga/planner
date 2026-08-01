@@ -1,4 +1,5 @@
 import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router';
 import { Check, Palette, Search, Settings2 } from 'lucide-react';
@@ -8,6 +9,7 @@ import { Input } from '../components/ui/Input';
 import { fetchPreferences, apiUpdatePreferences, type Preferences } from '../api/client';
 import { ensureFontLoaded, type FontOption } from '../utils/fontLoader';
 import { getDetectedTimeZone } from '../utils/date';
+import { useFloatingPosition } from '../hooks/useFloatingPosition';
 import { useI18n } from '../i18n/I18nContext';
 
 type SettingsSection = 'general' | 'appearance';
@@ -281,11 +283,22 @@ export function SettingsPage() {
   const { section } = useParams<{ section?: string }>();
   const timeZoneIdBase = useId().replace(/:/g, '');
   const timeZoneInputId = `settings-time-zone-${timeZoneIdBase}`;
-  const timeZoneHintId = `settings-time-zone-hint-${timeZoneIdBase}`;
   const panelHeadingId = `settings-panel-heading-${timeZoneIdBase}`;
   const detectedTimeZone = getDetectedTimeZone();
   const activeSection: SettingsSection = isSettingsSection(section) ? section : 'general';
   const [timeZoneDraft, setTimeZoneDraft] = useState(detectedTimeZone);
+  const [isTimeZoneOpen, setIsTimeZoneOpen] = useState(false);
+  const [timeZoneHighlight, setTimeZoneHighlight] = useState(0);
+  const timeZoneTriggerRef = useRef<HTMLDivElement>(null);
+  const timeZoneFloatingRef = useRef<HTMLDivElement>(null);
+  const timeZoneListboxRef = useRef<HTMLUListElement>(null);
+
+  const { top: timeZoneTop, left: timeZoneLeft } = useFloatingPosition(
+    timeZoneTriggerRef,
+    timeZoneFloatingRef,
+    { placement: 'below', align: 'start' },
+    isTimeZoneOpen,
+  );
 
   useEffect(() => {
     if (!isSettingsSection(section)) {
@@ -383,18 +396,92 @@ export function SettingsPage() {
     updateMutation.mutate({ smallCaps: next });
   };
 
-  const handleTimeZoneChange = (nextTimeZone: string) => {
+  const commitTimeZoneSelection = (nextTimeZone: string) => {
     setTimeZoneDraft(nextTimeZone);
-    if (nextTimeZone !== savedTimeZone && timeZoneOptions.includes(nextTimeZone)) {
+    setIsTimeZoneOpen(false);
+    if (nextTimeZone !== savedTimeZone) {
       updateMutation.mutate({ timeZone: nextTimeZone });
     }
   };
 
-  const handleTimeZoneBlur = () => {
+  const closeTimeZoneDropdown = () => {
+    setIsTimeZoneOpen(false);
     if (!timeZoneOptions.includes(timeZoneDraft)) {
       setTimeZoneDraft(savedTimeZone);
     }
   };
+
+  const handleTimeZoneInputChange = (nextDraft: string) => {
+    setTimeZoneDraft(nextDraft);
+    setIsTimeZoneOpen(true);
+    setTimeZoneHighlight(0);
+  };
+
+  const handleTimeZoneFocus = () => {
+    setIsTimeZoneOpen(true);
+    const currentIndex = filteredTimeZones.indexOf(timeZoneDraft);
+    setTimeZoneHighlight(currentIndex >= 0 ? currentIndex : 0);
+  };
+
+  const handleTimeZoneKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (!isTimeZoneOpen) {
+      if (event.key === 'ArrowDown' || event.key === 'Enter') {
+        event.preventDefault();
+        setIsTimeZoneOpen(true);
+      }
+      return;
+    }
+
+    switch (event.key) {
+      case 'Escape':
+        event.preventDefault();
+        closeTimeZoneDropdown();
+        break;
+      case 'ArrowDown':
+        event.preventDefault();
+        setTimeZoneHighlight((prev) => Math.min(prev + 1, filteredTimeZones.length - 1));
+        break;
+      case 'ArrowUp':
+        event.preventDefault();
+        setTimeZoneHighlight((prev) => Math.max(prev - 1, 0));
+        break;
+      case 'Enter':
+        event.preventDefault();
+        if (filteredTimeZones[timeZoneHighlight]) {
+          commitTimeZoneSelection(filteredTimeZones[timeZoneHighlight]);
+        }
+        break;
+      default:
+        break;
+    }
+  };
+
+  useEffect(() => {
+    if (!isTimeZoneOpen) return;
+
+    function handleMouseDown(event: MouseEvent) {
+      const target = event.target as Node;
+      if (
+        timeZoneFloatingRef.current &&
+        !timeZoneFloatingRef.current.contains(target) &&
+        timeZoneTriggerRef.current &&
+        !timeZoneTriggerRef.current.contains(target)
+      ) {
+        closeTimeZoneDropdown();
+      }
+    }
+
+    document.addEventListener('mousedown', handleMouseDown);
+    return () => document.removeEventListener('mousedown', handleMouseDown);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isTimeZoneOpen, timeZoneDraft, timeZoneOptions, savedTimeZone]);
+
+  useEffect(() => {
+    if (!isTimeZoneOpen || !timeZoneListboxRef.current) return;
+    const items = timeZoneListboxRef.current.querySelectorAll('[role="option"]');
+    const highlighted = items[timeZoneHighlight] as HTMLElement | undefined;
+    highlighted?.scrollIntoView?.({ block: 'nearest' });
+  }, [isTimeZoneOpen, timeZoneHighlight]);
 
   const handleWeekStartChange = (nextWeekStart: Preferences['weekStart']) => {
     updateMutation.mutate({ weekStart: nextWeekStart });
@@ -494,26 +581,83 @@ export function SettingsPage() {
                           {t('settings.detected', { zone: detectedTimeZone })}
                         </p>
                       </div>
-                      <Input
-                        id={timeZoneInputId}
-                        icon={<Search size={16} />}
-                        value={timeZoneDraft}
-                        onChange={(event) => handleTimeZoneChange(event.target.value)}
-                        onBlur={handleTimeZoneBlur}
-                        disabled={disabled}
-                        placeholder={t('settings.searchTimeZones')}
-                        list={`${timeZoneInputId}-options`}
-                        aria-describedby={timeZoneHintId}
-                        autoComplete="off"
-                      />
-                      <p id={timeZoneHintId} className="text-xs leading-5 text-ink-light">
-                        {t('settings.timeZoneHint')}
-                      </p>
-                      <datalist id={`${timeZoneInputId}-options`}>
-                        {filteredTimeZones.map((zone) => (
-                          <option key={zone} value={zone} />
-                        ))}
-                      </datalist>
+                      <div ref={timeZoneTriggerRef} className="relative">
+                        <Input
+                          id={timeZoneInputId}
+                          icon={<Search size={16} />}
+                          value={timeZoneDraft}
+                          onChange={(event) => handleTimeZoneInputChange(event.target.value)}
+                          onFocus={handleTimeZoneFocus}
+                          onKeyDown={handleTimeZoneKeyDown}
+                          onBlur={closeTimeZoneDropdown}
+                          disabled={disabled}
+                          placeholder={t('settings.searchTimeZones')}
+                          role="combobox"
+                          aria-autocomplete="list"
+                          aria-expanded={isTimeZoneOpen}
+                          aria-controls={`${timeZoneInputId}-listbox`}
+                          aria-activedescendant={
+                            isTimeZoneOpen && filteredTimeZones[timeZoneHighlight]
+                              ? `${timeZoneInputId}-option-${timeZoneHighlight}`
+                              : undefined
+                          }
+                          autoComplete="off"
+                        />
+                        {isTimeZoneOpen &&
+                          createPortal(
+                            <div
+                              ref={timeZoneFloatingRef}
+                              className="ui-custom-select-dropdown fixed z-50 p-1 bg-[var(--planner-card-bg)] border border-border rounded-md shadow-medium"
+                              style={{
+                                top: timeZoneTop,
+                                left: timeZoneLeft,
+                                width: timeZoneTriggerRef.current?.offsetWidth || 200,
+                              }}
+                            >
+                              {filteredTimeZones.length > 0 ? (
+                                <ul
+                                  id={`${timeZoneInputId}-listbox`}
+                                  role="listbox"
+                                  ref={timeZoneListboxRef}
+                                  className="max-h-[240px] overflow-y-auto"
+                                  aria-label={t('settings.timeZone')}
+                                >
+                                  {filteredTimeZones.map((zone, index) => {
+                                    const isSelected = zone === savedTimeZone;
+                                    const isHighlighted = index === timeZoneHighlight;
+
+                                    let itemClass = 'flex items-center h-9 px-2 rounded-[4px] text-sm cursor-pointer select-none ';
+                                    if (isSelected) {
+                                      itemClass += 'bg-dot/60 text-ink ';
+                                    } else if (isHighlighted) {
+                                      itemClass += 'bg-dot/40 text-ink ';
+                                    } else {
+                                      itemClass += 'text-ink hover:bg-dot/40 ';
+                                    }
+
+                                    return (
+                                      <li
+                                        key={zone}
+                                        id={`${timeZoneInputId}-option-${index}`}
+                                        role="option"
+                                        aria-selected={isSelected}
+                                        className={itemClass}
+                                        onMouseDown={(event) => event.preventDefault()}
+                                        onClick={() => commitTimeZoneSelection(zone)}
+                                        onMouseEnter={() => setTimeZoneHighlight(index)}
+                                      >
+                                        {zone}
+                                      </li>
+                                    );
+                                  })}
+                                </ul>
+                              ) : (
+                                <p className="px-2 py-2 text-sm text-ink-light">{t('settings.noTimeZonesFound')}</p>
+                              )}
+                            </div>,
+                            timeZoneTriggerRef.current?.closest('.app-shell') ?? document.body,
+                          )}
+                      </div>
                     </section>
 
                     <section className="space-y-3 border-t border-[var(--planner-settings-separator)] pt-8">

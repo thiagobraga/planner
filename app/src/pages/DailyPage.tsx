@@ -35,10 +35,11 @@ interface DaySection {
 }
 
 function dayLabel(d: Date, locale: 'en' | 'pt-BR'): string {
-  const month = d.toLocaleDateString(locale, { month: 'short' }).toLocaleUpperCase(locale);
+  const month = d.toLocaleDateString(locale, { month: 'short' });
   const day = String(d.getDate()).padStart(2, '0');
-  const weekday = d.toLocaleDateString(locale, { weekday: 'short' }).toLocaleUpperCase(locale);
-  return `${month} ${day} ${weekday}`;
+  const weekday = d.toLocaleDateString(locale, { weekday: 'short' });
+  const clean = locale === 'pt-BR' ? (value: string) => value.replace(/\./g, '') : (value: string) => value;
+  return `${clean(month).toLocaleUpperCase(locale)} ${day} ${clean(weekday).toLocaleUpperCase(locale)}`;
 }
 
 function dateFromISO(iso: string): Date {

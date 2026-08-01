@@ -107,7 +107,7 @@ export const englishCatalog = {
   'settings.timeZone': 'Time zone',
   'settings.detected': 'Detected: {{zone}}',
   'settings.searchTimeZones': 'Search time zones',
-  'settings.timeZoneHint': 'UTC, your browser zone, and the saved zone are always available.',
+  'settings.noTimeZonesFound': 'No time zones match your search.',
   'settings.weekStartsOn': 'Week starts on',
   'settings.sunday': 'Sunday',
   'settings.monday': 'Monday',

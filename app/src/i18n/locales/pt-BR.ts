@@ -109,7 +109,7 @@ export const portugueseBrazilCatalog = {
   'settings.timeZone': 'Fuso horário',
   'settings.detected': 'Detectado: {{zone}}',
   'settings.searchTimeZones': 'Buscar fusos horários',
-  'settings.timeZoneHint': 'UTC, o fuso do navegador e o fuso salvo estão sempre disponíveis.',
+  'settings.noTimeZonesFound': 'Nenhum fuso horário encontrado.',
   'settings.weekStartsOn': 'A semana começa em',
   'settings.sunday': 'Domingo',
   'settings.monday': 'Segunda-feira',
