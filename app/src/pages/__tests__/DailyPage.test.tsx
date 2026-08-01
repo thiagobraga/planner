@@ -3,6 +3,7 @@ import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { DailyPage } from '../DailyPage';
+import { I18nProvider } from '../../i18n/I18nContext';
 import {
   fetchTodayTasks,
   fetchPreferences,
@@ -88,10 +89,10 @@ function dateKey(d: Date): string {
   return `${year}-${month}-${day}`;
 }
 
-function dayLabel(d: Date): string {
-  const month = d.toLocaleDateString('en-US', { month: 'short' }).toUpperCase();
+function dayLabel(d: Date, locale: 'en' | 'pt-BR' = 'en'): string {
+  const month = d.toLocaleDateString(locale, { month: 'short' }).replace(/\./g, '').toUpperCase();
   const day = String(d.getDate()).padStart(2, '0');
-  const weekday = d.toLocaleDateString('en-US', { weekday: 'short' }).toUpperCase();
+  const weekday = d.toLocaleDateString(locale, { weekday: 'short' }).replace(/\./g, '').toUpperCase();
   return `${month} ${day} ${weekday}`;
 }
 
@@ -148,15 +149,18 @@ function renderPage() {
 
   return render(
     <QueryClientProvider client={client}>
-      <MemoryRouter>
-        <DailyPage />
-      </MemoryRouter>
+      <I18nProvider>
+        <MemoryRouter>
+          <DailyPage />
+        </MemoryRouter>
+      </I18nProvider>
     </QueryClientProvider>,
   );
 }
 
 beforeEach(() => {
   vi.clearAllMocks();
+  window.localStorage.clear();
   mockFetchTodayTasks.mockResolvedValue({ overdue: [overdueTask], today: [todayTask] });
   mockFetchPreferences.mockResolvedValue(basePreferences);
   mockFetchCollections.mockResolvedValue(mockCollections);
@@ -184,11 +188,14 @@ describe('DailyPage', () => {
     expect(await screen.findByText(overdueLabel)).toBeInTheDocument();
   });
 
-  it('renders today section label', async () => {
+  it('removes dots from Portuguese month and weekday labels', async () => {
+    window.localStorage.setItem('planner_locale', 'pt-BR');
+
     renderPage();
 
-    const todayLabel = dayLabel(today);
-    expect(await screen.findByText(todayLabel)).toBeInTheDocument();
+    const overdueLabel = dayLabel(yesterday, 'pt-BR');
+    expect(await screen.findByText(overdueLabel)).toBeInTheDocument();
+    expect(overdueLabel).not.toContain('.');
   });
 
   it('renders "Add task" input', async () => {
@@ -213,4 +220,3 @@ describe('DailyPage', () => {
     expect(scrollIntoViewMock).toHaveBeenCalled();
   });
 });
-
