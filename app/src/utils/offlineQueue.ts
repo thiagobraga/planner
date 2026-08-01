@@ -73,7 +73,14 @@ function hasIndex(db: IDBDatabase): boolean {
   if (!db.objectStoreNames.contains(STORE_NAME)) {
     return false;
   }
-  return db.transaction(STORE_NAME, 'readonly').objectStore(STORE_NAME).indexNames.contains(INDEX_NAME);
+  try {
+    return db
+      .transaction(STORE_NAME, 'readonly')
+      .objectStore(STORE_NAME)
+      .indexNames.contains(INDEX_NAME);
+  } catch {
+    return false;
+  }
 }
 
 function openDB(): Promise<IDBDatabase> {
@@ -82,14 +89,22 @@ function openDB(): Promise<IDBDatabase> {
     // makes a drifted database repairable: one that reached the current
     // version without the index can be detected here and upgraded past it,
     // since onupgradeneeded only fires when the version actually increases.
-    dbPromise = open().then((db) => {
-      if (hasIndex(db)) {
-        return db;
-      }
-      const next = db.version + 1;
-      db.close();
-      return open(next);
-    });
+    dbPromise = open()
+      .then((db) => {
+        if (hasIndex(db)) {
+          return db;
+        }
+        const next = db.version + 1;
+        db.close();
+        return open(next);
+      })
+      .catch((err) => {
+        // If the repair upgrade itself fails (e.g. another tab holds an open
+        // connection that blocks onversionchange), reset the cached promise so
+        // the next call can retry instead of permanently caching the rejection.
+        dbPromise = null;
+        throw err;
+      });
   }
   return dbPromise;
 }
@@ -107,21 +122,33 @@ function withStore<T>(mode: IDBTransactionMode, run: (store: IDBObjectStore) => 
   );
 }
 
-function withStoreAndIndex<T>(
-  mode: IDBTransactionMode,
-  run: (store: IDBObjectStore, index: IDBIndex) => IDBRequest<T>,
-): Promise<T> {
-  return openDB().then(
-    (db) =>
-      new Promise<T>((resolve, reject) => {
-        const tx = db.transaction(STORE_NAME, mode);
-        const store = tx.objectStore(STORE_NAME);
-        const index = store.index(INDEX_NAME);
-        const req = run(store, index);
-        req.onsuccess = () => resolve(req.result);
-        req.onerror = () => reject(req.error);
-      }),
-  );
+/**
+ * Query by ownerUserId using the index when available, falling back to a
+ * full-store scan when the index is missing. This prevents NotFoundError
+ * crashes in browsers holding a stale database version.
+ */
+function getByOwner(db: IDBDatabase, ownerUserId: string): Promise<QueuedMutation[]> {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORE_NAME, 'readonly');
+    const store = tx.objectStore(STORE_NAME);
+
+    let req: IDBRequest<QueuedMutation[]>;
+    if (store.indexNames.contains(INDEX_NAME)) {
+      req = store.index(INDEX_NAME).getAll(ownerUserId);
+    } else {
+      // Fallback: index unavailable — scan all records and filter in memory.
+      req = store.getAll();
+    }
+
+    req.onsuccess = () => {
+      const records = req.result;
+      // When the index was available IDB already filtered; when it wasn't we
+      // need to filter ourselves. Running the filter in both cases is harmless
+      // and keeps the result deterministic.
+      resolve(records.filter((m) => m.ownerUserId === ownerUserId));
+    };
+    req.onerror = () => reject(req.error);
+  });
 }
 
 let lastStamp = 0;
@@ -162,10 +189,8 @@ export async function getQueuedMutations(): Promise<QueuedMutation[]> {
 }
 
 export async function getQueuedMutationsForUser(ownerUserId: string): Promise<QueuedMutation[]> {
-  const all = await withStoreAndIndex<QueuedMutation[]>('readonly', (_store, index) => {
-    const req = index.getAll(ownerUserId);
-    return req as unknown as IDBRequest<QueuedMutation[]>;
-  });
+  const db = await openDB();
+  const all = await getByOwner(db, ownerUserId);
   return [...all].sort((a, b) => a.createdAt - b.createdAt);
 }
 
