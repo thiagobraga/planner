@@ -177,6 +177,51 @@ describe("register - validation", () => {
   });
 });
 
+describe("register - time zone", () => {
+  function preferencesInsertCall() {
+    return mockClientQuery.mock.calls.find(([sql]) =>
+      String(sql).includes("INSERT INTO preferences"),
+    );
+  }
+
+  it("stores a valid IANA time zone passed at registration", async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+
+    await register({
+      email: "tz@example.com",
+      password: STRONG_PASSWORD,
+      displayName: "Test",
+      timeZone: "America/Sao_Paulo",
+    });
+
+    const call = preferencesInsertCall();
+    expect(call?.[1]).toEqual(expect.arrayContaining(["America/Sao_Paulo"]));
+  });
+
+  it("defaults to UTC when no time zone is provided", async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+
+    await register({ email: "no-tz@example.com", password: STRONG_PASSWORD, displayName: "Test" });
+
+    const call = preferencesInsertCall();
+    expect(call?.[1]).toEqual(expect.arrayContaining(["UTC"]));
+  });
+
+  it("defaults to UTC when the given time zone is not a valid IANA zone", async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+
+    await register({
+      email: "bad-tz@example.com",
+      password: STRONG_PASSWORD,
+      displayName: "Test",
+      timeZone: "Not/AZone",
+    });
+
+    const call = preferencesInsertCall();
+    expect(call?.[1]).toEqual(expect.arrayContaining(["UTC"]));
+  });
+});
+
 describe("login", () => {
   it("returns user and raw session token on success", async () => {
     mockQuery.mockResolvedValueOnce({
