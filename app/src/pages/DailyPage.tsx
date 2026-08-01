@@ -632,8 +632,9 @@ export function DailyPage() {
               data-day-date={section.key}
               className={`mt-6 ${isToday ? 'scroll-mt-24' : ''}`}
             >
-            <div className="text-[11px] tracking-[0.08em] uppercase text-ink-light leading-6 h-6 m-0 font-medium">
+            <div className="text-[11px] tracking-[0.08em] uppercase text-ink-light leading-6 h-6 m-0 font-semibold">
               {section.label}
+              {isToday && <> · <span className="text-accent-light">{t('page.today')}</span></>}
             </div>
 
             <TaskList
