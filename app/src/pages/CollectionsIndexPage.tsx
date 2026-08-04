@@ -191,7 +191,7 @@ export function CollectionsIndexPage() {
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<CollectionTreeNode | null>(null);
 
-  const nextColor = () => PALETTE_COLORS[rawCollections.length % PALETTE_COLORS.length].name;
+  const nextColor = () => PALETTE_COLORS[rawCollections.length % PALETTE_COLORS.length];
 
   const startAddRoot = () => {
     setAddingRoot(true);

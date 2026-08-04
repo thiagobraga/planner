@@ -20,7 +20,7 @@ import { TaskRowSpecimen } from '../components/ui/TaskRowSpecimen';
 import { CustomSelect } from '../components/ui/CustomSelect';
 import { ContextMenu, ContextMenuItem } from '../components/ui/ContextMenu';
 import { Briefcase, Calendar as CalendarIcon, Tag, ArrowUp, ArrowDown } from 'lucide-react';
-import { fetchPreferences, paletteColorHex } from '../api/client';
+import { fetchPreferences } from '../api/client';
 
 // ── Card wrapper ──────────────────────────────────────────────────────────────
 function Card({
@@ -55,23 +55,23 @@ const TYPE_SCALE = [
 ];
 
 const COLLECTIONS = [
-  { name: 'dev', color: 'green' },
-  { name: 'planner', color: 'lime_green' },
-  { name: 'health', color: 'yellow' },
-  { name: 'senac', color: 'orange' },
-  { name: 'sociopata', color: 'red' },
+  { name: 'dev', color: '#7dbfb2' },
+  { name: 'planner', color: '#d7db96' },
+  { name: 'health', color: '#cbd376' },
+  { name: 'senac', color: '#b97a3a' },
+  { name: 'sociopata', color: '#c98079' },
 ];
 
 const NAV_COLLECTIONS = [
-  { name: 'dev', color: 'green', depth: 0 },
-  { name: 'openclaw', color: 'lime_green', depth: 1 },
-  { name: 'planner', color: 'lime_green', depth: 1 },
-  { name: 'health', color: 'yellow', depth: 0 },
-  { name: 'music', color: 'red', depth: 0 },
-  { name: 'sociopata', color: 'berry_red', depth: 1 },
-  { name: 'senac', color: 'orange', depth: 0 },
-  { name: 'tech', color: 'teal', depth: 0 },
-  { name: 'ai', color: 'mint_green', depth: 1 },
+  { name: 'dev', color: '#7dbfb2', depth: 0 },
+  { name: 'openclaw', color: '#d7db96', depth: 1 },
+  { name: 'planner', color: '#d7db96', depth: 1 },
+  { name: 'health', color: '#cbd376', depth: 0 },
+  { name: 'music', color: '#c98079', depth: 0 },
+  { name: 'sociopata', color: '#d56b64', depth: 1 },
+  { name: 'senac', color: '#b97a3a', depth: 0 },
+  { name: 'tech', color: '#7ea2d6', depth: 0 },
+  { name: 'ai', color: '#a6cfc5', depth: 1 },
 ] as const;
 
 const NAV = [
@@ -137,7 +137,7 @@ export function StyleguidePage() {
         ...COLLECTIONS.map(p => ({
           type: 'item' as const,
           label: p.name,
-          icon: <span className="w-2 h-2 rounded-full" style={{ backgroundColor: `var(--color-${p.color})` }} />,
+          icon: <span className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color }} />,
           onClick: () => console.log(`Selected ${p.name}`)
         }))
       ]
@@ -410,7 +410,7 @@ export function StyleguidePage() {
                   <span className="flex w-4 shrink-0 items-center justify-center">
                     <span
                       className="block h-2 w-2 shrink-0 rounded-full [filter:saturate(0.55)]"
-                      style={{ background: paletteColorHex(collection.color) }}
+                      style={{ background: collection.color }}
                     />
                   </span>
                   <span className="truncate text-[13px] text-ink opacity-60">{collection.name}</span>

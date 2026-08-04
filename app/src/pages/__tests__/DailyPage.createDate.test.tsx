@@ -138,7 +138,7 @@ const mockCollections: ApiCollection[] = [
     userId: 'user-1',
     parentId: null,
     name: 'Work',
-    color: 'blue',
+    color: '#65788a',
     isInbox: false,
     isArchived: false,
     orderValue: 0,

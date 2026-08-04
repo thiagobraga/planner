@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react';
-import { paletteColorHex } from '../../api/client';
 
 export interface ChipProps {
   children: ReactNode;
@@ -19,7 +18,7 @@ export function Chip({ children, className = '' }: ChipProps) {
 
 export interface CollectionChipProps {
   name: string;
-  /** Named collection color (see PALETTE_COLORS); falls back to ink-light. */
+  /** Literal CSS color value (hex/rgb(a)/hsl(a)); falls back to ink-light. */
   color?: string;
   className?: string;
 }
@@ -32,7 +31,7 @@ export function CollectionChip({ name, color, className = '' }: CollectionChipPr
     >
       <span
         className="ui-collection-chip-dot w-2 h-2 rounded-full shrink-0 [filter:saturate(0.55)]"
-        style={{ backgroundColor: paletteColorHex(color) }}
+        style={{ backgroundColor: color || 'var(--color-ink-light)' }}
       />
       {name}
     </span>

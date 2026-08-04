@@ -17,7 +17,6 @@ import {
   apiUpdateCollection,
   apiDeleteCollection,
   PALETTE_COLORS,
-  paletteColorHex,
   type ApiCollection,
 } from '../api/client';
 import { ConfirmModal } from './ConfirmModal';
@@ -33,26 +32,26 @@ const DEPTH_PADDING_CLASSES = ['pl-3', 'pl-[22px]', 'pl-[32px]', 'pl-[42px]', 'p
 const SUB_INPUT_PADDING_CLASSES = ['pl-[22px]', 'pl-[32px]', 'pl-[42px]', 'pl-[52px]', 'pl-[62px]'] as const;
 
 const COLOR_SHADE_FAMILIES: Record<string, readonly string[]> = {
-  red: ['red', 'berry_red', 'salmon', 'magenta'],
-  berry_red: ['berry_red', 'red', 'magenta', 'salmon'],
-  salmon: ['salmon', 'orange', 'taupe', 'red'],
-  magenta: ['magenta', 'berry_red', 'lavender', 'violet'],
-  blue: ['blue', 'sky_blue', 'light_blue', 'teal'],
-  sky_blue: ['sky_blue', 'light_blue', 'blue', 'teal'],
-  light_blue: ['light_blue', 'sky_blue', 'blue', 'teal'],
-  teal: ['teal', 'mint_green', 'sky_blue', 'blue'],
-  green: ['green', 'lime_green', 'mint_green', 'olive_green'],
-  lime_green: ['lime_green', 'green', 'olive_green', 'mint_green'],
-  mint_green: ['mint_green', 'teal', 'lime_green', 'green'],
-  olive_green: ['olive_green', 'lime_green', 'green', 'taupe'],
-  orange: ['orange', 'yellow', 'salmon', 'taupe'],
-  yellow: ['yellow', 'orange', 'taupe', 'olive_green'],
-  taupe: ['taupe', 'grey', 'olive_green', 'yellow'],
-  grape: ['grape', 'violet', 'lavender', 'blue'],
-  violet: ['violet', 'lavender', 'grape', 'magenta'],
-  lavender: ['lavender', 'violet', 'magenta', 'grape'],
-  charcoal: ['charcoal', 'grey', 'taupe', 'light_blue'],
-  grey: ['grey', 'charcoal', 'taupe', 'light_blue'],
+  '#c98079': ['#c98079', '#d56b64', '#cc8b85', '#d16d73'],
+  '#d56b64': ['#d56b64', '#c98079', '#d16d73', '#cc8b85'],
+  '#cc8b85': ['#cc8b85', '#b97a3a', '#ac918f', '#c98079'],
+  '#d16d73': ['#d16d73', '#d56b64', '#d6c7b0', '#c2a29e'],
+  '#65788a': ['#65788a', '#6fa0d5', '#adb9c1', '#7ea2d6'],
+  '#6fa0d5': ['#6fa0d5', '#adb9c1', '#65788a', '#7ea2d6'],
+  '#adb9c1': ['#adb9c1', '#6fa0d5', '#65788a', '#7ea2d6'],
+  '#7ea2d6': ['#7ea2d6', '#a6cfc5', '#6fa0d5', '#65788a'],
+  '#7dbfb2': ['#7dbfb2', '#d7db96', '#a6cfc5', '#b7bf4e'],
+  '#d7db96': ['#d7db96', '#7dbfb2', '#b7bf4e', '#a6cfc5'],
+  '#a6cfc5': ['#a6cfc5', '#7ea2d6', '#d7db96', '#7dbfb2'],
+  '#b7bf4e': ['#b7bf4e', '#d7db96', '#7dbfb2', '#ac918f'],
+  '#b97a3a': ['#b97a3a', '#cbd376', '#cc8b85', '#ac918f'],
+  '#cbd376': ['#cbd376', '#b97a3a', '#ac918f', '#b7bf4e'],
+  '#ac918f': ['#ac918f', '#bababa', '#b7bf4e', '#cbd376'],
+  '#b08b8a': ['#b08b8a', '#c2a29e', '#d6c7b0', '#65788a'],
+  '#c2a29e': ['#c2a29e', '#d6c7b0', '#b08b8a', '#d16d73'],
+  '#d6c7b0': ['#d6c7b0', '#c2a29e', '#d16d73', '#b08b8a'],
+  '#6f7780': ['#6f7780', '#bababa', '#ac918f', '#adb9c1'],
+  '#bababa': ['#bababa', '#6f7780', '#ac918f', '#adb9c1'],
 };
 
 function getHierarchicalColor(
@@ -68,7 +67,7 @@ function getHierarchicalColor(
   };
 
   const getOriginalColor = (id: string) => {
-    return collections.find((p) => p.id === id)?.color ?? 'blue';
+    return collections.find((p) => p.id === id)?.color ?? '#65788a';
   };
 
   let depth = 0;
@@ -89,7 +88,7 @@ function getHierarchicalColor(
 interface FlatCollection {
   id: string;
   name: string;
-  colorName: string;
+  color: string;
   parentId: string | null;
   depth: number;
 }
@@ -111,7 +110,7 @@ function flattenCollections(collections: ApiCollection[]): FlatCollection[] {
   const out: FlatCollection[] = [];
   const walk = (parentId: string | null, depth: number) => {
     for (const p of childrenOf.get(parentId) ?? []) {
-      out.push({ id: p.id, name: p.name, colorName: p.color, parentId, depth });
+      out.push({ id: p.id, name: p.name, color: p.color, parentId, depth });
       walk(p.id, depth + 1);
     }
   };
@@ -188,7 +187,7 @@ export function CollectionTreeNav() {
     [qc],
   );
 
-  const nextColor = () => PALETTE_COLORS[collections.length % PALETTE_COLORS.length].name;
+  const nextColor = () => PALETTE_COLORS[collections.length % PALETTE_COLORS.length];
 
   const handleCreate = (name: string, parentId: string | null) => {
     const trimmed = name.trim();
@@ -486,7 +485,7 @@ function SortableCollectionRow({
       >
         <span
           className="w-2 h-2 rounded-full shrink-0 block [filter:saturate(0.55)]"
-          style={{ background: paletteColorHex(item.colorName) }}
+          style={{ background: item.color }}
         />
       </span>
       {isEditing ? (

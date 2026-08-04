@@ -12,7 +12,6 @@ import {
   apiToggleTask,
   apiDeleteTask,
   fetchCollections,
-  paletteColorHex,
   type ApiTask,
 } from '../api/client';
 import { ContextMenu, type ContextMenuItem } from '../components/ui/ContextMenu';
@@ -356,7 +355,7 @@ export function InboxPage() {
         icon: (
           <span
             className="w-2 h-2 rounded-full inline-block"
-            style={{ backgroundColor: paletteColorHex(c.color) }}
+            style={{ backgroundColor: c.color }}
           />
         ),
         onClick: () => {
