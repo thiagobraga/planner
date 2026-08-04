@@ -215,6 +215,14 @@ export function parseNaturalDate(input: string, locale: 'en' | 'pt-BR' = 'en'): 
       },
     },
     {
+      re: locale === 'pt-BR' ? /\bontem\b/u : /\byesterday\b/,
+      resolve: () => {
+        const d = new Date(today);
+        d.setDate(d.getDate() - 1);
+        return d;
+      },
+    },
+    {
       re: new RegExp(locale === 'pt-BR' ? `\\bpr[oó]xim[oa] ${weekdayPattern}` : `\\bnext ${weekdayPattern}`, 'u'),
       resolve: (m) => {
         const target = weekdayIndex(m[1]);
