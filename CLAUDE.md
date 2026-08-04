@@ -238,14 +238,14 @@ Full spec: `DESIGN.md`.
 
 All AI agents (Claude, Codex, Antigravity, Opencode) must follow this when entering Plan mode:
 
-1. **Create a new folder** under `.specs/<slug>/` named after the feature being planned (short kebab-case).
-2. Write **`.specs/<slug>/plan.md`** — high-level strategy, approach, and architecture decisions.
-3. Write **`.specs/<slug>/task.md`** — detailed breakdown of the plan into actionable tasks. Use these markers:
+1. **Create a new folder** under `.specs/` with the naming pattern: `yyyy-mm-dd-<short-kebab-case-slug>` (e.g., `2026-08-04-exact-colors`).
+2. Write **`.specs/yyyy-mm-dd-slug/plan.md`** — high-level strategy, approach, and architecture decisions.
+3. Write **`.specs/yyyy-mm-dd-slug/task.md`** — detailed breakdown of the plan into actionable tasks. Use these markers:
    - `[ ]` not started
    - `[~]` in progress
    - `[x]` completed
 4. **Update `task.md`** as work progresses — mark tasks `[~]` when started, `[x]` when done.
-5. Refer to existing `.specs/` folders for naming patterns.
+5. Refer to existing `.specs/` folders for naming pattern precedent.
 
 ## "Work on this spec" Workflow
 
@@ -253,7 +253,7 @@ When instructed to "work on this specs <some spec>", you must:
 
 1. **Read the Spec:** Start by carefully reading the provided `<spec path>`.
 2. **Isolate the Environment:**
-   - Pick a short kebab-case slug for the feature (e.g. `task-filters`).
+   - Use the spec folder's date-slug naming (e.g., `2026-08-04-exact-colors` → worktree slug is `exact-colors`).
    - Create a new Git worktree and branch:
      ```bash
      cd /p/projects/planner
