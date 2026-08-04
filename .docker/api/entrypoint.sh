@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-npm install --legacy-peer-deps
+npm ci --include=optional
 
 # Run migrations
 echo "Running database migrations..."
