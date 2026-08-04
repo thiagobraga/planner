@@ -344,14 +344,16 @@ export function resolveMove({
   const targetDay = scope.kind === 'day' ? (over.dueDate ?? scope.dueDate) : null;
   const crossesDay = targetDay !== null && targetDay !== active.dueDate;
 
-  // Project against the destination day alone. Daily hands this hook every
-  // rendered date as one flat list, so the rows either side of a drop can
-  // belong to a different day - dropping on the last row of one date read the
-  // first row of the *next* date as its neighbour and parented the task there,
-  // across the boundary. It also made the commit disagree with the slot the
-  // list had been previewing, which is drawn from that day's rows alone.
+  const taskDateKey = (t: Task) =>
+    t.dueDate ? t.dueDate.slice(0, 10) : scope.kind === 'day' ? scope.dueDate : null;
+
   const scopedRows = targetDay
-    ? rows.filter((r) => r.task.dueDate === targetDay || active.subtreeIds.includes(r.id))
+    ? rows.filter(
+        (r) =>
+          r.task.dueDate === targetDay ||
+          taskDateKey(r.task) === targetDay ||
+          active.subtreeIds.includes(r.id),
+      )
     : rows;
   if (!scopedRows.some((r) => r.id === over.taskId)) return null;
 

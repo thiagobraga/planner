@@ -169,6 +169,11 @@ export function DailyPage() {
 
   useEffect(() => {
     replaceTodayFromApi();
+    const handleTaskCreated = () => {
+      replaceTodayFromApi();
+    };
+    window.addEventListener('task-created', handleTaskCreated);
+    return () => window.removeEventListener('task-created', handleTaskCreated);
   }, [replaceTodayFromApi]);
 
   useSync(useCallback((event) => {

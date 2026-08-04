@@ -207,9 +207,17 @@ export function AppShell() {
         onClose={() => setQuickAddOpen(false)}
         onSubmit={(title, dueDate, recurrenceRule) => {
           if (import.meta.env.DEV) console.log('Quick add:', { title, dueDate, recurrenceRule });
-          apiCreateTask({ title, dueDate, recurrenceRule }).catch((err) => {
-            console.error('Failed to quick add task:', err);
-          });
+          apiCreateTask({ title, dueDate, recurrenceRule })
+            .then((created) => {
+              qc.invalidateQueries({ queryKey: ['today'] });
+              qc.invalidateQueries({ queryKey: ['upcoming'] });
+              qc.invalidateQueries({ queryKey: ['inbox'] });
+              qc.invalidateQueries({ queryKey: ['tasks'] });
+              window.dispatchEvent(new CustomEvent('task-created', { detail: created }));
+            })
+            .catch((err) => {
+              console.error('Failed to quick add task:', err);
+            });
         }}
       />
 

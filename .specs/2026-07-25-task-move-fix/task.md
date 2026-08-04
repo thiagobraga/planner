@@ -16,8 +16,13 @@
 - [x] `app/src/hooks/useTaskDrag.ts`: update `.then()` handler types; add no-op-diff guard to preserve object identity for unchanged tasks
 - [x] `api/src/services/__tests__/taskService.move.test.ts`: update gap-write assertions, add collision-fallback test, split day-scope seeded/unseeded test cases
 - [x] Optional: migration `031_task_collection_scope_index.sql` adding `idx_tasks_collection_scope_ordered` (use `db-migration` skill)
-- [x] Run `docker compose exec api npm test && docker compose exec app npm test`, both builds
-- [~] Manual verification: wrong-position repro, response payload size in Network tab, React Profiler re-render check, cross-collection/cross-date drags
+- [ ] `api/src/services/taskService.ts`: in `renumberDayScope`, return `position` as `orderValue` in `MovedTaskSummary` so day-scoped task ordering is preserved in frontend state without snapping back to `createdAt`
+- [ ] `api/src/services/viewService.ts`: in `getTodayView` and `getUpcomingView`, select `COALESCE(o.position, t.order_value) AS order_value` so tasks carry effective day position
+- [ ] `app/src/hooks/useSync.ts` / `AppShell.tsx`: update state / invalidate queries when a task is created via QuickAdd so tasks created for yesterday or today immediately appear on `DailyPage` without manual refresh
+- [ ] `app/src/hooks/useTaskDrag.ts`: update `scopedRows` filter to preserve undated tasks belonging to the current view section
+- [ ] `app/src/utils/taskProjection.ts` & `TaskList.tsx` & `collision.ts`: support dropping after the last item in a list or container
+- [ ] Write unit & integration tests covering yesterday QuickAdd creation, day-scope reordering persistence, end-of-list drops, and subtask reparenting
+- [ ] Manual browser verification: QuickAdd yesterday task, drag to last position, drag as child under last task, subtask reordering and persistence
   - [x] Wrong-position repro (Daily): registered a throwaway test account against
     the running isolated stack (localhost:5174/4001, shared dev DB), created 3
     day-scoped tasks A/B/C, dragged A past C. Confirmed directly in Postgres

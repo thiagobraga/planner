@@ -1221,7 +1221,7 @@ async function renumberDayScope(
       return [
         summarize(
           opts.movedTaskId,
-          opts.movedOrderValue,
+          midpoint,
           opts.movedCollectionId,
           opts.movedParentTaskId,
           opts.movedDepth,
@@ -1254,7 +1254,7 @@ async function renumberDayScope(
     written.push(
       summarize(
         ids[i],
-        sib ? sib.order_value : opts.movedOrderValue,
+        position,
         sib ? sib.collection_id : opts.movedCollectionId,
         sib ? sib.parent_task_id : opts.movedParentTaskId,
         sib ? sib.depth : opts.movedDepth,

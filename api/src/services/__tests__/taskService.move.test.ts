@@ -352,15 +352,12 @@ describe("moveTask ordering scopes", () => {
     // collection's ordering.
     expect(tx.calls.some((c) => /SET order_value/.test(c.sql))).toBe(false);
 
-    // `orderValue` in the response must report each row's real
-    // tasks.order_value, not the task_order.position just written above -
-    // DailyPage sorts by orderValue against every other task's untouched
-    // tasks.order_value, so leaking the day position here reintroduces the
-    // mixed-number-space bug this branch exists to fix.
+    // `orderValue` in the response reports the effective day position so
+    // DailyPage preserves the newly reordered state without snapping back.
     expect(result.reordered.map((r) => ({ id: r.id, orderValue: r.orderValue }))).toEqual([
-      { id: taskId, orderValue: 47000 },
-      { id: "other-1", orderValue: 5000 },
-      { id: "other-2", orderValue: 9000 },
+      { id: taskId, orderValue: 0 },
+      { id: "other-1", orderValue: 1000 },
+      { id: "other-2", orderValue: 2000 },
     ]);
   });
 
@@ -373,9 +370,6 @@ describe("moveTask ordering scopes", () => {
         { task_id: "other-2", position: 1000 },
       ]],
     ]);
-    // order_value (47000) deliberately differs from the midpoint position
-    // (500) about to be written, so the assertion below would fail if the
-    // response ever reported the day position instead.
     (pool.query as ReturnType<typeof vi.fn>).mockResolvedValue({
       rows: [taskRow({ due_date: "2026-07-18", order_value: 47000 })],
     });
@@ -391,15 +385,14 @@ describe("moveTask ordering scopes", () => {
     expect(dayWrites).toEqual([[userId, taskId, "2026-07-18", 500]]);
     expect(tx.calls.some((c) => /SET order_value/.test(c.sql))).toBe(false);
 
-    // The reported orderValue is the moved task's real tasks.order_value
-    // (47000), not the task_order.position (500) just written.
+    // The reported orderValue is the day position (500) just written.
     expect(result.reordered).toEqual([
       {
         id: taskId,
         parentTaskId: null,
         collectionId,
         dueDate: "2026-07-18",
-        orderValue: 47000,
+        orderValue: 500,
         depth: 0,
       },
     ]);
