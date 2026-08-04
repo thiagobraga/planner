@@ -34,12 +34,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [initializing, setInitializing] = useState(true);
+  const userRef = useRef(user);
 
   useOfflineQueueReplay(user?.id ?? null);
 
   useEffect(() => {
     fetchCurrentUser().then((u) => {
       if (u) {
+        userRef.current = u;
         setUser(u);
         setIsAuthenticated(true);
         setCurrentUserId(u.id);
@@ -58,6 +60,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(async (email: string, password: string) => {
     const u = await apiLogin(email, password);
+    userRef.current = u;
     setUser(u);
     setIsAuthenticated(true);
     setCurrentUserId(u.id);
@@ -74,13 +77,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [login],
   );
 
-  // Keeps the callbacks registered below pointed at the current user without
-  // re-registering them on every render.
-  const userRef = useRef(user);
-  useEffect(() => {
-    userRef.current = user;
-  }, [user]);
-
   // Tears down everything this tab holds for the signed-in user. Idempotent, so
   // repeated 401s from requests already in flight collapse into one teardown.
   const endLocalSession = useCallback(() => {
@@ -89,6 +85,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Cancel pending queries first so requests that land after the auth state
     // changes don't report their own 401s back through here.
     queryClient.cancelQueries();
+    userRef.current = null;
     setUser(null);
     setIsAuthenticated(false);
     setCurrentUserId(null);
