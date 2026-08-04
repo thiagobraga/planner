@@ -54,7 +54,7 @@ vi.mock('../../components/TaskList', () => ({
 }));
 
 const collectionViewData = {
-  collection: { id: 'test-collection-id', name: 'Test Collection', color: 'berry_red', isInbox: false },
+  collection: { id: 'test-collection-id', name: 'Test Collection', color: '#d56b64', isInbox: false },
   tasks: [
     {
       id: 'task-1',

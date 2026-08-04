@@ -7,7 +7,7 @@ function makeCollection(overrides: Partial<ApiCollection> & { id: string }): Api
     userId: 'user-1',
     parentId: null,
     name: 'Test',
-    color: 'blue',
+    color: '#65788a',
     isInbox: false,
     isArchived: false,
     orderValue: 0,
@@ -117,13 +117,12 @@ describe('buildCollectionTree', () => {
     expect(tree[1].id).toBe('b');
   });
 
-  it('resolves color hex from palette name', () => {
+  it('passes through the literal color value', () => {
     const collections: ApiCollection[] = [
-      makeCollection({ id: '1', color: 'berry_red' }),
+      makeCollection({ id: '1', color: '#d56b64' }),
     ];
     const tree = buildCollectionTree(collections);
-    expect(tree[0].color).toBe('#b8255f');
-    expect(tree[0].colorName).toBe('berry_red');
+    expect(tree[0].color).toBe('#d56b64');
   });
 
   it('handles empty collections list', () => {

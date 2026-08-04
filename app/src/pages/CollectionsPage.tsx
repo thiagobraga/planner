@@ -20,7 +20,7 @@ import { useTaskDrag } from '../hooks/useTaskDrag';
 import { useTaskVisibilityPreferences } from '../hooks/useTaskVisibilityPreferences';
 import { flattenTasks } from '../utils/taskProjection';
 import { applyIndent } from '../utils/taskTree';
-import { fetchCollections, paletteColorHex } from '../api/client';
+import { fetchCollections } from '../api/client';
 import { ContextMenu, type ContextMenuItem } from '../components/ui/ContextMenu';
 import { useI18n } from '../i18n/I18nContext';
 
@@ -347,7 +347,7 @@ export function CollectionsPage() {
         icon: (
           <span
             className="w-2 h-2 rounded-full inline-block"
-            style={{ backgroundColor: paletteColorHex(c.color) }}
+            style={{ backgroundColor: c.color }}
           />
         ),
         onClick: () => {
@@ -389,13 +389,13 @@ export function CollectionsPage() {
     let current = byId.get(id);
     while (current && !seen.has(current.id)) {
       seen.add(current.id);
-      out.unshift({ id: current.id, name: current.name, color: paletteColorHex(current.color) });
+      out.unshift({ id: current.id, name: current.name, color: current.color });
       current = current.parentId ? byId.get(current.parentId) : undefined;
     }
 
     if (out.length > 0) return out;
     return data?.collection
-      ? [{ id: data.collection.id, name: data.collection.name, color: paletteColorHex(data.collection.color) }]
+      ? [{ id: data.collection.id, name: data.collection.name, color: data.collection.color }]
       : [];
   }, [collections, id, data]);
 

@@ -14,10 +14,7 @@ vi.mock('../../api/client', () => ({
   apiCreateCollection: vi.fn(),
   apiUpdateCollection: vi.fn(),
   apiDeleteCollection: vi.fn(),
-  PALETTE_COLORS: [{ name: 'blue', hex: '#4073ff' }],
-  paletteColorHex: vi.fn((name: string | undefined) =>
-    name ? '#4073ff' : 'var(--color-ink-light)',
-  ),
+  PALETTE_COLORS: ['#65788a'],
 }));
 
 vi.mock('@dnd-kit/sortable', () => ({
@@ -83,7 +80,7 @@ describe('CollectionTreeNav', () => {
         id: 'c1',
         userId: 'u1',
         name: 'Work',
-        color: 'blue',
+        color: '#65788a',
         parentId: null,
         isInbox: false,
         isArchived: false,
@@ -95,7 +92,7 @@ describe('CollectionTreeNav', () => {
         id: 'c2',
         userId: 'u1',
         name: 'Personal',
-        color: 'green',
+        color: '#7dbfb2',
         parentId: null,
         isInbox: false,
         isArchived: false,

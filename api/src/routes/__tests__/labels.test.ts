@@ -39,11 +39,11 @@ describe("labels routes", () => {
   });
 
   it("POST /api/v1/labels → calls createLabel, returns 201", async () => {
-    mockCreateLabel.mockResolvedValue({ id: "l1", name: "urgent", color: "red" });
-    const res = await request(app).post("/api/v1/labels").send({ name: "urgent", color: "red" });
+    mockCreateLabel.mockResolvedValue({ id: "l1", name: "urgent", color: "#c98079" });
+    const res = await request(app).post("/api/v1/labels").send({ name: "urgent", color: "#c98079" });
     expect(res.status).toBe(201);
-    expect(res.body).toEqual({ id: "l1", name: "urgent", color: "red" });
-    expect(mockCreateLabel).toHaveBeenCalledWith("test-user", { name: "urgent", color: "red" });
+    expect(res.body).toEqual({ id: "l1", name: "urgent", color: "#c98079" });
+    expect(mockCreateLabel).toHaveBeenCalledWith("test-user", { name: "urgent", color: "#c98079" });
   });
 
   it("PATCH /api/v1/labels/:id → calls updateLabel", async () => {

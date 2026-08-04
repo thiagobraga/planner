@@ -420,34 +420,30 @@ export interface ApiCollection {
   updatedAt: string;
 }
 
-export const PALETTE_COLORS: ReadonlyArray<{ name: string; hex: string }> = [
-  { name: 'berry_red', hex: '#b8255f' },
-  { name: 'red', hex: '#db4035' },
-  { name: 'orange', hex: '#ff9933' },
-  { name: 'yellow', hex: '#fad000' },
-  { name: 'olive_green', hex: '#afb83b' },
-  { name: 'lime_green', hex: '#7ecc49' },
-  { name: 'green', hex: '#299438' },
-  { name: 'mint_green', hex: '#6accbc' },
-  { name: 'teal', hex: '#158fad' },
-  { name: 'sky_blue', hex: '#14aaf5' },
-  { name: 'light_blue', hex: '#96c3eb' },
-  { name: 'blue', hex: '#4073ff' },
-  { name: 'grape', hex: '#884dff' },
-  { name: 'violet', hex: '#af38eb' },
-  { name: 'lavender', hex: '#eb96eb' },
-  { name: 'magenta', hex: '#e05194' },
-  { name: 'salmon', hex: '#ff8d85' },
-  { name: 'charcoal', hex: '#808080' },
-  { name: 'grey', hex: '#b8b8b8' },
-  { name: 'taupe', hex: '#ccac93' },
+// Collection colors intentionally stay soft and muted so they sit on top of
+// the paper surface instead of competing with the page chrome.
+export const PALETTE_COLORS: readonly string[] = [
+  '#d56b64',
+  '#c98079',
+  '#b97a3a',
+  '#cbd376',
+  '#b7bf4e',
+  '#d7db96',
+  '#7dbfb2',
+  '#a6cfc5',
+  '#7ea2d6',
+  '#6fa0d5',
+  '#adb9c1',
+  '#65788a',
+  '#b08b8a',
+  '#c2a29e',
+  '#d6c7b0',
+  '#d16d73',
+  '#cc8b85',
+  '#6f7780',
+  '#bababa',
+  '#ac918f',
 ];
-
-const PALETTE_COLOR_HEX = new Map(PALETTE_COLORS.map((c) => [c.name, c.hex]));
-
-export function paletteColorHex(name: string | undefined): string {
-  return (name && PALETTE_COLOR_HEX.get(name)) || 'var(--color-ink-light)';
-}
 
 export async function fetchCollections(): Promise<ApiCollection[]> {
   return request('/collections');

@@ -1,29 +1,7 @@
 import { v4 as uuidv4 } from "uuid";
 import pool from "../db/pool.js";
 import { AppError } from "../utils/AppError.js";
-
-const SUPPORTED_COLORS = [
-  "berry_red",
-  "red",
-  "orange",
-  "yellow",
-  "olive_green",
-  "lime_green",
-  "green",
-  "mint_green",
-  "teal",
-  "sky_blue",
-  "light_blue",
-  "blue",
-  "grape",
-  "violet",
-  "lavender",
-  "magenta",
-  "salmon",
-  "charcoal",
-  "grey",
-  "taupe",
-] as const;
+import { validateColor } from "../utils/color.js";
 
 const NAME_REGEX = /^[a-zA-Z0-9_]+$/;
 
@@ -67,19 +45,6 @@ function validateName(name: unknown): string {
   }
 
   return name;
-}
-
-function validateColor(color: unknown): string {
-  if (!SUPPORTED_COLORS.includes(color as (typeof SUPPORTED_COLORS)[number])) {
-    throw new AppError({
-      code: "VALIDATION_ERROR",
-      message: "Validation failed",
-      statusCode: 400,
-      details: [{ field: "color", message: "Invalid color value" }],
-    });
-  }
-
-  return color as string;
 }
 
 async function checkDuplicateName(userId: string, name: string, excludeId?: string): Promise<void> {

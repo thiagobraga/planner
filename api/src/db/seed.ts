@@ -46,7 +46,7 @@ async function seed() {
     }> = [
       {
         name: "Work",
-        color: "blue",
+        color: "#65788a",
         tasks: [
           { title: "Review quarterly roadmap", priority: 2 },
           { title: "Reply to the design feedback thread", priority: 3 },
@@ -55,7 +55,7 @@ async function seed() {
       },
       {
         name: "Website Redesign",
-        color: "sky_blue",
+        color: "#6fa0d5",
         parentName: "Work",
         tasks: [
           { title: "Audit current landing page", priority: 2 },
@@ -64,7 +64,7 @@ async function seed() {
       },
       {
         name: "Personal",
-        color: "green",
+        color: "#7dbfb2",
         tasks: [
           { title: "Book dentist appointment", priority: 1 },
           { title: "Plan weekend trip" },
@@ -72,7 +72,7 @@ async function seed() {
       },
       {
         name: "Reading List",
-        color: "violet",
+        color: "#c2a29e",
         tasks: [
           { title: "Finish 'The Pragmatic Programmer'" },
           { title: "Start 'Thinking, Fast and Slow'" },
