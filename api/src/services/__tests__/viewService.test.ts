@@ -244,7 +244,7 @@ describe("getCollectionView", () => {
     mockQuery
       .mockResolvedValueOnce({ rows: [{ time_zone: "UTC", hide_completed_tasks: false, hide_old_notes: false }] })
       .mockResolvedValueOnce({
-        rows: [{ id: "c-1", name: "Work", color: "green", is_inbox: false }],
+        rows: [{ id: "c-1", name: "Work", color: "#7dbfb2", is_inbox: false }],
       })
       .mockResolvedValueOnce({
         rows: [
@@ -258,7 +258,7 @@ describe("getCollectionView", () => {
     expect(view.collection).toEqual({
       id: "c-1",
       name: "Work",
-      color: "green",
+      color: "#7dbfb2",
       isInbox: false,
     });
     expect(view.collectionId).toBe("c-1");

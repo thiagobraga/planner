@@ -27,7 +27,7 @@ function makeRow(overrides: Record<string, unknown> = {}) {
     id: "label-1",
     user_id: "user-1",
     name: "my_label",
-    color: "blue",
+    color: "#65788a",
     created_at: "2024-01-01T00:00:00Z",
     updated_at: "2024-01-01T00:00:00Z",
     ...overrides,
@@ -61,34 +61,34 @@ describe("labelService", () => {
   describe("createLabel", () => {
     it("inserts and returns formatted label", async () => {
       mockQuery.mockResolvedValueOnce({ rows: [] }); // duplicate check
-      mockQuery.mockResolvedValueOnce({ rows: [makeRow({ id: "fixed-uuid-for-test", name: "my_label", color: "green" })] });
+      mockQuery.mockResolvedValueOnce({ rows: [makeRow({ id: "fixed-uuid-for-test", name: "my_label", color: "#7dbfb2" })] });
 
-      const label = await createLabel("user-1", { name: "my_label", color: "green" });
+      const label = await createLabel("user-1", { name: "my_label", color: "#7dbfb2" });
 
       expect(label.id).toBe("fixed-uuid-for-test");
       expect(label.name).toBe("my_label");
-      expect(label.color).toBe("green");
+      expect(label.color).toBe("#7dbfb2");
     });
 
     it("throws on duplicate name", async () => {
       mockQuery.mockResolvedValueOnce({ rows: [{ id: "existing" }] });
 
-      await expect(createLabel("user-1", { name: "my_label", color: "blue" })).rejects.toMatchObject({
+      await expect(createLabel("user-1", { name: "my_label", color: "#65788a" })).rejects.toMatchObject({
         code: "CONFLICT",
         statusCode: 409,
       });
     });
 
     it("throws on empty name", async () => {
-      await expect(createLabel("user-1", { name: "", color: "blue" })).rejects.toThrow(AppError);
+      await expect(createLabel("user-1", { name: "", color: "#65788a" })).rejects.toThrow(AppError);
     });
 
     it("throws on name > 60 chars", async () => {
-      await expect(createLabel("user-1", { name: "a".repeat(61), color: "blue" })).rejects.toThrow(AppError);
+      await expect(createLabel("user-1", { name: "a".repeat(61), color: "#65788a" })).rejects.toThrow(AppError);
     });
 
     it("throws on name with special characters", async () => {
-      await expect(createLabel("user-1", { name: "my-label!", color: "blue" })).rejects.toThrow(AppError);
+      await expect(createLabel("user-1", { name: "my-label!", color: "#65788a" })).rejects.toThrow(AppError);
     });
 
     it("throws on invalid color", async () => {
