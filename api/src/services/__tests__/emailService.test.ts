@@ -9,6 +9,8 @@ vi.mock("resend", () => ({
 }));
 
 const RESET_LINK = "https://planner.test/reset-password?token=abc123";
+const MALICIOUS_EMAIL = "user@example.com\nInjected";
+const SANITIZED_EMAIL = "user@example.comInjected";
 
 // The module reads RESEND_API_KEY once at import time to decide whether a
 // client exists at all, so each configuration needs its own fresh import.
@@ -36,11 +38,12 @@ describe("sendPasswordResetEmail - no API key", () => {
     const info = vi.spyOn(console, "info").mockImplementation(() => {});
     const { sendPasswordResetEmail } = await loadService("");
 
-    await sendPasswordResetEmail("user@example.com", RESET_LINK);
+    await sendPasswordResetEmail(MALICIOUS_EMAIL, RESET_LINK);
 
     expect(mockSend).not.toHaveBeenCalled();
     expect(info).toHaveBeenCalledWith(expect.stringContaining(RESET_LINK));
-    expect(info).toHaveBeenCalledWith(expect.stringContaining("user@example.com"));
+    expect(info).toHaveBeenCalledWith(expect.stringContaining(SANITIZED_EMAIL));
+    expect(info).not.toHaveBeenCalledWith(expect.stringContaining(MALICIOUS_EMAIL));
   });
 });
 
@@ -70,8 +73,10 @@ describe("sendPasswordResetEmail - configured", () => {
     mockSend.mockRejectedValueOnce(new Error("network down"));
     const { sendPasswordResetEmail } = await loadService("re_test_key");
 
-    await expect(sendPasswordResetEmail("user@example.com", RESET_LINK)).resolves.toBeUndefined();
+    await expect(sendPasswordResetEmail(MALICIOUS_EMAIL, RESET_LINK)).resolves.toBeUndefined();
     expect(error).toHaveBeenCalledWith(expect.stringContaining("network down"));
+    expect(error).toHaveBeenCalledWith(expect.stringContaining(SANITIZED_EMAIL));
+    expect(error).not.toHaveBeenCalledWith(expect.stringContaining(MALICIOUS_EMAIL));
   });
 
   it("swallows an error returned in the Resend response body", async () => {
@@ -79,7 +84,9 @@ describe("sendPasswordResetEmail - configured", () => {
     mockSend.mockResolvedValueOnce({ data: null, error: { message: "domain not verified" } });
     const { sendPasswordResetEmail } = await loadService("re_test_key");
 
-    await expect(sendPasswordResetEmail("user@example.com", RESET_LINK)).resolves.toBeUndefined();
+    await expect(sendPasswordResetEmail(MALICIOUS_EMAIL, RESET_LINK)).resolves.toBeUndefined();
     expect(error).toHaveBeenCalledWith(expect.stringContaining("domain not verified"));
+    expect(error).toHaveBeenCalledWith(expect.stringContaining(SANITIZED_EMAIL));
+    expect(error).not.toHaveBeenCalledWith(expect.stringContaining(MALICIOUS_EMAIL));
   });
 });

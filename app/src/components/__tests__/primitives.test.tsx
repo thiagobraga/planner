@@ -130,6 +130,17 @@ describe('CustomSelect', () => {
     fireEvent.click(screen.getByRole('option', { name: 'B' }));
     expect(onChange).toHaveBeenCalledWith('b');
   });
+
+  it('closes on outside click in normal mode', () => {
+    render(<CustomSelect options={[{ value: 'a', label: 'A' }]} />);
+
+    const trigger = screen.getByRole('button');
+    fireEvent.click(trigger);
+    expect(trigger).toHaveAttribute('aria-expanded', 'true');
+
+    fireEvent.mouseDown(document.body);
+    expect(trigger).toHaveAttribute('aria-expanded', 'false');
+  });
 });
 
 describe('PriorityDot', () => {

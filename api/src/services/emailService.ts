@@ -3,6 +3,10 @@ import { RESEND_API_KEY, EMAIL_FROM } from "../config.js";
 
 const resend = RESEND_API_KEY ? new Resend(RESEND_API_KEY) : null;
 
+function sanitizeLogValue(value: string): string {
+  return value.replace(/[\r\n]/g, "");
+}
+
 function buildResetBody(resetLink: string): { html: string; text: string } {
   // Plain text ships alongside the HTML: HTML-only mail scores worse with spam
   // filters and some clients render nothing at all.
@@ -32,7 +36,7 @@ function buildResetBody(resetLink: string): { html: string; text: string } {
 // generic message is there to withhold.
 export async function sendPasswordResetEmail(email: string, resetLink: string): Promise<void> {
   if (!resend) {
-    console.info(`[email] password reset link for ${email}: ${resetLink}`);
+    console.info(`[email] password reset link for ${sanitizeLogValue(email)}: ${sanitizeLogValue(resetLink)}`);
     return;
   }
 
@@ -47,9 +51,9 @@ export async function sendPasswordResetEmail(email: string, resetLink: string): 
       text,
     });
     if (error) {
-      console.error(`[email] Resend rejected password reset to ${email}: ${error.message}`);
+      console.error(`[email] Resend rejected password reset to ${sanitizeLogValue(email)}: ${error.message}`);
     }
   } catch (err) {
-    console.error(`[email] failed to send password reset to ${email}: ${(err as Error).message}`);
+    console.error(`[email] failed to send password reset to ${sanitizeLogValue(email)}: ${(err as Error).message}`);
   }
 }

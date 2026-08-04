@@ -73,7 +73,7 @@ export function CustomSelect({
         triggerRef.current &&
         !triggerRef.current.contains(e.target as Node)
       ) {
-        if (!alwaysOpen) setIsOpen(false);
+        setIsOpen(false);
       }
     }
 
