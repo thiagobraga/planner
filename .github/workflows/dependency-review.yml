@@ -1,0 +1,29 @@
+name: Dependency Review
+
+on:
+  pull_request:
+    branches: [main]
+    paths-ignore:
+      - '**.md'
+      - '.specs/**'
+      - '.claude/**'
+      - '.claudeignore'
+      - '.superpowers/**'
+      - '.omx/**'
+      - '.vscode/**'
+      - '.codegraph/**'
+      - 'backups/**'
+      - '.gitignore'
+
+permissions:
+  contents: read
+
+jobs:
+  dependency-review:
+    name: Dependency review
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high
