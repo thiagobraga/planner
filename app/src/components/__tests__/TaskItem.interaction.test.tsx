@@ -3,7 +3,7 @@ import { DndContext } from '@dnd-kit/core';
 import { SortableContext } from '@dnd-kit/sortable';
 import { describe, it, expect, vi } from 'vitest';
 import { TaskItem, type Task } from '../TaskItem';
-import { NO_DRAG_ATTR, DRAG_HANDLE_ATTR } from '../dnd/sensors';
+import { NO_DRAG_ATTR } from '../dnd/sensors';
 
 function renderRow(props: Partial<React.ComponentProps<typeof TaskItem>> = {}, task: Partial<Task> = {}) {
   const full: Task = {

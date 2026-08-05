@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { PlannerPointerSensor, NO_DRAG_ATTR, DRAG_HANDLE_ATTR } from '../sensors';
+import { PlannerPointerSensor, NO_DRAG_ATTR } from '../sensors';
 
 const handler = PlannerPointerSensor.activators[0].handler;
 
