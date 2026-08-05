@@ -11,6 +11,7 @@ import {
 import {
   DndContext,
   DragOverlay,
+  MeasuringStrategy,
   useSensor,
   useSensors,
   type DragStartEvent,
@@ -18,6 +19,7 @@ import {
   type DragOverEvent,
   type DragEndEvent,
   type Announcements,
+  type MeasuringConfiguration,
 } from '@dnd-kit/core';
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import {
@@ -145,6 +147,25 @@ export function usePlannerDragHandlers(kind: DragKind, handlers: DragHandlers): 
  * entirely: sideways movement means nesting here, never travel.
  */
 const AUTO_SCROLL = { threshold: { x: 0, y: 0.08 } } as const;
+
+/**
+ * dnd-kit's default (`MeasuringStrategy.WhileDragging`) re-measures every
+ * registered droppable's rect on every animation frame of a drag - and this
+ * app has exactly one `DndContext` for the whole shell, so that means every
+ * task row across every rendered day, every habit, every sidebar collection,
+ * on every pointer move, for the entire gesture. A performance trace of a
+ * single task drag showed the main thread saturated with back-to-back 30-40ms
+ * script chunks for the whole ~5s gesture, largely `@dnd-kit/utilities` rect
+ * recalculation and the React re-renders it forces.
+ *
+ * Sortable rows shift via CSS transform, computed from each row's rect
+ * measured once at drag start plus the live index delta - dnd-kit does not
+ * need a fresh DOM measurement to keep that correct while the pointer moves.
+ * Measuring once up front is the standard fix for exactly this cost.
+ */
+const MEASURING: MeasuringConfiguration = {
+  droppable: { strategy: MeasuringStrategy.BeforeDragging },
+};
 
 const SILENT_ANNOUNCEMENTS: Announcements = {
   onDragStart: () => undefined,
@@ -305,6 +326,7 @@ export function PlannerDragProvider({ children }: { children: ReactNode }) {
         sensors={sensors}
         collisionDetection={plannerCollisionDetection}
         autoScroll={AUTO_SCROLL}
+        measuring={MEASURING}
         accessibility={{ announcements: SILENT_ANNOUNCEMENTS, restoreFocus: false }}
         onDragStart={handleDragStart}
         onDragMove={handleDragMove}

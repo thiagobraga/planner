@@ -69,11 +69,35 @@ recording (`AUG 05 WED · TODAY`):
   midpoint threshold unchanged, so "insert directly before the last row" by
   hovering it is still possible there. Regression tests:
   `collision.test.ts` > "cross-day drop aimed at the end of a short list".
-- [ ] **"Fix: also fix these bugs I showed here"** — general catch-all
-  pointing back at this same recording; no second distinct defect beyond the
-  one above was visible in the captured frames. Revisit against a fresh
-  recording once the above is fixed, in case it covers something this pass
-  didn't reproduce clearly on camera.
+- [x] **"Fix: also fix these bugs I showed here"** — user followed up with a
+  Chrome performance trace (`Trace-20260804T230002.json.gz`) of the same
+  drag gesture. It showed the main thread saturated with back-to-back
+  30-40ms script chunks for the whole ~5s gesture (window ~47050890000 to
+  ~47056000000 in trace timestamps) - not the network requests, which were
+  fast (40-110ms each), but continuous scripting during the drag itself.
+  Breakdown of that window: 369 calls into `react-dom`'s `dispatchContinuousEvent`
+  (the `pointermove` handler), 254 calls into `@dnd-kit/utilities` rect
+  recalculation, 31 calls to dnd-kit's `handleMove`. Root cause: `DndContext`
+  in `app/src/contexts/PlannerDragContext.tsx` had no `measuring` config, so
+  dnd-kit used its default `MeasuringStrategy.WhileDragging` - re-measuring
+  every registered droppable's rect on every animation frame, and this app
+  has exactly one `DndContext` for the whole shell, so that means every task
+  row across every rendered day, every habit, every sidebar collection, on
+  every pointer move. Fixed by setting `droppable: { strategy:
+  MeasuringStrategy.BeforeDragging }`: sortable rows shift via CSS transform
+  computed from each row's rect measured once at drag start plus the live
+  index delta, so dnd-kit does not need continuous re-measurement to keep
+  that correct - this is the standard dnd-kit performance fix for exactly
+  this shape of setup. Stale rects during a saturated main thread are also a
+  plausible contributor to the "moving to last" bug above being harder to
+  hit reliably than the isolated collision.ts fix alone would suggest.
+  `TaskItem` was already `memo`-wrapped with stable props across drag
+  frames, so no additional per-row memoization work was needed on top of
+  this. No dedicated regression test - this is a `DndContext` configuration
+  change with no independently-observable behavior at the unit level; the
+  existing collision/drag test suites (775 tests) all still pass unchanged,
+  confirming no functional regression. Verify with a fresh performance trace
+  after this lands.
 
 ## Migrated from .specs/2026-07-25-drag-polish-defects/task.md
 

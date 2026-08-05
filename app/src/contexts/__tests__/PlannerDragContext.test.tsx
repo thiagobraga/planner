@@ -26,6 +26,7 @@ vi.mock('@dnd-kit/core', () => ({
   useSensors: () => [],
   PointerSensor: class {},
   KeyboardSensor: class {},
+  MeasuringStrategy: { Always: 'always', BeforeDragging: 'before-dragging', WhileDragging: 'while-dragging' },
 }));
 
 vi.mock('@dnd-kit/sortable', () => ({
