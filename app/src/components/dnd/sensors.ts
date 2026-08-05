@@ -42,9 +42,6 @@ export class PlannerPointerSensor extends PointerSensor {
         // Only the primary button drags; right-click opens context menus.
         if (!event.isPrimary || event.button !== 0) return false;
         if (isWithin(event.target, NO_DRAG_ATTR)) return false;
-        if (event.pointerType !== 'mouse' && !isWithin(event.target, DRAG_HANDLE_ATTR)) {
-          return false;
-        }
         return true;
       },
     },
@@ -52,11 +49,7 @@ export class PlannerPointerSensor extends PointerSensor {
 }
 
 /**
- * Keyboard drag, startable only from the dedicated handle.
- *
- * Scoping it to the handle is what keeps Space free to toggle a task while the
- * row itself has focus - dnd-kit's default keyboard activator would otherwise
- * claim that key for picking the row up.
+ * Keyboard drag, startable from task row or handle.
  */
 export class PlannerKeyboardSensor extends KeyboardSensor {
   static activators = [
@@ -71,4 +64,4 @@ export class PlannerKeyboardSensor extends KeyboardSensor {
 }
 
 /** Press-and-hold constraint shared by every pointer drag in the app. */
-export const PRESS_ACTIVATION = { delay: 150, tolerance: 8 } as const;
+export const PRESS_ACTIVATION = { delay: 90, tolerance: 6 } as const;

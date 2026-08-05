@@ -278,6 +278,7 @@ export interface Preferences {
   smallCaps: boolean;
   hideCompletedTasks: boolean;
   hideOldNotes: boolean;
+  dateFormat?: string;
 }
 
 export async function fetchInboxTasks(): Promise<{ tasks: ApiTask[]; collectionId: string | null }> {

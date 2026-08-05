@@ -15,6 +15,7 @@ import {
   type ApiTask,
 } from '../api/client';
 import { ContextMenu, type ContextMenuItem } from '../components/ui/ContextMenu';
+import { Calendar, Tag, Folder, Hash, ArrowUp, ArrowDown, Trash2 } from 'lucide-react';
 import { useTaskDrag } from '../hooks/useTaskDrag';
 import { useTaskVisibilityPreferences } from '../hooks/useTaskVisibilityPreferences';
 import { flattenTasks } from '../utils/taskProjection';
@@ -472,15 +473,15 @@ export function InboxPage() {
           position={contextMenu.position}
           onClose={() => setContextMenu(null)}
           items={[
-            { type: 'item', label: 'Date', disabled: true },
-            { type: 'item', label: 'Priority', disabled: true },
-            { type: 'item', label: 'Project', submenu: projectSubmenuItems },
-            { type: 'item', label: 'Tags', disabled: true },
+            { type: 'item', label: 'Date', icon: <Calendar size={14} />, disabled: true },
+            { type: 'item', label: 'Priority', icon: <Tag size={14} />, disabled: true },
+            { type: 'item', label: 'Project', icon: <Folder size={14} />, submenu: projectSubmenuItems },
+            { type: 'item', label: 'Tags', icon: <Hash size={14} />, disabled: true },
             { type: 'separator' },
-            { type: 'item', label: 'Add above', onClick: () => handleAddAbove(contextMenu.taskId) },
-            { type: 'item', label: 'Add below', onClick: () => handleAddBelow(contextMenu.taskId) },
+            { type: 'item', label: 'Add above', icon: <ArrowUp size={14} />, onClick: () => handleAddAbove(contextMenu.taskId) },
+            { type: 'item', label: 'Add below', icon: <ArrowDown size={14} />, onClick: () => handleAddBelow(contextMenu.taskId) },
             { type: 'separator' },
-            { type: 'item', label: 'Delete', destructive: true, onClick: () => handleDelete(contextMenu.taskId) },
+            { type: 'item', label: 'Delete', icon: <Trash2 size={14} />, destructive: true, onClick: () => handleDelete(contextMenu.taskId) },
           ]}
         />
       )}

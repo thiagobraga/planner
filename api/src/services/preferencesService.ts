@@ -15,6 +15,7 @@ interface PreferencesRow {
   hide_completed_tasks: boolean;
   hide_old_notes: boolean;
   locale: string;
+  date_format: string;
 }
 
 function formatPreferences(row: PreferencesRow) {
@@ -31,6 +32,7 @@ function formatPreferences(row: PreferencesRow) {
     hideCompletedTasks: row.hide_completed_tasks,
     hideOldNotes: row.hide_old_notes,
     locale: row.locale,
+    dateFormat: row.date_format ?? 'MMM DD ddd',
   };
 }
 
@@ -39,6 +41,13 @@ const VALID_THEMES = ["light", "dark", "system"] as const;
 const VALID_FONTS = ["lora", "playpen", "hubballi"] as const;
 const VALID_BACKGROUNDS = ["beige", "white"] as const;
 const VALID_LOCALES = ["en", "pt-BR"] as const;
+export const VALID_DATE_FORMATS = [
+  "MMM DD ddd",
+  "DD/MM ddd",
+  "DD-MM-YYYY ddd",
+  "ddd MMM DD",
+  "YYYY-MM-DD",
+] as const;
 
 export function isValidIanaTimezone(tz: string): boolean {
   try {
@@ -61,6 +70,7 @@ export interface UpdatePreferencesInput {
   hideCompletedTasks?: boolean;
   hideOldNotes?: boolean;
   locale?: string;
+  dateFormat?: string;
 }
 
 export function validatePreferences(input: UpdatePreferencesInput): UpdatePreferencesInput {
@@ -110,6 +120,10 @@ export function validatePreferences(input: UpdatePreferencesInput): UpdatePrefer
 
   if (input.locale !== undefined && !VALID_LOCALES.includes(input.locale as (typeof VALID_LOCALES)[number])) {
     errors.push({ field: "locale", message: "locale must be one of: en, pt-BR" });
+  }
+
+  if (input.dateFormat !== undefined && !VALID_DATE_FORMATS.includes(input.dateFormat as (typeof VALID_DATE_FORMATS)[number])) {
+    errors.push({ field: "dateFormat", message: `dateFormat must be one of: ${VALID_DATE_FORMATS.join(', ')}` });
   }
 
   if (errors.length > 0) {
@@ -191,6 +205,10 @@ export async function updatePreferences(userId: string, input: UpdatePreferences
   if (input.locale !== undefined) {
     setClauses.push(`locale = $${paramIndex++}`);
     values.push(input.locale);
+  }
+  if (input.dateFormat !== undefined) {
+    setClauses.push(`date_format = $${paramIndex++}`);
+    values.push(input.dateFormat);
   }
 
   if (setClauses.length === 0) {

@@ -1,10 +1,11 @@
-import { useRef, useEffect, memo, type ReactNode } from 'react';
+import { useRef, useEffect, memo, useCallback, type ReactNode } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Repeat } from 'lucide-react';
-import { NO_DRAG_ATTR, DRAG_HANDLE_ATTR } from './dnd/sensors';
+import { NO_DRAG_ATTR } from './dnd/sensors';
 import type { TaskDragData } from '../types/drag';
 import { useI18n } from '../i18n/I18nContext';
+import { useTaskSelectionStore } from '../stores/taskSelectionStore';
 
 let _pendingCol: number | null = null;
 export function setPendingColumn(col: number | null): void { _pendingCol = col; }
@@ -138,6 +139,9 @@ export const TaskItem = memo(function TaskItem({
   onRightClick,
 }: TaskItemProps) {
   const { locale, t } = useI18n();
+  const isSelected = useTaskSelectionStore((s) => s.selectedTaskIds.has(task.id));
+  const selectTask = useTaskSelectionStore((s) => s.selectTask);
+  const touchTimerRef = useRef<NodeJS.Timeout | null>(null);
   const dragData: TaskDragData = {
     kind: 'task',
     taskId: task.id,
@@ -274,12 +278,32 @@ export const TaskItem = memo(function TaskItem({
       data-task-id={task.id}
       {...attributes}
       {...listeners}
-      className={`task-item group ${isEditing ? 'task-item--editing' : ''} ${departed ? 'task-item--departed' : isDragging ? 'task-item--placeholder' : task.isCompleted || dimmed ? 'opacity-[0.35]' : ''}`}
+      className={`task-item group ${isEditing ? 'task-item--editing' : ''} ${isSelected ? 'task-item--selected bg-accent/10 rounded-[4px]' : ''} ${departed ? 'task-item--departed' : isDragging ? 'task-item--placeholder' : task.isCompleted || dimmed ? 'opacity-[0.35]' : ''}`}
       aria-label={task.title}
+      aria-selected={isSelected}
+      onClick={(e) => {
+        if (isEditing) return;
+        if ((e.target as HTMLElement).closest(`[${NO_DRAG_ATTR}]`)) return;
+        selectTask(task.id, e.ctrlKey || e.metaKey);
+      }}
       onDoubleClick={isEditing ? undefined : () => onStartEdit?.(task.id)}
       onContextMenu={(e) => {
         e.preventDefault();
         onRightClick?.(task.id, { x: e.clientX, y: e.clientY });
+      }}
+      onTouchStart={(e) => {
+        const touch = e.touches[0];
+        if (!touch) return;
+        const pos = { x: touch.clientX, y: touch.clientY };
+        touchTimerRef.current = setTimeout(() => {
+          onRightClick?.(task.id, pos);
+        }, 400);
+      }}
+      onTouchMove={() => {
+        if (touchTimerRef.current) clearTimeout(touchTimerRef.current);
+      }}
+      onTouchEnd={() => {
+        if (touchTimerRef.current) clearTimeout(touchTimerRef.current);
       }}
       onKeyDown={(e) => {
         listeners?.onKeyDown?.(e);
@@ -288,16 +312,6 @@ export const TaskItem = memo(function TaskItem({
       role="button"
       tabIndex={isEditing ? -1 : 0}
     >
-      <span
-        {...{ [DRAG_HANDLE_ATTR]: '' }}
-        tabIndex={isEditing ? -1 : 0}
-        role="button"
-        className="task-item-drag-handle drag-handle absolute left-[-18px] w-4 cursor-grab flex items-center justify-center opacity-0 text-ink-light text-[10px] select-none"
-        aria-label={t('task.reorder', { title: task.title })}
-      >
-        ⠿
-      </span>
-
       {task.type === 'note' ? (
         <span
           aria-hidden="true"
