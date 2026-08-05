@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { StyleguidePage } from '../StyleguidePage';
 import { fetchPreferences, type Preferences } from '../../api/client';
@@ -55,6 +55,7 @@ describe('StyleguidePage (smoke)', () => {
     expect(screen.getByText('Toolbar / View Options')).toBeInTheDocument();
     expect(screen.getByText('Task Rows')).toBeInTheDocument();
     expect(screen.getByText('Calendar & Monthly')).toBeInTheDocument();
+    expect(screen.getByText('Month Selector')).toBeInTheDocument();
     expect(screen.getByText('Habit')).toBeInTheDocument();
     expect(screen.getByText('Calendar')).toBeInTheDocument();
     expect(screen.getByText('Essential Tokens')).toBeInTheDocument();
@@ -109,6 +110,10 @@ describe('StyleguidePage (smoke)', () => {
     renderPage();
 
     expect(await screen.findByText('Calendar & Monthly')).toBeInTheDocument();
+    const monthSelector = screen.getByText('Month Selector').closest('section');
+    expect(monthSelector).not.toBeNull();
+    expect(within(monthSelector!).getByRole('button', { name: 'Previous month' })).toBeInTheDocument();
+    expect(within(monthSelector!).getByRole('button', { name: 'Next month' })).toBeInTheDocument();
     expect(screen.getByText('Calendar')).toBeInTheDocument();
   });
 });

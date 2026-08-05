@@ -250,6 +250,17 @@ button,
   background-color: var(--planner-monthly-strip-hover) !important;
 }
 
+.month-strip-card--current::before {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  border-top: 10px solid var(--color-accent);
+  border-right: 10px solid transparent;
+  content: '';
+}
+
 /* Task item row */
 .task-item {
   position: relative;

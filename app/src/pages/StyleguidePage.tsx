@@ -5,6 +5,7 @@ import { BjTask, MonthlyIcon, PlannerIcon } from '../components/Sidebar';
 import { SidebarNavItem } from '../components/SidebarNavItem';
 import { ChevronRight, Repeat2 } from 'lucide-react';
 import { MonthlyCalendarSpecimen } from '../components/monthly/MonthlyCalendarSpecimen';
+import { MonthSelector } from '../components/monthly/MonthSelector';
 import { DatePickerSpecimen } from '../components/monthly/DatePickerSpecimen';
 import { HabitSpecimen } from '../components/habits/HabitSpecimen';
 import { Button } from '../components/ui/Button';
@@ -117,6 +118,10 @@ export function StyleguidePage() {
   const [radioChoice, setRadioChoice] = useState('a');
   const [toggleOn, setToggleOn] = useState(true);
   const [checkOn, setCheckOn] = useState(false);
+  const [selectedMonth, setSelectedMonth] = useState(() => {
+    const today = new Date();
+    return { year: today.getFullYear(), month: today.getMonth() };
+  });
 
   // CustomSelect state
   const [customSelectValue, setCustomSelectValue] = useState('2');
@@ -440,16 +445,25 @@ export function StyleguidePage() {
           <MonthlyCalendarSpecimen compact weekStart={weekStart} />
         </Card>
 
-        {/* 9 - Habit */}
+        {/* 9 - Month Selector */}
+        <Card title="Month Selector" span>
+          <MonthSelector
+            year={selectedMonth.year}
+            month={selectedMonth.month}
+            onChange={(year, month) => setSelectedMonth({ year, month })}
+          />
+        </Card>
+
+        {/* 10 - Habit */}
         <Card title="Habit" span>
           <HabitSpecimen weekStart={weekStart} />
         </Card>
-        {/* 10 - Calendar */}
+        {/* 11 - Calendar */}
         <Card title="Calendar">
           <DatePickerSpecimen weekStart={weekStart} />
         </Card>
 
-        {/* 11 - Essential Tokens */}
+        {/* 12 - Essential Tokens */}
         <Card title="Essential Tokens" span>
           <div className="flex flex-col gap-5">
             <TokenRow label="Spacing">
