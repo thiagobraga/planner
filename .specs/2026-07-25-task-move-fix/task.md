@@ -99,6 +99,32 @@ recording (`AUG 05 WED · TODAY`):
   confirming no functional regression. Verify with a fresh performance trace
   after this lands.
 
+## Follow-up: cross-day drop into a gap between sections (2026-08-04, live report)
+
+User reported dragging "Teste 2" (AUG 04 TUE) up onto AUG 05 WED, aimed to
+land after "Note test" (WED's last row, a note), was not possible - even
+after the collision.ts and dnd-kit measuring fixes above landed.
+
+- [x] Root cause was a real dead zone, not covered by the earlier collision.ts
+  fix: sections sit `mt-6` (24px) apart in `DailyPage.tsx`, and each day's
+  `TaskList` container (`app/src/components/TaskList.tsx`) wraps only its own
+  rows with no padding - its droppable rect stops exactly at the last row's
+  bottom edge. Dragging up from a lower-rendered date crosses that 24px seam
+  on the way to the section above; while the pointer is in it, *no* day's
+  droppable claims the hit (`plannerCollisionDetection`'s `containerHits` is
+  empty), so it falls through to plain nearest-row `closestCenter` matching
+  across every rendered row - which resolves to "insert before" the nearest
+  row, bypassing the foreign-drag/last-row append logic entirely, since that
+  logic only runs once a container hit already exists. Fixed by generalizing
+  the existing `.task-list--empty-target` trick (which reserved 24px of
+  droppable area for an *empty* date only, via `min-height` + equal negative
+  `margin-bottom` so it costs no layout) into `.task-list--drag-target`: same
+  cancel-out-the-margin trick, but `padding-bottom` instead of `min-height`
+  so it adds space regardless of whether the list already has content, and
+  applied to every list while a drag is in flight rather than only an empty
+  one. Closes the dead zone for every date, not just this one repro.
+  Regression tests: `TaskList.dragTarget.test.tsx`.
+
 ## Migrated from .specs/2026-07-25-drag-polish-defects/task.md
 
 ### From .specs/2026-07-18-unified-task-habit-dragging/task.md

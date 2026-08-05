@@ -407,25 +407,35 @@ button,
 }
 
 /*
-  A date with no tasks still has to be reachable by a drag: an empty list
-  collapses to zero height, which leaves its droppable with no area for the
-  pointer to be inside, so an empty date could never be hovered and never drew a
-  landing slot.
+  Every date's droppable needs to reach into the 24px gap below it while a drag
+  is in flight, not just an empty one.
+
+  An empty list collapses to zero height, leaving its droppable with no area
+  for the pointer to be inside, so an empty date could never be hovered and
+  never drew a landing slot. A populated list has the opposite version of the
+  same gap: it stops exactly at its last row, so a task dragged in from a date
+  rendered further down the page - crossing that 24px seam on the way to the
+  section above - passed through a dead zone no droppable claimed, fell back to
+  plain nearest-row matching, and landed inserted *before* the last row instead
+  of appended after it.
 
   The row of drop area is claimed only while a drag is in flight, and is undone
   by an equal negative margin, so the list occupies exactly as much space as it
   did before. Both halves matter:
 
-  - reserving it permanently left a blank line under every empty date;
+  - reserving it permanently left a blank line under every date;
   - reserving it *without* the negative margin grew the content by 24px on
     pickup, and dnd-kit answers a mid-drag layout shift by moving the scroll
     position - so pressing a row scrolled the page and released it back.
 
-  The height it takes therefore overlaps the 24px gap below the section, which
-  is empty by construction, and the page does not move at all.
+  Padding rather than min-height so it adds space unconditionally instead of
+  only when the list has none of its own yet - the same rule now covers both
+  the empty list and the populated one. The height it takes overlaps the 24px
+  gap below the section, which is otherwise empty, and the page does not move
+  at all.
 */
-.task-list--empty-target {
-  min-height: var(--dot-grid);
+.task-list--drag-target {
+  padding-bottom: var(--dot-grid);
   margin-bottom: calc(-1 * var(--dot-grid));
 }
 
