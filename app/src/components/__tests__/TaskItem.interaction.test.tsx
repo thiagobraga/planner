@@ -26,17 +26,16 @@ function renderRow(props: Partial<React.ComponentProps<typeof TaskItem>> = {}, t
 
 const row = () => screen.getByRole('button', { name: 'Write the thing' });
 
-describe('TaskItem: click no longer selects', () => {
-  it('does nothing on a single click', () => {
+describe('TaskItem: click selection', () => {
+  it('selects task row on single click', () => {
     const onStartEdit = vi.fn();
     renderRow({ onStartEdit });
 
     fireEvent.click(row());
 
     expect(onStartEdit).not.toHaveBeenCalled();
-    // Selection is gone entirely, so no row ever reports itself as selected.
-    expect(row()).not.toHaveAttribute('aria-selected');
-    expect(row().className).not.toContain('task-item--selected');
+    expect(row()).toHaveAttribute('aria-selected', 'true');
+    expect(row().className).toContain('task-item--selected');
   });
 
   it('opens inline editing on double-click', () => {
@@ -89,13 +88,7 @@ describe('TaskItem: drag surfaces', () => {
   it('leaves the row itself draggable', () => {
     renderRow();
     expect(row().closest(`[${NO_DRAG_ATTR}]`)).toBeNull();
-  });
-
-  it('exposes a named, focusable drag handle for keyboard dragging', () => {
-    renderRow();
-    const handle = screen.getByRole('button', { name: 'Reorder Write the thing' });
-    expect(handle).toHaveAttribute(DRAG_HANDLE_ATTR);
-    expect(handle).toHaveAttribute('tabIndex', '0');
+    expect(row()).toHaveAttribute('aria-roledescription', 'sortable');
   });
 });
 

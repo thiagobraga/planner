@@ -173,12 +173,12 @@ describe('CollectionsIndexPage', () => {
     expect(await screen.findByText('CollectionDetail')).toBeInTheDocument();
   });
 
-  it('renders chevron icons for navigation hint', async () => {
+  it('does not render chevron icons on collection rows', async () => {
     renderPage();
 
     await screen.findByText('Work');
     const chevrons = document.querySelectorAll('.collections-index-row svg.lucide-chevron-right');
-    expect(chevrons.length).toBeGreaterThanOrEqual(2);
+    expect(chevrons.length).toBe(0);
   });
 
   it('keeps collection rows on the 24px grid step', async () => {
