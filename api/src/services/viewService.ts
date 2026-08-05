@@ -18,6 +18,7 @@ interface TaskRow {
   is_completed: boolean;
   completed_at: string | null;
   order_value: number;
+  effective_order_value?: number;
   depth: number;
   type: string;
   created_at: string;
@@ -47,7 +48,7 @@ function formatTask(row: TaskRow) {
     recurrenceRule: row.recurrence_rule,
     isCompleted: row.is_completed,
     completedAt: row.completed_at,
-    orderValue: row.order_value,
+    orderValue: Number(row.effective_order_value ?? row.order_value),
     depth: row.depth,
     type: row.type,
     createdAt: row.created_at,
@@ -120,7 +121,7 @@ export async function getTodayView(userId: string, now: Date = new Date()): Prom
   // a separate place in its day, and one column cannot express both. Tasks never
   // dragged within Daily hold no day position and fall back to collection order.
   const result = await pool.query(
-    `SELECT t.* FROM tasks t
+    `SELECT t.id, t.user_id, t.collection_id, t.section_id, t.parent_task_id, t.assignee_user_id, t.title, t.description, t.priority, t.due_date, t.due_time, t.due_timezone, t.recurrence_rule, t.is_completed, t.completed_at, t.depth, t.type, t.created_at, t.updated_at, COALESCE(o.position, t.order_value) AS effective_order_value FROM tasks t
      JOIN collections p ON p.id = t.collection_id
      LEFT JOIN task_order o
        ON o.task_id = t.id
@@ -172,15 +173,19 @@ export async function getUpcomingView(userId: string, days: number, now: Date = 
   const end = addDaysISO(start, days - 1);
 
   const result = await pool.query(
-    `SELECT t.* FROM tasks t
+    `SELECT t.id, t.user_id, t.collection_id, t.section_id, t.parent_task_id, t.assignee_user_id, t.title, t.description, t.priority, t.due_date, t.due_time, t.due_timezone, t.recurrence_rule, t.is_completed, t.completed_at, t.depth, t.type, t.created_at, t.updated_at, COALESCE(o.position, t.order_value) AS effective_order_value FROM tasks t
      JOIN collections p ON p.id = t.collection_id
+     LEFT JOIN task_order o
+       ON o.task_id = t.id
+      AND o.scope_type = 'day'
+      AND o.scope_id = to_char(t.due_date, 'YYYY-MM-DD')
      WHERE t.user_id = $1
        AND t.is_completed = false
        AND t.due_date IS NOT NULL
        AND t.due_date >= $2::date
        AND t.due_date <= $3::date
        AND p.is_archived = false
-     ORDER BY t.due_date ASC, t.priority ASC, t.order_value ASC, t.created_at ASC`,
+     ORDER BY t.due_date ASC, o.position ASC NULLS LAST, t.order_value ASC, t.created_at ASC`,
     [userId, start, end],
   );
 

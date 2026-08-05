@@ -995,12 +995,30 @@ export async function moveTask(taskId: string, userId: string, input: MoveTaskIn
 
     // ── Report every record the client must patch ──────────────────────────────
     // Scoped to just the dragged subtree - not bloated, no change needed here.
+    //
+    // A day-scoped move never touches `tasks.order_value` - only `task_order`.
+    // Reporting the raw column here would hand the client `orderValue: 0` for
+    // every subtree member on a day-scoped move, snapping the row back to the
+    // front of the list the moment this "authoritative" patch lands, even
+    // though the `reordered` position was written correctly. Every row that
+    // has a day position must report that instead.
     const movedResult = await pool.query(
-      `SELECT * FROM tasks WHERE id = ANY($1::uuid[]) ORDER BY depth ASC, order_value ASC`,
+      `SELECT t.*, o.position AS day_position
+       FROM tasks t
+       LEFT JOIN task_order o
+         ON o.task_id = t.id
+        AND o.scope_type = 'day'
+        AND o.scope_id = to_char(t.due_date, 'YYYY-MM-DD')
+       WHERE t.id = ANY($1::uuid[]) ORDER BY t.depth ASC, t.order_value ASC`,
       [subtreeIds],
     );
-    const movedTasks = (movedResult.rows as TaskRow[]).map(formatTask);
-    const moved = movedTasks.map(toMovedTaskSummary);
+    const movedTasks = (movedResult.rows as (TaskRow & { day_position: number | null })[]).map(
+      (row) => ({ ...formatTask(row), dayPosition: row.day_position }),
+    );
+    const moved = movedTasks.map((task) => ({
+      ...toMovedTaskSummary(task),
+      orderValue: task.dayPosition ?? task.orderValue,
+    }));
 
     const root = movedTasks.find((t) => t.id === taskId)!;
     publishEvent(
@@ -1221,7 +1239,7 @@ async function renumberDayScope(
       return [
         summarize(
           opts.movedTaskId,
-          opts.movedOrderValue,
+          midpoint,
           opts.movedCollectionId,
           opts.movedParentTaskId,
           opts.movedDepth,
@@ -1254,7 +1272,7 @@ async function renumberDayScope(
     written.push(
       summarize(
         ids[i],
-        sib ? sib.order_value : opts.movedOrderValue,
+        position,
         sib ? sib.collection_id : opts.movedCollectionId,
         sib ? sib.parent_task_id : opts.movedParentTaskId,
         sib ? sib.depth : opts.movedDepth,

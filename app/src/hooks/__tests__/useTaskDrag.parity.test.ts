@@ -153,3 +153,45 @@ describe('useTaskDrag: position parity survives when the commit scope carries a 
     expect(commit!.input.position).toBe(1);
   });
 });
+
+describe('useTaskDrag: optimistic orderValue matches the projected slot', () => {
+  // `flattenTasks`/`buildSections` sort siblings by `orderValue`. Dragging 'a'
+  // (1000) to land between 'b' (2000) and 'c' (3000) has to hand back an
+  // `orderValue` in that gap immediately - if the moved task kept its old
+  // orderValue, the very next optimistic re-sort would put it straight back
+  // at the front, undoing the drop before the request even goes out.
+  const day = '2026-07-19';
+  const orderTasks: Task[] = [
+    task('a', day, 1000),
+    task('b', day, 2000),
+    task('c', day, 3000),
+  ];
+  const rows = flattenTasks(orderTasks);
+
+  it('lands between the two siblings it was dropped between', () => {
+    const commit = resolveMove({
+      rows,
+      active: dragData('a', day, ['a']),
+      over: dragData('c', day, ['c']),
+      offsetX: 0,
+      scope: { kind: 'day', dueDate: day },
+    });
+
+    expect(commit).not.toBeNull();
+    expect(commit!.orderValue).toBeGreaterThan(2000);
+    expect(commit!.orderValue).toBeLessThan(3000);
+  });
+
+  it('lands after every sibling when dropped on the empty day container', () => {
+    const commit = resolveMove({
+      rows,
+      active: { kind: 'task', taskId: 'a', parentTaskId: null, collectionId: 'c1', dueDate: day, depth: 0, containerId: `day:${day}`, subtreeIds: ['a'] },
+      over: { kind: 'day', date: day },
+      offsetX: 0,
+      scope: { kind: 'day', dueDate: day },
+    });
+
+    expect(commit).not.toBeNull();
+    expect(commit!.orderValue).toBe(Number.MAX_SAFE_INTEGER);
+  });
+});

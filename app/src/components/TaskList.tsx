@@ -166,13 +166,12 @@ export function TaskList({
         ref={setNodeRef}
         role="list"
         aria-label={t('task.list')}
-        // An empty list claims a row of drop area while a drag is in flight, so
-        // an empty date can be hovered at all. The class cancels its own height
-        // with a negative margin - see the note on the rule for why it has to
-        // cost the layout nothing.
-        className={`task-list flex flex-col gap-0 ${
-          activeDrag && rows.length === 0 ? 'task-list--empty-target' : ''
-        }`}
+        // Every list claims a row of drop area below itself while a drag is in
+        // flight, so the 24px seam before the next date is never a dead zone no
+        // droppable covers. The class cancels its own height with a negative
+        // margin - see the note on the rule for why it has to cost the layout
+        // nothing.
+        className={`task-list flex flex-col gap-0 ${activeDrag ? 'task-list--drag-target' : ''}`}
       >
         {showEmptyInsert && (
           <div aria-hidden className="task-list-slot" style={{ marginLeft: foreignInsertDepth * INDENT_WIDTH }} />

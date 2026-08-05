@@ -122,7 +122,31 @@ export const plannerCollisionDetection: CollisionDetection = (args) => {
 
     // Rows still win inside their own container - dropping onto a task within a
     // day means "next to that task", not "somewhere in that day".
-    if (inside.length > 0) return closestCenter({ ...args, droppableContainers: inside });
+    if (inside.length > 0) {
+      const lastRow = inside[inside.length - 1];
+      const lastRect = args.droppableRects.get(lastRow.id);
+      const pointerY =
+        args.pointerCoordinates?.y ??
+        (args.collisionRect ? args.collisionRect.top + args.collisionRect.height / 2 : null);
+      if (lastRect && pointerY !== null) {
+        // A drag arriving from a *different* list has no "insert before the
+        // last row" to preserve - that reading only makes sense to someone
+        // already reordering within this list, who can reach for the row
+        // above the last one to get it. A foreign drop landing anywhere on
+        // the last row - which, dragging in from below, is usually the first
+        // row it reaches, well before the pointer crosses that row's own
+        // midpoint - overwhelmingly means "add it here at the end", not
+        // "slot in just above the last item". Requiring the stricter
+        // past-center threshold here is what made a cross-day drop aimed at
+        // the end of a short list land one slot short of it instead.
+        const foreignDrag = 'containerId' in activeData && activeData.containerId !== scope;
+        const threshold = foreignDrag ? lastRect.top : lastRect.top + lastRect.height / 2;
+        if (pointerY >= threshold) {
+          return containerHits;
+        }
+      }
+      return closestCenter({ ...args, droppableContainers: inside });
+    }
     return containerHits;
   }
 
