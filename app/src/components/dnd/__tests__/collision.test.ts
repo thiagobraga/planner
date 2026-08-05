@@ -205,3 +205,98 @@ describe('plannerCollisionDetection: the dragged row is its own target', () => {
     expect(candidates('parent', ['parent', 'child'], 48)).toContain('other');
   });
 });
+
+/**
+ * A drop arriving from a different day, aimed at the end of a short list.
+ *
+ * Dragging in from below (a source day rendered lower on the page) reaches a
+ * short target list's last row well before the pointer travels past that
+ * row's own midpoint - the row is often the very first thing the drag
+ * touches. Requiring the stricter past-center threshold there resolved the
+ * drop as "insert before the last row" instead of "append", which is the
+ * "moving to last not working" bug: a task dragged from AUG 04 onto TODAY,
+ * aimed past TODAY's last row, landed one slot short of the end.
+ */
+function crossDayLastRowCandidates(pointerY: number, activeContainerId: string): string[] {
+  const targetDay = {
+    id: 'day:today',
+    rect: { current: { top: 0, bottom: 48, left: 0, right: 200, width: 200, height: 48 } },
+    data: { current: { kind: 'day', date: '2026-08-05', containerId: 'day:today' } },
+    disabled: false,
+    key: 'day:today',
+    node: { current: null },
+  };
+  const taskRow = (id: string, top: number, containerId: string) => ({
+    id,
+    rect: { current: rect(top) },
+    data: {
+      current: {
+        kind: 'task',
+        taskId: id,
+        parentTaskId: null,
+        collectionId: 'c1',
+        dueDate: null,
+        depth: 0,
+        containerId,
+        subtreeIds: [id],
+      },
+    },
+    disabled: false,
+    key: id,
+    node: { current: null },
+  });
+  const test = taskRow('test', 0, 'day:today');
+  const fix = taskRow('fix', 24, 'day:today');
+
+  const collisions = plannerCollisionDetection({
+    active: {
+      id: 'dragged',
+      data: {
+        current: {
+          kind: 'task',
+          taskId: 'dragged',
+          parentTaskId: null,
+          collectionId: 'c1',
+          dueDate: null,
+          depth: 0,
+          containerId: activeContainerId,
+          subtreeIds: ['dragged'],
+        },
+      },
+      rect: { current: { initial: rect(0), translated: rect(pointerY) } },
+    },
+    collisionRect: rect(pointerY),
+    droppableRects: new Map([
+      ['test', rect(0)],
+      ['fix', rect(24)],
+      ['day:today', targetDay.rect.current],
+    ]),
+    droppableContainers: [test, fix, targetDay],
+    pointerCoordinates: { x: 10, y: pointerY },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } as any);
+
+  return collisions.map((c) => String(c.id));
+}
+
+describe('plannerCollisionDetection: cross-day drop aimed at the end of a short list', () => {
+  // 'fix' is the last row, spanning y 24-48; its center sits at y 36.
+  it('appends past the last row for a foreign drag, even before its midpoint', () => {
+    // Upper half of 'fix' (y=28): a same-list drag would still resolve to
+    // 'fix' here (insert before it), but this drag started in a different
+    // day, so it reads as "add to the end" instead.
+    expect(crossDayLastRowCandidates(28, 'day:2026-08-04')).toContain('day:today');
+  });
+
+  it('still resolves to the last row directly for a same-list drag', () => {
+    // Same pointer position, but the drag started in this list - reordering
+    // within a list must still be able to target "just before the last row"
+    // by hovering it.
+    expect(crossDayLastRowCandidates(28, 'day:today')).toContain('fix');
+    expect(crossDayLastRowCandidates(28, 'day:today')).not.toContain('day:today');
+  });
+
+  it('appends for a foreign drag once the pointer does cross the midpoint too', () => {
+    expect(crossDayLastRowCandidates(40, 'day:2026-08-04')).toContain('day:today');
+  });
+});

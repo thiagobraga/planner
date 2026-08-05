@@ -42,6 +42,39 @@
     actual code and pinned them with tests instead; a human should still spot
     check this in a real browser before/after merging if that matters.
 
+## Follow-up video (2026-08-04 22:30) — post-fix repro
+
+User recorded a second pass after the `orderValue: 0` fix above landed. Basic
+same-day and cross-day reordering is now stable and persists across reloads
+(confirmed in-video: dragging "Talk to someone" around the AUG 04 list, and
+across the day boundary into AUG 05/Today, both survive the round-trip). Two
+bugs remained, captured as tasks typed directly into the app during the
+recording (`AUG 05 WED · TODAY`):
+
+- [x] **"Fix: moving to last not working"** — dragging a task from one day's
+  list and dropping it intending the *last* position of the target day
+  landed it one slot too early instead. Traced to `app/src/components/dnd/collision.ts`:
+  a populated list's last row only counted as "append past the end" once the
+  pointer crossed *below that row's own vertical midpoint*. Dragging in from
+  a source list rendered further down the page (AUG 04, below TODAY) means
+  the pointer reaches TODAY's last row from underneath and typically first
+  lands on its upper half or center - never crossing the midpoint - so it
+  resolved as "insert before the last row" instead of "append". Fixed by
+  relaxing the threshold to the last row's *top* edge specifically for a
+  foreign drag (one whose source container differs from the target's): a
+  drop arriving from elsewhere and landing anywhere on the last row
+  overwhelmingly means "add it to the end", not "slot in just above the last
+  item" - and that narrower reading is still reachable by hovering the row
+  above the last one instead. Same-list reordering keeps the stricter
+  midpoint threshold unchanged, so "insert directly before the last row" by
+  hovering it is still possible there. Regression tests:
+  `collision.test.ts` > "cross-day drop aimed at the end of a short list".
+- [ ] **"Fix: also fix these bugs I showed here"** — general catch-all
+  pointing back at this same recording; no second distinct defect beyond the
+  one above was visible in the captured frames. Revisit against a fresh
+  recording once the above is fixed, in case it covers something this pass
+  didn't reproduce clearly on camera.
+
 ## Migrated from .specs/2026-07-25-drag-polish-defects/task.md
 
 ### From .specs/2026-07-18-unified-task-habit-dragging/task.md
