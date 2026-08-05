@@ -26,6 +26,7 @@ import {
   type ApiTask,
 } from '../api/client';
 import { ContextMenu, type ContextMenuItem } from '../components/ui/ContextMenu';
+import { Calendar, Tag, Folder, Hash, ArrowUp, ArrowDown, Trash2 } from 'lucide-react';
 
 interface DaySection {
   key: string;
@@ -33,12 +34,26 @@ interface DaySection {
   tasks: Task[];
 }
 
-function dayLabel(d: Date, locale: 'en' | 'pt-BR'): string {
-  const month = d.toLocaleDateString(locale, { month: 'short' });
+function dayLabel(d: Date, locale: 'en' | 'pt-BR', format: string = 'MMM DD ddd'): string {
+  const clean = locale === 'pt-BR' ? (val: string) => val.replace(/\./g, '') : (val: string) => val;
+  const month = clean(d.toLocaleDateString(locale, { month: 'short' })).toLocaleUpperCase(locale);
   const day = String(d.getDate()).padStart(2, '0');
-  const weekday = d.toLocaleDateString(locale, { weekday: 'short' });
-  const clean = locale === 'pt-BR' ? (value: string) => value.replace(/\./g, '') : (value: string) => value;
-  return `${clean(month).toLocaleUpperCase(locale)} ${day} ${clean(weekday).toLocaleUpperCase(locale)}`;
+  const weekday = clean(d.toLocaleDateString(locale, { weekday: 'short' })).toLocaleUpperCase(locale);
+  const year = d.getFullYear();
+
+  switch (format) {
+    case 'DD/MM ddd':
+      return `${day}/${String(d.getMonth() + 1).padStart(2, '0')} ${weekday}`;
+    case 'DD-MM-YYYY ddd':
+      return `${day}-${String(d.getMonth() + 1).padStart(2, '0')}-${year} ${weekday}`;
+    case 'ddd MMM DD':
+      return `${weekday} ${month} ${day}`;
+    case 'YYYY-MM-DD':
+      return `${year}-${String(d.getMonth() + 1).padStart(2, '0')}-${day}`;
+    case 'MMM DD ddd':
+    default:
+      return `${month} ${day} ${weekday}`;
+  }
 }
 
 function dateFromISO(iso: string): Date {
@@ -68,6 +83,7 @@ function buildSections(
   todayTasks: Task[],
   locale: 'en' | 'pt-BR',
   currentTodayKey: string = fmtISOInTimeZone(new Date()),
+  dateFormat: string = 'MMM DD ddd',
 ): DaySection[] {
   const byDate = new Map<string, Task[]>();
 
@@ -93,7 +109,7 @@ function buildSections(
   const sortedDates = Array.from(byDate.keys()).sort().reverse();
   return sortedDates.map((date) => ({
     key: date,
-    label: dayLabel(dateFromISO(date), locale),
+    label: dayLabel(dateFromISO(date), locale, dateFormat),
     tasks: (byDate.get(date) ?? []).sort((a, b) => a.orderValue - b.orderValue || (a.createdAt ?? '').localeCompare(b.createdAt ?? '')),
   }));
 }
@@ -133,14 +149,15 @@ export function DailyPage() {
   const replaceTodayFromApi = useCallback(() => {
     const requestId = ++loadRequestId.current;
     const currentToday = fmtISOInTimeZone(new Date(), prefsRef.current?.timeZone);
+    const dateFormat = prefsRef.current?.dateFormat ?? 'MMM DD ddd';
     fetchTodayTasks().then((response) => {
       if (requestId !== loadRequestId.current) return;
       const overdueTasks = (response.overdue || []).map(apiToTask);
       const todayTasks = (response.today || []).map(apiToTask);
-      setSections(buildSections(overdueTasks, todayTasks, locale, currentToday));
+      setSections(buildSections(overdueTasks, todayTasks, locale, currentToday, dateFormat));
     }).catch(() => {
       if (requestId !== loadRequestId.current) return;
-      setSections(buildSections([], [], locale, currentToday));
+      setSections(buildSections([], [], locale, currentToday, dateFormat));
     });
   }, [locale]);
 
@@ -691,15 +708,15 @@ export function DailyPage() {
           position={contextMenu.position}
           onClose={() => setContextMenu(null)}
           items={[
-            { type: 'item', label: 'Date', disabled: true },
-            { type: 'item', label: 'Priority', disabled: true },
-            { type: 'item', label: 'Project', submenu: projectSubmenuItems },
-            { type: 'item', label: 'Tags', disabled: true },
+            { type: 'item', label: 'Date', icon: <Calendar size={14} />, disabled: true },
+            { type: 'item', label: 'Priority', icon: <Tag size={14} />, disabled: true },
+            { type: 'item', label: 'Project', icon: <Folder size={14} />, submenu: projectSubmenuItems },
+            { type: 'item', label: 'Tags', icon: <Hash size={14} />, disabled: true },
             { type: 'separator' },
-            { type: 'item', label: 'Add above', onClick: () => handleAddAbove(contextMenu.taskId) },
-            { type: 'item', label: 'Add below', onClick: () => handleAddBelow(contextMenu.taskId) },
+            { type: 'item', label: 'Add above', icon: <ArrowUp size={14} />, onClick: () => handleAddAbove(contextMenu.taskId) },
+            { type: 'item', label: 'Add below', icon: <ArrowDown size={14} />, onClick: () => handleAddBelow(contextMenu.taskId) },
             { type: 'separator' },
-            { type: 'item', label: 'Delete', destructive: true, onClick: () => handleDelete(contextMenu.taskId) },
+            { type: 'item', label: 'Delete', icon: <Trash2 size={14} />, destructive: true, onClick: () => handleDelete(contextMenu.taskId) },
           ]}
         />
       )}

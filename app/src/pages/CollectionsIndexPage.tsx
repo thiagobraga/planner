@@ -1,7 +1,8 @@
-import { useMemo, useState, useRef, useEffect } from 'react';
+import { useMemo, useState, useRef } from 'react';
 import { useNavigate } from 'react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { ChevronRight, Plus, MoreHorizontal } from 'lucide-react';
+import { Plus, MoreHorizontal, Pencil, FolderPlus, Trash2 } from 'lucide-react';
+import { ContextMenu } from '../components/ui/ContextMenu';
 import {
   fetchCollections,
   apiCreateCollection,
@@ -14,20 +15,6 @@ import { buildCollectionTree, type CollectionTreeNode } from '../stores/collecti
 import { ConfirmModal } from '../components/ConfirmModal';
 import { useI18n } from '../i18n/I18nContext';
 
-function useOnClickOutside(ref: React.RefObject<HTMLElement | null>, handler: () => void) {
-  useEffect(() => {
-    const listener = (event: MouseEvent | TouchEvent) => {
-      if (!ref.current || ref.current.contains(event.target as Node)) return;
-      handler();
-    };
-    document.addEventListener('mousedown', listener);
-    document.addEventListener('touchstart', listener);
-    return () => {
-      document.removeEventListener('mousedown', listener);
-      document.removeEventListener('touchstart', listener);
-    };
-  }, [ref, handler]);
-}
 
 interface CollectionRowProps {
   node: CollectionTreeNode;
@@ -50,15 +37,17 @@ interface CollectionRowProps {
 function CollectionRow({ node, depth, ...props }: CollectionRowProps) {
   const { t } = useI18n();
   const navigate = useNavigate();
-  const menuRef = useRef<HTMLDivElement>(null);
+  const [contextPos, setContextPos] = useState<{ x: number; y: number } | null>(null);
+  const touchTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  useOnClickOutside(menuRef, () => {
-    if (props.menuOpenId === node.id) props.setMenuOpenId(null);
-  });
-
-  const isMenuOpen = props.menuOpenId === node.id;
+  const isMenuOpen = props.menuOpenId === node.id || contextPos !== null;
   const isRenaming = props.renamingId === node.id;
   const isAddingSub = props.addingSubFor === node.id;
+
+  const handleOpenMenu = (pos: { x: number; y: number }) => {
+    setContextPos(pos);
+    props.setMenuOpenId(node.id);
+  };
 
   return (
     <>
@@ -67,6 +56,24 @@ function CollectionRow({ node, depth, ...props }: CollectionRowProps) {
         style={{ gridTemplateColumns: `24px minmax(0, 1fr) 24px`, paddingLeft: `${depth * 24}px` }}
         onClick={() => {
           if (!isRenaming && !isMenuOpen) navigate(`/collection/${node.id}`);
+        }}
+        onContextMenu={(e) => {
+          e.preventDefault();
+          handleOpenMenu({ x: e.clientX, y: e.clientY });
+        }}
+        onTouchStart={(e) => {
+          const touch = e.touches[0];
+          if (!touch) return;
+          const pos = { x: touch.clientX, y: touch.clientY };
+          touchTimerRef.current = setTimeout(() => {
+            handleOpenMenu(pos);
+          }, 400);
+        }}
+        onTouchMove={() => {
+          if (touchTimerRef.current) clearTimeout(touchTimerRef.current);
+        }}
+        onTouchEnd={() => {
+          if (touchTimerRef.current) clearTimeout(touchTimerRef.current);
         }}
       >
         <span
@@ -95,53 +102,64 @@ function CollectionRow({ node, depth, ...props }: CollectionRowProps) {
 
         {!isRenaming && (
           <div className="col-start-3 col-span-1 flex h-6 items-center justify-self-end gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
-            <div className="relative" ref={menuRef}>
-              <button
-                type="button"
-                className="collections-index-row__actions-btn flex h-6 w-6 items-center justify-center p-0 text-ink-light hover:text-ink bg-transparent border-0 cursor-pointer"
-                aria-label={t('page.deleteNamed', { name: node.name })}
-                onClick={() => props.setMenuOpenId(isMenuOpen ? null : node.id)}
-              >
-                <MoreHorizontal size={16} strokeWidth={1.5} />
-              </button>
-              {isMenuOpen && (
-                <div className="collections-index-menu">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      props.onRename(node);
-                      props.setMenuOpenId(null);
-                    }}
-                  >
-                    {t('common.rename')}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      props.onAddSub(node);
-                      props.setMenuOpenId(null);
-                    }}
-                  >
-                    {t('page.addSubCollection')}
-                  </button>
-                  <button
-                    type="button"
-                    data-destructive
-                    onClick={() => {
-                      props.onDelete(node);
-                      props.setMenuOpenId(null);
-                    }}
-                  >
-                    {t('common.delete')}
-                  </button>
-                </div>
-              )}
-            </div>
-
-            <ChevronRight size={16} className="self-center text-ink-light opacity-40" />
+            <button
+              type="button"
+              className="collections-index-row__actions-btn flex h-6 w-6 items-center justify-center p-0 text-ink-light hover:text-ink bg-transparent border-0 cursor-pointer"
+              aria-label={t('page.deleteNamed', { name: node.name })}
+              onClick={(e) => {
+                const rect = e.currentTarget.getBoundingClientRect();
+                handleOpenMenu({ x: rect.left, y: rect.bottom });
+              }}
+            >
+              <MoreHorizontal size={16} strokeWidth={1.5} />
+            </button>
           </div>
         )}
       </div>
+
+      {isMenuOpen && contextPos && (
+        <ContextMenu
+          position={contextPos}
+          onClose={() => {
+            setContextPos(null);
+            props.setMenuOpenId(null);
+          }}
+          items={[
+            {
+              type: 'item',
+              label: t('common.rename'),
+              icon: <Pencil size={14} />,
+              onClick: () => {
+                props.onRename(node);
+                props.setMenuOpenId(null);
+                setContextPos(null);
+              },
+            },
+            {
+              type: 'item',
+              label: t('page.addSubCollection'),
+              icon: <FolderPlus size={14} />,
+              onClick: () => {
+                props.onAddSub(node);
+                props.setMenuOpenId(null);
+                setContextPos(null);
+              },
+            },
+            { type: 'separator' },
+            {
+              type: 'item',
+              label: t('common.delete'),
+              icon: <Trash2 size={14} />,
+              destructive: true,
+              onClick: () => {
+                props.onDelete(node);
+                props.setMenuOpenId(null);
+                setContextPos(null);
+              },
+            },
+          ]}
+        />
+      )}
 
       {isAddingSub && (
         <div

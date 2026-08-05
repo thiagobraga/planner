@@ -73,6 +73,18 @@ const WEEK_START_OPTIONS: Array<{
   { value: 'monday', label: 'Monday' },
 ];
 
+const DATE_FORMAT_OPTIONS: Array<{
+  value: string;
+  label: string;
+  example: string;
+}> = [
+  { value: 'MMM DD ddd', label: 'Month Day Weekday', example: 'AUG 05 WED' },
+  { value: 'DD/MM ddd', label: 'Day/Month Weekday', example: '05/08 QUA' },
+  { value: 'DD-MM-YYYY ddd', label: 'Full Date Weekday', example: '05-08-2026 WED' },
+  { value: 'ddd MMM DD', label: 'Weekday Month Day', example: 'WED AUG 05' },
+  { value: 'YYYY-MM-DD', label: 'ISO Standard', example: '2026-08-05' },
+];
+
 function getBrowserSupportedTimeZones() {
   try {
     const supportedValuesOf = (Intl as typeof Intl & {
@@ -340,6 +352,7 @@ export function SettingsPage() {
           | 'weekStart'
           | 'hideCompletedTasks'
           | 'hideOldNotes'
+          | 'dateFormat'
         >
       >,
     ) =>
@@ -361,6 +374,7 @@ export function SettingsPage() {
       qc.setQueryData<Preferences>(['preferences'], (prev) => (prev ? { ...prev, ...data } : data));
       qc.invalidateQueries({ queryKey: ['inbox'] });
       qc.invalidateQueries({ queryKey: ['collection'] });
+      qc.invalidateQueries({ queryKey: ['today'] });
     },
   });
 
@@ -372,8 +386,13 @@ export function SettingsPage() {
   const weekStart = preferences?.weekStart ?? 'sunday';
   const hideCompletedTasks = preferences?.hideCompletedTasks ?? false;
   const hideOldNotes = preferences?.hideOldNotes ?? false;
+  const dateFormat = preferences?.dateFormat ?? 'MMM DD ddd';
   const savedTimeZone = preferences?.timeZone ?? detectedTimeZone;
   const disabled = updateMutation.isPending;
+
+  const handleDateFormatChange = (nextFormat: string) => {
+    updateMutation.mutate({ dateFormat: nextFormat });
+  };
 
   const handleFontChange = (nextFont: FontOption) => {
     ensureFontLoaded(nextFont);
@@ -675,6 +694,34 @@ export function SettingsPage() {
                             label={t(value === 'sunday' ? 'settings.sunday' : 'settings.monday')}
                             className={`w-full rounded-[6px] border px-3 py-3 transition-colors duration-[var(--motion-fast)] ${
                               weekStart === value
+                                ? 'border-ink-light bg-[var(--planner-control-bg-hover)]'
+                                : 'border-border bg-[var(--planner-control-bg)] hover:bg-[var(--planner-control-bg-hover)]'
+                            }`}
+                          />
+                        ))}
+                      </div>
+                    </section>
+
+                    <section className="space-y-3 border-t border-[var(--planner-settings-separator)] pt-8">
+                      <h3 className="text-[10px] leading-5 tracking-[0.12em] uppercase text-ink-light font-medium">
+                        Daily Date Format
+                      </h3>
+                      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                        {DATE_FORMAT_OPTIONS.map(({ value, label, example }) => (
+                          <Radio
+                            key={value}
+                            name="date-format"
+                            checked={dateFormat === value}
+                            onChange={() => handleDateFormatChange(value)}
+                            disabled={disabled}
+                            label={
+                              <span className="flex flex-col">
+                                <span>{example}</span>
+                                <span className="text-[11px] text-ink-light opacity-70">{label}</span>
+                              </span>
+                            }
+                            className={`w-full rounded-[6px] border px-3 py-3 transition-colors duration-[var(--motion-fast)] ${
+                              dateFormat === value
                                 ? 'border-ink-light bg-[var(--planner-control-bg-hover)]'
                                 : 'border-border bg-[var(--planner-control-bg)] hover:bg-[var(--planner-control-bg-hover)]'
                             }`}

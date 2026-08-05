@@ -1,4 +1,4 @@
-import { Fragment, useMemo, useState, useCallback } from 'react';
+import { Fragment, useMemo, useState, useCallback, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
@@ -10,7 +10,8 @@ import { SortableContext, useSortable, arrayMove, verticalListSortingStrategy } 
 import { usePlannerDrag, usePlannerDragHandlers } from '../contexts/PlannerDragContext';
 import type { CollectionDragData, CollectionDropData } from '../types/drag';
 import { CSS } from '@dnd-kit/utilities';
-import { Plus } from 'lucide-react';
+import { Plus, Pencil, FolderPlus, Trash2 } from 'lucide-react';
+import { ContextMenu } from './ui/ContextMenu';
 import {
   fetchCollections,
   apiCreateCollection,
@@ -450,6 +451,9 @@ function SortableCollectionRow({
   onDelete,
 }: RowProps) {
   const { t } = useI18n();
+  const [contextPos, setContextPos] = useState<{ x: number; y: number } | null>(null);
+  const touchTimerRef = useRef<NodeJS.Timeout | null>(null);
+
   // One payload serves both roles: this row is a peer to drag against when a
   // collection is moving, and a container to file into when a task is.
   const data: CollectionDragData & CollectionDropData = {
@@ -467,70 +471,119 @@ function SortableCollectionRow({
   const depthClass = DEPTH_PADDING_CLASSES[Math.min(depth, DEPTH_PADDING_CLASSES.length - 1)];
 
   return (
-    <div
-      ref={setNodeRef}
-      style={{
-        transform: CSS.Translate.toString(transform),
-        transition,
-        opacity: isDragging ? 0.5 : 1,
-      }}
-      data-drop-target={isTaskTarget ? 'true' : undefined}
-      className={`collection-row flex items-center gap-[7px] h-6 pr-2 text-[13px] text-ink ${depthClass} ${isActive ? 'collection-row--active font-medium' : ''} ${isTaskTarget ? 'collection-row--drop-target rounded-[4px] bg-[var(--planner-hover,rgba(44,44,44,0.06))] outline outline-1 outline-dot' : ''}`}
-    >
-      <span
-        {...attributes}
-        {...listeners}
-        className="w-4 flex items-center justify-center shrink-0 cursor-grab"
-        aria-label={`Reorder ${item.name}`}
+    <>
+      <div
+        ref={setNodeRef}
+        style={{
+          transform: CSS.Translate.toString(transform),
+          transition,
+          opacity: isDragging ? 0.5 : 1,
+        }}
+        data-drop-target={isTaskTarget ? 'true' : undefined}
+        className={`collection-row flex items-center gap-[7px] h-6 pr-2 text-[13px] text-ink ${depthClass} ${isActive ? 'collection-row--active font-medium' : ''} ${isTaskTarget ? 'collection-row--drop-target rounded-[4px] bg-[var(--planner-hover,rgba(44,44,44,0.06))] outline outline-1 outline-dot' : ''}`}
+        onContextMenu={(e) => {
+          e.preventDefault();
+          setContextPos({ x: e.clientX, y: e.clientY });
+        }}
+        onTouchStart={(e) => {
+          const touch = e.touches[0];
+          if (!touch) return;
+          const pos = { x: touch.clientX, y: touch.clientY };
+          touchTimerRef.current = setTimeout(() => {
+            setContextPos(pos);
+          }, 400);
+        }}
+        onTouchMove={() => {
+          if (touchTimerRef.current) clearTimeout(touchTimerRef.current);
+        }}
+        onTouchEnd={() => {
+          if (touchTimerRef.current) clearTimeout(touchTimerRef.current);
+        }}
       >
         <span
-          className="w-2 h-2 rounded-full shrink-0 block [filter:saturate(0.55)]"
-          style={{ background: item.color }}
+          {...attributes}
+          {...listeners}
+          className="w-4 flex items-center justify-center shrink-0 cursor-grab"
+          aria-label={`Reorder ${item.name}`}
+        >
+          <span
+            className="w-2 h-2 rounded-full shrink-0 block [filter:saturate(0.55)]"
+            style={{ background: item.color }}
+          />
+        </span>
+        {isEditing ? (
+          <input
+            autoFocus
+            value={draft}
+            onChange={(e) => onDraftChange(e.target.value)}
+            onBlur={onCommitRename}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') onCommitRename();
+              if (e.key === 'Escape') onCancelRename();
+            }}
+            className="flex-1 h-5 text-[13px] text-ink bg-transparent border-0 border-b border-dot outline-none"
+          />
+        ) : (
+          <>
+            <button
+              type="button"
+              onClick={onNavigate}
+              onDoubleClick={onStartRename}
+              aria-current={isActive ? 'page' : undefined}
+              className={`flex-1 text-left bg-transparent border-0 cursor-pointer text-[13px] text-ink truncate p-0 ${isActive ? 'opacity-100' : 'opacity-60'}`}
+            >
+              {item.name}
+            </button>
+            <button
+              type="button"
+              className="collection-row__action bg-transparent border-0 cursor-pointer text-ink-light text-sm leading-none py-0 px-0.5 shrink-0"
+              aria-label={`${t('page.addSubCollection')} ${item.name}`}
+              title={t('page.addSubCollection')}
+              onClick={onAddSub}
+            >
+              +
+            </button>
+            <button
+              type="button"
+              className="collection-row__action bg-transparent border-0 cursor-pointer text-ink-light text-sm leading-none py-0 px-0.5 shrink-0"
+              aria-label={t('page.deleteNamed', { name: item.name })}
+              title={t('page.deleteCollection')}
+              onClick={onDelete}
+            >
+              ×
+            </button>
+          </>
+        )}
+      </div>
+
+      {contextPos && (
+        <ContextMenu
+          position={contextPos}
+          onClose={() => setContextPos(null)}
+          items={[
+            {
+              type: 'item',
+              label: t('common.rename'),
+              icon: <Pencil size={14} />,
+              onClick: onStartRename,
+            },
+            {
+              type: 'item',
+              label: t('page.addSubCollection'),
+              icon: <FolderPlus size={14} />,
+              onClick: onAddSub,
+            },
+            { type: 'separator' },
+            {
+              type: 'item',
+              label: t('common.delete'),
+              icon: <Trash2 size={14} />,
+              destructive: true,
+              onClick: onDelete,
+            },
+          ]}
         />
-      </span>
-      {isEditing ? (
-        <input
-          autoFocus
-          value={draft}
-          onChange={(e) => onDraftChange(e.target.value)}
-          onBlur={onCommitRename}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') onCommitRename();
-            if (e.key === 'Escape') onCancelRename();
-          }}
-          className="flex-1 h-5 text-[13px] text-ink bg-transparent border-0 border-b border-dot outline-none"
-        />
-      ) : (
-        <>
-          <button
-            type="button"
-            onClick={onNavigate}
-            onDoubleClick={onStartRename}
-            aria-current={isActive ? 'page' : undefined}
-            className={`flex-1 text-left bg-transparent border-0 cursor-pointer text-[13px] text-ink truncate p-0 ${isActive ? 'opacity-100' : 'opacity-60'}`}
-          >
-            {item.name}
-          </button>
-          <button
-            type="button"
-            className="collection-row__action bg-transparent border-0 cursor-pointer text-ink-light text-sm leading-none py-0 px-0.5 shrink-0"
-            aria-label={`${t('page.addSubCollection')} ${item.name}`}
-            title={t('page.addSubCollection')}
-            onClick={onAddSub}
-          >
-            +
-          </button>
-          <button
-            type="button"
-            className="collection-row__action bg-transparent border-0 cursor-pointer text-ink-light text-sm leading-none py-0 px-0.5 shrink-0"
-            aria-label={t('page.deleteNamed', { name: item.name })}
-            title={t('page.deleteCollection')}
-            onClick={onDelete}
-          >
-            ×
-          </button>
-        </>
       )}
-    </div>
+    </>
   );
 }

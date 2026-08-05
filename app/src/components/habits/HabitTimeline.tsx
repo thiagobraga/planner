@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { ChevronDown, ChevronRight, MoreHorizontal, Plus } from 'lucide-react';
+import { ChevronDown, ChevronRight, MoreHorizontal, Plus, Pencil, Smile, Trash2 } from 'lucide-react';
 import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { ContextMenu } from '../ui/ContextMenu';
@@ -721,12 +721,13 @@ export function HabitTimeline({
           position={{ x: menu.x, y: menu.y }}
           onClose={() => setMenu(null)}
           items={[
-            { type: 'item', label: t('common.rename'), onClick: () => onStartEdit(menu.target) },
+            { type: 'item', label: t('common.rename'), icon: <Pencil size={14} />, onClick: () => onStartEdit(menu.target) },
             ...(menu.target.kind === 'group'
               ? [
                 {
                   type: 'item' as const,
                   label: menuGroup?.icon ? t('habit.removeIcon') : t('habit.addIcon'),
+                  icon: <Smile size={14} />,
                   onClick: () => onToggleGroupIcon(menu.target.id),
                 },
               ]
@@ -736,6 +737,7 @@ export function HabitTimeline({
                 {
                   type: 'item' as const,
                   label: t('habit.addSubHabit'),
+                  icon: <Plus size={14} />,
                   onClick: () => onAddHabit({ groupId: null, parentId: menu.target.id }),
                 },
               ]
@@ -744,6 +746,7 @@ export function HabitTimeline({
             {
               type: 'item',
               label: menu.target.kind === 'group' ? t('habit.deleteGroup') : t('common.delete'),
+              icon: <Trash2 size={14} />,
               destructive: true,
               onClick: () => onDelete(menu.target),
             },
