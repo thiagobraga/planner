@@ -397,6 +397,50 @@ describe("moveTask ordering scopes", () => {
       },
     ]);
   });
+
+  it("reports the day position, not the untouched collection order_value, in `moved`", async () => {
+    // A day-scoped move never writes `tasks.order_value` - it stays at
+    // whatever the collection last set it to (47000 here, deliberately unlike
+    // the day position). The client applies `moved` as the authoritative
+    // patch after a drag; if it reported the raw column, every day-scoped
+    // move would hand the client `orderValue: 47000` (or, for a task that has
+    // never had a collection order written, literally `0`) and the row would
+    // snap back to the front of the list the instant that "authoritative"
+    // patch lands - the optimistic reorder was correct, the patch undid it.
+    const tx = mockTransaction([
+      [/WITH RECURSIVE/, [{ id: taskId, parent_task_id: null, depth: 0, collection_id: collectionId, section_id: null, due_date: "2026-07-18" }]],
+      [/LEFT JOIN task_order/, [
+        { task_id: "other-1", position: 0 },
+        { task_id: "other-2", position: 1000 },
+      ]],
+    ]);
+    (pool.query as ReturnType<typeof vi.fn>).mockImplementation(async (sql: string) => {
+      // The post-commit subtree read joins `task_order` to recover the day
+      // position for whichever tasks moved; simulate that join's result.
+      if (/LEFT JOIN task_order/.test(sql)) {
+        return { rows: [taskRow({ due_date: "2026-07-18", order_value: 47000, day_position: 500 })] };
+      }
+      return { rows: [taskRow({ due_date: "2026-07-18", order_value: 47000 })] };
+    });
+
+    const result = await moveTask(taskId, userId, {
+      parentTaskId: null,
+      scope: { kind: "day", dueDate: "2026-07-18" },
+      position: 1,
+    });
+
+    void tx;
+    expect(result.moved).toEqual([
+      {
+        id: taskId,
+        parentTaskId: null,
+        collectionId,
+        dueDate: "2026-07-18",
+        orderValue: 500,
+        depth: 0,
+      },
+    ]);
+  });
 });
 
 describe("moveTask onto a sidebar collection", () => {

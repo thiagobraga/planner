@@ -272,6 +272,13 @@ interface ResolvedMove {
   input: Parameters<typeof apiMoveTask>[1];
   parentTaskId: string | null;
   depth: number;
+  /**
+   * A same-space estimate of the server's midpoint, so the optimistic
+   * re-sort (which orders siblings by `orderValue`, same as `flattenTasks`)
+   * lands the row where it was dropped instead of snapping back to its old
+   * slot until the authoritative response arrives.
+   */
+  orderValue: number;
   /** Past tense, spoken once the move has committed. */
   announcement: string;
   /**
@@ -315,6 +322,10 @@ export function resolveMove({
       },
       parentTaskId: null,
       depth: 0,
+      // This page's `rows` cannot see the target collection's real ordering,
+      // so this is a rough "goes last" guess - overwritten by the response
+      // once it lands, same as every other branch here.
+      orderValue: Number.MAX_SAFE_INTEGER,
       announcement: 'Moved to collection.',
       preview: 'Drop to file in this collection.',
     };
@@ -331,6 +342,7 @@ export function resolveMove({
       },
       parentTaskId: null,
       depth: 0,
+      orderValue: Number.MAX_SAFE_INTEGER,
       announcement: `Moved to ${over.date}.`,
       preview: `Drop to move to ${over.date}.`,
     };
@@ -369,6 +381,23 @@ export function resolveMove({
     ? { parentId: null, depth: 0, position: projected.position }
     : projected;
 
+  // Same-space estimate of the server's midpoint write: siblings under the
+  // projected parent, in the same scoped list the position was resolved
+  // against, with the dragged subtree excluded so it cannot bracket itself.
+  const orderSiblings = scopedRows.filter(
+    (r) => r.parentId === projection.parentId && !active.subtreeIds.includes(r.id),
+  );
+  const prevSibling = orderSiblings[projection.position - 1]?.task.orderValue;
+  const nextSibling = orderSiblings[projection.position]?.task.orderValue;
+  const orderValue =
+    prevSibling !== undefined && nextSibling !== undefined
+      ? Math.floor((prevSibling + nextSibling) / 2)
+      : prevSibling !== undefined
+        ? prevSibling + 1000
+        : nextSibling !== undefined
+          ? nextSibling - 1000
+          : 0;
+
   return {
     input: {
       parentTaskId: projection.parentId,
@@ -378,6 +407,7 @@ export function resolveMove({
     },
     parentTaskId: projection.parentId,
     depth: projection.depth,
+    orderValue,
     announcement: projection.parentId
       ? `Moved under ${scopedRows.find((r) => r.id === projection.parentId)?.task.title ?? 'parent'}.`
       : 'Moved to top level.',
@@ -405,6 +435,11 @@ function applyMoveLocally(tasks: Task[], active: TaskDragData, move: ResolvedMov
         ...task,
         parentTaskId: move.parentTaskId ?? undefined,
         indent: move.depth,
+        // Siblings sort by `orderValue` (`flattenTasks`, `buildSections`); left
+        // at its pre-drag value, the row snaps straight back to its old slot
+        // the instant this optimistic state re-sorts, before the request even
+        // lands.
+        orderValue: move.orderValue,
         ...(move.input.collectionId ? { collectionId: move.input.collectionId } : {}),
         ...(move.input.dueDate !== undefined ? { dueDate: move.input.dueDate ?? undefined } : {}),
       };
