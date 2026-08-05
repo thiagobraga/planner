@@ -30,7 +30,6 @@ export function LoginPage() {
         start(err.retryAfterSeconds ?? 0);
       }
       setError(err instanceof Error ? err.message : t('auth.somethingWrong'));
-    } finally {
       setLoading(false);
     }
   };
