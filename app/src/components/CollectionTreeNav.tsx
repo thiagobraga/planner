@@ -55,7 +55,7 @@ const COLOR_SHADE_FAMILIES: Record<string, readonly string[]> = {
   '#bababa': ['#bababa', '#6f7780', '#ac918f', '#adb9c1'],
 };
 
-function getHierarchicalColor(
+export function getHierarchicalColor(
   collectionId: string,
   parentId: string | null,
   collections: ApiCollection[],
@@ -86,7 +86,7 @@ function getHierarchicalColor(
   return family[depth % family.length];
 }
 
-interface FlatCollection {
+export interface FlatCollection {
   id: string;
   name: string;
   color: string;
@@ -96,7 +96,7 @@ interface FlatCollection {
 
 // Flatten the visible (non-inbox, non-archived) collections into a depth-annotated,
 // order-sorted list suitable for a single sortable list with indentation.
-function flattenCollections(collections: ApiCollection[]): FlatCollection[] {
+export function flattenCollections(collections: ApiCollection[]): FlatCollection[] {
   const visible = collections.filter((p) => !p.isArchived && !p.isInbox);
   const childrenOf = new Map<string | null, ApiCollection[]>();
   for (const p of visible) {

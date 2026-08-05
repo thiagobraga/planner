@@ -22,6 +22,7 @@ import { flattenTasks } from '../utils/taskProjection';
 import { applyIndent } from '../utils/taskTree';
 import { fetchCollections } from '../api/client';
 import { ContextMenu, type ContextMenuItem } from '../components/ui/ContextMenu';
+import { flattenCollections } from '../components/CollectionTreeNav';
 import { Calendar, Tag, Folder, Hash, ArrowUp, ArrowDown, Trash2 } from 'lucide-react';
 import { useI18n } from '../i18n/I18nContext';
 
@@ -340,23 +341,21 @@ export function CollectionsPage() {
   }, []);
 
   const projectSubmenuItems = useMemo<ContextMenuItem[]>(() => {
-    const items: ContextMenuItem[] = collections
-      .filter((c) => !c.isInbox)
-      .map((c) => ({
-        type: 'item',
-        label: c.name,
-        icon: (
-          <span
-            className="w-2 h-2 rounded-full inline-block"
-            style={{ backgroundColor: c.color }}
-          />
-        ),
-        onClick: () => {
-          if (contextMenu?.taskId) {
-            apiUpdateTask(contextMenu.taskId, { collectionId: c.id }).catch(() => invalidate());
-          }
-        },
-      }));
+    const items: ContextMenuItem[] = flattenCollections(collections).map((c) => ({
+      type: 'item',
+      label: c.name,
+      icon: (
+        <span
+          className="w-2 h-2 rounded-full inline-block [filter:saturate(0.55)]"
+          style={{ backgroundColor: c.color, marginLeft: c.depth * 12 }}
+        />
+      ),
+      onClick: () => {
+        if (contextMenu?.taskId) {
+          apiUpdateTask(contextMenu.taskId, { collectionId: c.id }).catch(() => invalidate());
+        }
+      },
+    }));
 
     items.push({
       type: 'item',

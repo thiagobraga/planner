@@ -4,7 +4,7 @@ import { ChevronRight } from 'lucide-react';
 
 export interface ContextMenuItem {
   type: 'item' | 'separator';
-  label?: string;
+  label?: React.ReactNode;
   icon?: React.ReactNode;
   disabled?: boolean;
   destructive?: boolean;

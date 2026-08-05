@@ -26,6 +26,7 @@ import {
   type ApiTask,
 } from '../api/client';
 import { ContextMenu, type ContextMenuItem } from '../components/ui/ContextMenu';
+import { flattenCollections } from '../components/CollectionTreeNav';
 import { Calendar, Tag, Folder, Hash, ArrowUp, ArrowDown, Trash2 } from 'lucide-react';
 
 interface DaySection {
@@ -573,23 +574,23 @@ export function DailyPage() {
   }, []);
 
   const projectSubmenuItems = useMemo<ContextMenuItem[]>(() => {
-    const items: ContextMenuItem[] = collections
-      .filter((c) => !c.isInbox)
-      .map((c) => ({
-        type: 'item',
-        label: c.name,
-        icon: (
-          <span
-            className="w-2 h-2 rounded-full inline-block"
-            style={{ backgroundColor: c.color }}
-          />
-        ),
-        onClick: () => {
-          if (contextMenu?.taskId) {
-            apiUpdateTask(contextMenu.taskId, { collectionId: c.id }).catch(() => replaceTodayFromApi());
-          }
-        },
-      }));
+    const items: ContextMenuItem[] = flattenCollections(collections).map((c) => ({
+      type: 'item',
+      label: c.name,
+      icon: (
+        <span
+          className="w-2 h-2 rounded-full inline-block [filter:saturate(0.55)]"
+          style={{ backgroundColor: c.color, marginLeft: c.depth * 12 }}
+        />
+      ),
+      onClick: () => {
+        if (contextMenu?.taskId) {
+          const taskId = contextMenu.taskId;
+          setAllTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, collectionId: c.id } : t)));
+          apiUpdateTask(taskId, { collectionId: c.id }).catch(() => replaceTodayFromApi());
+        }
+      },
+    }));
 
     items.push({
       type: 'item',
@@ -603,14 +604,16 @@ export function DailyPage() {
         if (contextMenu?.taskId) {
           const inbox = collections.find((c) => c.isInbox);
           if (inbox) {
-            apiUpdateTask(contextMenu.taskId, { collectionId: inbox.id }).catch(() => replaceTodayFromApi());
+            const taskId = contextMenu.taskId;
+            setAllTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, collectionId: inbox.id } : t)));
+            apiUpdateTask(taskId, { collectionId: inbox.id }).catch(() => replaceTodayFromApi());
           }
         }
       },
     });
 
     return items;
-  }, [collections, contextMenu, replaceTodayFromApi]);
+  }, [collections, contextMenu, replaceTodayFromApi, setAllTasks]);
 
   return (
     <div
