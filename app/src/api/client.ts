@@ -475,6 +475,17 @@ export async function apiDeleteCollection(id: string): Promise<void> {
   await request<unknown>(`/collections/${id}`, { method: 'DELETE' });
 }
 
+export async function fetchSavedColors(): Promise<string[]> {
+  return request<string[]>('/saved-colors');
+}
+
+export async function apiAddSavedColor(color: string): Promise<string[]> {
+  return request<string[]>('/saved-colors', {
+    method: 'POST',
+    body: JSON.stringify({ color }),
+  });
+}
+
 export async function apiArchiveCollection(id: string): Promise<ApiCollection> {
   return request<ApiCollection>(`/collections/${id}/archive`, { method: 'POST' });
 }
