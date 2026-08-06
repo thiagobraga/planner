@@ -75,6 +75,22 @@ interface PlannerDragContextValue {
    * nesting level actually changes, instead of on every pointer move.
    */
   indentSteps: number;
+  /**
+   * The same nesting intent as `indentSteps`, readable synchronously.
+   *
+   * The preview renders from `indentSteps` (React state) while a drop commits
+   * from a ref read inside `onDragEnd`. When those came from two separately
+   * instantiated `IndentTracker`s - one here, one in `useTaskDrag` - they were
+   * two pieces of mutable state with no shared source of truth, and they
+   * disagreed: the list previewed a row nesting under its sibling while the
+   * committed move sent `parentTaskId: null`. Reading both from this one
+   * tracker makes that divergence structurally impossible rather than merely
+   * unlikely.
+   *
+   * A function rather than a value so callers get the live offset at the moment
+   * they ask, not whatever was current when the context value was memoised.
+   */
+  indentOffset: () => number;
   /** The droppable currently under the pointer, for positioning the indicator. */
   overId: string | null;
   /** Speak a message through the shared live region. */
@@ -201,6 +217,20 @@ export function PlannerDragProvider({ children }: { children: ReactNode }) {
 
   const announce = useCallback((message: string) => setAnnouncement(message), []);
 
+  /**
+   * The live nesting intent, snapped to the same whole step the preview draws.
+   *
+   * Quantising here rather than handing back raw pixels is the point: the
+   * preview renders `Math.round(offset / INDENT_PX)` steps, so a commit reading
+   * the unrounded offset would disagree with it for every pointer position that
+   * is not exactly on a step boundary. Both sides now round the same number the
+   * same way.
+   */
+  const indentOffset = useCallback(
+    () => Math.round(indent.current.offset() / INDENT_PX) * INDENT_PX,
+    [],
+  );
+
   /** Route an event to whichever page registered the kind being dragged. */
   const dispatch = useCallback(
     <E extends { active: { data: { current?: unknown } } }>(
@@ -313,11 +343,22 @@ export function PlannerDragProvider({ children }: { children: ReactNode }) {
       setOverlayNode,
       hasMoved,
       indentSteps,
+      indentOffset,
       overId,
       announce,
       registerHandlers,
     }),
-    [activeDrag, overlay, overlayNode, hasMoved, indentSteps, overId, announce, registerHandlers],
+    [
+      activeDrag,
+      overlay,
+      overlayNode,
+      hasMoved,
+      indentSteps,
+      indentOffset,
+      overId,
+      announce,
+      registerHandlers,
+    ],
   );
 
   return (
