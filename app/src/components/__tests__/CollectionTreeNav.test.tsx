@@ -1,8 +1,13 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent, within } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { CollectionTreeNav } from '../CollectionTreeNav';
-import { fetchCollections } from '../../api/client';
+import {
+  fetchCollections,
+  apiUpdateCollection,
+  fetchSavedColors,
+  apiAddSavedColor,
+} from '../../api/client';
 
 vi.mock('react-router', () => ({
   useNavigate: vi.fn(() => vi.fn()),
@@ -14,6 +19,8 @@ vi.mock('../../api/client', () => ({
   apiCreateCollection: vi.fn(),
   apiUpdateCollection: vi.fn(),
   apiDeleteCollection: vi.fn(),
+  fetchSavedColors: vi.fn(),
+  apiAddSavedColor: vi.fn(),
   PALETTE_COLORS: ['#65788a'],
 }));
 
@@ -62,6 +69,8 @@ describe('CollectionTreeNav', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(fetchCollections).mockResolvedValue([]);
+    vi.mocked(fetchSavedColors).mockResolvedValue([]);
+    vi.mocked(apiAddSavedColor).mockResolvedValue([]);
   });
 
   it('renders Collections header', () => {
@@ -112,6 +121,64 @@ describe('CollectionTreeNav', () => {
     renderWithQuery(<CollectionTreeNav />);
     await waitFor(() => {
       expect(fetchCollections).toHaveBeenCalled();
+    });
+  });
+
+  describe('row context menu', () => {
+    const workCollection = {
+      id: 'c1',
+      userId: 'u1',
+      name: 'Work',
+      color: '#65788a',
+      parentId: null,
+      isInbox: false,
+      isArchived: false,
+      orderValue: 0,
+      createdAt: '',
+      updatedAt: '',
+    };
+
+    async function openRowMenu() {
+      vi.mocked(fetchCollections).mockResolvedValue([workCollection]);
+      renderWithQuery(<CollectionTreeNav />);
+      const row = (await screen.findByText('Work')).closest('.collection-row')!;
+      fireEvent.contextMenu(row, { clientX: 30, clientY: 60 });
+      return screen.getByRole('menu');
+    }
+
+    it('lists "Change color…" as the first item', async () => {
+      const menu = await openRowMenu();
+      const labels = within(menu)
+        .getAllByRole('menuitem')
+        .map((item) => item.textContent);
+
+      expect(labels).toEqual(['Change color…', 'Rename', 'Add sub-collection', 'Delete']);
+    });
+
+    it('opens the color picker seeded with the row color', async () => {
+      const menu = await openRowMenu();
+      fireEvent.click(within(menu).getByText('Change color…'));
+
+      const picker = await screen.findByRole('dialog', { name: 'Change color' });
+      expect(within(picker).getByLabelText('Color value')).toHaveValue('#65788a');
+    });
+
+    it('applying a color patches only that collection', async () => {
+      vi.mocked(apiUpdateCollection).mockResolvedValue({ ...workCollection, color: '#d56b64' });
+
+      const menu = await openRowMenu();
+      fireEvent.click(within(menu).getByText('Change color…'));
+
+      const picker = await screen.findByRole('dialog', { name: 'Change color' });
+      const input = within(picker).getByLabelText('Color value');
+      fireEvent.change(input, { target: { value: '#d56b64' } });
+      fireEvent.keyDown(input, { key: 'Enter' });
+
+      await waitFor(() =>
+        expect(apiUpdateCollection).toHaveBeenCalledWith('c1', { color: '#d56b64' }),
+      );
+      expect(apiUpdateCollection).toHaveBeenCalledTimes(1);
+      await waitFor(() => expect(apiAddSavedColor).toHaveBeenCalledWith('#d56b64'));
     });
   });
 });

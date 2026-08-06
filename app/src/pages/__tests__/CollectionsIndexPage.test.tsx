@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { CollectionsIndexPage } from '../CollectionsIndexPage';
@@ -8,12 +8,16 @@ import {
   apiCreateCollection,
   apiDeleteCollection,
   apiUpdateCollection,
+  fetchSavedColors,
+  apiAddSavedColor,
 } from '../../api/client';
 
 const mockFetchCollections = vi.mocked(fetchCollections);
 const mockApiCreateCollection = vi.mocked(apiCreateCollection);
 const mockApiDeleteCollection = vi.mocked(apiDeleteCollection);
 const mockApiUpdateCollection = vi.mocked(apiUpdateCollection);
+const mockFetchSavedColors = vi.mocked(fetchSavedColors);
+const mockApiAddSavedColor = vi.mocked(apiAddSavedColor);
 
 vi.mock('../../api/client', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../../api/client')>()),
@@ -21,6 +25,8 @@ vi.mock('../../api/client', async (importOriginal) => ({
   apiCreateCollection: vi.fn(),
   apiDeleteCollection: vi.fn(),
   apiUpdateCollection: vi.fn(),
+  fetchSavedColors: vi.fn(),
+  apiAddSavedColor: vi.fn(),
 }));
 
 vi.mock('../../stores/collectionStore', async (importOriginal) => {
@@ -107,8 +113,12 @@ beforeEach(() => {
   mockApiCreateCollection.mockReset();
   mockApiDeleteCollection.mockReset();
   mockApiUpdateCollection.mockReset();
+  mockFetchSavedColors.mockReset();
+  mockApiAddSavedColor.mockReset();
 
   mockFetchCollections.mockResolvedValue(sampleCollections);
+  mockFetchSavedColors.mockResolvedValue([]);
+  mockApiAddSavedColor.mockResolvedValue([]);
 });
 
 describe('CollectionsIndexPage', () => {
@@ -216,6 +226,44 @@ describe('CollectionsIndexPage', () => {
       expect(mockApiCreateCollection).toHaveBeenCalledWith(
         expect.objectContaining({ name: 'New Collection' }),
       );
+    });
+  });
+
+  describe('row context menu', () => {
+    async function openRowMenu(name: string) {
+      renderPage();
+      const row = (await screen.findByText(name)).closest('.collections-index-row')!;
+      fireEvent.contextMenu(row, { clientX: 200, clientY: 80 });
+      return screen.getByRole('menu');
+    }
+
+    it('lists "Change color…" as the first action', async () => {
+      const menu = await openRowMenu('Work');
+      const labels = within(menu)
+        .getAllByRole('menuitem')
+        .map((item) => item.textContent);
+
+      expect(labels).toEqual(['Change color…', 'Rename', 'Add sub-collection', 'Delete']);
+    });
+
+    it('opens the picker seeded with the row colour and recolors only that row', async () => {
+      mockApiUpdateCollection.mockResolvedValue({ ...sampleCollections[0], color: '#b7bf4e' });
+
+      const menu = await openRowMenu('Work');
+      fireEvent.click(within(menu).getByText('Change color…'));
+
+      const picker = await screen.findByRole('dialog', { name: 'Change color' });
+      const input = within(picker).getByLabelText('Color value');
+      expect(input).toHaveValue('#65788a');
+
+      fireEvent.change(input, { target: { value: '#b7bf4e' } });
+      fireEvent.keyDown(input, { key: 'Enter' });
+
+      await waitFor(() =>
+        expect(mockApiUpdateCollection).toHaveBeenCalledWith('col-1', { color: '#b7bf4e' }),
+      );
+      expect(mockApiUpdateCollection).toHaveBeenCalledTimes(1);
+      await waitFor(() => expect(mockApiAddSavedColor).toHaveBeenCalledWith('#b7bf4e'));
     });
   });
 });

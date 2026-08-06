@@ -144,6 +144,33 @@ describe("collectionService", () => {
       expect(mockPublishEvent).toHaveBeenCalledTimes(1);
     });
 
+    it("a color-only update touches only the target row and publishes once", async () => {
+      mockQuery.mockResolvedValueOnce({ rows: [makeRow()] }); // ownership check
+      mockQuery.mockResolvedValueOnce({ rows: [makeRow({ color: "#d56b64" })] }); // update
+
+      const col = await updateCollection("col-1", "user-1", { color: "#d56b64" });
+
+      expect(col.color).toBe("#d56b64");
+      // Ownership check + the single UPDATE: no duplicate-name lookup, no descendant
+      // walk, no cascading writes to children.
+      expect(mockQuery).toHaveBeenCalledTimes(2);
+      const [updateSql, updateValues] = mockQuery.mock.calls[1] as [string, unknown[]];
+      expect(updateSql).toContain("UPDATE collections SET");
+      expect(updateSql).toContain("color = $1");
+      expect(updateSql).not.toContain("parent_id");
+      expect(updateValues).toEqual(["#d56b64", "col-1"]);
+      expect(mockPublishEvent).toHaveBeenCalledTimes(1);
+    });
+
+    it("rejects an invalid color before writing", async () => {
+      mockQuery.mockResolvedValueOnce({ rows: [makeRow()] }); // ownership check
+
+      await expect(updateCollection("col-1", "user-1", { color: "not-a-color" })).rejects.toMatchObject({
+        code: "VALIDATION_ERROR",
+      });
+      expect(mockQuery).toHaveBeenCalledTimes(1);
+    });
+
     it("throws on inbox rename", async () => {
       mockQuery.mockResolvedValueOnce({ rows: [makeRow({ is_inbox: true })] });
 

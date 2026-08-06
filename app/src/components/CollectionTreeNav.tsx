@@ -10,8 +10,10 @@ import { SortableContext, useSortable, arrayMove, verticalListSortingStrategy } 
 import { usePlannerDrag, usePlannerDragHandlers } from '../contexts/PlannerDragContext';
 import type { CollectionDragData, CollectionDropData } from '../types/drag';
 import { CSS } from '@dnd-kit/utilities';
-import { Plus, Pencil, FolderPlus, Trash2 } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { ContextMenu } from './ui/ContextMenu';
+import { ColorPickerPopover } from './ui/ColorPickerPopover';
+import { buildCollectionMenuItems } from './collectionMenuItems';
 import {
   fetchCollections,
   apiCreateCollection,
@@ -20,6 +22,7 @@ import {
   PALETTE_COLORS,
   type ApiCollection,
 } from '../api/client';
+import { runOptimistic, patchById, upsertById } from '../stores/optimistic';
 import { ConfirmModal } from './ConfirmModal';
 import { useI18n } from '../i18n/I18nContext';
 
@@ -238,6 +241,19 @@ export function CollectionTreeNav() {
     setDeletingCollection({ id, name });
   };
 
+  // A manual recolor is deliberately flat: only this row changes. The shade
+  // family in getHierarchicalColor() still governs creation and drag-reparent.
+  const handleColorChange = (id: string, color: string) => {
+    void runOptimistic<ApiCollection, ApiCollection>({
+      state: collections,
+      apply: (prev) => patchById(prev, id, { color }),
+      call: () => apiUpdateCollection(id, { color }),
+      onApply: (next) => qc.setQueryData<ApiCollection[]>(['collections'], next),
+      onRevert: (snapshot) => qc.setQueryData<ApiCollection[]>(['collections'], snapshot),
+      onSuccess: (updated) => setCollectionsCache((prev) => upsertById(prev, updated)),
+    }).catch(() => qc.invalidateQueries({ queryKey: ['collections'] }));
+  };
+
   const handleDragEnd = (event: DragEndEvent) => {
     const proj = projection;
     const { over } = event;
@@ -353,6 +369,7 @@ export function CollectionTreeNav() {
                 onCancelRename={() => setEditingId(null)}
                 onAddSub={() => handleStartSubCollection(item.id)}
                 onDelete={() => handleDelete(item.id, item.name)}
+                onColorCommit={(color) => handleColorChange(item.id, color)}
               />
               {subAddingParentId === item.id && (
                 <div className={`flex items-center h-6 pr-2 ${SUB_INPUT_PADDING_CLASSES[Math.min(item.depth, SUB_INPUT_PADDING_CLASSES.length - 1)]}`}>
@@ -434,6 +451,7 @@ interface RowProps {
   onCancelRename: () => void;
   onAddSub: () => void;
   onDelete: () => void;
+  onColorCommit: (color: string) => void;
 }
 
 function SortableCollectionRow({
@@ -449,9 +467,11 @@ function SortableCollectionRow({
   onCancelRename,
   onAddSub,
   onDelete,
+  onColorCommit,
 }: RowProps) {
   const { t } = useI18n();
   const [contextPos, setContextPos] = useState<{ x: number; y: number } | null>(null);
+  const [colorPickerPos, setColorPickerPos] = useState<{ x: number; y: number } | null>(null);
   const touchTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // One payload serves both roles: this row is a peer to drag against when a
@@ -560,28 +580,21 @@ function SortableCollectionRow({
         <ContextMenu
           position={contextPos}
           onClose={() => setContextPos(null)}
-          items={[
-            {
-              type: 'item',
-              label: t('common.rename'),
-              icon: <Pencil size={14} />,
-              onClick: onStartRename,
-            },
-            {
-              type: 'item',
-              label: t('page.addSubCollection'),
-              icon: <FolderPlus size={14} />,
-              onClick: onAddSub,
-            },
-            { type: 'separator' },
-            {
-              type: 'item',
-              label: t('common.delete'),
-              icon: <Trash2 size={14} />,
-              destructive: true,
-              onClick: onDelete,
-            },
-          ]}
+          items={buildCollectionMenuItems(t, {
+            onChangeColor: () => setColorPickerPos(contextPos),
+            onStartRename,
+            onAddSub,
+            onDelete,
+          })}
+        />
+      )}
+
+      {colorPickerPos && (
+        <ColorPickerPopover
+          position={colorPickerPos}
+          value={item.color}
+          onCommit={onColorCommit}
+          onClose={() => setColorPickerPos(null)}
         />
       )}
     </>

@@ -1,5 +1,5 @@
 import { Fragment, useState, useRef, useCallback, useEffect, useMemo } from 'react';
-import { useParams, Link } from 'react-router';
+import { useParams, Link, useNavigate } from 'react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { TaskList } from '../components/TaskList';
 import { TaskVisibilityControls } from '../components/TaskVisibilityControls';
@@ -14,15 +14,24 @@ import {
   apiUpdateTask,
   apiToggleTask,
   apiDeleteTask,
+  apiCreateCollection,
+  apiUpdateCollection,
+  apiDeleteCollection,
+  PALETTE_COLORS,
   type ApiTask,
+  type ApiCollection,
 } from '../api/client';
+import { runOptimistic, patchById, upsertById } from '../stores/optimistic';
 import { useTaskDrag } from '../hooks/useTaskDrag';
 import { useTaskVisibilityPreferences } from '../hooks/useTaskVisibilityPreferences';
 import { flattenTasks } from '../utils/taskProjection';
 import { applyIndent } from '../utils/taskTree';
 import { fetchCollections } from '../api/client';
 import { ContextMenu, type ContextMenuItem } from '../components/ui/ContextMenu';
-import { flattenCollections } from '../components/CollectionTreeNav';
+import { ColorPickerPopover } from '../components/ui/ColorPickerPopover';
+import { buildCollectionMenuItems } from '../components/collectionMenuItems';
+import { ConfirmModal } from '../components/ConfirmModal';
+import { flattenCollections, getHierarchicalColor } from '../components/CollectionTreeNav';
 import { Calendar, Tag, Folder, Hash, ArrowUp, ArrowDown, Trash2 } from 'lucide-react';
 import { useI18n } from '../i18n/I18nContext';
 
@@ -52,12 +61,22 @@ function tempId() { return `temp-${++tempCounter}`; }
 export function CollectionsPage() {
   const { locale, t } = useI18n();
   const { id = '' } = useParams();
+  const navigate = useNavigate();
   const qc = useQueryClient();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [input, setInput] = useState('');
   const [editingId, setEditingId] = useState<string | undefined>();
   const [, setSelectedId] = useState<string>();
   const [contextMenu, setContextMenu] = useState<{ taskId: string; position: { x: number; y: number } } | null>(null);
+  const [crumbMenu, setCrumbMenu] = useState<{ collectionId: string; position: { x: number; y: number } } | null>(null);
+  const [crumbColorPicker, setCrumbColorPicker] = useState<
+    { collectionId: string; color: string; position: { x: number; y: number } } | null
+  >(null);
+  const [renamingCrumbId, setRenamingCrumbId] = useState<string | null>(null);
+  const [crumbDraft, setCrumbDraft] = useState('');
+  const [subAddingParentId, setSubAddingParentId] = useState<string | null>(null);
+  const [subNewName, setSubNewName] = useState('');
+  const [deletingCollection, setDeletingCollection] = useState<{ id: string; name: string } | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -399,6 +418,49 @@ export function CollectionsPage() {
       : [];
   }, [collections, id, data]);
 
+  const setCollectionsCache = useCallback(
+    (updater: (prev: ApiCollection[]) => ApiCollection[]) => {
+      qc.setQueryData<ApiCollection[]>(['collections'], (prev) => updater(prev ?? []));
+    },
+    [qc],
+  );
+
+  // Same flat recolor the sidebar performs: only the targeted crumb changes.
+  const handleCrumbColorCommit = (collectionId: string, color: string) => {
+    void runOptimistic<ApiCollection, ApiCollection>({
+      state: collections,
+      apply: (prev) => patchById(prev, collectionId, { color }),
+      call: () => apiUpdateCollection(collectionId, { color }),
+      onApply: (next) => qc.setQueryData<ApiCollection[]>(['collections'], next),
+      onRevert: (snapshot) => qc.setQueryData<ApiCollection[]>(['collections'], snapshot),
+      onSuccess: (updated) => setCollectionsCache((prev) => upsertById(prev, updated)),
+    }).catch(() => qc.invalidateQueries({ queryKey: ['collections'] }));
+  };
+
+  const handleCrumbRename = (collectionId: string) => {
+    const trimmed = crumbDraft.trim();
+    if (renamingCrumbId !== collectionId) return;
+    setRenamingCrumbId(null);
+    if (!trimmed) return;
+    setCollectionsCache((prev) => patchById(prev, collectionId, { name: trimmed }));
+    apiUpdateCollection(collectionId, { name: trimmed }).catch(() =>
+      qc.invalidateQueries({ queryKey: ['collections'] }),
+    );
+  };
+
+  const handleCrumbCommitSub = () => {
+    if (!subAddingParentId) return;
+    const parentId = subAddingParentId;
+    const trimmed = subNewName.trim();
+    setSubAddingParentId(null);
+    setSubNewName('');
+    if (!trimmed) return;
+    const color = getHierarchicalColor('temp-id', parentId, collections);
+    apiCreateCollection({ name: trimmed, color: color || PALETTE_COLORS[0], parentId })
+      .then((created) => setCollectionsCache((prev) => [...prev, created]))
+      .catch(() => qc.invalidateQueries({ queryKey: ['collections'] }));
+  };
+
   return (
     <div
       className="collection-detail-page relative w-full cursor-text"
@@ -418,13 +480,32 @@ export function CollectionsPage() {
                   /
                 </span>
               )}
-              <span className="collections-page-crumb flex min-w-0 items-center gap-2">
+              <span
+                className="collections-page-crumb flex min-w-0 items-center gap-2"
+                onContextMenu={(e) => {
+                  e.preventDefault();
+                  setCrumbMenu({ collectionId: crumb.id, position: { x: e.clientX, y: e.clientY } });
+                }}
+              >
                 <span
                   aria-hidden="true"
                   className="h-2 w-2 shrink-0 rounded-full"
                   style={{ background: crumb.color }}
                 />
-                {isCurrent ? (
+                {renamingCrumbId === crumb.id ? (
+                  <input
+                    autoFocus
+                    aria-label={t('common.rename')}
+                    value={crumbDraft}
+                    onChange={(e) => setCrumbDraft(e.target.value)}
+                    onBlur={() => handleCrumbRename(crumb.id)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleCrumbRename(crumb.id);
+                      if (e.key === 'Escape') setRenamingCrumbId(null);
+                    }}
+                    className="min-w-0 flex-1 border-0 border-b border-dot bg-transparent p-0 text-lg leading-6 font-semibold text-ink outline-none"
+                  />
+                ) : isCurrent ? (
                   <span className="truncate">{crumb.name}</span>
                 ) : (
                   <Link
@@ -439,6 +520,25 @@ export function CollectionsPage() {
           );
         })}
         </h1>
+        {subAddingParentId && (
+          <div className="collections-page-sub-input flex h-6 items-center">
+            <input
+              autoFocus
+              value={subNewName}
+              onChange={(e) => setSubNewName(e.target.value)}
+              onBlur={handleCrumbCommitSub}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleCrumbCommitSub();
+                if (e.key === 'Escape') {
+                  setSubAddingParentId(null);
+                  setSubNewName('');
+                }
+              }}
+              placeholder={t('page.collectionName')}
+              className="h-6 w-full min-w-0 border-0 border-b border-dot bg-transparent p-0 text-[13px] leading-6 text-ink outline-none"
+            />
+          </div>
+        )}
       </header>
 
       <div className="page-header-toolbar collection-page-header-controls sticky top-0 z-20 -mt-6 ml-auto w-fit">
@@ -521,6 +621,61 @@ export function CollectionsPage() {
           ]}
         />
       )}
+
+      {crumbMenu && (
+        <ContextMenu
+          position={crumbMenu.position}
+          onClose={() => setCrumbMenu(null)}
+          items={buildCollectionMenuItems(t, {
+            onChangeColor: () =>
+              setCrumbColorPicker({
+                collectionId: crumbMenu.collectionId,
+                color: trail.find((c) => c.id === crumbMenu.collectionId)?.color ?? '#65788a',
+                position: crumbMenu.position,
+              }),
+            onStartRename: () => {
+              setCrumbDraft(trail.find((c) => c.id === crumbMenu.collectionId)?.name ?? '');
+              setRenamingCrumbId(crumbMenu.collectionId);
+            },
+            onAddSub: () => {
+              setSubNewName('');
+              setSubAddingParentId(crumbMenu.collectionId);
+            },
+            onDelete: () =>
+              setDeletingCollection({
+                id: crumbMenu.collectionId,
+                name: trail.find((c) => c.id === crumbMenu.collectionId)?.name ?? '',
+              }),
+          })}
+        />
+      )}
+
+      {crumbColorPicker && (
+        <ColorPickerPopover
+          position={crumbColorPicker.position}
+          value={crumbColorPicker.color}
+          onCommit={(color) => handleCrumbColorCommit(crumbColorPicker.collectionId, color)}
+          onClose={() => setCrumbColorPicker(null)}
+        />
+      )}
+
+      <ConfirmModal
+        isOpen={deletingCollection !== null}
+        title={t('page.deleteCollection')}
+        message={t('page.deleteCollectionMessage', { name: deletingCollection?.name ?? '' })}
+        confirmLabel={t('common.delete')}
+        cancelLabel={t('common.cancel')}
+        onConfirm={() => {
+          if (!deletingCollection) return;
+          const target = deletingCollection.id;
+          setDeletingCollection(null);
+          setCollectionsCache((prev) => prev.filter((c) => c.id !== target));
+          apiDeleteCollection(target)
+            .then(() => navigate('/daily'))
+            .catch(() => qc.invalidateQueries({ queryKey: ['collections'] }));
+        }}
+        onCancel={() => setDeletingCollection(null)}
+      />
     </div>
   );
 }
