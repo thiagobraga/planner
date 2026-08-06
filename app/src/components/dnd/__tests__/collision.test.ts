@@ -300,3 +300,118 @@ describe('plannerCollisionDetection: cross-day drop aimed at the end of a short 
     expect(crossDayLastRowCandidates(40, 'day:2026-08-04')).toContain('day:today');
   });
 });
+
+/**
+ * The same drop, into a day holding exactly *one* task.
+ *
+ * The reported repro: today has a single row, a task is dragged in from another
+ * day and aimed below it, and it landed above instead. This is the shape the
+ * cases above miss - there the last row has a sibling above it, so the pointer
+ * has somewhere to be that is unambiguously "past a row". With one row the
+ * whole list is its last row, and the only space below it is the 24px seam the
+ * container's padding claims.
+ *
+ * That padding is exactly what `MeasuringStrategy.BeforeDragging` failed to see
+ * while it was applied by a drag-conditional class: dnd-kit measures each
+ * droppable once at drag start, before React has committed the class, so the
+ * container rect stopped at the row and `pointerWithin` found nothing to append
+ * to. The `containerBottom` argument below is what that measured rect's bottom
+ * edge is - the whole point of the fix is that it now includes the padding.
+ */
+function singleRowDayCandidates(pointerY: number, containerBottom: number): string[] {
+  const targetDay = {
+    id: 'day:today',
+    rect: {
+      current: { top: 0, bottom: containerBottom, left: 0, right: 200, width: 200, height: containerBottom },
+    },
+    data: { current: { kind: 'day', date: '2026-08-06', containerId: 'day:today' } },
+    disabled: false,
+    key: 'day:today',
+    node: { current: null },
+  };
+  const only = {
+    id: 'only',
+    rect: { current: rect(0) },
+    data: {
+      current: {
+        kind: 'task',
+        taskId: 'only',
+        parentTaskId: null,
+        collectionId: 'c1',
+        dueDate: null,
+        depth: 0,
+        containerId: 'day:today',
+        subtreeIds: ['only'],
+      },
+    },
+    disabled: false,
+    key: 'only',
+    node: { current: null },
+  };
+
+  const collisions = plannerCollisionDetection({
+    active: {
+      id: 'dragged',
+      data: {
+        current: {
+          kind: 'task',
+          taskId: 'dragged',
+          parentTaskId: null,
+          collectionId: 'c1',
+          dueDate: null,
+          depth: 0,
+          // A different day - this is a foreign drop.
+          containerId: 'day:2026-08-05',
+          subtreeIds: ['dragged'],
+        },
+      },
+      rect: { current: { initial: rect(0), translated: rect(pointerY) } },
+    },
+    collisionRect: rect(pointerY),
+    droppableRects: new Map([
+      ['only', rect(0)],
+      ['day:today', targetDay.rect.current],
+    ]),
+    droppableContainers: [only, targetDay],
+    pointerCoordinates: { x: 10, y: pointerY },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } as any);
+
+  return collisions.map((c) => String(c.id));
+}
+
+describe('plannerCollisionDetection: foreign drop below the only row in a day', () => {
+  // The row spans y 0-24. With the trailing slot reserved, the container spans
+  // y 0-48: the row plus the 24px seam below it.
+  const WITH_SLOT = 48;
+  const WITHOUT_SLOT = 24;
+
+  it('appends when the pointer is on the row', () => {
+    // A foreign drag reads anywhere on the last row as "add at the end", so it
+    // resolves to the day container rather than inserting before the row.
+    expect(singleRowDayCandidates(10, WITH_SLOT)).toContain('day:today');
+  });
+
+  it('appends when the pointer is in the seam below the row', () => {
+    // y=36 is past the row entirely, inside the reserved slot. This is the
+    // position the user aims at to drop "after" the only task.
+    expect(singleRowDayCandidates(36, WITH_SLOT)).toContain('day:today');
+  });
+
+  it('does not resolve to inserting before the only row', () => {
+    expect(singleRowDayCandidates(36, WITH_SLOT)[0]).toBe('day:today');
+  });
+
+  /**
+   * The regression itself, stated as a contrast.
+   *
+   * With the container measured *without* the trailing slot, the pointer at
+   * y=36 is outside every droppable, so the drop falls back to nearest-row
+   * matching and lands on 'only' - "insert before the last row", which is
+   * precisely the reported bug. Pinning it here says why the padding has to be
+   * in the measured rect rather than merely in the stylesheet.
+   */
+  it('falls back to the row when the slot is missing from the measured rect', () => {
+    expect(singleRowDayCandidates(36, WITHOUT_SLOT)).toEqual(['only']);
+  });
+});
