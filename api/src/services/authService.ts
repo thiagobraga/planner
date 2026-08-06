@@ -85,8 +85,10 @@ export async function register(input: RegisterInput): Promise<UserData> {
     );
 
     await client.query(
+      // Migration 033 replaced the named palette with exact hex and added a
+      // CHECK constraint; the old 'grey' literal fails it and broke register.
       `INSERT INTO collections (id, user_id, name, color, is_inbox)
-       VALUES ($1, $2, 'Inbox', 'grey', true)`,
+       VALUES ($1, $2, 'Inbox', '#bababa', true)`,
       [collectionId, userId],
     );
 

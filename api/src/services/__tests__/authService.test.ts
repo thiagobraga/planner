@@ -222,6 +222,27 @@ describe("register - time zone", () => {
   });
 });
 
+describe("register - inbox collection", () => {
+  // Migration 033 added collections_color_format; a named palette colour here
+  // aborts the whole registration transaction.
+  const COLLECTIONS_COLOR_FORMAT =
+    /^(#([0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})|rgba?\([^)]+\)|hsla?\([^)]+\))$/i;
+
+  it("seeds the Inbox with a colour the collections CHECK constraint accepts", async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+
+    await register({ email: "inbox@example.com", password: STRONG_PASSWORD, displayName: "Test" });
+
+    const call = mockClientQuery.mock.calls.find(([sql]) =>
+      String(sql).includes("INSERT INTO collections"),
+    );
+    const color = String(call?.[0]).match(/'(#[0-9a-fA-F]{3,8})'/)?.[1];
+
+    expect(color).toBeDefined();
+    expect(color).toMatch(COLLECTIONS_COLOR_FORMAT);
+  });
+});
+
 describe("login", () => {
   it("returns user and raw session token on success", async () => {
     mockQuery.mockResolvedValueOnce({
