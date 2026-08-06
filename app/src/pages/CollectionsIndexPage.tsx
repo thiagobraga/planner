@@ -1,8 +1,11 @@
 import { useMemo, useState, useRef } from 'react';
 import { useNavigate } from 'react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Plus, MoreHorizontal, Pencil, FolderPlus, Trash2 } from 'lucide-react';
+import { Plus, MoreHorizontal } from 'lucide-react';
 import { ContextMenu } from '../components/ui/ContextMenu';
+import { ColorPickerPopover } from '../components/ui/ColorPickerPopover';
+import { buildCollectionMenuItems } from '../components/collectionMenuItems';
+import { runOptimistic, patchById, upsertById } from '../stores/optimistic';
 import {
   fetchCollections,
   apiCreateCollection,
@@ -32,12 +35,14 @@ interface CollectionRowProps {
   onCancelRename: () => void;
   onSaveNewSub: (parentId: string) => void;
   onCancelNewSub: () => void;
+  onColorCommit: (node: CollectionTreeNode, color: string) => void;
 }
 
 function CollectionRow({ node, depth, ...props }: CollectionRowProps) {
   const { t } = useI18n();
   const navigate = useNavigate();
   const [contextPos, setContextPos] = useState<{ x: number; y: number } | null>(null);
+  const [colorPickerPos, setColorPickerPos] = useState<{ x: number; y: number } | null>(null);
   const touchTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const isMenuOpen = props.menuOpenId === node.id || contextPos !== null;
@@ -124,40 +129,37 @@ function CollectionRow({ node, depth, ...props }: CollectionRowProps) {
             setContextPos(null);
             props.setMenuOpenId(null);
           }}
-          items={[
-            {
-              type: 'item',
-              label: t('common.rename'),
-              icon: <Pencil size={14} />,
-              onClick: () => {
-                props.onRename(node);
-                props.setMenuOpenId(null);
-                setContextPos(null);
-              },
+          items={buildCollectionMenuItems(t, {
+            onChangeColor: () => {
+              setColorPickerPos(contextPos);
+              props.setMenuOpenId(null);
+              setContextPos(null);
             },
-            {
-              type: 'item',
-              label: t('page.addSubCollection'),
-              icon: <FolderPlus size={14} />,
-              onClick: () => {
-                props.onAddSub(node);
-                props.setMenuOpenId(null);
-                setContextPos(null);
-              },
+            onStartRename: () => {
+              props.onRename(node);
+              props.setMenuOpenId(null);
+              setContextPos(null);
             },
-            { type: 'separator' },
-            {
-              type: 'item',
-              label: t('common.delete'),
-              icon: <Trash2 size={14} />,
-              destructive: true,
-              onClick: () => {
-                props.onDelete(node);
-                props.setMenuOpenId(null);
-                setContextPos(null);
-              },
+            onAddSub: () => {
+              props.onAddSub(node);
+              props.setMenuOpenId(null);
+              setContextPos(null);
             },
-          ]}
+            onDelete: () => {
+              props.onDelete(node);
+              props.setMenuOpenId(null);
+              setContextPos(null);
+            },
+          })}
+        />
+      )}
+
+      {colorPickerPos && (
+        <ColorPickerPopover
+          position={colorPickerPos}
+          value={node.color}
+          onCommit={(color) => props.onColorCommit(node, color)}
+          onClose={() => setColorPickerPos(null)}
         />
       )}
 
@@ -263,6 +265,20 @@ export function CollectionsIndexPage() {
       .catch(() => qc.invalidateQueries({ queryKey: ['collections'] }));
   };
 
+  // Flat recolor, matching the sidebar and the collection page breadcrumb:
+  // children keep whatever colour they already have.
+  const handleColorCommit = (node: CollectionTreeNode, color: string) => {
+    void runOptimistic<ApiCollection, ApiCollection>({
+      state: rawCollections,
+      apply: (prev) => patchById(prev, node.id, { color }),
+      call: () => apiUpdateCollection(node.id, { color }),
+      onApply: (next) => qc.setQueryData<ApiCollection[]>(['collections'], next),
+      onRevert: (snapshot) => qc.setQueryData<ApiCollection[]>(['collections'], snapshot),
+      onSuccess: (updated) =>
+        qc.setQueryData<ApiCollection[]>(['collections'], (prev) => upsertById(prev ?? [], updated)),
+    }).catch(() => qc.invalidateQueries({ queryKey: ['collections'] }));
+  };
+
   const confirmDelete = () => {
     if (!deleteTarget) return;
     const id = deleteTarget.id;
@@ -348,6 +364,7 @@ export function CollectionsIndexPage() {
                 setRenamingId(null);
                 setEditingName('');
               }}
+              onColorCommit={handleColorCommit}
               onSaveNewSub={handleSaveNewSub}
               onCancelNewSub={() => {
                 setAddingSubFor(null);
