@@ -38,6 +38,15 @@ describe("saved colors routes", () => {
     expect(mockListSavedColors).toHaveBeenCalledWith("test-user");
   });
 
+  it("surfaces saved-color lookup errors through the error handler", async () => {
+    mockListSavedColors.mockRejectedValue(new Error("database unavailable"));
+
+    const res = await request(app).get("/api/v1/saved-colors");
+
+    expect(res.status).toBe(500);
+    expect(res.body.error.code).toBe("INTERNAL_ERROR");
+  });
+
   it("POST /api/v1/saved-colors → calls addSavedColor, returns 201 with the updated list", async () => {
     mockAddSavedColor.mockResolvedValue(["#c98079", "#d56b64"]);
 
