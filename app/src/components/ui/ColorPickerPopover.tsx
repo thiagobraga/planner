@@ -9,12 +9,15 @@ import {
   isLightColor,
   parseColor,
   rgbToHex,
+  rgbToHsl,
   rgbToHsv,
+  hslToRgb,
   type ColorFormat,
   type Hsv,
 } from '../../utils/color';
 import { PALETTE_COLORS, fetchSavedColors, apiAddSavedColor } from '../../api/client';
 import { useI18n } from '../../i18n/I18nContext';
+import type { TranslationKey } from '../../i18n/catalogs';
 
 const PANEL_WIDTH = 248;
 const VIEWPORT_PADDING = 8;
@@ -32,6 +35,35 @@ export interface ColorPickerPopoverProps {
 interface PickerState {
   hsv: Hsv;
   alpha: number;
+}
+
+type ChannelKey = 'r' | 'g' | 'b' | 'h' | 's' | 'l';
+
+const CHANNELS: Record<ColorFormat, readonly ChannelKey[]> = {
+  hex: [],
+  rgb: ['r', 'g', 'b'],
+  hsl: ['h', 's', 'l'],
+};
+
+const CHANNEL_MAX: Record<ChannelKey, number> = { r: 255, g: 255, b: 255, h: 360, s: 100, l: 100 };
+
+const CHANNEL_LABEL: Record<ChannelKey, TranslationKey> = {
+  r: 'colorPicker.red',
+  g: 'colorPicker.green',
+  b: 'colorPicker.blue',
+  h: 'colorPicker.hue',
+  s: 'colorPicker.saturation',
+  l: 'colorPicker.lightness',
+};
+
+// One to three digits, nothing else: an empty field, a sign, a decimal point or
+// a stray letter all leave the colour untouched rather than committing NaN.
+const CHANNEL_INPUT = /^\d{1,3}$/;
+
+function isInvalidChannelDraft(raw: string | undefined, key: ChannelKey): boolean {
+  if (raw === undefined) return false;
+  const trimmed = raw.trim();
+  return !CHANNEL_INPUT.test(trimmed) || Number(trimmed) > CHANNEL_MAX[key];
 }
 
 function stateFromColor(value: string): PickerState {
@@ -71,6 +103,7 @@ export function ColorPickerPopover({ position, value, onCommit, onClose }: Color
       : 'hex',
   );
   const [draft, setDraft] = useState<string | null>(null);
+  const [channelDrafts, setChannelDrafts] = useState<Partial<Record<ChannelKey, string>>>({});
   const [coords, setCoords] = useState({ top: position.y, left: position.x });
 
   const { data: savedColors = [] } = useQuery({
@@ -79,6 +112,7 @@ export function ColorPickerPopover({ position, value, onCommit, onClose }: Color
   });
 
   const rgb = useMemo(() => hsvToRgb(state.hsv), [state.hsv]);
+  const hsl = useMemo(() => rgbToHsl(rgb), [rgb]);
   const current = useMemo(() => formatColor(rgb, state.alpha, format), [rgb, state.alpha, format]);
   const cssColor = useMemo(() => rgbToHex(rgb, state.alpha), [rgb, state.alpha]);
   const hueColor = `hsl(${Math.round(state.hsv.h)}, 100%, 50%)`;
@@ -217,6 +251,61 @@ export function ColorPickerPopover({ position, value, onCommit, onClose }: Color
     commit(formatColor(parsed.rgb, parsed.alpha, format));
   };
 
+  const channelValue = (key: ChannelKey): number => {
+    switch (key) {
+      case 'r':
+        return rgb.r;
+      case 'g':
+        return rgb.g;
+      case 'b':
+        return rgb.b;
+      case 'h':
+        return Math.round(hsl.h);
+      case 's':
+        return Math.round(hsl.s);
+      case 'l':
+        return Math.round(hsl.l);
+    }
+  };
+
+  const commitChannel = (key: ChannelKey) => {
+    const raw = channelDrafts[key];
+    setChannelDrafts((prev) => {
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+
+    // Tabbing through an untouched field must not re-commit the same colour and
+    // push a duplicate onto the saved-colour list.
+    if (raw === undefined) return;
+
+    const trimmed = raw.trim();
+    if (!CHANNEL_INPUT.test(trimmed)) return;
+
+    const value = clamp(Number(trimmed), 0, CHANNEL_MAX[key]);
+    const next =
+      key === 'r' || key === 'g' || key === 'b'
+        ? { ...rgb, [key]: value }
+        : hslToRgb({
+            h: key === 'h' ? value : hsl.h,
+            s: key === 's' ? value : hsl.s,
+            l: key === 'l' ? value : hsl.l,
+          });
+
+    const formatted = formatColor(next, state.alpha, format);
+    if (formatted === current) return;
+
+    setState({ hsv: rgbToHsv(next), alpha: state.alpha });
+    commit(formatted);
+  };
+
+  const switchFormat = (next: ColorFormat) => {
+    setDraft(null);
+    setChannelDrafts({});
+    setFormat(next);
+  };
+
   const supportsEyeDropper = typeof window !== 'undefined' && 'EyeDropper' in window;
 
   const pickWithEyeDropper = () => {
@@ -258,7 +347,7 @@ export function ColorPickerPopover({ position, value, onCommit, onClose }: Color
           ref={squareRef}
           role="slider"
           tabIndex={0}
-          aria-label={t('colorPicker.saturation')}
+          aria-label={t('colorPicker.gradient')}
           aria-valuemin={0}
           aria-valuemax={100}
           aria-valuenow={Math.round(state.hsv.s)}
@@ -320,7 +409,7 @@ export function ColorPickerPopover({ position, value, onCommit, onClose }: Color
               ref={hueRef}
               role="slider"
               tabIndex={0}
-              aria-label={t('colorPicker.hue')}
+              aria-label={t('colorPicker.hueSlider')}
               aria-valuemin={0}
               aria-valuemax={360}
               aria-valuenow={Math.round(state.hsv.h)}
@@ -355,7 +444,7 @@ export function ColorPickerPopover({ position, value, onCommit, onClose }: Color
               ref={alphaRef}
               role="slider"
               tabIndex={0}
-              aria-label={t('colorPicker.alpha')}
+              aria-label={t('colorPicker.alphaSlider')}
               aria-valuemin={0}
               aria-valuemax={100}
               aria-valuenow={Math.round(state.alpha * 100)}
@@ -389,31 +478,70 @@ export function ColorPickerPopover({ position, value, onCommit, onClose }: Color
           <select
             aria-label={t('colorPicker.format')}
             value={format}
-            onChange={(e) => {
-              setDraft(null);
-              setFormat(e.target.value as ColorFormat);
-            }}
+            onChange={(e) => switchFormat(e.target.value as ColorFormat)}
             className="h-6 shrink-0 cursor-pointer rounded-[4px] border border-border bg-transparent px-1 text-[11px] text-ink-light outline-none"
           >
             <option value="hex">{t('colorPicker.formatHex')}</option>
             <option value="rgb">{t('colorPicker.formatRgb')}</option>
             <option value="hsl">{t('colorPicker.formatHsl')}</option>
           </select>
-          <input
-            aria-label={t('colorPicker.value')}
-            value={draft ?? current}
-            onChange={(e) => setDraft(e.target.value)}
-            onBlur={commitText}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                commitText();
-              }
-              if (e.key === 'Escape') setDraft(null);
-            }}
-            spellCheck={false}
-            className="h-6 min-w-0 flex-1 border-0 border-b border-dot bg-transparent px-0 text-[12px] text-ink outline-none"
-          />
+
+          {format === 'hex' ? (
+            <input
+              aria-label={t('colorPicker.value')}
+              value={draft ?? current}
+              onChange={(e) => setDraft(e.target.value)}
+              onBlur={commitText}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  commitText();
+                }
+                if (e.key === 'Escape') setDraft(null);
+              }}
+              spellCheck={false}
+              className="h-6 min-w-0 flex-1 border-0 border-b border-dot bg-transparent px-0 text-[12px] text-ink outline-none"
+            />
+          ) : (
+            <div className="color-picker__channels flex min-w-0 flex-1 items-center gap-2">
+              {CHANNELS[format].map((key) => (
+                <label
+                  key={key}
+                  className="color-picker__channel flex min-w-0 flex-1 items-center gap-1 border-b border-dot"
+                >
+                  <span aria-hidden="true" className="text-[9px] uppercase text-ink-light">
+                    {key}
+                  </span>
+                  <input
+                    aria-label={t(CHANNEL_LABEL[key])}
+                    aria-invalid={isInvalidChannelDraft(channelDrafts[key], key)}
+                    inputMode="numeric"
+                    maxLength={3}
+                    value={channelDrafts[key] ?? String(channelValue(key))}
+                    onChange={(e) =>
+                      setChannelDrafts((prev) => ({ ...prev, [key]: e.target.value }))
+                    }
+                    onBlur={() => commitChannel(key)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        commitChannel(key);
+                      }
+                      if (e.key === 'Escape') {
+                        setChannelDrafts((prev) => {
+                          const next = { ...prev };
+                          delete next[key];
+                          return next;
+                        });
+                      }
+                    }}
+                    spellCheck={false}
+                    className="h-6 w-full min-w-0 border-0 bg-transparent px-0 text-center text-[12px] text-ink outline-none"
+                  />
+                </label>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="color-picker__section flex flex-col gap-2">
