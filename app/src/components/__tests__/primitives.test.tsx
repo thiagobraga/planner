@@ -107,7 +107,7 @@ describe('ContextMenu', () => {
     const item = shell.querySelector('.ui-context-menu-item');
 
     expect(menuRoot).toBeInTheDocument();
-    expect(panel).toHaveClass('bg-[var(--planner-overlay-bg,var(--color-cream))]');
+    expect(panel).toHaveClass('bg-(--planner-overlay-bg,var(--color-cream))');
     expect(item).toHaveClass('bg-[var(--planner-overlay-hover-bg,rgba(212,207,199,0.4))]');
     expect(item).not.toHaveClass('font-journal');
   });

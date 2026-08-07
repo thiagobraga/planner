@@ -30,7 +30,7 @@ export function CollectionChip({ name, color, className = '' }: CollectionChipPr
       className={`ui-collection-chip inline-flex items-center gap-1.5 text-[11px] leading-5 px-2 rounded-sm bg-dot/40 text-ink whitespace-nowrap ${className}`}
     >
       <span
-        className="ui-collection-chip-dot w-2 h-2 rounded-full shrink-0 filter-[saturate(0.55)]"
+        className="ui-collection-chip-dot w-1.75 h-1.75 rounded-full shrink-0 filter-[saturate(0.55)]"
         style={{ backgroundColor: color || 'var(--color-ink-light)' }}
       />
       {name}
