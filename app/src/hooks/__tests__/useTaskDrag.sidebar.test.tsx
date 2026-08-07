@@ -71,8 +71,8 @@ function mount(onMoved?: () => void) {
   return emitted;
 }
 
-function drop(active: TaskDragData, over: CollectionDropData | TaskDragData | null) {
-  act(() => {
+async function drop(active: TaskDragData, over: CollectionDropData | TaskDragData | null) {
+  await act(async () => {
     registered?.({
       active: { id: active.taskId, data: { current: active } },
       over: over ? { id: 'target', data: { current: over } } : null,
@@ -87,9 +87,9 @@ beforeEach(() => {
 });
 
 describe('dropping a task on a sidebar collection', () => {
-  it('files it into a named collection, appended at top level', () => {
+  it('files it into a named collection, appended at top level', async () => {
     mount();
-    drop(taskDrag(), collectionDrop());
+    await drop(taskDrag(), collectionDrop());
 
     expect(moveTask).toHaveBeenCalledWith('root', {
       parentTaskId: null,
@@ -99,9 +99,9 @@ describe('dropping a task on a sidebar collection', () => {
     });
   });
 
-  it('treats a sub-collection exactly like a root collection', () => {
+  it('treats a sub-collection exactly like a root collection', async () => {
     mount();
-    drop(taskDrag(), collectionDrop({ collectionId: 'collection-sub', parentId: 'collection-work' }));
+    await drop(taskDrag(), collectionDrop({ collectionId: 'collection-sub', parentId: 'collection-work' }));
 
     expect(moveTask).toHaveBeenCalledWith(
       'root',
@@ -109,9 +109,9 @@ describe('dropping a task on a sidebar collection', () => {
     );
   });
 
-  it('files into Inbox through the same top-level append', () => {
+  it('files into Inbox through the same top-level append', async () => {
     mount();
-    drop(taskDrag(), collectionDrop({ collectionId: 'collection-inbox', isInbox: true }));
+    await drop(taskDrag(), collectionDrop({ collectionId: 'collection-inbox', isInbox: true }));
 
     expect(moveTask).toHaveBeenCalledWith(
       'root',
@@ -119,16 +119,16 @@ describe('dropping a task on a sidebar collection', () => {
     );
   });
 
-  it('never sends a due date, so a dated task keeps its day', () => {
+  it('never sends a due date, so a dated task keeps its day', async () => {
     mount();
-    drop(taskDrag(), collectionDrop());
+    await drop(taskDrag(), collectionDrop());
 
     expect(moveTask.mock.calls[0]![1]).not.toHaveProperty('dueDate');
   });
 
-  it('promotes a subtask dropped on the collection it already lives in', () => {
+  it('promotes a subtask dropped on the collection it already lives in', async () => {
     mount();
-    drop(
+    await drop(
       taskDrag({ taskId: 'child', parentTaskId: 'root', depth: 1, subtreeIds: ['child'] }),
       collectionDrop({ collectionId: HOME }),
     );
@@ -140,9 +140,9 @@ describe('dropping a task on a sidebar collection', () => {
     );
   });
 
-  it('applies the promotion optimistically before the server answers', () => {
+  it('applies the promotion optimistically before the server answers', async () => {
     const emitted = mount();
-    drop(
+    await drop(
       taskDrag({ taskId: 'child', parentTaskId: 'root', depth: 1, subtreeIds: ['child'] }),
       collectionDrop({ collectionId: 'collection-work' }),
     );
@@ -156,21 +156,21 @@ describe('dropping a task on a sidebar collection', () => {
   it('invalidates the other views once the move succeeds', async () => {
     const onMoved = vi.fn();
     mount(onMoved);
-    drop(taskDrag(), collectionDrop());
+    await drop(taskDrag(), collectionDrop());
 
     await waitFor(() => expect(onMoved).toHaveBeenCalled());
   });
 
-  it('does nothing when released over no target at all', () => {
+  it('does nothing when released over no target at all', async () => {
     mount();
-    drop(taskDrag(), null);
+    await drop(taskDrag(), null);
 
     expect(moveTask).not.toHaveBeenCalled();
   });
 
-  it('refuses to move a row the server has never seen', () => {
+  it('refuses to move a row the server has never seen', async () => {
     mount();
-    drop(taskDrag({ taskId: 'temp-123', subtreeIds: ['temp-123'] }), collectionDrop());
+    await drop(taskDrag({ taskId: 'temp-123', subtreeIds: ['temp-123'] }), collectionDrop());
 
     expect(moveTask).not.toHaveBeenCalled();
   });
@@ -186,7 +186,7 @@ describe('dropping a task on a sidebar collection', () => {
     });
 
     const emitted = mount();
-    drop(taskDrag(), collectionDrop({ collectionId: HOME }));
+    await drop(taskDrag(), collectionDrop({ collectionId: HOME }));
 
     await waitFor(() => expect(emitted.length).toBeGreaterThan(1));
 

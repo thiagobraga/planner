@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { render, screen, act } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { DailyPage } from '../DailyPage';
@@ -214,7 +214,7 @@ describe('DailyPage', () => {
     expect(mockFetchTodayTasks).toHaveBeenCalledTimes(1);
 
     expect(capturedMidnightCb).toBeTypeOf('function');
-    capturedMidnightCb!();
+    await act(async () => { capturedMidnightCb!(); });
 
     expect(mockFetchTodayTasks).toHaveBeenCalledTimes(2);
     expect(scrollIntoViewMock).toHaveBeenCalled();

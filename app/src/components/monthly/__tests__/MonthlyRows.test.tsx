@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { fetchMonthNotes } from '../../../api/client';
@@ -63,33 +63,33 @@ describe('MonthlyRows', () => {
     });
   });
 
-  it('renders without crashing', () => {
-    renderRows(2026, 6);
+  it('renders without crashing', async () => {
+    await act(async () => { renderRows(2026, 6); });
     expect(screen.getByTestId('month-selector')).toBeInTheDocument();
   });
 
-  it('renders month navigation (prev/next buttons)', () => {
-    renderRows(2026, 6);
+  it('renders month navigation (prev/next buttons)', async () => {
+    await act(async () => { renderRows(2026, 6); });
     expect(screen.getByTestId('prev-month')).toBeInTheDocument();
     expect(screen.getByTestId('next-month')).toBeInTheDocument();
   });
 
-  it('calls onMonthChange when navigating prev', () => {
+  it('calls onMonthChange when navigating prev', async () => {
     const onMonthChange = vi.fn();
-    renderRows(2026, 6, onMonthChange);
-    fireEvent.click(screen.getByTestId('prev-month'));
+    await act(async () => { renderRows(2026, 6, onMonthChange); });
+    await act(async () => { fireEvent.click(screen.getByTestId('prev-month')); });
     expect(onMonthChange).toHaveBeenCalledWith(2026, 5);
   });
 
-  it('calls onMonthChange when navigating next', () => {
+  it('calls onMonthChange when navigating next', async () => {
     const onMonthChange = vi.fn();
-    renderRows(2026, 6, onMonthChange);
-    fireEvent.click(screen.getByTestId('next-month'));
+    await act(async () => { renderRows(2026, 6, onMonthChange); });
+    await act(async () => { fireEvent.click(screen.getByTestId('next-month')); });
     expect(onMonthChange).toHaveBeenCalledWith(2026, 7);
   });
 
-  it('renders days of month', () => {
-    renderRows(2026, 6);
+  it('renders days of month', async () => {
+    await act(async () => { renderRows(2026, 6); });
     for (let day = 1; day <= 31; day++) {
       expect(screen.getByText(String(day))).toBeInTheDocument();
     }
