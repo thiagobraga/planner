@@ -13,6 +13,7 @@ interface SectionHeaderProps {
   onCancelEdit: () => void;
   onDelete: () => void;
   onReorder: (sectionId: string, position: number) => void;
+  onRightClick?: (position: { x: number; y: number }) => void;
 }
 
 export function SectionHeader({
@@ -22,6 +23,7 @@ export function SectionHeader({
   onCommitName,
   onCancelEdit,
   onDelete,
+  onRightClick,
 }: SectionHeaderProps) {
   const { attributes, listeners, setNodeRef, isDragging } = useSortable({
     id: section.id,
@@ -36,6 +38,11 @@ export function SectionHeader({
       style={{ opacity: isDragging ? 0.4 : 1 }}
       className="group flex h-6 min-w-0 items-center pr-2"
       aria-label={section.name}
+      onContextMenu={(e) => {
+        if (!onRightClick) return;
+        e.preventDefault();
+        onRightClick({ x: e.clientX, y: e.clientY });
+      }}
     >
       <HabitDragHandle label={section.name} />
       {isEditing ? (
