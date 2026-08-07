@@ -210,7 +210,10 @@ describe("getInboxView", () => {
   it("returns inbox tasks in stored manual order, interleaving completed rows", async () => {
     mockQuery.mockResolvedValueOnce({
       rows: [{ time_zone: "UTC", hide_completed_tasks: false, hide_old_notes: false }],
-    }).mockResolvedValueOnce({
+    })
+    // inbox collection result
+    .mockResolvedValueOnce({ rows: [{ id: "p-1" }] })
+    .mockResolvedValueOnce({
       rows: [
         taskRow({ id: "done", collection_id: "p-2", is_completed: true, priority: 4, order_value: 1000, created_at: "2024-06-02T00:00:00Z" }),
         taskRow({ id: "open", collection_id: "p-1", is_completed: false, priority: 1, order_value: 2000, created_at: "2024-06-01T00:00:00Z" }),
@@ -221,7 +224,7 @@ describe("getInboxView", () => {
     expect(view.collectionId).toBeNull();
     expect(view.tasks.map((t) => t.id)).toEqual(["done", "open"]);
 
-    const sql = mockQuery.mock.calls[1][0] as string;
+    const sql = mockQuery.mock.calls[2][0] as string;
     expect(sql).toMatch(/JOIN collections p ON p\.id = t\.collection_id/);
     expect(sql).toMatch(/p\.is_inbox = true/);
     expect(sql).toMatch(/is_archived = false/);
@@ -233,9 +236,12 @@ describe("getInboxView", () => {
   });
 
   it("returns empty when there are no accessible tasks", async () => {
-    mockQuery.mockResolvedValueOnce({ rows: [] }).mockResolvedValueOnce({ rows: [] });
+    mockQuery.mockResolvedValueOnce({ rows: [] })
+      // inbox collection result (none accessible)
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [] });
     const view = await getInboxView(userId);
-    expect(view).toEqual({ tasks: [], collectionId: null });
+    expect(view).toEqual({ tasks: [], collectionId: null, inboxCollectionId: undefined });
   });
 });
 
