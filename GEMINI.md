@@ -219,6 +219,7 @@ Full spec: `DESIGN.md`.
 - No error handling for impossible cases; trust framework guarantees
 - Commits: Conventional Commits (`feat:`, `fix:`, `chore:`, etc.), many small per file/feature
 - Add `Co-Authored-By` on the last line of every commit body matching the model that wrote the code
+  - For GitHub Copilot CLI: `Co-Authored-By: Copilot (<model-used> <effort>) <copilot@github.com>` (e.g., `Co-Authored-By: Copilot (claude-haiku-4.5 xhigh) <copilot@github.com>`)
   - For OpenCode: `Co-Authored-By: OpenCode (<real model name and effort>) <noreply@opencode.ai>` (e.g., `Co-Authored-By: OpenCode (DeepSeek V4 Flash Free) <noreply@opencode.ai>`)
   - For Codex: `Co-Authored-By: Codex (<real model name and effort>) <codex@openai.com>` (e.g., `Co-Authored-By: Codex (gpt-4o) <codex@openai.com>`)
   - For Antigravity: `Co-Authored-By: Antigravity (<real model name and effort>) <noreply@antigravity.ai>` (e.g., `Co-Authored-By: Antigravity (Gemini 2.5 Pro) <noreply@antigravity.ai>`)
