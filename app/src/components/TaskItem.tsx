@@ -74,7 +74,7 @@ export const priorityClasses: Record<number, string> = {
   1: 'text-accent',
   2: 'text-priority-2',
   3: 'text-priority-3',
-  4: 'text-ink',
+  4: 'text-ink-light',
 };
 
 function formatDueDate(value: string, locale: 'en' | 'pt-BR'): string {
@@ -278,7 +278,7 @@ export const TaskItem = memo(function TaskItem({
       data-task-id={task.id}
       {...attributes}
       {...listeners}
-      className={`task-item group ${isEditing ? 'task-item--editing' : ''} ${isSelected ? 'task-item--selected bg-accent/10 rounded-[4px]' : ''} ${departed ? 'task-item--departed' : isDragging ? 'task-item--placeholder' : task.isCompleted || dimmed ? 'opacity-[0.35]' : ''}`}
+      className={`task-item group ${isEditing ? 'task-item--editing' : ''} ${isSelected ? 'task-item--selected bg-accent/10 rounded-xs' : ''} ${departed ? 'task-item--departed' : isDragging ? 'task-item--placeholder' : task.isCompleted || dimmed ? 'opacity-[0.35]' : ''}`}
       aria-label={task.title}
       aria-selected={isSelected}
       onClick={(e) => {
@@ -360,7 +360,7 @@ export const TaskItem = memo(function TaskItem({
           <>
             <span
               style={{ lineHeight: 'var(--task-line-height, 24px)' }}
-              className={`task-item-title-text text-sm break-words ${task.isCompleted ? 'line-through text-ink-light' : 'text-ink'} ${task.type === 'note' && dimNotes ? 'text-ink-light' : ''}`}
+              className={`task-item-title-text text-sm wrap-break-word ${task.isCompleted ? 'line-through text-ink-light' : 'text-ink'} ${task.type === 'note' && dimNotes ? 'text-ink-light' : ''}`}
             >
               {task.title}
             </span>
@@ -379,7 +379,7 @@ export const TaskItem = memo(function TaskItem({
             {task.labels?.map((label) => (
               <span
                 key={label}
-                className="task-item-label text-[10px] leading-6 px-1.5 rounded-[8px] bg-dot text-ink ml-1 whitespace-nowrap"
+                className="task-item-label text-[10px] leading-6 px-1.5 rounded-md bg-dot text-ink ml-1 whitespace-nowrap"
               >
                 @{label}
               </span>
