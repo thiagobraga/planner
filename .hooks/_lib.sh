@@ -2,7 +2,7 @@
 # Shared helpers for the hooks in this directory.
 #
 # Enabled per clone with:
-#   ./scripts/setup-hooks.sh        (or: git config core.hooksPath .githooks)
+#   ./.hooks/setup-hooks.sh        (or: git config core.hooksPath .hooks)
 #
 # Bypass a single run with `git commit --no-verify` / `git push --no-verify`,
 # or set SKIP_HOOKS=1 to turn the hooks off for a whole shell session.

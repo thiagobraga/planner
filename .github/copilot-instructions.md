@@ -38,7 +38,7 @@ Purpose: concise, actionable guidance for Copilot/CLI sessions in this repo.
 - All API routes live under /api/v1. Add new route files to api/src/routes and export in routes/index.ts.
 - Tests are Vitest-based. Integration tests use a real PostgreSQL instance (no mocked DBs). Use the docker-compose dev stack for reproducible runs.
 - Optimistic update helpers live at app/src/stores/optimistic.ts — follow runOptimistic({apply, revert}) pattern for safe UI updates.
-- Pre-commit / pre-push hooks are optional; setup via ./scripts/setup-hooks.sh (recommended to reproduce CI checks locally).
+- Pre-commit / pre-push hooks are optional; setup via ./.hooks/setup-hooks.sh (recommended to reproduce CI checks locally).
 - Commit messages follow Conventional Commits. Add `Co-authored-by: Copilot (<model-used> <effort>) <copilot@github.com>` trailer. See CLAUDE.md/AGENTS.md for agent-specific formats.
 - Peggy parser files (parsers/*.peggy) and DB migrations must be copied into dist during API build (see api/package.json build step).
 

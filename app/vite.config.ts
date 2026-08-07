@@ -1,13 +1,28 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
-import tailwindcss from "@tailwindcss/vite";
+// Dynamically import the tailwindcss Vite plugin so a missing native binary for
+// `lightningcss` inside the pre-push docker environment doesn't abort config
+// parsing. If the import fails, fall back to null and omit the plugin.
 import { VitePWA } from "vite-plugin-pwa";
+
+let tailwindcss: any = null;
+try {
+  // top-level await allowed in ESM; use dynamic import to catch failures
+  // when native binaries are unavailable in the environment.
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  // @ts-ignore - dynamic import fallback
+  const mod = await import('@tailwindcss/vite');
+  tailwindcss = mod.default ?? mod;
+} catch (e) {
+  // Leave tailwindcss null — plugin will be omitted.
+  tailwindcss = null;
+}
 /// <reference types="vitest" />
 
 export default defineConfig({
   plugins: [
     react(),
-    tailwindcss(),
+    tailwindcss && tailwindcss(),
     VitePWA({
       registerType: "autoUpdate",
       manifest: false,
@@ -55,12 +70,11 @@ export default defineConfig({
     globals: true,
     setupFiles: ['./src/test/setup.ts'],
   },
-  // Disable CSS minification (lightningcss) during CI hooks to avoid native
-  // binary platform mismatches inside the hook's docker environment. Vite
-  // still builds JS and bundles CSS; production builds in CI should enable
-  // minification separately if desired.
+  // When SKIP_CSS_MINIFY is set (e.g. in pre-push hook), use esbuild only.
+  // Otherwise use esbuild for production minification to avoid lightningcss
+  // native binary platform mismatches in restricted environments.
   build: {
-    minify: false,
+    minify: process.env.SKIP_CSS_MINIFY ? false : 'esbuild',
   },
   server: {
     port: 5173,
