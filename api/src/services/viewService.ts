@@ -1,5 +1,6 @@
 import pool from "../db/pool.js";
 import { AppError } from "../utils/AppError.js";
+import { listSections } from "./sectionService.js";
 
 interface TaskRow {
   id: string;
@@ -285,10 +286,13 @@ export async function getInboxView(userId: string, now: Date = new Date()) {
     [userId, settings.hideCompletedTasks, settings.hideOldNotes, settings.todayDate],
   );
 
+  const sections = inboxCollection ? await listSections(inboxCollection.id, userId) : [];
+
   return {
     tasks: (result.rows as TaskRow[]).map(formatTask),
     collectionId: null,
     inboxCollectionId: inboxCollection?.id,
+    sections,
   };
 }
 
@@ -321,6 +325,8 @@ export async function getCollectionView(userId: string, collectionId: string, no
     [collectionId, settings.hideCompletedTasks, settings.hideOldNotes, settings.todayDate],
   );
 
+  const sections = await listSections(collectionId, userId);
+
   return {
     collection: {
       id: collection.id,
@@ -330,5 +336,6 @@ export async function getCollectionView(userId: string, collectionId: string, no
     },
     tasks: (result.rows as TaskRow[]).map(formatTask),
     collectionId,
+    sections,
   };
 }

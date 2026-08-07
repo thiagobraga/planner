@@ -281,7 +281,12 @@ export interface Preferences {
   dateFormat?: string;
 }
 
-export async function fetchInboxTasks(): Promise<{ tasks: ApiTask[]; collectionId: string | null }> {
+export async function fetchInboxTasks(): Promise<{
+  tasks: ApiTask[];
+  collectionId: string | null;
+  inboxCollectionId?: string;
+  sections: ApiSection[];
+}> {
   return request('/views/inbox');
 }
 
@@ -316,6 +321,7 @@ export async function apiCreateTask(input: {
   title: string;
   priority?: number;
   collectionId?: string;
+  sectionId?: string;
   dueDate?: string;
   parentTaskId?: string;
   depth?: number;
@@ -497,6 +503,7 @@ export interface CollectionView {
   collection: { id: string; name: string; color: string; isInbox: boolean };
   tasks: ApiTask[];
   collectionId: string;
+  sections: ApiSection[];
 }
 
 export async function fetchCollectionView(id: string): Promise<CollectionView> {

@@ -218,7 +218,10 @@ describe("getInboxView", () => {
         taskRow({ id: "done", collection_id: "p-2", is_completed: true, priority: 4, order_value: 1000, created_at: "2024-06-02T00:00:00Z" }),
         taskRow({ id: "open", collection_id: "p-1", is_completed: false, priority: 1, order_value: 2000, created_at: "2024-06-01T00:00:00Z" }),
       ],
-    });
+    })
+    // listSections: verifyCollectionAccess + sections select
+    .mockResolvedValueOnce({ rows: [{ id: "p-1" }] })
+    .mockResolvedValueOnce({ rows: [] });
 
     const view = await getInboxView(userId);
     expect(view.collectionId).toBeNull();
@@ -241,7 +244,7 @@ describe("getInboxView", () => {
       .mockResolvedValueOnce({ rows: [] })
       .mockResolvedValueOnce({ rows: [] });
     const view = await getInboxView(userId);
-    expect(view).toEqual({ tasks: [], collectionId: null, inboxCollectionId: undefined });
+    expect(view).toEqual({ tasks: [], collectionId: null, inboxCollectionId: undefined, sections: [] });
   });
 });
 
@@ -257,7 +260,10 @@ describe("getCollectionView", () => {
           taskRow({ id: "done", is_completed: true, order_value: 1000, created_at: "2024-06-02T00:00:00Z" }),
           taskRow({ id: "open", is_completed: false, order_value: 2000, created_at: "2024-06-01T00:00:00Z" }),
         ],
-      });
+      })
+      // listSections: verifyCollectionAccess + sections select
+      .mockResolvedValueOnce({ rows: [{ id: "c-1" }] })
+      .mockResolvedValueOnce({ rows: [] });
 
     const view = await getCollectionView(userId, "c-1");
 
