@@ -2,11 +2,13 @@ import { Fragment, useState, useRef, useCallback, useEffect, useMemo } from 'rea
 import { useParams, Link, useNavigate } from 'react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { TaskList } from '../components/TaskList';
+import { SectionHeader } from '../components/SectionHeader';
 import { TaskVisibilityControls } from '../components/TaskVisibilityControls';
 import { nextOrderValue } from '../utils/order';
 import { extractNaturalDate } from '../utils/date';
 import { setPendingColumn } from '../components/TaskItem';
 import type { Task } from '../components/TaskItem';
+import type { Section } from '../stores/taskStore';
 import {
   fetchCollectionView,
   fetchPreferences,
@@ -17,9 +19,14 @@ import {
   apiCreateCollection,
   apiUpdateCollection,
   apiDeleteCollection,
+  fetchSections,
+  apiCreateSection,
+  apiUpdateSection,
+  apiDeleteSection,
   PALETTE_COLORS,
   type ApiTask,
   type ApiCollection,
+  type ApiSection,
 } from '../api/client';
 import { runOptimistic, patchById, upsertById } from '../stores/optimistic';
 import { useTaskDrag } from '../hooks/useTaskDrag';
@@ -58,14 +65,36 @@ function apiToTask(t: ApiTask): Task {
 let tempCounter = 0;
 function tempId() { return `temp-${++tempCounter}`; }
 
+function buildSectionGroups(tasks: Task[], sections: Section[]) {
+  const groups: Array<{ section: Section | null; tasks: Task[] }> = [];
+
+  // Top-level tasks (sectionId-less)
+  groups.push({
+    section: null,
+    tasks: tasks.filter((t) => !t.sectionId),
+  });
+
+  // One group per section, ordered by orderValue
+  for (const section of sections.sort((a, b) => a.orderValue - b.orderValue)) {
+    groups.push({
+      section,
+      tasks: tasks.filter((t) => t.sectionId === section.id),
+    });
+  }
+
+  return groups;
+}
+
 export function CollectionsPage() {
   const { locale, t } = useI18n();
   const { id = '' } = useParams();
   const navigate = useNavigate();
   const qc = useQueryClient();
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [sections, setSections] = useState<Section[]>([]);
   const [input, setInput] = useState('');
   const [editingId, setEditingId] = useState<string | undefined>();
+  const [editingSectionId, setEditingSectionId] = useState<string | null>(null);
   const [, setSelectedId] = useState<string>();
   const [contextMenu, setContextMenu] = useState<{ taskId: string; position: { x: number; y: number } } | null>(null);
   const [crumbMenu, setCrumbMenu] = useState<{ collectionId: string; position: { x: number; y: number } } | null>(null);
@@ -89,6 +118,12 @@ export function CollectionsPage() {
     staleTime: 30_000,
     enabled: !!id,
   });
+  const { data: sectionsData } = useQuery({
+    queryKey: ['collection', id, 'sections'],
+    queryFn: () => fetchSections(id),
+    staleTime: 30_000,
+    enabled: !!id,
+  });
   const { data: preferences } = useQuery({
     queryKey: ['preferences'],
     queryFn: fetchPreferences,
@@ -104,6 +139,12 @@ export function CollectionsPage() {
       setTasks(data.tasks.map(apiToTask));
     }
   }, [data]);
+
+  useEffect(() => {
+    if (sectionsData) {
+      setSections(sectionsData);
+    }
+  }, [sectionsData]);
 
   const invalidate = useCallback(
     () => qc.invalidateQueries({ queryKey: ['collection', id] }),
@@ -359,6 +400,59 @@ export function CollectionsPage() {
     setContextMenu({ taskId, position });
   }, []);
 
+  const handleAddSection = useCallback(() => {
+    const sectionId = tempId();
+    setSections((prev) => [
+      ...prev,
+      { id: sectionId, name: '', collectionId: id, orderValue: prev.length * 1000 },
+    ]);
+    setEditingSectionId(sectionId);
+  }, [id]);
+
+  const handleCommitSectionName = useCallback(
+    (sectionId: string, name: string) => {
+      const trimmed = name.trim();
+      setEditingSectionId(null);
+      if (!trimmed) {
+        setSections((prev) => prev.filter((s) => s.id !== sectionId));
+        if (!sectionId.startsWith('temp-')) apiDeleteSection(sectionId).catch(() => {});
+        return;
+      }
+      setSections((prev) => prev.map((s) => (s.id === sectionId ? { ...s, name: trimmed } : s)));
+      if (sectionId.startsWith('temp-')) {
+        apiCreateSection(id, { name: trimmed })
+          .then((created) => {
+            setSections((prev) =>
+              prev.map((s) => (s.id === sectionId ? created : s))
+            );
+          })
+          .catch(() => {
+            setSections((prev) => prev.filter((s) => s.id !== sectionId));
+          });
+      } else {
+        apiUpdateSection(sectionId, { name: trimmed }).catch(() => {});
+      }
+    },
+    [id]
+  );
+
+  const handleCancelSectionEdit = useCallback((sectionId: string) => {
+    setEditingSectionId(null);
+    if (sectionId.startsWith('temp-')) {
+      setSections((prev) => prev.filter((s) => s.id !== sectionId));
+    }
+  }, []);
+
+  const handleDeleteSection = useCallback((sectionId: string) => {
+    // TODO: Show modal with options: Delete tasks / Move to top-level / Cancel
+    // For now, just delete (backend will orphan tasks)
+    apiDeleteSection(sectionId)
+      .then(() => {
+        setSections((prev) => prev.filter((s) => s.id !== sectionId));
+      })
+      .catch(() => {});
+  }, []);
+
   const projectSubmenuItems = useMemo<ContextMenuItem[]>(() => {
     const items: ContextMenuItem[] = flattenCollections(collections).map((c) => ({
       type: 'item',
@@ -554,22 +648,48 @@ export function CollectionsPage() {
       <div className="max-w-162">
         <div className="h-6" />
 
-      <TaskList
-        tasks={tasks}
-        containerId={`collection:${id}`}
-        activeDragId={activeDragId}
-        editingId={editingId}
-        onTaskToggle={handleToggle}
-        onStartEdit={handleStartEdit}
-        onEditCommit={handleEditCommit}
-        onEditCancel={handleEditCancel}
-        onDelete={handleDelete}
-        onAddBelow={handleAddBelow}
-        onIndent={handleIndent}
-        onNavigate={handleNavigate}
-        onConvertType={handleConvertType}
-        onRightClick={handleRightClick}
-      />
+        {buildSectionGroups(tasks, sections).map((group, idx) => (
+          <Fragment key={group.section?.id ?? 'top-level'}>
+            {group.section && (
+              <SectionHeader
+                section={group.section}
+                isEditing={editingSectionId === group.section.id}
+                onEdit={() => setEditingSectionId(group.section.id)}
+                onCommitName={(name) => handleCommitSectionName(group.section!.id, name)}
+                onCancelEdit={() => handleCancelSectionEdit(group.section!.id)}
+                onDelete={() => handleDeleteSection(group.section!.id)}
+                onReorder={() => {}} // TODO: implement section reordering
+              />
+            )}
+            <TaskList
+              tasks={group.tasks}
+              containerId={group.section ? `section:${group.section.id}` : `collection:${id}`}
+              sectionId={group.section?.id}
+              collectionId={id}
+              activeDragId={activeDragId}
+              editingId={editingId}
+              onTaskToggle={handleToggle}
+              onStartEdit={handleStartEdit}
+              onEditCommit={handleEditCommit}
+              onEditCancel={handleEditCancel}
+              onDelete={handleDelete}
+              onAddBelow={handleAddBelow}
+              onIndent={handleIndent}
+              onNavigate={handleNavigate}
+              onConvertType={handleConvertType}
+              onRightClick={handleRightClick}
+            />
+          </Fragment>
+        ))}
+
+        <button
+          type="button"
+          onClick={handleAddSection}
+          className="group flex h-6 w-full min-w-0 items-center pr-2 text-ink-light transition-colors hover:text-ink"
+        >
+          <span className="flex h-6 w-6 shrink-0 items-center justify-center">+</span>
+          <span className="min-w-0 flex-1 truncate text-left text-sm leading-6">{t('page.newSection')}</span>
+        </button>
 
         <form
         onSubmit={handleAddAtEnd}
