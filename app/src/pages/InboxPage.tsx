@@ -1,9 +1,11 @@
-import { useState, useRef, useCallback, useEffect, useMemo } from 'react';
+import { Fragment, useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { TaskList } from '../components/TaskList';
+import { SectionHeader } from '../components/SectionHeader';
 import { TaskVisibilityControls } from '../components/TaskVisibilityControls';
 import { setPendingColumn } from '../components/TaskItem';
 import type { Task } from '../components/TaskItem';
+import type { Section } from '../stores/taskStore';
 import {
   fetchInboxTasks,
   fetchPreferences,
@@ -12,6 +14,10 @@ import {
   apiToggleTask,
   apiDeleteTask,
   fetchCollections,
+  fetchSections,
+  apiCreateSection,
+  apiUpdateSection,
+  apiDeleteSection,
   type ApiTask,
 } from '../api/client';
 import { ContextMenu, type ContextMenuItem } from '../components/ui/ContextMenu';
@@ -54,8 +60,10 @@ export function InboxPage() {
   const qc = useQueryClient();
   const phrase = useMemo(() => getPhrase('inbox', locale), [locale]);
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [sections, setSections] = useState<Section[]>([]);
   const [input, setInput] = useState('');
   const [editingId, setEditingId] = useState<string | undefined>();
+  const [editingSectionId, setEditingSectionId] = useState<string | null>(null);
   const [, setSelectedId] = useState<string>();
   const [contextMenu, setContextMenu] = useState<{ taskId: string; position: { x: number; y: number } } | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -88,6 +96,21 @@ export function InboxPage() {
       setTasks(data.tasks.map(apiToTask));
     }
   }, [data]);
+
+  // Fetch sections for the inbox collection (using inboxCollectionId from response)
+  const inboxCollectionId = (data as any)?.inboxCollectionId;
+  const { data: sectionsData } = useQuery({
+    queryKey: ['inbox', 'sections'],
+    queryFn: () => inboxCollectionId ? fetchSections(inboxCollectionId) : Promise.resolve([]),
+    staleTime: 30_000,
+    enabled: !!inboxCollectionId,
+  });
+
+  useEffect(() => {
+    if (sectionsData) {
+      setSections(sectionsData);
+    }
+  }, [sectionsData]);
 
   const invalidate = useCallback(() => qc.invalidateQueries({ queryKey: ['inbox'] }), [qc]);
 

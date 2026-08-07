@@ -2,7 +2,7 @@ import { type ReactNode, useState } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { HabitDragHandle } from './habits/HabitDragHandle';
 import { HabitNameInput } from './habits/HabitNameInput';
-import { NO_DRAG_ATTR } from '../utils/dnd/sensors';
+import { NO_DRAG_ATTR } from './dnd/sensors';
 import type { Section } from '../stores/taskStore';
 
 interface SectionHeaderProps {
