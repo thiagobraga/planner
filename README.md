@@ -40,32 +40,17 @@ It supports daily planning, monthly organization, habit tracking, collections, t
 - **List and Kanban Visualizations**: Multiple ways to visualize your workspace.
 - **Modern Routing Architecture**: Built on React Router v7 with declarative Splat path configuration.
 
-## Tech Stack
-
-![React](https://img.shields.io/badge/React-149ECA?style=for-the-badge&logo=react&logoColor=white)
-![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
-![Express.js](https://img.shields.io/badge/Express.js-000000?style=for-the-badge&logo=express&logoColor=white)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-336791?style=for-the-badge&logo=postgresql&logoColor=white)
-![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)
-![Vite](https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white)
-![Vitest](https://img.shields.io/badge/Vitest-6E9F18?style=for-the-badge&logo=vitest&logoColor=white)
-![Zustand](https://img.shields.io/badge/Zustand-000000?style=for-the-badge&logo=zustand&logoColor=white)
-![TanStack Query](https://img.shields.io/badge/TanStack_Query-FF4154?style=for-the-badge&logo=react-query&logoColor=white)
-![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
-
 ## Installation
 
 ### Requirements
 
-- Node.js 20 or newer
-- Docker and Docker Compose
+- Docker
+- Docker Compose
 
 ### Setup
 
 ```bash
 cp .env.example .env
-
-# Installs deps, runs migrations, starts api (4000) + app (5173) + Postgres + Redis
 docker compose up -d
 ```
 
