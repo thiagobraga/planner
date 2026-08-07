@@ -105,9 +105,21 @@ describe('Sidebar', () => {
     expect(screen.getByText('Settings')).toBeInTheDocument();
   });
 
-  it('renders styleguide link in expanded mode', () => {
+  it('hides the styleguide link from a regular user in expanded mode', () => {
+    render(<Sidebar />);
+    expect(screen.queryByText('Styleguide')).not.toBeInTheDocument();
+  });
+
+  it('renders styleguide link for an admin in expanded mode', () => {
+    authState.user = { role: 'admin' };
     render(<Sidebar />);
     expect(screen.getByText('Styleguide')).toBeInTheDocument();
+  });
+
+  it('renders styleguide link for an admin in collapsed mode', () => {
+    authState.user = { role: 'admin' };
+    render(<Sidebar collapsed />);
+    expect(screen.getByTitle('Styleguide')).toBeInTheDocument();
   });
 
   it('renders CollectionTreeNav in expanded mode', () => {

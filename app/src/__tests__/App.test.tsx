@@ -2,7 +2,11 @@ import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const testRoute = vi.hoisted(() => ({ current: '/daily' }));
-const authState = vi.hoisted(() => ({ isAuthenticated: false, isLoading: false }));
+const authState = vi.hoisted(() => ({
+  isAuthenticated: false,
+  isLoading: false,
+  user: null as { role: string } | null,
+}));
 
 vi.mock('react-router', async (importOriginal) => {
   const actual = await importOriginal<typeof import('react-router')>();
@@ -44,7 +48,7 @@ vi.mock('../contexts/AuthContext', () => ({
   },
   useAuth: () => ({
     isAuthenticated: authState.isAuthenticated,
-    user: null,
+    user: authState.user,
     login: vi.fn(),
     register: vi.fn(),
     logout: vi.fn(),
@@ -63,6 +67,7 @@ describe('App', () => {
   beforeEach(() => {
     authState.isAuthenticated = false;
     authState.isLoading = false;
+    authState.user = null;
     testRoute.current = '/daily';
   });
 
@@ -78,6 +83,22 @@ describe('App', () => {
     testRoute.current = '/collections';
     render(<App />);
     expect(screen.getByText('CollectionsIndexPage')).toBeInTheDocument();
+  });
+
+  it('renders StyleguidePage when an admin is authenticated on /styleguide', () => {
+    authState.isAuthenticated = true;
+    authState.user = { role: 'admin' };
+    testRoute.current = '/styleguide';
+    render(<App />);
+    expect(screen.getByText('StyleguidePage')).toBeInTheDocument();
+  });
+
+  it('redirects a non-admin away from /styleguide', () => {
+    authState.isAuthenticated = true;
+    authState.user = { role: 'user' };
+    testRoute.current = '/styleguide';
+    render(<App />);
+    expect(screen.getByText('redirect:/daily')).toBeInTheDocument();
   });
 
   it('redirects to /login when not authenticated on protected route', () => {

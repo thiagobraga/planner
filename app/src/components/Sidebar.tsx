@@ -268,8 +268,8 @@ export function Sidebar({ isOpen, onClose, collapsed = false, updateAvailable = 
             </>
           )}
           <UpdateToast updateAvailable={updateAvailable} />
+          {isAdmin && <SidebarNavItem to="/styleguide" label={t('nav.styleguide')} icon={<StyleguideIcon size={15} />} />}
           <SidebarNavItem to="/settings" label={t('common.settings')} icon={<Settings size={15} strokeWidth={1.5} />} />
-          <SidebarNavItem to="/styleguide" label={t('nav.styleguide')} icon={<StyleguideIcon size={15} />} />
           <SidebarNavItem to="/help" label={t('nav.help')} icon={<HelpCircle size={15} strokeWidth={1.5} />} />
 
           <div className="border-t border-dot my-4 mx-0"></div>
