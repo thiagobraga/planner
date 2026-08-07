@@ -231,7 +231,7 @@ export function StyleguidePage() {
             ]).map(({ label, variant }) => (
               <div key={label} className="flex flex-col gap-2">
                 <span className="text-[10px] text-ink-light uppercase tracking-widest font-semibold block">{label}</span>
-                <div className="flex flex-wrap items-center gap-3">
+                <div className="flex flex-wrap items-start gap-3">
                   <Button
                     variant={variant}
                     size="lg"
@@ -254,7 +254,7 @@ export function StyleguidePage() {
             ))}
             <div className="flex flex-col gap-2">
               <span className="text-[10px] text-ink-light uppercase tracking-widest font-semibold block">Disabled</span>
-              <div className="flex flex-wrap items-center gap-3">
+              <div className="flex flex-wrap items-start gap-3">
                 <Button variant="secondary" size="lg" leftIcon={<Plus />} disabled>
                   Large
                 </Button>
