@@ -55,6 +55,7 @@ Add to `/etc/hosts`: `planner.local`, `api.planner.local`, `db.planner.local`.
 - `middleware/errorHandler.ts` - `AppError` vs generic; returns `{ error: { code, message, details? } }`
 - `services/syncService.ts` - `publishEvent(event)` is the single broadcast entry point
 - `services/authService.ts` - register/login (Redis rate-limit: 10 attempts/15 min), 7-day JWT
+- `services/emailService.ts` - Resend wrapper; logs reset links to console when `RESEND_API_KEY` is unset
 - `services/taskService.ts` - CRUD, completion, recurrence
 - `services/viewService.ts` - today/upcoming/inbox aggregations
 - `services/filterService.ts` - saved filter CRUD + evaluation via Peggy DSL parser
@@ -227,7 +228,7 @@ Full spec: `DESIGN.md`.
 - No backwards-compat shims for removed code - delete cleanly
 - Tests: Vitest; integration tests hit real DB (no mock-DB pattern)
 - Always write unit tests and e2e tests if possible for each new feature or bugfix. The goal is to always keep app with high test coverage as possible.
-- Node ≥ 20 required
+- Node ≥ 24 required
 
 ## Plan Mode — Specs Convention
 
