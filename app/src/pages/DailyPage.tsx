@@ -361,13 +361,13 @@ export function DailyPage() {
       // A row belongs to the day it was written under, so that day - not today -
       // is what a title without any date phrase falls back to.
       const extracted = extractNaturalDate(trimmed, section?.key ?? todayKey, locale);
-      
-      apiCreateTask({ 
-        title: extracted.title, 
-        priority: 4, 
-        dueDate: extracted.dueDate, 
-        type: currentType, 
-        parentTaskId, 
+
+      apiCreateTask({
+        title: extracted.title,
+        priority: 4,
+        dueDate: extracted.dueDate,
+        type: currentType,
+        parentTaskId,
         depth: currentIndent,
         recurrenceRule: extracted.recurrenceRule,
         orderValue: currentTask?.orderValue ?? 0
@@ -530,10 +530,10 @@ export function DailyPage() {
     );
     const extracted = extractNaturalDate(trimmed, todayKey, locale);
 
-    apiCreateTask({ 
-      title: extracted.title, 
-      priority: 4, 
-      dueDate: extracted.dueDate, 
+    apiCreateTask({
+      title: extracted.title,
+      priority: 4,
+      dueDate: extracted.dueDate,
       type: 'task',
       recurrenceRule: extracted.recurrenceRule,
       orderValue: newOrderValue
@@ -607,7 +607,7 @@ export function DailyPage() {
       label: c.name,
       icon: (
         <span
-          className="w-2 h-2 rounded-full inline-block [filter:saturate(0.55)]"
+          className="w-1.75 h-1.75 rounded-full inline-block filter-[saturate(0.55)]"
           style={{ backgroundColor: c.color, marginLeft: c.depth * 12 }}
         />
       ),
@@ -625,7 +625,7 @@ export function DailyPage() {
       label: 'No project',
       icon: (
         <span
-          className="w-2 h-2 rounded-full inline-block bg-transparent border border-ink/20"
+          className="w-1.75 h-1.75 rounded-full inline-block bg-transparent border border-ink/20"
         />
       ),
       onClick: () => {

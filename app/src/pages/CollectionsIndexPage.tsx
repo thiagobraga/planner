@@ -82,7 +82,7 @@ function CollectionRow({ node, depth, ...props }: CollectionRowProps) {
         }}
       >
         <span
-          className="w-2 h-2 rounded-full justify-self-center self-center translate-y-px shrink-0 [filter:saturate(0.55)]"
+          className="w-1.75 h-1.75 rounded-full justify-self-center self-center translate-y-px shrink-0 filter-[saturate(0.55)]"
           style={{ backgroundColor: node.color }}
           aria-hidden="true"
         />
@@ -168,7 +168,7 @@ function CollectionRow({ node, depth, ...props }: CollectionRowProps) {
           className="grid h-6"
           style={{ gridTemplateColumns: `24px minmax(0, 1fr) 24px`, paddingLeft: `${(depth + 1) * 24}px` }}
         >
-          <span className="w-2 h-2 rounded-full justify-self-center self-center shrink-0 bg-dot" aria-hidden="true" />
+          <span className="w-1.75 h-1.75 rounded-full justify-self-center self-center shrink-0 bg-dot" aria-hidden="true" />
           <input
             autoFocus
             type="text"
@@ -306,7 +306,7 @@ export function CollectionsIndexPage() {
           <button
             type="button"
             onClick={startAddRoot}
-            className="p-1.5 -mr-1.5 text-ink-light hover:text-ink bg-transparent border-0 cursor-pointer rounded-full hover:bg-[var(--planner-sidebar-hover-bg)] transition-colors"
+            className="p-1.5 -mr-1.5 text-ink-light hover:text-ink bg-transparent border-0 cursor-pointer rounded-full hover:bg-(--planner-sidebar-hover-bg) transition-colors"
             title={t('page.addCollection')}
             aria-label={t('page.addCollection')}
           >

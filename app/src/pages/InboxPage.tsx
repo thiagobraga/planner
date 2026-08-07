@@ -155,16 +155,16 @@ export function InboxPage() {
     const tid = tempId();
     setInput('');
     const extracted = extractNaturalDate(trimmed, undefined, locale);
-    
+
     setTasks((prev) => [
       ...prev,
       { id: tid, title: extracted.title, priority: 4, isCompleted: false, orderValue: nextOrderValue(prev), type: 'task' },
     ]);
-    apiCreateTask({ 
-      title: extracted.title, 
-      priority: 4, 
-      dueDate: extracted.dueDate, 
-      recurrenceRule: extracted.recurrenceRule 
+    apiCreateTask({
+      title: extracted.title,
+      priority: 4,
+      dueDate: extracted.dueDate,
+      recurrenceRule: extracted.recurrenceRule
     })
       .then((created) => {
         setTasks((prev) => prev.map((t) => (t.id === tid ? apiToTask(created) : t)));
@@ -300,9 +300,9 @@ export function InboxPage() {
       const currentTask = tasks.find((t) => t.id === id);
       const parentTaskId = currentTask?.parentTaskId ?? undefined;
       const currentIndent = currentTask?.indent ?? 0;
-      
+
       const extracted = extractNaturalDate(trimmed, undefined, locale);
-      
+
       // was a new row - create it, keeping whichever type it was opened as
       apiCreateTask({
         title: extracted.title,
@@ -500,7 +500,7 @@ export function InboxPage() {
       label: c.name,
       icon: (
         <span
-          className="w-2 h-2 rounded-full inline-block [filter:saturate(0.55)]"
+          className="w-1.75 h-1.75 rounded-full inline-block filter-[saturate(0.55)]"
           style={{ backgroundColor: c.color, marginLeft: c.depth * 12 }}
         />
       ),
@@ -516,7 +516,7 @@ export function InboxPage() {
       label: 'No project',
       icon: (
         <span
-          className="w-2 h-2 rounded-full inline-block bg-transparent border border-ink/20"
+          className="w-1.75 h-1.75 rounded-full inline-block bg-transparent border border-ink/20"
         />
       ),
       onClick: () => {
@@ -681,7 +681,7 @@ export function InboxPage() {
           <HabitNameInput
             defaultValue=""
             placeholder={t('page.newSection')}
-            className="uppercase tracking-[0.1em] text-[10px] font-semibold text-ink-light"
+            className="uppercase tracking-widest text-[10px] font-semibold text-ink-light"
             onCommit={(name) => handleCommitSectionName(addingSection.id, name)}
             onCancel={() => handleCancelSectionEdit(addingSection.id)}
           />

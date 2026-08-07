@@ -35,7 +35,7 @@ function Card({
 }) {
   return (
     <section className={`${span ? 'lg:col-span-2' : ''}`}>
-      <h2 className="text-[11px] font-semibold text-ink uppercase tracking-widest mb-4">
+      <h2 className="text-[11px] font-semibold text-ink uppercase tracking-widest">
         {title}
       </h2>
       {children}
@@ -159,7 +159,7 @@ export function StyleguidePage() {
       </p>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-        {/* 11 - Color Palette */}
+        {/* Color Palette */}
         <Card title="Color Palette" span>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div className="lg:col-span-2">
@@ -205,7 +205,7 @@ export function StyleguidePage() {
           </div>
         </Card>
 
-        {/* 1 - Interface Typography */}
+        {/* Interface Typography */}
         <Card title="Typography" span>
           <div className="divide-y divide-border">
             {TYPE_SCALE.map(({ label, spec, className }) => (
@@ -220,7 +220,7 @@ export function StyleguidePage() {
           </div>
         </Card>
 
-        {/* 2 - Buttons */}
+        {/* Buttons */}
         <Card title="Buttons" span>
           <div className="flex flex-col gap-6">
             {([
@@ -269,7 +269,7 @@ export function StyleguidePage() {
           </div>
         </Card>
 
-        {/* 3 - Fields & Controls */}
+        {/* Fields & Controls */}
         <Card title="Forms">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <div className="flex flex-col gap-4">
@@ -343,9 +343,17 @@ export function StyleguidePage() {
           </div>
         </Card>
 
-        {/* 4 - Chips & Tags */}
+        {/* Chips & Tags */}
         <Card title="Chips & Tags">
           <div className="flex flex-col gap-4">
+            <div>
+              <span className="text-[10px] text-ink-light uppercase tracking-widest block mb-2">Tag chips</span>
+              <div className="flex flex-wrap gap-2 items-center">
+                <Chip># ai</Chip>
+                <Chip># tech</Chip>
+                <Chip># dev</Chip>
+              </div>
+            </div>
             <div>
               <span className="text-[10px] text-ink-light uppercase tracking-widest block mb-2">Collection chips</span>
               <div className="flex flex-wrap gap-2 items-center">
@@ -376,7 +384,7 @@ export function StyleguidePage() {
           </div>
         </Card>
 
-        {/* 5 - Navigation */}
+        {/* Navigation */}
         <Card title="Navigation">
           <div className="w-55 border border-dot bg-(--planner-sidebar-bg) px-3 py-6">
             <div className="mb-6 ml-3">
@@ -421,12 +429,12 @@ export function StyleguidePage() {
           </div>
         </Card>
 
-        {/* 6 - Toolbar / View Options */}
+        {/* Toolbar / View Options */}
         <Card title="Toolbar / View Options" span>
           <ViewToolbar />
         </Card>
 
-        {/* 7 - Task Rows */}
+        {/* Task Rows */}
         <Card title="Task Rows" span>
           <div className="flex flex-col gap-1">
             <TaskRowSpecimen priority={1} title="Review quarterly editorial plan" tags={['editorial', 'planner']} date="Jul 10" flagged />
@@ -436,12 +444,12 @@ export function StyleguidePage() {
           </div>
         </Card>
 
-        {/* 8 - Calendar & Monthly */}
+        {/* Calendar & Monthly */}
         <Card title="Calendar & Monthly">
           <MonthlyCalendarSpecimen compact weekStart={weekStart} />
         </Card>
 
-        {/* 9 - Month Selector */}
+        {/* Month Selector */}
         <Card title="Month Selector" span>
           <MonthSelector
             year={selectedMonth.year}
@@ -450,16 +458,16 @@ export function StyleguidePage() {
           />
         </Card>
 
-        {/* 10 - Habit */}
+        {/* Habit */}
         <Card title="Habit" span>
           <HabitSpecimen weekStart={weekStart} />
         </Card>
-        {/* 11 - Calendar */}
+        {/* Calendar */}
         <Card title="Calendar">
           <DatePickerSpecimen weekStart={weekStart} />
         </Card>
 
-        {/* 12 - Essential Tokens */}
+        {/* Essential Tokens */}
         <Card title="Essential Tokens" span>
           <div className="flex flex-col gap-5">
             <TokenRow label="Spacing">
@@ -522,7 +530,7 @@ export function StyleguidePage() {
 
 
 
-        {/* 13 - Context Menu */}
+        {/* Context Menu */}
         <Card title="Context Menu">
           <div className="flex flex-col gap-4">
             <p className="text-[13px] text-ink-light leading-5">
