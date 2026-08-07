@@ -151,6 +151,8 @@ export const portugueseBrazilCatalog = {
   'page.deleteCollection': 'Excluir coleção',
   'page.deleteCollectionMessage': 'Excluir a coleção “{{name}}” e todas as tarefas? Esta ação não pode ser desfeita.',
   'page.addSubCollection': 'Adicionar subcoleção',
+  'page.collapseCollection': 'Recolher {{name}}',
+  'page.expandCollection': 'Expandir {{name}}',
   'page.deleteNamed': 'Excluir {{name}}',
   'page.changeColor': 'Alterar cor…',
   'colorPicker.title': 'Alterar cor',

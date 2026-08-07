@@ -83,7 +83,7 @@ function ContextMenuRoot({ items, position, onClose }: ContextMenuRootProps) {
         isRoot={true}
       />
     </div>,
-    document.body
+    document.querySelector('.app-shell') ?? document.body
   );
 }
 
@@ -227,7 +227,7 @@ function MenuPanel({
         ref={panelRef}
         tabIndex={-1}
         onKeyDown={handleKeyDown}
-        className="ui-context-menu-panel fixed z-50 py-1 bg-cream border border-border rounded-md shadow-medium pointer-events-auto min-w-[180px]"
+        className="ui-context-menu-panel fixed z-50 min-w-[180px] rounded-md border border-border bg-[var(--planner-overlay-bg,var(--color-cream))] py-1 shadow-medium pointer-events-auto"
         style={{ top: coords.top, left: coords.left, outline: 'none' }}
         role="menu"
       >
@@ -245,7 +245,7 @@ function MenuPanel({
           const isHighlighted = highlightedIndex === index;
           const isSubmenuOpen = openSubmenuIndex === index;
           
-          let itemClass = `flex items-center justify-between h-8 px-3 mx-1 rounded-[4px] text-[14px] font-journal cursor-pointer select-none outline-none transition-colors duration-75 `;
+          let itemClass = `flex items-center justify-between h-8 px-3 mx-1 rounded-[4px] text-[14px] cursor-pointer select-none outline-none transition-colors duration-75 `;
           
           if (item.disabled) {
             itemClass += `opacity-40 cursor-not-allowed text-ink-light `;
@@ -254,7 +254,7 @@ function MenuPanel({
             if (isHighlighted || isSubmenuOpen) itemClass += `bg-accent/10 `;
           } else {
             itemClass += `text-ink `;
-            if (isHighlighted || isSubmenuOpen) itemClass += `bg-[#d4cfc7]/40 `;
+            if (isHighlighted || isSubmenuOpen) itemClass += `bg-[var(--planner-overlay-hover-bg,rgba(212,207,199,0.4))] `;
           }
 
           return (

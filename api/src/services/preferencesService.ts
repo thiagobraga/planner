@@ -1,6 +1,7 @@
 import pool from "../db/pool.js";
 import { AppError } from "../utils/AppError.js";
 import { buildEvent, publishEvent } from "./syncService.js";
+import { validate as isUuid } from "uuid";
 
 interface PreferencesRow {
   user_id: string;
@@ -16,6 +17,7 @@ interface PreferencesRow {
   hide_old_notes: boolean;
   locale: string;
   date_format: string;
+  collapsed_collection_ids: string[];
 }
 
 function formatPreferences(row: PreferencesRow) {
@@ -33,6 +35,7 @@ function formatPreferences(row: PreferencesRow) {
     hideOldNotes: row.hide_old_notes,
     locale: row.locale,
     dateFormat: row.date_format ?? 'MMM DD ddd',
+    collapsedCollectionIds: row.collapsed_collection_ids,
   };
 }
 
@@ -71,6 +74,7 @@ export interface UpdatePreferencesInput {
   hideOldNotes?: boolean;
   locale?: string;
   dateFormat?: string;
+  collapsedCollectionIds?: string[];
 }
 
 export function validatePreferences(input: UpdatePreferencesInput): UpdatePreferencesInput {
@@ -124,6 +128,17 @@ export function validatePreferences(input: UpdatePreferencesInput): UpdatePrefer
 
   if (input.dateFormat !== undefined && !VALID_DATE_FORMATS.includes(input.dateFormat as (typeof VALID_DATE_FORMATS)[number])) {
     errors.push({ field: "dateFormat", message: `dateFormat must be one of: ${VALID_DATE_FORMATS.join(', ')}` });
+  }
+
+  if (
+    input.collapsedCollectionIds !== undefined
+    && (!Array.isArray(input.collapsedCollectionIds)
+      || !input.collapsedCollectionIds.every((id) => typeof id === "string" && isUuid(id)))
+  ) {
+    errors.push({
+      field: "collapsedCollectionIds",
+      message: "collapsedCollectionIds must be an array of UUID strings",
+    });
   }
 
   if (errors.length > 0) {
@@ -209,6 +224,10 @@ export async function updatePreferences(userId: string, input: UpdatePreferences
   if (input.dateFormat !== undefined) {
     setClauses.push(`date_format = $${paramIndex++}`);
     values.push(input.dateFormat);
+  }
+  if (input.collapsedCollectionIds !== undefined) {
+    setClauses.push(`collapsed_collection_ids = $${paramIndex++}`);
+    values.push([...new Set(input.collapsedCollectionIds)]);
   }
 
   if (setClauses.length === 0) {

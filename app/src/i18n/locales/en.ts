@@ -149,6 +149,8 @@ export const englishCatalog = {
   'page.deleteCollection': 'Delete Collection',
   'page.deleteCollectionMessage': 'Delete collection "{{name}}" and all its tasks? This cannot be undone.',
   'page.addSubCollection': 'Add sub-collection',
+  'page.collapseCollection': 'Collapse {{name}}',
+  'page.expandCollection': 'Expand {{name}}',
   'page.deleteNamed': 'Delete {{name}}',
   'page.changeColor': 'Change color…',
   'colorPicker.title': 'Change color',

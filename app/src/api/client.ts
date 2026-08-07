@@ -278,6 +278,7 @@ export interface Preferences {
   smallCaps: boolean;
   hideCompletedTasks: boolean;
   hideOldNotes: boolean;
+  collapsedCollectionIds: string[];
   dateFormat?: string;
 }
 
