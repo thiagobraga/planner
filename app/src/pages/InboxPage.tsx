@@ -2,6 +2,7 @@ import { Fragment, useState, useRef, useCallback, useEffect, useMemo } from 'rea
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { TaskList } from '../components/TaskList';
 import { SectionHeader } from '../components/SectionHeader';
+import { HabitNameInput } from '../components/habits/HabitNameInput';
 import { TaskVisibilityControls } from '../components/TaskVisibilityControls';
 import { setPendingColumn } from '../components/TaskItem';
 import type { Task } from '../components/TaskItem';
@@ -14,15 +15,15 @@ import {
   apiToggleTask,
   apiDeleteTask,
   fetchCollections,
-  fetchSections,
   apiCreateSection,
   apiUpdateSection,
   apiDeleteSection,
   type ApiTask,
 } from '../api/client';
 import { ContextMenu, type ContextMenuItem } from '../components/ui/ContextMenu';
+import { SectionDeleteModal } from '../components/SectionDeleteModal';
 import { flattenCollections } from '../components/CollectionTreeNav';
-import { Calendar, Tag, Folder, Hash, ArrowUp, ArrowDown, Trash2 } from 'lucide-react';
+import { Calendar, Tag, Folder, Hash, ArrowUp, ArrowDown, Trash2, Pencil } from 'lucide-react';
 import { useTaskDrag } from '../hooks/useTaskDrag';
 import { useTaskVisibilityPreferences } from '../hooks/useTaskVisibilityPreferences';
 import { flattenTasks } from '../utils/taskProjection';
@@ -55,6 +56,24 @@ function apiToTask(t: ApiTask): Task {
 let tempCounter = 0;
 function tempId() { return `temp-${++tempCounter}`; }
 
+function buildSectionGroups(tasks: Task[], sections: Section[]) {
+  const groups: Array<{ section: Section | null; tasks: Task[] }> = [];
+
+  groups.push({
+    section: null,
+    tasks: tasks.filter((t) => !t.sectionId),
+  });
+
+  for (const section of [...sections].sort((a, b) => a.orderValue - b.orderValue)) {
+    groups.push({
+      section,
+      tasks: tasks.filter((t) => t.sectionId === section.id),
+    });
+  }
+
+  return groups;
+}
+
 export function InboxPage() {
   const { locale, t } = useI18n();
   const qc = useQueryClient();
@@ -64,8 +83,11 @@ export function InboxPage() {
   const [input, setInput] = useState('');
   const [editingId, setEditingId] = useState<string | undefined>();
   const [editingSectionId, setEditingSectionId] = useState<string | null>(null);
+  const [sectionTaskInput, setSectionTaskInput] = useState<Record<string, string>>({});
   const [, setSelectedId] = useState<string>();
   const [contextMenu, setContextMenu] = useState<{ taskId: string; position: { x: number; y: number } } | null>(null);
+  const [sectionContextMenu, setSectionContextMenu] = useState<{ sectionId: string; position: { x: number; y: number } } | null>(null);
+  const [deletingSection, setDeletingSection] = useState<{ id: string; name: string; taskCount: number } | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const tasksRef = useRef(tasks);
   useEffect(() => {
@@ -97,20 +119,13 @@ export function InboxPage() {
     }
   }, [data]);
 
-  // Fetch sections for the inbox collection (using inboxCollectionId from response)
-  const inboxCollectionId = (data as any)?.inboxCollectionId;
-  const { data: sectionsData } = useQuery({
-    queryKey: ['inbox', 'sections'],
-    queryFn: () => inboxCollectionId ? fetchSections(inboxCollectionId) : Promise.resolve([]),
-    staleTime: 30_000,
-    enabled: !!inboxCollectionId,
-  });
+  const inboxCollectionId = data?.inboxCollectionId;
 
   useEffect(() => {
-    if (sectionsData) {
-      setSections(sectionsData);
+    if (data?.sections) {
+      setSections(data.sections);
     }
-  }, [sectionsData]);
+  }, [data]);
 
   const invalidate = useCallback(() => qc.invalidateQueries({ queryKey: ['inbox'] }), [qc]);
 
@@ -150,6 +165,34 @@ export function InboxPage() {
       priority: 4, 
       dueDate: extracted.dueDate, 
       recurrenceRule: extracted.recurrenceRule 
+    })
+      .then((created) => {
+        setTasks((prev) => prev.map((t) => (t.id === tid ? apiToTask(created) : t)));
+      })
+      .catch(() => {
+        setTasks((prev) => prev.filter((t) => t.id !== tid));
+        invalidate();
+      });
+  };
+
+  const handleAddSectionTask = (sectionId: string, e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmed = (sectionTaskInput[sectionId] ?? '').trim();
+    if (!trimmed) return;
+    const tid = tempId();
+    setSectionTaskInput((prev) => ({ ...prev, [sectionId]: '' }));
+    const extracted = extractNaturalDate(trimmed, undefined, locale);
+
+    setTasks((prev) => [
+      ...prev,
+      { id: tid, title: extracted.title, priority: 4, isCompleted: false, orderValue: nextOrderValue(prev), type: 'task', sectionId },
+    ]);
+    apiCreateTask({
+      title: extracted.title,
+      priority: 4,
+      sectionId,
+      dueDate: extracted.dueDate,
+      recurrenceRule: extracted.recurrenceRule,
     })
       .then((created) => {
         setTasks((prev) => prev.map((t) => (t.id === tid ? apiToTask(created) : t)));
@@ -207,6 +250,7 @@ export function InboxPage() {
         orderValue: computedOrderValue,
         indent: prev[idx]?.indent,
         parentTaskId: prev[idx]?.parentTaskId,
+        sectionId: prev[idx]?.sectionId,
         type: 'task',
       });
       return next;
@@ -230,6 +274,7 @@ export function InboxPage() {
         orderValue: computedOrderValue,
         indent: prev[idx]?.indent,
         parentTaskId: prev[idx]?.parentTaskId,
+        sectionId: prev[idx]?.sectionId,
         type: 'task',
       });
       return next;
@@ -262,6 +307,7 @@ export function InboxPage() {
       apiCreateTask({
         title: extracted.title,
         priority: 4,
+        sectionId: currentTask?.sectionId,
         parentTaskId,
         depth: currentIndent,
         type: currentTask?.type ?? 'task',
@@ -371,6 +417,83 @@ export function InboxPage() {
     setContextMenu({ taskId, position });
   }, []);
 
+  const handleSectionRightClick = useCallback((sectionId: string, position: { x: number; y: number }) => {
+    setSectionContextMenu({ sectionId, position });
+  }, []);
+
+  const handleAddSection = useCallback(() => {
+    if (!inboxCollectionId) return;
+    const sectionId = tempId();
+    setSections((prev) => [
+      ...prev,
+      { id: sectionId, name: '', collectionId: inboxCollectionId, orderValue: prev.length * 1000 },
+    ]);
+    setEditingSectionId(sectionId);
+  }, [inboxCollectionId]);
+
+  const handleCommitSectionName = useCallback(
+    (sectionId: string, name: string) => {
+      const trimmed = name.trim();
+      setEditingSectionId(null);
+      if (!trimmed) {
+        setSections((prev) => prev.filter((s) => s.id !== sectionId));
+        if (!sectionId.startsWith('temp-')) apiDeleteSection(sectionId).catch(() => {});
+        return;
+      }
+      setSections((prev) => prev.map((s) => (s.id === sectionId ? { ...s, name: trimmed } : s)));
+      if (sectionId.startsWith('temp-')) {
+        if (!inboxCollectionId) return;
+        apiCreateSection(inboxCollectionId, { name: trimmed })
+          .then((created) => {
+            setSections((prev) =>
+              prev.map((s) => (s.id === sectionId ? created : s))
+            );
+          })
+          .catch(() => {
+            setSections((prev) => prev.filter((s) => s.id !== sectionId));
+          });
+      } else {
+        apiUpdateSection(sectionId, { name: trimmed }).catch(() => {});
+      }
+    },
+    [inboxCollectionId]
+  );
+
+  const handleCancelSectionEdit = useCallback((sectionId: string) => {
+    setEditingSectionId(null);
+    if (sectionId.startsWith('temp-')) {
+      setSections((prev) => prev.filter((s) => s.id !== sectionId));
+    }
+  }, []);
+
+  const handleDeleteSection = useCallback((sectionId: string) => {
+    const section = sections.find((s) => s.id === sectionId);
+    if (!section) return;
+    const taskCount = tasks.filter((t) => t.sectionId === sectionId).length;
+    setDeletingSection({ id: sectionId, name: section.name, taskCount });
+  }, [sections, tasks]);
+
+  const handleConfirmDeleteSectionAndTasks = useCallback(() => {
+    if (!deletingSection) return;
+    const { id: sectionId } = deletingSection;
+    const taskIds = tasks.filter((t) => t.sectionId === sectionId).map((t) => t.id);
+    setDeletingSection(null);
+    setTasks((prev) => prev.filter((t) => t.sectionId !== sectionId));
+    setSections((prev) => prev.filter((s) => s.id !== sectionId));
+    Promise.all(taskIds.map((taskId) => apiDeleteTask(taskId)))
+      .then(() => apiDeleteSection(sectionId))
+      .catch(() => invalidate());
+  }, [deletingSection, tasks, invalidate]);
+
+  const handleConfirmMoveTasksToTopLevel = useCallback(() => {
+    if (!deletingSection) return;
+    const { id: sectionId } = deletingSection;
+    setDeletingSection(null);
+    setTasks((prev) => prev.map((t) => (t.sectionId === sectionId ? { ...t, sectionId: undefined } : t)));
+    setSections((prev) => prev.filter((s) => s.id !== sectionId));
+    apiDeleteSection(sectionId).catch(() => invalidate());
+  }, [deletingSection, invalidate]);
+
   const projectSubmenuItems = useMemo<ContextMenuItem[]>(() => {
     const items: ContextMenuItem[] = flattenCollections(collections).map((c) => ({
       type: 'item',
@@ -409,6 +532,15 @@ export function InboxPage() {
     return items;
   }, [collections, contextMenu, invalidate]);
 
+  // A section being named for the first time renders as an inline input in the
+  // "+ New section" row itself, rather than up in the grouped list, so the
+  // input appears exactly where the user clicked.
+  const addingSection = sections.find((s) => s.id.startsWith('temp-'));
+  const [topLevelGroup, ...sectionGroups] = buildSectionGroups(
+    tasks,
+    sections.filter((s) => !s.id.startsWith('temp-')),
+  );
+
   return (
     <div
       className="inbox-page relative w-full cursor-text"
@@ -441,8 +573,8 @@ export function InboxPage() {
         <div className="h-6" />
 
       <TaskList
-        tasks={tasks}
-        containerId="inbox"
+        tasks={topLevelGroup.tasks}
+        containerId="collection:inbox"
         activeDragId={activeDragId}
         editingId={editingId}
         onTaskToggle={handleToggle}
@@ -488,6 +620,82 @@ export function InboxPage() {
           }}
         />
         </form>
+
+      {sectionGroups.map((group) => (
+        <Fragment key={group.section!.id}>
+          <div className="h-6" />
+          <SectionHeader
+            section={group.section!}
+            isEditing={editingSectionId === group.section!.id}
+            onEdit={() => setEditingSectionId(group.section!.id)}
+            onCommitName={(name) => handleCommitSectionName(group.section!.id, name)}
+            onCancelEdit={() => handleCancelSectionEdit(group.section!.id)}
+            onDelete={() => handleDeleteSection(group.section!.id)}
+            onReorder={() => {}} // TODO: implement section reordering
+            onRightClick={(position) => handleSectionRightClick(group.section!.id, position)}
+          />
+          <TaskList
+            tasks={group.tasks}
+            containerId={`section:${group.section!.id}`}
+            sectionId={group.section!.id}
+            collectionId={inboxCollectionId}
+            activeDragId={activeDragId}
+            editingId={editingId}
+            onTaskToggle={handleToggle}
+            onStartEdit={handleStartEdit}
+            onEditCommit={handleEditCommit}
+            onEditCancel={handleEditCancel}
+            onDelete={handleDelete}
+            onAddBelow={handleAddBelow}
+            onIndent={handleIndent}
+            onNavigate={handleNavigate}
+            onConvertType={handleConvertType}
+            onRightClick={handleRightClick}
+          />
+          <form
+            onSubmit={(e) => handleAddSectionTask(group.section!.id, e)}
+            className="flex items-center h-6"
+          >
+            <span className="w-6 text-center text-[10px] leading-6 text-ink opacity-25 select-none shrink-0">
+              •
+            </span>
+            <input
+              type="text"
+              value={sectionTaskInput[group.section!.id] ?? ''}
+              onChange={(e) =>
+                setSectionTaskInput((prev) => ({ ...prev, [group.section!.id]: e.target.value }))
+              }
+              placeholder={t('common.addTask')}
+              className="task-input task-add-input flex-1 text-[14px] leading-6 text-ink bg-transparent border-none outline-none p-0"
+              spellCheck={false}
+            />
+          </form>
+        </Fragment>
+      ))}
+
+      <div className="h-6" />
+
+      {addingSection ? (
+        <div className="flex h-6 w-full min-w-0 items-center pr-2">
+          <span className="flex h-6 w-6 shrink-0 items-center justify-center text-ink-light opacity-35">+</span>
+          <HabitNameInput
+            defaultValue=""
+            placeholder={t('page.newSection')}
+            className="uppercase tracking-[0.1em] text-[10px] font-semibold text-ink-light"
+            onCommit={(name) => handleCommitSectionName(addingSection.id, name)}
+            onCancel={() => handleCancelSectionEdit(addingSection.id)}
+          />
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={handleAddSection}
+          className="group flex h-6 w-full min-w-0 items-center pr-2 text-ink-light opacity-35 transition-opacity hover:opacity-100"
+        >
+          <span className="flex h-6 w-6 shrink-0 items-center justify-center">+</span>
+          <span className="min-w-0 flex-1 truncate text-left text-sm leading-6">{t('page.newSection')}</span>
+        </button>
+      )}
       </div>
 
       {contextMenu && (
@@ -507,6 +715,27 @@ export function InboxPage() {
           ]}
         />
       )}
+
+      {sectionContextMenu && (
+        <ContextMenu
+          position={sectionContextMenu.position}
+          onClose={() => setSectionContextMenu(null)}
+          items={[
+            { type: 'item', label: 'Rename', icon: <Pencil size={14} />, onClick: () => setEditingSectionId(sectionContextMenu.sectionId) },
+            { type: 'separator' },
+            { type: 'item', label: 'Delete', icon: <Trash2 size={14} />, destructive: true, onClick: () => handleDeleteSection(sectionContextMenu.sectionId) },
+          ]}
+        />
+      )}
+
+      <SectionDeleteModal
+        isOpen={deletingSection !== null}
+        sectionName={deletingSection?.name ?? ''}
+        taskCount={deletingSection?.taskCount ?? 0}
+        onDeleteTasks={handleConfirmDeleteSectionAndTasks}
+        onMoveToTopLevel={handleConfirmMoveTasksToTopLevel}
+        onCancel={() => setDeletingSection(null)}
+      />
     </div>
   );
 }
