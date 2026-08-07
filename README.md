@@ -1,22 +1,26 @@
-<p align="center">
+<h1 align="center">
   <img src="app/public/images/bulletjournal-planner-192x192.png" alt="Planner" width="96">
-</p>
-
-<h1 align="center">Planner</h1>
-
-<p align="center">
-  Beautiful and easy-to-use Bullet Journal task management.
-</p>
+  <br>
+  Planner
+</h1>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Next.js-000000?style=flat-square&logo=nextdotjs&logoColor=white" alt="Next.js">
-  <img src="https://img.shields.io/badge/React-149ECA?style=flat-square&logo=react&logoColor=white" alt="React">
-  <img src="https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript">
-  <img src="https://img.shields.io/badge/Tailwind_CSS-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white" alt="Tailwind CSS">
-  <img src="https://img.shields.io/badge/license-MIT-3DA639?style=flat-square" alt="MIT License">
+  Beautiful and easy-to-use Bullet Journal task management
 </p>
 
----
+<p align="center">
+  <img src="https://img.shields.io/badge/%E2%80%8B-React-f5f0e8?style=flat&logoColor=f5f0e8&logo=react" alt="React">
+  <img src="https://img.shields.io/badge/%E2%80%8B-TypeScript-f5f0e8?style=flat&logo=typescript&logoColor=f5f0e8" alt="TypeScript">
+  <img src="https://img.shields.io/badge/%E2%80%8B-Tailwind-f5f0e8?style=flat&logoColor=f5f0e8&logo=tailwindcss" alt="Tailwind">
+  <img src="https://img.shields.io/badge/%E2%80%8B-Vite-f5f0e8?style=flat&logoColor=f5f0e8&logo=vite" alt="Vite">
+  <br>
+  <img src="https://img.shields.io/badge/%E2%80%8B-Docker-f5f0e8?style=flat&logoColor=f5f0e8&logo=docker" alt="Docker">
+  <img src="https://img.shields.io/badge/%E2%80%8B-PostgreSQL-f5f0e8?style=flat&logoColor=f5f0e8&logo=postgresql" alt="PostgreSQL">
+  <img src="https://img.shields.io/badge/license-MIT-f5f0e8?style=flat" alt="MIT License" />
+  <br>
+  <img src="https://github.com/thiagobraga/planner/actions/workflows/pipeline.yml/badge.svg" alt="Pipeline badge" />
+  <img alt="GitHub Repo stars" src="https://img.shields.io/github/stars/thiagobraga/planner?style=social" alt="Github repository stars" />
+</p>
 
 ## About
 
