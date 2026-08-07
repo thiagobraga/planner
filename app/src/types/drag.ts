@@ -16,7 +16,7 @@ export type DragKind = 'task' | 'habit' | 'habit-group' | 'collection';
  * separate kinds because they resolve differently: a header by closest-center
  * like any sortable row, a section by pointer intersection like any container.
  */
-export type DropKind = 'task' | 'habit' | 'habit-group' | 'habit-section' | 'collection' | 'day';
+export type DropKind = 'task' | 'habit' | 'habit-group' | 'habit-section' | 'collection' | 'day' | 'section';
 
 /**
  * Which ordered list a task position refers to.
@@ -27,7 +27,8 @@ export type DropKind = 'task' | 'habit' | 'habit-group' | 'habit-section' | 'col
  */
 export type TaskOrderScope =
   | { kind: 'collection'; collectionId: string }
-  | { kind: 'day'; dueDate: string };
+  | { kind: 'day'; dueDate: string }
+  | { kind: 'section'; sectionId: string };
 
 export interface TaskDragData {
   kind: 'task';
@@ -123,6 +124,14 @@ export interface DayDropData {
   containerId: string;
 }
 
+/** A task section as a drop target: tasks can be dropped here to move into the section. */
+export interface SectionDropData {
+  kind: 'section';
+  sectionId: string;
+  collectionId: string;
+  containerId: string;
+}
+
 export type DragData =
   | TaskDragData
   | HabitDragData
@@ -135,7 +144,8 @@ export type DropData =
   | HabitGroupDragData
   | HabitSectionDropData
   | CollectionDropData
-  | DayDropData;
+  | DayDropData
+  | SectionDropData;
 
 export function isTaskDrag(data: DragData | undefined): data is TaskDragData {
   return data?.kind === 'task';

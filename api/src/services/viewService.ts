@@ -263,6 +263,12 @@ export async function getMonthView(userId: string, year: number, month: number):
 
 export async function getInboxView(userId: string, now: Date = new Date()) {
   const settings = await getViewPreferences(userId, now);
+  const inboxResult = await pool.query(
+    `SELECT id FROM collections WHERE user_id = $1 AND is_inbox = true`,
+    [userId],
+  );
+  const inboxCollection = inboxResult.rows[0] as { id: string } | undefined;
+
   const result = await pool.query(
     `SELECT t.* FROM tasks t
      JOIN collections p ON p.id = t.collection_id
@@ -282,6 +288,7 @@ export async function getInboxView(userId: string, now: Date = new Date()) {
   return {
     tasks: (result.rows as TaskRow[]).map(formatTask),
     collectionId: null,
+    inboxCollectionId: inboxCollection?.id,
   };
 }
 

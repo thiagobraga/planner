@@ -11,7 +11,7 @@ import {
 } from '../utils/taskProjection';
 import { usePlannerDrag } from '../contexts/PlannerDragContext';
 import { TaskBlockPreview } from './TaskBlockPreview';
-import type { DayDropData } from '../types/drag';
+import type { DayDropData, SectionDropData } from '../types/drag';
 import { useI18n } from '../i18n/I18nContext';
 
 type TaskCallbacks = Pick<
@@ -31,6 +31,13 @@ interface TaskListProps extends TaskCallbacks {
    * collection lists, which are addressed by container id alone.
    */
   dayDate?: string;
+  /**
+   * Set on Collections/Inbox when grouping tasks by section. Creates a section
+   * drop target so tasks can be moved into this section.
+   */
+  sectionId?: string;
+  /** Required when sectionId is set; used to populate SectionDropData. */
+  collectionId?: string;
   /** The task currently being dragged, so its descendants can be dimmed. */
   activeDragId?: string | null;
   /** Rendered next to a row's title - Daily uses it for the collection chip. */
@@ -54,6 +61,8 @@ export function TaskList({
   hideDueDate,
   containerId,
   dayDate,
+  sectionId,
+  collectionId,
   activeDragId,
   renderBadge,
   onTaskToggle,
@@ -70,9 +79,11 @@ export function TaskList({
   const { t } = useI18n();
   const { indentSteps, overId, hasMoved, setOverlayNode } = usePlannerDrag();
 
-  const dropData: DayDropData | undefined = dayDate
+  const dropData: DayDropData | SectionDropData | undefined = dayDate
     ? { kind: 'day', date: dayDate, containerId }
-    : undefined;
+    : sectionId && collectionId
+      ? { kind: 'section', sectionId, collectionId, containerId }
+      : undefined;
 
   // Registered even when empty: an empty day or collection still has to accept a
   // drop, and a SortableContext with no items cannot receive one.

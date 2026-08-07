@@ -8,7 +8,7 @@ import { usePlannerDrag, usePlannerDragHandlers } from '../contexts/PlannerDragC
 import { flattenTasks, getSubtreeBlock, projectMove, type FlatRow } from '../utils/taskProjection';
 import { apiMoveTask, type TaskOrderScope } from '../api/client';
 import { trackMove } from '../utils/moveEcho';
-import type { CollectionDropData, DayDropData, TaskDragData } from '../types/drag';
+import type { CollectionDropData, DayDropData, SectionDropData, TaskDragData } from '../types/drag';
 import type { Task } from '../components/TaskItem';
 
 /**
@@ -99,6 +99,7 @@ export function useTaskDrag({ tasks, setTasks, scope, onError, onMoved }: UseTas
         | TaskDragData
         | DayDropData
         | CollectionDropData
+        | SectionDropData
         | undefined;
       if (!active) return;
 
@@ -138,6 +139,7 @@ export function useTaskDrag({ tasks, setTasks, scope, onError, onMoved }: UseTas
         | TaskDragData
         | DayDropData
         | CollectionDropData
+        | SectionDropData
         | undefined;
       setActiveDragId(null);
       lastPreview.current = null;
@@ -287,7 +289,7 @@ export function resolveMove({
 }: {
   rows: FlatRow<Task>[];
   active: TaskDragData;
-  over: TaskDragData | DayDropData | CollectionDropData;
+  over: TaskDragData | DayDropData | CollectionDropData | SectionDropData;
   offsetX: number;
   scope: TaskOrderScope;
 }): ResolvedMove | null {
@@ -327,6 +329,23 @@ export function resolveMove({
       orderValue: Number.MAX_SAFE_INTEGER,
       announcement: `Moved to ${over.date}.`,
       preview: `Drop to move to ${over.date}.`,
+    };
+  }
+
+  // Dropped into a section: move to top-level of that section, keep other fields.
+  if (over.kind === 'section') {
+    return {
+      input: {
+        parentTaskId: null,
+        sectionId: over.sectionId,
+        scope: { kind: 'section', sectionId: over.sectionId },
+        position: Number.MAX_SAFE_INTEGER, // append to end
+      },
+      parentTaskId: null,
+      depth: 0,
+      orderValue: Number.MAX_SAFE_INTEGER,
+      announcement: 'Moved to section.',
+      preview: 'Drop to move to this section.',
     };
   }
 
@@ -424,6 +443,7 @@ function applyMoveLocally(tasks: Task[], active: TaskDragData, move: ResolvedMov
         orderValue: move.orderValue,
         ...(move.input.collectionId ? { collectionId: move.input.collectionId } : {}),
         ...(move.input.dueDate !== undefined ? { dueDate: move.input.dueDate ?? undefined } : {}),
+        ...(move.input.sectionId !== undefined ? { sectionId: move.input.sectionId ?? undefined } : {}),
       };
     }
     if (block.has(task.id)) {
@@ -433,6 +453,7 @@ function applyMoveLocally(tasks: Task[], active: TaskDragData, move: ResolvedMov
         indent: Math.max(0, (task.indent ?? 0) + rootDepthDelta),
         ...(move.input.collectionId ? { collectionId: move.input.collectionId } : {}),
         ...(move.input.dueDate !== undefined ? { dueDate: move.input.dueDate ?? undefined } : {}),
+        ...(move.input.sectionId !== undefined ? { sectionId: move.input.sectionId ?? undefined } : {}),
       };
     }
     return task;

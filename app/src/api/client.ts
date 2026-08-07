@@ -331,7 +331,7 @@ export async function apiCreateTask(input: {
 
 export async function apiUpdateTask(
   id: string,
-  updates: Partial<Pick<ApiTask, 'title' | 'priority' | 'dueDate' | 'depth' | 'type' | 'collectionId'>> & {
+  updates: Partial<Pick<ApiTask, 'title' | 'priority' | 'dueDate' | 'depth' | 'type' | 'collectionId' | 'sectionId'>> & {
     parentTaskId?: string | null;
   },
 ): Promise<ApiTask> {
@@ -363,11 +363,12 @@ export async function apiDeleteTask(id: string): Promise<void> {
  *
  * These are independent orderings of the same task - see migration 025. A drag
  * inside a collection reorders the collection scope and leaves the day scope
- * alone, and vice versa.
+ * alone, and vice versa. A drag into a section updates the section scope.
  */
 export type TaskOrderScope =
   | { kind: 'collection'; collectionId: string }
-  | { kind: 'day'; dueDate: string };
+  | { kind: 'day'; dueDate: string }
+  | { kind: 'section'; sectionId: string };
 
 export interface TaskMoveInput {
   /** New parent, or null to place at the top level. */
@@ -376,6 +377,8 @@ export interface TaskMoveInput {
   collectionId?: string;
   /** ISO YYYY-MM-DD; null clears the date. Omit to keep the current one. */
   dueDate?: string | null;
+  /** Omit to keep the task's current section. */
+  sectionId?: string | null;
   /** The list the task lands in. */
   scope: TaskOrderScope;
   /** Zero-based index within that scope. Clamped server-side. */
@@ -498,6 +501,40 @@ export interface CollectionView {
 
 export async function fetchCollectionView(id: string): Promise<CollectionView> {
   return request<CollectionView>(`/views/collection/${id}`);
+}
+
+// ── Sections ──────────────────────────────────────────────────────────────────
+
+export interface ApiSection {
+  id: string;
+  name: string;
+  collectionId: string;
+  orderValue: number;
+}
+
+export async function fetchSections(collectionId: string): Promise<ApiSection[]> {
+  return request<ApiSection[]>(`/collections/${collectionId}/sections`);
+}
+
+export async function apiCreateSection(collectionId: string, input: { name: string }): Promise<ApiSection> {
+  return request<ApiSection>(`/collections/${collectionId}/sections`, {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+}
+
+export async function apiUpdateSection(
+  sectionId: string,
+  updates: Partial<Pick<ApiSection, 'name' | 'orderValue'>>,
+): Promise<ApiSection> {
+  return request<ApiSection>(`/sections/${sectionId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(updates),
+  });
+}
+
+export async function apiDeleteSection(sectionId: string): Promise<void> {
+  await request<unknown>(`/sections/${sectionId}`, { method: 'DELETE' });
 }
 
 // ── Habits ───────────────────────────────────────────────────────────────────
