@@ -175,6 +175,7 @@ export const englishCatalog = {
   'page.noHabitsGroup': 'No habits in this group.',
   'page.newGroup': 'New group',
   'page.newHabit': 'New habit',
+  'page.newSection': 'New section',
   'page.habitName': 'Habit name',
   'page.timelineView': 'Timeline view',
   'page.calendarView': 'Calendar view',

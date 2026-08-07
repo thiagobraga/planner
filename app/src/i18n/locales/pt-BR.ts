@@ -177,6 +177,7 @@ export const portugueseBrazilCatalog = {
   'page.noHabitsGroup': 'Nenhum hábito neste grupo.',
   'page.newGroup': 'Novo grupo',
   'page.newHabit': 'Novo hábito',
+  'page.newSection': 'Nova seção',
   'page.habitName': 'Nome do hábito',
   'page.timelineView': 'Visualização em linha do tempo',
   'page.calendarView': 'Visualização em calendário',
