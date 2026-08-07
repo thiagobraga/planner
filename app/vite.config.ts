@@ -55,6 +55,13 @@ export default defineConfig({
     globals: true,
     setupFiles: ['./src/test/setup.ts'],
   },
+  // Disable CSS minification (lightningcss) during CI hooks to avoid native
+  // binary platform mismatches inside the hook's docker environment. Vite
+  // still builds JS and bundles CSS; production builds in CI should enable
+  // minification separately if desired.
+  build: {
+    minify: false,
+  },
   server: {
     port: 5173,
     host: true,
