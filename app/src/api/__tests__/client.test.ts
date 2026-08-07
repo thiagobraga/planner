@@ -11,8 +11,8 @@ describe('api client unit tests', () => {
     vi.unstubAllGlobals();
   });
 
-  it('ApiError.fieldErrors narrows details to ValidationDetail[]', () => {
-    const { ApiError } = require('../../client');
+  it('ApiError.fieldErrors narrows details to ValidationDetail[]', async () => {
+    const { ApiError } = await import('../../client');
     const err = new ApiError({
       message: 'bad',
       code: 'VALIDATION',
