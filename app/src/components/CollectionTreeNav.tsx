@@ -1,6 +1,6 @@
 import { Fragment, useMemo, useState, useCallback, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   type DragStartEvent,
   type DragMoveEvent,
@@ -10,7 +10,7 @@ import { SortableContext, useSortable, arrayMove, verticalListSortingStrategy } 
 import { usePlannerDrag, usePlannerDragHandlers } from '../contexts/PlannerDragContext';
 import type { CollectionDragData, CollectionDropData } from '../types/drag';
 import { CSS } from '@dnd-kit/utilities';
-import { Plus } from 'lucide-react';
+import { ChevronRight, Plus } from 'lucide-react';
 import { ContextMenu } from './ui/ContextMenu';
 import { ColorPickerPopover } from './ui/ColorPickerPopover';
 import { buildCollectionMenuItems } from './collectionMenuItems';
@@ -19,12 +19,15 @@ import {
   apiCreateCollection,
   apiUpdateCollection,
   apiDeleteCollection,
+  apiUpdatePreferences,
   PALETTE_COLORS,
   type ApiCollection,
+  type Preferences,
 } from '../api/client';
 import { runOptimistic, patchById, upsertById } from '../stores/optimistic';
 import { ConfirmModal } from './ConfirmModal';
 import { useI18n } from '../i18n/I18nContext';
+import { usePreferences } from '../hooks/usePreferences';
 
 const INDENT = 22;
 const MAX_DEPTH = 4; // backend enforces nesting depth of 4
@@ -122,6 +125,51 @@ export function flattenCollections(collections: ApiCollection[]): FlatCollection
   return out;
 }
 
+function ancestorIds(flat: FlatCollection[], collectionId: string | null): Set<string> {
+  const parentById = new Map(flat.map((item) => [item.id, item.parentId]));
+  const ancestors = new Set<string>();
+  let parentId = collectionId ? parentById.get(collectionId) : null;
+
+  while (parentId) {
+    ancestors.add(parentId);
+    parentId = parentById.get(parentId) ?? null;
+  }
+
+  return ancestors;
+}
+
+export function visibleCollections(
+  flat: FlatCollection[],
+  collapsedIds: ReadonlySet<string>,
+  revealedIds: ReadonlySet<string>,
+): FlatCollection[] {
+  const parentById = new Map(flat.map((item) => [item.id, item.parentId]));
+
+  return flat.filter((item) => {
+    let parentId = item.parentId;
+    while (parentId) {
+      if (collapsedIds.has(parentId) && !revealedIds.has(parentId)) return false;
+      parentId = parentById.get(parentId) ?? null;
+    }
+    return true;
+  });
+}
+
+function reorderVisibleCollections(
+  flat: FlatCollection[],
+  visible: FlatCollection[],
+  activeIndex: number,
+  overIndex: number,
+): FlatCollection[] {
+  const reorderedVisible = arrayMove(visible, activeIndex, overIndex);
+  const visibleIds = new Set(visible.map((item) => item.id));
+  let visibleIndex = 0;
+
+  return flat.map((item) => (
+    visibleIds.has(item.id) ? reorderedVisible[visibleIndex++] : item
+  ));
+}
+
 // Compute the projected parent/depth for the dragged item given the horizontal drag offset.
 function getProjection(
   items: FlatCollection[],
@@ -165,9 +213,25 @@ export function CollectionTreeNav() {
   const location = useLocation();
   const qc = useQueryClient();
   const { data: collections = [] } = useQuery({ queryKey: ['collections'], queryFn: fetchCollections });
+  const { data: preferences } = usePreferences();
 
   const flat = useMemo(() => flattenCollections(collections), [collections]);
   const selectedCollectionId = location.pathname.match(/^\/collection\/([^/]+)$/)?.[1] ?? null;
+  const collectionIds = useMemo(() => new Set(flat.map((item) => item.id)), [flat]);
+  const normalizedCollapsedIds = useMemo(
+    () => [...new Set(preferences?.collapsedCollectionIds ?? [])].filter((id) => collectionIds.has(id)),
+    [collectionIds, preferences?.collapsedCollectionIds],
+  );
+  const collapsedIds = useMemo(() => new Set(normalizedCollapsedIds), [normalizedCollapsedIds]);
+  const revealedIds = useMemo(() => ancestorIds(flat, selectedCollectionId), [flat, selectedCollectionId]);
+  const visibleFlat = useMemo(
+    () => visibleCollections(flat, collapsedIds, revealedIds),
+    [collapsedIds, flat, revealedIds],
+  );
+  const parentIds = useMemo(
+    () => new Set(flat.flatMap((item) => item.parentId ? [item.parentId] : [])),
+    [flat],
+  );
 
   const [activeId, setActiveId] = useState<string | null>(null);
   const [offsetLeft, setOffsetLeft] = useState(0);
@@ -180,9 +244,34 @@ export function CollectionTreeNav() {
   const [deletingCollection, setDeletingCollection] = useState<{ id: string; name: string } | null>(null);
 
   const projection =
-    activeId && flat.length
-      ? getProjection(flat, activeId, overIdRef.current ?? activeId, offsetLeft)
+    activeId && visibleFlat.length
+      ? getProjection(visibleFlat, activeId, overIdRef.current ?? activeId, offsetLeft)
       : null;
+
+  const collapsedMutation = useMutation({
+    mutationFn: (collapsedCollectionIds: string[]) => apiUpdatePreferences({ collapsedCollectionIds }),
+    onMutate: async (collapsedCollectionIds) => {
+      await qc.cancelQueries({ queryKey: ['preferences'] });
+      const previous = qc.getQueryData<Preferences>(['preferences']);
+      if (previous) {
+        qc.setQueryData<Preferences>(['preferences'], { ...previous, collapsedCollectionIds });
+      }
+      return { previous };
+    },
+    onError: (_error, _collapsedCollectionIds, context) => {
+      if (context?.previous) qc.setQueryData(['preferences'], context.previous);
+    },
+    onSuccess: (nextPreferences) => {
+      qc.setQueryData(['preferences'], nextPreferences);
+    },
+  });
+
+  const handleToggleCollapsed = (id: string) => {
+    const nextIds = collapsedIds.has(id)
+      ? normalizedCollapsedIds.filter((collapsedId) => collapsedId !== id)
+      : [...normalizedCollapsedIds, id];
+    collapsedMutation.mutate(nextIds);
+  };
 
   const setCollectionsCache = useCallback(
     (updater: (prev: ApiCollection[]) => ApiCollection[]) => {
@@ -262,13 +351,13 @@ export function CollectionTreeNav() {
     overIdRef.current = null;
     if (!over || !proj) return;
 
-    const activeIndex = flat.findIndex((i) => i.id === event.active.id);
-    const overIndex = flat.findIndex((i) => i.id === over.id);
+    const activeIndex = visibleFlat.findIndex((i) => i.id === event.active.id);
+    const overIndex = visibleFlat.findIndex((i) => i.id === over.id);
     // The shared context also offers the Inbox nav item as a collection target.
     // It is a valid place to drop a *task*, but not a peer in this sortable list.
     if (activeIndex === -1 || overIndex === -1) return;
 
-    const reordered = arrayMove(flat, activeIndex, overIndex).map((item) =>
+    const reordered = reorderVisibleCollections(flat, visibleFlat, activeIndex, overIndex).map((item) =>
       item.id === event.active.id ? { ...item, parentId: proj.parentId } : item,
     );
 
@@ -353,20 +442,23 @@ export function CollectionTreeNav() {
         </button>
       </div>
 
-      <SortableContext items={flat.map((f) => f.id)} strategy={verticalListSortingStrategy}>
-          {flat.map((item) => (
+      <SortableContext items={visibleFlat.map((f) => f.id)} strategy={verticalListSortingStrategy}>
+          {visibleFlat.map((item) => (
             <Fragment key={item.id}>
               <SortableCollectionRow
                 item={item}
                 depth={activeId === item.id && projection ? projection.depth : item.depth}
                 isActive={selectedCollectionId === item.id}
                 isEditing={editingId === item.id}
+                hasChildren={parentIds.has(item.id)}
+                isExpanded={!collapsedIds.has(item.id) || revealedIds.has(item.id)}
                 draft={draft}
                 onNavigate={() => navigate(`/collection/${item.id}`)}
                 onStartRename={() => { setEditingId(item.id); setDraft(item.name); }}
                 onDraftChange={setDraft}
                 onCommitRename={() => handleRename(item.id, draft)}
                 onCancelRename={() => setEditingId(null)}
+                onToggleCollapsed={() => handleToggleCollapsed(item.id)}
                 onAddSub={() => handleStartSubCollection(item.id)}
                 onDelete={() => handleDelete(item.id, item.name)}
                 onColorCommit={(color) => handleColorChange(item.id, color)}
@@ -443,12 +535,15 @@ interface RowProps {
   depth: number;
   isActive: boolean;
   isEditing: boolean;
+  hasChildren: boolean;
+  isExpanded: boolean;
   draft: string;
   onNavigate: () => void;
   onStartRename: () => void;
   onDraftChange: (v: string) => void;
   onCommitRename: () => void;
   onCancelRename: () => void;
+  onToggleCollapsed: () => void;
   onAddSub: () => void;
   onDelete: () => void;
   onColorCommit: (color: string) => void;
@@ -459,12 +554,15 @@ function SortableCollectionRow({
   depth,
   isActive,
   isEditing,
+  hasChildren,
+  isExpanded,
   draft,
   onNavigate,
   onStartRename,
   onDraftChange,
   onCommitRename,
   onCancelRename,
+  onToggleCollapsed,
   onAddSub,
   onDelete,
   onColorCommit,
@@ -554,24 +652,26 @@ function SortableCollectionRow({
             >
               {item.name}
             </button>
-            <button
-              type="button"
-              className="collection-row__action bg-transparent border-0 cursor-pointer text-ink-light text-sm leading-none py-0 px-0.5 shrink-0"
-              aria-label={`${t('page.addSubCollection')} ${item.name}`}
-              title={t('page.addSubCollection')}
-              onClick={onAddSub}
-            >
-              +
-            </button>
-            <button
-              type="button"
-              className="collection-row__action bg-transparent border-0 cursor-pointer text-ink-light text-sm leading-none py-0 px-0.5 shrink-0"
-              aria-label={t('page.deleteNamed', { name: item.name })}
-              title={t('page.deleteCollection')}
-              onClick={onDelete}
-            >
-              ×
-            </button>
+            {hasChildren && (
+              <button
+                type="button"
+                aria-label={t(isExpanded ? 'page.collapseCollection' : 'page.expandCollection', { name: item.name })}
+                aria-expanded={isExpanded}
+                onPointerDown={(event) => event.stopPropagation()}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onToggleCollapsed();
+                }}
+                className="flex size-5 shrink-0 cursor-pointer items-center justify-center border-0 bg-transparent p-0 text-ink-light"
+              >
+                <ChevronRight
+                  aria-hidden="true"
+                  size={14}
+                  strokeWidth={1.5}
+                  className={`transition-transform duration-[var(--motion-fast)] ${isExpanded ? 'rotate-90' : ''}`}
+                />
+              </button>
+            )}
           </>
         )}
       </div>

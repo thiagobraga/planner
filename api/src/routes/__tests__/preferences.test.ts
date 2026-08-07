@@ -31,6 +31,7 @@ describe("preferences routes", () => {
       font: "lora",
       hideCompletedTasks: false,
       hideOldNotes: false,
+      collapsedCollectionIds: [],
     });
     const res = await request(app).get("/api/v1/preferences");
     expect(res.status).toBe(200);
@@ -38,14 +39,30 @@ describe("preferences routes", () => {
       font: "lora",
       hideCompletedTasks: false,
       hideOldNotes: false,
+      collapsedCollectionIds: [],
     });
     expect(mockGetPreferences).toHaveBeenCalledWith("test-user");
   });
 
   it("PATCH /api/v1/preferences → calls updatePreferences", async () => {
-    mockUpdatePreferences.mockResolvedValue({ font: "playpen", hideCompletedTasks: true, hideOldNotes: true });
-    const res = await request(app).patch("/api/v1/preferences").send({ font: "playpen", hideCompletedTasks: true });
+    const collectionId = "11111111-1111-4111-8111-111111111111";
+    mockUpdatePreferences.mockResolvedValue({
+      font: "playpen",
+      hideCompletedTasks: true,
+      hideOldNotes: true,
+      collapsedCollectionIds: [collectionId],
+    });
+    const res = await request(app).patch("/api/v1/preferences").send({
+      font: "playpen",
+      hideCompletedTasks: true,
+      collapsedCollectionIds: [collectionId],
+    });
     expect(res.status).toBe(200);
-    expect(mockUpdatePreferences).toHaveBeenCalledWith("test-user", { font: "playpen", hideCompletedTasks: true });
+    expect(res.body.collapsedCollectionIds).toEqual([collectionId]);
+    expect(mockUpdatePreferences).toHaveBeenCalledWith("test-user", {
+      font: "playpen",
+      hideCompletedTasks: true,
+      collapsedCollectionIds: [collectionId],
+    });
   });
 });

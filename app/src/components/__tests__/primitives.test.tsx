@@ -87,6 +87,30 @@ describe('ContextMenu', () => {
     fireEvent.click(screen.getByText('Edit'));
     expect(onClose).toHaveBeenCalledTimes(1);
   });
+
+  it('portals beneath the app shell and inherits its font and theme tokens', () => {
+    const { container, rerender } = render(<div className="app-shell" />);
+
+    rerender(
+      <div className="app-shell font-playpen">
+        <ContextMenu
+          position={{ x: 0, y: 0 }}
+          onClose={vi.fn()}
+          items={[{ type: 'item', label: 'Edit' }]}
+        />
+      </div>
+    );
+
+    const shell = container.querySelector('.app-shell')!;
+    const menuRoot = shell.querySelector('.ui-context-menu-root');
+    const panel = shell.querySelector('.ui-context-menu-panel');
+    const item = shell.querySelector('.ui-context-menu-item');
+
+    expect(menuRoot).toBeInTheDocument();
+    expect(panel).toHaveClass('bg-[var(--planner-overlay-bg,var(--color-cream))]');
+    expect(item).toHaveClass('bg-[var(--planner-overlay-hover-bg,rgba(212,207,199,0.4))]');
+    expect(item).not.toHaveClass('font-journal');
+  });
 });
 
 describe('CustomSelect', () => {

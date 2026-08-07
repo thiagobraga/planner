@@ -567,7 +567,7 @@ textarea:focus-visible {
   display: flex;
 }
 
-/* Collection rows - reveal row actions on hover */
+/* Collection rows */
 .collection-row {
   border-radius: 4px;
 
@@ -579,14 +579,6 @@ textarea:focus-visible {
 .collection-row--active:hover {
   background: var(--planner-sidebar-active-bg);
 }
-.collection-row__action {
-  opacity: 0;
-  transition: opacity 120ms ease;
-}
-.collection-row:hover .collection-row__action {
-  opacity: 0.7;
-}
-
 /* Collections index page */
 .collections-index-page {
   --page-header-toolbar-space: 48px;
