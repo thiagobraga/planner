@@ -68,7 +68,7 @@ export function TaskList({
   onRightClick,
 }: TaskListProps) {
   const { t } = useI18n();
-  const { activeDrag, indentSteps, overId, hasMoved, setOverlayNode } = usePlannerDrag();
+  const { indentSteps, overId, hasMoved, setOverlayNode } = usePlannerDrag();
 
   const dropData: DayDropData | undefined = dayDate
     ? { kind: 'day', date: dayDate, containerId }
@@ -166,12 +166,19 @@ export function TaskList({
         ref={setNodeRef}
         role="list"
         aria-label={t('task.list')}
-        // Every list claims a row of drop area below itself while a drag is in
-        // flight, so the 24px seam before the next date is never a dead zone no
-        // droppable covers. The class cancels its own height with a negative
-        // margin - see the note on the rule for why it has to cost the layout
-        // nothing.
-        className={`task-list flex flex-col gap-0 ${activeDrag ? 'task-list--drag-target' : ''}`}
+        // Every list claims a row of drop area below itself, so the 24px seam
+        // before the next date is never a dead zone no droppable covers. The
+        // class cancels its own height with a negative margin - see the note on
+        // the rule for why it has to cost the layout nothing.
+        //
+        // Applied unconditionally rather than only while `activeDrag` is set:
+        // dnd-kit measures every droppable's rect once at drag start
+        // (`MeasuringStrategy.BeforeDragging`), which runs before React has
+        // committed the re-render that would add a drag-conditional class. The
+        // padding therefore was not part of the measured rect, and the hit area
+        // that lets a row drop *below* the last one never existed for the rest
+        // of the gesture.
+        className="task-list task-list--drag-target flex flex-col gap-0"
       >
         {showEmptyInsert && (
           <div aria-hidden className="task-list-slot" style={{ marginLeft: foreignInsertDepth * INDENT_WIDTH }} />

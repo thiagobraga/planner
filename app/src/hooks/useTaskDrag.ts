@@ -1,7 +1,6 @@
 import { useCallback, useRef, useState } from 'react';
 import type {
   DragEndEvent,
-  DragMoveEvent,
   DragOverEvent,
   DragStartEvent,
 } from '@dnd-kit/core';
@@ -9,7 +8,6 @@ import { usePlannerDrag, usePlannerDragHandlers } from '../contexts/PlannerDragC
 import { flattenTasks, getSubtreeBlock, projectMove, type FlatRow } from '../utils/taskProjection';
 import { apiMoveTask, type TaskOrderScope } from '../api/client';
 import { trackMove } from '../utils/moveEcho';
-import { createIndentTracker } from '../utils/dragIndent';
 import type { CollectionDropData, DayDropData, TaskDragData } from '../types/drag';
 import type { Task } from '../components/TaskItem';
 
@@ -55,15 +53,15 @@ interface UseTaskDragOptions {
  * a visible snap-back.
  */
 export function useTaskDrag({ tasks, setTasks, scope, onError, onMoved }: UseTaskDragOptions) {
-  const { setOverlay, announce } = usePlannerDrag();
+  // `indentOffset` is the provider's own tracker, quantised to whole steps.
+  // This hook deliberately keeps no tracker of its own: the preview renders
+  // from the provider's state and the commit reads this, so the two cannot
+  // drift apart the way two separately-updated trackers did.
+  const { setOverlay, announce, indentOffset } = usePlannerDrag();
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
-  const offsetX = useRef(0);
   const snapshot = useRef<Task[] | null>(null);
   /** Last spoken hover target, so an unchanged projection is not repeated. */
   const lastPreview = useRef<string | null>(null);
-  /** Nesting intent, rebased on each row so drift cannot accumulate. */
-  const indent = useRef(createIndentTracker());
-  const overRowId = useRef<string | null>(null);
 
   const rows = flattenTasks(tasks);
 
@@ -73,9 +71,6 @@ export function useTaskDrag({ tasks, setTasks, scope, onError, onMoved }: UseTas
       if (!data) return;
       const id = data.taskId;
       setActiveDragId(id);
-      offsetX.current = 0;
-      indent.current.reset();
-      overRowId.current = null;
       snapshot.current = tasks;
       lastPreview.current = null;
 
@@ -90,11 +85,6 @@ export function useTaskDrag({ tasks, setTasks, scope, onError, onMoved }: UseTas
     },
     [tasks, setOverlay, announce],
   );
-
-  const handleDragMove = useCallback((event: DragMoveEvent) => {
-    indent.current.move(event.delta.x);
-    offsetX.current = indent.current.offset();
-  }, []);
 
   /**
    * Speak the target the row would land on if released now.
@@ -112,15 +102,8 @@ export function useTaskDrag({ tasks, setTasks, scope, onError, onMoved }: UseTas
         | undefined;
       if (!active) return;
 
-      // Rebase nesting intent whenever the pointer reaches a different row, so
-      // sideways drift on the way there is not read as a request to indent.
-      const overRow = event.over ? String(event.over.id) : null;
-      if (overRow !== overRowId.current) {
-        overRowId.current = overRow;
-        indent.current.enterRow();
-        offsetX.current = indent.current.offset();
-      }
-
+      // Rebasing on each new hovered row happens in the provider, which owns the
+      // one tracker both the preview and the commit read.
       if (!over) {
         if (lastPreview.current !== null) {
           lastPreview.current = null;
@@ -139,13 +122,13 @@ export function useTaskDrag({ tasks, setTasks, scope, onError, onMoved }: UseTas
         return;
       }
 
-      const move = resolveMove({ rows, active, over, offsetX: offsetX.current, scope });
+      const move = resolveMove({ rows, active, over, offsetX: indentOffset(), scope });
       const message = move?.preview ?? 'That is not a valid place to drop this task.';
       if (lastPreview.current === message) return;
       lastPreview.current = message;
       announce(message);
     },
-    [rows, scope, announce],
+    [rows, scope, announce, indentOffset],
   );
 
   const handleDragEnd = useCallback(
@@ -181,7 +164,7 @@ export function useTaskDrag({ tasks, setTasks, scope, onError, onMoved }: UseTas
         return;
       }
 
-      const move = resolveMove({ rows, active, over, offsetX: offsetX.current, scope });
+      const move = resolveMove({ rows, active, over, offsetX: indentOffset(), scope });
       if (!move) {
         announce('That is not a valid place to drop this task.');
         return;
@@ -240,7 +223,7 @@ export function useTaskDrag({ tasks, setTasks, scope, onError, onMoved }: UseTas
         })
         .finally(untrack);
     },
-    [rows, tasks, scope, setTasks, announce, onError, onMoved],
+    [rows, tasks, scope, setTasks, announce, onError, onMoved, indentOffset],
   );
 
   const handleDragCancel = useCallback(() => {
@@ -259,7 +242,6 @@ export function useTaskDrag({ tasks, setTasks, scope, onError, onMoved }: UseTas
 
   usePlannerDragHandlers('task', {
     onDragStart: handleDragStart,
-    onDragMove: handleDragMove,
     onDragOver: handleDragOver,
     onDragEnd: handleDragEnd,
     onDragCancel: handleDragCancel,

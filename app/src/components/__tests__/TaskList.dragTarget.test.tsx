@@ -15,8 +15,9 @@ import type { Task } from '../TaskItem';
  * nearest-row matching and landed inserted *before* the target's last row
  * instead of appended after it ("moving Teste 2 from TUE to after Note test
  * on WED" - not possible). `.task-list--drag-target` closes that gap by
- * padding the container 24px while a drag is in flight, cancelled by an
- * equal negative margin so the page never shifts.
+ * padding the container 24px, cancelled by an equal negative margin so the
+ * page never shifts. The padding is claimed unconditionally rather than only
+ * during a drag, so dnd-kit's one-shot rect measurement at drag start sees it.
  */
 
 type DragHandler = (event: unknown) => void;
@@ -72,17 +73,28 @@ const tasks: Task[] = [
 ];
 
 describe('TaskList: the droppable reaches into the gap below the section', () => {
-  it('does not claim drop area while nothing is being dragged', () => {
+  /**
+   * The drop area has to exist *before* the drag starts, not once it has.
+   *
+   * `MeasuringStrategy.BeforeDragging` measures every droppable's rect a single
+   * time, at drag start - which happens before React commits the re-render that
+   * a drag-conditional class would arrive on. Claiming the padding only while
+   * `activeDrag` was truthy therefore left it out of the measured rect for the
+   * whole gesture, and the seam below the last row went back to being the dead
+   * zone this rule exists to close. These assert the class is present with no
+   * drag in flight for that reason; the negative margin keeps it free.
+   */
+  it('claims the 24px drop area on a populated list before any drag starts', () => {
     const { container } = render(
       <PlannerDragProvider>
         <TaskList tasks={tasks} containerId="day:wed" dayDate="2026-08-05" />
       </PlannerDragProvider>,
     );
 
-    expect(container.querySelectorAll('.task-list--drag-target').length).toBe(0);
+    expect(container.querySelectorAll('.task-list--drag-target').length).toBe(1);
   });
 
-  it('claims a 24px drop area below a populated list once a drag starts', () => {
+  it('keeps claiming it once a drag is in flight', () => {
     const { container } = render(
       <PlannerDragProvider>
         <TaskList tasks={tasks} containerId="day:wed" dayDate="2026-08-05" />

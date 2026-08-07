@@ -430,14 +430,17 @@ button,
   plain nearest-row matching, and landed inserted *before* the last row instead
   of appended after it.
 
-  The row of drop area is claimed only while a drag is in flight, and is undone
-  by an equal negative margin, so the list occupies exactly as much space as it
-  did before. Both halves matter:
+  The row of drop area is undone by an equal negative margin, so the list
+  occupies exactly as much space as it did before. That negative margin is what
+  makes permanent reservation free: reserving the padding *without* it grew the
+  content by 24px, which as a mid-drag shift made dnd-kit move the scroll
+  position - pressing a row scrolled the page and released it back.
 
-  - reserving it permanently left a blank line under every date;
-  - reserving it *without* the negative margin grew the content by 24px on
-    pickup, and dnd-kit answers a mid-drag layout shift by moving the scroll
-    position - so pressing a row scrolled the page and released it back.
+  The class is applied unconditionally rather than toggled on drag start.
+  `MeasuringStrategy.BeforeDragging` measures each droppable's rect once, before
+  React commits the render that would add a drag-conditional class, so the
+  padding was absent from the measured rect and the seam stayed a dead zone for
+  the whole gesture - the exact bug this rule exists to prevent.
 
   Padding rather than min-height so it adds space unconditionally instead of
   only when the list has none of its own yet - the same rule now covers both

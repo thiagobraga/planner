@@ -147,10 +147,16 @@ export function DailyPage() {
 
   const todayKey = useMemo(() => fmtISOInTimeZone(new Date(), prefs?.timeZone), [prefs?.timeZone]);
 
+  // Reads the format from `prefs` rather than `prefsRef`, and depends on it, so
+  // the first load is re-run once preferences arrive. `prefsRef` is populated by
+  // an effect that runs *after* render, and the mount effect below fires this
+  // before that has happened - so a ref read here always saw `undefined` on the
+  // first pass and rendered the default format, with nothing scheduled to
+  // correct it.
+  const dateFormat = prefs?.dateFormat ?? 'MMM DD ddd';
   const replaceTodayFromApi = useCallback(() => {
     const requestId = ++loadRequestId.current;
     const currentToday = fmtISOInTimeZone(new Date(), prefsRef.current?.timeZone);
-    const dateFormat = prefsRef.current?.dateFormat ?? 'MMM DD ddd';
     fetchTodayTasks().then((response) => {
       if (requestId !== loadRequestId.current) return;
       const overdueTasks = (response.overdue || []).map(apiToTask);
@@ -160,7 +166,7 @@ export function DailyPage() {
       if (requestId !== loadRequestId.current) return;
       setSections(buildSections([], [], locale, currentToday, dateFormat));
     });
-  }, [locale]);
+  }, [locale, dateFormat]);
 
   const handleToday = useCallback(() => {
     todaySectionRef.current?.scrollIntoView({
@@ -216,7 +222,14 @@ export function DailyPage() {
         const key = created.dueDate && /^\d{4}-\d{2}-\d{2}$/.test(created.dueDate) ? created.dueDate : todayKey;
         const existingIdx = prev.findIndex((s) => s.key === key);
         if (existingIdx === -1) {
-          const next = [...prev, { key, label: dayLabel(dateFromISO(key), locale), tasks: [created] }];
+          const next = [
+            ...prev,
+            {
+              key,
+              label: dayLabel(dateFromISO(key), locale, prefsRef.current?.dateFormat),
+              tasks: [created],
+            },
+          ];
           return next.sort((a, b) => (a.key < b.key ? 1 : -1));
         }
         return prev.map((s, i) => (i === existingIdx ? { ...s, tasks: [...s.tasks, created] } : s));
@@ -244,9 +257,11 @@ export function DailyPage() {
   const allTasks = useMemo(() => sections.flatMap((s) => s.tasks), [sections]);
   const setAllTasks = useCallback(
     (updater: (prev: Task[]) => Task[]) => {
-      setSections((prev) => buildSections([], updater(prev.flatMap((s) => s.tasks)), locale, todayKey));
+      setSections((prev) =>
+        buildSections([], updater(prev.flatMap((s) => s.tasks)), locale, todayKey, dateFormat),
+      );
     },
-    [locale, todayKey],
+    [locale, todayKey, dateFormat],
   );
 
   const { activeDragId } = useTaskDrag({
@@ -256,7 +271,13 @@ export function DailyPage() {
     onError: () => {
       fetchTodayTasks().then((response) => {
         setSections(
-          buildSections((response.overdue || []).map(apiToTask), (response.today || []).map(apiToTask), locale, todayKey),
+          buildSections(
+            (response.overdue || []).map(apiToTask),
+            (response.today || []).map(apiToTask),
+            locale,
+            todayKey,
+            dateFormat,
+          ),
         );
       });
     },
@@ -542,7 +563,14 @@ export function DailyPage() {
     updateSections((prev) => {
       const withToday = prev.some((s) => s.key === todayKey)
         ? prev
-        : [...prev, { key: todayKey, label: dayLabel(dateFromISO(todayKey), locale), tasks: [] }];
+        : [
+          ...prev,
+          {
+            key: todayKey,
+            label: dayLabel(dateFromISO(todayKey), locale, prefsRef.current?.dateFormat),
+            tasks: [],
+          },
+        ];
 
       return withToday.map((s) =>
         s.key === todayKey
