@@ -350,16 +350,15 @@ export function StyleguidePage() {
         <Card title="Chips & Tags">
           <div className="flex flex-col gap-4">
             <div>
-              <span className="text-[10px] text-ink-light uppercase tracking-[0.1em] block mb-2">Collection chips</span>
+              <span className="text-[10px] text-ink-light uppercase tracking-widest block mb-2">Collection chips</span>
               <div className="flex flex-wrap gap-2 items-center">
                 {COLLECTIONS.map((p) => (
                   <CollectionChip key={p.name} name={p.name} color={p.color} />
                 ))}
-                <Chip className="text-ink-light">＋ New</Chip>
               </div>
             </div>
             <div>
-              <span className="text-[10px] text-ink-light uppercase tracking-[0.1em] block mb-2">Status</span>
+              <span className="text-[10px] text-ink-light uppercase tracking-widest block mb-2">Status</span>
               <div className="flex flex-wrap gap-2 items-center">
                 <StatusPill status="open" />
                 <StatusPill status="in_progress" />
@@ -368,7 +367,7 @@ export function StyleguidePage() {
               </div>
             </div>
             <div>
-              <span className="text-[10px] text-ink-light uppercase tracking-[0.1em] block mb-2">Priorities</span>
+              <span className="text-[10px] text-ink-light uppercase tracking-widest block mb-2">Priorities</span>
               <div className="flex flex-wrap gap-4 items-center">
                 <PriorityDot priority={1} showLabel />
                 <PriorityDot priority={2} showLabel />
@@ -404,7 +403,7 @@ export function StyleguidePage() {
             </nav>
             <div className="mt-6">
               <div className="flex items-center justify-between px-3">
-                <span className="text-[10px] font-medium uppercase leading-6 tracking-[0.1em] text-ink-light">Collections</span>
+                <span className="text-[10px] font-medium uppercase leading-6 tracking-widest text-ink-light">Collections</span>
                 <span className="flex items-center text-sm leading-none text-ink-light" aria-hidden="true">+</span>
               </div>
               {NAV_COLLECTIONS.map((collection) => (
@@ -558,7 +557,7 @@ export function StyleguidePage() {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="text-[10px] text-ink-light uppercase tracking-[0.1em] block mb-1.5">{label}</label>
+      <label className="text-[10px] text-ink-light uppercase tracking-widest block mb-1.5">{label}</label>
       {children}
     </div>
   );
@@ -567,7 +566,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 function TokenRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="grid grid-cols-1 gap-2">
-      <span className="text-[10px] text-ink-light uppercase tracking-[0.1em] block">{label}</span>
+      <span className="text-[10px] text-ink-light uppercase tracking-widest block">{label}</span>
       {children}
     </div>
   );
