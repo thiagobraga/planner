@@ -1,4 +1,4 @@
-# Coverage — Full Blaster — Tasks
+# Full coverage tests — Tasks
 
 - [ ] Inventory uncovered files and produce prioritized list (low->high risk)
 - [ ] Add unit tests for app/src/api/client.ts (mock fetch/XHR, edge cases)

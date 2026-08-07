@@ -314,21 +314,17 @@ export async function apiLoginWithGoogle(idToken: string) {
 
 ---
 
-## Open Questions
+## Decisions (Confirmed)
 
-> [!IMPORTANT]
-> **Google Cloud Project Setup**: A Google Cloud project with OAuth consent screen must be configured. Who sets this up? The developer needs:
+> [!NOTE]
+> **Google Cloud Project Setup**: Owner (Thiago) will create the Google Cloud project and OAuth credentials. Requirements:
 > - Google Cloud Console → APIs & Services → Credentials → OAuth 2.0 Client ID (Web application)
 > - Authorized JavaScript origins: `https://planner.local`, production domain
 > - Authorized redirect URIs: not needed (popup flow, no server redirect)
 > - OAuth consent screen: "External" user type, app name, support email
 
-> [!IMPORTANT]
-> **Account Linking Conflict**: If a user registered with email/password and then signs in with Google using the same email, should we:
-> - **(A)** Auto-link the accounts (recommended — seamless UX)
-> - **(B)** Ask the user to confirm by entering their password first (more secure but friction)
->
-> **Recommendation**: Option A for this phase. The email is verified by Google, so it's safe to auto-link.
+> [!NOTE]
+> **Account Linking**: ✅ **Auto-link** — if a user registered with email/password and then signs in with Google using the same email, accounts are automatically linked. The email is verified by Google, so this is safe.
 
-> [!WARNING]
-> **Privacy Policy Page**: Planner currently has no privacy policy page. One must be created (or linked) before launching Google OAuth in production. This is a GDPR/LGPD hard requirement.
+> [!NOTE]
+> **Privacy Policy**: ✅ Separate spec created — see [`.specs/2026-08-07-privacy-legal/`](file:///p/projects/planner/.specs/2026-08-07-privacy-legal). Must be implemented before Google OAuth goes to production.
