@@ -346,7 +346,7 @@ export const TaskItem = memo(function TaskItem({
         </button>
       )}
 
-      <span style={{ lineHeight: 'var(--task-line-height, 24px)' }} className="task-item-title-area flex-1 flex flex-wrap items-baseline min-w-0">
+      <span style={{ lineHeight: 'var(--task-line-height, 24px)' }} className="task-item-title-area flex-1 flex flex-wrap items-center min-w-0">
         {isEditing ? (
           <input
             ref={editRef}
