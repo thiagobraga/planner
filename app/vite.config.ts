@@ -70,11 +70,12 @@ export default defineConfig({
     globals: true,
     setupFiles: ['./src/test/setup.ts'],
   },
-  // When SKIP_CSS_MINIFY is set (e.g. in pre-push hook), use esbuild only.
-  // Otherwise use esbuild for production minification to avoid lightningcss
-  // native binary platform mismatches in restricted environments.
+  // When SKIP_CSS_MINIFY is set (e.g. in pre-push hook), disable CSS minification
+  // to avoid lightningcss native binary platform mismatches in restricted environments.
+  // JS minification via esbuild continues unchanged.
   build: {
-    minify: process.env.SKIP_CSS_MINIFY ? false : 'esbuild',
+    minify: 'esbuild',
+    cssMinify: process.env.SKIP_CSS_MINIFY ? false : 'esbuild',
   },
   server: {
     port: 5173,
