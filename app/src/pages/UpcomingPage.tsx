@@ -92,7 +92,7 @@ export function UpcomingPage() {
         const tasks = tasksByDay[day.key] ?? [];
         return (
           <div key={day.key} className="mt-6">
-            <div className="text-[11px] tracking-[0.08em] uppercase text-ink-light font-medium leading-6">
+            <div style={{ lineHeight: 'var(--task-line-height, 24px)' }} className="text-[11px] tracking-[0.08em] uppercase text-ink-light font-medium">
               {day.label}
             </div>
             {tasks.length > 0 ? (

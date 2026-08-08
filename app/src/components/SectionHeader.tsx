@@ -61,7 +61,8 @@ export function SectionHeader({
       ) : (
         <>
           <span
-            className="min-w-0 flex-1 cursor-text truncate text-[10px] font-semibold uppercase leading-6 tracking-widest text-ink-light"
+            style={{ lineHeight: 'var(--task-line-height, 24px)' }}
+            className="min-w-0 flex-1 cursor-text truncate text-[10px] font-semibold uppercase tracking-widest text-ink-light"
             onDoubleClick={onEdit}
           >
             {section.name}
@@ -88,6 +89,7 @@ function SectionOptionsButton({
         type="button"
         aria-label={`Options for section ${label}`}
         {...{ [NO_DRAG_ATTR]: '' }}
+        style={{ lineHeight: 'var(--task-line-height, 24px)' }}
         className="flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-xs text-ink-light opacity-0 transition-opacity duration-75 hover:bg-dot/30 hover:text-ink focus:opacity-100 group-hover:opacity-100"
         onClick={() => setMenuOpen(!menuOpen)}
       >

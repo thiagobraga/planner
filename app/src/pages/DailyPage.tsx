@@ -2,7 +2,6 @@ import { useMemo, useRef, useState, useEffect, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSync } from '../hooks/useSync';
 import { isEchoedMove, isStructuralMove } from '../utils/moveEcho';
-import { PageHeader } from '../components/PageHeader';
 import { TaskList } from '../components/TaskList';
 import { TaskVisibilityControls } from '../components/TaskVisibilityControls';
 import { CollectionChip } from '../components/ui/Chip';
@@ -652,7 +651,16 @@ export function DailyPage() {
         inputRef.current?.focus();
       }}
     >
-      <PageHeader title={t('page.daily')} subtitle={phrase}>
+      <header className="page-header-copy sticky-page-header max-w-162">
+        <h1 className="m-0 h-6 p-0 text-[18px] leading-6 font-semibold text-ink">
+          {t('page.daily')}
+        </h1>
+        <p className="page-header-subtitle daily-page-header-subtitle m-0 h-6 p-0 text-[13px] leading-6 text-ink-light opacity-60">
+          {phrase}
+        </p>
+      </header>
+
+      <div className="page-header-toolbar daily-page-header-controls sticky top-6 z-20 -mt-6 ml-auto flex w-fit items-center gap-2">
         <Button variant="secondary" size="sm" onClick={handleToday}>
           {t('page.today')}
         </Button>
@@ -663,7 +671,7 @@ export function DailyPage() {
           onHideCompletedTasksChange={setHideCompletedTasks}
           onHideOldNotesChange={setHideOldNotes}
         />
-      </PageHeader>
+      </div>
 
       <div className="max-w-162">
         {sections.map((section) => {
@@ -676,7 +684,7 @@ export function DailyPage() {
               data-day-date={section.key}
               className={`mt-6 ${isToday ? 'scroll-mt-24' : ''}`}
             >
-            <div className="text-[11px] tracking-[0.08em] uppercase text-ink-light leading-6 h-6 m-0 font-semibold">
+            <div style={{ lineHeight: 'var(--task-line-height, 24px)' }} className="text-[11px] tracking-[0.08em] uppercase text-ink-light h-6 m-0 font-semibold">
               {section.label}
               {isToday && <> · <span className="text-accent-light">{t('page.today')}</span></>}
             </div>

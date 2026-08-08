@@ -316,7 +316,8 @@ export const TaskItem = memo(function TaskItem({
       {task.type === 'note' ? (
         <span
           aria-hidden="true"
-          className="task-item-note-indicator w-6 h-6 flex items-center justify-center text-[10px] font-normal text-ink select-none shrink-0"
+          style={{ lineHeight: 'var(--task-line-height, 24px)' }}
+          className="task-item-note-indicator w-6 text-center text-[10px] font-normal text-ink select-none shrink-0"
         >
           -
         </span>
@@ -333,11 +334,13 @@ export const TaskItem = memo(function TaskItem({
           style={task.isCompleted ? {
             fontSize: 'var(--icon-check-size, 26px)',
             transform: 'translateY(var(--icon-check-offset, 0px))',
+            lineHeight: 'var(--task-line-height, 24px)',
           } : {
             fontSize: 'var(--icon-dot-size, 10px)',
             transform: 'translateY(var(--icon-dot-offset, 0px))',
+            lineHeight: 'var(--task-line-height, 24px)',
           }}
-          className={`task-item-toggle w-6 h-6 flex items-center justify-center ${task.isCompleted ? 'font-bold' : 'font-normal'} ${priorityClasses[task.priority]} select-none shrink-0 cursor-pointer bg-transparent border-0 p-0`}
+          className={`task-item-toggle w-6 text-center ${task.isCompleted ? 'font-bold' : 'font-normal'} overflow-hidden ${priorityClasses[task.priority]} select-none shrink-0 cursor-pointer bg-transparent border-0 p-0`}
         >
           {task.isCompleted ? '×' : '•'}
         </button>
