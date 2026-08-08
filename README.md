@@ -95,13 +95,13 @@ Optional but recommended — they run the same checks CI does, so a red
 pipeline shows up locally instead of on GitHub. Enable once per clone:
 
 ```bash
-./scripts/setup-hooks.sh     # sets core.hooksPath to .githooks/
+./.hooks/setup-hooks.sh     # sets core.hooksPath to .hooks/
 ```
 
-| Hook | Runs | Typical time |
-| ---------- | ------------------------ | ------------ |
-| pre-commit | `lint`                   | 2–8s         |
-| pre-push   | `lint`, `test`, `build`  | ~30s/package |
+| Hook       | Runs                    | Typical time |
+| ---------- | ----------------------- | ------------ |
+| pre-commit | `lint`                  | 2–8s         |
+| pre-push   | `lint`, `test`, `build` | ~30s/package |
 
 Both only check the packages your change actually touches, so a docs-only
 commit does no work and an `api/` change never waits on the app suite.

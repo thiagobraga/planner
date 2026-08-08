@@ -56,7 +56,7 @@ describe('Sidebar', () => {
   it('renders Planner branding', () => {
     render(<Sidebar />);
     expect(screen.getByText('Planner')).toBeInTheDocument();
-    expect(screen.getByText('Bulletjournal online')).toBeInTheDocument();
+    expect(screen.getByText('Your Bullet Journal')).toBeInTheDocument();
   });
 
   it('renders collapsed mode with icon-only bar', () => {

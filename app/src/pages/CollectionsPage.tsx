@@ -39,7 +39,7 @@ import { buildCollectionMenuItems } from '../components/collectionMenuItems';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { SectionDeleteModal } from '../components/SectionDeleteModal';
 import { flattenCollections, getHierarchicalColor } from '../components/CollectionTreeNav';
-import { Calendar, Tag, Folder, Hash, ArrowUp, ArrowDown, Trash2, Pencil } from 'lucide-react';
+import { Calendar, Tag, Folder, Hash, ArrowUp, ArrowDown, Trash2, Pencil, ChevronRight } from 'lucide-react';
 import { useI18n } from '../i18n/I18nContext';
 
 function apiToTask(t: ApiTask): Task {
@@ -167,17 +167,17 @@ export function CollectionsPage() {
     const tid = tempId();
     setInput('');
     const extracted = extractNaturalDate(trimmed, undefined, locale);
-    
+
     setTasks((prev) => [
       ...prev,
       { id: tid, title: extracted.title, priority: 4, isCompleted: false, orderValue: nextOrderValue(prev), type: 'task' },
     ]);
-    apiCreateTask({ 
-      title: extracted.title, 
-      priority: 4, 
+    apiCreateTask({
+      title: extracted.title,
+      priority: 4,
       collectionId: id,
-      dueDate: extracted.dueDate, 
-      recurrenceRule: extracted.recurrenceRule 
+      dueDate: extracted.dueDate,
+      recurrenceRule: extracted.recurrenceRule
     })
       .then((created) => {
         setTasks((prev) => prev.map((t) => (t.id === tid ? apiToTask(created) : t)));
@@ -314,9 +314,9 @@ export function CollectionsPage() {
       const currentTask = tasks.find((t) => t.id === taskId);
       const parentTaskId = currentTask?.parentTaskId ?? undefined;
       const currentIndent = currentTask?.indent ?? 0;
-      
+
       const extracted = extractNaturalDate(trimmed, undefined, locale);
-      
+
       // was a new row - create it, keeping whichever type it was opened as
       apiCreateTask({
         title: extracted.title,
@@ -510,7 +510,7 @@ export function CollectionsPage() {
       label: c.name,
       icon: (
         <span
-          className="w-2 h-2 rounded-full inline-block [filter:saturate(0.55)]"
+          className="w-1.75 h-1.75 rounded-full inline-block filter-[saturate(0.55)]"
           style={{ backgroundColor: c.color, marginLeft: c.depth * 12 }}
         />
       ),
@@ -526,7 +526,7 @@ export function CollectionsPage() {
       label: 'No project',
       icon: (
         <span
-          className="w-2 h-2 rounded-full inline-block bg-transparent border border-ink/20"
+          className="w-1.75 h-1.75 rounded-full inline-block bg-transparent border border-ink/20"
         />
       ),
       onClick: () => {
@@ -630,9 +630,7 @@ export function CollectionsPage() {
           return (
             <Fragment key={crumb.id}>
               {i > 0 && (
-                <span className="collections-page-title-separator font-normal text-ink-light opacity-50" aria-hidden="true">
-                  /
-                </span>
+                <ChevronRight size={13} className="collections-page-title-separator font-normal mx-1 text-ink-light opacity-50" aria-hidden="true" />
               )}
               <span
                 className="collections-page-crumb flex min-w-0 items-center gap-2"
@@ -643,7 +641,7 @@ export function CollectionsPage() {
               >
                 <span
                   aria-hidden="true"
-                  className="h-2 w-2 shrink-0 rounded-full"
+                  className="w-1.75 h-1.75 shrink-0 rounded-full"
                   style={{ background: crumb.color }}
                 />
                 {renamingCrumbId === crumb.id ? (
@@ -817,7 +815,7 @@ export function CollectionsPage() {
             <HabitNameInput
               defaultValue=""
               placeholder={t('page.newSection')}
-              className="uppercase tracking-[0.1em] text-[10px] font-semibold text-ink-light"
+              className="uppercase tracking-widest text-[10px] font-semibold text-ink-light"
               onCommit={(name) => handleCommitSectionName(addingSection.id, name)}
               onCancel={() => handleCancelSectionEdit(addingSection.id)}
             />

@@ -18,16 +18,16 @@ const base =
 // md → 32px / 6px radius
 // sm → 24px / 2px radius   (fits one dotted row, matches month selector)
 const sizes: Record<ButtonSize, string> = {
-  lg: 'h-10 px-4 rounded-[8px]',
-  md: 'h-8 px-3 rounded-[6px]',
-  sm: 'h-6 px-2 rounded-[2px] text-[13px]',
-  xs: 'h-5 px-1.5 rounded-[2px] text-[11px]',
+  lg: 'h-10 px-4 rounded-sm',
+  md: 'h-8 px-3 rounded-xs',
+  sm: 'h-6 px-2 rounded-xs text-[13px]',
+  xs: 'h-5 px-1.5 rounded-xs text-[11px]',
 };
 
 const variants: Record<ButtonVariant, string> = {
   primary: 'bg-ink text-cream border border-ink hover:opacity-90 disabled:opacity-40',
   secondary:
-    'bg-transparent text-ink border border-border hover:bg-dot/30 disabled:opacity-40',
+    'bg-cream text-ink border border-border hover:bg-dot/30 disabled:opacity-40',
   tertiary:
     'bg-transparent text-ink border border-transparent hover:bg-dot/30 disabled:opacity-40',
   destructive:

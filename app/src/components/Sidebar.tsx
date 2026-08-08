@@ -97,7 +97,7 @@ function InboxNavItem({ label, icon }: { label: string; icon: ReactNode }) {
       onClickCapture={(e) => {
         if (activeDrag) e.preventDefault();
       }}
-      className={isTaskTarget ? 'rounded-[4px] outline outline-1 outline-dot' : undefined}
+      className={isTaskTarget ? 'rounded-xs outline outline-dot' : undefined}
     >
       <SidebarNavItem to="/inbox" label={label} icon={icon} />
     </div>
@@ -117,7 +117,7 @@ export function Sidebar({ isOpen, onClose, collapsed = false, updateAvailable = 
   if (collapsed) {
     return (
       <aside
-        className="sidebar sidebar-collapsed w-12 h-full flex flex-col items-center border-r border-dot bg-[var(--planner-sidebar-bg)] py-6 shrink-0 overflow-y-auto"
+        className="sidebar sidebar-collapsed w-12 h-full flex flex-col items-center border-r border-dot bg-(--planner-sidebar-bg) py-6 shrink-0 overflow-y-auto"
         aria-label={t('nav.navigation')}
       >
         {/* Logo mark */}
@@ -211,7 +211,7 @@ export function Sidebar({ isOpen, onClose, collapsed = false, updateAvailable = 
 
   const sidebarContent = (
     <aside
-      className={`sidebar-drawer ${isOpen !== false ? 'sidebar-drawer--open' : ''} w-[220px] h-full flex flex-col border-r border-dot bg-[var(--planner-sidebar-bg)] relative overflow-y-auto shrink-0`}
+      className={`sidebar-drawer ${isOpen !== false ? 'sidebar-drawer--open' : ''} w-55 h-full flex flex-col border-r border-dot bg-(--planner-sidebar-bg) relative overflow-y-auto shrink-0`}
       aria-label={t('nav.navigation')}
     >
       {/* Logo */}
@@ -225,7 +225,7 @@ export function Sidebar({ isOpen, onClose, collapsed = false, updateAvailable = 
               Planner
             </h1>
             <p className="text-[13px] leading-6 text-ink-light m-0 p-0 opacity-60 h-6">
-              Bulletjournal online
+              Your Bullet Journal
             </p>
           </div>
         </div>

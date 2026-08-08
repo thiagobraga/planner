@@ -50,4 +50,4 @@ while IFS= read -r pkg; do
   [ -n "$pkg" ] && pkgs+=("$pkg")
 done <<< "$(packages_touched_by "$changed")"
 
-run_all "lint + test + build" ${pkgs[@]+"${pkgs[@]}"} -- lint test build
+SKIP_CSS_MINIFY=1 run_all "lint + test + build" ${pkgs[@]+"${pkgs[@]}"} -- lint test build

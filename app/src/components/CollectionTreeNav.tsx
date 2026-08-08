@@ -427,7 +427,7 @@ export function CollectionTreeNav() {
         <a
           href="/collections"
           onClick={(e) => { e.preventDefault(); navigate('/collections'); }}
-          className="text-[10px] leading-6 tracking-[0.1em] uppercase text-ink-light font-medium hover:text-ink transition-colors no-underline"
+          className="text-[10px] leading-6 tracking-widest uppercase text-ink-light font-medium hover:text-ink transition-colors no-underline"
         >
           {t('nav.collections')}
         </a>
@@ -598,7 +598,7 @@ function SortableCollectionRow({
           opacity: isDragging ? 0.5 : 1,
         }}
         data-drop-target={isTaskTarget ? 'true' : undefined}
-        className={`collection-row flex items-center gap-[7px] h-6 pr-2 text-[13px] text-ink ${depthClass} ${isActive ? 'collection-row--active font-medium' : ''} ${isTaskTarget ? 'collection-row--drop-target rounded-[4px] bg-[var(--planner-hover,rgba(44,44,44,0.06))] outline outline-1 outline-dot' : ''}`}
+        className={`collection-row flex items-center gap-1.75 h-6 pr-2 text-[13px] text-ink ${depthClass} ${isActive ? 'collection-row--active font-medium' : ''} ${isTaskTarget ? 'collection-row--drop-target rounded-xs bg-(--planner-hover,rgba(44,44,44,0.06)) outline outline-dot' : ''}`}
         onContextMenu={(e) => {
           e.preventDefault();
           setContextPos({ x: e.clientX, y: e.clientY });
@@ -625,7 +625,7 @@ function SortableCollectionRow({
           aria-label={`Reorder ${item.name}`}
         >
           <span
-            className="w-2 h-2 rounded-full shrink-0 block [filter:saturate(0.55)]"
+            className="w-1.75 h-1.75 rounded-full shrink-0 block filter-[saturate(0.55)]"
             style={{ background: item.color }}
           />
         </span>
@@ -668,7 +668,7 @@ function SortableCollectionRow({
                   aria-hidden="true"
                   size={14}
                   strokeWidth={1.5}
-                  className={`transition-transform duration-[var(--motion-fast)] ${isExpanded ? 'rotate-90' : ''}`}
+                  className={`transition-transform duration-(--motion-fast) ${isExpanded ? 'rotate-90' : ''}`}
                 />
               </button>
             )}
