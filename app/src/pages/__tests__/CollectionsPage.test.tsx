@@ -54,6 +54,10 @@ vi.mock('../../hooks/useTaskDrag', () => ({
   useTaskDrag: vi.fn(() => ({ activeDragId: null })),
 }));
 
+vi.mock('../../hooks/useSectionDrag', () => ({
+  useSectionDrag: vi.fn(),
+}));
+
 vi.mock('../../components/TaskList', () => ({
   TaskList: ({ tasks }: { tasks: { title: string }[] }) => (
     <div data-testid="task-list">

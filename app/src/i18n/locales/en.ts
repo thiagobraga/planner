@@ -1,5 +1,5 @@
 export const englishCatalog = {
-  'common.addTask': 'Add task…',
+  'common.addTask': 'New task…',
   'common.cancel': 'Cancel',
   'common.close': 'Close',
   'common.delete': 'Delete',

@@ -1,6 +1,7 @@
 import { Fragment, useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { TaskList } from '../components/TaskList';
 import { SectionHeader } from '../components/SectionHeader';
 import { HabitNameInput } from '../components/habits/HabitNameInput';
@@ -29,6 +30,7 @@ import {
 } from '../api/client';
 import { runOptimistic, patchById, upsertById } from '../stores/optimistic';
 import { useTaskDrag } from '../hooks/useTaskDrag';
+import { useSectionDrag } from '../hooks/useSectionDrag';
 import { useTaskVisibilityPreferences } from '../hooks/useTaskVisibilityPreferences';
 import { flattenTasks } from '../utils/taskProjection';
 import { applyIndent } from '../utils/taskTree';
@@ -159,6 +161,8 @@ export function CollectionsPage() {
       qc.invalidateQueries({ queryKey: ['collection'] });
     },
   });
+
+  useSectionDrag({ sections, setSections, onError: invalidate });
 
   const handleAddAtEnd = (e: React.FormEvent) => {
     e.preventDefault();
@@ -755,17 +759,21 @@ export function CollectionsPage() {
         />
         </form>
 
+        <SortableContext
+          items={sectionGroups.map((group) => group.section!.id)}
+          strategy={verticalListSortingStrategy}
+        >
         {sectionGroups.map((group) => (
           <Fragment key={group.section!.id}>
             <div className="h-6" />
             <SectionHeader
               section={group.section!}
+              collectionId={id ?? ''}
               isEditing={editingSectionId === group.section!.id}
               onEdit={() => setEditingSectionId(group.section!.id)}
               onCommitName={(name) => handleCommitSectionName(group.section!.id, name)}
               onCancelEdit={() => handleCancelSectionEdit(group.section!.id)}
               onDelete={() => handleDeleteSection(group.section!.id)}
-              onReorder={() => {}} // TODO: implement section reordering
               onRightClick={(position) => handleSectionRightClick(group.section!.id, position)}
             />
             <TaskList
@@ -806,6 +814,7 @@ export function CollectionsPage() {
             </form>
           </Fragment>
         ))}
+        </SortableContext>
 
         <div className="h-6" />
 

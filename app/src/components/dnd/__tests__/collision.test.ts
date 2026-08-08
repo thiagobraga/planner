@@ -116,6 +116,57 @@ describe('plannerCollisionDetection: containers with no rows', () => {
 });
 
 /**
+ * An Inbox/Collections task section with no tasks of its own.
+ *
+ * `SectionDropData` is what makes a brand-new section fillable at all - a
+ * task drag that never lists `'section'` among its allowed drop kinds filters
+ * it out of the candidate list before any pointer geometry runs, so the empty
+ * section can never win no matter where the pointer sits.
+ */
+function candidatesWithEmptySection(pointerY: number): string[] {
+  const taskRow = {
+    ...container('other-section-row', 0),
+    data: { current: { ...dragData('other-section-row', ['other-section-row']), containerId: 'section:other' } },
+  };
+  const emptySection = {
+    id: 'section:empty',
+    rect: { current: { top: 100, bottom: 148, left: 0, right: 200, width: 200, height: 48 } },
+    data: { current: { kind: 'section', sectionId: 'empty', collectionId: 'c1', containerId: 'section:empty' } },
+    disabled: false,
+    key: 'section:empty',
+    node: { current: null },
+  };
+
+  const collisions = plannerCollisionDetection({
+    active: {
+      id: 'dragged',
+      data: { current: dragData('dragged', ['dragged']) },
+      rect: { current: { initial: rect(0), translated: rect(pointerY) } },
+    },
+    collisionRect: rect(pointerY),
+    droppableRects: new Map([
+      ['other-section-row', rect(0)],
+      ['section:empty', emptySection.rect.current],
+    ]),
+    droppableContainers: [taskRow, emptySection],
+    pointerCoordinates: { x: 10, y: pointerY },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } as any);
+
+  return collisions.map((c) => String(c.id));
+}
+
+describe('plannerCollisionDetection: an empty task section', () => {
+  it('offers an empty section the pointer is inside, even with rows elsewhere', () => {
+    expect(candidatesWithEmptySection(120)).toContain('section:empty');
+  });
+
+  it('still prefers a row when the pointer is not inside any section', () => {
+    expect(candidatesWithEmptySection(0)).toContain('other-section-row');
+  });
+});
+
+/**
  * Habit rows sit inside a section that is itself a drop target.
  *
  * The section is what makes an empty group fillable, but it must not swallow
@@ -178,6 +229,72 @@ function habitCandidates(pointerY: number): string[] {
 
   return collisions.map((c) => String(c.id));
 }
+
+/**
+ * Section headers reorder against each other, never against the `section`
+ * container a task can be filed into - despite dnd-kit registering both a
+ * section header (draggable + droppable, for reordering) and its empty task
+ * list (droppable, for filing) at the same time. Sharing the `section` tag
+ * between the two would let a task drag collide with a header row it should
+ * never see, and a header drag collide with a task-only container.
+ */
+function sectionHeaderVsTaskCandidates(activeKind: 'task' | 'section-header'): string[] {
+  const header = {
+    id: 'header:a',
+    rect: { current: rect(0) },
+    data: { current: { kind: 'section-header', sectionId: 'a', collectionId: 'c1' } },
+    disabled: false,
+    key: 'header:a',
+    node: { current: null },
+  };
+  const otherHeader = {
+    id: 'header:b',
+    rect: { current: rect(24) },
+    data: { current: { kind: 'section-header', sectionId: 'b', collectionId: 'c1' } },
+    disabled: false,
+    key: 'header:b',
+    node: { current: null },
+  };
+  const taskRow = { ...container('sibling-task', 0), data: { current: dragData('sibling-task', ['sibling-task']) } };
+
+  const active =
+    activeKind === 'task'
+      ? { id: 'dragged-task', data: { current: dragData('dragged-task', ['dragged-task']) } }
+      : { id: 'header:a', data: { current: header.data.current } };
+
+  const collisions = plannerCollisionDetection({
+    active: {
+      ...active,
+      rect: { current: { initial: rect(0), translated: rect(0) } },
+    },
+    collisionRect: rect(0),
+    droppableRects: new Map([
+      ['sibling-task', rect(0)],
+      ['header:a', rect(0)],
+      ['header:b', rect(24)],
+    ]),
+    droppableContainers: [taskRow, header, otherHeader],
+    pointerCoordinates: { x: 10, y: 12 },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } as any);
+
+  return collisions.map((c) => String(c.id));
+}
+
+describe('plannerCollisionDetection: section headers reorder only against each other', () => {
+  it('a task drag never collides with a section header row', () => {
+    expect(sectionHeaderVsTaskCandidates('task')).not.toContain('header:a');
+    expect(sectionHeaderVsTaskCandidates('task')).not.toContain('header:b');
+  });
+
+  it('a section header drag never collides with a task row', () => {
+    expect(sectionHeaderVsTaskCandidates('section-header')).not.toContain('sibling-task');
+  });
+
+  it('a section header drag still finds the other header to reorder against', () => {
+    expect(sectionHeaderVsTaskCandidates('section-header')).toContain('header:b');
+  });
+});
 
 describe('plannerCollisionDetection: habit rows inside a section', () => {
   it('prefers the row the pointer is over to the section holding it', () => {

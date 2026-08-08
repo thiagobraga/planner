@@ -2,6 +2,7 @@ import { useMemo, useRef, useState, useEffect, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSync } from '../hooks/useSync';
 import { isEchoedMove, isStructuralMove } from '../utils/moveEcho';
+import { PageHeader } from '../components/PageHeader';
 import { TaskList } from '../components/TaskList';
 import { TaskVisibilityControls } from '../components/TaskVisibilityControls';
 import { CollectionChip } from '../components/ui/Chip';
@@ -651,16 +652,7 @@ export function DailyPage() {
         inputRef.current?.focus();
       }}
     >
-      <header className="page-header-copy sticky-page-header max-w-162">
-        <h1 className="m-0 h-6 p-0 text-[18px] leading-6 font-semibold text-ink">
-          {t('page.daily')}
-        </h1>
-        <p className="page-header-subtitle daily-page-header-subtitle m-0 h-6 p-0 text-[13px] leading-6 text-ink-light opacity-60">
-          {phrase}
-        </p>
-      </header>
-
-      <div className="page-header-toolbar daily-page-header-controls sticky top-6 z-20 -mt-6 ml-auto flex w-fit items-center gap-2">
+      <PageHeader title={t('page.daily')} subtitle={phrase}>
         <Button variant="secondary" size="sm" onClick={handleToday}>
           {t('page.today')}
         </Button>
@@ -671,7 +663,7 @@ export function DailyPage() {
           onHideCompletedTasksChange={setHideCompletedTasks}
           onHideOldNotesChange={setHideOldNotes}
         />
-      </div>
+      </PageHeader>
 
       <div className="max-w-162">
         {sections.map((section) => {

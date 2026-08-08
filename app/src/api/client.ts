@@ -533,7 +533,7 @@ export async function apiCreateSection(collectionId: string, input: { name: stri
 
 export async function apiUpdateSection(
   sectionId: string,
-  updates: Partial<Pick<ApiSection, 'name' | 'orderValue'>>,
+  updates: Partial<{ name: string; position: number }>,
 ): Promise<ApiSection> {
   return request<ApiSection>(`/sections/${sectionId}`, {
     method: 'PATCH',

@@ -1,7 +1,7 @@
 import type { TranslationCatalog } from '../types';
 
 export const portugueseBrazilCatalog = {
-  'common.addTask': 'Adicionar tarefa…',
+  'common.addTask': 'Nova tarefa…',
   'common.cancel': 'Cancelar',
   'common.close': 'Fechar',
   'common.delete': 'Excluir',

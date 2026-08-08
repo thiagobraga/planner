@@ -1,5 +1,6 @@
 import { Fragment, useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { TaskList } from '../components/TaskList';
 import { SectionHeader } from '../components/SectionHeader';
 import { HabitNameInput } from '../components/habits/HabitNameInput';
@@ -25,6 +26,7 @@ import { SectionDeleteModal } from '../components/SectionDeleteModal';
 import { flattenCollections } from '../components/CollectionTreeNav';
 import { Calendar, Tag, Folder, Hash, ArrowUp, ArrowDown, Trash2, Pencil } from 'lucide-react';
 import { useTaskDrag } from '../hooks/useTaskDrag';
+import { useSectionDrag } from '../hooks/useSectionDrag';
 import { useTaskVisibilityPreferences } from '../hooks/useTaskVisibilityPreferences';
 import { flattenTasks } from '../utils/taskProjection';
 import { getPhrase } from '../utils/phrases';
@@ -139,6 +141,8 @@ export function InboxPage() {
     // A task can be dropped onto a sidebar collection and leave Inbox entirely.
     onMoved: () => qc.invalidateQueries({ queryKey: ['collection'] }),
   });
+
+  useSectionDrag({ sections, setSections, onError: invalidate });
 
   useSync(useCallback((event) => {
     if (event.entityType !== 'task') return;
@@ -621,57 +625,62 @@ export function InboxPage() {
         />
         </form>
 
-      {sectionGroups.map((group) => (
-        <Fragment key={group.section!.id}>
-          <div className="h-6" />
-          <SectionHeader
-            section={group.section!}
-            isEditing={editingSectionId === group.section!.id}
-            onEdit={() => setEditingSectionId(group.section!.id)}
-            onCommitName={(name) => handleCommitSectionName(group.section!.id, name)}
-            onCancelEdit={() => handleCancelSectionEdit(group.section!.id)}
-            onDelete={() => handleDeleteSection(group.section!.id)}
-            onReorder={() => {}} // TODO: implement section reordering
-            onRightClick={(position) => handleSectionRightClick(group.section!.id, position)}
-          />
-          <TaskList
-            tasks={group.tasks}
-            containerId={`section:${group.section!.id}`}
-            sectionId={group.section!.id}
-            collectionId={inboxCollectionId}
-            activeDragId={activeDragId}
-            editingId={editingId}
-            onTaskToggle={handleToggle}
-            onStartEdit={handleStartEdit}
-            onEditCommit={handleEditCommit}
-            onEditCancel={handleEditCancel}
-            onDelete={handleDelete}
-            onAddBelow={handleAddBelow}
-            onIndent={handleIndent}
-            onNavigate={handleNavigate}
-            onConvertType={handleConvertType}
-            onRightClick={handleRightClick}
-          />
-          <form
-            onSubmit={(e) => handleAddSectionTask(group.section!.id, e)}
-            className="flex items-center h-6"
-          >
-            <span className="w-6 text-center text-[10px] leading-6 text-ink opacity-25 select-none shrink-0">
-              •
-            </span>
-            <input
-              type="text"
-              value={sectionTaskInput[group.section!.id] ?? ''}
-              onChange={(e) =>
-                setSectionTaskInput((prev) => ({ ...prev, [group.section!.id]: e.target.value }))
-              }
-              placeholder={t('common.addTask')}
-              className="task-input task-add-input flex-1 text-[14px] leading-6 text-ink bg-transparent border-none outline-none p-0"
-              spellCheck={false}
+      <SortableContext
+        items={sectionGroups.map((group) => group.section!.id)}
+        strategy={verticalListSortingStrategy}
+      >
+        {sectionGroups.map((group) => (
+          <Fragment key={group.section!.id}>
+            <div className="h-6" />
+            <SectionHeader
+              section={group.section!}
+              collectionId={inboxCollectionId ?? ''}
+              isEditing={editingSectionId === group.section!.id}
+              onEdit={() => setEditingSectionId(group.section!.id)}
+              onCommitName={(name) => handleCommitSectionName(group.section!.id, name)}
+              onCancelEdit={() => handleCancelSectionEdit(group.section!.id)}
+              onDelete={() => handleDeleteSection(group.section!.id)}
+              onRightClick={(position) => handleSectionRightClick(group.section!.id, position)}
             />
-          </form>
-        </Fragment>
-      ))}
+            <TaskList
+              tasks={group.tasks}
+              containerId={`section:${group.section!.id}`}
+              sectionId={group.section!.id}
+              collectionId={inboxCollectionId}
+              activeDragId={activeDragId}
+              editingId={editingId}
+              onTaskToggle={handleToggle}
+              onStartEdit={handleStartEdit}
+              onEditCommit={handleEditCommit}
+              onEditCancel={handleEditCancel}
+              onDelete={handleDelete}
+              onAddBelow={handleAddBelow}
+              onIndent={handleIndent}
+              onNavigate={handleNavigate}
+              onConvertType={handleConvertType}
+              onRightClick={handleRightClick}
+            />
+            <form
+              onSubmit={(e) => handleAddSectionTask(group.section!.id, e)}
+              className="flex items-center h-6"
+            >
+              <span className="w-6 text-center text-[10px] leading-6 text-ink opacity-25 select-none shrink-0">
+                •
+              </span>
+              <input
+                type="text"
+                value={sectionTaskInput[group.section!.id] ?? ''}
+                onChange={(e) =>
+                  setSectionTaskInput((prev) => ({ ...prev, [group.section!.id]: e.target.value }))
+                }
+                placeholder={t('common.addTask')}
+                className="task-input task-add-input flex-1 text-[14px] leading-6 text-ink bg-transparent border-none outline-none p-0"
+                spellCheck={false}
+              />
+            </form>
+          </Fragment>
+        ))}
+      </SortableContext>
 
       <div className="h-6" />
 

@@ -10,17 +10,20 @@ import { containerForGroup } from '../../utils/habitProjection';
  * drag would try to reparent itself into a Daily section.
  */
 const ALLOWED_TARGETS: Record<DragKind, ReadonlySet<DropKind>> = {
-  task: new Set<DropKind>(['task', 'day', 'collection']),
+  task: new Set<DropKind>(['task', 'day', 'collection', 'section']),
   habit: new Set<DropKind>(['habit', 'habit-section']),
   // A group reorders against other group headers; it is never filed into a
   // section, least of all its own.
   'habit-group': new Set<DropKind>(['habit-group']),
   // Collections reorder among themselves; they are never filed into a day or task.
   collection: new Set<DropKind>(['collection']),
+  // Section headers reorder among themselves - never against the `section`
+  // kind a task is filed into, which is a different-shaped target entirely.
+  'section-header': new Set<DropKind>(['section-header']),
 };
 
 /** Containers are regions; rows are points on a list. They resolve differently. */
-const CONTAINER_KINDS: ReadonlySet<DropKind> = new Set<DropKind>(['day', 'collection', 'habit-section']);
+const CONTAINER_KINDS: ReadonlySet<DropKind> = new Set<DropKind>(['day', 'collection', 'habit-section', 'section']);
 
 /**
  * A sidebar collection row plays both parts, depending on what is being dragged.
@@ -44,7 +47,8 @@ function containerKindsFor(activeKind: DragKind): ReadonlySet<DropKind> {
  */
 function containerIdOf(data: DropData | undefined): string | null {
   if (!data) return null;
-  if (data.kind === 'task' || data.kind === 'day' || data.kind === 'habit') return data.containerId;
+  if (data.kind === 'task' || data.kind === 'day' || data.kind === 'habit' || data.kind === 'section')
+    return data.containerId;
   // A habit section names itself the way its rows name it, so the rows inside
   // it can be matched against it. Without this the section - which the pointer
   // is always inside, since it holds the rows - beat every row it contains, and
