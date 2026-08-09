@@ -86,16 +86,16 @@ export function AdminDashboardPage() {
 
   return (
     <div className="admin-dashboard-page w-full max-w-4xl">
-      <header className="page-header-copy">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-lg leading-6 font-semibold text-ink h-6">
-              {t('admin.dashboardTitle')}
-            </h1>
-            <p className="text-[13px] leading-6 text-ink-light opacity-60 mt-0">
-              {t('admin.dashboardSubtitle')}
-            </p>
-          </div>
+      <header className="page-header-copy sticky-page-header max-w-162">
+        <div className="page-header-copy-text">
+          <h1 className="m-0 h-6 p-0 text-lg leading-6 font-semibold text-ink">
+            {t('admin.dashboardTitle')}
+          </h1>
+          <p className="page-header-subtitle m-0 h-6 p-0 text-[13px] leading-6 text-ink-light opacity-60">
+            {t('admin.dashboardSubtitle')}
+          </p>
+        </div>
+        <div className="page-header-toolbar absolute bottom-0 right-0 z-20">
           <Button
             size="sm"
             variant="tertiary"

@@ -153,10 +153,16 @@ export function StyleguidePage() {
 
   return (
     <div className="max-w-5xl pb-24 text-ink">
-      <h1 className="text-lg leading-6 font-semibold text-ink">Styleguide</h1>
-      <p className="text-[13px] leading-6 text-ink-light opacity-70 mb-6">
-        Fonts, colors, components, and tokens to build Planner ecosystem.
-      </p>
+      <header className="page-header-copy sticky-page-header max-w-162">
+        <div className="page-header-copy-text">
+          <h1 className="m-0 h-6 p-0 text-lg leading-6 font-semibold text-ink">Styleguide</h1>
+          <p className="page-header-subtitle m-0 h-6 p-0 text-[13px] leading-6 text-ink-light opacity-70">
+            Fonts, colors, components, and tokens to build Planner ecosystem.
+          </p>
+        </div>
+      </header>
+
+      <div className="h-12" />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
         {/* Color Palette */}
