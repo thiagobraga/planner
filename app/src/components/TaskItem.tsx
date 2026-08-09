@@ -8,7 +8,6 @@ import { useI18n } from '../i18n/I18nContext';
 import { useTaskSelectionStore } from '../stores/taskSelectionStore';
 import { usePlannerDrag } from '../contexts/usePlannerDrag';
 import { priorityClasses } from './taskPriorityClasses';
-import { consumePendingColumn } from './taskPendingColumn';
 
 export interface Task {
   id: string;
@@ -63,7 +62,6 @@ export interface TaskItemProps {
   onDelete?: (id: string) => void;
   onAddBelow?: (id: string) => void;
   onIndent?: (id: string, dir: 1 | -1) => void;
-  onNavigate?: (id: string, dir: 'up' | 'down', col: number) => void;
   onConvertType?: (id: string, type: 'task' | 'note') => void;
   onRightClick?: (id: string, position: { x: number; y: number }) => void;
 }
@@ -80,19 +78,6 @@ function formatDueDate(value: string, locale: 'en' | 'pt-BR'): string {
     day: 'numeric',
     ...(Number(year) !== currentYear ? { year: 'numeric' } : {}),
   });
-}
-
-function focusAdjacent(currentId: string, dir: 'up' | 'down') {
-  const items = Array.from(document.querySelectorAll<HTMLElement>('[data-task-id]'));
-  const idx = items.findIndex((el) => el.dataset.taskId === currentId);
-  if (dir === 'down') {
-    const next = items[idx + 1];
-    if (next) next.focus();
-    else document.querySelector<HTMLElement>('.task-add-input')?.focus();
-  } else {
-    const prev = items[idx - 1];
-    if (prev) prev.focus();
-  }
 }
 
 /**
@@ -125,7 +110,6 @@ export const TaskItem = memo(function TaskItem({
   onDelete,
   onAddBelow,
   onIndent,
-  onNavigate,
   onConvertType,
   onRightClick,
 }: TaskItemProps) {
@@ -157,10 +141,8 @@ export const TaskItem = memo(function TaskItem({
   useEffect(() => {
     if (isEditing && editRef.current) {
       editRef.current.focus();
-      const pending = consumePendingColumn();
       const len = editRef.current.value.length;
-      const col = pending !== null ? Math.min(pending, len) : len;
-      editRef.current.setSelectionRange(col, col);
+      editRef.current.setSelectionRange(len, len);
     }
   }, [isEditing]);
 
@@ -179,13 +161,7 @@ export const TaskItem = memo(function TaskItem({
 
   const handleRowKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (isEditing) return;
-    if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      focusAdjacent(task.id, 'down');
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      focusAdjacent(task.id, 'up');
-    } else if (e.key === 'Enter' && e.shiftKey) {
+    if (e.key === 'Enter' && e.shiftKey) {
       e.preventDefault();
       onStartEdit?.(task.id);
     } else if (e.key === 'Enter') {
@@ -242,18 +218,6 @@ export const TaskItem = memo(function TaskItem({
       e.preventDefault();
       onIndent?.(task.id, e.shiftKey ? -1 : 1);
       requestAnimationFrame(() => editRef.current?.focus());
-    } else if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      const col = e.currentTarget.selectionStart ?? 0;
-      committedRef.current = true;
-      onEditCommit?.(task.id, e.currentTarget.value);
-      onNavigate?.(task.id, 'down', col);
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      const col = e.currentTarget.selectionStart ?? 0;
-      committedRef.current = true;
-      onEditCommit?.(task.id, e.currentTarget.value);
-      onNavigate?.(task.id, 'up', col);
     }
   };
 

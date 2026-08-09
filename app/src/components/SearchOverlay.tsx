@@ -147,7 +147,7 @@ export function SearchOverlay({
       onClick={(e) => e.target === e.currentTarget && onClose()}
       className="fixed inset-0 z-[100] bg-[rgba(44,44,44,0.3)] backdrop-blur-[2px] flex items-start justify-center pt-20"
     >
-      <div className="bg-cream rounded-md border border-dot w-[560px] max-w-[calc(100vw-48px)] shadow-[0_8px_32px_rgba(44,44,44,0.15)] overflow-hidden max-h-[60vh] flex flex-col">
+      <div className="rounded-md border border-dot w-[560px] max-w-[calc(100vw-48px)] shadow-[0_8px_32px_rgba(44,44,44,0.15)] overflow-hidden max-h-[60vh] flex flex-col" style={{ backgroundColor: 'var(--planner-overlay-bg)' }}>
         {/* Search input */}
         <div className="px-5 py-3.5 border-b border-dot flex items-center gap-2.5">
           <span className="text-base text-ink-light">⌕</span>

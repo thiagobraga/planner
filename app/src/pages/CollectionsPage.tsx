@@ -8,7 +8,6 @@ import { InlineNameInput } from '../components/ui/InlineNameInput';
 import { TaskVisibilityControls } from '../components/TaskVisibilityControls';
 import { nextOrderValue } from '../utils/order';
 import { extractNaturalDate } from '../utils/date';
-import { setPendingColumn } from '../components/taskPendingColumn';
 import type { Task } from '../components/TaskItem';
 import type { Section } from '../stores/taskStore';
 import {
@@ -384,27 +383,6 @@ export function CollectionsPage() {
       return nextFlat.map(t => t.id === taskId ? { ...t, parentTaskId: parentTaskId ?? undefined } : t);
     });
   }, [invalidate]);
-  const handleNavigate = useCallback((taskId: string, dir: 'up' | 'down', col: number) => {
-    setTasks((prev) => {
-      const idx = prev.findIndex((t) => t.id === taskId);
-      const targetIdx = dir === 'up' ? idx - 1 : idx + 1;
-      if (targetIdx < 0) return prev;
-      if (targetIdx >= prev.length) {
-        requestAnimationFrame(() => {
-          if (inputRef.current) {
-            inputRef.current.focus();
-            const clamped = Math.min(col, inputRef.current.value.length);
-            inputRef.current.setSelectionRange(clamped, clamped);
-          }
-        });
-        return prev;
-      }
-      const target = prev[targetIdx];
-      setPendingColumn(col);
-      setEditingId(target.id);
-      return prev;
-    });
-  }, []);
   const handleToggle = useCallback((taskId: string) => {
     const hideCompleted = preferences?.hideCompletedTasks ?? false;
     const task = tasks.find((t) => t.id === taskId);
@@ -446,13 +424,23 @@ export function CollectionsPage() {
     setEditingSectionId(sectionId);
   }, [id]);
 
+  const handleDeleteSection = useCallback((sectionId: string) => {
+    const section = sections.find((s) => s.id === sectionId);
+    if (!section) return;
+    const taskCount = tasks.filter((t) => t.sectionId === sectionId).length;
+    setDeletingSection({ id: sectionId, name: section.name, taskCount });
+  }, [sections, tasks]);
+
   const handleCommitSectionName = useCallback(
     (sectionId: string, name: string) => {
       const trimmed = name.trim();
       setEditingSectionId(null);
       if (!trimmed) {
-        setSections((prev) => prev.filter((s) => s.id !== sectionId));
-        if (!sectionId.startsWith('temp-')) apiDeleteSection(sectionId).catch(() => {});
+        if (sectionId.startsWith('temp-')) {
+          setSections((prev) => prev.filter((s) => s.id !== sectionId));
+        } else {
+          handleDeleteSection(sectionId);
+        }
         return;
       }
       setSections((prev) => prev.map((s) => (s.id === sectionId ? { ...s, name: trimmed } : s)));
@@ -470,7 +458,7 @@ export function CollectionsPage() {
         apiUpdateSection(sectionId, { name: trimmed }).catch(() => {});
       }
     },
-    [id]
+    [handleDeleteSection, id]
   );
 
   const handleCancelSectionEdit = useCallback((sectionId: string) => {
@@ -479,13 +467,6 @@ export function CollectionsPage() {
       setSections((prev) => prev.filter((s) => s.id !== sectionId));
     }
   }, []);
-
-  const handleDeleteSection = useCallback((sectionId: string) => {
-    const section = sections.find((s) => s.id === sectionId);
-    if (!section) return;
-    const taskCount = tasks.filter((t) => t.sectionId === sectionId).length;
-    setDeletingSection({ id: sectionId, name: section.name, taskCount });
-  }, [sections, tasks]);
 
   const handleConfirmDeleteSectionAndTasks = useCallback(() => {
     if (!deletingSection) return;
@@ -724,7 +705,6 @@ export function CollectionsPage() {
           onDelete={handleDelete}
           onAddBelow={handleAddBelow}
           onIndent={handleIndent}
-          onNavigate={handleNavigate}
           onConvertType={handleConvertType}
           onRightClick={handleRightClick}
         />
@@ -744,20 +724,7 @@ export function CollectionsPage() {
           placeholder={t('common.addTask')}
           className="task-input task-add-input flex-1 text-sm leading-6 text-ink bg-transparent border-none outline-none p-0"
           spellCheck={false}
-          onKeyDown={(e) => {
-            if (handleAddNoteKeyDown(e)) return;
-            if (e.key === 'ArrowUp') {
-              e.preventDefault();
-              setTasks((prev) => {
-                if (prev.length === 0) return prev;
-                const col = (e.target as HTMLInputElement).selectionStart ?? 0;
-                const last = prev[prev.length - 1];
-                setPendingColumn(col);
-                setEditingId(last.id);
-                return prev;
-              });
-            }
-          }}
+          onKeyDown={handleAddNoteKeyDown}
         />
         </form>
 
@@ -792,7 +759,6 @@ export function CollectionsPage() {
               onDelete={handleDelete}
               onAddBelow={handleAddBelow}
               onIndent={handleIndent}
-              onNavigate={handleNavigate}
               onConvertType={handleConvertType}
               onRightClick={handleRightClick}
             />

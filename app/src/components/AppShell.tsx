@@ -183,7 +183,8 @@ export function AppShell() {
           type="button"
           aria-label={t('nav.open')}
           onClick={() => setSidebarOpen(true)}
-          className="app-shell-mobile-menu-btn mobile-menu-btn hidden fixed top-3 left-3 z-[60] bg-cream border border-dot rounded py-1 px-2 text-base cursor-pointer"
+          className="app-shell-mobile-menu-btn mobile-menu-btn hidden fixed top-3 left-3 z-[60] border border-dot rounded py-1 px-2 text-base cursor-pointer"
+          style={{ backgroundColor: 'var(--planner-control-bg)' }}
         >
           ☰
         </button>
@@ -253,7 +254,8 @@ export function AppShell() {
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="app-shell-help-dialog-content bg-cream border border-dot rounded-md py-6 px-8 min-w-[320px] shadow-[0_8px_32px_rgba(44,44,44,0.15)]"
+            className="app-shell-help-dialog-content border border-dot rounded-md py-6 px-8 min-w-[320px] shadow-[0_8px_32px_rgba(44,44,44,0.15)]"
+            style={{ backgroundColor: 'var(--planner-overlay-bg)' }}
           >
             <h2 className="app-shell-help-title text-base font-semibold text-ink mb-4">
               {t('shell.keyboardShortcuts')}

@@ -5,7 +5,6 @@ import { TaskList } from '../components/TaskList';
 import { SectionHeader } from '../components/SectionHeader';
 import { InlineNameInput } from '../components/ui/InlineNameInput';
 import { TaskVisibilityControls } from '../components/TaskVisibilityControls';
-import { setPendingColumn } from '../components/taskPendingColumn';
 import type { Task } from '../components/TaskItem';
 import type { Section } from '../stores/taskStore';
 import {
@@ -372,28 +371,6 @@ export function InboxPage() {
     });
   }, [invalidate]);
 
-  const handleNavigate = useCallback((id: string, dir: 'up' | 'down', col: number) => {
-    setTasks((prev) => {
-      const idx = prev.findIndex((t) => t.id === id);
-      const targetIdx = dir === 'up' ? idx - 1 : idx + 1;
-      if (targetIdx < 0) return prev;
-      if (targetIdx >= prev.length) {
-        requestAnimationFrame(() => {
-          if (inputRef.current) {
-            inputRef.current.focus();
-            const clamped = Math.min(col, inputRef.current.value.length);
-            inputRef.current.setSelectionRange(clamped, clamped);
-          }
-        });
-        return prev;
-      }
-      const target = prev[targetIdx];
-      setPendingColumn(col);
-      setEditingId(target.id);
-      return prev;
-    });
-  }, []);
-
   const handleToggle = useCallback((id: string) => {
     const prevTasks = tasksRef.current;
     const task = prevTasks.find((t) => t.id === id);
@@ -435,13 +412,23 @@ export function InboxPage() {
     setEditingSectionId(sectionId);
   }, [inboxCollectionId]);
 
+  const handleDeleteSection = useCallback((sectionId: string) => {
+    const section = sections.find((s) => s.id === sectionId);
+    if (!section) return;
+    const taskCount = tasks.filter((t) => t.sectionId === sectionId).length;
+    setDeletingSection({ id: sectionId, name: section.name, taskCount });
+  }, [sections, tasks]);
+
   const handleCommitSectionName = useCallback(
     (sectionId: string, name: string) => {
       const trimmed = name.trim();
       setEditingSectionId(null);
       if (!trimmed) {
-        setSections((prev) => prev.filter((s) => s.id !== sectionId));
-        if (!sectionId.startsWith('temp-')) apiDeleteSection(sectionId).catch(() => { });
+        if (sectionId.startsWith('temp-')) {
+          setSections((prev) => prev.filter((s) => s.id !== sectionId));
+        } else {
+          handleDeleteSection(sectionId);
+        }
         return;
       }
       setSections((prev) => prev.map((s) => (s.id === sectionId ? { ...s, name: trimmed } : s)));
@@ -460,7 +447,7 @@ export function InboxPage() {
         apiUpdateSection(sectionId, { name: trimmed }).catch(() => { });
       }
     },
-    [inboxCollectionId]
+    [handleDeleteSection, inboxCollectionId]
   );
 
   const handleCancelSectionEdit = useCallback((sectionId: string) => {
@@ -469,13 +456,6 @@ export function InboxPage() {
       setSections((prev) => prev.filter((s) => s.id !== sectionId));
     }
   }, []);
-
-  const handleDeleteSection = useCallback((sectionId: string) => {
-    const section = sections.find((s) => s.id === sectionId);
-    if (!section) return;
-    const taskCount = tasks.filter((t) => t.sectionId === sectionId).length;
-    setDeletingSection({ id: sectionId, name: section.name, taskCount });
-  }, [sections, tasks]);
 
   const handleConfirmDeleteSectionAndTasks = useCallback(() => {
     if (!deletingSection) return;
@@ -590,7 +570,6 @@ export function InboxPage() {
           onDelete={handleDelete}
           onAddBelow={handleAddBelow}
           onIndent={handleIndent}
-          onNavigate={handleNavigate}
           onConvertType={handleConvertType}
           onRightClick={handleRightClick}
         />
@@ -610,20 +589,7 @@ export function InboxPage() {
             placeholder={t('common.addTask')}
             className="task-input task-add-input flex-1 text-[14px] leading-6 text-ink bg-transparent border-none outline-none p-0"
             spellCheck={false}
-            onKeyDown={(e) => {
-              if (handleAddNoteKeyDown(e)) return;
-              if (e.key === 'ArrowUp') {
-                e.preventDefault();
-                setTasks((prev) => {
-                  if (prev.length === 0) return prev;
-                  const col = (e.target as HTMLInputElement).selectionStart ?? 0;
-                  const last = prev[prev.length - 1];
-                  setPendingColumn(col);
-                  setEditingId(last.id);
-                  return prev;
-                });
-              }
-            }}
+            onKeyDown={handleAddNoteKeyDown}
           />
         </form>
 
@@ -658,7 +624,6 @@ export function InboxPage() {
                 onDelete={handleDelete}
                 onAddBelow={handleAddBelow}
                 onIndent={handleIndent}
-                onNavigate={handleNavigate}
                 onConvertType={handleConvertType}
                 onRightClick={handleRightClick}
               />

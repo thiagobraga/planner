@@ -303,7 +303,7 @@ export function PlannerDragProvider({ children }: { children: ReactNode }) {
           {overlayNode ? (
             <div className="planner-drag-overlay planner-drag-overlay--block">{overlayNode}</div>
           ) : overlay ? (
-            <div className="planner-drag-overlay flex items-center gap-2 rounded-[8px] border border-dot bg-cream px-2 py-1 text-[13px] text-ink shadow-[0_4px_16px_rgba(44,44,44,0.18)]">
+            <div className="planner-drag-overlay flex items-center gap-2 rounded-[8px] border border-dot px-2 py-1 text-[13px] text-ink shadow-[0_4px_16px_rgba(44,44,44,0.18)]" style={{ backgroundColor: 'var(--planner-overlay-bg)' }}>
               <span className="planner-drag-overlay-title truncate max-w-[280px]">
                 {overlay.title}
               </span>

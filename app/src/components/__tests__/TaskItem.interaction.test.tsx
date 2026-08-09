@@ -73,6 +73,18 @@ describe('TaskItem: toggle stays isolated', () => {
   });
 });
 
+describe('TaskItem: edit keyboard behavior', () => {
+  it('leaves arrow keys to the input without committing the row', () => {
+    const onEditCommit = vi.fn();
+    renderRow({ isEditing: true, onEditCommit });
+
+    const input = screen.getByRole('textbox');
+    expect(fireEvent.keyDown(input, { key: 'ArrowUp' })).toBe(true);
+    expect(fireEvent.keyDown(input, { key: 'ArrowDown' })).toBe(true);
+    expect(onEditCommit).not.toHaveBeenCalled();
+  });
+});
+
 describe('TaskItem: drag surfaces', () => {
   it('marks the toggle as non-draggable so its press is not swallowed', () => {
     renderRow();

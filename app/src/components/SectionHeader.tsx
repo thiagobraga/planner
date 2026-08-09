@@ -98,7 +98,7 @@ function SectionOptionsButton({
         <span className="text-sm">⋯</span>
       </button>
       {menuOpen && (
-        <div className="absolute right-0 top-6 z-50 rounded-xs bg-cream border border-ink-light/20 shadow-lg">
+        <div className="absolute right-0 top-6 z-50 rounded-xs border border-ink-light/20 shadow-lg" style={{ backgroundColor: 'var(--planner-overlay-bg)' }}>
           <button
             type="button"
             className="w-full px-3 py-2 text-left text-sm text-ink hover:bg-dot/10 first:rounded-t-xs last:rounded-b-xs"
