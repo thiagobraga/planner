@@ -1,7 +1,8 @@
 import { render, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type React from 'react';
-import { PlannerDragProvider, usePlannerDrag, INDENT_PX } from '../../contexts/PlannerDragContext';
+import { PlannerDragProvider } from '../../contexts/PlannerDragContext';
+import { usePlannerDrag, INDENT_PX } from '../../contexts/usePlannerDrag';
 import { useTaskDrag } from '../useTaskDrag';
 import { apiMoveTask } from '../../api/client';
 import type { Task } from '../../components/TaskItem';

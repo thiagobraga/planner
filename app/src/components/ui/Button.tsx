@@ -27,9 +27,9 @@ const sizes: Record<ButtonSize, string> = {
 const variants: Record<ButtonVariant, string> = {
   primary: 'bg-ink text-cream border border-ink hover:opacity-90 disabled:opacity-40',
   secondary:
-    'bg-cream text-ink border border-border hover:bg-dot/30 disabled:opacity-40',
+    'text-ink border border-border disabled:opacity-40',
   tertiary:
-    'bg-transparent text-ink border border-transparent hover:bg-dot/30 disabled:opacity-40',
+    'bg-transparent text-ink border border-transparent disabled:opacity-40',
   destructive:
     'bg-transparent text-accent border border-accent hover:bg-accent/10 disabled:opacity-40',
 };
@@ -43,8 +43,29 @@ export function Button({
   type = 'button',
   ...rest
 }: ButtonProps) {
+  const isSecondary = variant === 'secondary';
+  const isTertiary = variant === 'tertiary';
+  const secTertiaryStyle = (isSecondary || isTertiary) ? {
+    backgroundColor: 'var(--planner-control-bg)',
+  } : undefined;
+
   return (
-    <button type={type} className={`ui-button ${base} ${sizes[size]} ${variants[variant]} ${className}`} {...rest}>
+    <button
+      type={type}
+      className={`ui-button ${base} ${sizes[size]} ${variants[variant]} ${className}`}
+      style={secTertiaryStyle}
+      onMouseEnter={(e) => {
+        if (isSecondary || isTertiary) {
+          e.currentTarget.style.backgroundColor = 'var(--planner-control-bg-hover)';
+        }
+      }}
+      onMouseLeave={(e) => {
+        if (isSecondary || isTertiary) {
+          e.currentTarget.style.backgroundColor = 'var(--planner-control-bg)';
+        }
+      }}
+      {...rest}
+    >
       {leftIcon && (
         <span className="ui-button-icon flex items-center justify-center shrink-0 [&_svg]:w-4 [&_svg]:h-4">
           {leftIcon}

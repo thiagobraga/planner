@@ -126,10 +126,10 @@ describe('HabitsPage', () => {
 
     expect(header).toBeInTheDocument();
     expect(header).toContainElement(screen.getByText('Small reps build large lives.'));
-    expect(header).not.toContainElement(screen.getByRole('button', { name: 'Today' }));
-    expect(header).not.toContainElement(screen.getByLabelText('Timeline view'));
-    expect(header).not.toContainElement(screen.getByLabelText('Calendar view'));
-    expect(screen.getByRole('button', { name: 'Today' }).closest('.page-header-toolbar')).toHaveClass('sticky');
+    expect(header).toContainElement(screen.getByRole('button', { name: 'Today' }));
+    expect(header).toContainElement(screen.getByLabelText('Timeline view'));
+    expect(header).toContainElement(screen.getByLabelText('Calendar view'));
+    expect(screen.getByRole('button', { name: 'Today' }).closest('.page-header-toolbar')).toHaveClass('absolute');
   });
 
   it('renders view toggle buttons (Timeline/Calendar)', () => {

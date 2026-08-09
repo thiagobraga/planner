@@ -1,10 +1,10 @@
 import { Fragment, useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { TaskList } from '../components/TaskList';
 import { SectionHeader } from '../components/SectionHeader';
-import { HabitNameInput } from '../components/habits/HabitNameInput';
+import { InlineNameInput } from '../components/ui/InlineNameInput';
 import { TaskVisibilityControls } from '../components/TaskVisibilityControls';
-import { setPendingColumn } from '../components/TaskItem';
 import type { Task } from '../components/TaskItem';
 import type { Section } from '../stores/taskStore';
 import {
@@ -25,6 +25,7 @@ import { SectionDeleteModal } from '../components/SectionDeleteModal';
 import { flattenCollections } from '../components/CollectionTreeNav';
 import { Calendar, Tag, Folder, Hash, ArrowUp, ArrowDown, Trash2, Pencil } from 'lucide-react';
 import { useTaskDrag } from '../hooks/useTaskDrag';
+import { useSectionDrag } from '../hooks/useSectionDrag';
 import { useTaskVisibilityPreferences } from '../hooks/useTaskVisibilityPreferences';
 import { flattenTasks } from '../utils/taskProjection';
 import { getPhrase } from '../utils/phrases';
@@ -139,6 +140,8 @@ export function InboxPage() {
     // A task can be dropped onto a sidebar collection and leave Inbox entirely.
     onMoved: () => qc.invalidateQueries({ queryKey: ['collection'] }),
   });
+
+  useSectionDrag({ sections, setSections, onError: invalidate });
 
   useSync(useCallback((event) => {
     if (event.entityType !== 'task') return;
@@ -368,28 +371,6 @@ export function InboxPage() {
     });
   }, [invalidate]);
 
-  const handleNavigate = useCallback((id: string, dir: 'up' | 'down', col: number) => {
-    setTasks((prev) => {
-      const idx = prev.findIndex((t) => t.id === id);
-      const targetIdx = dir === 'up' ? idx - 1 : idx + 1;
-      if (targetIdx < 0) return prev;
-      if (targetIdx >= prev.length) {
-        requestAnimationFrame(() => {
-          if (inputRef.current) {
-            inputRef.current.focus();
-            const clamped = Math.min(col, inputRef.current.value.length);
-            inputRef.current.setSelectionRange(clamped, clamped);
-          }
-        });
-        return prev;
-      }
-      const target = prev[targetIdx];
-      setPendingColumn(col);
-      setEditingId(target.id);
-      return prev;
-    });
-  }, []);
-
   const handleToggle = useCallback((id: string) => {
     const prevTasks = tasksRef.current;
     const task = prevTasks.find((t) => t.id === id);
@@ -431,13 +412,23 @@ export function InboxPage() {
     setEditingSectionId(sectionId);
   }, [inboxCollectionId]);
 
+  const handleDeleteSection = useCallback((sectionId: string) => {
+    const section = sections.find((s) => s.id === sectionId);
+    if (!section) return;
+    const taskCount = tasks.filter((t) => t.sectionId === sectionId).length;
+    setDeletingSection({ id: sectionId, name: section.name, taskCount });
+  }, [sections, tasks]);
+
   const handleCommitSectionName = useCallback(
     (sectionId: string, name: string) => {
       const trimmed = name.trim();
       setEditingSectionId(null);
       if (!trimmed) {
-        setSections((prev) => prev.filter((s) => s.id !== sectionId));
-        if (!sectionId.startsWith('temp-')) apiDeleteSection(sectionId).catch(() => {});
+        if (sectionId.startsWith('temp-')) {
+          setSections((prev) => prev.filter((s) => s.id !== sectionId));
+        } else {
+          handleDeleteSection(sectionId);
+        }
         return;
       }
       setSections((prev) => prev.map((s) => (s.id === sectionId ? { ...s, name: trimmed } : s)));
@@ -453,10 +444,10 @@ export function InboxPage() {
             setSections((prev) => prev.filter((s) => s.id !== sectionId));
           });
       } else {
-        apiUpdateSection(sectionId, { name: trimmed }).catch(() => {});
+        apiUpdateSection(sectionId, { name: trimmed }).catch(() => { });
       }
     },
-    [inboxCollectionId]
+    [handleDeleteSection, inboxCollectionId]
   );
 
   const handleCancelSectionEdit = useCallback((sectionId: string) => {
@@ -465,13 +456,6 @@ export function InboxPage() {
       setSections((prev) => prev.filter((s) => s.id !== sectionId));
     }
   }, []);
-
-  const handleDeleteSection = useCallback((sectionId: string) => {
-    const section = sections.find((s) => s.id === sectionId);
-    if (!section) return;
-    const taskCount = tasks.filter((t) => t.sectionId === sectionId).length;
-    setDeletingSection({ id: sectionId, name: section.name, taskCount });
-  }, [sections, tasks]);
 
   const handleConfirmDeleteSectionAndTasks = useCallback(() => {
     if (!deletingSection) return;
@@ -513,7 +497,7 @@ export function InboxPage() {
 
     items.push({
       type: 'item',
-      label: 'No project',
+      label: t('contextMenu.noCollection'),
       icon: (
         <span
           className="w-1.75 h-1.75 rounded-full inline-block bg-transparent border border-ink/20"
@@ -550,152 +534,146 @@ export function InboxPage() {
       }}
     >
       <header className="page-header-copy sticky-page-header max-w-162">
-        <h1 className="text-[18px] leading-6 h-6 font-semibold text-ink m-0 p-0">
-          {t('page.inbox')}
-        </h1>
+        <div className="page-header-copy-text">
+          <h1 className="text-[18px] leading-6 h-6 font-semibold text-ink m-0 p-0">
+            {t('page.inbox')}
+          </h1>
 
-        <p className="page-header-subtitle text-[13px] leading-6 h-6 text-ink-light opacity-60 m-0 p-0">
-          {phrase}
-        </p>
+          <p className="page-header-subtitle text-[13px] leading-6 h-6 text-ink-light opacity-60 m-0 p-0">
+            {phrase}
+          </p>
+        </div>
+
+        <div className="page-header-toolbar inbox-page-header-controls absolute bottom-0 right-0 z-20 flex items-center">
+          <TaskVisibilityControls
+            hideCompletedTasks={preferences?.hideCompletedTasks ?? false}
+            hideOldNotes={preferences?.hideOldNotes ?? false}
+            disabled={!preferences || visibilityPreferencesPending}
+            onHideCompletedTasksChange={setHideCompletedTasks}
+            onHideOldNotesChange={setHideOldNotes}
+          />
+        </div>
       </header>
-
-      <div className="page-header-toolbar inbox-page-header-controls sticky top-6 z-20 -mt-6 ml-auto w-fit">
-        <TaskVisibilityControls
-          hideCompletedTasks={preferences?.hideCompletedTasks ?? false}
-          hideOldNotes={preferences?.hideOldNotes ?? false}
-          disabled={!preferences || visibilityPreferencesPending}
-          onHideCompletedTasksChange={setHideCompletedTasks}
-          onHideOldNotesChange={setHideOldNotes}
-        />
-      </div>
 
       <div className="max-w-162">
         <div className="h-6" />
 
-      <TaskList
-        tasks={topLevelGroup.tasks}
-        containerId="collection:inbox"
-        activeDragId={activeDragId}
-        editingId={editingId}
-        onTaskToggle={handleToggle}
-        onStartEdit={handleStartEdit}
-        onEditCommit={handleEditCommit}
-        onEditCancel={handleEditCancel}
-        onDelete={handleDelete}
-        onAddBelow={handleAddBelow}
-        onIndent={handleIndent}
-        onNavigate={handleNavigate}
-        onConvertType={handleConvertType}
-        onRightClick={handleRightClick}
-      />
+        <TaskList
+          tasks={topLevelGroup.tasks}
+          containerId="collection:inbox"
+          activeDragId={activeDragId}
+          editingId={editingId}
+          onTaskToggle={handleToggle}
+          onStartEdit={handleStartEdit}
+          onEditCommit={handleEditCommit}
+          onEditCancel={handleEditCancel}
+          onDelete={handleDelete}
+          onAddBelow={handleAddBelow}
+          onIndent={handleIndent}
+          onConvertType={handleConvertType}
+          onRightClick={handleRightClick}
+        />
 
         <form
-        onSubmit={handleAddAtEnd}
-        className="flex items-center h-6"
-      >
-        <span className="w-6 text-center text-[10px] leading-6 text-ink opacity-25 select-none shrink-0">
-          •
-        </span>
-        <input
-          ref={inputRef}
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder={t('common.addTask')}
-          className="task-input task-add-input flex-1 text-[14px] leading-6 text-ink bg-transparent border-none outline-none p-0"
-          spellCheck={false}
-          onKeyDown={(e) => {
-            if (handleAddNoteKeyDown(e)) return;
-            if (e.key === 'ArrowUp') {
-              e.preventDefault();
-              setTasks((prev) => {
-                if (prev.length === 0) return prev;
-                const col = (e.target as HTMLInputElement).selectionStart ?? 0;
-                const last = prev[prev.length - 1];
-                setPendingColumn(col);
-                setEditingId(last.id);
-                return prev;
-              });
-            }
-          }}
-        />
+          onSubmit={handleAddAtEnd}
+          className="flex items-center h-6"
+        >
+          <span className="w-6 text-center text-[10px] leading-6 text-ink opacity-25 select-none shrink-0">
+            •
+          </span>
+          <input
+            ref={inputRef}
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder={t('common.addTask')}
+            className="task-input task-add-input flex-1 text-[14px] leading-6 text-ink bg-transparent border-none outline-none p-0"
+            spellCheck={false}
+            onKeyDown={handleAddNoteKeyDown}
+          />
         </form>
 
-      {sectionGroups.map((group) => (
-        <Fragment key={group.section!.id}>
-          <div className="h-6" />
-          <SectionHeader
-            section={group.section!}
-            isEditing={editingSectionId === group.section!.id}
-            onEdit={() => setEditingSectionId(group.section!.id)}
-            onCommitName={(name) => handleCommitSectionName(group.section!.id, name)}
-            onCancelEdit={() => handleCancelSectionEdit(group.section!.id)}
-            onDelete={() => handleDeleteSection(group.section!.id)}
-            onReorder={() => {}} // TODO: implement section reordering
-            onRightClick={(position) => handleSectionRightClick(group.section!.id, position)}
-          />
-          <TaskList
-            tasks={group.tasks}
-            containerId={`section:${group.section!.id}`}
-            sectionId={group.section!.id}
-            collectionId={inboxCollectionId}
-            activeDragId={activeDragId}
-            editingId={editingId}
-            onTaskToggle={handleToggle}
-            onStartEdit={handleStartEdit}
-            onEditCommit={handleEditCommit}
-            onEditCancel={handleEditCancel}
-            onDelete={handleDelete}
-            onAddBelow={handleAddBelow}
-            onIndent={handleIndent}
-            onNavigate={handleNavigate}
-            onConvertType={handleConvertType}
-            onRightClick={handleRightClick}
-          />
-          <form
-            onSubmit={(e) => handleAddSectionTask(group.section!.id, e)}
-            className="flex items-center h-6"
-          >
-            <span className="w-6 text-center text-[10px] leading-6 text-ink opacity-25 select-none shrink-0">
-              •
-            </span>
-            <input
-              type="text"
-              value={sectionTaskInput[group.section!.id] ?? ''}
-              onChange={(e) =>
-                setSectionTaskInput((prev) => ({ ...prev, [group.section!.id]: e.target.value }))
-              }
-              placeholder={t('common.addTask')}
-              className="task-input task-add-input flex-1 text-[14px] leading-6 text-ink bg-transparent border-none outline-none p-0"
-              spellCheck={false}
-            />
-          </form>
-        </Fragment>
-      ))}
-
-      <div className="h-6" />
-
-      {addingSection ? (
-        <div className="flex h-6 w-full min-w-0 items-center pr-2">
-          <span className="flex h-6 w-6 shrink-0 items-center justify-center text-ink-light opacity-35">+</span>
-          <HabitNameInput
-            defaultValue=""
-            placeholder={t('page.newSection')}
-            className="uppercase tracking-widest text-[10px] font-semibold text-ink-light"
-            onCommit={(name) => handleCommitSectionName(addingSection.id, name)}
-            onCancel={() => handleCancelSectionEdit(addingSection.id)}
-          />
-        </div>
-      ) : (
-        <button
-          type="button"
-          onClick={handleAddSection}
-          className="group flex h-6 w-full min-w-0 items-center pr-2 text-ink-light opacity-35 transition-opacity hover:opacity-100"
+        <SortableContext
+          items={sectionGroups.map((group) => group.section!.id)}
+          strategy={verticalListSortingStrategy}
         >
-          <span className="flex h-6 w-6 shrink-0 items-center justify-center">+</span>
-          <span className="min-w-0 flex-1 truncate text-left text-sm leading-6">{t('page.newSection')}</span>
-        </button>
-      )}
+          {sectionGroups.map((group) => (
+            <Fragment key={group.section!.id}>
+              <div className="h-6" />
+              <SectionHeader
+                section={group.section!}
+                collectionId={inboxCollectionId ?? ''}
+                isEditing={editingSectionId === group.section!.id}
+                onEdit={() => setEditingSectionId(group.section!.id)}
+                onCommitName={(name) => handleCommitSectionName(group.section!.id, name)}
+                onCancelEdit={() => handleCancelSectionEdit(group.section!.id)}
+                onDelete={() => handleDeleteSection(group.section!.id)}
+                onRightClick={(position) => handleSectionRightClick(group.section!.id, position)}
+              />
+              <TaskList
+                tasks={group.tasks}
+                containerId={`section:${group.section!.id}`}
+                sectionId={group.section!.id}
+                collectionId={inboxCollectionId}
+                activeDragId={activeDragId}
+                editingId={editingId}
+                onTaskToggle={handleToggle}
+                onStartEdit={handleStartEdit}
+                onEditCommit={handleEditCommit}
+                onEditCancel={handleEditCancel}
+                onDelete={handleDelete}
+                onAddBelow={handleAddBelow}
+                onIndent={handleIndent}
+                onConvertType={handleConvertType}
+                onRightClick={handleRightClick}
+              />
+              <form
+                onSubmit={(e) => handleAddSectionTask(group.section!.id, e)}
+                className="flex items-center h-6"
+              >
+                <span className="w-6 text-center text-[10px] leading-6 text-ink opacity-25 select-none shrink-0">
+                  •
+                </span>
+                <input
+                  type="text"
+                  value={sectionTaskInput[group.section!.id] ?? ''}
+                  onChange={(e) =>
+                    setSectionTaskInput((prev) => ({ ...prev, [group.section!.id]: e.target.value }))
+                  }
+                  placeholder={t('common.addTask')}
+                  className="task-input task-add-input flex-1 text-[14px] leading-6 text-ink bg-transparent border-none outline-none p-0"
+                  spellCheck={false}
+                />
+              </form>
+            </Fragment>
+          ))}
+        </SortableContext>
+
+        <div className="h-6" />
+
+        {addingSection ? (
+          <div className="flex h-6 w-full min-w-0 items-center pr-2">
+            <span className="flex h-6 w-6 shrink-0 items-center justify-center text-ink-light opacity-35">+</span>
+            <InlineNameInput
+              defaultValue=""
+              placeholder={t('page.newSection')}
+              className="uppercase tracking-widest text-[10px] font-semibold text-ink-light"
+              onCommit={(name) => handleCommitSectionName(addingSection.id, name)}
+              onCancel={() => handleCancelSectionEdit(addingSection.id)}
+            />
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={handleAddSection}
+            className="group flex h-6 w-full min-w-0 items-center pr-2 text-ink-light opacity-35 transition-opacity hover:opacity-100"
+          >
+            <span className="flex h-6 w-6 shrink-0 items-center justify-center">+</span>
+            <span className="min-w-0 flex-1 truncate text-left uppercase tracking-widest text-[10px] font-semibold">
+              {t('page.newSection')}
+            </span>
+          </button>
+        )}
       </div>
 
       {contextMenu && (
@@ -703,15 +681,15 @@ export function InboxPage() {
           position={contextMenu.position}
           onClose={() => setContextMenu(null)}
           items={[
-            { type: 'item', label: 'Date', icon: <Calendar size={14} />, disabled: true },
-            { type: 'item', label: 'Priority', icon: <Tag size={14} />, disabled: true },
-            { type: 'item', label: 'Project', icon: <Folder size={14} />, submenu: projectSubmenuItems },
-            { type: 'item', label: 'Tags', icon: <Hash size={14} />, disabled: true },
+            // { type: 'item', label: 'Date', icon: <Calendar size={14} />, disabled: true },
+            // { type: 'item', label: 'Priority', icon: <Tag size={14} />, disabled: true },
+            { type: 'item', label: t('contextMenu.collection'), icon: <Folder size={14} />, submenu: projectSubmenuItems },
+            // { type: 'item', label: 'Tags', icon: <Hash size={14} />, disabled: true },
             { type: 'separator' },
-            { type: 'item', label: 'Add above', icon: <ArrowUp size={14} />, onClick: () => handleAddAbove(contextMenu.taskId) },
-            { type: 'item', label: 'Add below', icon: <ArrowDown size={14} />, onClick: () => handleAddBelow(contextMenu.taskId) },
+            { type: 'item', label: t('contextMenu.addAbove'), icon: <ArrowUp size={14} />, onClick: () => handleAddAbove(contextMenu.taskId) },
+            { type: 'item', label: t('contextMenu.addBelow'), icon: <ArrowDown size={14} />, onClick: () => handleAddBelow(contextMenu.taskId) },
             { type: 'separator' },
-            { type: 'item', label: 'Delete', icon: <Trash2 size={14} />, destructive: true, onClick: () => handleDelete(contextMenu.taskId) },
+            { type: 'item', label: t('common.delete'), icon: <Trash2 size={14} />, destructive: true, onClick: () => handleDelete(contextMenu.taskId) },
           ]}
         />
       )}
@@ -721,9 +699,9 @@ export function InboxPage() {
           position={sectionContextMenu.position}
           onClose={() => setSectionContextMenu(null)}
           items={[
-            { type: 'item', label: 'Rename', icon: <Pencil size={14} />, onClick: () => setEditingSectionId(sectionContextMenu.sectionId) },
+            { type: 'item', label: t('common.rename'), icon: <Pencil size={14} />, onClick: () => setEditingSectionId(sectionContextMenu.sectionId) },
             { type: 'separator' },
-            { type: 'item', label: 'Delete', icon: <Trash2 size={14} />, destructive: true, onClick: () => handleDeleteSection(sectionContextMenu.sectionId) },
+            { type: 'item', label: t('common.delete'), icon: <Trash2 size={14} />, destructive: true, onClick: () => handleDeleteSection(sectionContextMenu.sectionId) },
           ]}
         />
       )}

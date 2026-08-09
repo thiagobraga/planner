@@ -175,10 +175,10 @@ describe('DailyPage', () => {
 
     expect(header).toBeInTheDocument();
     expect(header).toContainElement(screen.getByText('Make today count'));
-    expect(header).not.toContainElement(screen.getByRole('button', { name: 'Today' }));
-    expect(header).not.toContainElement(screen.getByRole('button', { name: 'Hide completed tasks' }));
-    expect(header).not.toContainElement(screen.getByRole('button', { name: 'Hide old notes' }));
-    expect(screen.getByRole('button', { name: 'Today' }).closest('.page-header-toolbar')).toHaveClass('sticky');
+    expect(header).toContainElement(screen.getByRole('button', { name: 'Today' }));
+    expect(header).toContainElement(screen.getByRole('button', { name: 'Hide completed tasks' }));
+    expect(header).toContainElement(screen.getByRole('button', { name: 'Hide old notes' }));
+    expect(screen.getByRole('button', { name: 'Today' }).closest('.page-header-toolbar')).toHaveClass('absolute');
   });
 
   it('renders overdue section label', async () => {
@@ -201,7 +201,7 @@ describe('DailyPage', () => {
   it('renders "Add task" input', async () => {
     renderPage();
 
-    expect(await screen.findByPlaceholderText('Add task…')).toBeInTheDocument();
+    expect(await screen.findByPlaceholderText('New task…')).toBeInTheDocument();
   });
 
   it('triggers refetch and scrolls to today section when midnight timer fires', async () => {

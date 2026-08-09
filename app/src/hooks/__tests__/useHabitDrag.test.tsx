@@ -67,8 +67,8 @@ interface CapturedHandlers {
 
 let registered: CapturedHandlers | null = null;
 
-vi.mock('../../contexts/PlannerDragContext', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../contexts/PlannerDragContext')>();
+vi.mock('../../contexts/usePlannerDrag', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../contexts/usePlannerDrag')>();
   return {
     ...actual,
     usePlannerDragHandlers: (kind: string, handlers: CapturedHandlers) => {

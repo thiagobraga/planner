@@ -192,18 +192,43 @@ button,
   background-attachment: local;
 }
 
+/*
+ * Positioning shell for a page header: spans the full row so the toolbar
+ * (an absolutely-positioned child, anchored bottom-right) has the true right
+ * edge to sit against, and carries the one sticky context both title and
+ * toolbar stick together under. Splitting title-and-toolbar into two
+ * independently-stickied siblings, each cancelling its own margin, used to
+ * leave a fractional-pixel remainder whenever a sibling's rendered height
+ * wasn't exactly what its -mt-6 assumed - see page-header-copy-text below.
+ */
 .sticky-page-header {
   position: sticky;
   top: -24px;
   z-index: 10;
+  /*
+   * flex, not the default block: an inline-flex child (page-header-copy-text)
+   * sitting in a block's inline formatting context is laid out inside an
+   * anonymous line box sized off this element's font metrics, which reserved
+   * a fractional strut above it that a plain height/margin audit never turns
+   * up. flex removes that formatting context - the child lays out at its own
+   * height, full stop.
+   */
+  display: flex;
+  align-items: flex-start;
+  width: 100%;
+  padding-top: 24px;
+  margin-top: -24px;
+  background-color: var(--planner-page-bg);
+}
+
+/* The title/subtitle column - shrunk to its own content, unlike the header
+ * shell around it, so the sticky background only paints behind the text. */
+.page-header-copy-text {
   display: inline-flex;
   flex-direction: column;
   align-items: flex-start;
   width: fit-content;
   max-width: 100%;
-  padding-top: 24px;
-  margin-top: -24px;
-  background-color: var(--planner-page-bg);
 }
 
 .monthly-current-day-label {
@@ -273,7 +298,7 @@ button,
   transition: opacity 150ms;
 
   &:hover {
-    background: rgba(212, 207, 199, 0.4);
+    background: var(--planner-task-hover-bg);
 
     & .drag-handle {
       opacity: 0.5 !important;
@@ -284,6 +309,14 @@ button,
     outline: 2px solid var(--color-ink);
     outline-offset: -2px;
     border-radius: 4px;
+  }
+}
+
+.task-item--selected {
+  background: var(--planner-task-selection-bg);
+
+  &:hover {
+    background: var(--planner-task-selection-bg);
   }
 }
 /*

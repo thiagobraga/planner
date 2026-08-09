@@ -48,7 +48,8 @@ export function SectionDeleteModal({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="bg-cream border border-dot rounded-md py-6 px-8 max-w-[400px] w-full mx-4 shadow-[0_8px_32px_rgba(44,44,44,0.15)]"
+        className="border border-dot rounded-md py-6 px-8 max-w-[400px] w-full mx-4 shadow-[0_8px_32px_rgba(44,44,44,0.15)]"
+        style={{ backgroundColor: 'var(--planner-overlay-bg)' }}
       >
         <h2 id="section-delete-modal-title" className="text-base font-semibold text-ink mb-2">
           {t('page.deleteSection', { name: sectionName })}

@@ -11,6 +11,7 @@ import {
   apiToggleTask,
   apiUpdateTask,
   apiDeleteTask,
+  apiDeleteSection,
   apiUpdatePreferences,
   apiUpdateCollection,
   fetchSavedColors,
@@ -24,6 +25,7 @@ const mockApiCreateTask = vi.mocked(apiCreateTask);
 const mockApiToggleTask = vi.mocked(apiToggleTask);
 const mockApiUpdateTask = vi.mocked(apiUpdateTask);
 const mockApiDeleteTask = vi.mocked(apiDeleteTask);
+const mockApiDeleteSection = vi.mocked(apiDeleteSection);
 const mockApiUpdatePreferences = vi.mocked(apiUpdatePreferences);
 const mockApiUpdateCollection = vi.mocked(apiUpdateCollection);
 const mockFetchSavedColors = vi.mocked(fetchSavedColors);
@@ -38,6 +40,7 @@ vi.mock('../../api/client', async (importOriginal) => ({
   apiToggleTask: vi.fn(),
   apiUpdateTask: vi.fn(),
   apiDeleteTask: vi.fn(),
+  apiDeleteSection: vi.fn(),
   apiUpdatePreferences: vi.fn(),
   apiUpdateCollection: vi.fn(),
   apiCreateCollection: vi.fn(),
@@ -52,6 +55,10 @@ vi.mock('../../contexts/AuthContext', () => ({
 
 vi.mock('../../hooks/useTaskDrag', () => ({
   useTaskDrag: vi.fn(() => ({ activeDragId: null })),
+}));
+
+vi.mock('../../hooks/useSectionDrag', () => ({
+  useSectionDrag: vi.fn(),
 }));
 
 vi.mock('../../components/TaskList', () => ({
@@ -78,6 +85,7 @@ const collectionViewData = {
     },
   ],
   collectionId: 'test-collection-id',
+  sections: [],
 };
 
 const defaultPreferences = {
@@ -121,6 +129,7 @@ beforeEach(() => {
   mockApiToggleTask.mockReset();
   mockApiUpdateTask.mockReset();
   mockApiDeleteTask.mockReset();
+  mockApiDeleteSection.mockReset();
   mockApiUpdatePreferences.mockReset();
   mockApiUpdateCollection.mockReset();
   mockFetchSavedColors.mockReset();
@@ -163,9 +172,9 @@ describe('CollectionsPage', () => {
     const header = title.closest('header');
 
     expect(header).toBeInTheDocument();
-    expect(header).not.toContainElement(screen.getByRole('button', { name: 'Hide completed tasks' }));
-    expect(header).not.toContainElement(screen.getByRole('button', { name: 'Hide old notes' }));
-    expect(screen.getByRole('button', { name: 'Hide old notes' }).closest('.page-header-toolbar')).toHaveClass('sticky', 'ml-auto');
+    expect(header).toContainElement(screen.getByRole('button', { name: 'Hide completed tasks' }));
+    expect(header).toContainElement(screen.getByRole('button', { name: 'Hide old notes' }));
+    expect(screen.getByRole('button', { name: 'Hide old notes' }).closest('.page-header-toolbar')).toHaveClass('absolute', 'right-0');
   });
 
   it('updates completed-task visibility from the header toolbar', async () => {
@@ -192,8 +201,34 @@ describe('CollectionsPage', () => {
   it('renders add task input', async () => {
     renderPage();
 
-    const input = await screen.findByPlaceholderText('Add task…');
+    const input = await screen.findByPlaceholderText('New task…');
     expect(input).toBeInTheDocument();
+  });
+
+  it('asks what to do with tasks when a populated section name is blanked', async () => {
+    mockFetchCollectionView.mockResolvedValue({
+      ...collectionViewData,
+      tasks: [{ ...collectionViewData.tasks[0], sectionId: 'section-1' }],
+      sections: [{
+        id: 'section-1',
+        name: 'Work',
+        collectionId: 'test-collection-id',
+        orderValue: 0,
+      }],
+    });
+    renderPage();
+
+    fireEvent.doubleClick(await screen.findByText('Work'));
+    const input = screen.getByDisplayValue('Work');
+    fireEvent.change(input, { target: { value: '' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+
+    expect(await screen.findByRole('dialog', { name: 'Delete "Work"?' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Delete section and tasks' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Move tasks to top-level' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Cancel' })).toBeInTheDocument();
+    expect(mockApiDeleteTask).not.toHaveBeenCalled();
+    expect(mockApiDeleteSection).not.toHaveBeenCalled();
   });
 
   it('uses the collection id from URL params', async () => {

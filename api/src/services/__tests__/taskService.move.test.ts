@@ -496,16 +496,118 @@ describe("moveTask onto a sidebar collection", () => {
   });
 });
 
+describe("moveTask section scope", () => {
+  const sectionId = "section-1";
+
+  it("files the task into an explicit section when dropped on a sibling row", async () => {
+    // Dropped onto another top-level row: no destParent, so the only signal
+    // that this belongs in a section is the explicit `sectionId` on the input -
+    // this is the row-to-row drag gesture, not the empty-section-container one.
+    (pool.query as ReturnType<typeof vi.fn>).mockResolvedValue({
+      rows: [taskRow({ section_id: null })],
+    });
+    const tx = mockTransaction([
+      [/WITH RECURSIVE/, [{ id: taskId, parent_task_id: null, depth: 0, collection_id: collectionId, section_id: null, due_date: null }]],
+    ]);
+
+    await moveTask(taskId, userId, {
+      parentTaskId: null,
+      sectionId,
+      scope: scopeCollection,
+      position: 0,
+    });
+
+    const rootWrite = tx.calls.find((c) => /UPDATE tasks\s+SET parent_task_id/.test(c.sql));
+    const [, , destSectionId] = rootWrite!.params as unknown[];
+    expect(destSectionId).toBe(sectionId);
+
+    const scopeQuery = tx.calls.find((c) => /section_id IS NOT DISTINCT FROM/.test(c.sql));
+    expect(scopeQuery?.params).toEqual([collectionId, sectionId, null, taskId]);
+  });
+
+  it("files the task into a section via an explicit section scope, dropped on the empty container", async () => {
+    (pool.query as ReturnType<typeof vi.fn>).mockResolvedValue({
+      rows: [taskRow({ section_id: null })],
+    });
+    mockTransaction([
+      [/WITH RECURSIVE/, [{ id: taskId, parent_task_id: null, depth: 0, collection_id: collectionId, section_id: null, due_date: null }]],
+    ]);
+
+    const result = await moveTask(taskId, userId, {
+      parentTaskId: null,
+      sectionId,
+      scope: { kind: "section", sectionId },
+      position: Number.MAX_SAFE_INTEGER,
+    });
+
+    expect(result.reordered).toHaveLength(1);
+  });
+
+  it("preserves the task's current section when a plain reorder omits sectionId", async () => {
+    (pool.query as ReturnType<typeof vi.fn>).mockResolvedValue({
+      rows: [taskRow({ section_id: sectionId })],
+    });
+    const tx = mockTransaction([
+      [/WITH RECURSIVE/, [{ id: taskId, parent_task_id: null, depth: 0, collection_id: collectionId, section_id: sectionId, due_date: null }]],
+    ]);
+
+    await moveTask(taskId, userId, {
+      parentTaskId: null,
+      scope: scopeCollection,
+      position: 0,
+    });
+
+    const rootWrite = tx.calls.find((c) => /UPDATE tasks\s+SET parent_task_id/.test(c.sql));
+    const [, , destSectionId] = rootWrite!.params as unknown[];
+    expect(destSectionId).toBe(sectionId);
+  });
+
+  it("rejects a section scope without a section id", async () => {
+    await expectRejection(
+      moveTask(taskId, userId, {
+        parentTaskId: null,
+        scope: { kind: "section" } as unknown as Parameters<typeof moveTask>[2]["scope"],
+        position: 0,
+      }),
+      "scope.sectionId",
+      /Section scope requires a section id/,
+    );
+  });
+});
+
 describe("moveTask subtree propagation", () => {
+  const sourceSectionId = "section-1";
+  const targetSectionId = "section-2";
   const subtree = [
-    { id: taskId, parent_task_id: null, depth: 0, collection_id: collectionId, section_id: null, due_date: "2026-07-18" },
-    { id: "child-1", parent_task_id: taskId, depth: 1, collection_id: collectionId, section_id: null, due_date: "2026-07-18" },
-    { id: "grand-1", parent_task_id: "child-1", depth: 2, collection_id: collectionId, section_id: null, due_date: "2026-07-18" },
+    {
+      id: taskId,
+      parent_task_id: null,
+      depth: 0,
+      collection_id: collectionId,
+      section_id: sourceSectionId,
+      due_date: "2026-07-18",
+    },
+    {
+      id: "child-1",
+      parent_task_id: taskId,
+      depth: 1,
+      collection_id: collectionId,
+      section_id: sourceSectionId,
+      due_date: "2026-07-18",
+    },
+    {
+      id: "grand-1",
+      parent_task_id: "child-1",
+      depth: 2,
+      collection_id: collectionId,
+      section_id: sourceSectionId,
+      due_date: "2026-07-18",
+    },
   ];
 
-  it("moves every descendant's collection when crossing collections", async () => {
+  it("clears the root section and rewrites descendants when crossing collections", async () => {
     (pool.query as ReturnType<typeof vi.fn>).mockResolvedValue({
-      rows: [taskRow({ due_date: "2026-07-18" })],
+      rows: [taskRow({ due_date: "2026-07-18", section_id: sourceSectionId })],
     });
     const tx = mockTransaction([[/WITH RECURSIVE/, subtree]]);
 
@@ -516,8 +618,33 @@ describe("moveTask subtree propagation", () => {
       position: 0,
     });
 
-    const collectionWrite = tx.calls.find((c) => /SET collection_id = \$1, section_id = NULL/.test(c.sql));
-    expect(collectionWrite?.params).toEqual(["collection-2", ["child-1", "grand-1"]]);
+    const rootWrite = tx.calls.find((c) => /UPDATE tasks\s+SET parent_task_id/.test(c.sql));
+    const [, , destSectionId] = rootWrite!.params as unknown[];
+    expect(destSectionId).toBeNull();
+
+    const collectionWrite = tx.calls.find((c) => /SET collection_id = \$1, section_id = \$2/.test(c.sql));
+    expect(collectionWrite?.params).toEqual(["collection-2", null, ["child-1", "grand-1"]]);
+  });
+
+  it("rewrites descendant sections when moving within the same collection", async () => {
+    (pool.query as ReturnType<typeof vi.fn>).mockResolvedValue({
+      rows: [taskRow({ due_date: "2026-07-18", section_id: sourceSectionId })],
+    });
+    const tx = mockTransaction([[/WITH RECURSIVE/, subtree]]);
+
+    await moveTask(taskId, userId, {
+      parentTaskId: null,
+      sectionId: targetSectionId,
+      scope: scopeCollection,
+      position: 0,
+    });
+
+    const rootWrite = tx.calls.find((c) => /UPDATE tasks\s+SET parent_task_id/.test(c.sql));
+    const [, , destSectionId] = rootWrite!.params as unknown[];
+    expect(destSectionId).toBe(targetSectionId);
+
+    const sectionWrite = tx.calls.find((c) => /SET collection_id = \$1, section_id = \$2/.test(c.sql));
+    expect(sectionWrite?.params).toEqual([collectionId, targetSectionId, ["child-1", "grand-1"]]);
   });
 
   it("keeps the due date when only the collection changes", async () => {

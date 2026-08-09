@@ -9,6 +9,7 @@ import {
   apiUpdateTask,
   apiToggleTask,
   apiDeleteTask,
+  apiDeleteSection,
   apiUpdatePreferences,
   fetchPreferences,
   type Preferences,
@@ -20,6 +21,7 @@ const mockApiCreateTask = vi.mocked(apiCreateTask);
 const mockApiUpdateTask = vi.mocked(apiUpdateTask);
 const mockApiToggleTask = vi.mocked(apiToggleTask);
 const mockApiDeleteTask = vi.mocked(apiDeleteTask);
+const mockApiDeleteSection = vi.mocked(apiDeleteSection);
 const mockApiUpdatePreferences = vi.mocked(apiUpdatePreferences);
 const mockFetchPreferences = vi.mocked(fetchPreferences);
 
@@ -38,9 +40,11 @@ const basePreferences: Preferences = {
   hideOldNotes: false,
 };
 
-const baseInboxData: { tasks: ApiTask[]; collectionId: string | null } = {
+const baseInboxData = {
   tasks: [],
   collectionId: null,
+  inboxCollectionId: undefined,
+  sections: [],
 };
 
 const sampleTasks: ApiTask[] = [
@@ -83,6 +87,7 @@ vi.mock('../../api/client', async (importOriginal) => ({
   apiUpdateTask: vi.fn(),
   apiToggleTask: vi.fn(),
   apiDeleteTask: vi.fn(),
+  apiDeleteSection: vi.fn(),
   apiUpdatePreferences: vi.fn(),
   fetchPreferences: vi.fn(),
 }));
@@ -93,6 +98,10 @@ vi.mock('../../contexts/AuthContext', () => ({
 
 vi.mock('../../hooks/useTaskDrag', () => ({
   useTaskDrag: vi.fn(() => ({ activeDragId: null })),
+}));
+
+vi.mock('../../hooks/useSectionDrag', () => ({
+  useSectionDrag: vi.fn(),
 }));
 
 vi.mock('../../hooks/useSync', () => ({
@@ -155,6 +164,7 @@ beforeEach(() => {
   mockApiUpdateTask.mockReset();
   mockApiToggleTask.mockReset();
   mockApiDeleteTask.mockReset();
+  mockApiDeleteSection.mockReset();
   mockApiUpdatePreferences.mockReset();
   mockFetchPreferences.mockReset();
   mockFetchInboxTasks.mockResolvedValue(baseInboxData);
@@ -172,7 +182,7 @@ describe('InboxPage', () => {
 
     expect(screen.getByText('Inbox')).toBeInTheDocument();
     expect(screen.getByText('Dump it here. Sort it later.')).toBeInTheDocument();
-    expect(screen.getByPlaceholderText('Add task…')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('New task…')).toBeInTheDocument();
     expect(screen.getByTestId('task-list').children).toHaveLength(0);
   });
 
@@ -181,9 +191,9 @@ describe('InboxPage', () => {
 
     const header = screen.getByText('Inbox').closest('header');
     expect(header).toContainElement(await screen.findByText('Dump it here. Sort it later.'));
-    expect(header).not.toContainElement(screen.getByRole('button', { name: 'Hide completed tasks' }));
-    expect(header).not.toContainElement(screen.getByRole('button', { name: 'Hide old notes' }));
-    expect(screen.getByRole('button', { name: 'Hide old notes' }).closest('.page-header-toolbar')).toHaveClass('sticky', 'ml-auto');
+    expect(header).toContainElement(screen.getByRole('button', { name: 'Hide completed tasks' }));
+    expect(header).toContainElement(screen.getByRole('button', { name: 'Hide old notes' }));
+    expect(screen.getByRole('button', { name: 'Hide old notes' }).closest('.page-header-toolbar')).toHaveClass('absolute', 'right-0');
   });
 
   it('updates the hide-old-notes preference from the header toolbar', async () => {
@@ -214,6 +224,28 @@ describe('InboxPage', () => {
   it('renders the add-task input', async () => {
     renderPage();
 
-    expect(await screen.findByPlaceholderText('Add task…')).toBeInTheDocument();
+    expect(await screen.findByPlaceholderText('New task…')).toBeInTheDocument();
+  });
+
+  it('asks what to do with tasks when a populated section name is blanked', async () => {
+    mockFetchInboxTasks.mockResolvedValue({
+      tasks: [{ ...sampleTasks[0], sectionId: 'section-1' }],
+      collectionId: 'col-1',
+      inboxCollectionId: 'col-1',
+      sections: [{ id: 'section-1', name: 'Work', collectionId: 'col-1', orderValue: 0 }],
+    });
+    renderPage();
+
+    fireEvent.doubleClick(await screen.findByText('Work'));
+    const input = screen.getByDisplayValue('Work');
+    fireEvent.change(input, { target: { value: '' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+
+    expect(await screen.findByRole('dialog', { name: 'Delete "Work"?' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Delete section and tasks' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Move tasks to top-level' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Cancel' })).toBeInTheDocument();
+    expect(mockApiDeleteTask).not.toHaveBeenCalled();
+    expect(mockApiDeleteSection).not.toHaveBeenCalled();
   });
 });

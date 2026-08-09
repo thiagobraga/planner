@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useDroppable } from '@dnd-kit/core';
 import { ChevronRight, Repeat2, Settings, HelpCircle, LogOut, FolderOpen, ShieldCheck, Users, type LucideIcon } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { usePlannerDrag } from '../contexts/PlannerDragContext';
+import { usePlannerDrag } from '../contexts/usePlannerDrag';
 import { CollectionTreeNav } from './CollectionTreeNav';
 import { SidebarNavItem } from './SidebarNavItem';
 import { fetchCollections } from '../api/client';
@@ -65,8 +65,8 @@ type NavItem = { to: string; labelKey: TranslationKey; Icon: LucideIcon | React.
 const NAV_ITEMS: NavItem[] = [
   { to: '/daily', labelKey: 'nav.daily', Icon: BjTask },
   { to: '/inbox', labelKey: 'nav.inbox', Icon: ChevronRight },
-  { to: '/monthly', labelKey: 'nav.monthly', Icon: MonthlyIcon },
   { to: '/habits', labelKey: 'nav.habits', Icon: Repeat2 },
+  { to: '/monthly', labelKey: 'nav.monthly', Icon: MonthlyIcon },
 ];
 
 /**

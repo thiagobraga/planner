@@ -28,7 +28,8 @@ export function UpdateToast({ updateAvailable }: UpdateToastProps) {
         {tooltipOpen && (
           <div
             aria-live="polite"
-            className="absolute bottom-full left-12 z-[120] mb-2 flex items-center gap-3 whitespace-nowrap rounded-md border border-moss bg-cream px-3.5 py-2 text-[13px] leading-5 text-ink shadow-overlay"
+            className="absolute bottom-full left-12 z-[120] mb-2 flex items-center gap-3 whitespace-nowrap rounded-md border border-moss px-3.5 py-2 text-[13px] leading-5 text-ink shadow-overlay"
+            style={{ backgroundColor: 'var(--planner-overlay-bg)' }}
           >
             <span>{t('update.available')}</span>
             <button

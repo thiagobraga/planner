@@ -4,7 +4,7 @@ import type {
   DragOverEvent,
   DragStartEvent,
 } from '@dnd-kit/core';
-import { usePlannerDrag, usePlannerDragHandlers } from '../contexts/PlannerDragContext';
+import { usePlannerDrag, usePlannerDragHandlers } from '../contexts/usePlannerDrag';
 import { flattenTasks, getSubtreeBlock, projectMove, type FlatRow } from '../utils/taskProjection';
 import { apiMoveTask, type TaskOrderScope } from '../api/client';
 import { trackMove } from '../utils/moveEcho';
@@ -360,6 +360,13 @@ export function resolveMove({
   const taskDateKey = (t: Task) =>
     t.dueDate ? t.dueDate.slice(0, 10) : scope.kind === 'day' ? scope.dueDate : null;
 
+  // Inbox and Collections render every section's tasks in one flat array, so
+  // without this a row-to-row drop would resolve its position against the
+  // whole page - siblings from other sections included - instead of just the
+  // section the target row actually belongs to. Daily has no sections at all,
+  // so this only ever narrows anything on a `collection` scope.
+  const targetSectionId = scope.kind === 'collection' ? (over.sectionId ?? null) : null;
+
   const scopedRows = targetDay
     ? rows.filter(
         (r) =>
@@ -367,7 +374,11 @@ export function resolveMove({
           taskDateKey(r.task) === targetDay ||
           active.subtreeIds.includes(r.id),
       )
-    : rows;
+    : scope.kind === 'collection'
+      ? rows.filter(
+          (r) => (r.task.sectionId ?? null) === targetSectionId || active.subtreeIds.includes(r.id),
+        )
+      : rows;
   if (!scopedRows.some((r) => r.id === over.taskId)) return null;
 
   const projected = projectMove(scopedRows, active.taskId, over.taskId, offsetX);
@@ -403,6 +414,7 @@ export function resolveMove({
     input: {
       parentTaskId: projection.parentId,
       ...(crossesDay ? { dueDate: targetDay } : {}),
+      ...(scope.kind === 'collection' ? { sectionId: targetSectionId } : {}),
       scope: targetDay ? { kind: 'day', dueDate: targetDay } : scope,
       position: projection.position,
     },

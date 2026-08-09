@@ -58,7 +58,7 @@ vi.mock('@dnd-kit/utilities', () => ({
   },
 }));
 
-vi.mock('../../contexts/PlannerDragContext', () => ({
+vi.mock('../../contexts/usePlannerDrag', () => ({
   usePlannerDrag: vi.fn(() => ({ activeDrag: null, overId: null })),
   usePlannerDragHandlers: vi.fn(),
 }));

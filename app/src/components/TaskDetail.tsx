@@ -133,7 +133,8 @@ export function TaskDetail({ task, onClose, onUpdate, onDelete }: TaskDetailProp
   return (
     <aside
       aria-label={t('task.detail')}
-      className="w-[360px] min-w-[320px] h-full border-l border-dot bg-cream flex flex-col overflow-hidden"
+      className="w-[360px] min-w-[320px] h-full border-l border-dot flex flex-col overflow-hidden"
+      style={{ backgroundColor: 'var(--planner-overlay-bg)' }}
     >
       {/* Header */}
       <div className="flex items-center justify-between px-5 py-4 border-b border-dot shrink-0">

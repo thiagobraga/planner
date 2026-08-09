@@ -731,11 +731,13 @@ export async function reorderTask(taskId: string, userId: string, position: numb
  */
 export type TaskOrderScope =
   | { kind: 'collection'; collectionId: string }
-  | { kind: 'day'; dueDate: string };
+  | { kind: 'day'; dueDate: string }
+  | { kind: 'section'; sectionId: string };
 
 export interface MoveTaskInput {
   parentTaskId: string | null;
   collectionId?: string;
+  sectionId?: string | null;
   dueDate?: string | null;
   scope: TaskOrderScope;
   position: number;
@@ -764,6 +766,13 @@ function validateMoveInput(input: MoveTaskInput): void {
     throw validationError('collectionId', 'Collection id must be a string');
   }
   if (
+    input.sectionId !== undefined &&
+    input.sectionId !== null &&
+    typeof input.sectionId !== 'string'
+  ) {
+    throw validationError('sectionId', 'Section id must be a string or null');
+  }
+  if (
     input.dueDate !== undefined &&
     input.dueDate !== null &&
     !ISO_DATE.test(input.dueDate)
@@ -786,8 +795,12 @@ function validateMoveInput(input: MoveTaskInput): void {
     if (!ISO_DATE.test(scope.dueDate ?? '')) {
       throw validationError('scope.dueDate', 'Day scope requires an ISO date (YYYY-MM-DD)');
     }
+  } else if (scope.kind === 'section') {
+    if (typeof scope.sectionId !== 'string') {
+      throw validationError('scope.sectionId', 'Section scope requires a section id');
+    }
   } else {
-    throw validationError('scope.kind', "Ordering scope must be 'collection' or 'day'");
+    throw validationError('scope.kind', "Ordering scope must be 'collection', 'day' or 'section'");
   }
 }
 
@@ -891,7 +904,18 @@ export async function moveTask(taskId: string, userId: string, input: MoveTaskIn
     const destCollectionId = destParent
       ? destParent.collection_id
       : (input.collectionId ?? task.collection_id);
-    const destSectionId = destParent ? destParent.section_id : null;
+    // `undefined` keeps the current section for plain reorders. When the move
+    // transfers the task to another collection without an explicit section, it
+    // has to land at top level so collection views can render it.
+    const destSectionId = destParent
+      ? destParent.section_id
+      : (
+          input.sectionId !== undefined
+            ? input.sectionId
+            : input.collectionId !== undefined && input.collectionId !== task.collection_id
+              ? null
+              : task.section_id
+        );
 
     // Task ownership can outlive collaboration membership, so task access alone
     // does not prove the user still has access to the resolved destination.
@@ -929,13 +953,13 @@ export async function moveTask(taskId: string, userId: string, input: MoveTaskIn
           [depthDelta, descendantIds],
         );
       }
-      if (crossesCollection) {
-        // Sections belong to a collection, so a section id cannot survive the
-        // crossing; descendants land unsectioned under their new collection.
+      if (crossesCollection || destSectionId !== task.section_id) {
+        // Descendants inherit the moved root's collection and section, so any
+        // move that changes either value has to rewrite the whole subtree.
         await client.query(
-          `UPDATE tasks SET collection_id = $1, section_id = NULL, updated_at = NOW()
-           WHERE id = ANY($2::uuid[])`,
-          [destCollectionId, descendantIds],
+          `UPDATE tasks SET collection_id = $1, section_id = $2, updated_at = NOW()
+           WHERE id = ANY($3::uuid[])`,
+          [destCollectionId, destSectionId, descendantIds],
         );
       }
       if (crossesDate) {
@@ -967,18 +991,13 @@ export async function moveTask(taskId: string, userId: string, input: MoveTaskIn
     // drag usually needs one midpoint write, not a renumber of the whole list.
     // Removing the task from its old list needs no separate cleanup: gap
     // numbering tolerates a slightly bigger hole where it used to sit.
+    // Section scope reorders the exact same (collection, section) sibling list
+    // a plain collection-scoped move already scopes by - it exists as its own
+    // `TaskOrderScope` kind only because the client resolves a drop onto an
+    // empty section differently than one onto a sibling row, not because the
+    // server orders it differently.
     let reordered: MovedTaskSummary[];
-    if (input.scope.kind === 'collection') {
-      reordered = await renumberCollectionScope(client, {
-        collectionId: destCollectionId,
-        sectionId: destSectionId,
-        parentTaskId: input.parentTaskId,
-        movedTaskId: taskId,
-        position: input.position,
-        depth: rootNewDepth,
-        movedDueDate: destDueDate,
-      });
-    } else {
+    if (input.scope.kind === 'day') {
       reordered = await renumberDayScope(client, {
         userId: task.user_id,
         date: input.scope.dueDate,
@@ -988,6 +1007,16 @@ export async function moveTask(taskId: string, userId: string, input: MoveTaskIn
         movedParentTaskId: input.parentTaskId,
         movedDepth: rootNewDepth,
         movedOrderValue: task.order_value,
+      });
+    } else {
+      reordered = await renumberCollectionScope(client, {
+        collectionId: destCollectionId,
+        sectionId: destSectionId,
+        parentTaskId: input.parentTaskId,
+        movedTaskId: taskId,
+        position: input.position,
+        depth: rootNewDepth,
+        movedDueDate: destDueDate,
       });
     }
 

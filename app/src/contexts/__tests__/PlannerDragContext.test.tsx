@@ -1,6 +1,7 @@
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
-import { PlannerDragProvider, usePlannerDrag } from '../PlannerDragContext';
+import { PlannerDragProvider } from '../PlannerDragContext';
+import { usePlannerDrag } from '../usePlannerDrag';
 
 type DragHandler = (event: unknown) => void;
 
@@ -36,7 +37,7 @@ vi.mock('@dnd-kit/sortable', () => ({
 vi.mock('../../components/dnd/sensors', () => ({
   PlannerPointerSensor: class {},
   PlannerKeyboardSensor: class {},
-  PRESS_ACTIVATION: { delay: 150, tolerance: 8 },
+  PRESS_ACTIVATION: { distance: 6 },
 }));
 
 vi.mock('../../components/dnd/collision', () => ({

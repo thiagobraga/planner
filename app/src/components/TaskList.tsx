@@ -9,14 +9,14 @@ import {
   projectMove,
   INDENT_WIDTH,
 } from '../utils/taskProjection';
-import { usePlannerDrag } from '../contexts/PlannerDragContext';
+import { usePlannerDrag } from '../contexts/usePlannerDrag';
 import { TaskBlockPreview } from './TaskBlockPreview';
 import type { DayDropData, SectionDropData } from '../types/drag';
 import { useI18n } from '../i18n/I18nContext';
 
 type TaskCallbacks = Pick<
   TaskItemProps,
-  'onStartEdit' | 'onEditCommit' | 'onEditCancel' | 'onDelete' | 'onAddBelow' | 'onIndent' | 'onNavigate' | 'onConvertType' | 'onRightClick'
+  'onStartEdit' | 'onEditCommit' | 'onEditCancel' | 'onDelete' | 'onAddBelow' | 'onIndent' | 'onConvertType' | 'onRightClick'
 >;
 
 interface TaskListProps extends TaskCallbacks {
@@ -72,7 +72,6 @@ export function TaskList({
   onDelete,
   onAddBelow,
   onIndent,
-  onNavigate,
   onConvertType,
   onRightClick,
 }: TaskListProps) {
@@ -219,7 +218,6 @@ export function TaskList({
               onDelete={onDelete}
               onAddBelow={onAddBelow}
               onIndent={onIndent}
-              onNavigate={onNavigate}
               onConvertType={onConvertType}
               onRightClick={onRightClick}
             />

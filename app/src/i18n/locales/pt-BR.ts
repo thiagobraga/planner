@@ -1,7 +1,7 @@
 import type { TranslationCatalog } from '../types';
 
 export const portugueseBrazilCatalog = {
-  'common.addTask': 'Adicionar tarefa…',
+  'common.addTask': 'Nova tarefa…',
   'common.cancel': 'Cancelar',
   'common.close': 'Fechar',
   'common.delete': 'Excluir',
@@ -177,7 +177,6 @@ export const portugueseBrazilCatalog = {
   'colorPicker.applySwatch': 'Aplicar {{color}}',
   'page.noHabits': 'Nenhum hábito ainda. Mude para a linha do tempo para adicionar um.',
   'page.noHabitsGroup': 'Nenhum hábito neste grupo.',
-  'page.newGroup': 'Novo grupo',
   'page.newHabit': 'Novo hábito',
   'page.newSection': 'Nova seção',
   'page.deleteSection': 'Excluir "{{name}}"?',
@@ -192,6 +191,11 @@ export const portugueseBrazilCatalog = {
   'page.nextDays': 'Próximos dias',
   'page.previousMonth': 'Mês anterior',
   'page.nextMonth': 'Próximo mês',
+  'contextMenu.collection': 'Coleção',
+  'contextMenu.noCollection': 'Sem coleção',
+  'contextMenu.addAbove': 'Adicionar acima',
+  'contextMenu.addBelow': 'Adicionar abaixo',
+  'contextMenu.deleteSection': 'Excluir seção',
   'task.detail': 'Detalhes da tarefa',
   'task.task': 'Tarefa',
   'task.title': 'Título da tarefa',

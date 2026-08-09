@@ -17,8 +17,8 @@ const moveTask = vi.mocked(apiMoveTask);
 /** Captures the handler the provider registers, the way dnd-kit would call it. */
 let registered: ((event: DragEndEvent) => void) | null = null;
 
-vi.mock('../../contexts/PlannerDragContext', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../contexts/PlannerDragContext')>();
+vi.mock('../../contexts/usePlannerDrag', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../contexts/usePlannerDrag')>();
   return {
     ...actual,
     usePlannerDragHandlers: (_kind: string, handlers: { onDragEnd?: (e: DragEndEvent) => void }) => {

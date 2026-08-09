@@ -20,6 +20,7 @@ export function HabitDragHandle({
   return (
     <span
       {...{ [DRAG_HANDLE_ATTR]: '' }}
+      style={{ lineHeight: 'var(--task-line-height, 24px)' }}
       tabIndex={0}
       role="button"
       aria-label={`Reorder ${label}`}

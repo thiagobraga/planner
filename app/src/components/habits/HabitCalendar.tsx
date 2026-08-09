@@ -3,10 +3,10 @@ import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, useSortable, rectSortingStrategy } from '@dnd-kit/sortable';
 import { MonthSelector } from '../monthly/MonthSelector';
 import { HabitMonthGrid } from './HabitMonthGrid';
-import { HabitNameInput } from './HabitNameInput';
+import { InlineNameInput } from '../ui/InlineNameInput';
 import { HabitDragHandle } from './HabitDragHandle';
 import { HabitBlockPreview } from './HabitBlockPreview';
-import { usePlannerDrag } from '../../contexts/PlannerDragContext';
+import { usePlannerDrag } from '../../contexts/usePlannerDrag';
 import { dayState, type HabitNode, type HabitSections } from '../../utils/habitTree';
 import { containerForGroup } from '../../utils/habitProjection';
 import type { HabitDragData, HabitGroupDragData, HabitSectionDropData } from '../../types/drag';
@@ -142,7 +142,7 @@ export function HabitCalendar({
                 dimmed={activeDragId === section.group.id}
               >
                 {editing?.kind === 'group' && editing.id === section.group.id ? (
-                  <HabitNameInput
+                  <InlineNameInput
                     defaultValue={section.group.name}
                     className="uppercase tracking-[0.1em] text-[10px] font-semibold text-ink-light"
                     onCommit={(name) => onCommitEdit?.({ kind: 'group', id: section.group.id }, name)}
@@ -418,7 +418,7 @@ function HabitCalendarHeading({
         />
       </span>
       {isEditing ? (
-        <HabitNameInput
+        <InlineNameInput
           defaultValue={node.name}
           placeholder={t('page.habitName')}
           onCommit={onCommitEdit}

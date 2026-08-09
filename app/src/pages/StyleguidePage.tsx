@@ -139,7 +139,7 @@ export function StyleguidePage() {
         ...COLLECTIONS.map(p => ({
           type: 'item' as const,
           label: p.name,
-          icon: <span className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color }} />,
+          icon: <span className="w-1.75 h-1.75 rounded-full" style={{ backgroundColor: p.color }} />,
           onClick: () => console.log(`Selected ${p.name}`)
         }))
       ]
@@ -153,10 +153,16 @@ export function StyleguidePage() {
 
   return (
     <div className="max-w-5xl pb-24 text-ink">
-      <h1 className="text-lg leading-6 font-semibold text-ink">Styleguide</h1>
-      <p className="text-[13px] leading-6 text-ink-light opacity-70 mb-6">
-        Fonts, colors, components, and tokens to build Planner ecosystem.
-      </p>
+      <header className="page-header-copy sticky-page-header max-w-162">
+        <div className="page-header-copy-text">
+          <h1 className="m-0 h-6 p-0 text-lg leading-6 font-semibold text-ink">Styleguide</h1>
+          <p className="page-header-subtitle m-0 h-6 p-0 text-[13px] leading-6 text-ink-light opacity-70">
+            Fonts, colors, components, and tokens to build Planner ecosystem.
+          </p>
+        </div>
+      </header>
+
+      <div className="h-12" />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
         {/* Color Palette */}
@@ -418,7 +424,7 @@ export function StyleguidePage() {
                 >
                   <span className="flex w-4 shrink-0 items-center justify-center">
                     <span
-                      className="block h-2 w-2 shrink-0 rounded-full filter-[saturate(0.55)]"
+                      className="block w-1.75 h-1.75 rounded-full filter-[saturate(0.55)]"
                       style={{ background: collection.color }}
                     />
                   </span>
@@ -475,8 +481,8 @@ export function StyleguidePage() {
                 {SPACING.map((s) => (
                   <div key={s} className="flex items-center gap-4">
                     <div className="flex items-center" style={{ gap: `${s}px` }}>
-                      <span className="block h-2 w-2 rounded-[2px] bg-dot" aria-hidden="true" />
-                      <span className="block h-2 w-2 rounded-[2px] bg-dot" aria-hidden="true" />
+                      <span className="block w-1.75 h-1.75 rounded-[2px] bg-dot" aria-hidden="true" />
+                      <span className="block w-1.75 h-1.75 rounded-[2px] bg-dot" aria-hidden="true" />
                     </div>
                     <span className="text-[9px] text-ink-light font-mono leading-none">{s}px</span>
                   </div>

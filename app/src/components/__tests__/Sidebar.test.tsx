@@ -23,7 +23,7 @@ vi.mock('../../contexts/AuthContext', () => ({
   useAuth: vi.fn(() => ({ logout: mockLogout, user: authState.user })),
 }));
 
-vi.mock('../../contexts/PlannerDragContext', () => ({
+vi.mock('../../contexts/usePlannerDrag', () => ({
   usePlannerDrag: vi.fn(() => ({ activeDrag: null, overId: null })),
 }));
 

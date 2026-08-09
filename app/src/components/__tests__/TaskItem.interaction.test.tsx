@@ -1,9 +1,9 @@
 import { render, screen, fireEvent } from '@testing-library/react';
-import { DndContext } from '@dnd-kit/core';
 import { SortableContext } from '@dnd-kit/sortable';
 import { describe, it, expect, vi } from 'vitest';
 import { TaskItem, type Task } from '../TaskItem';
 import { NO_DRAG_ATTR } from '../dnd/sensors';
+import { PlannerDragProvider } from '../../contexts/PlannerDragContext';
 
 function renderRow(props: Partial<React.ComponentProps<typeof TaskItem>> = {}, task: Partial<Task> = {}) {
   const full: Task = {
@@ -16,11 +16,11 @@ function renderRow(props: Partial<React.ComponentProps<typeof TaskItem>> = {}, t
     ...task,
   };
   return render(
-    <DndContext>
+    <PlannerDragProvider>
       <SortableContext items={[full.id]}>
         <TaskItem task={full} {...props} />
       </SortableContext>
-    </DndContext>,
+    </PlannerDragProvider>,
   );
 }
 
@@ -70,6 +70,18 @@ describe('TaskItem: toggle stays isolated', () => {
 
     expect(onToggle).toHaveBeenCalledWith('t1');
     expect(onStartEdit).not.toHaveBeenCalled();
+  });
+});
+
+describe('TaskItem: edit keyboard behavior', () => {
+  it('leaves arrow keys to the input without committing the row', () => {
+    const onEditCommit = vi.fn();
+    renderRow({ isEditing: true, onEditCommit });
+
+    const input = screen.getByRole('textbox');
+    expect(fireEvent.keyDown(input, { key: 'ArrowUp' })).toBe(true);
+    expect(fireEvent.keyDown(input, { key: 'ArrowDown' })).toBe(true);
+    expect(onEditCommit).not.toHaveBeenCalled();
   });
 });
 

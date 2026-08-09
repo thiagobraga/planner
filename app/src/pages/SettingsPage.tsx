@@ -529,11 +529,13 @@ export function SettingsPage() {
 
   return (
     <div className="flex min-h-[calc(100dvh-48px)] max-w-5xl flex-col text-ink">
-      <header className="sticky-page-header">
-        <h1 className="text-[18px] leading-6 font-semibold text-ink m-0">{t('settings.title')}</h1>
-        <p className="text-[13px] leading-6 text-ink-light opacity-60 m-0">
-          {t('settings.subtitle')}
-        </p>
+      <header className="page-header-copy sticky-page-header max-w-162">
+        <div className="page-header-copy-text">
+          <h1 className="m-0 h-6 p-0 text-[18px] leading-6 font-semibold text-ink">{t('settings.title')}</h1>
+          <p className="page-header-subtitle m-0 h-6 p-0 text-[13px] leading-6 text-ink-light opacity-60">
+            {t('settings.subtitle')}
+          </p>
+        </div>
       </header>
 
       <section className="mt-6 flex flex-1 overflow-hidden rounded-[8px] border border-[var(--planner-settings-separator)] bg-[var(--planner-card-bg)] shadow-subtle">
