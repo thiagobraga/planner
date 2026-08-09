@@ -56,7 +56,7 @@ export function AppShell() {
   const pageBackground = isWhiteBackground ? '#ffffff' : 'var(--color-cream)';
   const shellThemeStyle = {
     backgroundColor: pageBackground,
-    '--color-dot': isWhiteBackground ? '#e5e1d8' : '#d8d3cb',
+    '--color-dot': isWhiteBackground ? '#d4d4d4' : '#d8d3cb',
     '--color-sidebar-bg': isWhiteBackground ? '#f1f1f1' : '#ebe6de',
     '--planner-page-bg': pageBackground,
     '--planner-sidebar-bg': 'var(--color-sidebar-bg)',
