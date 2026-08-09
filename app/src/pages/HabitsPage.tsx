@@ -394,41 +394,43 @@ export function HabitsPage() {
   return (
     <div className="habits-page relative w-full max-w-none">
       <header className="page-header-copy sticky-page-header max-w-162">
-        <h1 className="m-0 h-6 p-0 text-[18px] leading-6 font-semibold text-ink">
-          {t('page.habits')}
-        </h1>
-        <p className="page-header-subtitle m-0 h-6 p-0 text-[13px] leading-6 text-ink-light opacity-60">
-          {phrase}
-        </p>
-      </header>
-
-      <div className="page-header-toolbar habits-page-header-controls sticky top-6 z-20 -mt-6 ml-auto flex w-fit items-center gap-2">
-        <Button variant="secondary" size="sm" onClick={handleToday}>
-          {t('page.today')}
-        </Button>
-
-        <div className="habits-page-view-toggle inline-flex items-center rounded-[2px] border border-border h-6 overflow-hidden">
-          {(
-            [
-              { mode: 'timeline' as const, label: t('page.timelineView'), Icon: DotsConnectedIcon },
-              { mode: 'calendar' as const, label: t('page.calendarView'), Icon: Calendar },
-            ]
-          ).map(({ mode, label, Icon }, i) => (
-            <button
-              key={mode}
-              type="button"
-              aria-label={label}
-              aria-pressed={view === mode}
-              onClick={() => setView(mode)}
-              className={`habits-page-view-toggle-button inline-flex items-center justify-center h-6 w-6 transition-colors duration-[var(--motion-fast)] ${
-                i > 0 ? 'border-l border-border' : ''
-              } ${view === mode ? 'bg-dot/60 text-ink' : 'bg-transparent text-ink-light hover:bg-dot/30'}`}
-            >
-              <Icon size={14} strokeWidth={1.8} />
-            </button>
-          ))}
+        <div className="page-header-copy-text">
+          <h1 className="m-0 h-6 p-0 text-[18px] leading-6 font-semibold text-ink">
+            {t('page.habits')}
+          </h1>
+          <p className="page-header-subtitle m-0 h-6 p-0 text-[13px] leading-6 text-ink-light opacity-60">
+            {phrase}
+          </p>
         </div>
-      </div>
+
+        <div className="page-header-toolbar habits-page-header-controls absolute bottom-0 right-0 z-20 flex items-center gap-2">
+          <Button variant="secondary" size="sm" onClick={handleToday}>
+            {t('page.today')}
+          </Button>
+
+          <div className="habits-page-view-toggle inline-flex items-center rounded-[2px] border border-border h-6 overflow-hidden">
+            {(
+              [
+                { mode: 'timeline' as const, label: t('page.timelineView'), Icon: DotsConnectedIcon },
+                { mode: 'calendar' as const, label: t('page.calendarView'), Icon: Calendar },
+              ]
+            ).map(({ mode, label, Icon }, i) => (
+              <button
+                key={mode}
+                type="button"
+                aria-label={label}
+                aria-pressed={view === mode}
+                onClick={() => setView(mode)}
+                className={`habits-page-view-toggle-button inline-flex items-center justify-center h-6 w-6 transition-colors duration-[var(--motion-fast)] ${
+                  i > 0 ? 'border-l border-border' : ''
+                } ${view === mode ? 'bg-dot/60 text-ink' : 'bg-transparent text-ink-light hover:bg-dot/30'}`}
+              >
+                <Icon size={14} strokeWidth={1.8} />
+              </button>
+            ))}
+          </div>
+        </div>
+      </header>
 
       {view === 'timeline' ? (
         <HabitTimeline

@@ -139,7 +139,7 @@ export function StyleguidePage() {
         ...COLLECTIONS.map(p => ({
           type: 'item' as const,
           label: p.name,
-          icon: <span className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color }} />,
+          icon: <span className="w-1.75 h-1.75 rounded-full" style={{ backgroundColor: p.color }} />,
           onClick: () => console.log(`Selected ${p.name}`)
         }))
       ]
@@ -418,7 +418,7 @@ export function StyleguidePage() {
                 >
                   <span className="flex w-4 shrink-0 items-center justify-center">
                     <span
-                      className="block h-2 w-2 shrink-0 rounded-full filter-[saturate(0.55)]"
+                      className="block w-1.75 h-1.75 rounded-full filter-[saturate(0.55)]"
                       style={{ background: collection.color }}
                     />
                   </span>
@@ -475,8 +475,8 @@ export function StyleguidePage() {
                 {SPACING.map((s) => (
                   <div key={s} className="flex items-center gap-4">
                     <div className="flex items-center" style={{ gap: `${s}px` }}>
-                      <span className="block h-2 w-2 rounded-[2px] bg-dot" aria-hidden="true" />
-                      <span className="block h-2 w-2 rounded-[2px] bg-dot" aria-hidden="true" />
+                      <span className="block w-1.75 h-1.75 rounded-[2px] bg-dot" aria-hidden="true" />
+                      <span className="block w-1.75 h-1.75 rounded-[2px] bg-dot" aria-hidden="true" />
                     </div>
                     <span className="text-[9px] text-ink-light font-mono leading-none">{s}px</span>
                   </div>

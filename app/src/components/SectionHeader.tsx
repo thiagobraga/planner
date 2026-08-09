@@ -2,8 +2,9 @@ import { useState } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { HabitDragHandle } from './habits/HabitDragHandle';
-import { HabitNameInput } from './habits/HabitNameInput';
+import { InlineNameInput } from './ui/InlineNameInput';
 import { NO_DRAG_ATTR } from './dnd/sensors';
+import { useI18n } from '../i18n/I18nContext';
 import type { Section } from '../stores/taskStore';
 
 interface SectionHeaderProps {
@@ -52,7 +53,7 @@ export function SectionHeader({
     >
       <HabitDragHandle label={section.name} />
       {isEditing ? (
-        <HabitNameInput
+        <InlineNameInput
           defaultValue={section.name}
           className="uppercase tracking-widest text-[10px] font-semibold text-ink-light"
           onCommit={onCommitName}
@@ -81,6 +82,7 @@ function SectionOptionsButton({
   label: string;
   onDelete: () => void;
 }) {
+  const { t } = useI18n();
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
@@ -105,7 +107,7 @@ function SectionOptionsButton({
               setMenuOpen(false);
             }}
           >
-            Delete section
+            {t('contextMenu.deleteSection')}
           </button>
         </div>
       )}

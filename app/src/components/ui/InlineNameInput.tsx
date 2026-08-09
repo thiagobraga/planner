@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { NO_DRAG_ATTR } from '../dnd/sensors';
 
-interface HabitNameInputProps {
+interface InlineNameInputProps {
   defaultValue: string;
   placeholder?: string;
   className?: string;
@@ -10,7 +10,7 @@ interface HabitNameInputProps {
 }
 
 /**
- * Swap-to-input rename for a habit, sub-habit, group or Calendar card.
+ * Swap-to-input rename for a task row, section, habit, group, or collection.
  *
  * Follows the task row pattern: Enter commits, Escape cancels, and blur commits
  * once. `committedRef` stops blur from firing a second commit after Enter has
@@ -19,13 +19,13 @@ interface HabitNameInputProps {
  * Marked non-draggable so that pressing into the field to place a caret edits
  * the name instead of picking the row up.
  */
-export function HabitNameInput({
+export function InlineNameInput({
   defaultValue,
   placeholder,
   className = '',
   onCommit,
   onCancel,
-}: HabitNameInputProps) {
+}: InlineNameInputProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const committedRef = useRef(false);
 
@@ -50,7 +50,7 @@ export function HabitNameInput({
       placeholder={placeholder}
       spellCheck={false}
       {...{ [NO_DRAG_ATTR]: '' }}
-      className={`habit-timeline-row-name-input task-input min-w-0 flex-1 border-0 bg-transparent p-0 text-sm leading-6 text-ink outline-none ${className}`}
+      className={`task-input min-w-0 flex-1 border-0 bg-transparent p-0 text-sm leading-6 text-ink outline-none ${className}`}
       onKeyDown={(event) => {
         if (event.key === 'Enter') {
           event.preventDefault();

@@ -576,15 +576,38 @@ describe("moveTask section scope", () => {
 });
 
 describe("moveTask subtree propagation", () => {
+  const sourceSectionId = "section-1";
+  const targetSectionId = "section-2";
   const subtree = [
-    { id: taskId, parent_task_id: null, depth: 0, collection_id: collectionId, section_id: null, due_date: "2026-07-18" },
-    { id: "child-1", parent_task_id: taskId, depth: 1, collection_id: collectionId, section_id: null, due_date: "2026-07-18" },
-    { id: "grand-1", parent_task_id: "child-1", depth: 2, collection_id: collectionId, section_id: null, due_date: "2026-07-18" },
+    {
+      id: taskId,
+      parent_task_id: null,
+      depth: 0,
+      collection_id: collectionId,
+      section_id: sourceSectionId,
+      due_date: "2026-07-18",
+    },
+    {
+      id: "child-1",
+      parent_task_id: taskId,
+      depth: 1,
+      collection_id: collectionId,
+      section_id: sourceSectionId,
+      due_date: "2026-07-18",
+    },
+    {
+      id: "grand-1",
+      parent_task_id: "child-1",
+      depth: 2,
+      collection_id: collectionId,
+      section_id: sourceSectionId,
+      due_date: "2026-07-18",
+    },
   ];
 
-  it("moves every descendant's collection when crossing collections", async () => {
+  it("clears the root section and rewrites descendants when crossing collections", async () => {
     (pool.query as ReturnType<typeof vi.fn>).mockResolvedValue({
-      rows: [taskRow({ due_date: "2026-07-18" })],
+      rows: [taskRow({ due_date: "2026-07-18", section_id: sourceSectionId })],
     });
     const tx = mockTransaction([[/WITH RECURSIVE/, subtree]]);
 
@@ -595,8 +618,33 @@ describe("moveTask subtree propagation", () => {
       position: 0,
     });
 
-    const collectionWrite = tx.calls.find((c) => /SET collection_id = \$1, section_id = NULL/.test(c.sql));
-    expect(collectionWrite?.params).toEqual(["collection-2", ["child-1", "grand-1"]]);
+    const rootWrite = tx.calls.find((c) => /UPDATE tasks\s+SET parent_task_id/.test(c.sql));
+    const [, , destSectionId] = rootWrite!.params as unknown[];
+    expect(destSectionId).toBeNull();
+
+    const collectionWrite = tx.calls.find((c) => /SET collection_id = \$1, section_id = \$2/.test(c.sql));
+    expect(collectionWrite?.params).toEqual(["collection-2", null, ["child-1", "grand-1"]]);
+  });
+
+  it("rewrites descendant sections when moving within the same collection", async () => {
+    (pool.query as ReturnType<typeof vi.fn>).mockResolvedValue({
+      rows: [taskRow({ due_date: "2026-07-18", section_id: sourceSectionId })],
+    });
+    const tx = mockTransaction([[/WITH RECURSIVE/, subtree]]);
+
+    await moveTask(taskId, userId, {
+      parentTaskId: null,
+      sectionId: targetSectionId,
+      scope: scopeCollection,
+      position: 0,
+    });
+
+    const rootWrite = tx.calls.find((c) => /UPDATE tasks\s+SET parent_task_id/.test(c.sql));
+    const [, , destSectionId] = rootWrite!.params as unknown[];
+    expect(destSectionId).toBe(targetSectionId);
+
+    const sectionWrite = tx.calls.find((c) => /SET collection_id = \$1, section_id = \$2/.test(c.sql));
+    expect(sectionWrite?.params).toEqual([collectionId, targetSectionId, ["child-1", "grand-1"]]);
   });
 
   it("keeps the due date when only the collection changes", async () => {

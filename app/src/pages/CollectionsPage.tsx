@@ -4,11 +4,11 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { TaskList } from '../components/TaskList';
 import { SectionHeader } from '../components/SectionHeader';
-import { HabitNameInput } from '../components/habits/HabitNameInput';
+import { InlineNameInput } from '../components/ui/InlineNameInput';
 import { TaskVisibilityControls } from '../components/TaskVisibilityControls';
 import { nextOrderValue } from '../utils/order';
 import { extractNaturalDate } from '../utils/date';
-import { setPendingColumn } from '../components/TaskItem';
+import { setPendingColumn } from '../components/taskPendingColumn';
 import type { Task } from '../components/TaskItem';
 import type { Section } from '../stores/taskStore';
 import {
@@ -527,7 +527,7 @@ export function CollectionsPage() {
 
     items.push({
       type: 'item',
-      label: 'No project',
+      label: t('contextMenu.noCollection'),
       icon: (
         <span
           className="w-1.75 h-1.75 rounded-full inline-block bg-transparent border border-ink/20"
@@ -628,6 +628,7 @@ export function CollectionsPage() {
       }}
     >
       <header className="page-header-copy sticky-page-header max-w-162">
+        <div className="page-header-copy-text">
         <h1 className="collections-page-title flex h-6 items-center gap-2 text-lg leading-6 font-semibold text-ink">
         {trail.map((crumb, i) => {
           const isCurrent = i === trail.length - 1;
@@ -695,17 +696,18 @@ export function CollectionsPage() {
             />
           </div>
         )}
-      </header>
+        </div>
 
-      <div className="page-header-toolbar collection-page-header-controls sticky top-0 z-20 -mt-6 ml-auto w-fit">
-        <TaskVisibilityControls
-          hideCompletedTasks={preferences?.hideCompletedTasks ?? false}
-          hideOldNotes={preferences?.hideOldNotes ?? false}
-          disabled={!preferences || visibilityPreferencesPending}
-          onHideCompletedTasksChange={setHideCompletedTasks}
-          onHideOldNotesChange={setHideOldNotes}
-        />
-      </div>
+        <div className="page-header-toolbar collection-page-header-controls absolute bottom-0 right-0 z-20 flex items-center">
+          <TaskVisibilityControls
+            hideCompletedTasks={preferences?.hideCompletedTasks ?? false}
+            hideOldNotes={preferences?.hideOldNotes ?? false}
+            disabled={!preferences || visibilityPreferencesPending}
+            onHideCompletedTasksChange={setHideCompletedTasks}
+            onHideOldNotesChange={setHideOldNotes}
+          />
+        </div>
+      </header>
 
       <div className="max-w-162">
         <div className="h-6" />
@@ -821,7 +823,7 @@ export function CollectionsPage() {
         {addingSection ? (
           <div className="flex h-6 w-full min-w-0 items-center pr-2">
             <span className="flex h-6 w-6 shrink-0 items-center justify-center text-ink-light opacity-35">+</span>
-            <HabitNameInput
+            <InlineNameInput
               defaultValue=""
               placeholder={t('page.newSection')}
               className="uppercase tracking-widest text-[10px] font-semibold text-ink-light"
@@ -836,7 +838,9 @@ export function CollectionsPage() {
             className="group flex h-6 w-full min-w-0 items-center pr-2 text-ink-light opacity-35 transition-opacity hover:opacity-100"
           >
             <span className="flex h-6 w-6 shrink-0 items-center justify-center">+</span>
-            <span className="min-w-0 flex-1 truncate text-left text-sm leading-6">{t('page.newSection')}</span>
+            <span className="min-w-0 flex-1 truncate text-left uppercase tracking-widest text-[10px] font-semibold">
+              {t('page.newSection')}
+            </span>
           </button>
         )}
       </div>
@@ -846,15 +850,15 @@ export function CollectionsPage() {
           position={contextMenu.position}
           onClose={() => setContextMenu(null)}
           items={[
-            { type: 'item', label: 'Date', icon: <Calendar size={14} />, disabled: true },
-            { type: 'item', label: 'Priority', icon: <Tag size={14} />, disabled: true },
-            { type: 'item', label: 'Project', icon: <Folder size={14} />, submenu: projectSubmenuItems },
-            { type: 'item', label: 'Tags', icon: <Hash size={14} />, disabled: true },
+            // { type: 'item', label: 'Date', icon: <Calendar size={14} />, disabled: true },
+            // { type: 'item', label: 'Priority', icon: <Tag size={14} />, disabled: true },
+            { type: 'item', label: t('contextMenu.collection'), icon: <Folder size={14} />, submenu: projectSubmenuItems },
+            // { type: 'item', label: 'Tags', icon: <Hash size={14} />, disabled: true },
             { type: 'separator' },
-            { type: 'item', label: 'Add above', icon: <ArrowUp size={14} />, onClick: () => handleAddAbove(contextMenu.taskId) },
-            { type: 'item', label: 'Add below', icon: <ArrowDown size={14} />, onClick: () => handleAddBelow(contextMenu.taskId) },
+            { type: 'item', label: t('contextMenu.addAbove'), icon: <ArrowUp size={14} />, onClick: () => handleAddAbove(contextMenu.taskId) },
+            { type: 'item', label: t('contextMenu.addBelow'), icon: <ArrowDown size={14} />, onClick: () => handleAddBelow(contextMenu.taskId) },
             { type: 'separator' },
-            { type: 'item', label: 'Delete', icon: <Trash2 size={14} />, destructive: true, onClick: () => handleDelete(contextMenu.taskId) },
+            { type: 'item', label: t('common.delete'), icon: <Trash2 size={14} />, destructive: true, onClick: () => handleDelete(contextMenu.taskId) },
           ]}
         />
       )}
@@ -864,9 +868,9 @@ export function CollectionsPage() {
           position={sectionContextMenu.position}
           onClose={() => setSectionContextMenu(null)}
           items={[
-            { type: 'item', label: 'Rename', icon: <Pencil size={14} />, onClick: () => setEditingSectionId(sectionContextMenu.sectionId) },
+            { type: 'item', label: t('common.rename'), icon: <Pencil size={14} />, onClick: () => setEditingSectionId(sectionContextMenu.sectionId) },
             { type: 'separator' },
-            { type: 'item', label: 'Delete', icon: <Trash2 size={14} />, destructive: true, onClick: () => handleDeleteSection(sectionContextMenu.sectionId) },
+            { type: 'item', label: t('common.delete'), icon: <Trash2 size={14} />, destructive: true, onClick: () => handleDeleteSection(sectionContextMenu.sectionId) },
           ]}
         />
       )}

@@ -7,7 +7,7 @@ import {
   type DragEndEvent,
 } from '@dnd-kit/core';
 import { SortableContext, useSortable, arrayMove, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import { usePlannerDrag, usePlannerDragHandlers } from '../contexts/PlannerDragContext';
+import { usePlannerDrag, usePlannerDragHandlers } from '../contexts/usePlannerDrag';
 import type { CollectionDragData, CollectionDropData } from '../types/drag';
 import { CSS } from '@dnd-kit/utilities';
 import { ChevronRight, Plus } from 'lucide-react';

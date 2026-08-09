@@ -904,12 +904,18 @@ export async function moveTask(taskId: string, userId: string, input: MoveTaskIn
     const destCollectionId = destParent
       ? destParent.collection_id
       : (input.collectionId ?? task.collection_id);
-    // `undefined` keeps the current section, same as `collectionId` above -
-    // that is what lets a plain reorder (dropped on a sibling row, no explicit
-    // section given) stay put instead of being silently promoted out of it.
+    // `undefined` keeps the current section for plain reorders. When the move
+    // transfers the task to another collection without an explicit section, it
+    // has to land at top level so collection views can render it.
     const destSectionId = destParent
       ? destParent.section_id
-      : (input.sectionId !== undefined ? input.sectionId : task.section_id);
+      : (
+          input.sectionId !== undefined
+            ? input.sectionId
+            : input.collectionId !== undefined && input.collectionId !== task.collection_id
+              ? null
+              : task.section_id
+        );
 
     // Task ownership can outlive collaboration membership, so task access alone
     // does not prove the user still has access to the resolved destination.
@@ -947,13 +953,13 @@ export async function moveTask(taskId: string, userId: string, input: MoveTaskIn
           [depthDelta, descendantIds],
         );
       }
-      if (crossesCollection) {
-        // Sections belong to a collection, so a section id cannot survive the
-        // crossing; descendants land unsectioned under their new collection.
+      if (crossesCollection || destSectionId !== task.section_id) {
+        // Descendants inherit the moved root's collection and section, so any
+        // move that changes either value has to rewrite the whole subtree.
         await client.query(
-          `UPDATE tasks SET collection_id = $1, section_id = NULL, updated_at = NOW()
-           WHERE id = ANY($2::uuid[])`,
-          [destCollectionId, descendantIds],
+          `UPDATE tasks SET collection_id = $1, section_id = $2, updated_at = NOW()
+           WHERE id = ANY($3::uuid[])`,
+          [destCollectionId, destSectionId, descendantIds],
         );
       }
       if (crossesDate) {

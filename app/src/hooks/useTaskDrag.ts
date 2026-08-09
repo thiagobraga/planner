@@ -4,7 +4,7 @@ import type {
   DragOverEvent,
   DragStartEvent,
 } from '@dnd-kit/core';
-import { usePlannerDrag, usePlannerDragHandlers } from '../contexts/PlannerDragContext';
+import { usePlannerDrag, usePlannerDragHandlers } from '../contexts/usePlannerDrag';
 import { flattenTasks, getSubtreeBlock, projectMove, type FlatRow } from '../utils/taskProjection';
 import { apiMoveTask, type TaskOrderScope } from '../api/client';
 import { trackMove } from '../utils/moveEcho';

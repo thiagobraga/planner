@@ -14,6 +14,7 @@ import { updateDocumentThemeColor } from '../utils/theme';
 import { PlannerDragProvider } from '../contexts/PlannerDragContext';
 import { useI18n } from '../i18n/I18nContext';
 import { useVersionCheck } from '../hooks/useVersionCheck';
+import { useTaskSelectionStore } from '../stores/taskSelectionStore';
 
 const FONT_CLASSES: Record<FontOption, string> = {
   lora: 'font-journal',
@@ -157,6 +158,19 @@ export function AppShell() {
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, [isTextInputFocused, handleAction]);
+
+  useEffect(() => {
+    // pointerdown, not click: a press held past the drag sensor's activation
+    // delay makes dnd-kit swallow the click that follows it (see the note on
+    // TaskItem's onPointerUp), which would otherwise make an outside click
+    // silently fail to deselect too.
+    const handler = (e: PointerEvent) => {
+      if ((e.target as HTMLElement).closest('[data-task-id]')) return;
+      useTaskSelectionStore.getState().clearSelection();
+    };
+    document.addEventListener('pointerdown', handler);
+    return () => document.removeEventListener('pointerdown', handler);
+  }, []);
 
   return (
     <div

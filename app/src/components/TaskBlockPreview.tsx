@@ -1,4 +1,5 @@
-import { priorityClasses, type Task } from './TaskItem';
+import type { Task } from './TaskItem';
+import { priorityClasses } from './taskPriorityClasses';
 import { INDENT_WIDTH } from '../utils/taskProjection';
 
 interface TaskBlockPreviewProps {
@@ -44,24 +45,20 @@ export function TaskBlockPreview({ rows }: TaskBlockPreviewProps) {
             <span className="w-6 text-center text-[10px] font-normal leading-6 overflow-hidden text-ink select-none shrink-0">
               -
             </span>
-          ) : (
+          ) : task.isCompleted ? (
             <span
-              style={
-                task.isCompleted
-                  ? {
-                      fontSize: 'var(--icon-check-size, 26px)',
-                      transform: 'translateY(var(--icon-check-offset, 0px))',
-                      lineHeight: 'var(--task-line-height, 24px)',
-                    }
-                  : {
-                      fontSize: 'var(--icon-dot-size, 10px)',
-                      transform: 'translateY(var(--icon-dot-offset, 0px))',
-                      lineHeight: 'var(--task-line-height, 24px)',
-                    }
-              }
-              className={`w-6 text-center ${task.isCompleted ? 'font-bold' : 'font-normal'} overflow-hidden ${priorityClasses[task.priority]} select-none shrink-0`}
+              style={{
+                fontSize: 'var(--icon-check-size, 26px)',
+                transform: 'translateY(var(--icon-check-offset, 0px))',
+                lineHeight: 'var(--task-line-height, 24px)',
+              }}
+              className={`w-6 text-center font-bold overflow-hidden ${priorityClasses[task.priority]} select-none shrink-0`}
             >
-              {task.isCompleted ? '×' : '•'}
+              ×
+            </span>
+          ) : (
+            <span className={`w-6 h-6 flex items-center justify-center shrink-0 ${priorityClasses[task.priority]}`}>
+              <span aria-hidden="true" className="block w-[3px] h-[3px] rounded-full bg-current" />
             </span>
           )}
 

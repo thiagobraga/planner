@@ -1,16 +1,16 @@
 import { render, screen, fireEvent } from '@testing-library/react';
-import { DndContext } from '@dnd-kit/core';
 import { SortableContext } from '@dnd-kit/sortable';
 import { describe, it, expect, vi } from 'vitest';
 import { TaskItem, type Task } from '../TaskItem';
+import { PlannerDragProvider } from '../../contexts/PlannerDragContext';
 
 function renderTaskItem(task: Task, props: Partial<React.ComponentProps<typeof TaskItem>> = {}) {
   return render(
-    <DndContext>
+    <PlannerDragProvider>
       <SortableContext items={[task.id]}>
         <TaskItem task={task} isEditing {...props} />
       </SortableContext>
-    </DndContext>,
+    </PlannerDragProvider>,
   );
 }
 

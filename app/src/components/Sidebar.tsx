@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useDroppable } from '@dnd-kit/core';
 import { ChevronRight, Repeat2, Settings, HelpCircle, LogOut, FolderOpen, ShieldCheck, Users, type LucideIcon } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { usePlannerDrag } from '../contexts/PlannerDragContext';
+import { usePlannerDrag } from '../contexts/usePlannerDrag';
 import { CollectionTreeNav } from './CollectionTreeNav';
 import { SidebarNavItem } from './SidebarNavItem';
 import { fetchCollections } from '../api/client';

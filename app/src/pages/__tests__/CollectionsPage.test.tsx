@@ -167,9 +167,9 @@ describe('CollectionsPage', () => {
     const header = title.closest('header');
 
     expect(header).toBeInTheDocument();
-    expect(header).not.toContainElement(screen.getByRole('button', { name: 'Hide completed tasks' }));
-    expect(header).not.toContainElement(screen.getByRole('button', { name: 'Hide old notes' }));
-    expect(screen.getByRole('button', { name: 'Hide old notes' }).closest('.page-header-toolbar')).toHaveClass('sticky', 'ml-auto');
+    expect(header).toContainElement(screen.getByRole('button', { name: 'Hide completed tasks' }));
+    expect(header).toContainElement(screen.getByRole('button', { name: 'Hide old notes' }));
+    expect(screen.getByRole('button', { name: 'Hide old notes' }).closest('.page-header-toolbar')).toHaveClass('absolute', 'right-0');
   });
 
   it('updates completed-task visibility from the header toolbar', async () => {
@@ -196,7 +196,7 @@ describe('CollectionsPage', () => {
   it('renders add task input', async () => {
     renderPage();
 
-    const input = await screen.findByPlaceholderText('Add task…');
+    const input = await screen.findByPlaceholderText('New task…');
     expect(input).toBeInTheDocument();
   });
 

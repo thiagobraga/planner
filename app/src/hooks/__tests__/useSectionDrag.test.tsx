@@ -15,8 +15,8 @@ const updateSection = vi.mocked(apiUpdateSection);
 
 let registered: ((e: DragEndEvent) => void) | null = null;
 
-vi.mock('../../contexts/PlannerDragContext', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../contexts/PlannerDragContext')>();
+vi.mock('../../contexts/usePlannerDrag', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../contexts/usePlannerDrag')>();
   return {
     ...actual,
     usePlannerDragHandlers: (_kind: string, handlers: { onDragEnd?: (e: DragEndEvent) => void }) => {

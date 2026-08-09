@@ -176,7 +176,7 @@ describe('InboxPage', () => {
 
     expect(screen.getByText('Inbox')).toBeInTheDocument();
     expect(screen.getByText('Dump it here. Sort it later.')).toBeInTheDocument();
-    expect(screen.getByPlaceholderText('Add task…')).toBeInTheDocument();
+    expect(screen.getByPlaceholderText('New task…')).toBeInTheDocument();
     expect(screen.getByTestId('task-list').children).toHaveLength(0);
   });
 
@@ -185,9 +185,9 @@ describe('InboxPage', () => {
 
     const header = screen.getByText('Inbox').closest('header');
     expect(header).toContainElement(await screen.findByText('Dump it here. Sort it later.'));
-    expect(header).not.toContainElement(screen.getByRole('button', { name: 'Hide completed tasks' }));
-    expect(header).not.toContainElement(screen.getByRole('button', { name: 'Hide old notes' }));
-    expect(screen.getByRole('button', { name: 'Hide old notes' }).closest('.page-header-toolbar')).toHaveClass('sticky', 'ml-auto');
+    expect(header).toContainElement(screen.getByRole('button', { name: 'Hide completed tasks' }));
+    expect(header).toContainElement(screen.getByRole('button', { name: 'Hide old notes' }));
+    expect(screen.getByRole('button', { name: 'Hide old notes' }).closest('.page-header-toolbar')).toHaveClass('absolute', 'right-0');
   });
 
   it('updates the hide-old-notes preference from the header toolbar', async () => {
@@ -218,6 +218,6 @@ describe('InboxPage', () => {
   it('renders the add-task input', async () => {
     renderPage();
 
-    expect(await screen.findByPlaceholderText('Add task…')).toBeInTheDocument();
+    expect(await screen.findByPlaceholderText('New task…')).toBeInTheDocument();
   });
 });

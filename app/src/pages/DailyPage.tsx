@@ -622,7 +622,7 @@ export function DailyPage() {
 
     items.push({
       type: 'item',
-      label: 'No project',
+      label: t('contextMenu.noCollection'),
       icon: (
         <span
           className="w-1.75 h-1.75 rounded-full inline-block bg-transparent border border-ink/20"
@@ -652,26 +652,28 @@ export function DailyPage() {
       }}
     >
       <header className="page-header-copy sticky-page-header max-w-162">
-        <h1 className="m-0 h-6 p-0 text-[18px] leading-6 font-semibold text-ink">
-          {t('page.daily')}
-        </h1>
-        <p className="page-header-subtitle daily-page-header-subtitle m-0 h-6 p-0 text-[13px] leading-6 text-ink-light opacity-60">
-          {phrase}
-        </p>
-      </header>
+        <div className="page-header-copy-text">
+          <h1 className="m-0 h-6 p-0 text-[18px] leading-6 font-semibold text-ink">
+            {t('page.daily')}
+          </h1>
+          <p className="page-header-subtitle daily-page-header-subtitle m-0 h-6 p-0 text-[13px] leading-6 text-ink-light opacity-60">
+            {phrase}
+          </p>
+        </div>
 
-      <div className="page-header-toolbar daily-page-header-controls sticky top-6 z-20 -mt-6 ml-auto flex w-fit items-center gap-2">
-        <Button variant="secondary" size="sm" onClick={handleToday}>
-          {t('page.today')}
-        </Button>
-        <TaskVisibilityControls
-          hideCompletedTasks={prefs?.hideCompletedTasks ?? false}
-          hideOldNotes={prefs?.hideOldNotes ?? false}
-          disabled={!prefs || visibilityPreferencesPending}
-          onHideCompletedTasksChange={setHideCompletedTasks}
-          onHideOldNotesChange={setHideOldNotes}
-        />
-      </div>
+        <div className="page-header-toolbar daily-page-header-controls absolute bottom-0 right-0 z-20 flex items-center gap-2">
+          <Button variant="secondary" size="sm" onClick={handleToday}>
+            {t('page.today')}
+          </Button>
+          <TaskVisibilityControls
+            hideCompletedTasks={prefs?.hideCompletedTasks ?? false}
+            hideOldNotes={prefs?.hideOldNotes ?? false}
+            disabled={!prefs || visibilityPreferencesPending}
+            onHideCompletedTasksChange={setHideCompletedTasks}
+            onHideOldNotesChange={setHideOldNotes}
+          />
+        </div>
+      </header>
 
       <div className="max-w-162">
         {sections.map((section) => {
@@ -739,15 +741,15 @@ export function DailyPage() {
           position={contextMenu.position}
           onClose={() => setContextMenu(null)}
           items={[
-            { type: 'item', label: 'Date', icon: <Calendar size={14} />, disabled: true },
-            { type: 'item', label: 'Priority', icon: <Tag size={14} />, disabled: true },
-            { type: 'item', label: 'Project', icon: <Folder size={14} />, submenu: projectSubmenuItems },
-            { type: 'item', label: 'Tags', icon: <Hash size={14} />, disabled: true },
+            // { type: 'item', label: 'Date', icon: <Calendar size={14} />, disabled: true },
+            // { type: 'item', label: 'Priority', icon: <Tag size={14} />, disabled: true },
+            { type: 'item', label: t('contextMenu.collection'), icon: <Folder size={14} />, submenu: projectSubmenuItems },
+            // { type: 'item', label: 'Tags', icon: <Hash size={14} />, disabled: true },
             { type: 'separator' },
-            { type: 'item', label: 'Add above', icon: <ArrowUp size={14} />, onClick: () => handleAddAbove(contextMenu.taskId) },
-            { type: 'item', label: 'Add below', icon: <ArrowDown size={14} />, onClick: () => handleAddBelow(contextMenu.taskId) },
+            { type: 'item', label: t('contextMenu.addAbove'), icon: <ArrowUp size={14} />, onClick: () => handleAddAbove(contextMenu.taskId) },
+            { type: 'item', label: t('contextMenu.addBelow'), icon: <ArrowDown size={14} />, onClick: () => handleAddBelow(contextMenu.taskId) },
             { type: 'separator' },
-            { type: 'item', label: 'Delete', icon: <Trash2 size={14} />, destructive: true, onClick: () => handleDelete(contextMenu.taskId) },
+            { type: 'item', label: t('common.delete'), icon: <Trash2 size={14} />, destructive: true, onClick: () => handleDelete(contextMenu.taskId) },
           ]}
         />
       )}

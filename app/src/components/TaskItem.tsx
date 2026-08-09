@@ -3,13 +3,12 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Repeat } from 'lucide-react';
 import { NO_DRAG_ATTR } from './dnd/sensors';
-import type { TaskDragData } from '../types/drag';
+import { isTaskDrag, type TaskDragData } from '../types/drag';
 import { useI18n } from '../i18n/I18nContext';
 import { useTaskSelectionStore } from '../stores/taskSelectionStore';
-
-let _pendingCol: number | null = null;
-export function setPendingColumn(col: number | null): void { _pendingCol = col; }
-function consumePendingColumn(): number | null { const c = _pendingCol; _pendingCol = null; return c; }
+import { usePlannerDrag } from '../contexts/usePlannerDrag';
+import { priorityClasses } from './taskPriorityClasses';
+import { consumePendingColumn } from './taskPendingColumn';
 
 export interface Task {
   id: string;
@@ -68,14 +67,6 @@ export interface TaskItemProps {
   onConvertType?: (id: string, type: 'task' | 'note') => void;
   onRightClick?: (id: string, position: { x: number; y: number }) => void;
 }
-
-/** Shared with the drag preview, so a lifted row keeps its priority colour. */
-export const priorityClasses: Record<number, string> = {
-  1: 'text-accent',
-  2: 'text-priority-2',
-  3: 'text-priority-3',
-  4: 'text-ink-light',
-};
 
 function formatDueDate(value: string, locale: 'en' | 'pt-BR'): string {
   const match = value.match(/^(\d{4})-(\d{2})-(\d{2})/);
@@ -141,6 +132,7 @@ export const TaskItem = memo(function TaskItem({
   const { locale, t } = useI18n();
   const isSelected = useTaskSelectionStore((s) => s.selectedTaskIds.has(task.id));
   const selectTask = useTaskSelectionStore((s) => s.selectTask);
+  const { activeDrag, hasMoved, overId } = usePlannerDrag();
   const touchTimerRef = useRef<NodeJS.Timeout | null>(null);
   const dragData: TaskDragData = {
     kind: 'task',
@@ -279,13 +271,36 @@ export const TaskItem = memo(function TaskItem({
       data-task-id={task.id}
       {...attributes}
       {...listeners}
-      className={`task-item group ${isEditing ? 'task-item--editing' : ''} ${isSelected ? 'task-item--selected bg-accent/10 rounded-xs' : ''} ${departed ? 'task-item--departed' : isDragging ? 'task-item--placeholder' : task.isCompleted || dimmed ? 'opacity-[0.35]' : ''}`}
+      className={`task-item group ${isEditing ? 'task-item--editing' : ''} ${isSelected ? 'task-item--selected' : ''} ${departed ? 'task-item--departed' : isDragging ? 'task-item--placeholder' : task.isCompleted || dimmed ? 'opacity-[0.35]' : ''}`}
       aria-label={task.title}
       aria-selected={isSelected}
       onClick={(e) => {
         if (isEditing) return;
         if ((e.target as HTMLElement).closest(`[${NO_DRAG_ATTR}]`)) return;
         selectTask(task.id, e.ctrlKey || e.metaKey);
+      }}
+      onPointerUp={(e) => {
+        // Activation is distance-based (see PRESS_ACTIVATION in dnd/sensors.ts),
+        // so a stationary click never activates dnd-kit and this branch is a
+        // no-op for the common case - native onClick above handles it. This is
+        // a safety net for the rarer gesture that crosses the activation
+        // distance and then settles back near its origin before release: once
+        // activated, dnd-kit swallows the click that would otherwise follow it
+        // (stopPropagation on the next document click, see AbstractPointerSensor
+        // .handleStart in @dnd-kit/core), so selecting here - pointerup is
+        // never swallowed - is what keeps that gesture selecting too.
+        if (isEditing) return;
+        if ((e.target as HTMLElement).closest(`[${NO_DRAG_ATTR}]`)) return;
+        const drag = activeDrag ?? undefined;
+        // overId only moves to another droppable once collision detection
+        // actually picks a different target - a container included, per
+        // plannerCollisionDetection's end-of-list resolution - so this still
+        // catches a settled-back gesture that resolves onto something other
+        // than this row without meaning to.
+        const stayedOnSelf = overId === null || overId === task.id;
+        if (isTaskDrag(drag) && drag.taskId === task.id && (!hasMoved || stayedOnSelf)) {
+          selectTask(task.id, e.ctrlKey || e.metaKey);
+        }
       }}
       onDoubleClick={isEditing ? undefined : () => onStartEdit?.(task.id)}
       onContextMenu={(e) => {
@@ -333,24 +348,26 @@ export const TaskItem = memo(function TaskItem({
           style={task.isCompleted ? {
             fontSize: 'var(--icon-check-size, 26px)',
             transform: 'translateY(var(--icon-check-offset, 0px))',
-          } : {
-            fontSize: 'var(--icon-dot-size, 10px)',
-            transform: 'translateY(var(--icon-dot-offset, 0px))',
-          }}
-          className={`task-item-toggle h-6 w-6 flex items-center justify-center ${task.isCompleted ? 'font-bold' : 'font-normal'} overflow-hidden ${priorityClasses[task.priority]} select-none shrink-0 cursor-pointer bg-transparent border-0 p-0`}
+          } : undefined}
+          className={`task-item-toggle h-6 w-6 flex items-center justify-center ${task.isCompleted ? 'font-bold' : ''} overflow-hidden ${priorityClasses[task.priority]} select-none shrink-0 cursor-pointer bg-transparent border-0 p-0`}
         >
-          {task.isCompleted ? '×' : '•'}
+          {task.isCompleted ? '×' : (
+            // A drawn shape, not a font glyph: a bullet character's optical
+            // center shifts with font hinting/rendering, which is exactly what
+            // put the dot visibly off-center from the title text next to it.
+            <span aria-hidden="true" className="block w-[3px] h-[3px] rounded-full bg-current" />
+          )}
         </button>
       )}
 
-      <span style={{ lineHeight: 'var(--task-line-height, 24px)' }} className="task-item-title-area flex-1 flex flex-wrap items-center min-w-0">
+      <span className="task-item-title-area flex-1 flex flex-wrap items-center min-w-0">
         {isEditing ? (
           <input
             ref={editRef}
             type="text"
             {...{ [NO_DRAG_ATTR]: '' }}
             defaultValue={task.title}
-            className="task-item-title-input task-input flex-1 w-full text-sm leading-6 text-ink bg-transparent border-0 outline-none p-0"
+            className="task-item-title-input task-input flex-1 w-full h-6 text-sm text-ink bg-transparent border-0 outline-none p-0"
             spellCheck={false}
             onKeyDown={handleEditKeyDown}
             onBlur={handleEditBlur}
@@ -358,19 +375,18 @@ export const TaskItem = memo(function TaskItem({
         ) : (
           <>
             <span
-              style={{ lineHeight: 'var(--task-line-height, 24px)' }}
-              className={`task-item-title-text text-sm wrap-break-word ${task.isCompleted ? 'line-through text-ink-light' : 'text-ink'} ${task.type === 'note' && dimNotes ? 'text-ink-light' : ''}`}
+              className={`task-item-title-text flex items-center min-h-6 text-sm wrap-break-word ${task.isCompleted ? 'line-through text-ink-light' : 'text-ink'} ${task.type === 'note' && dimNotes ? 'text-ink-light' : ''}`}
             >
               {task.title}
             </span>
 
             {collectionBadge && (
-              <span className="task-item-collection ml-1.5 shrink-0">{collectionBadge}</span>
+              <span className="task-item-collection h-6 flex items-center ml-1.5 shrink-0">{collectionBadge}</span>
             )}
 
             {task.dueDate && !hideDueDate && (
-              <span className={`task-item-due-date inline-flex items-baseline gap-1 text-xs leading-6 text-ink-light ml-1.5 whitespace-nowrap`}>
-                {task.recurrenceRule && <Repeat className="w-3 h-3 self-center" />}
+              <span className="task-item-due-date h-6 inline-flex items-center gap-1 text-xs text-ink-light ml-1.5 whitespace-nowrap">
+                {task.recurrenceRule && <Repeat className="w-3 h-3" />}
                 {formatDueDate(task.dueDate, locale)}
               </span>
             )}
@@ -378,7 +394,7 @@ export const TaskItem = memo(function TaskItem({
             {task.labels?.map((label) => (
               <span
                 key={label}
-                className="task-item-label text-[10px] leading-6 px-1.5 rounded-md bg-dot text-ink ml-1 whitespace-nowrap"
+                className="task-item-label h-6 flex items-center text-[10px] px-1.5 rounded-md bg-dot text-ink ml-1 whitespace-nowrap"
               >
                 @{label}
               </span>

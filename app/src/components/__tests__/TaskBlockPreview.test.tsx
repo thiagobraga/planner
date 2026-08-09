@@ -22,10 +22,10 @@ describe('TaskBlockPreview', () => {
 
   it('renders a single task row', () => {
     const task = makeTask({ id: '1', title: 'Buy groceries' });
-    render(<TaskBlockPreview rows={[{ task, depth: 0 }]} />);
+    const { container } = render(<TaskBlockPreview rows={[{ task, depth: 0 }]} />);
 
     expect(screen.getByText('Buy groceries')).toBeInTheDocument();
-    expect(screen.getByText('•')).toBeInTheDocument();
+    expect(container.querySelector('.rounded-full')).toBeInTheDocument();
   });
 
   it('renders multiple task rows', () => {

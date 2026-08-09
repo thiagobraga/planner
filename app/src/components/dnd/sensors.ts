@@ -16,23 +16,34 @@ function isWithin(target: EventTarget | null, attr: string): boolean {
 }
 
 /**
- * Press-and-hold pointer drag.
+ * Press-and-move pointer drag.
  *
- * The 120ms delay is what lets a row be both tappable and draggable: a quick tap
- * never becomes a drag, so single clicks and double-taps stay intact. The 8px
- * tolerance is what keeps the page scrollable - moving more than 8px before the
- * delay elapses cancels the pending drag and hands the gesture back to the
- * browser, rather than blocking the scroll while waiting.
+ * Distance-based, not delay-based: a drag only activates once the pointer has
+ * actually travelled PRESS_ACTIVATION.distance while pressed, however long the
+ * press is held. A stationary press - however long a deliberate click happens
+ * to take, commonly well past 100ms for a real hand on a real mouse - never
+ * activates, so it never competes with the row's own click handler.
  *
- * That tolerance-based scroll fallback only works for mice: dnd-kit doesn't
- * call preventDefault() until a drag is fully activated (see handleMove in
- * @dnd-kit/core), so on a real touchscreen the browser's own scroll-gesture
- * recognizer can see the same touchmove first, decide the gesture is a scroll,
- * and fire pointercancel - killing the pending drag before the delay or
- * tolerance ever gets evaluated. Whole-row dragging is safe on a mouse (there's
- * no competing native gesture) but not on touch/pen, so those are scoped to
- * the handle, which is kept always visible and non-scrolling for them - see
- * the `(hover: none), (pointer: coarse)` rule for `.drag-handle` in index.css.
+ * A delay-based constraint was tried first (hold N ms, regardless of movement,
+ * to start a drag), but it made every click that happened to be held past the
+ * delay activate dnd-kit's real drag lifecycle - complete with collision
+ * detection landing on whatever the pointer was nearest, which for a click
+ * held on the last row of a list could resolve to the day/collection
+ * *container* rather than the row itself. dnd-kit's own click-suppression
+ * (stopPropagation on the next document click, see AbstractPointerSensor
+ * .handleStart in @dnd-kit/core) then ate the click that would have selected
+ * the row, while the drag lifecycle it left running could still resolve to a
+ * real, unintended move. Gating on movement instead of time removes the
+ * ambiguity at the source: no movement, no drag, ever.
+ *
+ * dnd-kit doesn't call preventDefault() until a drag is fully activated (see
+ * handleMove in @dnd-kit/core), so the browser's own scroll-gesture recognizer
+ * still gets first look at any touchmove exactly as before - this constraint
+ * changes when a drag activates, not that. Whole-row dragging is safe on a
+ * mouse (there's no competing native gesture) but not on touch/pen, so those
+ * are scoped to the handle, which is kept always visible and non-scrolling for
+ * them - see the `(hover: none), (pointer: coarse)` rule for `.drag-handle` in
+ * index.css.
  */
 export class PlannerPointerSensor extends PointerSensor {
   static activators = [
@@ -63,5 +74,5 @@ export class PlannerKeyboardSensor extends KeyboardSensor {
   ];
 }
 
-/** Press-and-hold constraint shared by every pointer drag in the app. */
-export const PRESS_ACTIVATION = { delay: 90, tolerance: 6 } as const;
+/** Distance-based activation shared by every pointer drag in the app. */
+export const PRESS_ACTIVATION = { distance: 6 } as const;

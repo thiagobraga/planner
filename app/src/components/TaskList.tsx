@@ -9,7 +9,7 @@ import {
   projectMove,
   INDENT_WIDTH,
 } from '../utils/taskProjection';
-import { usePlannerDrag } from '../contexts/PlannerDragContext';
+import { usePlannerDrag } from '../contexts/usePlannerDrag';
 import { TaskBlockPreview } from './TaskBlockPreview';
 import type { DayDropData, SectionDropData } from '../types/drag';
 import { useI18n } from '../i18n/I18nContext';
