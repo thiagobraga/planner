@@ -63,6 +63,8 @@ export function AppShell() {
     '--planner-card-bg': 'var(--color-sidebar-bg)',
     '--planner-sidebar-active-bg': isWhiteBackground ? 'rgba(212, 212, 212, 0.55)' : 'rgba(212, 207, 199, 0.5)',
     '--planner-sidebar-hover-bg': isWhiteBackground ? 'rgba(212, 212, 212, 0.35)' : 'rgba(212, 207, 199, 0.4)',
+    '--planner-task-selection-bg': isWhiteBackground ? 'rgba(212, 212, 212, 0.75)' : 'rgba(212, 207, 199, 0.75)',
+    '--planner-task-hover-bg': isWhiteBackground ? 'rgba(212, 212, 212, 0.4)' : 'rgba(212, 207, 199, 0.4)',
     '--planner-overlay-bg': pageBackground,
     '--planner-overlay-hover-bg': isWhiteBackground ? 'rgba(212, 212, 212, 0.35)' : 'rgba(212, 207, 199, 0.4)',
     '--planner-control-bg': isWhiteBackground ? '#ffffff' : 'rgba(245, 240, 232, 0.2)',
