@@ -39,7 +39,7 @@
     "eslint-plugin-react-hooks": "^7.0.0",
     "esbuild": "^0.25.0",
     "fake-indexeddb": "^6.2.5",
-    "rollup": "^4.30.0",
+    "rollup": "^4.62.4",
     "fast-check": "^3.22.0",
     "happy-dom": "^20.11.1",
     "jsdom": "^30.0.1",
