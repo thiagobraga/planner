@@ -14,6 +14,7 @@ const mockCreateStatus = vi.fn();
 const mockEnsureCollectionStatuses = vi.fn();
 const mockUpdateStatus = vi.fn();
 const mockDeleteStatus = vi.fn();
+const mockEnsureSeedLabels = vi.fn();
 
 vi.mock("../../services/statusService.js", () => ({
   listStatuses: (...args: unknown[]) => mockListStatuses(...args),
@@ -21,6 +22,10 @@ vi.mock("../../services/statusService.js", () => ({
   ensureCollectionStatuses: (...args: unknown[]) => mockEnsureCollectionStatuses(...args),
   updateStatus: (...args: unknown[]) => mockUpdateStatus(...args),
   deleteStatus: (...args: unknown[]) => mockDeleteStatus(...args),
+}));
+
+vi.mock("../../services/labelService.js", () => ({
+  ensureSeedLabels: (...args: unknown[]) => mockEnsureSeedLabels(...args),
 }));
 
 import statusRoutes from "../statuses.js";
@@ -50,9 +55,11 @@ describe("statuses routes", () => {
   });
 
   it("POST /api/v1/collections/:id/statuses/seed → calls ensureCollectionStatuses", async () => {
+    mockEnsureSeedLabels.mockResolvedValue([]);
     mockEnsureCollectionStatuses.mockResolvedValue([{ id: "st1" }, { id: "st2" }]);
     const res = await request(app).post("/api/v1/collections/c1/statuses/seed");
     expect(res.status).toBe(200);
+    expect(mockEnsureSeedLabels).toHaveBeenCalledWith("test-user");
     expect(mockEnsureCollectionStatuses).toHaveBeenCalledWith("c1", "test-user");
   });
 

@@ -85,6 +85,8 @@ describe("statusService", () => {
       mockClientQuery.mockResolvedValueOnce({
         rows: [makeStatusRow({ id: "s1" }), makeStatusRow({ id: "s2" })],
       }); // existing
+      mockClientQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 }); // file completed tasks
+      mockClientQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 }); // file open tasks
       mockClientQuery.mockResolvedValueOnce(undefined); // COMMIT
 
       const statuses = await ensureCollectionStatuses("col-1", "user-1");
@@ -92,6 +94,34 @@ describe("statusService", () => {
       expect(statuses).toHaveLength(2);
       expect(mockClientQuery).toHaveBeenCalledWith("SELECT id FROM collections WHERE id = $1 FOR UPDATE", ["col-1"]);
       expect(mockClientQuery).not.toHaveBeenCalledWith(expect.stringContaining("INSERT INTO task_statuses"), expect.anything());
+    });
+
+    it("files tasks created after the initial seed without creating duplicate statuses", async () => {
+      const existing = [
+        makeStatusRow({ id: "s-backlog", is_done_like: false }),
+        makeStatusRow({ id: "s-done", is_done_like: true, order_value: 1000 }),
+      ];
+      mockQuery.mockResolvedValueOnce({ rows: [{ id: "col-1" }] });
+      mockClientQuery
+        .mockResolvedValueOnce(undefined) // BEGIN
+        .mockResolvedValueOnce(undefined) // FOR UPDATE
+        .mockResolvedValueOnce({ rows: existing })
+        .mockResolvedValueOnce({ rows: [{ id: "late-completed" }], rowCount: 1 })
+        .mockResolvedValueOnce({ rows: [{ id: "late-open" }], rowCount: 1 })
+        .mockResolvedValueOnce(undefined); // COMMIT
+
+      await ensureCollectionStatuses("col-1", "user-1");
+
+      expect(mockClientQuery).not.toHaveBeenCalledWith(expect.stringContaining("INSERT INTO task_statuses"), expect.anything());
+      expect(mockClientQuery).toHaveBeenCalledWith(
+        expect.stringContaining("status_id IS NULL AND is_completed = true"),
+        ["s-done", "col-1"],
+      );
+      expect(mockClientQuery).toHaveBeenCalledWith(
+        expect.stringContaining("status_id IS NULL AND is_completed = false"),
+        ["s-backlog", "col-1"],
+      );
+      expect(mockPublishEvent).toHaveBeenCalledTimes(2);
     });
 
     it("seeds four defaults and files status-less tasks: completed -> first done-like, open -> first column", async () => {
@@ -110,8 +140,8 @@ describe("statusService", () => {
       for (const row of created) {
         mockClientQuery.mockResolvedValueOnce({ rows: [row] }); // INSERT
       }
-      mockClientQuery.mockResolvedValueOnce(undefined); // UPDATE completed tasks
-      mockClientQuery.mockResolvedValueOnce(undefined); // UPDATE open tasks
+      mockClientQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 }); // UPDATE completed tasks
+      mockClientQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 }); // UPDATE open tasks
       mockClientQuery.mockResolvedValueOnce(undefined); // COMMIT
 
       const statuses = await ensureCollectionStatuses("col-1", "user-1");
@@ -128,6 +158,10 @@ describe("statusService", () => {
         expect.stringContaining("WHERE collection_id = $2 AND status_id IS NULL AND is_completed = false"),
         ["s-backlog", "col-1"],
       );
+      expect(mockPublishEvent).toHaveBeenCalledTimes(4);
+      expect(mockPublishEvent).toHaveBeenCalledWith(
+        expect.objectContaining({ entityType: "status", eventType: "created", collectionId: "col-1" }),
+      );
     });
 
     it("does not double-seed on a second open (reload does not seed eight)", async () => {
@@ -137,6 +171,8 @@ describe("statusService", () => {
       mockClientQuery.mockResolvedValueOnce({
         rows: [makeStatusRow({ id: "s1" }), makeStatusRow({ id: "s2" }), makeStatusRow({ id: "s3" }), makeStatusRow({ id: "s4" })],
       });
+      mockClientQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 });
+      mockClientQuery.mockResolvedValueOnce({ rows: [], rowCount: 0 });
       mockClientQuery.mockResolvedValueOnce(undefined); // COMMIT
 
       const statuses = await ensureCollectionStatuses("col-1", "user-1");
@@ -238,6 +274,29 @@ describe("statusService", () => {
         code: "CONFLICT",
         statusCode: 409,
       });
+    });
+
+    it("rejects reassignment to a status from another collection", async () => {
+      mockQuery
+        .mockResolvedValueOnce({ rows: [makeStatusRow({ collection_id: "col-1" })] })
+        .mockResolvedValueOnce({ rows: [{ count: 2 }] })
+        .mockResolvedValueOnce({ rows: [makeStatusRow({ id: "status-2", collection_id: "col-2" })] });
+
+      await expect(
+        deleteStatus("status-1", "user-1", { reassignToStatusId: "status-2" }),
+      ).rejects.toMatchObject({ code: "VALIDATION_ERROR", statusCode: 400 });
+      expect(mockConnect).not.toHaveBeenCalled();
+    });
+
+    it("rejects reassignment to the status being deleted", async () => {
+      mockQuery
+        .mockResolvedValueOnce({ rows: [makeStatusRow({ collection_id: "col-1" })] })
+        .mockResolvedValueOnce({ rows: [{ count: 2 }] });
+
+      await expect(
+        deleteStatus("status-1", "user-1", { reassignToStatusId: "status-1" }),
+      ).rejects.toMatchObject({ code: "VALIDATION_ERROR", statusCode: 400 });
+      expect(mockConnect).not.toHaveBeenCalled();
     });
   });
 

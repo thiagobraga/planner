@@ -120,7 +120,7 @@ describe("completionSync", () => {
   });
 
   describe("syncStatusToCompletion", () => {
-    it("completing: previous_status_id = status_id, status_id = first done-like status", async () => {
+    it("completing: moves the task and descendants to the first done-like status", async () => {
       client.query
         .mockResolvedValueOnce({ rows: [{ status_id: "s-doing", previous_status_id: null }] }) // task lookup
         .mockResolvedValueOnce({ rows: [{ id: "s-completed" }] }) // first done-like
@@ -134,9 +134,13 @@ describe("completionSync", () => {
       });
 
       expect(client.query).toHaveBeenCalledWith(
-        expect.stringContaining("SET previous_status_id = $1, status_id = $2"),
-        ["s-doing", "s-completed", "t1"],
+        expect.stringContaining("WITH RECURSIVE affected"),
+        ["t1", "s-completed"],
       );
+      const updateSql = client.query.mock.calls[2][0] as string;
+      expect(updateSql).toContain("previous_status_id = a.status_id");
+      expect(updateSql).toContain("INNER JOIN affected a ON t.parent_task_id = a.id");
+      expect(updateSql).toContain("t.status_id IS DISTINCT FROM $2");
     });
 
     it("reopening: status_id restores from previous_status_id, previous cleared - round-trips", async () => {

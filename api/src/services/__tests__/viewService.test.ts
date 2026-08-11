@@ -288,4 +288,37 @@ describe("getCollectionView", () => {
     expect(sql).toMatch(/due_date IS NOT NULL/);
     expect(sql).toMatch(/ORDER BY order_value ASC, created_at ASC/);
   });
+
+  it("attaches each task's labels in one query", async () => {
+    mockQuery
+      .mockResolvedValueOnce({ rows: [{ time_zone: "UTC", hide_completed_tasks: false, hide_old_notes: false }] })
+      .mockResolvedValueOnce({ rows: [{ id: "c-1", name: "Work", color: "#7dbfb2", is_inbox: false }] })
+      .mockResolvedValueOnce({
+        rows: [
+          taskRow({ id: "t-labeled" }),
+          taskRow({ id: "t-bare", order_value: 1 }),
+        ],
+      })
+      // listSections
+      .mockResolvedValueOnce({ rows: [{ id: "c-1" }] })
+      .mockResolvedValueOnce({ rows: [] })
+      // attachLabels join
+      .mockResolvedValueOnce({
+        rows: [
+          { task_id: "t-labeled", id: "l-1", user_id: userId, name: "bug", color: "#c98079", created_at: "2024-06-01T00:00:00Z", updated_at: "2024-06-01T00:00:00Z" },
+        ],
+      });
+
+    const view = await getCollectionView(userId, "c-1");
+
+    const labeled = view.tasks.find((t) => t.id === "t-labeled");
+    const bare = view.tasks.find((t) => t.id === "t-bare");
+    expect(labeled?.labels).toEqual([
+      { id: "l-1", userId, name: "bug", color: "#c98079", createdAt: "2024-06-01T00:00:00Z", updatedAt: "2024-06-01T00:00:00Z" },
+    ]);
+    expect(bare?.labels).toEqual([]);
+
+    const labelsSql = mockQuery.mock.calls[5][0] as string;
+    expect(labelsSql).toMatch(/JOIN labels l ON l\.id = tl\.label_id/);
+  });
 });

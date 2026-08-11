@@ -59,6 +59,15 @@ function publishStatusEvent(
   ).catch((err) => console.error("[sync] publish failed", err));
 }
 
+function invalidReassignment(message: string): AppError {
+  return new AppError({
+    code: "VALIDATION_ERROR",
+    message: "Validation failed",
+    statusCode: 400,
+    details: [{ field: "reassignToStatusId", message }],
+  });
+}
+
 async function verifyCollectionAccess(collectionId: string, userId: string): Promise<void> {
   const result = await pool.query(
     `SELECT id FROM collections
@@ -142,45 +151,62 @@ export async function ensureCollectionStatuses(collectionId: string, userId: str
       [collectionId],
     );
 
-    if (existing.rows.length > 0) {
-      await client.query("COMMIT");
-      return existing.rows.map((row) => formatStatus(row as StatusRow));
-    }
-
-    const localeResult = await client.query(`SELECT locale FROM preferences WHERE user_id = $1`, [userId]);
-    const locale = (localeResult.rows[0]?.locale as string | undefined) ?? "en";
-    const defaults = DEFAULT_STATUS_NAMES[locale] ?? DEFAULT_STATUS_NAMES.en;
-
+    const statuses = existing.rows as StatusRow[];
     const created: StatusRow[] = [];
-    for (let i = 0; i < defaults.length; i++) {
-      const result = await client.query(
-        `INSERT INTO task_statuses (id, collection_id, name, is_done_like, order_value)
-         VALUES ($1, $2, $3, $4, $5)
-         RETURNING *`,
-        [uuidv4(), collectionId, defaults[i].name, defaults[i].isDoneLike, i * 1000],
-      );
-      created.push(result.rows[0] as StatusRow);
+
+    if (statuses.length === 0) {
+      const localeResult = await client.query(`SELECT locale FROM preferences WHERE user_id = $1`, [userId]);
+      const locale = (localeResult.rows[0]?.locale as string | undefined) ?? "en";
+      const defaults = DEFAULT_STATUS_NAMES[locale] ?? DEFAULT_STATUS_NAMES.en;
+
+      for (let i = 0; i < defaults.length; i++) {
+        const result = await client.query(
+          `INSERT INTO task_statuses (id, collection_id, name, is_done_like, order_value)
+           VALUES ($1, $2, $3, $4, $5)
+           RETURNING *`,
+          [uuidv4(), collectionId, defaults[i].name, defaults[i].isDoneLike, i * 1000],
+        );
+        const row = result.rows[0] as StatusRow;
+        created.push(row);
+        statuses.push(row);
+      }
     }
 
-    const firstDoneLike = created.find((s) => s.is_done_like) ?? created[created.length - 1];
-    const firstColumn = created[0];
+    const firstDoneLike = statuses.find((status) => status.is_done_like) ?? statuses[statuses.length - 1];
+    const firstColumn = statuses[0];
 
     // File status-less tasks explicitly - one state, one representation, rather
     // than treating NULL as "first column" at render time.
-    await client.query(
+    const completedTasks = await client.query(
       `UPDATE tasks SET status_id = $1, updated_at = NOW()
-       WHERE collection_id = $2 AND status_id IS NULL AND is_completed = true`,
+       WHERE collection_id = $2 AND status_id IS NULL AND is_completed = true
+       RETURNING id`,
       [firstDoneLike.id, collectionId],
     );
-    await client.query(
+    const openTasks = await client.query(
       `UPDATE tasks SET status_id = $1, updated_at = NOW()
-       WHERE collection_id = $2 AND status_id IS NULL AND is_completed = false`,
+       WHERE collection_id = $2 AND status_id IS NULL AND is_completed = false
+       RETURNING id`,
       [firstColumn.id, collectionId],
     );
 
     await client.query("COMMIT");
 
-    return created.map((row) => formatStatus(row));
+    const formatted = statuses.map((row) => formatStatus(row));
+    if (created.length > 0) {
+      for (const status of formatted) {
+        publishStatusEvent("created", status.id, userId, collectionId, status);
+      }
+    } else {
+      if ((completedTasks.rowCount ?? completedTasks.rows.length) > 0) {
+        publishStatusEvent("updated", firstDoneLike.id, userId, collectionId, formatStatus(firstDoneLike));
+      }
+      if ((openTasks.rowCount ?? openTasks.rows.length) > 0 && firstColumn.id !== firstDoneLike.id) {
+        publishStatusEvent("updated", firstColumn.id, userId, collectionId, formatStatus(firstColumn));
+      }
+    }
+
+    return formatted;
   } catch (err) {
     await client.query("ROLLBACK");
     throw err;
@@ -354,7 +380,13 @@ export async function deleteStatus(statusId: string, userId: string, options: De
   }
 
   if (options.reassignToStatusId) {
-    await verifyStatusAccess(options.reassignToStatusId, userId);
+    if (options.reassignToStatusId === statusId) {
+      throw invalidReassignment("Reassignment status must be different from the deleted status");
+    }
+    const targetStatus = await verifyStatusAccess(options.reassignToStatusId, userId);
+    if (targetStatus.collection_id !== status.collection_id) {
+      throw invalidReassignment("Reassignment status must belong to the same collection");
+    }
   }
 
   const client = await pool.connect();

@@ -60,14 +60,13 @@ Work in a worktree: `git worktree add ../planner-kanban-board -b feat/kanban-boa
 - [x] Apply `attachLabels` in `getCollectionView`, `getInboxView`, and the single-task returns of
       create / update / complete / reopen.
 - [x] `labelService.ensureSeedLabels(userId)` — `feature` / `bug` / `chore`, only for a user with
-      no labels at all. (Exported and tested; not yet wired to a call site — no seeding trigger
-      specified in the plan.)
+      no labels at all. The status seed endpoint invokes it on first board open.
 - [x] Add `publishEvent` to `labelService` create / update / delete (it publishes nothing today).
-- [~] Tests: `services/__tests__/taskService.labels.test.ts`; extend
+- [x] Tests: `services/__tests__/taskService.labels.test.ts`; extend
       `routes/__tests__/views.test.ts` for per-task `labels`.
-- [~] Verify: `docker compose exec api npm run build && docker compose exec api npm run lint && docker compose exec api npm test`
-- [~] Commit: `feat(api): implement task labels end to end` (implementation committed; dedicated
-      tests remain uncommitted follow-up work)
+- [x] Verify: `docker compose exec api npm run build && docker compose exec api npm run lint && docker compose exec api npm test`
+- [x] Commit: `feat(api): implement task labels end to end` (implementation plus follow-up coverage
+      and invariant hardening)
 
 ## Milestone 4 — Board ordering scopes in `moveTask` (`api/src/services/taskService.ts`)
 

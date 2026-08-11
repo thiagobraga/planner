@@ -67,6 +67,15 @@ describe("views routes", () => {
     expect(mockGetCollectionView).toHaveBeenCalledWith("test-user", "c1");
   });
 
+  it("GET /api/v1/views/collection/:id → passes through per-task labels", async () => {
+    mockGetCollectionView.mockResolvedValue({
+      tasks: [{ id: "t1", labels: [{ id: "l1", name: "bug", color: "#c98079" }] }],
+    });
+    const res = await request(app).get("/api/v1/views/collection/c1");
+    expect(res.status).toBe(200);
+    expect(res.body.tasks[0].labels).toEqual([{ id: "l1", name: "bug", color: "#c98079" }]);
+  });
+
   it("GET /api/v1/views/month?year=2026&month=7 → calls getMonthView", async () => {
     mockGetMonthView.mockResolvedValue({ weeks: [] });
     const res = await request(app).get("/api/v1/views/month?year=2026&month=7");

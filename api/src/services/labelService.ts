@@ -104,17 +104,32 @@ const SEED_LABELS = [
 
 // Only for a user with no labels at all - never runs again once any label exists.
 export async function ensureSeedLabels(userId: string): Promise<Label[]> {
-  const existing = await pool.query(`SELECT id FROM labels WHERE user_id = $1 LIMIT 1`, [userId]);
-  if (existing.rows.length > 0) return [];
-
+  const client = await pool.connect();
   const created: Label[] = [];
-  for (const seed of SEED_LABELS) {
-    const result = await pool.query(
-      `INSERT INTO labels (id, user_id, name, color) VALUES ($1, $2, $3, $4) RETURNING *`,
-      [uuidv4(), userId, seed.name, seed.color],
-    );
-    created.push(formatLabel(result.rows[0] as LabelRow));
+  try {
+    await client.query("BEGIN");
+    await client.query(`SELECT id FROM users WHERE id = $1 FOR UPDATE`, [userId]);
+
+    const existing = await client.query(`SELECT id FROM labels WHERE user_id = $1 LIMIT 1`, [userId]);
+    if (existing.rows.length === 0) {
+      for (const seed of SEED_LABELS) {
+        const result = await client.query(
+          `INSERT INTO labels (id, user_id, name, color) VALUES ($1, $2, $3, $4) RETURNING *`,
+          [uuidv4(), userId, seed.name, seed.color],
+        );
+        created.push(formatLabel(result.rows[0] as LabelRow));
+      }
+    }
+
+    await client.query("COMMIT");
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
   }
+
+  for (const label of created) publishLabelEvent("created", label.id, userId, label);
   return created;
 }
 
