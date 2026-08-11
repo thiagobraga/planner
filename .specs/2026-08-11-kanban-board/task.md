@@ -70,7 +70,7 @@ Work in a worktree: `git worktree add ../planner-kanban-board -b feat/kanban-boa
 
 ## Milestone 4 — Board ordering scopes in `moveTask` (`api/src/services/taskService.ts`)
 
-- [ ] Write `api/src/db/migrations/038_task_order_board_scopes.sql` — widen the
+- [~] Write `api/src/db/migrations/038_task_order_board_scopes.sql` — widen the
       `task_order_scope_type_check` CHECK to `('day','collection','status','priority')`.
 - [ ] Extend `TaskOrderScope` with `status` and `priority`; extend `MoveTaskInput` with `statusId`
       and `priority` (root only).
