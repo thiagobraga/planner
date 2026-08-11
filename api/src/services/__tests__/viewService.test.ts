@@ -221,6 +221,8 @@ describe("getInboxView", () => {
     })
     // listSections: verifyCollectionAccess + sections select
     .mockResolvedValueOnce({ rows: [{ id: "p-1" }] })
+    .mockResolvedValueOnce({ rows: [] })
+    // attachLabels
     .mockResolvedValueOnce({ rows: [] });
 
     const view = await getInboxView(userId);
@@ -263,6 +265,8 @@ describe("getCollectionView", () => {
       })
       // listSections: verifyCollectionAccess + sections select
       .mockResolvedValueOnce({ rows: [{ id: "c-1" }] })
+      .mockResolvedValueOnce({ rows: [] })
+      // attachLabels
       .mockResolvedValueOnce({ rows: [] });
 
     const view = await getCollectionView(userId, "c-1");

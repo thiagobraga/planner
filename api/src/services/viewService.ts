@@ -1,6 +1,7 @@
 import pool from "../db/pool.js";
 import { AppError } from "../utils/AppError.js";
 import { listSections } from "./sectionService.js";
+import { attachLabels } from "./labelService.js";
 
 interface TaskRow {
   id: string;
@@ -291,7 +292,7 @@ export async function getInboxView(userId: string, now: Date = new Date()) {
   const sections = inboxCollection ? await listSections(inboxCollection.id, userId) : [];
 
   return {
-    tasks: (result.rows as TaskRow[]).map(formatTask),
+    tasks: await attachLabels((result.rows as TaskRow[]).map(formatTask)),
     collectionId: null,
     inboxCollectionId: inboxCollection?.id,
     sections,
@@ -336,7 +337,7 @@ export async function getCollectionView(userId: string, collectionId: string, no
       color: collection.color,
       isInbox: collection.is_inbox,
     },
-    tasks: (result.rows as TaskRow[]).map(formatTask),
+    tasks: await attachLabels((result.rows as TaskRow[]).map(formatTask)),
     collectionId,
     sections,
   };

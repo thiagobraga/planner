@@ -4,6 +4,7 @@ import pool from '../db/pool.js';
 import { AppError } from '../utils/AppError.js';
 import { buildEvent, publishEvent } from './syncService.js';
 import { syncStatusToCompletion } from './completionSync.js';
+import { attachLabels, verifyLabelOwnership } from './labelService.js';
 import { computeNextOccurrence } from '../engines/recurrenceEngine.js';
 import type { RecurrenceRule } from '../engines/recurrenceEngine.js';
 
@@ -157,7 +158,7 @@ export async function completeTask(taskId: string, userId: string) {
       await client.query('COMMIT');
 
       const updated = await pool.query('SELECT * FROM tasks WHERE id = $1', [taskId]);
-      const formattedOld = formatTask(updated.rows[0] as TaskRow);
+      const [formattedOld] = await attachLabels([formatTask(updated.rows[0] as TaskRow)]);
       publishEvent(
         buildEvent({
           entityType: 'task',
@@ -169,7 +170,7 @@ export async function completeTask(taskId: string, userId: string) {
         }),
       ).catch((err) => console.error('[sync] publish failed', err));
 
-      const formattedNew = formatTask(insertResult.rows[0] as TaskRow);
+      const [formattedNew] = await attachLabels([formatTask(insertResult.rows[0] as TaskRow)]);
       publishEvent(
         buildEvent({
           entityType: 'task',
@@ -223,7 +224,7 @@ export async function completeTask(taskId: string, userId: string) {
     await client.query('COMMIT');
 
     const updated = await pool.query('SELECT * FROM tasks WHERE id = $1', [taskId]);
-    const formatted = formatTask(updated.rows[0] as TaskRow);
+    const [formatted] = await attachLabels([formatTask(updated.rows[0] as TaskRow)]);
     publishEvent(
       buildEvent({
         entityType: 'task',
@@ -290,6 +291,10 @@ export async function createTask(userId: string, input: CreateTaskInput) {
     });
   }
 
+  if (input.labelIds?.length) {
+    await verifyLabelOwnership(input.labelIds, userId);
+  }
+
   let collectionId = input.collectionId;
   let sectionId = input.sectionId ?? null;
   let depth = 0;
@@ -343,28 +348,50 @@ export async function createTask(userId: string, input: CreateTaskInput) {
   const priority = input.priority ?? 4;
   const type = input.type ?? 'task';
 
-  const result = await pool.query(
-    `INSERT INTO tasks (id, user_id, collection_id, section_id, parent_task_id, title, description, priority, due_date, recurrence_rule, depth, type, order_value)
+  const insertQuery = `INSERT INTO tasks (id, user_id, collection_id, section_id, parent_task_id, title, description, priority, due_date, recurrence_rule, depth, type, order_value)
      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
-     RETURNING *`,
-    [
-      id,
-      userId,
-      collectionId,
-      sectionId,
-      input.parentTaskId ?? null,
-      input.title,
-      input.description ?? null,
-      priority,
-      input.dueDate ?? null,
-      input.recurrenceRule ?? null,
-      depth,
-      type,
-      input.orderValue ?? 0,
-    ],
-  );
+     RETURNING *`;
+  const insertValues = [
+    id,
+    userId,
+    collectionId,
+    sectionId,
+    input.parentTaskId ?? null,
+    input.title,
+    input.description ?? null,
+    priority,
+    input.dueDate ?? null,
+    input.recurrenceRule ?? null,
+    depth,
+    type,
+    input.orderValue ?? 0,
+  ];
 
-  const task = formatTask(result.rows[0] as TaskRow);
+  let taskRow: TaskRow;
+  if (input.labelIds?.length) {
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      const result = await client.query(insertQuery, insertValues);
+      const placeholders = input.labelIds.map((_, i) => `($1, $${i + 2})`).join(', ');
+      await client.query(
+        `INSERT INTO task_labels (task_id, label_id) VALUES ${placeholders}`,
+        [id, ...input.labelIds],
+      );
+      await client.query('COMMIT');
+      taskRow = result.rows[0] as TaskRow;
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
+  } else {
+    const result = await pool.query(insertQuery, insertValues);
+    taskRow = result.rows[0] as TaskRow;
+  }
+
+  const [task] = await attachLabels([formatTask(taskRow)]);
   publishEvent(
     buildEvent({
       entityType: 'task',
@@ -424,6 +451,10 @@ export async function updateTask(taskId: string, userId: string, input: UpdateTa
       statusCode: 400,
       details: [{ field: 'type', message: "type must be 'task' or 'note'" }],
     });
+  }
+
+  if (input.labelIds !== undefined) {
+    await verifyLabelOwnership(input.labelIds, userId);
   }
 
   const task = await verifyTaskAccess(taskId, userId);
@@ -558,8 +589,9 @@ export async function updateTask(taskId: string, userId: string, input: UpdateTa
     values.push(input.recurrenceRule);
   }
 
-  if (setClauses.length === 0) {
-    return formatTask(task);
+  if (setClauses.length === 0 && input.labelIds === undefined) {
+    const [unchanged] = await attachLabels([formatTask(task)]);
+    return unchanged;
   }
 
   setClauses.push(`updated_at = NOW()`);
@@ -570,26 +602,39 @@ export async function updateTask(taskId: string, userId: string, input: UpdateTa
   // When reparenting shifts the task's own depth, the entire descendant subtree
   // must shift by the same delta so relative nesting is preserved (Phase 6 rule 5).
   const shiftsDescendants = reparentDelta !== undefined && reparentDelta !== 0;
+  const needsTransaction = shiftsDescendants || input.labelIds !== undefined;
 
-  let formatted;
-  if (shiftsDescendants) {
+  let taskRow: TaskRow;
+  if (needsTransaction) {
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
       const result = await client.query(query, values);
-      await client.query(
-        `WITH RECURSIVE descendants AS (
-           SELECT id FROM tasks WHERE parent_task_id = $1
-           UNION ALL
-           SELECT t.id FROM tasks t
-           INNER JOIN descendants d ON t.parent_task_id = d.id
-         )
-         UPDATE tasks SET depth = depth + $2, updated_at = NOW()
-         WHERE id IN (SELECT id FROM descendants)`,
-        [taskId, reparentDelta],
-      );
+      if (shiftsDescendants) {
+        await client.query(
+          `WITH RECURSIVE descendants AS (
+             SELECT id FROM tasks WHERE parent_task_id = $1
+             UNION ALL
+             SELECT t.id FROM tasks t
+             INNER JOIN descendants d ON t.parent_task_id = d.id
+           )
+           UPDATE tasks SET depth = depth + $2, updated_at = NOW()
+           WHERE id IN (SELECT id FROM descendants)`,
+          [taskId, reparentDelta],
+        );
+      }
+      if (input.labelIds !== undefined) {
+        await client.query(`DELETE FROM task_labels WHERE task_id = $1`, [taskId]);
+        if (input.labelIds.length > 0) {
+          const placeholders = input.labelIds.map((_, i) => `($1, $${i + 2})`).join(', ');
+          await client.query(
+            `INSERT INTO task_labels (task_id, label_id) VALUES ${placeholders}`,
+            [taskId, ...input.labelIds],
+          );
+        }
+      }
       await client.query('COMMIT');
-      formatted = formatTask(result.rows[0] as TaskRow);
+      taskRow = result.rows[0] as TaskRow;
     } catch (err) {
       await client.query('ROLLBACK');
       throw err;
@@ -598,9 +643,10 @@ export async function updateTask(taskId: string, userId: string, input: UpdateTa
     }
   } else {
     const result = await pool.query(query, values);
-    formatted = formatTask(result.rows[0] as TaskRow);
+    taskRow = result.rows[0] as TaskRow;
   }
 
+  const [formatted] = await attachLabels([formatTask(taskRow)]);
   publishEvent(
     buildEvent({
       entityType: 'task',
@@ -668,7 +714,7 @@ export async function reopenTask(taskId: string, userId: string) {
     await client.query('COMMIT');
 
     const updated = await pool.query('SELECT * FROM tasks WHERE id = $1', [taskId]);
-    const formatted = formatTask(updated.rows[0] as TaskRow);
+    const [formatted] = await attachLabels([formatTask(updated.rows[0] as TaskRow)]);
     publishEvent(
       buildEvent({
         entityType: 'task',
