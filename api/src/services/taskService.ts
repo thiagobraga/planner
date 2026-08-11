@@ -799,13 +799,17 @@ export async function reorderTask(taskId: string, userId: string, position: numb
 export type TaskOrderScope =
   | { kind: 'collection'; collectionId: string }
   | { kind: 'day'; dueDate: string }
-  | { kind: 'section'; sectionId: string };
+  | { kind: 'section'; sectionId: string }
+  | { kind: 'status'; collectionId: string; statusId: string | null }
+  | { kind: 'priority'; collectionId: string; priority: number };
 
 export interface MoveTaskInput {
   parentTaskId: string | null;
   collectionId?: string;
   sectionId?: string | null;
   dueDate?: string | null;
+  statusId?: string | null;
+  priority?: number;
   scope: TaskOrderScope;
   position: number;
 }
@@ -846,6 +850,15 @@ function validateMoveInput(input: MoveTaskInput): void {
   ) {
     throw validationError('dueDate', 'Due date must be an ISO date (YYYY-MM-DD)');
   }
+  if (input.statusId !== undefined && input.statusId !== null && typeof input.statusId !== 'string') {
+    throw validationError('statusId', 'Status id must be a string or null');
+  }
+  if (
+    input.priority !== undefined &&
+    (!Number.isInteger(input.priority) || input.priority < 1 || input.priority > 4)
+  ) {
+    throw validationError('priority', 'Priority must be an integer between 1 and 4');
+  }
   if (!Number.isInteger(input.position) || input.position < 0) {
     throw validationError('position', 'Position must be a non-negative integer');
   }
@@ -866,8 +879,25 @@ function validateMoveInput(input: MoveTaskInput): void {
     if (typeof scope.sectionId !== 'string') {
       throw validationError('scope.sectionId', 'Section scope requires a section id');
     }
+  } else if (scope.kind === 'status') {
+    if (typeof scope.collectionId !== 'string') {
+      throw validationError('scope.collectionId', 'Status scope requires a collection id');
+    }
+    if (scope.statusId !== null && typeof scope.statusId !== 'string') {
+      throw validationError('scope.statusId', 'Status scope requires a status id or null');
+    }
+  } else if (scope.kind === 'priority') {
+    if (typeof scope.collectionId !== 'string') {
+      throw validationError('scope.collectionId', 'Priority scope requires a collection id');
+    }
+    if (!Number.isInteger(scope.priority) || scope.priority < 1 || scope.priority > 4) {
+      throw validationError('scope.priority', 'Priority scope requires an integer between 1 and 4');
+    }
   } else {
-    throw validationError('scope.kind', "Ordering scope must be 'collection', 'day' or 'section'");
+    throw validationError(
+      'scope.kind',
+      "Ordering scope must be 'collection', 'day', 'section', 'status' or 'priority'",
+    );
   }
 }
 
@@ -888,6 +918,9 @@ interface MovedTaskSummary {
   dueDate: string | null;
   orderValue: number;
   depth: number;
+  statusId: string | null;
+  priority: number;
+  isCompleted: boolean;
 }
 
 function toMovedTaskSummary(task: ReturnType<typeof formatTask>): MovedTaskSummary {
@@ -898,6 +931,9 @@ function toMovedTaskSummary(task: ReturnType<typeof formatTask>): MovedTaskSumma
     dueDate: task.dueDate,
     orderValue: task.orderValue,
     depth: task.depth,
+    statusId: task.statusId,
+    priority: task.priority,
+    isCompleted: task.isCompleted,
   };
 }
 
