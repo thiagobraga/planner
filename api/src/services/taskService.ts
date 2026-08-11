@@ -1196,6 +1196,7 @@ export async function moveTask(taskId: string, userId: string, input: MoveTaskIn
         movedParentTaskId: input.parentTaskId,
         movedDepth: rootNewDepth,
         movedOrderValue: task.order_value,
+        movedDueDate: destDueDate,
         movedStatusId: destStatusId,
         movedPriority: destPriority,
         movedIsCompleted: rootIsCompleted,
@@ -1216,6 +1217,7 @@ export async function moveTask(taskId: string, userId: string, input: MoveTaskIn
         movedParentTaskId: input.parentTaskId,
         movedDepth: rootNewDepth,
         movedOrderValue: task.order_value,
+        movedDueDate: destDueDate,
         movedStatusId: destStatusId,
         movedPriority: destPriority,
         movedIsCompleted: rootIsCompleted,
@@ -1429,39 +1431,69 @@ async function renumberCollectionScope(
 }
 
 /**
- * Place a task at `position` within one day's list, gap-numbered. A midpoint
+ * Place a task at `position` within an order-table scope, gap-numbered. A midpoint
  * write for the moved task alone is only valid once both flanking neighbors
- * already carry a materialized `task_order` row for this day - an unseeded
+ * already carry a materialized `task_order` row for this scope - an unseeded
  * neighbor has no `position` to compute a midpoint from. Otherwise falls back
- * to seeding the whole day from its current rendered order and rewriting it,
- * which is what makes the first drag into a day stick. Returns the rows
+ * to seeding the whole scope from its current rendered order and rewriting it.
+ * Returns the rows
  * actually written, mappable to `MovedTaskSummary` by the caller.
  */
-async function renumberDayScope(
+async function renumberOrderTableScope(
   client: Client,
   opts: {
     userId: string;
-    date: string;
+    scopeType: 'day' | 'status' | 'priority';
+    scopeId: string;
+    collectionId: string;
+    statusId: string | null;
+    priority: number;
     movedTaskId: string;
     position: number;
     movedCollectionId: string;
     movedParentTaskId: string | null;
     movedDepth: number;
     movedOrderValue: number;
+    movedDueDate: string | null;
+    movedStatusId: string | null;
+    movedPriority: number;
+    movedIsCompleted: boolean;
   },
 ): Promise<MovedTaskSummary[]> {
-  // Read every task on this day, not only those already carrying a day
+  // Read every task in this scope, not only those already carrying a
   // position - a task that has never been dragged in Daily is seeded
   // alongside those that have. The LEFT JOIN's NULL `position` is also how a
   // seeded/unseeded neighbor is told apart for the fast-path check below.
+  let membershipSql: string;
+  let membershipParams: unknown[];
+  if (opts.scopeType === 'day') {
+    membershipSql = `t.due_date = $5::date`;
+    membershipParams = [opts.scopeId];
+  } else if (opts.scopeType === 'status') {
+    membershipSql = `t.collection_id = $5 AND t.status_id IS NOT DISTINCT FROM $6::uuid`;
+    membershipParams = [opts.collectionId, opts.statusId];
+  } else {
+    membershipSql = `t.collection_id = $5 AND t.priority = $6`;
+    membershipParams = [opts.collectionId, opts.priority];
+  }
+
   const result = await client.query(
-    `SELECT t.id AS task_id, t.collection_id, t.parent_task_id, t.depth, t.order_value, o.position
+    `SELECT t.id AS task_id,
+            t.collection_id,
+            t.parent_task_id,
+            t.depth,
+            t.order_value,
+            t.due_date,
+            t.status_id,
+            t.priority,
+            t.is_completed,
+            o.position
      FROM tasks t
      LEFT JOIN task_order o
-       ON o.task_id = t.id AND o.scope_type = 'day' AND o.scope_id = $2
-     WHERE t.user_id = $1 AND t.due_date = $2::date AND t.id != $3
+       ON o.task_id = t.id AND o.scope_type = $2 AND o.scope_id = $3
+     WHERE t.user_id = $1 AND t.id != $4 AND ${membershipSql}
      ORDER BY o.position ASC NULLS LAST, t.order_value ASC, t.created_at ASC`,
-    [opts.userId, opts.date, opts.movedTaskId],
+    [opts.userId, opts.scopeType, opts.scopeId, opts.movedTaskId, ...membershipParams],
   );
   const siblings = result.rows as {
     task_id: string;
@@ -1469,6 +1501,10 @@ async function renumberDayScope(
     parent_task_id: string | null;
     depth: number;
     order_value: number;
+    due_date: string | null;
+    status_id: string | null;
+    priority: number;
+    is_completed: boolean;
     position: number | null | undefined;
   }[];
 
@@ -1482,13 +1518,20 @@ async function renumberDayScope(
     collectionId: string,
     parentTaskId: string | null,
     depth: number,
+    dueDate: string | null,
+    statusId: string | null,
+    priority: number,
+    isCompleted: boolean,
   ): MovedTaskSummary => ({
     id,
     parentTaskId,
     collectionId,
-    dueDate: opts.date,
+    dueDate,
     orderValue,
     depth,
+    statusId,
+    priority,
+    isCompleted,
   });
 
   const clampedPosition = Math.min(opts.position, siblings.length);
@@ -1508,10 +1551,10 @@ async function renumberDayScope(
     if (midpoint !== null) {
       await client.query(
         `INSERT INTO task_order (user_id, task_id, scope_type, scope_id, position)
-         VALUES ($1, $2, 'day', $3, $4)
+         VALUES ($1, $2, $3, $4, $5)
          ON CONFLICT (task_id, scope_type, scope_id)
          DO UPDATE SET position = EXCLUDED.position, updated_at = NOW()`,
-        [opts.userId, opts.movedTaskId, opts.date, midpoint],
+        [opts.userId, opts.movedTaskId, opts.scopeType, opts.scopeId, midpoint],
       );
       return [
         summarize(
@@ -1520,6 +1563,10 @@ async function renumberDayScope(
           opts.movedCollectionId,
           opts.movedParentTaskId,
           opts.movedDepth,
+          opts.movedDueDate,
+          opts.movedStatusId,
+          opts.movedPriority,
+          opts.movedIsCompleted,
         ),
       ];
     }
@@ -1530,8 +1577,8 @@ async function renumberDayScope(
   ids.splice(clampedPosition, 0, opts.movedTaskId);
 
   await client.query(
-    `DELETE FROM task_order WHERE task_id = $1 AND scope_type = 'day' AND scope_id = $2`,
-    [opts.movedTaskId, opts.date],
+    `DELETE FROM task_order WHERE task_id = $1 AND scope_type = $2 AND scope_id = $3`,
+    [opts.movedTaskId, opts.scopeType, opts.scopeId],
   );
 
   const byId = new Map(siblings.map((s) => [s.task_id, s]));
@@ -1540,10 +1587,10 @@ async function renumberDayScope(
     const position = i * 1000;
     await client.query(
       `INSERT INTO task_order (user_id, task_id, scope_type, scope_id, position)
-       VALUES ($1, $2, 'day', $3, $4)
+       VALUES ($1, $2, $3, $4, $5)
        ON CONFLICT (task_id, scope_type, scope_id)
        DO UPDATE SET position = EXCLUDED.position, updated_at = NOW()`,
-      [opts.userId, ids[i], opts.date, position],
+      [opts.userId, ids[i], opts.scopeType, opts.scopeId, position],
     );
     const sib = byId.get(ids[i]);
     written.push(
@@ -1553,6 +1600,10 @@ async function renumberDayScope(
         sib ? sib.collection_id : opts.movedCollectionId,
         sib ? sib.parent_task_id : opts.movedParentTaskId,
         sib ? sib.depth : opts.movedDepth,
+        sib ? sib.due_date : opts.movedDueDate,
+        sib ? sib.status_id : opts.movedStatusId,
+        sib ? sib.priority : opts.movedPriority,
+        sib ? sib.is_completed : opts.movedIsCompleted,
       ),
     );
   }

@@ -35,7 +35,7 @@ vi.mock('uuid', () => ({
   v4: () => 'test-uuid-1234',
 }));
 
-import { createTask, updateTask, completeTask, deleteTask } from '../taskService.js';
+import { createTask, updateTask, completeTask, deleteTask, moveTask } from '../taskService.js';
 
 const userId = 'user-1';
 const collectionId = 'collection-1';
@@ -499,6 +499,35 @@ describe('Property 14: Moving parent moves all descendants', () => {
         expect(result.collectionId).toBe(newCollectionId);
         expect(result.sectionId).toBeNull();
       }),
+      { numRuns: 100 },
+    );
+  });
+});
+
+// --- Property 15: Board move priority validation ---
+// **Validates: Kanban board task 4 priority scope boundaries**
+
+describe('Property 15: Board move priority validation', () => {
+  it('rejects every integer priority outside 1 through 4 before database access', async () => {
+    await fc.assert(
+      fc.asyncProperty(
+        fc.integer().filter((priority) => priority < 1 || priority > 4),
+        async (priority) => {
+          vi.clearAllMocks();
+
+          await expect(
+            moveTask('task-move', userId, {
+              parentTaskId: null,
+              priority,
+              scope: { kind: 'collection', collectionId },
+              position: 0,
+            }),
+          ).rejects.toMatchObject({ code: 'VALIDATION_ERROR', statusCode: 400 });
+
+          expect(mockQuery).not.toHaveBeenCalled();
+          expect(mockConnect).not.toHaveBeenCalled();
+        },
+      ),
       { numRuns: 100 },
     );
   });

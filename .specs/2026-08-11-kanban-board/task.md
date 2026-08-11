@@ -70,25 +70,26 @@ Work in a worktree: `git worktree add ../planner-kanban-board -b feat/kanban-boa
 
 ## Milestone 4 — Board ordering scopes in `moveTask` (`api/src/services/taskService.ts`)
 
-- [~] Write `api/src/db/migrations/038_task_order_board_scopes.sql` — widen the
+- [x] Write `api/src/db/migrations/038_task_order_board_scopes.sql` — widen the
       `task_order_scope_type_check` CHECK to `('day','collection','status','priority')`.
-- [ ] Extend `TaskOrderScope` with `status` and `priority`; extend `MoveTaskInput` with `statusId`
+- [x] Extend `TaskOrderScope` with `status` and `priority`; extend `MoveTaskInput` with `statusId`
       and `priority` (root only).
-- [ ] Extend `validateMoveInput` (`:758`) for both new fields and both new scope kinds.
-- [ ] Destination resolution: a cross-collection move nulls `status_id` unless one is given
+- [x] Extend `validateMoveInput` (`:758`) for both new fields and both new scope kinds.
+- [x] Destination resolution: a cross-collection move nulls `status_id` unless one is given
       explicitly.
-- [ ] Root UPDATE (`:932`) writes `status_id` and, when provided, `priority`.
-- [ ] Call `syncCompletionToStatus` right after the root UPDATE, only when the destination status
+- [x] Root UPDATE (`:932`) writes `status_id` and, when provided, `priority`.
+- [x] Call `syncCompletionToStatus` right after the root UPDATE, only when the destination status
       differs.
-- [ ] Generalize `renumberDayScope` (`:1192`) into
+- [x] Generalize `renumberDayScope` (`:1192`) into
       `renumberOrderTableScope(client, { scopeType, scopeId, … })`; route `status` and `priority`
       to it. Leave `renumberCollectionScope` (`:1117`) untouched for `collection` / `section`.
-- [ ] `MovedTaskSummary` (`:817`) gains `statusId`, `priority`, `isCompleted`.
-- [ ] Correct the stale comment at `:946-947`.
-- [ ] Tests: `taskService.move.status.test.ts` (asserts `order_value` is **never** written),
+- [x] `MovedTaskSummary` (`:817`) gains `statusId`, `priority`, `isCompleted`.
+- [x] Correct the stale comment at `:946-947`.
+- [x] Tests: `taskService.move.status.test.ts` (asserts `order_value` is **never** written),
       `taskService.move.priority.test.ts`; extend `taskService.property.test.ts`.
-- [ ] Verify: `docker compose exec api npm run build && docker compose exec api npm run lint && docker compose exec api npm test`
-- [ ] Commit: `feat(api): add board ordering scopes to task move`
+- [x] Verify: `docker compose exec api npm run build && docker compose exec api npm run lint && docker compose exec api npm test`
+- [x] Commit: `feat(api): add board ordering scopes` plus follow-up move propagation and coverage
+      commits.
 
 ## Milestone 5 — Board view preferences (`api/src/services/preferencesService.ts`)
 
