@@ -40,6 +40,7 @@ const prefsRow = {
   locale: "en",
   date_format: "MMM DD ddd",
   collapsed_collection_ids: [],
+  board_view_modes: {},
 };
 
 describe("validatePreferences", () => {
@@ -100,6 +101,33 @@ describe("validatePreferences", () => {
     expect(() => validatePreferences({ collapsedCollectionIds: [123 as unknown as string] })).toThrow(AppError);
   });
 
+  it("accepts valid per-collection board modes", () => {
+    expect(() => validatePreferences({
+      boardViewModes: {
+        "11111111-1111-4111-8111-111111111111": { view: "kanban", groupBy: "status" },
+      },
+    })).not.toThrow();
+  });
+
+  it("rejects malformed board mode keys, values, and oversized maps", () => {
+    expect(() => validatePreferences({
+      boardViewModes: { "not-a-uuid": { view: "kanban" } },
+    })).toThrow(AppError);
+    expect(() => validatePreferences({
+      boardViewModes: {
+        "11111111-1111-4111-8111-111111111111": { view: "grid" as "kanban" },
+      },
+    })).toThrow(AppError);
+
+    const oversized = Object.fromEntries(
+      Array.from({ length: 201 }, (_, index) => [
+        `00000000-0000-4000-8000-${String(index).padStart(12, "0")}`,
+        { groupBy: "priority" as const },
+      ]),
+    );
+    expect(() => validatePreferences({ boardViewModes: oversized })).toThrow(AppError);
+  });
+
   it("aggregates multiple errors", () => {
     try {
       validatePreferences({ timeZone: "x", theme: "y", weekStart: "z" });
@@ -123,6 +151,7 @@ describe("getPreferences", () => {
     expect(p.hideOldNotes).toBe(false);
     expect(p.locale).toBe("en");
     expect(p.collapsedCollectionIds).toEqual([]);
+    expect(p.boardViewModes).toEqual({});
   });
 
   it("404s when no preferences", async () => {
@@ -209,6 +238,19 @@ describe("updatePreferences", () => {
     expect(mockQuery.mock.calls[0][0]).toMatch(/collapsed_collection_ids = \$1/);
     expect(mockQuery.mock.calls[0][1]).toEqual([[collectionId], "u1"]);
     expect(mockBuildEvent).toHaveBeenCalledWith(expect.objectContaining({ payload: p }));
+  });
+
+  it("persists board view modes as one JSONB field", async () => {
+    const boardViewModes = {
+      "11111111-1111-4111-8111-111111111111": { view: "kanban" as const, groupBy: "priority" as const },
+    };
+    mockQuery.mockResolvedValueOnce({ rows: [{ ...prefsRow, board_view_modes: boardViewModes }] });
+
+    const p = await updatePreferences("u1", { boardViewModes });
+
+    expect(p.boardViewModes).toEqual(boardViewModes);
+    expect(mockQuery.mock.calls[0][0]).toMatch(/board_view_modes = \$1/);
+    expect(mockQuery.mock.calls[0][1]).toEqual([boardViewModes, "u1"]);
   });
 
   it("rejects invalid input before db call", async () => {

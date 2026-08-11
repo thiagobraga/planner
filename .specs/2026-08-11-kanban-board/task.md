@@ -93,18 +93,18 @@ Work in a worktree: `git worktree add ../planner-kanban-board -b feat/kanban-boa
 
 ## Milestone 5 — Board view preferences (`api/src/services/preferencesService.ts`)
 
-- [ ] Write `api/src/db/migrations/039_preferences_board_view.sql` — `board_view_modes JSONB NOT
+- [x] Write `api/src/db/migrations/039_preferences_board_view.sql` — `board_view_modes JSONB NOT
       NULL DEFAULT '{}'`.
-- [ ] Update all six sites: `PreferencesRow` (:6), `formatPreferences` (:23) with `?? {}`,
+- [x] Update all six sites: `PreferencesRow` (:6), `formatPreferences` (:23) with `?? {}`,
       `VALID_GROUP_BYS` / `VALID_VIEW_MODES` (near :42), `UpdatePreferencesInput` (:64),
       `validatePreferences` (:80) — UUID keys, enum values, ≤200 keys — and the `setClauses` branch
       (:180-231).
-- [ ] Add `statuses` and `boardOrder` to `getCollectionView` and `getInboxView`.
-- [ ] Confirm `provisionUser.ts` and `seed.ts` need no change (they rely on column defaults).
-- [ ] Tests: extend `services/__tests__/preferencesService.test.ts` and
+- [x] Add `statuses` and `boardOrder` to `getCollectionView` and `getInboxView`.
+- [x] Confirm `provisionUser.ts` and `seed.ts` need no change (they rely on column defaults).
+- [x] Tests: extend `services/__tests__/preferencesService.test.ts` and
       `routes/__tests__/views.test.ts`.
-- [ ] Verify: `docker compose exec api npm run build && docker compose exec api npm run lint && docker compose exec api npm test`
-- [ ] Commit: `feat(api): persist per-collection board view preferences`
+- [x] Verify: `docker compose exec api npm run build && docker compose exec api npm run lint && docker compose exec api npm test`
+- [x] Commit: `feat(api): persist per-collection board view preferences`
 
 ## Milestone 6 — Playwright harness (`e2e/`)
 

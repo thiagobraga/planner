@@ -223,11 +223,27 @@ describe("getInboxView", () => {
     .mockResolvedValueOnce({ rows: [{ id: "p-1" }] })
     .mockResolvedValueOnce({ rows: [] })
     // attachLabels
-    .mockResolvedValueOnce({ rows: [] });
+    .mockResolvedValueOnce({ rows: [] })
+    // board metadata
+    .mockResolvedValueOnce({
+      rows: [{
+        id: "status-1", collection_id: "p-1", name: "Todo", color: "#adb9c1",
+        is_done_like: false, order_value: 1000, created_at: "2024-06-01T00:00:00Z",
+        updated_at: "2024-06-01T00:00:00Z",
+      }],
+    })
+    .mockResolvedValueOnce({
+      rows: [
+        { task_id: "done", scope_type: "status", position: 2000 },
+        { task_id: "open", scope_type: "priority", position: 500 },
+      ],
+    });
 
     const view = await getInboxView(userId);
     expect(view.collectionId).toBeNull();
     expect(view.tasks.map((t) => t.id)).toEqual(["done", "open"]);
+    expect(view.statuses[0]).toEqual(expect.objectContaining({ id: "status-1", name: "Todo" }));
+    expect(view.boardOrder).toEqual({ status: { done: 2000 }, priority: { open: 500 } });
 
     const sql = mockQuery.mock.calls[2][0] as string;
     expect(sql).toMatch(/JOIN collections p ON p\.id = t\.collection_id/);
@@ -246,7 +262,14 @@ describe("getInboxView", () => {
       .mockResolvedValueOnce({ rows: [] })
       .mockResolvedValueOnce({ rows: [] });
     const view = await getInboxView(userId);
-    expect(view).toEqual({ tasks: [], collectionId: null, inboxCollectionId: undefined, sections: [] });
+    expect(view).toEqual({
+      tasks: [],
+      collectionId: null,
+      inboxCollectionId: undefined,
+      sections: [],
+      statuses: [],
+      boardOrder: { status: {}, priority: {} },
+    });
   });
 
   it("attaches labels to inbox tasks in one query", async () => {
@@ -260,7 +283,9 @@ describe("getInboxView", () => {
         rows: [
           { task_id: "inbox-labeled", id: "l-1", user_id: userId, name: "bug", color: "#c98079", created_at: "2024-06-01T00:00:00Z", updated_at: "2024-06-01T00:00:00Z" },
         ],
-      });
+      })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [] });
 
     const view = await getInboxView(userId);
 
@@ -288,6 +313,9 @@ describe("getCollectionView", () => {
       .mockResolvedValueOnce({ rows: [{ id: "c-1" }] })
       .mockResolvedValueOnce({ rows: [] })
       // attachLabels
+      .mockResolvedValueOnce({ rows: [] })
+      // board metadata
+      .mockResolvedValueOnce({ rows: [] })
       .mockResolvedValueOnce({ rows: [] });
 
     const view = await getCollectionView(userId, "c-1");
@@ -328,7 +356,9 @@ describe("getCollectionView", () => {
         rows: [
           { task_id: "t-labeled", id: "l-1", user_id: userId, name: "bug", color: "#c98079", created_at: "2024-06-01T00:00:00Z", updated_at: "2024-06-01T00:00:00Z" },
         ],
-      });
+      })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({ rows: [] });
 
     const view = await getCollectionView(userId, "c-1");
 

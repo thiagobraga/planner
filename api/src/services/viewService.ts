@@ -2,6 +2,7 @@ import pool from "../db/pool.js";
 import { AppError } from "../utils/AppError.js";
 import { listSections } from "./sectionService.js";
 import { attachLabels } from "./labelService.js";
+import type { Status } from "./statusService.js";
 
 interface TaskRow {
   id: string;
@@ -34,6 +35,23 @@ interface PreferencesRow {
   hide_old_notes: boolean;
 }
 
+interface StatusRow {
+  id: string;
+  collection_id: string;
+  name: string;
+  color: string;
+  is_done_like: boolean;
+  order_value: number;
+  created_at: string;
+  updated_at: string;
+}
+
+interface BoardOrderRow {
+  task_id: string;
+  scope_type: "status" | "priority";
+  position: number;
+}
+
 function formatTask(row: TaskRow) {
   return {
     id: row.id,
@@ -58,6 +76,43 @@ function formatTask(row: TaskRow) {
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
+}
+
+async function getBoardMetadata(collectionId: string, userId: string) {
+  const statusesResult = await pool.query(
+    `SELECT * FROM task_statuses WHERE collection_id = $1 ORDER BY order_value ASC`,
+    [collectionId],
+  );
+  const orderResult = await pool.query(
+    `SELECT o.task_id, o.scope_type, o.position
+     FROM task_order o
+     INNER JOIN tasks t ON t.id = o.task_id
+     WHERE t.collection_id = $1
+       AND o.user_id = $2
+       AND o.scope_type IN ('status', 'priority')`,
+    [collectionId, userId],
+  );
+
+  const boardOrder: { status: Record<string, number>; priority: Record<string, number> } = {
+    status: {},
+    priority: {},
+  };
+  for (const row of orderResult.rows as BoardOrderRow[]) {
+    boardOrder[row.scope_type][row.task_id] = Number(row.position);
+  }
+
+  const statuses: Status[] = (statusesResult.rows as StatusRow[]).map((row) => ({
+    id: row.id,
+    collectionId: row.collection_id,
+    name: row.name,
+    color: row.color,
+    isDoneLike: row.is_done_like,
+    orderValue: row.order_value,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  }));
+
+  return { statuses, boardOrder };
 }
 
 export async function getUserTimezone(userId: string): Promise<string> {
@@ -290,12 +345,17 @@ export async function getInboxView(userId: string, now: Date = new Date()) {
   );
 
   const sections = inboxCollection ? await listSections(inboxCollection.id, userId) : [];
+  const tasks = await attachLabels((result.rows as TaskRow[]).map(formatTask));
+  const boardMetadata = inboxCollection
+    ? await getBoardMetadata(inboxCollection.id, userId)
+    : { statuses: [], boardOrder: { status: {}, priority: {} } };
 
   return {
-    tasks: await attachLabels((result.rows as TaskRow[]).map(formatTask)),
+    tasks,
     collectionId: null,
     inboxCollectionId: inboxCollection?.id,
     sections,
+    ...boardMetadata,
   };
 }
 
@@ -329,6 +389,8 @@ export async function getCollectionView(userId: string, collectionId: string, no
   );
 
   const sections = await listSections(collectionId, userId);
+  const tasks = await attachLabels((result.rows as TaskRow[]).map(formatTask));
+  const boardMetadata = await getBoardMetadata(collectionId, userId);
 
   return {
     collection: {
@@ -337,8 +399,9 @@ export async function getCollectionView(userId: string, collectionId: string, no
       color: collection.color,
       isInbox: collection.is_inbox,
     },
-    tasks: await attachLabels((result.rows as TaskRow[]).map(formatTask)),
+    tasks,
     collectionId,
     sections,
+    ...boardMetadata,
   };
 }

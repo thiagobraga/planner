@@ -76,6 +76,18 @@ describe("views routes", () => {
     expect(res.body.tasks[0].labels).toEqual([{ id: "l1", name: "bug", color: "#c98079" }]);
   });
 
+  it("GET /api/v1/views/collection/:id → passes through board metadata", async () => {
+    mockGetCollectionView.mockResolvedValue({
+      tasks: [],
+      statuses: [{ id: "s1", name: "Todo" }],
+      boardOrder: { status: { t1: 0 }, priority: {} },
+    });
+    const res = await request(app).get("/api/v1/views/collection/c1");
+    expect(res.status).toBe(200);
+    expect(res.body.statuses).toEqual([{ id: "s1", name: "Todo" }]);
+    expect(res.body.boardOrder).toEqual({ status: { t1: 0 }, priority: {} });
+  });
+
   it("GET /api/v1/views/month?year=2026&month=7 → calls getMonthView", async () => {
     mockGetMonthView.mockResolvedValue({ weeks: [] });
     const res = await request(app).get("/api/v1/views/month?year=2026&month=7");
