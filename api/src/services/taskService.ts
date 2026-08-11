@@ -25,6 +25,7 @@ interface TaskRow {
   order_value: number;
   depth: number;
   type: string;
+  status_id: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -49,6 +50,7 @@ function formatTask(row: TaskRow) {
     orderValue: row.order_value,
     depth: row.depth,
     type: row.type,
+    statusId: row.status_id,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };

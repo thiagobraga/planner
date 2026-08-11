@@ -37,6 +37,8 @@ export function AppShell() {
     if (event.entityType === 'collection') {
       qc.invalidateQueries({ queryKey: ['collections'] });
       qc.invalidateQueries({ queryKey: ['collection'] });
+    } else if (event.entityType === 'status') {
+      qc.invalidateQueries({ queryKey: ['collection'] });
     } else if (event.entityType === 'preferences') {
       if (event.payload && typeof event.payload === 'object') {
         qc.setQueryData<Preferences>(['preferences'], event.payload as Preferences);

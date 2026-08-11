@@ -15,7 +15,7 @@ interface SocketData {
   rawToken?: string;
 }
 
-export type SyncEntityType = "task" | "collection" | "section" | "label" | "comment" | "reminder" | "preferences" | "habit" | "habit_completion" | "habit_group";
+export type SyncEntityType = "task" | "collection" | "section" | "status" | "label" | "comment" | "reminder" | "preferences" | "habit" | "habit_completion" | "habit_group";
 export type SyncEventType = "created" | "updated" | "deleted" | "completed" | "uncompleted";
 
 export interface SyncEvent {

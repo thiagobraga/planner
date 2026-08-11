@@ -22,6 +22,7 @@ interface TaskRow {
   effective_order_value?: number;
   depth: number;
   type: string;
+  status_id: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -52,6 +53,7 @@ function formatTask(row: TaskRow) {
     orderValue: Number(row.effective_order_value ?? row.order_value),
     depth: row.depth,
     type: row.type,
+    statusId: row.status_id,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -122,7 +124,7 @@ export async function getTodayView(userId: string, now: Date = new Date()): Prom
   // a separate place in its day, and one column cannot express both. Tasks never
   // dragged within Daily hold no day position and fall back to collection order.
   const result = await pool.query(
-    `SELECT t.id, t.user_id, t.collection_id, t.section_id, t.parent_task_id, t.assignee_user_id, t.title, t.description, t.priority, t.due_date, t.due_time, t.due_timezone, t.recurrence_rule, t.is_completed, t.completed_at, t.depth, t.type, t.created_at, t.updated_at, COALESCE(o.position, t.order_value) AS effective_order_value FROM tasks t
+    `SELECT t.id, t.user_id, t.collection_id, t.section_id, t.parent_task_id, t.assignee_user_id, t.title, t.description, t.priority, t.due_date, t.due_time, t.due_timezone, t.recurrence_rule, t.is_completed, t.completed_at, t.depth, t.type, t.status_id, t.created_at, t.updated_at, COALESCE(o.position, t.order_value) AS effective_order_value FROM tasks t
      JOIN collections p ON p.id = t.collection_id
      LEFT JOIN task_order o
        ON o.task_id = t.id
@@ -174,7 +176,7 @@ export async function getUpcomingView(userId: string, days: number, now: Date = 
   const end = addDaysISO(start, days - 1);
 
   const result = await pool.query(
-    `SELECT t.id, t.user_id, t.collection_id, t.section_id, t.parent_task_id, t.assignee_user_id, t.title, t.description, t.priority, t.due_date, t.due_time, t.due_timezone, t.recurrence_rule, t.is_completed, t.completed_at, t.depth, t.type, t.created_at, t.updated_at, COALESCE(o.position, t.order_value) AS effective_order_value FROM tasks t
+    `SELECT t.id, t.user_id, t.collection_id, t.section_id, t.parent_task_id, t.assignee_user_id, t.title, t.description, t.priority, t.due_date, t.due_time, t.due_timezone, t.recurrence_rule, t.is_completed, t.completed_at, t.depth, t.type, t.status_id, t.created_at, t.updated_at, COALESCE(o.position, t.order_value) AS effective_order_value FROM tasks t
      JOIN collections p ON p.id = t.collection_id
      LEFT JOIN task_order o
        ON o.task_id = t.id
