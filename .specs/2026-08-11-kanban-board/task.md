@@ -3,69 +3,71 @@
 Source plan: `plan.md`.
 
 Work in a worktree: `git worktree add ../planner-kanban-board -b feat/kanban-board`, then
-`COMPOSE_PROJECT_NAME=planner-claude` / `APP_SUBDOMAIN=claude.planner` in `.env` and
+`COMPOSE_PROJECT_NAME=planner-claude` / `APP_SUBDOMAIN=codex.planner` in `.env` and
 `docker compose up -d`. Mark tasks `[~]` when started, `[x]` when done.
 
 ## Milestone 1 — Per-collection task statuses (`api/src/services/statusService.ts`)
 
-- [ ] Write `api/src/db/migrations/037_task_statuses.sql` — `task_statuses` table, the two indexes,
+- [x] Write `api/src/db/migrations/037_task_statuses.sql` — `task_statuses` table, the two indexes,
       `tasks.status_id` and `tasks.previous_status_id` (both `ON DELETE SET NULL`),
       `idx_tasks_collection_status`. Copy the color CHECK regex verbatim from
       `033_exact_collection_label_colors.sql`.
-- [ ] Create `api/src/services/statusService.ts` modelled on `sectionService.ts` — `Status` type,
+- [x] Create `api/src/services/statusService.ts` modelled on `sectionService.ts` — `Status` type,
       `formatStatus`, `verifyCollectionAccess` / `verifyStatusAccess`.
-- [ ] `listStatuses(collectionId, userId)` ordered by `order_value`.
-- [ ] `ensureCollectionStatuses(collectionId, userId)` — idempotent, opens with
+- [x] `listStatuses(collectionId, userId)` ordered by `order_value`.
+- [x] `ensureCollectionStatuses(collectionId, userId)` — idempotent, opens with
       `SELECT id FROM collections WHERE id = $1 FOR UPDATE`; seeds Backlog / Todo / Doing /
       Completed (only Completed `is_done_like`), names localized from `preferences.locale`; files
       every status-less task — completed into the first done-like, the rest into the first column.
-- [ ] `createStatus` (append at `MAX(order_value) + 1000`), `updateStatus` (name / color /
+- [x] `createStatus` (append at `MAX(order_value) + 1000`), `updateStatus` (name / color /
       isDoneLike / position, splice-and-rewrite siblings), `deleteStatus` with
       `reassignToStatusId` and a 409 on the collection's last status.
-- [ ] Publish `entityType: 'status'` with `collectionId` from all four mutations.
-- [ ] Add `"status"` to `SyncEntityType` (`api/src/services/syncService.ts:18`) and
+- [x] Publish `entityType: 'status'` with `collectionId` from all four mutations.
+- [x] Add `"status"` to `SyncEntityType` (`api/src/services/syncService.ts:18`) and
       `app/src/hooks/useSync.ts:6`; add the invalidation branch in `AppShell.tsx:36-49`.
-- [ ] Create `api/src/routes/statuses.ts` (five endpoints per plan) and mount it in
+- [x] Create `api/src/routes/statuses.ts` (five endpoints per plan) and mount it in
       `api/src/routes/index.ts`.
-- [ ] Both `formatTask` copies (`taskService.ts:32`, `viewService.ts:35`) gain
+- [x] Both `formatTask` copies (`taskService.ts:32`, `viewService.ts:35`) gain
       `statusId: row.status_id`.
-- [ ] Tests: `services/__tests__/statusService.test.ts`, `routes/__tests__/statuses.test.ts`.
-- [ ] Verify: `docker compose exec api npm run build && docker compose exec api npm run lint && docker compose exec api npm test`
-- [ ] Commit: `feat(api): add per-collection task statuses`
+- [x] Tests: `services/__tests__/statusService.test.ts`, `routes/__tests__/statuses.test.ts`.
+- [x] Verify: `docker compose exec api npm run build && docker compose exec api npm run lint && docker compose exec api npm test`
+- [x] Commit: `feat(api): add per-collection task statuses`
 
 ## Milestone 2 — Completion sync (`api/src/services/completionSync.ts`)
 
-- [ ] Create `completionSync.ts` with `syncCompletionToStatus` and `syncStatusToCompletion`, both
+- [x] Create `completionSync.ts` with `syncCompletionToStatus` and `syncStatusToCompletion`, both
       taking an open `PoolClient`.
-- [ ] `syncCompletionToStatus` — done-like sets `is_completed`/`completed_at` and cascades to
+- [x] `syncCompletionToStatus` — done-like sets `is_completed`/`completed_at` and cascades to
       descendants with the same recursive CTE as `completeTask` (`taskService.ts:176-190`);
       non-done-like clears both without cascading; returns null when already aligned. Record the
       matching activity event.
-- [ ] `syncStatusToCompletion` — on complete write `previous_status_id` then the first done-like
+- [x] `syncStatusToCompletion` — on complete write `previous_status_id` then the first done-like
       status; on reopen restore `COALESCE(previous_status_id, first non-done-like)` and clear it.
-- [ ] Wire into `completeTask` (`taskService.ts:81`) and `reopenTask` (`:623`).
-- [ ] Wire into `statusService.updateStatus` when `isDoneLike` flips.
-- [ ] Confirm `updateTask` does **not** accept `statusId` — a fifth call site is forbidden.
-- [ ] Tests: `services/__tests__/completionSync.test.ts`.
-- [ ] Verify: `docker compose exec api npm run build && docker compose exec api npm run lint && docker compose exec api npm test`
-- [ ] Commit: `feat(api): reconcile completion with done-like statuses`
+- [x] Wire into `completeTask` (`taskService.ts:81`) and `reopenTask` (`:623`).
+- [x] Wire into `statusService.updateStatus` when `isDoneLike` flips.
+- [x] Confirm `updateTask` does **not** accept `statusId` — a fifth call site is forbidden.
+- [x] Tests: `services/__tests__/completionSync.test.ts`.
+- [x] Verify: `docker compose exec api npm run build && docker compose exec api npm run lint && docker compose exec api npm test`
+- [x] Commit: `feat(api): reconcile completion with done-like statuses`
 
 ## Milestone 3 — Labels, implemented (`api/src/services/labelService.ts`)
 
-- [ ] `createTask` — verify `labelIds` ownership, bulk-insert `task_labels`; keep the single-query
+- [x] `createTask` — verify `labelIds` ownership, bulk-insert `task_labels`; keep the single-query
       fast path when no labels are given.
-- [ ] `updateTask` — when `labelIds !== undefined`, replace the whole set; the transaction
+- [x] `updateTask` — when `labelIds !== undefined`, replace the whole set; the transaction
       condition at `taskService.ts:554` becomes `shiftsDescendants || input.labelIds !== undefined`.
-- [ ] `labelService.attachLabels<T extends {id}>(tasks)` — one query per page, no N+1.
-- [ ] Apply `attachLabels` in `getCollectionView`, `getInboxView`, and the single-task returns of
+- [x] `labelService.attachLabels<T extends {id}>(tasks)` — one query per page, no N+1.
+- [x] Apply `attachLabels` in `getCollectionView`, `getInboxView`, and the single-task returns of
       create / update / complete / reopen.
-- [ ] `labelService.ensureSeedLabels(userId)` — `feature` / `bug` / `chore`, only for a user with
-      no labels at all.
-- [ ] Add `publishEvent` to `labelService` create / update / delete (it publishes nothing today).
-- [ ] Tests: `services/__tests__/taskService.labels.test.ts`; extend
+- [x] `labelService.ensureSeedLabels(userId)` — `feature` / `bug` / `chore`, only for a user with
+      no labels at all. (Exported and tested; not yet wired to a call site — no seeding trigger
+      specified in the plan.)
+- [x] Add `publishEvent` to `labelService` create / update / delete (it publishes nothing today).
+- [~] Tests: `services/__tests__/taskService.labels.test.ts`; extend
       `routes/__tests__/views.test.ts` for per-task `labels`.
-- [ ] Verify: `docker compose exec api npm run build && docker compose exec api npm run lint && docker compose exec api npm test`
-- [ ] Commit: `feat(api): implement task labels end to end`
+- [~] Verify: `docker compose exec api npm run build && docker compose exec api npm run lint && docker compose exec api npm test`
+- [~] Commit: `feat(api): implement task labels end to end` (implementation committed; dedicated
+      tests remain uncommitted follow-up work)
 
 ## Milestone 4 — Board ordering scopes in `moveTask` (`api/src/services/taskService.ts`)
 
