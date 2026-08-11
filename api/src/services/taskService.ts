@@ -219,6 +219,7 @@ export async function completeTask(taskId: string, userId: string) {
       userId,
       collectionId: task.collection_id,
       isCompleted: true,
+      includeDescendants: true,
     });
 
     await client.query('COMMIT');
@@ -291,9 +292,8 @@ export async function createTask(userId: string, input: CreateTaskInput) {
     });
   }
 
-  if (input.labelIds?.length) {
-    await verifyLabelOwnership(input.labelIds, userId);
-  }
+  const labelIds = input.labelIds ?? [];
+  await verifyLabelOwnership(labelIds, userId);
 
   let collectionId = input.collectionId;
   let sectionId = input.sectionId ?? null;
@@ -368,15 +368,15 @@ export async function createTask(userId: string, input: CreateTaskInput) {
   ];
 
   let taskRow: TaskRow;
-  if (input.labelIds?.length) {
+  if (labelIds.length > 0) {
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
       const result = await client.query(insertQuery, insertValues);
-      const placeholders = input.labelIds.map((_, i) => `($1, $${i + 2})`).join(', ');
+      const placeholders = labelIds.map((_, i) => `($1, $${i + 2})`).join(', ');
       await client.query(
         `INSERT INTO task_labels (task_id, label_id) VALUES ${placeholders}`,
-        [id, ...input.labelIds],
+        [id, ...labelIds],
       );
       await client.query('COMMIT');
       taskRow = result.rows[0] as TaskRow;
@@ -453,10 +453,7 @@ export async function updateTask(taskId: string, userId: string, input: UpdateTa
     });
   }
 
-  if (input.labelIds !== undefined) {
-    await verifyLabelOwnership(input.labelIds, userId);
-  }
-
+  await verifyLabelOwnership(input.labelIds ?? [], userId);
   const task = await verifyTaskAccess(taskId, userId);
 
   const setClauses: string[] = [];

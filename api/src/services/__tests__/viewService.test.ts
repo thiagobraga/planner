@@ -248,6 +248,27 @@ describe("getInboxView", () => {
     const view = await getInboxView(userId);
     expect(view).toEqual({ tasks: [], collectionId: null, inboxCollectionId: undefined, sections: [] });
   });
+
+  it("attaches labels to inbox tasks in one query", async () => {
+    mockQuery
+      .mockResolvedValueOnce(visibilityPrefsRow)
+      .mockResolvedValueOnce({ rows: [{ id: "p-1" }] })
+      .mockResolvedValueOnce({ rows: [taskRow({ id: "inbox-labeled" })] })
+      .mockResolvedValueOnce({ rows: [{ id: "p-1" }] })
+      .mockResolvedValueOnce({ rows: [] })
+      .mockResolvedValueOnce({
+        rows: [
+          { task_id: "inbox-labeled", id: "l-1", user_id: userId, name: "bug", color: "#c98079", created_at: "2024-06-01T00:00:00Z", updated_at: "2024-06-01T00:00:00Z" },
+        ],
+      });
+
+    const view = await getInboxView(userId);
+
+    expect(view.tasks[0]?.labels).toEqual([
+      { id: "l-1", userId, name: "bug", color: "#c98079", createdAt: "2024-06-01T00:00:00Z", updatedAt: "2024-06-01T00:00:00Z" },
+    ]);
+    expect(mockQuery.mock.calls[5][0]).toMatch(/JOIN labels l ON l\.id = tl\.label_id/);
+  });
 });
 
 describe("getCollectionView", () => {

@@ -172,23 +172,32 @@ export async function ensureCollectionStatuses(collectionId: string, userId: str
       }
     }
 
-    const firstDoneLike = statuses.find((status) => status.is_done_like) ?? statuses[statuses.length - 1];
-    const firstColumn = statuses[0];
+    const firstDoneLike = statuses.find((status) => status.is_done_like);
+    const firstOpenColumn = statuses.find((status) => !status.is_done_like);
 
     // File status-less tasks explicitly - one state, one representation, rather
     // than treating NULL as "first column" at render time.
-    const completedTasks = await client.query(
-      `UPDATE tasks SET status_id = $1, updated_at = NOW()
-       WHERE collection_id = $2 AND status_id IS NULL AND is_completed = true
-       RETURNING id`,
-      [firstDoneLike.id, collectionId],
-    );
-    const openTasks = await client.query(
-      `UPDATE tasks SET status_id = $1, updated_at = NOW()
-       WHERE collection_id = $2 AND status_id IS NULL AND is_completed = false
-       RETURNING id`,
-      [firstColumn.id, collectionId],
-    );
+    let completedTaskCount = 0;
+    if (firstDoneLike) {
+      const completedTasks = await client.query(
+        `UPDATE tasks SET status_id = $1, updated_at = NOW()
+         WHERE collection_id = $2 AND status_id IS NULL AND is_completed = true
+         RETURNING id`,
+        [firstDoneLike.id, collectionId],
+      );
+      completedTaskCount = completedTasks.rowCount ?? completedTasks.rows.length;
+    }
+
+    let openTaskCount = 0;
+    if (firstOpenColumn) {
+      const openTasks = await client.query(
+        `UPDATE tasks SET status_id = $1, updated_at = NOW()
+         WHERE collection_id = $2 AND status_id IS NULL AND is_completed = false
+         RETURNING id`,
+        [firstOpenColumn.id, collectionId],
+      );
+      openTaskCount = openTasks.rowCount ?? openTasks.rows.length;
+    }
 
     await client.query("COMMIT");
 
@@ -198,11 +207,11 @@ export async function ensureCollectionStatuses(collectionId: string, userId: str
         publishStatusEvent("created", status.id, userId, collectionId, status);
       }
     } else {
-      if ((completedTasks.rowCount ?? completedTasks.rows.length) > 0) {
+      if (completedTaskCount > 0 && firstDoneLike) {
         publishStatusEvent("updated", firstDoneLike.id, userId, collectionId, formatStatus(firstDoneLike));
       }
-      if ((openTasks.rowCount ?? openTasks.rows.length) > 0 && firstColumn.id !== firstDoneLike.id) {
-        publishStatusEvent("updated", firstColumn.id, userId, collectionId, formatStatus(firstColumn));
+      if (openTaskCount > 0 && firstOpenColumn) {
+        publishStatusEvent("updated", firstOpenColumn.id, userId, collectionId, formatStatus(firstOpenColumn));
       }
     }
 
@@ -367,39 +376,61 @@ export interface DeleteStatusOptions {
 export async function deleteStatus(statusId: string, userId: string, options: DeleteStatusOptions = {}): Promise<{ success: true }> {
   const status = await verifyStatusAccess(statusId, userId);
 
-  const siblingCount = await pool.query(
-    `SELECT COUNT(*)::int AS count FROM task_statuses WHERE collection_id = $1`,
-    [status.collection_id],
-  );
-  if (siblingCount.rows[0].count <= 1) {
-    throw new AppError({
-      code: "CONFLICT",
-      message: "Cannot delete the last status in a collection",
-      statusCode: 409,
-    });
-  }
-
-  if (options.reassignToStatusId) {
-    if (options.reassignToStatusId === statusId) {
-      throw invalidReassignment("Reassignment status must be different from the deleted status");
-    }
-    const targetStatus = await verifyStatusAccess(options.reassignToStatusId, userId);
-    if (targetStatus.collection_id !== status.collection_id) {
-      throw invalidReassignment("Reassignment status must belong to the same collection");
-    }
-  }
-
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
 
+    const collectionLock = await client.query(
+      `SELECT id FROM collections
+       WHERE id = $1
+         AND (user_id = $2 OR id IN (SELECT collection_id FROM collaborators WHERE user_id = $2))
+       FOR UPDATE`,
+      [status.collection_id, userId],
+    );
+    if (collectionLock.rows.length === 0) {
+      throw new AppError({
+        code: "NOT_FOUND",
+        message: "Collection not found or not accessible",
+        statusCode: 404,
+      });
+    }
+
+    const lockedResult = await client.query(
+      `SELECT * FROM task_statuses WHERE collection_id = $1 ORDER BY id FOR UPDATE`,
+      [status.collection_id],
+    );
+    const lockedStatuses = lockedResult.rows as StatusRow[];
+    if (!lockedStatuses.some((candidate) => candidate.id === statusId)) {
+      throw new AppError({
+        code: "NOT_FOUND",
+        message: "Status not found or not accessible",
+        statusCode: 404,
+      });
+    }
+    if (lockedStatuses.length <= 1) {
+      throw new AppError({
+        code: "CONFLICT",
+        message: "Cannot delete the last status in a collection",
+        statusCode: 409,
+      });
+    }
+
+    const reassignToStatusId = options.reassignToStatusId;
+    const targetStatus = lockedStatuses.find((candidate) => candidate.id === reassignToStatusId);
+    if (reassignToStatusId === statusId) {
+      throw invalidReassignment("Reassignment status must be different from the deleted status");
+    }
+    if (reassignToStatusId !== undefined && !targetStatus) {
+      throw invalidReassignment("Reassignment status must belong to the same collection");
+    }
+
     await client.query(
       `UPDATE tasks SET status_id = $1, updated_at = NOW() WHERE status_id = $2`,
-      [options.reassignToStatusId ?? null, statusId],
+      [reassignToStatusId ?? null, statusId],
     );
     await client.query(
       `UPDATE tasks SET previous_status_id = $1 WHERE previous_status_id = $2`,
-      [options.reassignToStatusId ?? null, statusId],
+      [reassignToStatusId ?? null, statusId],
     );
 
     await client.query(`DELETE FROM task_statuses WHERE id = $1`, [statusId]);

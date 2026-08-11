@@ -37,8 +37,11 @@ export function AppShell() {
     if (event.entityType === 'collection') {
       qc.invalidateQueries({ queryKey: ['collections'] });
       qc.invalidateQueries({ queryKey: ['collection'] });
-    } else if (event.entityType === 'status') {
+    } else if (event.entityType === 'status' || event.entityType === 'label') {
       qc.invalidateQueries({ queryKey: ['collection'] });
+      qc.invalidateQueries({ queryKey: ['inbox'] });
+      qc.invalidateQueries({ queryKey: ['today'] });
+      qc.invalidateQueries({ queryKey: ['upcoming'] });
     } else if (event.entityType === 'preferences') {
       if (event.payload && typeof event.payload === 'object') {
         qc.setQueryData<Preferences>(['preferences'], event.payload as Preferences);

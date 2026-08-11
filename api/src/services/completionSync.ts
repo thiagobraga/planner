@@ -81,6 +81,7 @@ export interface SyncStatusToCompletionParams {
   userId: string;
   collectionId: string;
   isCompleted: boolean;
+  includeDescendants?: boolean;
 }
 
 // Completion just changed on this task by another path (completeTask,
@@ -89,7 +90,7 @@ export async function syncStatusToCompletion(
   client: PoolClient,
   params: SyncStatusToCompletionParams,
 ): Promise<void> {
-  const { taskId, collectionId, isCompleted } = params;
+  const { taskId, collectionId, isCompleted, includeDescendants = false } = params;
 
   const taskResult = await client.query(
     `SELECT status_id, previous_status_id FROM tasks WHERE id = $1`,
@@ -106,21 +107,30 @@ export async function syncStatusToCompletion(
     const doneLikeId = doneLikeResult.rows[0]?.id as string | undefined;
     if (!doneLikeId) return;
 
-    await client.query(
-      `WITH RECURSIVE affected AS (
-         SELECT id, status_id FROM tasks WHERE id = $1
-         UNION ALL
-         SELECT t.id, t.status_id FROM tasks t
-         INNER JOIN affected a ON t.parent_task_id = a.id
-       )
-       UPDATE tasks t
-       SET previous_status_id = a.status_id,
-           status_id = $2,
-           updated_at = NOW()
-       FROM affected a
-       WHERE t.id = a.id AND t.status_id IS DISTINCT FROM $2`,
-      [taskId, doneLikeId],
-    );
+    if (includeDescendants) {
+      await client.query(
+        `WITH RECURSIVE affected AS (
+           SELECT id, status_id FROM tasks WHERE id = $1
+           UNION ALL
+           SELECT t.id, t.status_id FROM tasks t
+           INNER JOIN affected a ON t.parent_task_id = a.id
+         )
+         UPDATE tasks t
+         SET previous_status_id = a.status_id,
+             status_id = $2,
+             updated_at = NOW()
+         FROM affected a
+         WHERE t.id = a.id AND t.status_id IS DISTINCT FROM $2`,
+        [taskId, doneLikeId],
+      );
+    } else {
+      await client.query(
+        `UPDATE tasks
+         SET previous_status_id = status_id, status_id = $1, updated_at = NOW()
+         WHERE id = $2 AND status_id IS DISTINCT FROM $1`,
+        [doneLikeId, taskId],
+      );
+    }
   } else {
     let targetStatusId = row.previous_status_id;
     if (!targetStatusId) {

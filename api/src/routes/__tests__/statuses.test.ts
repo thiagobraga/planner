@@ -61,6 +61,20 @@ describe("statuses routes", () => {
     expect(res.status).toBe(200);
     expect(mockEnsureSeedLabels).toHaveBeenCalledWith("test-user");
     expect(mockEnsureCollectionStatuses).toHaveBeenCalledWith("c1", "test-user");
+    expect(mockEnsureCollectionStatuses.mock.invocationCallOrder[0]).toBeLessThan(
+      mockEnsureSeedLabels.mock.invocationCallOrder[0],
+    );
+  });
+
+  it("does not seed labels when collection access validation fails", async () => {
+    mockEnsureCollectionStatuses.mockRejectedValue(
+      new AppError({ code: "NOT_FOUND", message: "Collection not found", statusCode: 404 }),
+    );
+
+    const res = await request(app).post("/api/v1/collections/missing/statuses/seed");
+
+    expect(res.status).toBe(404);
+    expect(mockEnsureSeedLabels).not.toHaveBeenCalled();
   });
 
   it("PATCH /api/v1/statuses/:id → calls updateStatus", async () => {

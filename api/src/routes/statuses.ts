@@ -34,8 +34,8 @@ router.post("/collections/:id/statuses", async (req: Request, res: Response, nex
 // POST /api/v1/collections/:id/statuses/seed
 router.post("/collections/:id/statuses/seed", async (req: Request, res: Response, next: NextFunction) => {
   try {
-    await ensureSeedLabels(req.userId!);
     const statuses = await ensureCollectionStatuses(req.params.id as string, req.userId!);
+    await ensureSeedLabels(req.userId!);
     res.json(statuses);
   } catch (err) {
     next(err);

@@ -131,6 +131,7 @@ describe("completionSync", () => {
         userId: "u1",
         collectionId: "c1",
         isCompleted: true,
+        includeDescendants: true,
       });
 
       expect(client.query).toHaveBeenCalledWith(
@@ -141,6 +142,27 @@ describe("completionSync", () => {
       expect(updateSql).toContain("previous_status_id = a.status_id");
       expect(updateSql).toContain("INNER JOIN affected a ON t.parent_task_id = a.id");
       expect(updateSql).toContain("t.status_id IS DISTINCT FROM $2");
+    });
+
+    it("completing without descendant propagation only moves the requested task", async () => {
+      client.query
+        .mockResolvedValueOnce({ rows: [{ status_id: "s-doing", previous_status_id: null }] })
+        .mockResolvedValueOnce({ rows: [{ id: "s-completed" }] })
+        .mockResolvedValueOnce(undefined);
+
+      await syncStatusToCompletion(client, {
+        taskId: "t1",
+        userId: "u1",
+        collectionId: "c1",
+        isCompleted: true,
+      });
+
+      const updateSql = client.query.mock.calls[2][0] as string;
+      expect(updateSql).not.toContain("WITH RECURSIVE");
+      expect(client.query).toHaveBeenCalledWith(
+        expect.stringContaining("previous_status_id = status_id"),
+        ["s-completed", "t1"],
+      );
     });
 
     it("reopening: status_id restores from previous_status_id, previous cleared - round-trips", async () => {
