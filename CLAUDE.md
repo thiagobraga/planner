@@ -274,13 +274,11 @@ When instructed to "work on this specs <some spec>", you must:
    - The feature instance is now reachable at `https://<agent>.planner.local`, fully isolated from the main `https://planner.local`. Traefik routes, container names, and volumes are all namespaced automatically.
 4. **Implementation & Verification:**
    - Implement the feature according to the spec.
-   - **Open a browser** at `https://<agent>.planner.local` to visually verify the implementation so the user can see it. Take screenshots for the PR.
-   - Do *not* commit screenshots to version control.
+   - **Open a browser** at `https://<agent>.planner.local` to visually verify the implementation so the user can see it.
 5. **Cleanup & PR:**
    - Once complete, tear down the isolated stack: `docker compose down -v` (from the worktree directory).
    - Remove the worktree: `cd /p/projects/planner && git worktree remove ../planner-<slug>`.
    - Create a Pull Request against the `main` branch.
-   - Insert (upload or paste) the screenshots directly into the PR comments.
    - Provide the PR link to the user.
    - Always do your best and ask for clarification if any requirements are unclear.
 

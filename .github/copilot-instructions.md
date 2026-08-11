@@ -51,7 +51,9 @@ Purpose: concise, actionable guidance for Copilot/CLI sessions in this repo.
 ## Specs & worktree workflow (agent-oriented)
 - Follow .specs/ pattern for Plan Mode: create `.specs/yyyy-mm-dd-slug/{plan.md,task.md}`.
 - For isolated feature work: create a worktree `git worktree add ../planner-<slug> -b feat/<slug>`, copy .env.example → .env, set COMPOSE_PROJECT_NAME/APP_SUBDOMAIN per agent, then docker compose up -d.
+- After implementing, open a browser at `https://<agent>.planner.local` to visually verify the change.
 - Tear down with docker compose down -v and git worktree remove when done.
+- Create a Pull Request against `main` and provide the link to the user.
 
 ---
 Sources used: README.md, CLAUDE.md, AGENTS.md, app/package.json, api/package.json, .github workflows.
