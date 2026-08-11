@@ -3,6 +3,7 @@ import pool from "../db/pool.js";
 import { AppError } from "../utils/AppError.js";
 import { validateColor } from "../utils/color.js";
 import { buildEvent, publishEvent } from "./syncService.js";
+import { syncCompletionToStatus } from "./completionSync.js";
 
 interface StatusRow {
   id: string;
@@ -282,6 +283,20 @@ export async function updateStatus(statusId: string, userId: string, input: Upda
         `UPDATE task_statuses SET ${setClauses.join(", ")} WHERE id = $${paramIndex}`,
         values,
       );
+    }
+
+    // isDoneLike flipped: every task sitting in this column completes or
+    // reopens in the same transaction, subtree cascades included.
+    if (input.isDoneLike !== undefined && input.isDoneLike !== status.is_done_like) {
+      const tasksResult = await client.query(`SELECT id FROM tasks WHERE status_id = $1`, [statusId]);
+      for (const taskRow of tasksResult.rows as { id: string }[]) {
+        await syncCompletionToStatus(client, {
+          taskId: taskRow.id,
+          userId,
+          statusId,
+          collectionId: status.collection_id,
+        });
+      }
     }
 
     if (input.position !== undefined) {

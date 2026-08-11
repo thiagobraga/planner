@@ -4,7 +4,7 @@ vi.mock("../../db/pool.js", () => ({
   default: {
     query: vi.fn(),
     connect: vi.fn(() => ({
-      query: vi.fn().mockResolvedValue(undefined),
+      query: vi.fn().mockResolvedValue({ rows: [] }),
       release: vi.fn(),
     })),
   },
@@ -50,7 +50,7 @@ const mockTaskRow = {
 function resetMocks() {
   (pool.query as ReturnType<typeof vi.fn>).mockReset();
   (pool.connect as ReturnType<typeof vi.fn>).mockReturnValue({
-    query: vi.fn().mockResolvedValue(undefined),
+    query: vi.fn().mockResolvedValue({ rows: [] }),
     release: vi.fn(),
   });
   (redisPubClient.publish as ReturnType<typeof vi.fn>).mockReset();
@@ -211,6 +211,8 @@ describe("taskService: sync event emission", () => {
         .mockResolvedValueOnce({ rows: [newClonedTask] }) // INSERT cloned task
         .mockResolvedValueOnce({ rows: [] }) // SELECT label_id
         .mockResolvedValueOnce(undefined) // INSERT activity event
+        .mockResolvedValueOnce({ rows: [{ status_id: null, previous_status_id: null }] }) // syncStatusToCompletion: task lookup
+        .mockResolvedValueOnce({ rows: [] }) // syncStatusToCompletion: no done-like status configured yet
         .mockResolvedValueOnce(undefined); // COMMIT
         
       (pool.connect as ReturnType<typeof vi.fn>).mockReturnValue({ query: clientQuery, release: vi.fn() });

@@ -3,6 +3,7 @@ import type { PoolClient } from 'pg';
 import pool from '../db/pool.js';
 import { AppError } from '../utils/AppError.js';
 import { buildEvent, publishEvent } from './syncService.js';
+import { syncStatusToCompletion } from './completionSync.js';
 import { computeNextOccurrence } from '../engines/recurrenceEngine.js';
 import type { RecurrenceRule } from '../engines/recurrenceEngine.js';
 
@@ -146,6 +147,13 @@ export async function completeTask(taskId: string, userId: string) {
         [userId, task.collection_id, taskId, JSON.stringify({ recurring: true, nextTaskId: newId })],
       );
 
+      await syncStatusToCompletion(client, {
+        taskId,
+        userId,
+        collectionId: task.collection_id,
+        isCompleted: true,
+      });
+
       await client.query('COMMIT');
 
       const updated = await pool.query('SELECT * FROM tasks WHERE id = $1', [taskId]);
@@ -204,6 +212,13 @@ export async function completeTask(taskId: string, userId: string) {
        VALUES ($1, $2, 'task', $3, 'task_completed')`,
       [userId, task.collection_id, taskId],
     );
+
+    await syncStatusToCompletion(client, {
+      taskId,
+      userId,
+      collectionId: task.collection_id,
+      isCompleted: true,
+    });
 
     await client.query('COMMIT');
 
@@ -642,6 +657,13 @@ export async function reopenTask(taskId: string, userId: string) {
        VALUES ($1, $2, 'task', $3, 'task_reopened')`,
       [userId, task.collection_id, taskId],
     );
+
+    await syncStatusToCompletion(client, {
+      taskId,
+      userId,
+      collectionId: task.collection_id,
+      isCompleted: false,
+    });
 
     await client.query('COMMIT');
 
