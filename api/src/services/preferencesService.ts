@@ -50,7 +50,7 @@ const VALID_THEMES = ["light", "dark", "system"] as const;
 const VALID_FONTS = ["lora", "playpen", "hubballi"] as const;
 const VALID_BACKGROUNDS = ["beige", "white"] as const;
 const VALID_LOCALES = ["en", "pt-BR"] as const;
-const VALID_GROUP_BYS = ["status", "section", "priority"] as const;
+const VALID_GROUPINGS = ["status", "section", "priority"] as const;
 const VALID_VIEW_MODES = ["list", "kanban"] as const;
 export const VALID_DATE_FORMATS = [
   "MMM DD ddd",
@@ -164,7 +164,7 @@ export function validatePreferences(input: UpdatePreferencesInput): UpdatePrefer
         }
         const { view, groupBy } = mode as { view?: unknown; groupBy?: unknown };
         return (view === undefined || VALID_VIEW_MODES.includes(view as BoardViewMode))
-          && (groupBy === undefined || VALID_GROUP_BYS.includes(groupBy as BoardGroupBy));
+          && (groupBy === undefined || VALID_GROUPINGS.includes(groupBy as BoardGroupBy));
       });
 
     if (!validEntries) {
