@@ -18,7 +18,12 @@ interface PreferencesRow {
   locale: string;
   date_format: string;
   collapsed_collection_ids: string[];
+  board_view_modes: BoardViewModes;
 }
+
+export type BoardGroupBy = "status" | "section" | "priority";
+export type BoardViewMode = "list" | "kanban";
+export type BoardViewModes = Record<string, { view?: BoardViewMode; groupBy?: BoardGroupBy }>;
 
 function formatPreferences(row: PreferencesRow) {
   return {
@@ -36,6 +41,7 @@ function formatPreferences(row: PreferencesRow) {
     locale: row.locale,
     dateFormat: row.date_format ?? 'MMM DD ddd',
     collapsedCollectionIds: row.collapsed_collection_ids,
+    boardViewModes: row.board_view_modes ?? {},
   };
 }
 
@@ -44,6 +50,8 @@ const VALID_THEMES = ["light", "dark", "system"] as const;
 const VALID_FONTS = ["lora", "playpen", "hubballi"] as const;
 const VALID_BACKGROUNDS = ["beige", "white"] as const;
 const VALID_LOCALES = ["en", "pt-BR"] as const;
+const VALID_GROUPINGS = ["status", "section", "priority"] as const;
+const VALID_VIEW_MODES = ["list", "kanban"] as const;
 export const VALID_DATE_FORMATS = [
   "MMM DD ddd",
   "DD/MM ddd",
@@ -75,6 +83,7 @@ export interface UpdatePreferencesInput {
   locale?: string;
   dateFormat?: string;
   collapsedCollectionIds?: string[];
+  boardViewModes?: BoardViewModes;
 }
 
 export function validatePreferences(input: UpdatePreferencesInput): UpdatePreferencesInput {
@@ -139,6 +148,31 @@ export function validatePreferences(input: UpdatePreferencesInput): UpdatePrefer
       field: "collapsedCollectionIds",
       message: "collapsedCollectionIds must be an array of UUID strings",
     });
+  }
+
+  if (input.boardViewModes !== undefined) {
+    const entries = typeof input.boardViewModes === "object"
+      && input.boardViewModes !== null
+      && !Array.isArray(input.boardViewModes)
+      ? Object.entries(input.boardViewModes)
+      : null;
+    const validEntries = entries !== null
+      && entries.length <= 200
+      && entries.every(([collectionId, mode]) => {
+        if (!isUuid(collectionId) || typeof mode !== "object" || mode === null || Array.isArray(mode)) {
+          return false;
+        }
+        const { view, groupBy } = mode as { view?: unknown; groupBy?: unknown };
+        return (view === undefined || VALID_VIEW_MODES.includes(view as BoardViewMode))
+          && (groupBy === undefined || VALID_GROUPINGS.includes(groupBy as BoardGroupBy));
+      });
+
+    if (!validEntries) {
+      errors.push({
+        field: "boardViewModes",
+        message: "boardViewModes must contain at most 200 UUID keys with valid view and groupBy values",
+      });
+    }
   }
 
   if (errors.length > 0) {
@@ -228,6 +262,10 @@ export async function updatePreferences(userId: string, input: UpdatePreferences
   if (input.collapsedCollectionIds !== undefined) {
     setClauses.push(`collapsed_collection_ids = $${paramIndex++}`);
     values.push([...new Set(input.collapsedCollectionIds)]);
+  }
+  if (input.boardViewModes !== undefined) {
+    setClauses.push(`board_view_modes = $${paramIndex++}`);
+    values.push(input.boardViewModes);
   }
 
   if (setClauses.length === 0) {

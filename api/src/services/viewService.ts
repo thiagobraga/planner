@@ -1,6 +1,8 @@
 import pool from "../db/pool.js";
 import { AppError } from "../utils/AppError.js";
 import { listSections } from "./sectionService.js";
+import { attachLabels } from "./labelService.js";
+import type { Status } from "./statusService.js";
 
 interface TaskRow {
   id: string;
@@ -22,6 +24,7 @@ interface TaskRow {
   effective_order_value?: number;
   depth: number;
   type: string;
+  status_id: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -30,6 +33,23 @@ interface PreferencesRow {
   time_zone: string;
   hide_completed_tasks: boolean;
   hide_old_notes: boolean;
+}
+
+interface StatusRow {
+  id: string;
+  collection_id: string;
+  name: string;
+  color: string;
+  completion_status_id: string | null;
+  order_value: number;
+  created_at: string;
+  updated_at: string;
+}
+
+interface BoardOrderRow {
+  task_id: string;
+  scope_type: "status" | "priority";
+  position: number;
 }
 
 function formatTask(row: TaskRow) {
@@ -52,9 +72,51 @@ function formatTask(row: TaskRow) {
     orderValue: Number(row.effective_order_value ?? row.order_value),
     depth: row.depth,
     type: row.type,
+    statusId: row.status_id,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
+}
+
+async function getBoardMetadata(collectionId: string, userId: string) {
+  const statusesResult = await pool.query(
+    `SELECT s.*, c.completion_status_id
+     FROM task_statuses s
+     INNER JOIN collections c ON c.id = s.collection_id
+     WHERE s.collection_id = $1
+     ORDER BY s.order_value ASC`,
+    [collectionId],
+  );
+  const orderResult = await pool.query(
+    `SELECT o.task_id, o.scope_type, o.position
+     FROM task_order o
+     INNER JOIN tasks t ON t.id = o.task_id
+     WHERE t.collection_id = $1
+       AND o.user_id = $2
+       AND o.scope_type IN ('status', 'priority')`,
+    [collectionId, userId],
+  );
+
+  const boardOrder: { status: Record<string, number>; priority: Record<string, number> } = {
+    status: {},
+    priority: {},
+  };
+  for (const row of orderResult.rows as BoardOrderRow[]) {
+    boardOrder[row.scope_type][row.task_id] = Number(row.position);
+  }
+
+  const statuses: Status[] = (statusesResult.rows as StatusRow[]).map((row) => ({
+    id: row.id,
+    collectionId: row.collection_id,
+    name: row.name,
+    color: row.color,
+    orderValue: row.order_value,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  }));
+
+  const completionStatusId = (statusesResult.rows[0] as StatusRow | undefined)?.completion_status_id ?? null;
+  return { statuses, completionStatusId, boardOrder };
 }
 
 export async function getUserTimezone(userId: string): Promise<string> {
@@ -122,7 +184,7 @@ export async function getTodayView(userId: string, now: Date = new Date()): Prom
   // a separate place in its day, and one column cannot express both. Tasks never
   // dragged within Daily hold no day position and fall back to collection order.
   const result = await pool.query(
-    `SELECT t.id, t.user_id, t.collection_id, t.section_id, t.parent_task_id, t.assignee_user_id, t.title, t.description, t.priority, t.due_date, t.due_time, t.due_timezone, t.recurrence_rule, t.is_completed, t.completed_at, t.depth, t.type, t.created_at, t.updated_at, COALESCE(o.position, t.order_value) AS effective_order_value FROM tasks t
+    `SELECT t.id, t.user_id, t.collection_id, t.section_id, t.parent_task_id, t.assignee_user_id, t.title, t.description, t.priority, t.due_date, t.due_time, t.due_timezone, t.recurrence_rule, t.is_completed, t.completed_at, t.depth, t.type, t.status_id, t.created_at, t.updated_at, COALESCE(o.position, t.order_value) AS effective_order_value FROM tasks t
      JOIN collections p ON p.id = t.collection_id
      LEFT JOIN task_order o
        ON o.task_id = t.id
@@ -174,7 +236,7 @@ export async function getUpcomingView(userId: string, days: number, now: Date = 
   const end = addDaysISO(start, days - 1);
 
   const result = await pool.query(
-    `SELECT t.id, t.user_id, t.collection_id, t.section_id, t.parent_task_id, t.assignee_user_id, t.title, t.description, t.priority, t.due_date, t.due_time, t.due_timezone, t.recurrence_rule, t.is_completed, t.completed_at, t.depth, t.type, t.created_at, t.updated_at, COALESCE(o.position, t.order_value) AS effective_order_value FROM tasks t
+    `SELECT t.id, t.user_id, t.collection_id, t.section_id, t.parent_task_id, t.assignee_user_id, t.title, t.description, t.priority, t.due_date, t.due_time, t.due_timezone, t.recurrence_rule, t.is_completed, t.completed_at, t.depth, t.type, t.status_id, t.created_at, t.updated_at, COALESCE(o.position, t.order_value) AS effective_order_value FROM tasks t
      JOIN collections p ON p.id = t.collection_id
      LEFT JOIN task_order o
        ON o.task_id = t.id
@@ -287,12 +349,17 @@ export async function getInboxView(userId: string, now: Date = new Date()) {
   );
 
   const sections = inboxCollection ? await listSections(inboxCollection.id, userId) : [];
+  const tasks = await attachLabels((result.rows as TaskRow[]).map(formatTask));
+  const boardMetadata = inboxCollection
+    ? await getBoardMetadata(inboxCollection.id, userId)
+    : { statuses: [], completionStatusId: null, boardOrder: { status: {}, priority: {} } };
 
   return {
-    tasks: (result.rows as TaskRow[]).map(formatTask),
+    tasks,
     collectionId: null,
     inboxCollectionId: inboxCollection?.id,
     sections,
+    ...boardMetadata,
   };
 }
 
@@ -326,6 +393,8 @@ export async function getCollectionView(userId: string, collectionId: string, no
   );
 
   const sections = await listSections(collectionId, userId);
+  const tasks = await attachLabels((result.rows as TaskRow[]).map(formatTask));
+  const boardMetadata = await getBoardMetadata(collectionId, userId);
 
   return {
     collection: {
@@ -334,8 +403,9 @@ export async function getCollectionView(userId: string, collectionId: string, no
       color: collection.color,
       isInbox: collection.is_inbox,
     },
-    tasks: (result.rows as TaskRow[]).map(formatTask),
+    tasks,
     collectionId,
     sections,
+    ...boardMetadata,
   };
 }

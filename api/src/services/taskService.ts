@@ -3,6 +3,8 @@ import type { PoolClient } from 'pg';
 import pool from '../db/pool.js';
 import { AppError } from '../utils/AppError.js';
 import { buildEvent, publishEvent } from './syncService.js';
+import { syncCompletionToStatus, syncStatusToCompletion } from './completionSync.js';
+import { attachLabels, verifyLabelOwnership } from './labelService.js';
 import { computeNextOccurrence } from '../engines/recurrenceEngine.js';
 import type { RecurrenceRule } from '../engines/recurrenceEngine.js';
 
@@ -25,6 +27,7 @@ interface TaskRow {
   order_value: number;
   depth: number;
   type: string;
+  status_id: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -49,6 +52,7 @@ function formatTask(row: TaskRow) {
     orderValue: row.order_value,
     depth: row.depth,
     type: row.type,
+    statusId: row.status_id,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -144,10 +148,17 @@ export async function completeTask(taskId: string, userId: string) {
         [userId, task.collection_id, taskId, JSON.stringify({ recurring: true, nextTaskId: newId })],
       );
 
+      await syncStatusToCompletion(client, {
+        taskId,
+        userId,
+        collectionId: task.collection_id,
+        isCompleted: true,
+      });
+
       await client.query('COMMIT');
 
       const updated = await pool.query('SELECT * FROM tasks WHERE id = $1', [taskId]);
-      const formattedOld = formatTask(updated.rows[0] as TaskRow);
+      const [formattedOld] = await attachLabels([formatTask(updated.rows[0] as TaskRow)]);
       publishEvent(
         buildEvent({
           entityType: 'task',
@@ -159,7 +170,7 @@ export async function completeTask(taskId: string, userId: string) {
         }),
       ).catch((err) => console.error('[sync] publish failed', err));
 
-      const formattedNew = formatTask(insertResult.rows[0] as TaskRow);
+      const [formattedNew] = await attachLabels([formatTask(insertResult.rows[0] as TaskRow)]);
       publishEvent(
         buildEvent({
           entityType: 'task',
@@ -203,10 +214,18 @@ export async function completeTask(taskId: string, userId: string) {
       [userId, task.collection_id, taskId],
     );
 
+    await syncStatusToCompletion(client, {
+      taskId,
+      userId,
+      collectionId: task.collection_id,
+      isCompleted: true,
+      includeDescendants: true,
+    });
+
     await client.query('COMMIT');
 
     const updated = await pool.query('SELECT * FROM tasks WHERE id = $1', [taskId]);
-    const formatted = formatTask(updated.rows[0] as TaskRow);
+    const [formatted] = await attachLabels([formatTask(updated.rows[0] as TaskRow)]);
     publishEvent(
       buildEvent({
         entityType: 'task',
@@ -273,6 +292,9 @@ export async function createTask(userId: string, input: CreateTaskInput) {
     });
   }
 
+  const labelIds = input.labelIds ?? [];
+  await verifyLabelOwnership(labelIds, userId);
+
   let collectionId = input.collectionId;
   let sectionId = input.sectionId ?? null;
   let depth = 0;
@@ -326,28 +348,50 @@ export async function createTask(userId: string, input: CreateTaskInput) {
   const priority = input.priority ?? 4;
   const type = input.type ?? 'task';
 
-  const result = await pool.query(
-    `INSERT INTO tasks (id, user_id, collection_id, section_id, parent_task_id, title, description, priority, due_date, recurrence_rule, depth, type, order_value)
+  const insertQuery = `INSERT INTO tasks (id, user_id, collection_id, section_id, parent_task_id, title, description, priority, due_date, recurrence_rule, depth, type, order_value)
      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
-     RETURNING *`,
-    [
-      id,
-      userId,
-      collectionId,
-      sectionId,
-      input.parentTaskId ?? null,
-      input.title,
-      input.description ?? null,
-      priority,
-      input.dueDate ?? null,
-      input.recurrenceRule ?? null,
-      depth,
-      type,
-      input.orderValue ?? 0,
-    ],
-  );
+     RETURNING *`;
+  const insertValues = [
+    id,
+    userId,
+    collectionId,
+    sectionId,
+    input.parentTaskId ?? null,
+    input.title,
+    input.description ?? null,
+    priority,
+    input.dueDate ?? null,
+    input.recurrenceRule ?? null,
+    depth,
+    type,
+    input.orderValue ?? 0,
+  ];
 
-  const task = formatTask(result.rows[0] as TaskRow);
+  let taskRow: TaskRow;
+  if (labelIds.length > 0) {
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      const result = await client.query(insertQuery, insertValues);
+      const placeholders = labelIds.map((_, i) => `($1, $${i + 2})`).join(', ');
+      await client.query(
+        `INSERT INTO task_labels (task_id, label_id) VALUES ${placeholders}`,
+        [id, ...labelIds],
+      );
+      await client.query('COMMIT');
+      taskRow = result.rows[0] as TaskRow;
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
+  } else {
+    const result = await pool.query(insertQuery, insertValues);
+    taskRow = result.rows[0] as TaskRow;
+  }
+
+  const [task] = await attachLabels([formatTask(taskRow)]);
   publishEvent(
     buildEvent({
       entityType: 'task',
@@ -409,6 +453,7 @@ export async function updateTask(taskId: string, userId: string, input: UpdateTa
     });
   }
 
+  await verifyLabelOwnership(input.labelIds ?? [], userId);
   const task = await verifyTaskAccess(taskId, userId);
 
   const setClauses: string[] = [];
@@ -541,8 +586,9 @@ export async function updateTask(taskId: string, userId: string, input: UpdateTa
     values.push(input.recurrenceRule);
   }
 
-  if (setClauses.length === 0) {
-    return formatTask(task);
+  if (setClauses.length === 0 && input.labelIds === undefined) {
+    const [unchanged] = await attachLabels([formatTask(task)]);
+    return unchanged;
   }
 
   setClauses.push(`updated_at = NOW()`);
@@ -553,26 +599,39 @@ export async function updateTask(taskId: string, userId: string, input: UpdateTa
   // When reparenting shifts the task's own depth, the entire descendant subtree
   // must shift by the same delta so relative nesting is preserved (Phase 6 rule 5).
   const shiftsDescendants = reparentDelta !== undefined && reparentDelta !== 0;
+  const needsTransaction = shiftsDescendants || input.labelIds !== undefined;
 
-  let formatted;
-  if (shiftsDescendants) {
+  let taskRow: TaskRow;
+  if (needsTransaction) {
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
       const result = await client.query(query, values);
-      await client.query(
-        `WITH RECURSIVE descendants AS (
-           SELECT id FROM tasks WHERE parent_task_id = $1
-           UNION ALL
-           SELECT t.id FROM tasks t
-           INNER JOIN descendants d ON t.parent_task_id = d.id
-         )
-         UPDATE tasks SET depth = depth + $2, updated_at = NOW()
-         WHERE id IN (SELECT id FROM descendants)`,
-        [taskId, reparentDelta],
-      );
+      if (shiftsDescendants) {
+        await client.query(
+          `WITH RECURSIVE descendants AS (
+             SELECT id FROM tasks WHERE parent_task_id = $1
+             UNION ALL
+             SELECT t.id FROM tasks t
+             INNER JOIN descendants d ON t.parent_task_id = d.id
+           )
+           UPDATE tasks SET depth = depth + $2, updated_at = NOW()
+           WHERE id IN (SELECT id FROM descendants)`,
+          [taskId, reparentDelta],
+        );
+      }
+      if (input.labelIds !== undefined) {
+        await client.query(`DELETE FROM task_labels WHERE task_id = $1`, [taskId]);
+        if (input.labelIds.length > 0) {
+          const placeholders = input.labelIds.map((_, i) => `($1, $${i + 2})`).join(', ');
+          await client.query(
+            `INSERT INTO task_labels (task_id, label_id) VALUES ${placeholders}`,
+            [taskId, ...input.labelIds],
+          );
+        }
+      }
       await client.query('COMMIT');
-      formatted = formatTask(result.rows[0] as TaskRow);
+      taskRow = result.rows[0] as TaskRow;
     } catch (err) {
       await client.query('ROLLBACK');
       throw err;
@@ -581,9 +640,10 @@ export async function updateTask(taskId: string, userId: string, input: UpdateTa
     }
   } else {
     const result = await pool.query(query, values);
-    formatted = formatTask(result.rows[0] as TaskRow);
+    taskRow = result.rows[0] as TaskRow;
   }
 
+  const [formatted] = await attachLabels([formatTask(taskRow)]);
   publishEvent(
     buildEvent({
       entityType: 'task',
@@ -641,10 +701,17 @@ export async function reopenTask(taskId: string, userId: string) {
       [userId, task.collection_id, taskId],
     );
 
+    await syncStatusToCompletion(client, {
+      taskId,
+      userId,
+      collectionId: task.collection_id,
+      isCompleted: false,
+    });
+
     await client.query('COMMIT');
 
     const updated = await pool.query('SELECT * FROM tasks WHERE id = $1', [taskId]);
-    const formatted = formatTask(updated.rows[0] as TaskRow);
+    const [formatted] = await attachLabels([formatTask(updated.rows[0] as TaskRow)]);
     publishEvent(
       buildEvent({
         entityType: 'task',
@@ -732,13 +799,17 @@ export async function reorderTask(taskId: string, userId: string, position: numb
 export type TaskOrderScope =
   | { kind: 'collection'; collectionId: string }
   | { kind: 'day'; dueDate: string }
-  | { kind: 'section'; sectionId: string };
+  | { kind: 'section'; sectionId: string }
+  | { kind: 'status'; collectionId: string; statusId: string | null }
+  | { kind: 'priority'; collectionId: string; priority: number };
 
 export interface MoveTaskInput {
   parentTaskId: string | null;
   collectionId?: string;
   sectionId?: string | null;
   dueDate?: string | null;
+  statusId?: string | null;
+  priority?: number;
   scope: TaskOrderScope;
   position: number;
 }
@@ -779,6 +850,15 @@ function validateMoveInput(input: MoveTaskInput): void {
   ) {
     throw validationError('dueDate', 'Due date must be an ISO date (YYYY-MM-DD)');
   }
+  if (input.statusId !== undefined && input.statusId !== null && typeof input.statusId !== 'string') {
+    throw validationError('statusId', 'Status id must be a string or null');
+  }
+  if (
+    input.priority !== undefined &&
+    (!Number.isInteger(input.priority) || input.priority < 1 || input.priority > 4)
+  ) {
+    throw validationError('priority', 'Priority must be an integer between 1 and 4');
+  }
   if (!Number.isInteger(input.position) || input.position < 0) {
     throw validationError('position', 'Position must be a non-negative integer');
   }
@@ -799,8 +879,25 @@ function validateMoveInput(input: MoveTaskInput): void {
     if (typeof scope.sectionId !== 'string') {
       throw validationError('scope.sectionId', 'Section scope requires a section id');
     }
+  } else if (scope.kind === 'status') {
+    if (typeof scope.collectionId !== 'string') {
+      throw validationError('scope.collectionId', 'Status scope requires a collection id');
+    }
+    if (scope.statusId !== null && typeof scope.statusId !== 'string') {
+      throw validationError('scope.statusId', 'Status scope requires a status id or null');
+    }
+  } else if (scope.kind === 'priority') {
+    if (typeof scope.collectionId !== 'string') {
+      throw validationError('scope.collectionId', 'Priority scope requires a collection id');
+    }
+    if (!Number.isInteger(scope.priority) || scope.priority < 1 || scope.priority > 4) {
+      throw validationError('scope.priority', 'Priority scope requires an integer between 1 and 4');
+    }
   } else {
-    throw validationError('scope.kind', "Ordering scope must be 'collection', 'day' or 'section'");
+    throw validationError(
+      'scope.kind',
+      "Ordering scope must be 'collection', 'day', 'section', 'status' or 'priority'",
+    );
   }
 }
 
@@ -821,6 +918,9 @@ interface MovedTaskSummary {
   dueDate: string | null;
   orderValue: number;
   depth: number;
+  statusId: string | null;
+  priority: number;
+  isCompleted: boolean;
 }
 
 function toMovedTaskSummary(task: ReturnType<typeof formatTask>): MovedTaskSummary {
@@ -831,6 +931,9 @@ function toMovedTaskSummary(task: ReturnType<typeof formatTask>): MovedTaskSumma
     dueDate: task.dueDate,
     orderValue: task.orderValue,
     depth: task.depth,
+    statusId: task.statusId,
+    priority: task.priority,
+    isCompleted: task.isCompleted,
   };
 }
 
@@ -927,6 +1030,45 @@ export async function moveTask(taskId: string, userId: string, input: MoveTaskIn
 
     const crossesCollection = destCollectionId !== task.collection_id;
     const crossesDate = destDueDate !== task.due_date;
+    const destStatusId = input.statusId !== undefined
+      ? input.statusId
+      : crossesCollection
+        ? null
+        : task.status_id;
+    const destPriority = input.priority ?? task.priority;
+    const statusChanged = destStatusId !== task.status_id;
+
+    if (input.scope.kind === 'status') {
+      if (input.scope.collectionId !== destCollectionId) {
+        throw validationError('scope.collectionId', 'Status scope must match the destination collection');
+      }
+      if (input.scope.statusId !== destStatusId) {
+        throw validationError('scope.statusId', 'Status scope must match the destination status');
+      }
+    }
+    if (input.scope.kind === 'priority') {
+      if (input.scope.collectionId !== destCollectionId) {
+        throw validationError('scope.collectionId', 'Priority scope must match the destination collection');
+      }
+      if (input.scope.priority !== destPriority) {
+        throw validationError('scope.priority', 'Priority scope must match the destination priority');
+      }
+    }
+
+    let destStatusIsCompletion = false;
+    if (destStatusId) {
+      const statusResult = await client.query(
+        `SELECT s.id, c.completion_status_id
+         FROM task_statuses s
+         INNER JOIN collections c ON c.id = s.collection_id
+         WHERE s.id = $1 AND s.collection_id = $2`,
+        [destStatusId, destCollectionId],
+      );
+      if (statusResult.rows.length === 0) {
+        throw validationError('statusId', 'Status must belong to the destination collection');
+      }
+      destStatusIsCompletion = statusResult.rows[0].completion_status_id === destStatusId;
+    }
 
     // ── Apply the move to the root ─────────────────────────────────────────────
     await client.query(
@@ -935,16 +1077,49 @@ export async function moveTask(taskId: string, userId: string, input: MoveTaskIn
            collection_id = $2,
            section_id = $3,
            due_date = $4,
-           depth = $5,
+           status_id = $5,
+           priority = COALESCE($6::int, priority),
+           previous_status_id = CASE
+             WHEN $7::boolean THEN NULL
+             WHEN $8::boolean AND $9::boolean THEN status_id
+             WHEN $8::boolean THEN NULL
+             ELSE previous_status_id
+           END,
+           depth = $10,
            updated_at = NOW()
-       WHERE id = $6`,
-      [input.parentTaskId, destCollectionId, destSectionId, destDueDate, rootNewDepth, taskId],
+       WHERE id = $11`,
+      [
+        input.parentTaskId,
+        destCollectionId,
+        destSectionId,
+        destDueDate,
+        destStatusId,
+        input.priority ?? null,
+        crossesCollection,
+        statusChanged,
+        destStatusIsCompletion,
+        rootNewDepth,
+        taskId,
+      ],
     );
+
+    let rootIsCompleted = task.is_completed;
+    if (statusChanged) {
+      const completionResult = await syncCompletionToStatus(client, {
+        taskId,
+        userId,
+        statusId: destStatusId,
+        collectionId: destCollectionId,
+      });
+      if (completionResult === 'completed') rootIsCompleted = true;
+      if (completionResult === 'reopened') rootIsCompleted = false;
+    }
 
     // ── Carry the descendants ──────────────────────────────────────────────────
     // Their parent links and relative order are untouched; only the values that
-    // are inherited from the root shift. Completion, priority, labels,
-    // recurrence and content are never written here.
+    // are inherited from the root shift. Explicit status and priority changes
+    // apply to the root only; crossing collections clears stale descendant
+    // status references because statuses are collection-owned.
     const descendantIds = subtreeIds.filter((id) => id !== taskId);
     if (descendantIds.length > 0) {
       if (depthDelta !== 0) {
@@ -956,11 +1131,24 @@ export async function moveTask(taskId: string, userId: string, input: MoveTaskIn
       if (crossesCollection || destSectionId !== task.section_id) {
         // Descendants inherit the moved root's collection and section, so any
         // move that changes either value has to rewrite the whole subtree.
-        await client.query(
-          `UPDATE tasks SET collection_id = $1, section_id = $2, updated_at = NOW()
-           WHERE id = ANY($3::uuid[])`,
-          [destCollectionId, destSectionId, descendantIds],
-        );
+        if (crossesCollection) {
+          await client.query(
+            `UPDATE tasks
+             SET collection_id = $1,
+                 section_id = $2,
+                 status_id = NULL,
+                 previous_status_id = NULL,
+                 updated_at = NOW()
+             WHERE id = ANY($3::uuid[])`,
+            [destCollectionId, destSectionId, descendantIds],
+          );
+        } else {
+          await client.query(
+            `UPDATE tasks SET collection_id = $1, section_id = $2, updated_at = NOW()
+             WHERE id = ANY($3::uuid[])`,
+            [destCollectionId, destSectionId, descendantIds],
+          );
+        }
       }
       if (crossesDate) {
         await client.query(
@@ -998,15 +1186,44 @@ export async function moveTask(taskId: string, userId: string, input: MoveTaskIn
     // server orders it differently.
     let reordered: MovedTaskSummary[];
     if (input.scope.kind === 'day') {
-      reordered = await renumberDayScope(client, {
+      reordered = await renumberOrderTableScope(client, {
         userId: task.user_id,
-        date: input.scope.dueDate,
+        scopeType: 'day',
+        scopeId: input.scope.dueDate,
+        collectionId: destCollectionId,
+        statusId: destStatusId,
+        priority: destPriority,
         movedTaskId: taskId,
         position: input.position,
         movedCollectionId: destCollectionId,
         movedParentTaskId: input.parentTaskId,
         movedDepth: rootNewDepth,
         movedOrderValue: task.order_value,
+        movedDueDate: destDueDate,
+        movedStatusId: destStatusId,
+        movedPriority: destPriority,
+        movedIsCompleted: rootIsCompleted,
+      });
+    } else if (input.scope.kind === 'status' || input.scope.kind === 'priority') {
+      reordered = await renumberOrderTableScope(client, {
+        userId: task.user_id,
+        scopeType: input.scope.kind,
+        scopeId: input.scope.kind === 'status'
+          ? (input.scope.statusId ?? 'none')
+          : String(input.scope.priority),
+        collectionId: destCollectionId,
+        statusId: destStatusId,
+        priority: destPriority,
+        movedTaskId: taskId,
+        position: input.position,
+        movedCollectionId: destCollectionId,
+        movedParentTaskId: input.parentTaskId,
+        movedDepth: rootNewDepth,
+        movedOrderValue: task.order_value,
+        movedDueDate: destDueDate,
+        movedStatusId: destStatusId,
+        movedPriority: destPriority,
+        movedIsCompleted: rootIsCompleted,
       });
     } else {
       reordered = await renumberCollectionScope(client, {
@@ -1017,6 +1234,9 @@ export async function moveTask(taskId: string, userId: string, input: MoveTaskIn
         position: input.position,
         depth: rootNewDepth,
         movedDueDate: destDueDate,
+        movedStatusId: destStatusId,
+        movedPriority: destPriority,
+        movedIsCompleted: rootIsCompleted,
       });
     }
 
@@ -1124,10 +1344,13 @@ async function renumberCollectionScope(
     position: number;
     depth: number;
     movedDueDate: string | null;
+    movedStatusId: string | null;
+    movedPriority: number;
+    movedIsCompleted: boolean;
   },
 ): Promise<MovedTaskSummary[]> {
   const siblingsResult = await client.query(
-    `SELECT id, order_value, due_date FROM tasks
+    `SELECT id, order_value, due_date, status_id, priority, is_completed FROM tasks
      WHERE collection_id = $1
        AND section_id IS NOT DISTINCT FROM $2
        AND parent_task_id IS NOT DISTINCT FROM $3
@@ -1136,16 +1359,43 @@ async function renumberCollectionScope(
      FOR UPDATE`,
     [opts.collectionId, opts.sectionId, opts.parentTaskId, opts.movedTaskId],
   );
-  const siblings = siblingsResult.rows as { id: string; order_value: number; due_date: string | null }[];
+  const siblings = siblingsResult.rows as {
+    id: string;
+    order_value: number;
+    due_date: string | null;
+    status_id: string | null;
+    priority: number;
+    is_completed: boolean;
+  }[];
 
-  const summarize = (id: string, orderValue: number, dueDate: string | null): MovedTaskSummary => ({
-    id,
+  const summarize = (
+    task: {
+      id: string;
+      dueDate: string | null;
+      statusId: string | null;
+      priority: number;
+      isCompleted: boolean;
+    },
+    orderValue: number,
+  ): MovedTaskSummary => ({
+    id: task.id,
     parentTaskId: opts.parentTaskId,
     collectionId: opts.collectionId,
-    dueDate,
+    dueDate: task.dueDate,
     orderValue,
     depth: opts.depth,
+    statusId: task.statusId,
+    priority: task.priority,
+    isCompleted: task.isCompleted,
   });
+
+  const movedTask = {
+    id: opts.movedTaskId,
+    dueDate: opts.movedDueDate,
+    statusId: opts.movedStatusId,
+    priority: opts.movedPriority,
+    isCompleted: opts.movedIsCompleted,
+  };
 
   const clampedPosition = Math.min(opts.position, siblings.length);
   const prevValue = clampedPosition > 0 ? siblings[clampedPosition - 1].order_value : null;
@@ -1157,16 +1407,19 @@ async function renumberCollectionScope(
       midpoint,
       opts.movedTaskId,
     ]);
-    return [summarize(opts.movedTaskId, midpoint, opts.movedDueDate)];
+    return [summarize(movedTask, midpoint)];
   }
 
   // Collision: the gap at the target slot has collapsed. Fall back to the
   // full splice-and-rewrite so every sibling stays 1000 apart again.
-  const ordered: { id: string; due_date: string | null }[] = siblings.map((s) => ({
+  const ordered = siblings.map((s) => ({
     id: s.id,
-    due_date: s.due_date,
+    dueDate: s.due_date,
+    statusId: s.status_id,
+    priority: s.priority,
+    isCompleted: s.is_completed,
   }));
-  ordered.splice(clampedPosition, 0, { id: opts.movedTaskId, due_date: opts.movedDueDate });
+  ordered.splice(clampedPosition, 0, movedTask);
 
   const written: MovedTaskSummary[] = [];
   for (let i = 0; i < ordered.length; i++) {
@@ -1175,45 +1428,75 @@ async function renumberCollectionScope(
       orderValue,
       ordered[i].id,
     ]);
-    written.push(summarize(ordered[i].id, orderValue, ordered[i].due_date));
+    written.push(summarize(ordered[i], orderValue));
   }
   return written;
 }
 
 /**
- * Place a task at `position` within one day's list, gap-numbered. A midpoint
+ * Place a task at `position` within an order-table scope, gap-numbered. A midpoint
  * write for the moved task alone is only valid once both flanking neighbors
- * already carry a materialized `task_order` row for this day - an unseeded
+ * already carry a materialized `task_order` row for this scope - an unseeded
  * neighbor has no `position` to compute a midpoint from. Otherwise falls back
- * to seeding the whole day from its current rendered order and rewriting it,
- * which is what makes the first drag into a day stick. Returns the rows
+ * to seeding the whole scope from its current rendered order and rewriting it.
+ * Returns the rows
  * actually written, mappable to `MovedTaskSummary` by the caller.
  */
-async function renumberDayScope(
+async function renumberOrderTableScope(
   client: Client,
   opts: {
     userId: string;
-    date: string;
+    scopeType: 'day' | 'status' | 'priority';
+    scopeId: string;
+    collectionId: string;
+    statusId: string | null;
+    priority: number;
     movedTaskId: string;
     position: number;
     movedCollectionId: string;
     movedParentTaskId: string | null;
     movedDepth: number;
     movedOrderValue: number;
+    movedDueDate: string | null;
+    movedStatusId: string | null;
+    movedPriority: number;
+    movedIsCompleted: boolean;
   },
 ): Promise<MovedTaskSummary[]> {
-  // Read every task on this day, not only those already carrying a day
+  // Read every task in this scope, not only those already carrying a
   // position - a task that has never been dragged in Daily is seeded
   // alongside those that have. The LEFT JOIN's NULL `position` is also how a
   // seeded/unseeded neighbor is told apart for the fast-path check below.
+  let membershipSql: string;
+  let membershipParams: unknown[];
+  if (opts.scopeType === 'day') {
+    membershipSql = `t.due_date = $5::date`;
+    membershipParams = [opts.scopeId];
+  } else if (opts.scopeType === 'status') {
+    membershipSql = `t.collection_id = $5 AND t.status_id IS NOT DISTINCT FROM $6::uuid`;
+    membershipParams = [opts.collectionId, opts.statusId];
+  } else {
+    membershipSql = `t.collection_id = $5 AND t.priority = $6`;
+    membershipParams = [opts.collectionId, opts.priority];
+  }
+
   const result = await client.query(
-    `SELECT t.id AS task_id, t.collection_id, t.parent_task_id, t.depth, t.order_value, o.position
+    `SELECT t.id AS task_id,
+            t.collection_id,
+            t.parent_task_id,
+            t.depth,
+            t.order_value,
+            t.due_date,
+            t.status_id,
+            t.priority,
+            t.is_completed,
+            o.position
      FROM tasks t
      LEFT JOIN task_order o
-       ON o.task_id = t.id AND o.scope_type = 'day' AND o.scope_id = $2
-     WHERE t.user_id = $1 AND t.due_date = $2::date AND t.id != $3
+       ON o.task_id = t.id AND o.scope_type = $2 AND o.scope_id = $3
+     WHERE t.user_id = $1 AND t.id != $4 AND ${membershipSql}
      ORDER BY o.position ASC NULLS LAST, t.order_value ASC, t.created_at ASC`,
-    [opts.userId, opts.date, opts.movedTaskId],
+    [opts.userId, opts.scopeType, opts.scopeId, opts.movedTaskId, ...membershipParams],
   );
   const siblings = result.rows as {
     task_id: string;
@@ -1221,6 +1504,10 @@ async function renumberDayScope(
     parent_task_id: string | null;
     depth: number;
     order_value: number;
+    due_date: string | null;
+    status_id: string | null;
+    priority: number;
+    is_completed: boolean;
     position: number | null | undefined;
   }[];
 
@@ -1234,13 +1521,20 @@ async function renumberDayScope(
     collectionId: string,
     parentTaskId: string | null,
     depth: number,
+    dueDate: string | null,
+    statusId: string | null,
+    priority: number,
+    isCompleted: boolean,
   ): MovedTaskSummary => ({
     id,
     parentTaskId,
     collectionId,
-    dueDate: opts.date,
+    dueDate,
     orderValue,
     depth,
+    statusId,
+    priority,
+    isCompleted,
   });
 
   const clampedPosition = Math.min(opts.position, siblings.length);
@@ -1260,10 +1554,10 @@ async function renumberDayScope(
     if (midpoint !== null) {
       await client.query(
         `INSERT INTO task_order (user_id, task_id, scope_type, scope_id, position)
-         VALUES ($1, $2, 'day', $3, $4)
+         VALUES ($1, $2, $3, $4, $5)
          ON CONFLICT (task_id, scope_type, scope_id)
          DO UPDATE SET position = EXCLUDED.position, updated_at = NOW()`,
-        [opts.userId, opts.movedTaskId, opts.date, midpoint],
+        [opts.userId, opts.movedTaskId, opts.scopeType, opts.scopeId, midpoint],
       );
       return [
         summarize(
@@ -1272,6 +1566,10 @@ async function renumberDayScope(
           opts.movedCollectionId,
           opts.movedParentTaskId,
           opts.movedDepth,
+          opts.movedDueDate,
+          opts.movedStatusId,
+          opts.movedPriority,
+          opts.movedIsCompleted,
         ),
       ];
     }
@@ -1282,8 +1580,8 @@ async function renumberDayScope(
   ids.splice(clampedPosition, 0, opts.movedTaskId);
 
   await client.query(
-    `DELETE FROM task_order WHERE task_id = $1 AND scope_type = 'day' AND scope_id = $2`,
-    [opts.movedTaskId, opts.date],
+    `DELETE FROM task_order WHERE task_id = $1 AND scope_type = $2 AND scope_id = $3`,
+    [opts.movedTaskId, opts.scopeType, opts.scopeId],
   );
 
   const byId = new Map(siblings.map((s) => [s.task_id, s]));
@@ -1292,10 +1590,10 @@ async function renumberDayScope(
     const position = i * 1000;
     await client.query(
       `INSERT INTO task_order (user_id, task_id, scope_type, scope_id, position)
-       VALUES ($1, $2, 'day', $3, $4)
+       VALUES ($1, $2, $3, $4, $5)
        ON CONFLICT (task_id, scope_type, scope_id)
        DO UPDATE SET position = EXCLUDED.position, updated_at = NOW()`,
-      [opts.userId, ids[i], opts.date, position],
+      [opts.userId, ids[i], opts.scopeType, opts.scopeId, position],
     );
     const sib = byId.get(ids[i]);
     written.push(
@@ -1305,6 +1603,10 @@ async function renumberDayScope(
         sib ? sib.collection_id : opts.movedCollectionId,
         sib ? sib.parent_task_id : opts.movedParentTaskId,
         sib ? sib.depth : opts.movedDepth,
+        sib ? sib.due_date : opts.movedDueDate,
+        sib ? sib.status_id : opts.movedStatusId,
+        sib ? sib.priority : opts.movedPriority,
+        sib ? sib.is_completed : opts.movedIsCompleted,
       ),
     );
   }

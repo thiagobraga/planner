@@ -3,6 +3,7 @@ import taskRoutes from "./tasks.js";
 import labelRoutes from "./labels.js";
 import collectionRoutes from "./collections.js";
 import sectionRoutes from "./sections.js";
+import statusRoutes from "./statuses.js";
 import viewRoutes from "./views.js";
 import filterRoutes from "./filters.js";
 import searchRoutes from "./search.js";
@@ -45,5 +46,6 @@ router.use("/activity", activityRoutes);
 router.use("/", collaborationRoutes);
 router.use("/collections/:id", collectionCollabRouter);
 router.use("/", sectionRoutes);
+router.use("/", statusRoutes);
 
 export default router;

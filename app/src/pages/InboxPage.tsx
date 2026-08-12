@@ -4,7 +4,9 @@ import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { TaskList } from '../components/TaskList';
 import { SectionHeader } from '../components/SectionHeader';
 import { InlineNameInput } from '../components/ui/InlineNameInput';
-import { TaskVisibilityControls } from '../components/TaskVisibilityControls';
+import { CollectionBoard } from '../components/board/CollectionBoard';
+import { BoardToolbar } from '../components/board/BoardToolbar';
+import { StatusTaskList } from '../components/board/StatusTaskList';
 import type { Task } from '../components/TaskItem';
 import type { Section } from '../stores/taskStore';
 import {
@@ -27,6 +29,7 @@ import { Calendar, Tag, Folder, Hash, ArrowUp, ArrowDown, Trash2, Pencil } from 
 import { useTaskDrag } from '../hooks/useTaskDrag';
 import { useSectionDrag } from '../hooks/useSectionDrag';
 import { useTaskVisibilityPreferences } from '../hooks/useTaskVisibilityPreferences';
+import { useBoardPreferences } from '../hooks/useBoardPreferences';
 import { flattenTasks } from '../utils/taskProjection';
 import { getPhrase } from '../utils/phrases';
 import { nextOrderValue } from '../utils/order';
@@ -35,6 +38,7 @@ import { applyIndent } from '../utils/taskTree';
 import { useSync } from '../hooks/useSync';
 import { isEchoedMove } from '../utils/moveEcho';
 import { useI18n } from '../i18n/I18nContext';
+import { buildStatusListGroups } from '../utils/boardColumns';
 
 function apiToTask(t: ApiTask): Task {
   return {
@@ -44,6 +48,7 @@ function apiToTask(t: ApiTask): Task {
     priority: t.priority,
     collectionId: t.collectionId,
     sectionId: t.sectionId,
+    statusId: t.statusId,
     parentTaskId: t.parentTaskId ?? undefined,
     dueDate: t.dueDate ?? undefined,
     isCompleted: t.isCompleted,
@@ -121,6 +126,7 @@ export function InboxPage() {
   }, [data]);
 
   const inboxCollectionId = data?.inboxCollectionId;
+  const boardPreferences = useBoardPreferences(inboxCollectionId, preferences);
 
   useEffect(() => {
     if (data?.sections) {
@@ -133,6 +139,7 @@ export function InboxPage() {
   // Moves are addressed to the real Inbox collection, which the view resolves
   // for us rather than the client having to look it up.
   const { activeDragId } = useTaskDrag({
+    enabled: boardPreferences.view === 'list',
     tasks,
     setTasks,
     scope: { kind: 'collection', collectionId: data?.collectionId ?? '' },
@@ -524,6 +531,11 @@ export function InboxPage() {
     tasks,
     sections.filter((s) => !s.id.startsWith('temp-')),
   );
+  const statusListGroups = useMemo(
+    () => buildStatusListGroups(tasks, data?.statuses ?? [], data?.completionStatusId ?? null),
+    [data?.completionStatusId, data?.statuses, tasks],
+  );
+  const showStatusGroups = boardPreferences.groupBy === 'status' && statusListGroups.length > 0;
 
   return (
     <div
@@ -545,36 +557,89 @@ export function InboxPage() {
         </div>
 
         <div className="page-header-toolbar inbox-page-header-controls absolute bottom-0 right-0 z-20 flex items-center">
-          <TaskVisibilityControls
+          <BoardToolbar
+            view={boardPreferences.view}
+            groupBy={boardPreferences.groupBy}
             hideCompletedTasks={preferences?.hideCompletedTasks ?? false}
             hideOldNotes={preferences?.hideOldNotes ?? false}
-            disabled={!preferences || visibilityPreferencesPending}
+            preferencesDisabled={!preferences || visibilityPreferencesPending}
+            onViewChange={boardPreferences.setView}
+            onGroupByChange={boardPreferences.setGroupBy}
             onHideCompletedTasksChange={setHideCompletedTasks}
             onHideOldNotesChange={setHideOldNotes}
           />
         </div>
       </header>
 
-      <div className="max-w-162">
+      <div className={boardPreferences.view === 'kanban' ? 'w-full' : 'max-w-162'}>
+        {boardPreferences.view === 'kanban' && data && inboxCollectionId ? (
+          <CollectionBoard
+            collectionId={inboxCollectionId}
+            queryKey={['inbox']}
+            groupBy={boardPreferences.groupBy}
+            tasks={data.tasks}
+            statuses={data.statuses}
+            completionStatusId={data.completionStatusId}
+            sections={data.sections}
+            boardOrder={data.boardOrder}
+            onToggle={(taskId) => handleToggle(taskId)}
+          />
+        ) : (
+        <>
         <div className="h-6" />
 
-        <TaskList
-          tasks={topLevelGroup.tasks}
-          containerId="collection:inbox"
-          activeDragId={activeDragId}
-          editingId={editingId}
-          onTaskToggle={handleToggle}
-          onStartEdit={handleStartEdit}
-          onEditCommit={handleEditCommit}
-          onEditCancel={handleEditCancel}
-          onDelete={handleDelete}
-          onAddBelow={handleAddBelow}
-          onIndent={handleIndent}
-          onConvertType={handleConvertType}
-          onRightClick={handleRightClick}
-        />
+        {showStatusGroups ? (
+          <StatusTaskList
+            groups={statusListGroups}
+            afterFirstGroup={(
+              <form onSubmit={handleAddAtEnd} className="flex h-6 items-center">
+                <span className="w-6 shrink-0 select-none text-center text-[10px] leading-6 text-ink opacity-25">•</span>
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  placeholder={t('common.addTask')}
+                  className="task-input task-add-input flex-1 border-none bg-transparent p-0 text-[14px] leading-6 text-ink outline-none"
+                  spellCheck={false}
+                  onKeyDown={handleAddNoteKeyDown}
+                />
+              </form>
+            )}
+            taskListProps={{
+              collectionId: inboxCollectionId,
+              activeDragId,
+              editingId,
+              onTaskToggle: handleToggle,
+              onStartEdit: handleStartEdit,
+              onEditCommit: handleEditCommit,
+              onEditCancel: handleEditCancel,
+              onDelete: handleDelete,
+              onAddBelow: handleAddBelow,
+              onIndent: handleIndent,
+              onConvertType: handleConvertType,
+              onRightClick: handleRightClick,
+            }}
+          />
+        ) : (
+          <TaskList
+            tasks={topLevelGroup.tasks}
+            containerId="collection:inbox"
+            activeDragId={activeDragId}
+            editingId={editingId}
+            onTaskToggle={handleToggle}
+            onStartEdit={handleStartEdit}
+            onEditCommit={handleEditCommit}
+            onEditCancel={handleEditCancel}
+            onDelete={handleDelete}
+            onAddBelow={handleAddBelow}
+            onIndent={handleIndent}
+            onConvertType={handleConvertType}
+            onRightClick={handleRightClick}
+          />
+        )}
 
-        <form
+        {!showStatusGroups && <form
           onSubmit={handleAddAtEnd}
           className="flex items-center h-6"
         >
@@ -591,8 +656,9 @@ export function InboxPage() {
             spellCheck={false}
             onKeyDown={handleAddNoteKeyDown}
           />
-        </form>
+        </form>}
 
+        {!showStatusGroups && <>
         <SortableContext
           items={sectionGroups.map((group) => group.section!.id)}
           strategy={verticalListSortingStrategy}
@@ -673,6 +739,9 @@ export function InboxPage() {
               {t('page.newSection')}
             </span>
           </button>
+        )}
+        </>}
+        </>
         )}
       </div>
 

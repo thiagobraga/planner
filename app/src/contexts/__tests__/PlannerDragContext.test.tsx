@@ -1,7 +1,7 @@
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { PlannerDragProvider } from '../PlannerDragContext';
-import { usePlannerDrag } from '../usePlannerDrag';
+import { usePlannerDrag, usePlannerDragHandlers } from '../usePlannerDrag';
 
 type DragHandler = (event: unknown) => void;
 
@@ -224,6 +224,23 @@ describe('PlannerDragContext', () => {
     );
 
     expect(screen.getByTestId('unregister-type')).toHaveTextContent('function');
+  });
+
+  it('does not register handlers when enabled is false', () => {
+    const onDragStart = vi.fn();
+    function DisabledHandler() {
+      usePlannerDragHandlers('task', { onDragStart }, { enabled: false });
+      return null;
+    }
+
+    render(<TestWrapper><DisabledHandler /></TestWrapper>);
+    act(() => {
+      dndHandlers.onDragStart?.({
+        active: { data: { current: { kind: 'task', taskId: 'task-1' } } },
+      });
+    });
+
+    expect(onDragStart).not.toHaveBeenCalled();
   });
 
   it('handleDragStart sets activeDrag via DndContext onDragStart', () => {

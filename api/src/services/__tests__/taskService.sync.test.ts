@@ -4,7 +4,7 @@ vi.mock("../../db/pool.js", () => ({
   default: {
     query: vi.fn(),
     connect: vi.fn(() => ({
-      query: vi.fn().mockResolvedValue(undefined),
+      query: vi.fn().mockResolvedValue({ rows: [] }),
       release: vi.fn(),
     })),
   },
@@ -50,7 +50,7 @@ const mockTaskRow = {
 function resetMocks() {
   (pool.query as ReturnType<typeof vi.fn>).mockReset();
   (pool.connect as ReturnType<typeof vi.fn>).mockReturnValue({
-    query: vi.fn().mockResolvedValue(undefined),
+    query: vi.fn().mockResolvedValue({ rows: [] }),
     release: vi.fn(),
   });
   (redisPubClient.publish as ReturnType<typeof vi.fn>).mockReset();
@@ -66,7 +66,8 @@ describe("taskService: sync event emission", () => {
     it("emits a created sync event after successful creation", async () => {
       (pool.query as ReturnType<typeof vi.fn>)
         .mockResolvedValueOnce({ rows: [{ id: collectionId }] })
-        .mockResolvedValueOnce({ rows: [mockTaskRow] });
+        .mockResolvedValueOnce({ rows: [mockTaskRow] })
+        .mockResolvedValueOnce({ rows: [] }); // attachLabels
 
       await createTask(userId, { title: "New Task", collectionId });
 
@@ -84,7 +85,8 @@ describe("taskService: sync event emission", () => {
     it("defaults type to 'task' when not provided, and propagates it in the sync payload", async () => {
       (pool.query as ReturnType<typeof vi.fn>)
         .mockResolvedValueOnce({ rows: [{ id: collectionId }] })
-        .mockResolvedValueOnce({ rows: [mockTaskRow] });
+        .mockResolvedValueOnce({ rows: [mockTaskRow] })
+        .mockResolvedValueOnce({ rows: [] }); // attachLabels
 
       await createTask(userId, { title: "New Task", collectionId });
 
@@ -96,7 +98,8 @@ describe("taskService: sync event emission", () => {
     it("propagates type: 'note' in the sync payload when creating a note", async () => {
       (pool.query as ReturnType<typeof vi.fn>)
         .mockResolvedValueOnce({ rows: [{ id: collectionId }] })
-        .mockResolvedValueOnce({ rows: [{ ...mockTaskRow, type: "note" }] });
+        .mockResolvedValueOnce({ rows: [{ ...mockTaskRow, type: "note" }] })
+        .mockResolvedValueOnce({ rows: [] }); // attachLabels
 
       await createTask(userId, { title: "New Note", collectionId, type: "note" });
 
@@ -110,7 +113,8 @@ describe("taskService: sync event emission", () => {
     it("emits an updated sync event after successful update", async () => {
       (pool.query as ReturnType<typeof vi.fn>)
         .mockResolvedValueOnce({ rows: [mockTaskRow] })
-        .mockResolvedValueOnce({ rows: [{ ...mockTaskRow, title: "Updated Title" }] });
+        .mockResolvedValueOnce({ rows: [{ ...mockTaskRow, title: "Updated Title" }] })
+        .mockResolvedValueOnce({ rows: [] }); // attachLabels
 
       await updateTask(taskId, userId, { title: "Updated Title" });
 
@@ -126,7 +130,8 @@ describe("taskService: sync event emission", () => {
     it("propagates type change to 'note' in the sync payload", async () => {
       (pool.query as ReturnType<typeof vi.fn>)
         .mockResolvedValueOnce({ rows: [mockTaskRow] })
-        .mockResolvedValueOnce({ rows: [{ ...mockTaskRow, type: "note" }] });
+        .mockResolvedValueOnce({ rows: [{ ...mockTaskRow, type: "note" }] })
+        .mockResolvedValueOnce({ rows: [] }); // attachLabels
 
       await updateTask(taskId, userId, { type: "note" });
 
@@ -136,7 +141,9 @@ describe("taskService: sync event emission", () => {
     });
 
     it("does not emit event when no fields change", async () => {
-      (pool.query as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ rows: [mockTaskRow] });
+      (pool.query as ReturnType<typeof vi.fn>)
+        .mockResolvedValueOnce({ rows: [mockTaskRow] })
+        .mockResolvedValueOnce({ rows: [] }); // attachLabels
 
       await updateTask(taskId, userId, {});
 
@@ -150,7 +157,8 @@ describe("taskService: sync event emission", () => {
         .mockResolvedValueOnce({ rows: [mockTaskRow] })                 // verifyTaskAccess(task)
         .mockResolvedValueOnce({ rows: [parentRow] })                   // verifyTaskAccess(parent)
         .mockResolvedValueOnce({ rows: [] })                            // detectCycle
-        .mockResolvedValueOnce({ rows: [{ max_depth: 0 }] });           // maxDescendantDepth
+        .mockResolvedValueOnce({ rows: [{ max_depth: 0 }] })            // maxDescendantDepth
+        .mockResolvedValueOnce({ rows: [] });                          // attachLabels (after transaction commits)
 
       const clientQuery = vi
         .fn()
@@ -174,7 +182,8 @@ describe("taskService: sync event emission", () => {
     it("emits a completed sync event for non-recurring task", async () => {
       (pool.query as ReturnType<typeof vi.fn>)
         .mockResolvedValueOnce({ rows: [mockTaskRow] })
-        .mockResolvedValueOnce({ rows: [{ ...mockTaskRow, is_completed: true, completed_at: new Date().toISOString() }] });
+        .mockResolvedValueOnce({ rows: [{ ...mockTaskRow, is_completed: true, completed_at: new Date().toISOString() }] })
+        .mockResolvedValueOnce({ rows: [] }); // attachLabels
 
       await completeTask(taskId, userId);
 
@@ -202,7 +211,9 @@ describe("taskService: sync event emission", () => {
 
       (pool.query as ReturnType<typeof vi.fn>)
         .mockResolvedValueOnce({ rows: [recurringTask] }) // verifyTaskAccess
-        .mockResolvedValueOnce({ rows: [recurringTask] }); // SELECT * FROM tasks (updated original)
+        .mockResolvedValueOnce({ rows: [recurringTask] }) // SELECT * FROM tasks (updated original)
+        .mockResolvedValueOnce({ rows: [] }) // attachLabels(formattedOld)
+        .mockResolvedValueOnce({ rows: [] }); // attachLabels(formattedNew)
 
       const clientQuery = vi
         .fn()
@@ -211,6 +222,8 @@ describe("taskService: sync event emission", () => {
         .mockResolvedValueOnce({ rows: [newClonedTask] }) // INSERT cloned task
         .mockResolvedValueOnce({ rows: [] }) // SELECT label_id
         .mockResolvedValueOnce(undefined) // INSERT activity event
+        .mockResolvedValueOnce({ rows: [{ status_id: null, previous_status_id: null }] }) // syncStatusToCompletion: task lookup
+        .mockResolvedValueOnce({ rows: [] }) // syncStatusToCompletion: no collection completion status configured yet
         .mockResolvedValueOnce(undefined); // COMMIT
         
       (pool.connect as ReturnType<typeof vi.fn>).mockReturnValue({ query: clientQuery, release: vi.fn() });
@@ -238,7 +251,8 @@ describe("taskService: sync event emission", () => {
       const completedTask = { ...mockTaskRow, is_completed: true, completed_at: new Date().toISOString() };
       (pool.query as ReturnType<typeof vi.fn>)
         .mockResolvedValueOnce({ rows: [completedTask] })
-        .mockResolvedValueOnce({ rows: [{ ...completedTask, is_completed: false, completed_at: null }] });
+        .mockResolvedValueOnce({ rows: [{ ...completedTask, is_completed: false, completed_at: null }] })
+        .mockResolvedValueOnce({ rows: [] }); // attachLabels
 
       await reopenTask(taskId, userId);
 

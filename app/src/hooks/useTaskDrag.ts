@@ -26,6 +26,7 @@ function toISODate(value: string | null | undefined): string | undefined {
 }
 
 interface UseTaskDragOptions {
+  enabled?: boolean;
   /** Current rows, flat and unordered; the hook builds the tree itself. */
   tasks: Task[];
   /** Apply an optimistic result, and restore a snapshot on failure. */
@@ -52,7 +53,7 @@ interface UseTaskDragOptions {
  * dropped it, because a silently-wrong order that survives reload is worse than
  * a visible snap-back.
  */
-export function useTaskDrag({ tasks, setTasks, scope, onError, onMoved }: UseTaskDragOptions) {
+export function useTaskDrag({ enabled = true, tasks, setTasks, scope, onError, onMoved }: UseTaskDragOptions) {
   // `indentOffset` is the provider's own tracker, quantised to whole steps.
   // This hook deliberately keeps no tracker of its own: the preview renders
   // from the provider's state and the commit reads this, so the two cannot
@@ -247,7 +248,7 @@ export function useTaskDrag({ tasks, setTasks, scope, onError, onMoved }: UseTas
     onDragOver: handleDragOver,
     onDragEnd: handleDragEnd,
     onDragCancel: handleDragCancel,
-  });
+  }, { enabled });
 
   return { activeDragId };
 }

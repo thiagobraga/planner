@@ -37,6 +37,11 @@ export function AppShell() {
     if (event.entityType === 'collection') {
       qc.invalidateQueries({ queryKey: ['collections'] });
       qc.invalidateQueries({ queryKey: ['collection'] });
+    } else if (event.entityType === 'status' || event.entityType === 'label') {
+      qc.invalidateQueries({ queryKey: ['collection'] });
+      qc.invalidateQueries({ queryKey: ['inbox'] });
+      qc.invalidateQueries({ queryKey: ['today'] });
+      qc.invalidateQueries({ queryKey: ['upcoming'] });
     } else if (event.entityType === 'preferences') {
       if (event.payload && typeof event.payload === 'object') {
         qc.setQueryData<Preferences>(['preferences'], event.payload as Preferences);
@@ -61,6 +66,8 @@ export function AppShell() {
     '--planner-page-bg': pageBackground,
     '--planner-sidebar-bg': 'var(--color-sidebar-bg)',
     '--planner-card-bg': 'var(--color-sidebar-bg)',
+    '--planner-board-column-bg': isWhiteBackground ? 'rgba(241, 241, 241, 0.72)' : 'rgba(235, 230, 222, 0.68)',
+    '--planner-board-card-bg': isWhiteBackground ? 'rgba(255, 255, 255, 0.82)' : 'rgba(245, 240, 232, 0.82)',
     '--planner-sidebar-active-bg': isWhiteBackground ? 'rgba(212, 212, 212, 0.55)' : 'rgba(212, 207, 199, 0.5)',
     '--planner-sidebar-hover-bg': isWhiteBackground ? 'rgba(212, 212, 212, 0.35)' : 'rgba(212, 207, 199, 0.4)',
     '--planner-task-selection-bg': isWhiteBackground ? 'rgba(212, 212, 212, 0.75)' : 'rgba(212, 207, 199, 0.75)',

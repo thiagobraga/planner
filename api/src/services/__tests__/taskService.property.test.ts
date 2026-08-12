@@ -35,7 +35,7 @@ vi.mock('uuid', () => ({
   v4: () => 'test-uuid-1234',
 }));
 
-import { createTask, updateTask, completeTask, deleteTask } from '../taskService.js';
+import { createTask, updateTask, completeTask, deleteTask, moveTask } from '../taskService.js';
 
 const userId = 'user-1';
 const collectionId = 'collection-1';
@@ -84,7 +84,8 @@ describe('Property 8: Task title validation', () => {
           mockQuery
             .mockResolvedValueOnce({ rows: [{ id: collectionId }] }) // inbox
             .mockResolvedValueOnce({ rows: [{ id: collectionId }] }) // collection access
-            .mockResolvedValueOnce({ rows: [makeTaskRow({ title })] }); // insert
+            .mockResolvedValueOnce({ rows: [makeTaskRow({ title })] }) // insert
+            .mockResolvedValueOnce({ rows: [] }); // attachLabels
 
           const result = await createTask(userId, { title });
           expect(result.title).toBe(title);
@@ -141,7 +142,8 @@ describe('Property 9: Task priority validation', () => {
         mockQuery
           .mockResolvedValueOnce({ rows: [{ id: collectionId }] }) // inbox
           .mockResolvedValueOnce({ rows: [{ id: collectionId }] }) // collection access
-          .mockResolvedValueOnce({ rows: [makeTaskRow({ priority })] }); // insert
+          .mockResolvedValueOnce({ rows: [makeTaskRow({ priority })] }) // insert
+          .mockResolvedValueOnce({ rows: [] }); // attachLabels
 
         const result = await createTask(userId, { title: 'Valid', priority });
         expect(result.priority).toBe(priority);
@@ -198,7 +200,8 @@ describe('Task type validation', () => {
     mockQuery
       .mockResolvedValueOnce({ rows: [{ id: collectionId }] }) // inbox
       .mockResolvedValueOnce({ rows: [{ id: collectionId }] }) // collection access
-      .mockResolvedValueOnce({ rows: [makeTaskRow({ type: 'task' })] }); // insert
+      .mockResolvedValueOnce({ rows: [makeTaskRow({ type: 'task' })] }) // insert
+      .mockResolvedValueOnce({ rows: [] }); // attachLabels
 
     const result = await createTask(userId, { title: 'Valid' });
     expect(result.type).toBe('task');
@@ -206,7 +209,8 @@ describe('Task type validation', () => {
     mockQuery
       .mockResolvedValueOnce({ rows: [{ id: collectionId }] })
       .mockResolvedValueOnce({ rows: [{ id: collectionId }] })
-      .mockResolvedValueOnce({ rows: [makeTaskRow({ type: 'note' })] });
+      .mockResolvedValueOnce({ rows: [makeTaskRow({ type: 'note' })] })
+      .mockResolvedValueOnce({ rows: [] }); // attachLabels
 
     const note = await createTask(userId, { title: 'Valid', type: 'note' });
     expect(note.type).toBe('note');
@@ -271,7 +275,9 @@ describe('Property 10: Subtask depth enforcement', () => {
           // insert returning
           .mockResolvedValueOnce({
             rows: [makeTaskRow({ depth: parentDepth + 1, parent_task_id: 'parent-1' })],
-          });
+          })
+          // attachLabels
+          .mockResolvedValueOnce({ rows: [] });
 
         const result = await createTask(userId, { title: 'Child', parentTaskId: 'parent-1' });
         expect(result.depth).toBe(parentDepth + 1);
@@ -366,6 +372,8 @@ describe('Property 11: Subtask cycle detection', () => {
       }) // main UPDATE
       .mockResolvedValueOnce({ rows: [] }) // descendant depth cascade
       .mockResolvedValueOnce({ rows: [] }); // COMMIT
+    // attachLabels (after transaction commits)
+    mockQuery.mockResolvedValueOnce({ rows: [] });
 
     const result = await updateTask(taskId, userId, { parentTaskId: newParentId });
     expect(result.parentTaskId).toBe(newParentId);
@@ -403,6 +411,8 @@ describe('Property 12: Parent completion cascades to all descendants', () => {
             makeTaskRow({ id: taskId, is_completed: true, completed_at: '2024-01-01T00:00:00Z' }),
           ],
         });
+        // attachLabels
+        mockQuery.mockResolvedValueOnce({ rows: [] });
 
         const result = await completeTask(taskId, userId);
         expect(result.isCompleted).toBe(true);
@@ -482,11 +492,42 @@ describe('Property 14: Moving parent moves all descendants', () => {
         mockQuery.mockResolvedValueOnce({
           rows: [makeTaskRow({ id: taskId, collection_id: newCollectionId, section_id: null })],
         });
+        // attachLabels
+        mockQuery.mockResolvedValueOnce({ rows: [] });
 
         const result = await updateTask(taskId, userId, { collectionId: newCollectionId });
         expect(result.collectionId).toBe(newCollectionId);
         expect(result.sectionId).toBeNull();
       }),
+      { numRuns: 100 },
+    );
+  });
+});
+
+// --- Property 15: Board move priority validation ---
+// **Validates: Kanban board task 4 priority scope boundaries**
+
+describe('Property 15: Board move priority validation', () => {
+  it('rejects every integer priority outside 1 through 4 before database access', async () => {
+    await fc.assert(
+      fc.asyncProperty(
+        fc.integer().filter((priority) => priority < 1 || priority > 4),
+        async (priority) => {
+          vi.clearAllMocks();
+
+          await expect(
+            moveTask('task-move', userId, {
+              parentTaskId: null,
+              priority,
+              scope: { kind: 'collection', collectionId },
+              position: 0,
+            }),
+          ).rejects.toMatchObject({ code: 'VALIDATION_ERROR', statusCode: 400 });
+
+          expect(mockQuery).not.toHaveBeenCalled();
+          expect(mockConnect).not.toHaveBeenCalled();
+        },
+      ),
       { numRuns: 100 },
     );
   });

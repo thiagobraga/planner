@@ -22,17 +22,26 @@ import { useSync } from '../../hooks/useSync';
 function useAppShellSync({
   invalidateCollections,
   invalidateInbox,
+  invalidateToday,
+  invalidateUpcoming,
   invalidatePreferences,
   setPreferences,
 }: {
   invalidateCollections: () => void;
   invalidateInbox: () => void;
+  invalidateToday: () => void;
+  invalidateUpcoming: () => void;
   invalidatePreferences: () => void;
   setPreferences: (payload: unknown) => void;
 }) {
   useSync(useCallback((event: SyncEvent) => {
     if (event.entityType === 'collection') {
       invalidateCollections();
+    } else if (event.entityType === 'status' || event.entityType === 'label') {
+      invalidateCollections();
+      invalidateInbox();
+      invalidateToday();
+      invalidateUpcoming();
     } else if (event.entityType === 'preferences') {
       if (event.payload && typeof event.payload === 'object') {
         setPreferences(event.payload);
@@ -42,7 +51,7 @@ function useAppShellSync({
       invalidateInbox();
       invalidateCollections();
     }
-  }, [invalidateCollections, invalidateInbox, invalidatePreferences, setPreferences]));
+  }, [invalidateCollections, invalidateInbox, invalidatePreferences, invalidateToday, invalidateUpcoming, setPreferences]));
 }
 
 function makeEvent(overrides: Partial<SyncEvent> = {}): SyncEvent {
@@ -60,6 +69,8 @@ function makeEvent(overrides: Partial<SyncEvent> = {}): SyncEvent {
 describe('AppShell: sync event invalidation', () => {
   let mockInvalidate: ReturnType<typeof vi.fn>;
   let mockInvalidateInbox: ReturnType<typeof vi.fn>;
+  let mockInvalidateToday: ReturnType<typeof vi.fn>;
+  let mockInvalidateUpcoming: ReturnType<typeof vi.fn>;
   let mockInvalidatePreferences: ReturnType<typeof vi.fn>;
   let mockSetPreferences: ReturnType<typeof vi.fn>;
 
@@ -67,6 +78,8 @@ describe('AppShell: sync event invalidation', () => {
     capturedSyncHandler = null;
     mockInvalidate = vi.fn();
     mockInvalidateInbox = vi.fn();
+    mockInvalidateToday = vi.fn();
+    mockInvalidateUpcoming = vi.fn();
     mockInvalidatePreferences = vi.fn();
     mockSetPreferences = vi.fn();
   });
@@ -75,6 +88,8 @@ describe('AppShell: sync event invalidation', () => {
     renderHook(() => useAppShellSync({
       invalidateCollections: mockInvalidate,
       invalidateInbox: mockInvalidateInbox,
+      invalidateToday: mockInvalidateToday,
+      invalidateUpcoming: mockInvalidateUpcoming,
       invalidatePreferences: mockInvalidatePreferences,
       setPreferences: mockSetPreferences,
     }));
@@ -88,6 +103,8 @@ describe('AppShell: sync event invalidation', () => {
     renderHook(() => useAppShellSync({
       invalidateCollections: mockInvalidate,
       invalidateInbox: mockInvalidateInbox,
+      invalidateToday: mockInvalidateToday,
+      invalidateUpcoming: mockInvalidateUpcoming,
       invalidatePreferences: mockInvalidatePreferences,
       setPreferences: mockSetPreferences,
     }));
@@ -102,6 +119,8 @@ describe('AppShell: sync event invalidation', () => {
     renderHook(() => useAppShellSync({
       invalidateCollections: mockInvalidate,
       invalidateInbox: mockInvalidateInbox,
+      invalidateToday: mockInvalidateToday,
+      invalidateUpcoming: mockInvalidateUpcoming,
       invalidatePreferences: mockInvalidatePreferences,
       setPreferences: mockSetPreferences,
     }));
@@ -111,10 +130,32 @@ describe('AppShell: sync event invalidation', () => {
     expect(mockInvalidate).toHaveBeenCalledTimes(1);
   });
 
+  it.each(['status', 'label'] as const)('invalidates every task-facing query for %s events', (entityType) => {
+    renderHook(() => useAppShellSync({
+      invalidateCollections: mockInvalidate,
+      invalidateInbox: mockInvalidateInbox,
+      invalidateToday: mockInvalidateToday,
+      invalidateUpcoming: mockInvalidateUpcoming,
+      invalidatePreferences: mockInvalidatePreferences,
+      setPreferences: mockSetPreferences,
+    }));
+
+    act(() => {
+      capturedSyncHandler?.(makeEvent({ entityType }));
+    });
+
+    expect(mockInvalidate).toHaveBeenCalledTimes(1);
+    expect(mockInvalidateInbox).toHaveBeenCalledTimes(1);
+    expect(mockInvalidateToday).toHaveBeenCalledTimes(1);
+    expect(mockInvalidateUpcoming).toHaveBeenCalledTimes(1);
+  });
+
   it('sets preferences from preferences sync payload', () => {
     renderHook(() => useAppShellSync({
       invalidateCollections: mockInvalidate,
       invalidateInbox: mockInvalidateInbox,
+      invalidateToday: mockInvalidateToday,
+      invalidateUpcoming: mockInvalidateUpcoming,
       invalidatePreferences: mockInvalidatePreferences,
       setPreferences: mockSetPreferences,
     }));
@@ -137,6 +178,8 @@ describe('AppShell: sync event invalidation', () => {
     renderHook(() => useAppShellSync({
       invalidateCollections: mockInvalidate,
       invalidateInbox: mockInvalidateInbox,
+      invalidateToday: mockInvalidateToday,
+      invalidateUpcoming: mockInvalidateUpcoming,
       invalidatePreferences: mockInvalidatePreferences,
       setPreferences: mockSetPreferences,
     }));

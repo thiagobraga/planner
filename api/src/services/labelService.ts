@@ -2,6 +2,7 @@ import { v4 as uuidv4 } from "uuid";
 import pool from "../db/pool.js";
 import { AppError } from "../utils/AppError.js";
 import { validateColor } from "../utils/color.js";
+import { buildEvent, publishEvent } from "./syncService.js";
 
 const NAME_REGEX = /^[a-zA-Z0-9_]+$/;
 
@@ -14,7 +15,16 @@ interface LabelRow {
   updated_at: string;
 }
 
-function formatLabel(row: LabelRow) {
+export interface Label {
+  id: string;
+  userId: string;
+  name: string;
+  color: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+function formatLabel(row: LabelRow): Label {
   return {
     id: row.id,
     userId: row.user_id,
@@ -23,6 +33,104 @@ function formatLabel(row: LabelRow) {
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
+}
+
+function publishLabelEvent(
+  eventType: "created" | "updated" | "deleted",
+  entityId: string,
+  userId: string,
+  payload?: unknown,
+) {
+  publishEvent(
+    buildEvent({
+      entityType: "label",
+      eventType,
+      entityId,
+      userId,
+      payload,
+    }),
+  ).catch((err) => console.error("[sync] publish failed", err));
+}
+
+// A task carrying no labels must not need a round trip - callers pass every
+// task on a page (or view) through here in one shot.
+export async function attachLabels<T extends { id: string }>(items: T[]): Promise<(T & { labels: Label[] })[]> {
+  if (items.length === 0) return items as (T & { labels: Label[] })[];
+
+  const result = await pool.query(
+    `SELECT tl.task_id, l.* FROM task_labels tl
+     INNER JOIN labels l ON l.id = tl.label_id
+     WHERE tl.task_id = ANY($1::uuid[])
+     ORDER BY l.name ASC`,
+    [items.map((item) => item.id)],
+  );
+
+  const byTaskId = new Map<string, Label[]>();
+  for (const row of result.rows as (LabelRow & { task_id: string })[]) {
+    const { task_id, ...labelFields } = row;
+    const list = byTaskId.get(task_id) ?? [];
+    list.push(formatLabel(labelFields as LabelRow));
+    byTaskId.set(task_id, list);
+  }
+
+  return items.map((item) => ({ ...item, labels: byTaskId.get(item.id) ?? [] }));
+}
+
+// Validates that every id in labelIds exists and belongs to userId - throws a
+// 400 on any mismatch. Shared by createTask and updateTask.
+export async function verifyLabelOwnership(labelIds: string[], userId: string): Promise<void> {
+  if (labelIds.length === 0) return;
+
+  const result = await pool.query(
+    `SELECT id FROM labels WHERE id = ANY($1::uuid[]) AND user_id = $2`,
+    [labelIds, userId],
+  );
+
+  if (result.rows.length !== labelIds.length) {
+    throw new AppError({
+      code: "VALIDATION_ERROR",
+      message: "Validation failed",
+      statusCode: 400,
+      details: [{ field: "labelIds", message: "One or more labels not found or not accessible" }],
+    });
+  }
+}
+
+const SEED_LABELS = [
+  { name: "feature", color: "#7dbfb2" },
+  { name: "bug", color: "#c98079" },
+  { name: "chore", color: "#adb9c1" },
+];
+
+// Only for a user with no labels at all - never runs again once any label exists.
+export async function ensureSeedLabels(userId: string): Promise<Label[]> {
+  const client = await pool.connect();
+  const created: Label[] = [];
+  try {
+    await client.query("BEGIN");
+    await client.query(`SELECT id FROM users WHERE id = $1 FOR UPDATE`, [userId]);
+
+    const existing = await client.query(`SELECT id FROM labels WHERE user_id = $1 LIMIT 1`, [userId]);
+    if (existing.rows.length === 0) {
+      for (const seed of SEED_LABELS) {
+        const result = await client.query(
+          `INSERT INTO labels (id, user_id, name, color) VALUES ($1, $2, $3, $4) RETURNING *`,
+          [uuidv4(), userId, seed.name, seed.color],
+        );
+        created.push(formatLabel(result.rows[0] as LabelRow));
+      }
+    }
+
+    await client.query("COMMIT");
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
+
+  for (const label of created) publishLabelEvent("created", label.id, userId, label);
+  return created;
 }
 
 function validateName(name: unknown): string {
@@ -92,7 +200,9 @@ export async function createLabel(userId: string, input: CreateLabelInput) {
     [id, userId, name, color]
   );
 
-  return formatLabel(result.rows[0] as LabelRow);
+  const label = formatLabel(result.rows[0] as LabelRow);
+  publishLabelEvent("created", label.id, userId, label);
+  return label;
 }
 
 export interface UpdateLabelInput {
@@ -141,7 +251,9 @@ export async function updateLabel(labelId: string, userId: string, input: Update
   const query = `UPDATE labels SET ${setClauses.join(", ")} WHERE id = $${paramIndex} RETURNING *`;
   const result = await pool.query(query, values);
 
-  return formatLabel(result.rows[0] as LabelRow);
+  const label = formatLabel(result.rows[0] as LabelRow);
+  publishLabelEvent("updated", label.id, userId, label);
+  return label;
 }
 
 export async function deleteLabel(labelId: string, userId: string): Promise<{ success: true }> {
@@ -176,5 +288,6 @@ export async function deleteLabel(labelId: string, userId: string): Promise<{ su
     client.release();
   }
 
+  publishLabelEvent("deleted", labelId, userId);
   return { success: true };
 }

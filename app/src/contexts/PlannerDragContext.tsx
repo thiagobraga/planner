@@ -69,7 +69,10 @@ import {
  * The band is tightened to 8%, and horizontal scrolling is switched off
  * entirely: sideways movement means nesting here, never travel.
  */
-const AUTO_SCROLL = { threshold: { x: 0, y: 0.08 } } as const;
+const AUTO_SCROLL = {
+  horizontal: { threshold: { x: 0.08, y: 0 } },
+  vertical: { threshold: { x: 0, y: 0.08 } },
+} as const;
 
 /**
  * dnd-kit's default (`MeasuringStrategy.WhileDragging`) re-measures every
@@ -105,6 +108,7 @@ export function PlannerDragProvider({ children }: { children: ReactNode }) {
   const [announcement, setAnnouncement] = useState('');
   const [indentSteps, setIndentSteps] = useState(0);
   const [overId, setOverId] = useState<string | null>(null);
+  const [autoScrollAxis, setAutoScrollAxis] = useState<'horizontal' | 'vertical'>('vertical');
   const handlersRef = useRef(new Map<DragKind, DragHandlers>());
   /** Nesting intent, rebased per row so drift cannot accumulate into a preview. */
   const indent = useRef(createIndentTracker());
@@ -259,6 +263,7 @@ export function PlannerDragProvider({ children }: { children: ReactNode }) {
       overId,
       announce,
       registerHandlers,
+      setAutoScrollAxis,
     }),
     [
       activeDrag,
@@ -270,6 +275,7 @@ export function PlannerDragProvider({ children }: { children: ReactNode }) {
       overId,
       announce,
       registerHandlers,
+      setAutoScrollAxis,
     ],
   );
 
@@ -278,7 +284,7 @@ export function PlannerDragProvider({ children }: { children: ReactNode }) {
       <DndContext
         sensors={sensors}
         collisionDetection={plannerCollisionDetection}
-        autoScroll={AUTO_SCROLL}
+        autoScroll={AUTO_SCROLL[autoScrollAxis]}
         measuring={MEASURING}
         accessibility={{ announcements: SILENT_ANNOUNCEMENTS, restoreFocus: false }}
         onDragStart={handleDragStart}

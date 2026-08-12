@@ -72,6 +72,7 @@ export interface PlannerDragContextValue {
   /** Speak a message through the shared live region. */
   announce: (message: string) => void;
   registerHandlers: (kind: DragKind, handlers: DragHandlers) => () => void;
+  setAutoScrollAxis: (axis: 'horizontal' | 'vertical') => void;
 }
 
 export const PlannerDragContext = createContext<PlannerDragContextValue | null>(null);
@@ -88,12 +89,17 @@ export function usePlannerDrag(): PlannerDragContextValue {
  * claims 'collection'. Handlers are held in a ref, so a component may pass fresh
  * closures every render without re-registering.
  */
-export function usePlannerDragHandlers(kind: DragKind, handlers: DragHandlers): void {
+export function usePlannerDragHandlers(
+  kind: DragKind,
+  handlers: DragHandlers,
+  options: { enabled?: boolean } = {},
+): void {
   const { registerHandlers } = usePlannerDrag();
   const ref = useRef(handlers);
   ref.current = handlers;
 
   useEffect(() => {
+    if (options.enabled === false) return;
     return registerHandlers(kind, {
       onDragStart: (e) => ref.current.onDragStart?.(e),
       onDragMove: (e) => ref.current.onDragMove?.(e),
@@ -101,5 +107,5 @@ export function usePlannerDragHandlers(kind: DragKind, handlers: DragHandlers): 
       onDragEnd: (e) => ref.current.onDragEnd?.(e),
       onDragCancel: () => ref.current.onDragCancel?.(),
     });
-  }, [kind, registerHandlers]);
+  }, [kind, options.enabled, registerHandlers]);
 }

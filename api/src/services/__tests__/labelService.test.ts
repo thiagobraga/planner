@@ -19,7 +19,13 @@ vi.mock("uuid", () => ({
   v4: () => "fixed-uuid-for-test",
 }));
 
-import { listLabels, createLabel, updateLabel, deleteLabel } from "../labelService.js";
+const mockPublishEvent = vi.fn().mockResolvedValue(undefined);
+vi.mock("../syncService.js", () => ({
+  buildEvent: (input: Record<string, unknown>) => ({ id: "evt-1", emittedAt: "now", ...input }),
+  publishEvent: (...args: unknown[]) => mockPublishEvent(...args),
+}));
+
+import { listLabels, ensureSeedLabels, createLabel, updateLabel, deleteLabel } from "../labelService.js";
 import { AppError } from "../../utils/AppError.js";
 
 function makeRow(overrides: Record<string, unknown> = {}) {
@@ -55,6 +61,49 @@ describe("labelService", () => {
       mockQuery.mockResolvedValue({ rows: [] });
       const labels = await listLabels("user-1");
       expect(labels).toEqual([]);
+    });
+  });
+
+  describe("ensureSeedLabels", () => {
+    it("serializes on the user and creates the three defaults once", async () => {
+      const seedRows = [
+        makeRow({ id: "feature-id", name: "feature", color: "#7dbfb2" }),
+        makeRow({ id: "bug-id", name: "bug", color: "#c98079" }),
+        makeRow({ id: "chore-id", name: "chore", color: "#adb9c1" }),
+      ];
+      mockClientQuery
+        .mockResolvedValueOnce(undefined) // BEGIN
+        .mockResolvedValueOnce({ rows: [{ id: "user-1" }] }) // user lock
+        .mockResolvedValueOnce({ rows: [] }) // no existing labels
+        .mockResolvedValueOnce({ rows: [seedRows[0]] })
+        .mockResolvedValueOnce({ rows: [seedRows[1]] })
+        .mockResolvedValueOnce({ rows: [seedRows[2]] })
+        .mockResolvedValueOnce(undefined); // COMMIT
+
+      const labels = await ensureSeedLabels("user-1");
+
+      expect(labels.map((label) => label.name)).toEqual(["feature", "bug", "chore"]);
+      expect(mockClientQuery).toHaveBeenCalledWith(
+        "SELECT id FROM users WHERE id = $1 FOR UPDATE",
+        ["user-1"],
+      );
+      expect(mockPublishEvent).toHaveBeenCalledTimes(3);
+    });
+
+    it("does not create defaults when the user already has any label", async () => {
+      mockClientQuery
+        .mockResolvedValueOnce(undefined)
+        .mockResolvedValueOnce({ rows: [{ id: "user-1" }] })
+        .mockResolvedValueOnce({ rows: [{ id: "existing" }] })
+        .mockResolvedValueOnce(undefined);
+
+      await expect(ensureSeedLabels("user-1")).resolves.toEqual([]);
+
+      expect(mockClientQuery).not.toHaveBeenCalledWith(
+        expect.stringContaining("INSERT INTO labels"),
+        expect.anything(),
+      );
+      expect(mockPublishEvent).not.toHaveBeenCalled();
     });
   });
 

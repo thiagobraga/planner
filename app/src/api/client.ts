@@ -263,7 +263,30 @@ export interface ApiTask {
   depth?: number;
   type: 'task' | 'note';
   createdAt?: string;
+  completedAt?: string | null;
+  statusId?: string | null;
+  labels?: LabelSummary[];
 }
+
+export interface LabelSummary {
+  id: string;
+  name: string;
+  color: string;
+}
+
+export interface ApiStatus {
+  id: string;
+  collectionId: string;
+  name: string;
+  color: string;
+  orderValue: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type BoardGroupBy = 'status' | 'section' | 'priority';
+export type BoardViewMode = 'list' | 'kanban';
+export type BoardViewModes = Record<string, { view?: BoardViewMode; groupBy?: BoardGroupBy }>;
 
 export interface Preferences {
   userId: string;
@@ -279,6 +302,7 @@ export interface Preferences {
   hideCompletedTasks: boolean;
   hideOldNotes: boolean;
   collapsedCollectionIds: string[];
+  boardViewModes: BoardViewModes;
   dateFormat?: string;
 }
 
@@ -287,6 +311,9 @@ export async function fetchInboxTasks(): Promise<{
   collectionId: string | null;
   inboxCollectionId?: string;
   sections: ApiSection[];
+  statuses: ApiStatus[];
+  completionStatusId: string | null;
+  boardOrder: BoardOrder;
 }> {
   return request('/views/inbox');
 }
@@ -375,7 +402,9 @@ export async function apiDeleteTask(id: string): Promise<void> {
 export type TaskOrderScope =
   | { kind: 'collection'; collectionId: string }
   | { kind: 'day'; dueDate: string }
-  | { kind: 'section'; sectionId: string };
+  | { kind: 'section'; sectionId: string }
+  | { kind: 'status'; collectionId: string; statusId: string | null }
+  | { kind: 'priority'; collectionId: string; priority: number };
 
 export interface TaskMoveInput {
   /** New parent, or null to place at the top level. */
@@ -386,6 +415,8 @@ export interface TaskMoveInput {
   dueDate?: string | null;
   /** Omit to keep the task's current section. */
   sectionId?: string | null;
+  statusId?: string | null;
+  priority?: number;
   /** The list the task lands in. */
   scope: TaskOrderScope;
   /** Zero-based index within that scope. Clamped server-side. */
@@ -400,6 +431,9 @@ export interface MovedTaskSummary {
   dueDate: string | null;
   orderValue: number;
   depth: number;
+  statusId: string | null;
+  priority: number;
+  isCompleted: boolean;
 }
 
 export interface TaskMoveResponse {
@@ -505,10 +539,84 @@ export interface CollectionView {
   tasks: ApiTask[];
   collectionId: string;
   sections: ApiSection[];
+  statuses: ApiStatus[];
+  completionStatusId: string | null;
+  boardOrder: BoardOrder;
+}
+
+export interface BoardOrder {
+  status: Record<string, number>;
+  priority: Record<string, number>;
 }
 
 export async function fetchCollectionView(id: string): Promise<CollectionView> {
   return request<CollectionView>(`/views/collection/${id}`);
+}
+
+// ── Statuses ──────────────────────────────────────────────────────────────────
+
+export async function fetchStatuses(collectionId: string): Promise<ApiStatus[]> {
+  return request<ApiStatus[]>(`/collections/${collectionId}/statuses`);
+}
+
+export async function apiSeedStatuses(collectionId: string): Promise<ApiStatus[]> {
+  return request<ApiStatus[]>(`/collections/${collectionId}/statuses/seed`, { method: 'POST' });
+}
+
+export async function apiCreateStatus(
+  collectionId: string,
+  input: { name: string; color?: string },
+): Promise<ApiStatus> {
+  return request<ApiStatus>(`/collections/${collectionId}/statuses`, {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+}
+
+export async function apiUpdateStatus(
+  statusId: string,
+  input: Partial<{ name: string; color: string; position: number }>,
+): Promise<ApiStatus> {
+  return request<ApiStatus>(`/statuses/${statusId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(input),
+  });
+}
+
+export async function apiSetCollectionCompletionStatus(
+  collectionId: string,
+  statusId: string,
+): Promise<{ completionStatusId: string }> {
+  return request<{ completionStatusId: string }>(`/collections/${collectionId}/completion-status`, {
+    method: 'PATCH',
+    body: JSON.stringify({ statusId }),
+  });
+}
+
+export async function apiDeleteStatus(statusId: string, reassignToStatusId?: string): Promise<void> {
+  const search = reassignToStatusId ? `?reassignTo=${encodeURIComponent(reassignToStatusId)}` : '';
+  await request<unknown>(`/statuses/${statusId}${search}`, { method: 'DELETE' });
+}
+
+// ── Labels ────────────────────────────────────────────────────────────────────
+
+export async function fetchLabels(): Promise<LabelSummary[]> {
+  return request<LabelSummary[]>('/labels');
+}
+
+export async function apiCreateLabel(input: { name: string; color?: string }): Promise<LabelSummary> {
+  return request<LabelSummary>('/labels', { method: 'POST', body: JSON.stringify(input) });
+}
+
+export async function apiUpdateLabel(
+  labelId: string,
+  input: Partial<{ name: string; color: string }>,
+): Promise<LabelSummary> {
+  return request<LabelSummary>(`/labels/${labelId}`, { method: 'PATCH', body: JSON.stringify(input) });
+}
+
+export async function apiDeleteLabel(labelId: string): Promise<void> {
+  await request<unknown>(`/labels/${labelId}`, { method: 'DELETE' });
 }
 
 // ── Sections ──────────────────────────────────────────────────────────────────
