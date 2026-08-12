@@ -208,7 +208,6 @@ vi.mock('../../components/TaskList', () => ({
       onEditCancel,
       onDelete,
       onAddBelow,
-      onAddAbove,
       onIndent,
       onConvertType,
       onRightClick,
@@ -222,7 +221,6 @@ vi.mock('../../components/TaskList', () => ({
       onEditCancel?: (id: string) => void;
       onDelete?: (id: string) => void;
       onAddBelow?: (id: string) => void;
-      onAddAbove?: (id: string) => void;
       onIndent?: (id: string, dir: 1 | -1) => void;
       onConvertType?: (id: string, type: 'task' | 'note') => void;
       onRightClick?: (id: string, position: { x: number; y: number }) => void;
@@ -268,12 +266,6 @@ vi.mock('../../components/TaskList', () => ({
             </button>
             <button data-testid={`add-below-${task.id}`} onClick={() => onAddBelow?.(task.id)}>
               add below
-            </button>
-            <button data-testid="add-above-ghost" onClick={() => onAddAbove?.('ghost-task')}>
-              add above ghost
-            </button>
-            <button data-testid="add-below-ghost" onClick={() => onAddBelow?.('ghost-task')}>
-              add below ghost
             </button>
             <button
               data-testid={`convert-${task.id}`}
@@ -554,6 +546,7 @@ describe('InboxPage', () => {
         ...baseInboxData,
         inboxCollectionId: 'col-1',
         sections: [section()],
+        tasks: sampleTasks,
       });
       mockApiCreateTask.mockResolvedValueOnce(createdTask({ title: 'Section task', sectionId: 'section-1' }));
       mockApiCreateTask.mockRejectedValueOnce(new Error('boom'));
@@ -842,17 +835,6 @@ describe('InboxPage', () => {
       await waitFor(() => expect(mockFetchInboxTasks).toHaveBeenCalledTimes(2));
     });
 
-    it('ignores add-below and add-above for unknown task ids', async () => {
-      mockFetchInboxTasks.mockResolvedValue({ tasks: sampleTasks, collectionId: 'col-1' });
-      renderPage();
-
-      await screen.findByText('Buy groceries');
-      fireEvent.click(screen.getAllByTestId('add-below-ghost')[0]);
-      fireEvent.click(screen.getAllByTestId('add-above-ghost')[0]);
-
-      expect(screen.getAllByTestId(/^task-item-/)).toHaveLength(2);
-    });
-
     it('does nothing when unindenting a top-level task', async () => {
       mockFetchInboxTasks.mockResolvedValue({ tasks: sampleTasks, collectionId: 'col-1' });
       renderPage();
@@ -862,6 +844,20 @@ describe('InboxPage', () => {
 
       expect(mockApiUpdateTask).not.toHaveBeenCalled();
       expect(screen.getByTestId('task-item-task-1')).toBeInTheDocument();
+    });
+
+    it('indents a temp row locally without an API call', async () => {
+      mockFetchInboxTasks.mockResolvedValue({ tasks: sampleTasks, collectionId: 'col-1' });
+      renderPage();
+
+      await screen.findByText('Buy groceries');
+      fireEvent.click(screen.getByTestId('add-below-task-2'));
+      const temp = await screen.findByTestId(/^task-item-temp-/);
+
+      fireEvent.click(screen.getByTestId(`indent-${temp.dataset.taskId}`));
+
+      expect(mockApiUpdateTask).not.toHaveBeenCalled();
+      expect(screen.getByTestId(`task-item-${temp.dataset.taskId}`)).toBeInTheDocument();
     });
 
     it('refetches when deleting a task fails', async () => {
@@ -886,6 +882,38 @@ describe('InboxPage', () => {
       fireEvent.click(screen.getByTestId('toggle-task-1'));
 
       await waitFor(() => expect(mockApiToggleTask).toHaveBeenCalledWith('task-1', true));
+    });
+
+    it('toggles before the preferences query resolves', async () => {
+      mockFetchInboxTasks.mockResolvedValue({ tasks: sampleTasks, collectionId: 'col-1' });
+      mockApiToggleTask.mockResolvedValue({ ...sampleTasks[0], isCompleted: true });
+      let resolvePrefs!: (value: unknown) => void;
+      mockFetchPreferences.mockReturnValue(
+        new Promise((resolve) => {
+          resolvePrefs = resolve;
+        }),
+      );
+      renderPage();
+
+      await screen.findByText('Buy groceries');
+      fireEvent.click(screen.getByTestId('toggle-task-1'));
+
+      await waitFor(() => expect(mockApiToggleTask).toHaveBeenCalledWith('task-1', true));
+      resolvePrefs(basePreferences);
+    });
+
+    it('toggles a temp row locally without an API call', async () => {
+      mockFetchInboxTasks.mockResolvedValue({ tasks: sampleTasks, collectionId: 'col-1' });
+      renderPage();
+
+      await screen.findByText('Buy groceries');
+      fireEvent.click(screen.getByTestId('add-below-task-1'));
+      const temp = await screen.findByTestId(/^task-item-temp-/);
+
+      fireEvent.click(screen.getByTestId(`toggle-${temp.dataset.taskId}`));
+
+      expect(mockApiToggleTask).not.toHaveBeenCalled();
+      expect(screen.getByTestId(`task-item-${temp.dataset.taskId}`)).toBeInTheDocument();
     });
 
     it('reopens a completed task', async () => {
@@ -945,6 +973,18 @@ describe('InboxPage', () => {
       fireEvent.click(screen.getByTestId(`context-task-1`));
       fireEvent.click(await screen.findByRole('menuitem', { name: 'Add above' }));
       await waitFor(() => expect(screen.getAllByTestId(/^task-item-temp-/)).toHaveLength(2));
+    });
+
+    it('adds a row above a task that has a previous sibling', async () => {
+      renderPage();
+      await screen.findByText('Buy groceries');
+
+      fireEvent.click(screen.getByTestId('context-task-2'));
+      fireEvent.click(await screen.findByRole('menuitem', { name: 'Add above' }));
+
+      const above = await screen.findByTestId(/^task-item-temp-/);
+      const items = screen.getAllByTestId(/^task-item-/).map((el) => el.dataset.taskId);
+      expect(items).toEqual(['task-1', above.dataset.taskId, 'task-2']);
     });
 
     it('deletes the task from the menu', async () => {
@@ -1017,6 +1057,19 @@ describe('InboxPage', () => {
       fireEvent.click(await screen.findByRole('menuitem', { name: 'No collection' }));
 
       await waitFor(() => expect(mockFetchInboxTasks).toHaveBeenCalledTimes(2));
+    });
+
+    it('does nothing when no inbox collection exists', async () => {
+      mockFetchCollections.mockResolvedValue([collection({ isInbox: false })]);
+      renderPage();
+      await screen.findByText('Buy groceries');
+
+      fireEvent.click(screen.getByTestId('context-task-1'));
+      fireEvent.click(await screen.findByRole('menuitem', { name: 'Collection' }));
+      fireEvent.click(await screen.findByRole('menuitem', { name: 'No collection' }));
+
+      expect(mockApiUpdateTask).not.toHaveBeenCalled();
+      expect(screen.getByTestId('task-item-task-1')).toBeInTheDocument();
     });
 
     it('renames and deletes a section from its context menu', async () => {
@@ -1250,6 +1303,29 @@ describe('InboxPage', () => {
       expect(screen.queryByText('Work')).not.toBeInTheDocument();
       expect(screen.getByTestId('task-item-task-1')).toBeInTheDocument();
       expect(taskListCalls('collection:inbox').at(-1)![0].tasks.map((t) => t.id)).toContain('task-1');
+    });
+
+    it('keeps unrelated tasks in place when moving section tasks to the top level', async () => {
+      mockFetchInboxTasks.mockResolvedValue({
+        ...baseInboxData,
+        inboxCollectionId: 'col-1',
+        sections: [section()],
+        tasks: [{ ...sampleTasks[0], sectionId: 'section-1' }, sampleTasks[1]],
+      });
+      mockApiDeleteSection.mockResolvedValue(undefined);
+      renderPage();
+
+      fireEvent.doubleClick(await screen.findByText('Work'));
+      const input = screen.getByDisplayValue('Work');
+      fireEvent.change(input, { target: { value: '' } });
+      fireEvent.keyDown(input, { key: 'Enter' });
+
+      fireEvent.click(await screen.findByRole('button', { name: 'Move tasks to top-level' }));
+
+      await waitFor(() => expect(mockApiDeleteSection).toHaveBeenCalledWith('section-1'));
+      const ids = taskListCalls('collection:inbox').at(-1)![0].tasks.map((t) => t.id);
+      expect(ids).toContain('task-1');
+      expect(ids).toContain('task-2');
     });
 
     it('refetches when moving tasks to the top level fails', async () => {

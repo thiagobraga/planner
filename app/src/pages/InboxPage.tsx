@@ -248,7 +248,6 @@ export function InboxPage() {
     const tid = tempId();
     setTasks((prev) => {
       const idx = prev.findIndex((t) => t.id === afterId);
-      if (idx === -1) return prev;
       const computedOrderValue = calculateMidpointOrder(prev, idx, 'below');
       const next = [...prev];
       next.splice(idx + 1, 0, {
@@ -272,7 +271,6 @@ export function InboxPage() {
     const tid = tempId();
     setTasks((prev) => {
       const idx = prev.findIndex((t) => t.id === beforeId);
-      if (idx === -1) return prev;
       const computedOrderValue = calculateMidpointOrder(prev, idx, 'above');
       const next = [...prev];
       next.splice(idx, 0, {
@@ -419,8 +417,7 @@ export function InboxPage() {
   }, [inboxCollectionId]);
 
   const handleDeleteSection = useCallback((sectionId: string) => {
-    const section = sections.find((s) => s.id === sectionId);
-    if (!section) return;
+    const section = sections.find((s) => s.id === sectionId)!;
     const taskCount = tasks.filter((t) => t.sectionId === sectionId).length;
     setDeletingSection({ id: sectionId, name: section.name, taskCount });
   }, [sections, tasks]);
@@ -439,8 +436,7 @@ export function InboxPage() {
       }
       setSections((prev) => prev.map((s) => (s.id === sectionId ? { ...s, name: trimmed } : s)));
       if (sectionId.startsWith('temp-')) {
-        if (!inboxCollectionId) return;
-        apiCreateSection(inboxCollectionId, { name: trimmed })
+        apiCreateSection(inboxCollectionId!, { name: trimmed })
           .then((created) => {
             setSections((prev) =>
               prev.map((s) => (s.id === sectionId ? created : s))
@@ -464,8 +460,7 @@ export function InboxPage() {
   }, []);
 
   const handleConfirmDeleteSectionAndTasks = useCallback(() => {
-    if (!deletingSection) return;
-    const { id: sectionId } = deletingSection;
+    const { id: sectionId } = deletingSection!;
     const taskIds = tasks.filter((t) => t.sectionId === sectionId).map((t) => t.id);
     setDeletingSection(null);
     setTasks((prev) => prev.filter((t) => t.sectionId !== sectionId));
@@ -476,8 +471,7 @@ export function InboxPage() {
   }, [deletingSection, tasks, invalidate]);
 
   const handleConfirmMoveTasksToTopLevel = useCallback(() => {
-    if (!deletingSection) return;
-    const { id: sectionId } = deletingSection;
+    const { id: sectionId } = deletingSection!;
     setDeletingSection(null);
     setTasks((prev) => prev.map((t) => (t.sectionId === sectionId ? { ...t, sectionId: undefined } : t)));
     setSections((prev) => prev.filter((s) => s.id !== sectionId));
@@ -495,9 +489,7 @@ export function InboxPage() {
         />
       ),
       onClick: () => {
-        if (contextMenu?.taskId) {
-          apiUpdateTask(contextMenu.taskId, { collectionId: c.id }).catch(() => invalidate());
-        }
+        apiUpdateTask(contextMenu!.taskId, { collectionId: c.id }).catch(() => invalidate());
       },
     }));
 
@@ -510,11 +502,9 @@ export function InboxPage() {
         />
       ),
       onClick: () => {
-        if (contextMenu?.taskId) {
-          const inbox = collections.find((c) => c.isInbox);
-          if (inbox) {
-            apiUpdateTask(contextMenu.taskId, { collectionId: inbox.id }).catch(() => invalidate());
-          }
+        const inbox = collections.find((c) => c.isInbox);
+        if (inbox) {
+          apiUpdateTask(contextMenu!.taskId, { collectionId: inbox.id }).catch(() => invalidate());
         }
       },
     });
