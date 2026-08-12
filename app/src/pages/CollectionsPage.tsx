@@ -5,7 +5,9 @@ import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { TaskList } from '../components/TaskList';
 import { SectionHeader } from '../components/SectionHeader';
 import { InlineNameInput } from '../components/ui/InlineNameInput';
-import { TaskVisibilityControls } from '../components/TaskVisibilityControls';
+import { CollectionBoard } from '../components/board/CollectionBoard';
+import { BoardToolbar } from '../components/board/BoardToolbar';
+import { StatusTaskList } from '../components/board/StatusTaskList';
 import { nextOrderValue } from '../utils/order';
 import { extractNaturalDate } from '../utils/date';
 import type { Task } from '../components/TaskItem';
@@ -31,6 +33,7 @@ import { runOptimistic, patchById, upsertById } from '../stores/optimistic';
 import { useTaskDrag } from '../hooks/useTaskDrag';
 import { useSectionDrag } from '../hooks/useSectionDrag';
 import { useTaskVisibilityPreferences } from '../hooks/useTaskVisibilityPreferences';
+import { useBoardPreferences } from '../hooks/useBoardPreferences';
 import { flattenTasks } from '../utils/taskProjection';
 import { applyIndent } from '../utils/taskTree';
 import { fetchCollections } from '../api/client';
@@ -42,6 +45,7 @@ import { SectionDeleteModal } from '../components/SectionDeleteModal';
 import { flattenCollections, getHierarchicalColor } from '../components/CollectionTreeNav';
 import { Calendar, Tag, Folder, Hash, ArrowUp, ArrowDown, Trash2, Pencil, ChevronRight } from 'lucide-react';
 import { useI18n } from '../i18n/I18nContext';
+import { buildStatusListGroups } from '../utils/boardColumns';
 
 function apiToTask(t: ApiTask): Task {
   return {
@@ -51,6 +55,7 @@ function apiToTask(t: ApiTask): Task {
     priority: t.priority,
     collectionId: t.collectionId,
     sectionId: t.sectionId,
+    statusId: t.statusId,
     parentTaskId: t.parentTaskId ?? undefined,
     dueDate: t.dueDate ?? undefined,
     isCompleted: t.isCompleted,
@@ -131,6 +136,7 @@ export function CollectionsPage() {
     setHideCompletedTasks,
     setHideOldNotes,
   } = useTaskVisibilityPreferences(preferences);
+  const boardPreferences = useBoardPreferences(id, preferences);
 
   useEffect(() => {
     if (data?.tasks) {
@@ -150,6 +156,7 @@ export function CollectionsPage() {
   );
 
   const { activeDragId } = useTaskDrag({
+    enabled: boardPreferences.view === 'list',
     tasks,
     setTasks,
     scope: { kind: 'collection', collectionId: id },
@@ -599,6 +606,11 @@ export function CollectionsPage() {
     tasks,
     sections.filter((s) => !s.id.startsWith('temp-')),
   );
+  const statusListGroups = useMemo(
+    () => buildStatusListGroups(tasks, data?.statuses ?? []),
+    [data?.statuses, tasks],
+  );
+  const showStatusGroups = boardPreferences.groupBy === 'status' && statusListGroups.length > 0;
 
   return (
     <div
@@ -680,36 +692,88 @@ export function CollectionsPage() {
         </div>
 
         <div className="page-header-toolbar collection-page-header-controls absolute bottom-0 right-0 z-20 flex items-center">
-          <TaskVisibilityControls
+          <BoardToolbar
+            view={boardPreferences.view}
+            groupBy={boardPreferences.groupBy}
             hideCompletedTasks={preferences?.hideCompletedTasks ?? false}
             hideOldNotes={preferences?.hideOldNotes ?? false}
-            disabled={!preferences || visibilityPreferencesPending}
+            preferencesDisabled={!preferences || visibilityPreferencesPending}
+            onViewChange={boardPreferences.setView}
+            onGroupByChange={boardPreferences.setGroupBy}
             onHideCompletedTasksChange={setHideCompletedTasks}
             onHideOldNotesChange={setHideOldNotes}
           />
         </div>
       </header>
 
-      <div className="max-w-162">
+      <div className={boardPreferences.view === 'kanban' ? 'w-full' : 'max-w-162'}>
+        {boardPreferences.view === 'kanban' && data ? (
+          <CollectionBoard
+            collectionId={id}
+            queryKey={['collection', id]}
+            groupBy={boardPreferences.groupBy}
+            tasks={data.tasks}
+            statuses={data.statuses}
+            sections={data.sections}
+            boardOrder={data.boardOrder}
+            onToggle={(taskId) => handleToggle(taskId)}
+          />
+        ) : (
+        <>
         <div className="h-6" />
 
-        <TaskList
-          tasks={topLevelGroup.tasks}
-          containerId={`collection:${id}`}
-          activeDragId={activeDragId}
-          editingId={editingId}
-          onTaskToggle={handleToggle}
-          onStartEdit={handleStartEdit}
-          onEditCommit={handleEditCommit}
-          onEditCancel={handleEditCancel}
-          onDelete={handleDelete}
-          onAddBelow={handleAddBelow}
-          onIndent={handleIndent}
-          onConvertType={handleConvertType}
-          onRightClick={handleRightClick}
-        />
+        {showStatusGroups ? (
+          <StatusTaskList
+            groups={statusListGroups}
+            afterFirstGroup={(
+              <form onSubmit={handleAddAtEnd} className="flex h-6 items-center">
+                <span className="w-6 shrink-0 select-none text-center text-[10px] leading-6 text-ink opacity-25">•</span>
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  placeholder={t('common.addTask')}
+                  className="task-input task-add-input flex-1 border-none bg-transparent p-0 text-sm leading-6 text-ink outline-none"
+                  spellCheck={false}
+                  onKeyDown={handleAddNoteKeyDown}
+                />
+              </form>
+            )}
+            taskListProps={{
+              collectionId: id,
+              activeDragId,
+              editingId,
+              onTaskToggle: handleToggle,
+              onStartEdit: handleStartEdit,
+              onEditCommit: handleEditCommit,
+              onEditCancel: handleEditCancel,
+              onDelete: handleDelete,
+              onAddBelow: handleAddBelow,
+              onIndent: handleIndent,
+              onConvertType: handleConvertType,
+              onRightClick: handleRightClick,
+            }}
+          />
+        ) : (
+          <TaskList
+            tasks={topLevelGroup.tasks}
+            containerId={`collection:${id}`}
+            activeDragId={activeDragId}
+            editingId={editingId}
+            onTaskToggle={handleToggle}
+            onStartEdit={handleStartEdit}
+            onEditCommit={handleEditCommit}
+            onEditCancel={handleEditCancel}
+            onDelete={handleDelete}
+            onAddBelow={handleAddBelow}
+            onIndent={handleIndent}
+            onConvertType={handleConvertType}
+            onRightClick={handleRightClick}
+          />
+        )}
 
-        <form
+        {!showStatusGroups && <form
         onSubmit={handleAddAtEnd}
         className="flex items-center h-6"
       >
@@ -726,8 +790,9 @@ export function CollectionsPage() {
           spellCheck={false}
           onKeyDown={handleAddNoteKeyDown}
         />
-        </form>
+        </form>}
 
+        {!showStatusGroups && <>
         <SortableContext
           items={sectionGroups.map((group) => group.section!.id)}
           strategy={verticalListSortingStrategy}
@@ -808,6 +873,9 @@ export function CollectionsPage() {
               {t('page.newSection')}
             </span>
           </button>
+        )}
+        </>}
+        </>
         )}
       </div>
 

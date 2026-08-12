@@ -22,6 +22,7 @@ import { CustomSelect } from '../components/ui/CustomSelect';
 import { ContextMenu, ContextMenuItem } from '../components/ui/ContextMenu';
 import { Briefcase, Calendar as CalendarIcon, Tag, ArrowUp, ArrowDown } from 'lucide-react';
 import { fetchPreferences } from '../api/client';
+import { BoardCard } from '../components/board/BoardCard';
 
 // ── Card wrapper ──────────────────────────────────────────────────────────────
 function Card({
@@ -447,6 +448,51 @@ export function StyleguidePage() {
             <TaskRowSpecimen priority={2} title="Draft weekly entry in Lora serif" tags={['writing']} date="Jul 12" />
             <TaskRowSpecimen priority={3} title="Implement interactive habit grid" tags={['dev']} date="Jun 17" selected />
             <TaskRowSpecimen priority={4} title="Configure cross-out styles for tests" tags={['dev']} date="Jun 09" completed />
+          </div>
+        </Card>
+
+        {/* Board Card */}
+        <Card title="Board Card">
+          <div className="w-72">
+            <BoardCard
+              task={{
+                id: 'board-card-specimen',
+                title: 'Review the board interaction notes',
+                description: 'Keep the paper texture visible through every surface.',
+                priority: 2,
+                collectionId: 'styleguide',
+                dueDate: '2026-08-14',
+                isCompleted: false,
+                orderValue: 1000,
+                type: 'task',
+                labels: [
+                  { id: 'label-design', name: 'design', color: '#c98079' },
+                  { id: 'label-review', name: 'review', color: '#8ca46a' },
+                ],
+              }}
+              subtasks={[
+                {
+                  id: 'board-card-subtask-1',
+                  title: 'Check spacing',
+                  priority: 4,
+                  collectionId: 'styleguide',
+                  parentTaskId: 'board-card-specimen',
+                  isCompleted: true,
+                  orderValue: 1000,
+                  type: 'task',
+                },
+                {
+                  id: 'board-card-subtask-2',
+                  title: 'Verify contrast',
+                  priority: 4,
+                  collectionId: 'styleguide',
+                  parentTaskId: 'board-card-specimen',
+                  isCompleted: false,
+                  orderValue: 2000,
+                  type: 'task',
+                },
+              ]}
+            />
           </div>
         </Card>
 

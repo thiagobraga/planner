@@ -15,6 +15,8 @@ export interface ViewToolbarProps {
   onMoveCompletedChange?: (value: boolean) => void;
   onFilter?: () => void;
   className?: string;
+  viewOnly?: boolean;
+  compact?: boolean;
 }
 
 // View-options toolbar: Filter · Show completed · Move completed to end · List/Kanban · overflow.
@@ -27,6 +29,8 @@ export function ViewToolbar({
   onMoveCompletedChange,
   onFilter,
   className = '',
+  viewOnly = false,
+  compact = false,
 }: ViewToolbarProps) {
   const { t } = useI18n();
   const [viewState, setViewState] = useState<ViewMode>('list');
@@ -42,24 +46,28 @@ export function ViewToolbar({
   const setMove = (v: boolean) => (onMoveCompletedChange ? onMoveCompletedChange(v) : setMoveState(v));
 
   return (
-    <div className={`flex flex-wrap items-center gap-2.5 pr-1 ${className}`}>
-      <Button variant="secondary" leftIcon={<SlidersHorizontal />} onClick={onFilter}>
-        {t('common.filter')}
-      </Button>
+    <div className={`flex flex-wrap items-center gap-2.5 ${compact ? '' : 'pr-1'} ${className}`}>
+      {!viewOnly && (
+        <>
+          <Button variant="secondary" leftIcon={<SlidersHorizontal />} onClick={onFilter}>
+            {t('common.filter')}
+          </Button>
 
-      <Checkbox
-        checked={showCompleted}
-        onChange={(e) => setShow(e.target.checked)}
-        label={t('toolbar.showCompleted')}
-      />
-      <Checkbox
-        checked={moveCompleted}
-        onChange={(e) => setMove(e.target.checked)}
-        label={t('toolbar.moveCompleted')}
-      />
+          <Checkbox
+            checked={showCompleted}
+            onChange={(e) => setShow(e.target.checked)}
+            label={t('toolbar.showCompleted')}
+          />
+          <Checkbox
+            checked={moveCompleted}
+            onChange={(e) => setMove(e.target.checked)}
+            label={t('toolbar.moveCompleted')}
+          />
+        </>
+      )}
 
       {/* Segmented List / Kanban toggle */}
-      <div className="ml-auto inline-flex items-center rounded-[8px] border border-border overflow-hidden mr-2.5">
+      <div className={`ml-auto inline-flex items-center border border-border overflow-hidden ${compact ? 'h-6 rounded-[4px]' : 'rounded-[8px] mr-2.5'}`}>
         {([
           { mode: 'list' as const, label: t('toolbar.list'), Icon: List },
           { mode: 'kanban' as const, label: t('toolbar.kanban'), Icon: LayoutGrid },
@@ -69,23 +77,23 @@ export function ViewToolbar({
             type="button"
             aria-pressed={view === mode}
             onClick={() => setView(mode)}
-            className={`inline-flex items-center gap-1.5 h-9 px-3 text-sm font-journal leading-none transition-colors duration-[var(--motion-fast)] ${
+            className={`inline-flex items-center font-journal leading-none transition-colors duration-[var(--motion-fast)] ${compact ? 'h-6 gap-1 px-2 text-[12px]' : 'h-9 gap-1.5 px-3 text-sm'} ${
               i > 0 ? 'border-l border-border' : ''
             } ${view === mode ? 'bg-dot/60 text-ink' : 'bg-transparent text-ink-light hover:bg-dot/30'}`}
           >
-            <Icon size={15} strokeWidth={1.5} />
+            <Icon size={compact ? 12 : 15} strokeWidth={1.5} />
             {label}
           </button>
         ))}
       </div>
 
-      <button
+      {!viewOnly && <button
         type="button"
         aria-label={t('toolbar.moreOptions')}
         className="inline-flex items-center justify-center w-9 h-9 rounded-[8px] text-ink-light hover:bg-dot/30 transition-colors duration-[var(--motion-fast)] mr-1"
       >
         <MoreHorizontal size={18} strokeWidth={1.5} />
-      </button>
+      </button>}
     </div>
   );
 }

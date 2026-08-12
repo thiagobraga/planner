@@ -16,6 +16,7 @@ export interface Task {
   priority: number;
   collectionId?: string;
   sectionId?: string;
+  statusId?: string | null;
   parentTaskId?: string;
   dueDate?: string;
   recurrenceRule?: object | null;
