@@ -1,9 +1,9 @@
-FROM node:26.5.1-alpine3.24 AS build
+FROM node:26.7.0-alpine3.24 AS build
 WORKDIR /app
 COPY --chown=node:node app ./
 RUN npm ci && npm run build && npm cache clean --force
 
-FROM node:26.5.1-alpine3.24 AS development
+FROM node:26.7.0-alpine3.24 AS development
 WORKDIR /app
 COPY --chown=node:node --chmod=755 .docker/app/entrypoint.sh /entrypoint.sh
 COPY --chown=node:node app ./
