@@ -11,9 +11,24 @@ Planner is a task manager with a paper-journal aesthetic (warm cream, Lora serif
 ```bash
 cp .env.example .env          # fill POSTGRES_PASSWORD, CORS_ORIGIN
 docker compose up -d          # installs deps, runs migrations, starts api (4000) + app (5173)
+bash .hooks/setup-hooks.sh    # one-time: points git at the versioned hooks in .hooks/
 ```
 
 Required `.env` vars: `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `CORS_ORIGIN`.
+
+### Git hooks
+
+`core.hooksPath` is local git config - it is **not** set by cloning and does not
+carry over automatically. Every fresh clone (including a new `git worktree add`
+off a *different* repo checkout) needs `bash .hooks/setup-hooks.sh` run once, or
+`pre-commit`/`pre-push` silently never run - no error, no warning, commits and
+pushes just skip straight past lint/test/build. If you're an AI agent starting
+work in a repo you haven't set up before, run this before your first commit:
+
+```bash
+git config --get core.hooksPath   # expect ".hooks" - if empty or anything else, hooks are OFF
+bash .hooks/setup-hooks.sh
+```
 
 ### Dev hosts (Traefik on the `proxy` network)
 
