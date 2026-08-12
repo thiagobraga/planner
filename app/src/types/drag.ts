@@ -6,7 +6,7 @@
 // handlers never reach back into component state to find it.
 
 /** Discriminator for anything that can be picked up. */
-export type DragKind = 'task' | 'habit' | 'habit-group' | 'collection' | 'section-header';
+export type DragKind = 'task' | 'habit' | 'habit-group' | 'collection' | 'section-header' | 'board-column';
 
 /**
  * Discriminator for anything that can be dropped on.
@@ -30,7 +30,12 @@ export type DropKind =
   | 'collection'
   | 'day'
   | 'section'
-  | 'section-header';
+  | 'section-header'
+  | 'board-column'
+  | 'board-column-header'
+  | 'card-subtasks';
+
+export type BoardGroupBy = 'status' | 'section' | 'priority';
 
 /**
  * Which ordered list a task position refers to.
@@ -42,7 +47,9 @@ export type DropKind =
 export type TaskOrderScope =
   | { kind: 'collection'; collectionId: string }
   | { kind: 'day'; dueDate: string }
-  | { kind: 'section'; sectionId: string };
+  | { kind: 'section'; sectionId: string }
+  | { kind: 'status'; collectionId: string; statusId: string | null }
+  | { kind: 'priority'; collectionId: string; priority: number };
 
 export interface TaskDragData {
   kind: 'task';
@@ -155,12 +162,41 @@ export interface SectionHeaderDragData {
   collectionId: string;
 }
 
+export interface BoardColumnDragData {
+  kind: 'board-column';
+  columnId: string;
+  collectionId: string;
+  groupBy: BoardGroupBy;
+}
+
+export interface BoardColumnDropData {
+  kind: 'board-column';
+  columnId: string;
+  collectionId: string;
+  groupBy: BoardGroupBy;
+  containerId: string;
+}
+
+export interface BoardColumnHeaderDropData {
+  kind: 'board-column-header';
+  columnId: string;
+  collectionId: string;
+  groupBy: BoardGroupBy;
+}
+
+export interface CardSubtasksDropData {
+  kind: 'card-subtasks';
+  taskId: string;
+  collectionId: string;
+}
+
 export type DragData =
   | TaskDragData
   | HabitDragData
   | HabitGroupDragData
   | CollectionDragData
-  | SectionHeaderDragData;
+  | SectionHeaderDragData
+  | BoardColumnDragData;
 
 export type DropData =
   | TaskDragData
@@ -170,7 +206,10 @@ export type DropData =
   | CollectionDropData
   | DayDropData
   | SectionDropData
-  | SectionHeaderDragData;
+  | SectionHeaderDragData
+  | BoardColumnDropData
+  | BoardColumnHeaderDropData
+  | CardSubtasksDropData;
 
 export function isTaskDrag(data: DragData | undefined): data is TaskDragData {
   return data?.kind === 'task';
