@@ -17,15 +17,15 @@ Work in a worktree: `git worktree add ../planner-kanban-board -b feat/kanban-boa
 - [x] `listStatuses(collectionId, userId)` ordered by `order_value`.
 - [x] `ensureCollectionStatuses(collectionId, userId)` — idempotent, opens with
       `SELECT id FROM collections WHERE id = $1 FOR UPDATE`; seeds Backlog / Todo / Doing /
-      Completed (only Completed `is_done_like`), names localized from `preferences.locale`; files
-      every status-less task — completed into the first done-like, the rest into the first column.
+      Completed, names localized from `preferences.locale`; files every status-less task. The
+      completion mapping is superseded by the collection-owned refactor below.
 - [x] `createStatus` (append at `MAX(order_value) + 1000`), `updateStatus` (name / color /
-      isDoneLike / position, splice-and-rewrite siblings), `deleteStatus` with
+      position, splice-and-rewrite siblings), `deleteStatus` with
       `reassignToStatusId` and a 409 on the collection's last status.
-- [x] Publish `entityType: 'status'` with `collectionId` from all four mutations.
+- [x] Publish `entityType: 'status'` with `collectionId` from every status mutation.
 - [x] Add `"status"` to `SyncEntityType` (`api/src/services/syncService.ts:18`) and
       `app/src/hooks/useSync.ts:6`; add the invalidation branch in `AppShell.tsx:36-49`.
-- [x] Create `api/src/routes/statuses.ts` (five endpoints per plan) and mount it in
+- [x] Create `api/src/routes/statuses.ts` (six endpoints after the completion-status refactor) and mount it in
       `api/src/routes/index.ts`.
 - [x] Both `formatTask` copies (`taskService.ts:32`, `viewService.ts:35`) gain
       `statusId: row.status_id`.
@@ -37,18 +37,37 @@ Work in a worktree: `git worktree add ../planner-kanban-board -b feat/kanban-boa
 
 - [x] Create `completionSync.ts` with `syncCompletionToStatus` and `syncStatusToCompletion`, both
       taking an open `PoolClient`.
-- [x] `syncCompletionToStatus` — done-like sets `is_completed`/`completed_at` and cascades to
+- [x] `syncCompletionToStatus` — the collection completion status sets `is_completed`/`completed_at` and cascades to
       descendants with the same recursive CTE as `completeTask` (`taskService.ts:176-190`);
-      non-done-like clears both without cascading; returns null when already aligned. Record the
+      another status clears both without cascading; returns null when already aligned. Record the
       matching activity event.
-- [x] `syncStatusToCompletion` — on complete write `previous_status_id` then the first done-like
-      status; on reopen restore `COALESCE(previous_status_id, first non-done-like)` and clear it.
+- [x] `syncStatusToCompletion` — on complete write `previous_status_id` then the collection's
+      completion status; on reopen restore `COALESCE(previous_status_id, first other status)` and clear it.
 - [x] Wire into `completeTask` (`taskService.ts:81`) and `reopenTask` (`:623`).
-- [x] Wire into `statusService.updateStatus` when `isDoneLike` flips.
+- [x] Wire into the collection-level completion-status mutation when the mapping changes.
 - [x] Confirm `updateTask` does **not** accept `statusId` — a fifth call site is forbidden.
 - [x] Tests: `services/__tests__/completionSync.test.ts`.
 - [x] Verify: `docker compose exec api npm run build && docker compose exec api npm run lint && docker compose exec api npm test`
-- [x] Commit: `feat(api): reconcile completion with done-like statuses`
+- [x] Original commit: `feat(api): reconcile completion with done-like statuses` (superseded by the
+      collection-owned completion-status refactor below).
+
+### Completion-status ownership refactor
+
+- [x] Add forward migration `040_collection_completion_status.sql`: move completion ownership to
+      `collections.completion_status_id`, backfill the existing mapping, enforce same-collection
+      references, and remove `task_statuses.is_done_like`.
+- [x] Remove `isDoneLike` from status persistence and API contracts; expose one
+      `completionStatusId` in collection and inbox view metadata.
+- [x] Add a collection-level completion-status mutation and transactionally realign tasks in the old
+      and new completion columns.
+- [x] Make direct first-status creation atomically initialize the collection completion pointer.
+- [x] Require reassignment before deleting the active completion status and preserve completion
+      semantics during status deletion.
+- [x] Update completion sync, task moves, board derivation, and regression tests around the single
+      collection-owned completion status.
+- [x] Verify API/app focused and full suites, lint, builds, migration on the isolated database, and
+      the visible browser flow. API: 83 files / 819 tests. App: 107 files / 916 tests. Browser: four
+      columns rendered, `completionStatusId` mapped to Completed, and zero console errors.
 
 ## Milestone 3 — Labels, implemented (`api/src/services/labelService.ts`)
 
@@ -189,11 +208,11 @@ Work in a worktree: `git worktree add ../planner-kanban-board -b feat/kanban-boa
 
 - [ ] `useBoardColumnDrag` registering `'board-column'`, dispatching to `apiUpdateStatus({position})`
       or `apiUpdateSection({position})` by group-by mode.
-- [ ] Inline rename via `InlineNameInput`; recolor via `ColorPickerPopover`; done-like toggle in the
-      `⋯` `ContextMenu`.
+- [ ] Inline rename via `InlineNameInput`; recolor via `ColorPickerPopover`; collection completion
+      status selection in the `⋯` `ContextMenu`.
 - [ ] `ColumnDeleteModal.tsx` — reassign-or-delete, modelled on `SectionDeleteModal`.
 - [ ] Surface the last-column 409 and the label-name 400 as messages, not swallowed errors.
-- [ ] Confirmation dialog before flipping `isDoneLike` on a non-empty column.
+- [ ] Confirmation dialog before changing the collection completion status on a non-empty board.
 - [ ] Tests: extend the board component tests.
 - [ ] Verify: `docker compose exec app npm run build && docker compose exec app npm run lint && docker compose exec app npm test`
 - [ ] Commit: `feat(app): reorder, rename and delete board columns`

@@ -37,8 +37,9 @@ describe('buildColumns', () => {
       tasks,
       statuses: [{
         id: 'status-1', collectionId: 'collection-1', name: 'Todo', color: '#adb9c1',
-        isDoneLike: false, orderValue: 0, createdAt: '', updatedAt: '',
+        orderValue: 0, createdAt: '', updatedAt: '',
       }],
+      completionStatusId: 'status-done',
       sections: [],
       boardOrder: { status: { a: 2000, b: 1000 }, priority: {} },
       noSectionTitle: 'No section',
@@ -52,6 +53,7 @@ describe('buildColumns', () => {
   it('always renders four priority columns', () => {
     const columns = buildColumns({
       groupBy: 'priority', tasks: [], statuses: [], sections: [],
+      completionStatusId: null,
       boardOrder: { status: {}, priority: {} }, noSectionTitle: 'No section',
       priorityTitle: (priority) => `P${priority}`,
     });
@@ -63,11 +65,11 @@ describe('buildStatusListGroups', () => {
   const statuses = [
     {
       id: 'backlog', collectionId: 'collection-1', name: 'Backlog', color: '#adb9c1',
-      isDoneLike: false, orderValue: 0, createdAt: '', updatedAt: '',
+      orderValue: 0, createdAt: '', updatedAt: '',
     },
     {
       id: 'completed', collectionId: 'collection-1', name: 'Completed', color: '#8ca46a',
-      isDoneLike: true, orderValue: 1000, createdAt: '', updatedAt: '',
+      orderValue: 1000, createdAt: '', updatedAt: '',
     },
   ];
 
@@ -76,11 +78,20 @@ describe('buildStatusListGroups', () => {
       { ...baseTask, id: 'root', statusId: 'completed' },
       { ...baseTask, id: 'child', parentTaskId: 'root', statusId: null },
       { ...baseTask, id: 'unfiled', statusId: null },
-    ], statuses);
+    ], statuses, 'completed');
 
     expect(groups.map((group) => [group.title, group.tasks.map((task) => task.id)])).toEqual([
       ['Backlog', ['unfiled']],
       ['Completed', ['root', 'child']],
     ]);
+  });
+
+  it('uses the collection completion status when choosing an open fallback', () => {
+    const groups = buildStatusListGroups([
+      { ...baseTask, id: 'unfiled', statusId: null },
+    ], [...statuses].reverse(), 'completed');
+
+    expect(groups.find((group) => group.id === 'backlog')?.tasks.map((task) => task.id)).toEqual(['unfiled']);
+    expect(groups.find((group) => group.id === 'completed')?.tasks).toEqual([]);
   });
 });

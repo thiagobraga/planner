@@ -5,6 +5,7 @@ import {
   createStatus,
   ensureCollectionStatuses,
   updateStatus,
+  setCollectionCompletionStatus,
   deleteStatus,
 } from "../services/statusService.js";
 import { ensureSeedLabels } from "../services/labelService.js";
@@ -47,6 +48,20 @@ router.patch("/statuses/:id", async (req: Request, res: Response, next: NextFunc
   try {
     const status = await updateStatus(req.params.id as string, req.userId!, req.body);
     res.json(status);
+  } catch (err) {
+    next(err);
+  }
+});
+
+// PATCH /api/v1/collections/:id/completion-status
+router.patch("/collections/:id/completion-status", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const result = await setCollectionCompletionStatus(
+      req.params.id as string,
+      req.userId!,
+      req.body?.statusId,
+    );
+    res.json(result);
   } catch (err) {
     next(err);
   }

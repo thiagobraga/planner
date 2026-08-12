@@ -532,8 +532,8 @@ export function InboxPage() {
     sections.filter((s) => !s.id.startsWith('temp-')),
   );
   const statusListGroups = useMemo(
-    () => buildStatusListGroups(tasks, data?.statuses ?? []),
-    [data?.statuses, tasks],
+    () => buildStatusListGroups(tasks, data?.statuses ?? [], data?.completionStatusId ?? null),
+    [data?.completionStatusId, data?.statuses, tasks],
   );
   const showStatusGroups = boardPreferences.groupBy === 'status' && statusListGroups.length > 0;
 
@@ -579,6 +579,7 @@ export function InboxPage() {
             groupBy={boardPreferences.groupBy}
             tasks={data.tasks}
             statuses={data.statuses}
+            completionStatusId={data.completionStatusId}
             sections={data.sections}
             boardOrder={data.boardOrder}
             onToggle={(taskId) => handleToggle(taskId)}

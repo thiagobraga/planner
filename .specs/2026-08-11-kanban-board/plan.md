@@ -25,7 +25,7 @@ task's labels.
 |---|---|
 | 1 | **Statuses are per-collection.** Renaming a column on one board never touches another. |
 | 2 | Seeded on first board open: **Backlog, Todo, Doing, Completed**. Renameable, recolorable, reorderable, deletable. |
-| 3 | **Done stays in sync with `is_completed`.** A status carries `is_done_like`; dropping into such a column completes the task, completing in list view moves the card there, reopening moves it back. |
+| 3 | **Done stays in sync with `is_completed`.** Each collection owns exactly one `completion_status_id`; dropping into that status completes the task, completing in list view moves the card there, and reopening moves it back. |
 | 4 | **Board order is separate from list order.** Board drags write `task_order`, never `tasks.order_value`. Tidying the board never shuffles the list. |
 | 5 | **Group-by modes in v1: Status, Section, Priority.** All three fully draggable. |
 | 6 | **Group-by Label is deferred to v2** (see Out of scope). |
@@ -117,31 +117,39 @@ app already reads. Inbox needs no special case; it is a collection row with `is_
 `provisionUser.ts` and `seed.ts` need **no change** — both `INSERT INTO preferences (user_id)` and
 rely on column defaults.
 
+### `api/src/db/migrations/040_collection_completion_status.sql`
+
+This forward migration replaces the original per-status `is_done_like` flag after `037` has already
+run in development. It adds nullable `collections.completion_status_id`, backfills the first
+configured done-like status (or the last ordered column on legacy boards with none), enforces that the referenced status belongs to the same
+collection, and then drops `task_statuses.is_done_like`. The pointer is nullable only before the
+board's statuses are first seeded; after seeding, the service maintains exactly one completion
+status per collection.
+
 ---
 
 ## Backend
 
 ### `api/src/services/completionSync.ts` (new)
 
-The single place `is_completed` and `is_done_like` reconcile. Its own module to avoid a
+The single place `tasks.is_completed` and `collections.completion_status_id` reconcile. Its own module to avoid a
 `taskService ↔ statusService` import cycle.
 
 ```ts
 syncCompletionToStatus(client, { taskId, userId, statusId, collectionId })
-  // done-like + not completed  -> set is_completed/completed_at, cascade to descendants
+  // completion status + not completed -> set is_completed/completed_at, cascade to descendants
   //                               (same recursive CTE as completeTask, taskService.ts:176-190)
-  // not done-like + completed  -> clear both, no cascade (matches reopenTask)
+  // other status + completed        -> clear both, no cascade (matches reopenTask)
   // already aligned            -> null
 
 syncStatusToCompletion(client, { taskId, userId, collectionId, isCompleted })
-  // completing -> previous_status_id = status_id; status_id = first done-like status
-  // reopening  -> status_id = COALESCE(previous_status_id, first non-done-like); clear previous
+  // completing -> previous_status_id = status_id; status_id = collection.completion_status_id
+  // reopening  -> status_id = COALESCE(previous_status_id, first other status); clear previous
 ```
 
 Both take an open `PoolClient` so they run inside the caller's transaction. **Exactly four call
-sites, and no fifth:** `completeTask` (`taskService.ts:81`), `reopenTask` (`:623`), `moveTask`
-(`:846`, only when the destination status differs), `statusService.updateStatus` (when
-`isDoneLike` flips).
+sites:** `completeTask`, `reopenTask`, `moveTask` (only when the destination status differs), and
+the collection-level completion-status mutation when the canonical status changes.
 
 **`updateTask` must never accept `statusId`.** It is the obvious next request and granting it adds a
 fifth site that will drift. Column changes go through `moveTask`.
@@ -154,18 +162,23 @@ splice-and-rewrite reorder — plus the `publishEvent` calls sections are missin
 - `listStatuses(collectionId, userId)`
 - `ensureCollectionStatuses(collectionId, userId)` — idempotent; takes
   `SELECT id FROM collections WHERE id = $1 FOR UPDATE` so two tabs cannot double-seed. Creates the
-  four defaults, then files every status-less task: completed ones into the first done-like column,
-  the rest into the first column. Assigning explicitly (rather than treating `NULL` as "first
+  four defaults, writes `collections.completion_status_id` to Completed, then files every status-less
+  task: completed ones into that column, the rest into the first other column. Assigning explicitly (rather than treating `NULL` as "first
   column" at render time) keeps one state to one representation.
 - `createStatus` / `updateStatus` / `deleteStatus(statusId, userId, { reassignToStatusId })` —
-  delete is 409 on the collection's last status.
+  creation locks the collection and makes the first manually created status canonical; delete is
+  409 on the collection's last status; deleting the completion status requires a
+  same-collection reassignment, which becomes the new completion status.
+- `setCollectionCompletionStatus(collectionId, userId, statusId)` — validates ownership, updates
+  the single collection pointer, completes tasks already in the new status, and reopens tasks in
+  the former status in one transaction.
 
 Default names are localized server-side from `preferences.locale` (they become user-owned data the
 moment they exist, so they are not i18n keys):
 `Backlog / Todo / Doing / Completed` · `Backlog / A fazer / Fazendo / Concluído`.
-Only `Completed` gets `is_done_like = true`.
+The seeded `Completed` status is written to `collections.completion_status_id`.
 
-All four mutations publish `entityType: 'status'` with `collectionId` set.
+All status mutations publish `entityType: 'status'` with `collectionId` set.
 `SyncEntityType` (`syncService.ts:18`) and `app/src/hooks/useSync.ts:6` both gain `"status"`;
 `AppShell.tsx:36-49` gains a branch invalidating `['collection']`.
 
@@ -257,9 +270,10 @@ Mirrors `routes/sections.ts`; mounted `router.use("/", statusRoutes)` in `routes
 
 ```
 GET    /api/v1/collections/:id/statuses
-POST   /api/v1/collections/:id/statuses          { name, color?, isDoneLike? }
+POST   /api/v1/collections/:id/statuses          { name, color? }
 POST   /api/v1/collections/:id/statuses/seed     -> Status[]  (idempotent)
-PATCH  /api/v1/statuses/:id                      { name?, color?, isDoneLike?, position? }
+PATCH  /api/v1/statuses/:id                      { name?, color?, position? }
+PATCH  /api/v1/collections/:id/completion-status { statusId }
 DELETE /api/v1/statuses/:id?reassignTo=<uuid>
 ```
 
@@ -342,7 +356,7 @@ app/src/hooks/useBoardPreferences.ts           reads/writes preferences.boardVie
 app/src/components/board/BoardView.tsx         horizontal grid; owns the SortableContexts
 app/src/components/board/BoardColumn.tsx       header + droppable body + add-card input
 app/src/components/board/BoardColumnHeader.tsx name (InlineNameInput), count, color dot,
-                                               ⋯ ContextMenu (recolor / done-like / delete)
+                                               ⋯ ContextMenu (recolor / completion status / delete)
 app/src/components/board/BoardCard.tsx         title, chips, priority flag, checklist, done date
 app/src/components/board/BoardCardChecklist.tsx subtask rows — draggable task + Checkbox
 app/src/components/board/AddColumnButton.tsx
@@ -437,14 +451,14 @@ to make Vitest talk to Postgres; DB-backed coverage is Playwright's job now.
 
 | File | Pattern from | Covers |
 |---|---|---|
-| `services/__tests__/statusService.test.ts` | `sectionService.test.ts` | seed idempotent; seed files completed→done-like, open→first; create appends; rename; reorder rewrites siblings; delete reassigns and refuses the last; every mutation publishes |
-| `services/__tests__/completionSync.test.ts` | same | done-like completes + cascades; non-done-like reopens without cascade; no-op when aligned; `previous_status_id` round-trips |
-| `services/__tests__/taskService.move.status.test.ts` | `taskService.move.test.ts` (`mockTransaction`, asserts recorded `{sql, params}`) | scope `status` writes `status_id` and a `task_order` row and **never** `order_value`; done-like drop issues the completion UPDATE; cross-collection nulls `status_id`; response carries `statusId`/`isCompleted` |
+| `services/__tests__/statusService.test.ts` | `sectionService.test.ts` | seed idempotent; seed sets the collection completion pointer; completed→completion status, open→first other; create appends; rename; reorder; changing the completion pointer realigns affected tasks; delete/reassign preserves the invariant; every mutation publishes |
+| `services/__tests__/completionSync.test.ts` | same | completion status completes + cascades; another status reopens without cascade; no-op when aligned; `previous_status_id` round-trips |
+| `services/__tests__/taskService.move.status.test.ts` | `taskService.move.test.ts` (`mockTransaction`, asserts recorded `{sql, params}`) | scope `status` writes `status_id` and a `task_order` row and **never** `order_value`; completion-status drop issues the completion UPDATE; cross-collection nulls `status_id`; response carries `statusId`/`isCompleted` |
 | `services/__tests__/taskService.move.priority.test.ts` | same | `priority` written; `task_order` scope `priority` |
 | `services/__tests__/taskService.labels.test.ts` | same | create/update write `task_labels`; foreign `labelIds` → 400; update replaces rather than appends |
 | `services/__tests__/preferencesService.test.ts` (extend) | existing | non-UUID key, bad enum, >200 keys, the setClause |
 | `services/__tests__/taskService.property.test.ts` (extend) | `fast-check` | renumbering a status column never yields duplicate positions |
-| `routes/__tests__/statuses.test.ts` | supertest + `createApp` (`routes/__tests__/testUtils.ts`) | all five endpoints; 404/403/validation shapes |
+| `routes/__tests__/statuses.test.ts` | supertest + `createApp` (`routes/__tests__/testUtils.ts`) | all six endpoints; 404/403/validation shapes |
 | `routes/__tests__/views.test.ts` (extend) | existing | view returns `statuses`, `boardOrder`, per-task `labels` |
 
 **App** — vitest/jsdom, Testing Library, `fireEvent` (no `user-event` in this repo).
@@ -454,7 +468,7 @@ to make Vitest talk to Postgres; DB-backed coverage is Playwright's job now.
 | `utils/__tests__/boardColumns.test.ts` | `buildColumns` per mode; "No section" column; exactly four priority columns; `parseColumnId` round-trip; board order beats `order_value` |
 | `hooks/__tests__/useBoardDrag.test.ts` | `resolveBoardMove` called as a pure function per mode — jsdom gives dnd-kit zero-size rects, which is exactly why the existing `useTaskDrag.*.test.ts` files test `resolveMove` directly |
 | `hooks/__tests__/useBoardDrag.reparent.test.ts` | drop on `card-subtasks` → `parentTaskId` set, appended |
-| `hooks/__tests__/useBoardDrag.completion.test.ts` | drop into done-like column optimistically ticks the card |
+| `hooks/__tests__/useBoardDrag.completion.test.ts` | drop into the collection completion column optimistically ticks the card |
 | `components/dnd/__tests__/collision.test.ts` (extend) | board allow-matrix; nested `card-subtasks` beats its column; existing cases stay green |
 | `contexts/__tests__/PlannerDragContext.test.tsx` (extend) | `enabled: false` skips registration and does not clobber the live one |
 | `components/board/__tests__/BoardCard.test.tsx` | `2/3`, flag + word, chips, completion date; ticking a checklist item calls back |
@@ -586,12 +600,13 @@ Then `docker compose down -v`, `git worktree remove`, open the PR.
   every existing drag — keep `collision.test.ts` green.
 - **Horizontal auto-scroll is off app-wide by deliberate design.** Easy to forget until QA on a
   6-column board.
-- **`updateStatus` flipping `isDoneLike` on a busy column** completes or reopens every task in it in
-  one transaction, subtree cascades included. Add a confirmation dialog; consider a row cap.
+- **Changing `collections.completion_status_id` on a busy board** completes tasks in the new
+  completion status and reopens tasks in the former status in one transaction. Add a confirmation
+  dialog; consider a row cap.
 - **Ticking a subtask cascades** — `POST /tasks/:id/complete` cascades to descendants and may move
-  that subtask into a done-like column it will never be seen in. Harmless but invisible.
+  that subtask into the collection's completion column it will never be seen in. Harmless but invisible.
 - **`previous_status_id` is a second place status lives.** Delete that status and the FK nulls it;
-  reopen falls back to the first non-done column.
+  reopen falls back to the first status other than the collection completion status.
 - **`updateTask` will be asked to accept `statusId`.** Refuse — it would be a fifth completion-sync
   call site. Route it through `moveTask` with `position: Number.MAX_SAFE_INTEGER`.
 - **Migration numbering** — `031_` is already duplicated and the runner sorts lexically. Claim 037,

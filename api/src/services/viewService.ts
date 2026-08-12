@@ -40,7 +40,7 @@ interface StatusRow {
   collection_id: string;
   name: string;
   color: string;
-  is_done_like: boolean;
+  completion_status_id: string | null;
   order_value: number;
   created_at: string;
   updated_at: string;
@@ -80,7 +80,11 @@ function formatTask(row: TaskRow) {
 
 async function getBoardMetadata(collectionId: string, userId: string) {
   const statusesResult = await pool.query(
-    `SELECT * FROM task_statuses WHERE collection_id = $1 ORDER BY order_value ASC`,
+    `SELECT s.*, c.completion_status_id
+     FROM task_statuses s
+     INNER JOIN collections c ON c.id = s.collection_id
+     WHERE s.collection_id = $1
+     ORDER BY s.order_value ASC`,
     [collectionId],
   );
   const orderResult = await pool.query(
@@ -106,13 +110,13 @@ async function getBoardMetadata(collectionId: string, userId: string) {
     collectionId: row.collection_id,
     name: row.name,
     color: row.color,
-    isDoneLike: row.is_done_like,
     orderValue: row.order_value,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   }));
 
-  return { statuses, boardOrder };
+  const completionStatusId = (statusesResult.rows[0] as StatusRow | undefined)?.completion_status_id ?? null;
+  return { statuses, completionStatusId, boardOrder };
 }
 
 export async function getUserTimezone(userId: string): Promise<string> {
@@ -348,7 +352,7 @@ export async function getInboxView(userId: string, now: Date = new Date()) {
   const tasks = await attachLabels((result.rows as TaskRow[]).map(formatTask));
   const boardMetadata = inboxCollection
     ? await getBoardMetadata(inboxCollection.id, userId)
-    : { statuses: [], boardOrder: { status: {}, priority: {} } };
+    : { statuses: [], completionStatusId: null, boardOrder: { status: {}, priority: {} } };
 
   return {
     tasks,

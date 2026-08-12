@@ -13,6 +13,7 @@ const mockListStatuses = vi.fn();
 const mockCreateStatus = vi.fn();
 const mockEnsureCollectionStatuses = vi.fn();
 const mockUpdateStatus = vi.fn();
+const mockSetCollectionCompletionStatus = vi.fn();
 const mockDeleteStatus = vi.fn();
 const mockEnsureSeedLabels = vi.fn();
 
@@ -21,6 +22,7 @@ vi.mock("../../services/statusService.js", () => ({
   createStatus: (...args: unknown[]) => mockCreateStatus(...args),
   ensureCollectionStatuses: (...args: unknown[]) => mockEnsureCollectionStatuses(...args),
   updateStatus: (...args: unknown[]) => mockUpdateStatus(...args),
+  setCollectionCompletionStatus: (...args: unknown[]) => mockSetCollectionCompletionStatus(...args),
   deleteStatus: (...args: unknown[]) => mockDeleteStatus(...args),
 }));
 
@@ -82,6 +84,17 @@ describe("statuses routes", () => {
     const res = await request(app).patch("/api/v1/statuses/st1").send({ name: "Renamed" });
     expect(res.status).toBe(200);
     expect(mockUpdateStatus).toHaveBeenCalledWith("st1", "test-user", { name: "Renamed" });
+  });
+
+  it("PATCH /api/v1/collections/:id/completion-status → updates the collection mapping", async () => {
+    mockSetCollectionCompletionStatus.mockResolvedValue({ completionStatusId: "st2" });
+    const res = await request(app)
+      .patch("/api/v1/collections/c1/completion-status")
+      .send({ statusId: "st2" });
+
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ completionStatusId: "st2" });
+    expect(mockSetCollectionCompletionStatus).toHaveBeenCalledWith("c1", "test-user", "st2");
   });
 
   it("DELETE /api/v1/statuses/:id → calls deleteStatus without reassignTo", async () => {

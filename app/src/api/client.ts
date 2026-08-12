@@ -279,7 +279,6 @@ export interface ApiStatus {
   collectionId: string;
   name: string;
   color: string;
-  isDoneLike: boolean;
   orderValue: number;
   createdAt: string;
   updatedAt: string;
@@ -313,6 +312,7 @@ export async function fetchInboxTasks(): Promise<{
   inboxCollectionId?: string;
   sections: ApiSection[];
   statuses: ApiStatus[];
+  completionStatusId: string | null;
   boardOrder: BoardOrder;
 }> {
   return request('/views/inbox');
@@ -540,6 +540,7 @@ export interface CollectionView {
   collectionId: string;
   sections: ApiSection[];
   statuses: ApiStatus[];
+  completionStatusId: string | null;
   boardOrder: BoardOrder;
 }
 
@@ -564,7 +565,7 @@ export async function apiSeedStatuses(collectionId: string): Promise<ApiStatus[]
 
 export async function apiCreateStatus(
   collectionId: string,
-  input: { name: string; color?: string; isDoneLike?: boolean },
+  input: { name: string; color?: string },
 ): Promise<ApiStatus> {
   return request<ApiStatus>(`/collections/${collectionId}/statuses`, {
     method: 'POST',
@@ -574,11 +575,21 @@ export async function apiCreateStatus(
 
 export async function apiUpdateStatus(
   statusId: string,
-  input: Partial<{ name: string; color: string; isDoneLike: boolean; position: number }>,
+  input: Partial<{ name: string; color: string; position: number }>,
 ): Promise<ApiStatus> {
   return request<ApiStatus>(`/statuses/${statusId}`, {
     method: 'PATCH',
     body: JSON.stringify(input),
+  });
+}
+
+export async function apiSetCollectionCompletionStatus(
+  collectionId: string,
+  statusId: string,
+): Promise<{ completionStatusId: string }> {
+  return request<{ completionStatusId: string }>(`/collections/${collectionId}/completion-status`, {
+    method: 'PATCH',
+    body: JSON.stringify({ statusId }),
   });
 }
 

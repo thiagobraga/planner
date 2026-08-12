@@ -15,9 +15,9 @@ describe("completionSync", () => {
   });
 
   describe("syncCompletionToStatus", () => {
-    it("done-like + not completed: completes the task and cascades to descendants", async () => {
+    it("collection completion status + not completed: completes the task and cascades to descendants", async () => {
       client.query
-        .mockResolvedValueOnce({ rows: [{ is_done_like: true }] }) // status lookup
+        .mockResolvedValueOnce({ rows: [{ completion_status_id: "s-done" }] })
         .mockResolvedValueOnce({ rows: [{ is_completed: false }] }) // task lookup
         .mockResolvedValueOnce(undefined) // UPDATE tasks is_completed=true
         .mockResolvedValueOnce(undefined) // cascade UPDATE
@@ -45,9 +45,9 @@ describe("completionSync", () => {
       );
     });
 
-    it("non-done-like + completed: reopens without cascading", async () => {
+    it("another status + completed: reopens without cascading", async () => {
       client.query
-        .mockResolvedValueOnce({ rows: [{ is_done_like: false }] })
+        .mockResolvedValueOnce({ rows: [{ completion_status_id: "s-done" }] })
         .mockResolvedValueOnce({ rows: [{ is_completed: true }] })
         .mockResolvedValueOnce(undefined) // UPDATE tasks is_completed=false
         .mockResolvedValueOnce(undefined); // activity event
@@ -74,9 +74,9 @@ describe("completionSync", () => {
       );
     });
 
-    it("returns null when already aligned (done-like + completed)", async () => {
+    it("returns null when already aligned (completion status + completed)", async () => {
       client.query
-        .mockResolvedValueOnce({ rows: [{ is_done_like: true }] })
+        .mockResolvedValueOnce({ rows: [{ completion_status_id: "s-done" }] })
         .mockResolvedValueOnce({ rows: [{ is_completed: true }] });
 
       const result = await syncCompletionToStatus(client, {
@@ -90,9 +90,9 @@ describe("completionSync", () => {
       expect(client.query).toHaveBeenCalledTimes(2);
     });
 
-    it("returns null when already aligned (non-done-like + open)", async () => {
+    it("returns null when already aligned (other status + open)", async () => {
       client.query
-        .mockResolvedValueOnce({ rows: [{ is_done_like: false }] })
+        .mockResolvedValueOnce({ rows: [{ completion_status_id: "s-done" }] })
         .mockResolvedValueOnce({ rows: [{ is_completed: false }] });
 
       const result = await syncCompletionToStatus(client, {
@@ -120,10 +120,10 @@ describe("completionSync", () => {
   });
 
   describe("syncStatusToCompletion", () => {
-    it("completing: moves the task and descendants to the first done-like status", async () => {
+    it("completing: moves the task and descendants to the collection completion status", async () => {
       client.query
         .mockResolvedValueOnce({ rows: [{ status_id: "s-doing", previous_status_id: null }] }) // task lookup
-        .mockResolvedValueOnce({ rows: [{ id: "s-completed" }] }) // first done-like
+        .mockResolvedValueOnce({ rows: [{ completion_status_id: "s-completed" }] })
         .mockResolvedValueOnce(undefined); // UPDATE
 
       await syncStatusToCompletion(client, {
@@ -147,7 +147,7 @@ describe("completionSync", () => {
     it("completing without descendant propagation only moves the requested task", async () => {
       client.query
         .mockResolvedValueOnce({ rows: [{ status_id: "s-doing", previous_status_id: null }] })
-        .mockResolvedValueOnce({ rows: [{ id: "s-completed" }] })
+        .mockResolvedValueOnce({ rows: [{ completion_status_id: "s-completed" }] })
         .mockResolvedValueOnce(undefined);
 
       await syncStatusToCompletion(client, {
@@ -168,6 +168,7 @@ describe("completionSync", () => {
     it("reopening: status_id restores from previous_status_id, previous cleared - round-trips", async () => {
       client.query
         .mockResolvedValueOnce({ rows: [{ status_id: "s-completed", previous_status_id: "s-doing" }] }) // task lookup
+        .mockResolvedValueOnce({ rows: [{ completion_status_id: "s-completed" }] })
         .mockResolvedValueOnce(undefined); // UPDATE (no fallback query needed - previous_status_id present)
 
       await syncStatusToCompletion(client, {
@@ -183,11 +184,32 @@ describe("completionSync", () => {
       );
     });
 
-    it("reopening with no previous_status_id: falls back to first non-done-like status", async () => {
+    it("reopening with no previous_status_id: falls back to the first other status", async () => {
       client.query
         .mockResolvedValueOnce({ rows: [{ status_id: "s-completed", previous_status_id: null }] }) // task lookup
-        .mockResolvedValueOnce({ rows: [{ id: "s-backlog" }] }) // fallback: first non-done-like
+        .mockResolvedValueOnce({ rows: [{ completion_status_id: "s-completed" }] })
+        .mockResolvedValueOnce({ rows: [{ id: "s-backlog" }] })
         .mockResolvedValueOnce(undefined); // UPDATE
+
+      await syncStatusToCompletion(client, {
+        taskId: "t1",
+        userId: "u1",
+        collectionId: "c1",
+        isCompleted: false,
+      });
+
+      expect(client.query).toHaveBeenCalledWith(
+        expect.stringContaining("SET status_id = $1, previous_status_id = NULL"),
+        ["s-backlog", "t1"],
+      );
+    });
+
+    it("does not restore a previous status that is now the completion status", async () => {
+      client.query
+        .mockResolvedValueOnce({ rows: [{ status_id: "s-completed", previous_status_id: "s-completed" }] })
+        .mockResolvedValueOnce({ rows: [{ completion_status_id: "s-completed" }] })
+        .mockResolvedValueOnce({ rows: [{ id: "s-backlog" }] })
+        .mockResolvedValueOnce(undefined);
 
       await syncStatusToCompletion(client, {
         taskId: "t1",
@@ -215,10 +237,10 @@ describe("completionSync", () => {
       expect(client.query).toHaveBeenCalledTimes(1);
     });
 
-    it("no-ops on complete when the collection has no done-like status yet", async () => {
+    it("no-ops on complete when the collection has no completion status yet", async () => {
       client.query
         .mockResolvedValueOnce({ rows: [{ status_id: "s-doing", previous_status_id: null }] })
-        .mockResolvedValueOnce({ rows: [] }); // no done-like status
+        .mockResolvedValueOnce({ rows: [{ completion_status_id: null }] });
 
       await syncStatusToCompletion(client, {
         taskId: "t1",

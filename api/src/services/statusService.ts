@@ -10,7 +10,6 @@ interface StatusRow {
   collection_id: string;
   name: string;
   color: string;
-  is_done_like: boolean;
   order_value: number;
   created_at: string;
   updated_at: string;
@@ -21,7 +20,6 @@ export interface Status {
   collectionId: string;
   name: string;
   color: string;
-  isDoneLike: boolean;
   orderValue: number;
   createdAt: string;
   updatedAt: string;
@@ -33,7 +31,6 @@ function formatStatus(row: StatusRow): Status {
     collectionId: row.collection_id,
     name: row.name,
     color: row.color,
-    isDoneLike: row.is_done_like,
     orderValue: row.order_value,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -118,21 +115,21 @@ export async function listStatuses(collectionId: string, userId: string): Promis
 
 interface DefaultStatusName {
   name: string;
-  isDoneLike: boolean;
+  isCompletionStatus?: boolean;
 }
 
 const DEFAULT_STATUS_NAMES: Record<string, DefaultStatusName[]> = {
   en: [
-    { name: "Backlog", isDoneLike: false },
-    { name: "Todo", isDoneLike: false },
-    { name: "Doing", isDoneLike: false },
-    { name: "Completed", isDoneLike: true },
+    { name: "Backlog" },
+    { name: "Todo" },
+    { name: "Doing" },
+    { name: "Completed", isCompletionStatus: true },
   ],
   "pt-BR": [
-    { name: "Backlog", isDoneLike: false },
-    { name: "A fazer", isDoneLike: false },
-    { name: "Fazendo", isDoneLike: false },
-    { name: "Concluído", isDoneLike: true },
+    { name: "Backlog" },
+    { name: "A fazer" },
+    { name: "Fazendo" },
+    { name: "Concluído", isCompletionStatus: true },
   ],
 };
 
@@ -144,7 +141,11 @@ export async function ensureCollectionStatuses(collectionId: string, userId: str
   try {
     await client.query("BEGIN");
 
-    await client.query(`SELECT id FROM collections WHERE id = $1 FOR UPDATE`, [collectionId]);
+    const collectionResult = await client.query(
+      `SELECT id, completion_status_id FROM collections WHERE id = $1 FOR UPDATE`,
+      [collectionId],
+    );
+    let completionStatusId = collectionResult.rows[0]?.completion_status_id as string | null | undefined;
 
     const existing = await client.query(
       `SELECT * FROM task_statuses WHERE collection_id = $1 ORDER BY order_value ASC`,
@@ -161,29 +162,40 @@ export async function ensureCollectionStatuses(collectionId: string, userId: str
 
       for (let i = 0; i < defaults.length; i++) {
         const result = await client.query(
-          `INSERT INTO task_statuses (id, collection_id, name, is_done_like, order_value)
-           VALUES ($1, $2, $3, $4, $5)
+          `INSERT INTO task_statuses (id, collection_id, name, order_value)
+           VALUES ($1, $2, $3, $4)
            RETURNING *`,
-          [uuidv4(), collectionId, defaults[i].name, defaults[i].isDoneLike, i * 1000],
+          [uuidv4(), collectionId, defaults[i].name, i * 1000],
         );
         const row = result.rows[0] as StatusRow;
         created.push(row);
         statuses.push(row);
+        if (defaults[i].isCompletionStatus) completionStatusId = row.id;
       }
     }
 
-    const firstDoneLike = statuses.find((status) => status.is_done_like);
-    const firstOpenColumn = statuses.find((status) => !status.is_done_like);
+    if (!completionStatusId && statuses.length > 0) {
+      throw new Error(`Collection ${collectionId} has statuses but no completion status`);
+    }
+    if (completionStatusId && collectionResult.rows[0]?.completion_status_id !== completionStatusId) {
+      await client.query(
+        `UPDATE collections SET completion_status_id = $1, updated_at = NOW() WHERE id = $2`,
+        [completionStatusId, collectionId],
+      );
+    }
+
+    const completionStatus = statuses.find((status) => status.id === completionStatusId);
+    const firstOpenColumn = statuses.find((status) => status.id !== completionStatusId);
 
     // File status-less tasks explicitly - one state, one representation, rather
     // than treating NULL as "first column" at render time.
     let completedTaskCount = 0;
-    if (firstDoneLike) {
+    if (completionStatus) {
       const completedTasks = await client.query(
         `UPDATE tasks SET status_id = $1, updated_at = NOW()
          WHERE collection_id = $2 AND status_id IS NULL AND is_completed = true
          RETURNING id`,
-        [firstDoneLike.id, collectionId],
+        [completionStatus.id, collectionId],
       );
       completedTaskCount = completedTasks.rowCount ?? completedTasks.rows.length;
     }
@@ -207,8 +219,8 @@ export async function ensureCollectionStatuses(collectionId: string, userId: str
         publishStatusEvent("created", status.id, userId, collectionId, status);
       }
     } else {
-      if (completedTaskCount > 0 && firstDoneLike) {
-        publishStatusEvent("updated", firstDoneLike.id, userId, collectionId, formatStatus(firstDoneLike));
+      if (completedTaskCount > 0 && completionStatus) {
+        publishStatusEvent("updated", completionStatus.id, userId, collectionId, formatStatus(completionStatus));
       }
       if (openTaskCount > 0 && firstOpenColumn) {
         publishStatusEvent("updated", firstOpenColumn.id, userId, collectionId, formatStatus(firstOpenColumn));
@@ -227,7 +239,6 @@ export async function ensureCollectionStatuses(collectionId: string, userId: str
 export interface CreateStatusInput {
   name: string;
   color?: string;
-  isDoneLike?: boolean;
 }
 
 function validateStatusName(name: unknown): string {
@@ -245,24 +256,56 @@ function validateStatusName(name: unknown): string {
 export async function createStatus(collectionId: string, userId: string, input: CreateStatusInput): Promise<Status> {
   const name = validateStatusName(input.name);
   const color = input.color !== undefined ? validateColor(input.color) : "#adb9c1";
-
-  await verifyCollectionAccess(collectionId, userId);
-
-  const maxOrder = await pool.query(
-    `SELECT COALESCE(MAX(order_value), -1000) + 1000 AS next_order FROM task_statuses WHERE collection_id = $1`,
-    [collectionId],
-  );
-  const orderValue = maxOrder.rows[0].next_order;
-
   const id = uuidv4();
-  const result = await pool.query(
-    `INSERT INTO task_statuses (id, collection_id, name, color, is_done_like, order_value)
-     VALUES ($1, $2, $3, $4, $5, $6)
-     RETURNING *`,
-    [id, collectionId, name, color, input.isDoneLike ?? false, orderValue],
-  );
+  const client = await pool.connect();
+  let row: StatusRow;
+  try {
+    await client.query("BEGIN");
 
-  const status = formatStatus(result.rows[0] as StatusRow);
+    const collectionResult = await client.query(
+      `SELECT id, completion_status_id FROM collections
+       WHERE id = $1
+         AND (user_id = $2 OR id IN (SELECT collection_id FROM collaborators WHERE user_id = $2))
+       FOR UPDATE`,
+      [collectionId, userId],
+    );
+    if (collectionResult.rows.length === 0) {
+      throw new AppError({
+        code: "NOT_FOUND",
+        message: "Collection not found or not accessible",
+        statusCode: 404,
+      });
+    }
+
+    const maxOrder = await client.query(
+      `SELECT COALESCE(MAX(order_value), -1000) + 1000 AS next_order
+       FROM task_statuses WHERE collection_id = $1`,
+      [collectionId],
+    );
+    const result = await client.query(
+      `INSERT INTO task_statuses (id, collection_id, name, color, order_value)
+       VALUES ($1, $2, $3, $4, $5)
+       RETURNING *`,
+      [id, collectionId, name, color, maxOrder.rows[0].next_order],
+    );
+    row = result.rows[0] as StatusRow;
+
+    if (!collectionResult.rows[0].completion_status_id) {
+      await client.query(
+        `UPDATE collections SET completion_status_id = $1, updated_at = NOW() WHERE id = $2`,
+        [id, collectionId],
+      );
+    }
+
+    await client.query("COMMIT");
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
+
+  const status = formatStatus(row);
   publishStatusEvent("created", status.id, userId, collectionId, status);
   return status;
 }
@@ -270,7 +313,6 @@ export async function createStatus(collectionId: string, userId: string, input: 
 export interface UpdateStatusInput {
   name?: string;
   color?: string;
-  isDoneLike?: boolean;
   position?: number;
 }
 
@@ -306,11 +348,6 @@ export async function updateStatus(statusId: string, userId: string, input: Upda
       setClauses.push(`color = $${paramIndex++}`);
       values.push(input.color);
     }
-    if (input.isDoneLike !== undefined) {
-      setClauses.push(`is_done_like = $${paramIndex++}`);
-      values.push(input.isDoneLike);
-    }
-
     if (setClauses.length > 0) {
       setClauses.push(`updated_at = NOW()`);
       values.push(statusId);
@@ -318,20 +355,6 @@ export async function updateStatus(statusId: string, userId: string, input: Upda
         `UPDATE task_statuses SET ${setClauses.join(", ")} WHERE id = $${paramIndex}`,
         values,
       );
-    }
-
-    // isDoneLike flipped: every task sitting in this column completes or
-    // reopens in the same transaction, subtree cascades included.
-    if (input.isDoneLike !== undefined && input.isDoneLike !== status.is_done_like) {
-      const tasksResult = await client.query(`SELECT id FROM tasks WHERE status_id = $1`, [statusId]);
-      for (const taskRow of tasksResult.rows as { id: string }[]) {
-        await syncCompletionToStatus(client, {
-          taskId: taskRow.id,
-          userId,
-          statusId,
-          collectionId: status.collection_id,
-        });
-      }
     }
 
     if (input.position !== undefined) {
@@ -369,6 +392,104 @@ export async function updateStatus(statusId: string, userId: string, input: Upda
   return formatted;
 }
 
+export async function setCollectionCompletionStatus(
+  collectionId: string,
+  userId: string,
+  statusId: string,
+): Promise<{ completionStatusId: string }> {
+  if (typeof statusId !== "string" || statusId.length === 0) {
+    throw new AppError({
+      code: "VALIDATION_ERROR",
+      message: "Validation failed",
+      statusCode: 400,
+      details: [{ field: "statusId", message: "statusId is required" }],
+    });
+  }
+
+  const client = await pool.connect();
+  let changed: boolean;
+  try {
+    await client.query("BEGIN");
+
+    const collectionResult = await client.query(
+      `SELECT id, completion_status_id FROM collections
+       WHERE id = $1
+         AND (user_id = $2 OR id IN (SELECT collection_id FROM collaborators WHERE user_id = $2))
+       FOR UPDATE`,
+      [collectionId, userId],
+    );
+    if (collectionResult.rows.length === 0) {
+      throw new AppError({
+        code: "NOT_FOUND",
+        message: "Collection not found or not accessible",
+        statusCode: 404,
+      });
+    }
+
+    const statusesResult = await client.query(
+      `SELECT * FROM task_statuses WHERE collection_id = $1 ORDER BY id FOR UPDATE`,
+      [collectionId],
+    );
+    if (!(statusesResult.rows as StatusRow[]).some((status) => status.id === statusId)) {
+      throw new AppError({
+        code: "VALIDATION_ERROR",
+        message: "Validation failed",
+        statusCode: 400,
+        details: [{ field: "statusId", message: "Status must belong to the collection" }],
+      });
+    }
+
+    const previousCompletionStatusId = collectionResult.rows[0].completion_status_id as string | null;
+    changed = previousCompletionStatusId !== statusId;
+    if (changed) {
+      const affectedResult = await client.query(
+        `SELECT id, status_id FROM tasks
+         WHERE collection_id = $1
+           AND status_id = ANY($2::uuid[])
+         ORDER BY CASE WHEN status_id = $3 THEN 0 ELSE 1 END, depth ASC, order_value ASC
+         FOR UPDATE`,
+        [collectionId, [previousCompletionStatusId, statusId].filter(Boolean), previousCompletionStatusId],
+      );
+
+      await client.query(
+        `UPDATE collections SET completion_status_id = $1, updated_at = NOW() WHERE id = $2`,
+        [statusId, collectionId],
+      );
+      if (previousCompletionStatusId) {
+        // Tasks leaving the former completion column are being reopened, so
+        // their old restore target is consumed. Preserve history for tasks in
+        // the new completion column so a later reopen can still round-trip.
+        await client.query(
+          `UPDATE tasks SET previous_status_id = NULL, updated_at = NOW()
+           WHERE collection_id = $1 AND status_id = $2`,
+          [collectionId, previousCompletionStatusId],
+        );
+      }
+
+      for (const task of affectedResult.rows as { id: string; status_id: string }[]) {
+        await syncCompletionToStatus(client, {
+          taskId: task.id,
+          userId,
+          statusId: task.status_id,
+          collectionId,
+        });
+      }
+    }
+
+    await client.query("COMMIT");
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
+
+  if (changed) {
+    publishStatusEvent("updated", statusId, userId, collectionId, { completionStatusId: statusId });
+  }
+  return { completionStatusId: statusId };
+}
+
 export interface DeleteStatusOptions {
   reassignToStatusId?: string;
 }
@@ -381,7 +502,7 @@ export async function deleteStatus(statusId: string, userId: string, options: De
     await client.query("BEGIN");
 
     const collectionLock = await client.query(
-      `SELECT id FROM collections
+      `SELECT id, completion_status_id FROM collections
        WHERE id = $1
          AND (user_id = $2 OR id IN (SELECT collection_id FROM collaborators WHERE user_id = $2))
        FOR UPDATE`,
@@ -424,14 +545,37 @@ export async function deleteStatus(statusId: string, userId: string, options: De
       throw invalidReassignment("Reassignment status must belong to the same collection");
     }
 
-    await client.query(
-      `UPDATE tasks SET status_id = $1, updated_at = NOW() WHERE status_id = $2`,
+    const completionStatusId = collectionLock.rows[0].completion_status_id as string | null;
+    if (completionStatusId === statusId && !targetStatus) {
+      throw invalidReassignment("Deleting the completion status requires a reassignment status");
+    }
+    if (completionStatusId === statusId && targetStatus) {
+      await client.query(
+        `UPDATE collections SET completion_status_id = $1, updated_at = NOW() WHERE id = $2`,
+        [targetStatus.id, status.collection_id],
+      );
+    }
+
+    const reassignedTasks = await client.query(
+      `UPDATE tasks SET status_id = $1, updated_at = NOW() WHERE status_id = $2
+       RETURNING id, status_id`,
       [reassignToStatusId ?? null, statusId],
     );
     await client.query(
       `UPDATE tasks SET previous_status_id = $1 WHERE previous_status_id = $2`,
       [reassignToStatusId ?? null, statusId],
     );
+
+    if (reassignToStatusId) {
+      for (const task of reassignedTasks.rows as { id: string; status_id: string }[]) {
+        await syncCompletionToStatus(client, {
+          taskId: task.id,
+          userId,
+          statusId: task.status_id,
+          collectionId: status.collection_id,
+        });
+      }
+    }
 
     await client.query(`DELETE FROM task_statuses WHERE id = $1`, [statusId]);
 

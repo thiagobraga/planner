@@ -1055,16 +1055,19 @@ export async function moveTask(taskId: string, userId: string, input: MoveTaskIn
       }
     }
 
-    let destStatusIsDoneLike = false;
+    let destStatusIsCompletion = false;
     if (destStatusId) {
       const statusResult = await client.query(
-        `SELECT is_done_like FROM task_statuses WHERE id = $1 AND collection_id = $2`,
+        `SELECT s.id, c.completion_status_id
+         FROM task_statuses s
+         INNER JOIN collections c ON c.id = s.collection_id
+         WHERE s.id = $1 AND s.collection_id = $2`,
         [destStatusId, destCollectionId],
       );
       if (statusResult.rows.length === 0) {
         throw validationError('statusId', 'Status must belong to the destination collection');
       }
-      destStatusIsDoneLike = Boolean(statusResult.rows[0].is_done_like);
+      destStatusIsCompletion = statusResult.rows[0].completion_status_id === destStatusId;
     }
 
     // ── Apply the move to the root ─────────────────────────────────────────────
@@ -1094,7 +1097,7 @@ export async function moveTask(taskId: string, userId: string, input: MoveTaskIn
         input.priority ?? null,
         crossesCollection,
         statusChanged,
-        destStatusIsDoneLike,
+        destStatusIsCompletion,
         rootNewDepth,
         taskId,
       ],

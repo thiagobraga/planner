@@ -80,8 +80,8 @@ describe("moveTask status scope", () => {
       [/WITH RECURSIVE subtree/, [
         { id: taskId, parent_task_id: null, depth: 0, collection_id: collectionId, section_id: null, due_date: null },
       ]],
-      [/SELECT is_done_like FROM task_statuses WHERE id = \$1 AND collection_id = \$2/, [{ is_done_like: false }]],
-      [/SELECT is_done_like FROM task_statuses WHERE id = \$1$/, [{ is_done_like: false }]],
+      [/FROM task_statuses s[\s\S]*WHERE s.id = \$1 AND s.collection_id = \$2/, [{ id: targetStatusId, completion_status_id: "status-completed" }]],
+      [/SELECT completion_status_id FROM collections WHERE id = \$1/, [{ completion_status_id: "status-completed" }]],
       [/SELECT is_completed FROM tasks/, [{ is_completed: false }]],
       [/LEFT JOIN task_order/, []],
     ]);
@@ -122,14 +122,14 @@ describe("moveTask status scope", () => {
     ]);
   });
 
-  it("completes the root when dropped into a done-like status and preserves its prior status", async () => {
+  it("completes the root when dropped into the collection completion status and preserves its prior status", async () => {
     mockPoolReads(taskRow({ status_id: targetStatusId, is_completed: true }));
     const tx = mockTransaction([
       [/WITH RECURSIVE subtree/, [
         { id: taskId, parent_task_id: null, depth: 0, collection_id: collectionId, section_id: null, due_date: null },
       ]],
-      [/SELECT is_done_like FROM task_statuses WHERE id = \$1 AND collection_id = \$2/, [{ is_done_like: true }]],
-      [/SELECT is_done_like FROM task_statuses WHERE id = \$1$/, [{ is_done_like: true }]],
+      [/FROM task_statuses s[\s\S]*WHERE s.id = \$1 AND s.collection_id = \$2/, [{ id: targetStatusId, completion_status_id: targetStatusId }]],
+      [/SELECT completion_status_id FROM collections WHERE id = \$1/, [{ completion_status_id: targetStatusId }]],
       [/SELECT is_completed FROM tasks/, [{ is_completed: false }]],
       [/LEFT JOIN task_order/, []],
     ]);
@@ -189,7 +189,7 @@ describe("moveTask status scope", () => {
       [/WITH RECURSIVE subtree/, [
         { id: taskId, parent_task_id: null, depth: 0, collection_id: collectionId, section_id: null, due_date: null },
       ]],
-      [/SELECT is_done_like FROM task_statuses/, []],
+      [/FROM task_statuses s/, []],
     ]);
 
     await expect(moveTask(taskId, userId, {
@@ -220,6 +220,6 @@ describe("moveTask status scope", () => {
       position: 0,
     })).rejects.toMatchObject({ code: "VALIDATION_ERROR", statusCode: 400 });
 
-    expect(tx.calls.some((call) => /SELECT is_done_like FROM task_statuses/.test(call.sql))).toBe(false);
+    expect(tx.calls.some((call) => /FROM task_statuses s/.test(call.sql))).toBe(false);
   });
 });

@@ -223,7 +223,7 @@ describe("taskService: sync event emission", () => {
         .mockResolvedValueOnce({ rows: [] }) // SELECT label_id
         .mockResolvedValueOnce(undefined) // INSERT activity event
         .mockResolvedValueOnce({ rows: [{ status_id: null, previous_status_id: null }] }) // syncStatusToCompletion: task lookup
-        .mockResolvedValueOnce({ rows: [] }) // syncStatusToCompletion: no done-like status configured yet
+        .mockResolvedValueOnce({ rows: [] }) // syncStatusToCompletion: no collection completion status configured yet
         .mockResolvedValueOnce(undefined); // COMMIT
         
       (pool.connect as ReturnType<typeof vi.fn>).mockReturnValue({ query: clientQuery, release: vi.fn() });

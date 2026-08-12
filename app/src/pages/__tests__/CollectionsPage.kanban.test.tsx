@@ -63,6 +63,7 @@ describe('CollectionsPage kanban wiring', () => {
       tasks: [],
       sections: [],
       statuses: [],
+      completionStatusId: null,
       boardOrder: {},
     });
     vi.mocked(fetchCollections).mockResolvedValue([]);
@@ -104,8 +105,9 @@ describe('CollectionsPage kanban wiring', () => {
       sections: [],
       statuses: [{
         id: 'backlog', collectionId, name: 'Backlog', color: '#adb9c1',
-        isDoneLike: false, orderValue: 0, createdAt: '', updatedAt: '',
+        orderValue: 0, createdAt: '', updatedAt: '',
       }],
+      completionStatusId: 'backlog',
       boardOrder: {},
     });
     vi.mocked(fetchPreferences).mockResolvedValue({

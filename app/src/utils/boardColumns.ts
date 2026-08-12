@@ -7,7 +7,7 @@ export interface BoardColumn {
   value: string | number | null;
   title: string;
   color?: string;
-  isDoneLike?: boolean;
+  isCompletionStatus?: boolean;
   tasks: ApiTask[];
 }
 
@@ -27,9 +27,10 @@ export interface StatusListGroup<T> {
 export function buildStatusListGroups<T extends StatusListTask>(
   tasks: T[],
   statuses: ApiStatus[],
+  completionStatusId: string | null,
 ): StatusListGroup<T>[] {
   const byId = new Map(tasks.map((task) => [task.id, task]));
-  const fallbackStatusId = statuses.find((status) => !status.isDoneLike)?.id ?? statuses[0]?.id;
+  const fallbackStatusId = statuses.find((status) => status.id !== completionStatusId)?.id ?? statuses[0]?.id;
 
   const rootStatusId = (task: T): string | undefined => {
     let current = task;
@@ -71,6 +72,7 @@ interface BuildColumnsInput {
   groupBy: BoardGroupBy;
   tasks: ApiTask[];
   statuses: ApiStatus[];
+  completionStatusId: string | null;
   sections: ApiSection[];
   boardOrder: BoardOrder;
   noSectionTitle: string;
@@ -97,7 +99,7 @@ export function buildColumns(input: BuildColumnsInput): BoardColumn[] {
         value: status.id,
         title: status.name,
         color: status.color,
-        isDoneLike: status.isDoneLike,
+        isCompletionStatus: status.id === input.completionStatusId,
         tasks: sortTasks(rootTasks.filter((task) => task.statusId === status.id), input.boardOrder.status),
       }));
   }

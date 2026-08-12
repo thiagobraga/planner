@@ -18,6 +18,7 @@ interface CollectionBoardProps {
   groupBy: BoardGroupBy;
   tasks: ApiTask[];
   statuses: ApiStatus[];
+  completionStatusId: string | null;
   sections: ApiSection[];
   boardOrder: BoardOrder;
   onToggle?: (taskId: string, completed: boolean) => void;
@@ -42,11 +43,12 @@ export function CollectionBoard(props: CollectionBoardProps) {
     groupBy: props.groupBy,
     tasks: props.tasks,
     statuses: props.statuses,
+    completionStatusId: props.completionStatusId,
     sections: props.sections,
     boardOrder: props.boardOrder,
     noSectionTitle: t('board.noSection'),
     priorityTitle: (priority) => t('board.priority', { priority }),
-  }), [props.boardOrder, props.groupBy, props.sections, props.statuses, props.tasks, t]);
+  }), [props.boardOrder, props.completionStatusId, props.groupBy, props.sections, props.statuses, props.tasks, t]);
 
   if (props.groupBy === 'status' && props.statuses.length === 0) {
     return <div className="board-loading">{t('board.preparing')}</div>;

@@ -228,7 +228,7 @@ describe("getInboxView", () => {
     .mockResolvedValueOnce({
       rows: [{
         id: "status-1", collection_id: "p-1", name: "Todo", color: "#adb9c1",
-        is_done_like: false, order_value: 1000, created_at: "2024-06-01T00:00:00Z",
+        completion_status_id: "status-completed", order_value: 1000, created_at: "2024-06-01T00:00:00Z",
         updated_at: "2024-06-01T00:00:00Z",
       }],
     })
@@ -243,6 +243,7 @@ describe("getInboxView", () => {
     expect(view.collectionId).toBeNull();
     expect(view.tasks.map((t) => t.id)).toEqual(["done", "open"]);
     expect(view.statuses[0]).toEqual(expect.objectContaining({ id: "status-1", name: "Todo" }));
+    expect(view.completionStatusId).toBe("status-completed");
     expect(view.boardOrder).toEqual({ status: { done: 2000 }, priority: { open: 500 } });
 
     const sql = mockQuery.mock.calls[2][0] as string;
@@ -268,6 +269,7 @@ describe("getInboxView", () => {
       inboxCollectionId: undefined,
       sections: [],
       statuses: [],
+      completionStatusId: null,
       boardOrder: { status: {}, priority: {} },
     });
   });
