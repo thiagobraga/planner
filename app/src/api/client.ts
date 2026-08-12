@@ -260,7 +260,7 @@ export interface ApiTask {
   dueDate?: string;
   isCompleted: boolean;
   orderValue: number;
-  depth?: number;
+  depth: number;
   type: 'task' | 'note';
   createdAt?: string;
   completedAt?: string | null;

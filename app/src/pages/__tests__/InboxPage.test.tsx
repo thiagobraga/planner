@@ -568,6 +568,22 @@ describe('InboxPage', () => {
       await waitFor(() => expect(screen.queryByText('Another')).not.toBeInTheDocument());
     });
 
+    it('does nothing when submitting an empty section input', async () => {
+      mockFetchInboxTasks.mockResolvedValue({
+        ...baseInboxData,
+        inboxCollectionId: 'col-1',
+        sections: [section()],
+      });
+      renderPage();
+      await screen.findByLabelText('Work');
+
+      const sectionForm = screen.getAllByPlaceholderText('New task…')[1].closest('form')!;
+      fireEvent.submit(sectionForm);
+
+      expect(mockApiCreateTask).not.toHaveBeenCalled();
+      expect(screen.queryByTestId(/^task-item-temp-/)).not.toBeInTheDocument();
+    });
+
     it('does nothing when the section input only contains whitespace', async () => {
       mockFetchInboxTasks.mockResolvedValue({
         ...baseInboxData,
