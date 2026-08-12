@@ -68,3 +68,4 @@ redis_data/
 
 # Local worktree dev-stack overrides (ports, alt project)
 compose.override.yml
+.playwright-mcp/
