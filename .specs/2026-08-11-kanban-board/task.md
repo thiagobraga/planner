@@ -133,43 +133,43 @@ Work in a worktree: `git worktree add ../planner-kanban-board -b feat/kanban-boa
 
 ## Milestone 7 — Board drag plumbing (`app/src/types/drag.ts`)
 
-- [ ] Extend `DragKind` with `'board-column'`; extend `DropKind` with `'board-column'`,
+- [x] Extend `DragKind` with `'board-column'`; extend `DropKind` with `'board-column'`,
       `'board-column-header'`, `'card-subtasks'`; add `BoardGroupBy` and the four data interfaces.
-- [ ] Extend the `collision.ts` allow-matrix and `CONTAINER_KINDS`; teach `containerIdOf` the two
+- [x] Extend the `collision.ts` allow-matrix and `CONTAINER_KINDS`; teach `containerIdOf` the two
       new container kinds.
-- [ ] **Fix `collision.ts:121`** — iterate `containerHits` in `pointerWithin` order instead of
+- [x] **Fix `collision.ts:121`** — iterate `containerHits` in `pointerWithin` order instead of
       `containers.find(c => hitIds.has(c.id))`, so a nested `card-subtasks` beats its column.
-- [ ] Add the `enabled` option to `usePlannerDragHandlers` (`contexts/usePlannerDrag.ts`) and skip
+- [x] Add the `enabled` option to `usePlannerDragHandlers` (`contexts/usePlannerDrag.ts`) and skip
       registration when false.
-- [ ] Make `AUTO_SCROLL` (`PlannerDragContext.tsx:72`) provider state with a `setAutoScrollAxis`
+- [x] Make `AUTO_SCROLL` (`PlannerDragContext.tsx:72`) provider state with a `setAutoScrollAxis`
       setter.
-- [ ] Create `app/src/utils/boardColumns.ts` — `buildColumns`, `buildColumnId`, `parseColumnId`.
-- [ ] Extend `app/src/api/client.ts` — status bindings, label bindings, and the type extensions to
+- [x] Create `app/src/utils/boardColumns.ts` — `buildColumns`, `buildColumnId`, `parseColumnId`.
+- [x] Extend `app/src/api/client.ts` — status bindings, label bindings, and the type extensions to
       `TaskOrderScope`, `TaskMoveInput`, `MovedTaskSummary`, `ApiTask`, `Preferences`,
       `CollectionView`.
-- [ ] Tests: `utils/__tests__/boardColumns.test.ts`; extend `collision.test.ts` (existing cases
+- [x] Tests: `utils/__tests__/boardColumns.test.ts`; extend `collision.test.ts` (existing cases
       must stay green) and `PlannerDragContext.test.tsx` for `enabled: false`.
-- [ ] Verify: `docker compose exec app npm run build && docker compose exec app npm run lint && docker compose exec app npm test`
-- [ ] Commit: `feat(app): add board column model and drag plumbing`
+- [x] Verify: `docker compose exec app npm run build && docker compose exec app npm run lint && docker compose exec app npm test`
+- [x] Commit: `feat(app): add board column model and drag plumbing` (`640d4d2`)
 
 ## Milestone 8 — Board UI, static (`app/src/components/board/`)
 
-- [ ] `BoardView.tsx` — horizontal grid, owns the `SortableContext`s, sets the auto-scroll axis on
+- [x] `BoardView.tsx` — horizontal grid, owns the `SortableContext`s, sets the auto-scroll axis on
       mount and restores on unmount.
-- [ ] `BoardColumn.tsx` (with `data-column-id`), `BoardColumnHeader.tsx`, `BoardCard.tsx` (with
+- [x] `BoardColumn.tsx` (with `data-column-id`), `BoardColumnHeader.tsx`, `BoardCard.tsx` (with
       `data-card-id`), `BoardCardChecklist.tsx`, `AddColumnButton.tsx`.
-- [ ] `CollectionBoard.tsx` — the single component both pages mount.
-- [ ] `components/ui/GroupBySelect.tsx` wrapping the existing `CustomSelect`.
-- [ ] Add `--planner-board-column-bg` and `--planner-board-card-bg` to `AppShell.tsx:55-81` for
+- [x] `CollectionBoard.tsx` — the single component both pages mount.
+- [x] `components/ui/GroupBySelect.tsx` wrapping the existing `CustomSelect`.
+- [x] Add `--planner-board-column-bg` and `--planner-board-card-bg` to `AppShell.tsx:55-81` for
       both background themes.
-- [ ] Column and card CSS per the design section — translucent tint, 1px border, **no box-shadow**,
+- [x] Column and card CSS per the design section — translucent tint, 1px border, **no box-shadow**,
       no side stripes, 24px rhythm, 288px column width.
-- [ ] Add every i18n key to **both** `en.ts` and `pt-BR.ts` (`toolbar.list` / `toolbar.kanban`
+- [x] Add every i18n key to **both** `en.ts` and `pt-BR.ts` (`toolbar.list` / `toolbar.kanban`
       already exist — do not re-add).
-- [ ] Add a Board card to `StyleguidePage.tsx` driving the real components.
-- [ ] Tests: `BoardCard.test.tsx`, `BoardColumn.test.tsx`, `BoardView.test.tsx`.
-- [ ] Verify: `docker compose exec app npm run build && docker compose exec app npm run lint && docker compose exec app npm test`
-- [ ] Commit: `feat(app): render the kanban board`
+- [x] Add a Board card to `StyleguidePage.tsx` driving the real components.
+- [x] Tests: `BoardCard.test.tsx`, `BoardColumn.test.tsx`, `BoardView.test.tsx`.
+- [x] Verify: `docker compose exec app npm run build && docker compose exec app npm run lint && docker compose exec app npm test`
+- [x] Commit: `feat(app): render the kanban board` (combined with page wiring in `561ee74`)
 
 ## Milestone 9 — Card drag (`app/src/hooks/useBoardDrag.ts`)
 
@@ -179,7 +179,7 @@ Work in a worktree: `git worktree add ../planner-kanban-board -b feat/kanban-boa
 - [ ] Optimistic apply, `trackMove` echo suppression, reconciliation from `MovedTaskSummary`.
 - [ ] Done-like columns tick the card optimistically.
 - [ ] a11y announcements using the `board.a11y.*` keys.
-- [ ] Set `enabled: view === 'list'` on the existing `useTaskDrag` call sites.
+- [x] Set `enabled: view === 'list'` on the existing `useTaskDrag` call sites.
 - [ ] Tests: `useBoardDrag.test.ts`, `useBoardDrag.reparent.test.ts`,
       `useBoardDrag.completion.test.ts`.
 - [ ] Verify: `docker compose exec app npm run build && docker compose exec app npm run lint && docker compose exec app npm test`
@@ -200,14 +200,14 @@ Work in a worktree: `git worktree add ../planner-kanban-board -b feat/kanban-boa
 
 ## Milestone 11 — Page wiring (`app/src/pages/`)
 
-- [ ] `hooks/useBoardPreferences.ts` — read/write `preferences.boardViewModes[collectionId]`.
-- [ ] `CollectionsPage.tsx` — mount `ViewToolbar` + `GroupBySelect` in the header toolbar, branch
-      between the list JSX and `CollectionBoard`.
-- [ ] `InboxPage.tsx` — same, with the collection id from `data.inboxCollectionId` and a loading
+- [x] `hooks/useBoardPreferences.ts` — read/write `preferences.boardViewModes[collectionId]`.
+- [x] `CollectionsPage.tsx` — mount the compact shared board toolbar, branch between List and
+      `CollectionBoard`, and preserve status columns as List section headings.
+- [x] `InboxPage.tsx` — same, with the collection id from `data.inboxCollectionId` and a loading
       state until it resolves.
-- [ ] Tests: `pages/__tests__/CollectionsPage.kanban.test.tsx`.
-- [ ] Verify: `docker compose exec app npm run build && docker compose exec app npm run lint && docker compose exec app npm test`
-- [ ] Commit: `feat(app): wire the board into collection and inbox pages`
+- [x] Tests: `pages/__tests__/CollectionsPage.kanban.test.tsx` plus shared toolbar/status-list coverage.
+- [x] Verify: `docker compose exec app npm run build && docker compose exec app npm run lint && docker compose exec app npm test`
+- [x] Commit: `feat(app): wire the board into collection and inbox pages` (combined in `561ee74`)
 
 ## Milestone 12 — Board e2e (`e2e/specs/board/`)
 
