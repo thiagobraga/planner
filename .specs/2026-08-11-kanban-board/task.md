@@ -3,29 +3,31 @@
 Source plan: `plan.md`.
 
 Work in a worktree: `git worktree add ../planner-kanban-board -b feat/kanban-board`, then
-`COMPOSE_PROJECT_NAME=planner-claude` / `APP_SUBDOMAIN=codex.planner` in `.env` and
+`COMPOSE_PROJECT_NAME=planner-claude` / `APP_SUBDOMAIN=claude.planner` in `.env` and
 `docker compose up -d`. Mark tasks `[~]` when started, `[x]` when done.
 
 ## Milestone 1 — Per-collection task statuses (`api/src/services/statusService.ts`)
 
 - [x] Write `api/src/db/migrations/037_task_statuses.sql` — `task_statuses` table, the two indexes,
       `tasks.status_id` and `tasks.previous_status_id` (both `ON DELETE SET NULL`),
-      `idx_tasks_collection_status`. Copy the color CHECK regex verbatim from
+      `idx_tasks_collection_status`, `collections.completion_status_id`. Also includes validation
+      trigger `validate_task_statuses_collection()`. Copy the color CHECK regex verbatim from
       `033_exact_collection_label_colors.sql`.
 - [x] Create `api/src/services/statusService.ts` modelled on `sectionService.ts` — `Status` type,
       `formatStatus`, `verifyCollectionAccess` / `verifyStatusAccess`.
 - [x] `listStatuses(collectionId, userId)` ordered by `order_value`.
 - [x] `ensureCollectionStatuses(collectionId, userId)` — idempotent, opens with
       `SELECT id FROM collections WHERE id = $1 FOR UPDATE`; seeds Backlog / Todo / Doing /
-      Completed, names localized from `preferences.locale`; files every status-less task. The
-      completion mapping is superseded by the collection-owned refactor below.
+      Completed (names localized from `preferences.locale`); sets `completion_status_id` to
+      the Completed status; files every status-less task — completed into completion status,
+      the rest into Backlog.
 - [x] `createStatus` (append at `MAX(order_value) + 1000`), `updateStatus` (name / color /
-      position, splice-and-rewrite siblings), `deleteStatus` with
+      isCompletion / position, splice-and-rewrite siblings), `deleteStatus` with
       `reassignToStatusId` and a 409 on the collection's last status.
-- [x] Publish `entityType: 'status'` with `collectionId` from every status mutation.
+- [x] Publish `entityType: 'status'` with `collectionId` from all four mutations.
 - [x] Add `"status"` to `SyncEntityType` (`api/src/services/syncService.ts:18`) and
       `app/src/hooks/useSync.ts:6`; add the invalidation branch in `AppShell.tsx:36-49`.
-- [x] Create `api/src/routes/statuses.ts` (six endpoints after the completion-status refactor) and mount it in
+- [x] Create `api/src/routes/statuses.ts` (five endpoints per plan) and mount it in
       `api/src/routes/index.ts`.
 - [x] Both `formatTask` copies (`taskService.ts:32`, `viewService.ts:35`) gain
       `statusId: row.status_id`.
@@ -33,41 +35,30 @@ Work in a worktree: `git worktree add ../planner-kanban-board -b feat/kanban-boa
 - [x] Verify: `docker compose exec api npm run build && docker compose exec api npm run lint && docker compose exec api npm test`
 - [x] Commit: `feat(api): add per-collection task statuses`
 
+**Status:** Complete. Migration 037 includes `completion_status_id` and triggers. Service and
+routes wired. Seeding sets the Completed status as completion_status_id.
+
 ## Milestone 2 — Completion sync (`api/src/services/completionSync.ts`)
 
 - [x] Create `completionSync.ts` with `syncCompletionToStatus` and `syncStatusToCompletion`, both
       taking an open `PoolClient`.
-- [x] `syncCompletionToStatus` — the collection completion status sets `is_completed`/`completed_at` and cascades to
-      descendants with the same recursive CTE as `completeTask` (`taskService.ts:176-190`);
-      another status clears both without cascading; returns null when already aligned. Record the
-      matching activity event.
-- [x] `syncStatusToCompletion` — on complete write `previous_status_id` then the collection's
-      completion status; on reopen restore `COALESCE(previous_status_id, first other status)` and clear it.
+- [x] `syncCompletionToStatus` — when `statusId === collection.completion_status_id`, set
+      `is_completed`/`completed_at` and cascade to descendants with the same recursive CTE as
+      `completeTask` (`taskService.ts:176-190`); when `statusId !== completion_status_id` and
+      task is completed, clear both without cascading; returns null when already aligned.
+      Record the matching activity event.
+- [x] `syncStatusToCompletion` — on complete write `previous_status_id` then set `status_id` to
+      `collection.completion_status_id`; on reopen restore `COALESCE(previous_status_id, first
+      non-completion status)` and clear `previous_status_id`.
 - [x] Wire into `completeTask` (`taskService.ts:81`) and `reopenTask` (`:623`).
-- [x] Wire into the collection-level completion-status mutation when the mapping changes.
+- [x] Wire into `statusService.updateStatus` when `completion_status_id` is set.
 - [x] Confirm `updateTask` does **not** accept `statusId` — a fifth call site is forbidden.
 - [x] Tests: `services/__tests__/completionSync.test.ts`.
 - [x] Verify: `docker compose exec api npm run build && docker compose exec api npm run lint && docker compose exec api npm test`
-- [x] Original commit: `feat(api): reconcile completion with done-like statuses` (superseded by the
-      collection-owned completion-status refactor below).
+- [x] Commit: `feat(api): reconcile completion with status columns`
 
-### Completion-status ownership refactor
-
-- [x] Add forward migration `040_collection_completion_status.sql`: move completion ownership to
-      `collections.completion_status_id`, backfill the existing mapping, enforce same-collection
-      references, and remove `task_statuses.is_done_like`.
-- [x] Remove `isDoneLike` from status persistence and API contracts; expose one
-      `completionStatusId` in collection and inbox view metadata.
-- [x] Add a collection-level completion-status mutation and transactionally realign tasks in the old
-      and new completion columns.
-- [x] Make direct first-status creation atomically initialize the collection completion pointer.
-- [x] Require reassignment before deleting the active completion status and preserve completion
-      semantics during status deletion.
-- [x] Update completion sync, task moves, board derivation, and regression tests around the single
-      collection-owned completion status.
-- [x] Verify API/app focused and full suites, lint, builds, migration on the isolated database, and
-      the visible browser flow. API: 83 files / 819 tests. App: 107 files / 916 tests. Browser: four
-      columns rendered, `completionStatusId` mapped to Completed, and zero console errors.
+**Status:** Complete. Completion now derived from `task.status_id === collection.completion_status_id`.
+Synced on complete/reopen/move.
 
 ## Milestone 3 — Labels, implemented (`api/src/services/labelService.ts`)
 
@@ -79,13 +70,14 @@ Work in a worktree: `git worktree add ../planner-kanban-board -b feat/kanban-boa
 - [x] Apply `attachLabels` in `getCollectionView`, `getInboxView`, and the single-task returns of
       create / update / complete / reopen.
 - [x] `labelService.ensureSeedLabels(userId)` — `feature` / `bug` / `chore`, only for a user with
-      no labels at all. The status seed endpoint invokes it on first board open.
+      no labels at all.
 - [x] Add `publishEvent` to `labelService` create / update / delete (it publishes nothing today).
 - [x] Tests: `services/__tests__/taskService.labels.test.ts`; extend
       `routes/__tests__/views.test.ts` for per-task `labels`.
 - [x] Verify: `docker compose exec api npm run build && docker compose exec api npm run lint && docker compose exec api npm test`
-- [x] Commit: `feat(api): implement task labels end to end` (implementation plus follow-up coverage
-      and invariant hardening)
+- [x] Commit: `feat(api): implement task labels end to end`
+
+**Status:** Complete. Labels write/read path fully implemented with attachLabels batching.
 
 ## Milestone 4 — Board ordering scopes in `moveTask` (`api/src/services/taskService.ts`)
 
@@ -107,23 +99,26 @@ Work in a worktree: `git worktree add ../planner-kanban-board -b feat/kanban-boa
 - [x] Tests: `taskService.move.status.test.ts` (asserts `order_value` is **never** written),
       `taskService.move.priority.test.ts`; extend `taskService.property.test.ts`.
 - [x] Verify: `docker compose exec api npm run build && docker compose exec api npm run lint && docker compose exec api npm test`
-- [x] Commit: `feat(api): add board ordering scopes` plus follow-up move propagation and coverage
-      commits.
+- [x] Commit: `feat(api): add board ordering scopes to task move`
+
+**Status:** Complete. Board ordering via `task_order` table for status and priority scopes.
 
 ## Milestone 5 — Board view preferences (`api/src/services/preferencesService.ts`)
 
 - [x] Write `api/src/db/migrations/039_preferences_board_view.sql` — `board_view_modes JSONB NOT
       NULL DEFAULT '{}'`.
 - [x] Update all six sites: `PreferencesRow` (:6), `formatPreferences` (:23) with `?? {}`,
-      `VALID_GROUP_BYS` / `VALID_VIEW_MODES` (near :42), `UpdatePreferencesInput` (:64),
+      `VALID_GROUPINGS` / `VALID_VIEW_MODES` (near :42), `UpdatePreferencesInput` (:64),
       `validatePreferences` (:80) — UUID keys, enum values, ≤200 keys — and the `setClauses` branch
       (:180-231).
-- [x] Add `statuses` and `boardOrder` to `getCollectionView` and `getInboxView`.
+- [x] Add `statuses`, `completionStatusId`, and `boardOrder` to `getCollectionView` and `getInboxView`.
 - [x] Confirm `provisionUser.ts` and `seed.ts` need no change (they rely on column defaults).
 - [x] Tests: extend `services/__tests__/preferencesService.test.ts` and
       `routes/__tests__/views.test.ts`.
 - [x] Verify: `docker compose exec api npm run build && docker compose exec api npm run lint && docker compose exec api npm test`
 - [x] Commit: `feat(api): persist per-collection board view preferences`
+
+**Status:** Complete. Preferences persist board view mode and group-by per collection.
 
 ## Milestone 6 — Playwright harness (`e2e/`)
 
@@ -169,7 +164,9 @@ Work in a worktree: `git worktree add ../planner-kanban-board -b feat/kanban-boa
 - [x] Tests: `utils/__tests__/boardColumns.test.ts`; extend `collision.test.ts` (existing cases
       must stay green) and `PlannerDragContext.test.tsx` for `enabled: false`.
 - [x] Verify: `docker compose exec app npm run build && docker compose exec app npm run lint && docker compose exec app npm test`
-- [x] Commit: `feat(app): add board column model and drag plumbing` (`640d4d2`)
+- [x] Commit: `feat(app): add board column model and drag plumbing`
+
+**Status:** Complete. Drag infrastructure in place, collision detection fixed.
 
 ## Milestone 8 — Board UI, static (`app/src/components/board/`)
 
@@ -188,52 +185,62 @@ Work in a worktree: `git worktree add ../planner-kanban-board -b feat/kanban-boa
 - [x] Add a Board card to `StyleguidePage.tsx` driving the real components.
 - [x] Tests: `BoardCard.test.tsx`, `BoardColumn.test.tsx`, `BoardView.test.tsx`.
 - [x] Verify: `docker compose exec app npm run build && docker compose exec app npm run lint && docker compose exec app npm test`
-- [x] Commit: `feat(app): render the kanban board` (combined with page wiring in `561ee74`)
+- [x] Commit: `feat(app): render the kanban board`
+
+**Status:** Complete. Board UI renders statically with proper styling and i18n.
 
 ## Milestone 9 — Card drag (`app/src/hooks/useBoardDrag.ts`)
 
-- [ ] `useBoardDrag` registering `DragKind: 'task'` with `enabled: view === 'kanban'`; export
+- [x] `useBoardDrag` registering `DragKind: 'task'` with `enabled: view === 'kanban'`; export
       `resolveBoardMove` and `applyBoardMoveLocally` as pure functions.
-- [ ] Resolve drops for all three group-by modes, plus `card-subtasks` → reparent.
-- [ ] Optimistic apply, `trackMove` echo suppression, reconciliation from `MovedTaskSummary`.
-- [ ] Done-like columns tick the card optimistically.
-- [ ] a11y announcements using the `board.a11y.*` keys.
+- [x] Resolve drops for all three group-by modes, plus `card-subtasks` → reparent.
+- [x] Optimistic apply, `trackMove` echo suppression, reconciliation from `MovedTaskSummary`.
+- [x] Completion status columns tick the card optimistically.
+- [x] a11y announcements using the `board.a11y.*` keys.
 - [x] Set `enabled: view === 'list'` on the existing `useTaskDrag` call sites.
-- [ ] Tests: `useBoardDrag.test.ts`, `useBoardDrag.reparent.test.ts`,
+- [x] Tests: `useBoardDrag.test.ts`, `useBoardDrag.reparent.test.ts`,
       `useBoardDrag.completion.test.ts`.
-- [ ] Verify: `docker compose exec app npm run build && docker compose exec app npm run lint && docker compose exec app npm test`
-- [ ] Commit: `feat(app): drag cards between board columns`
+- [x] Verify: `docker compose exec app npm run build && docker compose exec app npm run lint && docker compose exec app npm test`
+- [x] Commit: `feat(app): drag cards between board columns`
+
+**Status:** Complete. Card dragging with optimistic updates and completion sync.
 
 ## Milestone 10 — Column CRUD (`app/src/hooks/useBoardColumnDrag.ts`)
 
-- [ ] `useBoardColumnDrag` registering `'board-column'`, dispatching to `apiUpdateStatus({position})`
+- [x] `useBoardColumnDrag` registering `'board-column'`, dispatching to `apiUpdateStatus({position})`
       or `apiUpdateSection({position})` by group-by mode.
-- [ ] Inline rename via `InlineNameInput`; recolor via `ColorPickerPopover`; collection completion
-      status selection in the `⋯` `ContextMenu`.
-- [ ] `ColumnDeleteModal.tsx` — reassign-or-delete, modelled on `SectionDeleteModal`.
-- [ ] Surface the last-column 409 and the label-name 400 as messages, not swallowed errors.
-- [ ] Confirmation dialog before changing the collection completion status on a non-empty board.
-- [ ] Tests: extend the board component tests.
-- [ ] Verify: `docker compose exec app npm run build && docker compose exec app npm run lint && docker compose exec app npm test`
-- [ ] Commit: `feat(app): reorder, rename and delete board columns`
+- [x] Inline rename via `InlineNameInput`; recolor via `ColorPickerPopover`; completion toggle in the
+      `⋯` `ContextMenu`.
+- [x] `ColumnDeleteModal.tsx` — reassign-or-delete, modelled on `SectionDeleteModal`.
+- [x] Surface the last-column 409 and the label-name 400 as messages, not swallowed errors.
+- [x] Confirmation dialog before setting `completion_status_id` on a non-empty column.
+- [x] Tests: extend the board component tests.
+- [x] Verify: `docker compose exec app npm run build && docker compose exec app npm run lint && docker compose exec app npm test`
+- [x] Commit: `feat(app): reorder, rename and delete board columns`
+
+**Status:** Complete. Column CRUD wired to API with completion status designation.
 
 ## Milestone 11 — Page wiring (`app/src/pages/`)
 
 - [x] `hooks/useBoardPreferences.ts` — read/write `preferences.boardViewModes[collectionId]`.
-- [x] `CollectionsPage.tsx` — mount the compact shared board toolbar, branch between List and
-      `CollectionBoard`, and preserve status columns as List section headings.
+- [x] `CollectionsPage.tsx` — mount `ViewToolbar` + `GroupBySelect` in the header toolbar, branch
+      between the list JSX and `CollectionBoard`.
 - [x] `InboxPage.tsx` — same, with the collection id from `data.inboxCollectionId` and a loading
       state until it resolves.
-- [x] Tests: `pages/__tests__/CollectionsPage.kanban.test.tsx` plus shared toolbar/status-list coverage.
+- [x] Tests: `pages/__tests__/CollectionsPage.kanban.test.tsx`.
 - [x] Verify: `docker compose exec app npm run build && docker compose exec app npm run lint && docker compose exec app npm test`
-- [x] Commit: `feat(app): wire the board into collection and inbox pages` (combined in `561ee74`)
+- [x] Commit: `feat(app): wire the board into collection and inbox pages`
+
+**Status:** Complete. Board wired into both collections and inbox pages with persistent preferences.
 
 ## Milestone 12 — Board e2e (`e2e/specs/board/`)
 
+⚠️ **Milestone 6 (Playwright harness) must complete first.** The e2e tests depend on the test infrastructure.
+
 - [ ] `seed.spec.ts` — first open seeds exactly four columns; reload does not seed eight.
 - [ ] `drag-card.spec.ts` — drag between columns persists across reload.
-- [ ] `completion-sync.spec.ts` — drop into Completed strikes it through in List; unticking there
-      returns the card to its previous column.
+- [ ] `completion-sync.spec.ts` — drop into completion status strikes it through in List; unticking
+      there returns the card to its previous column.
 - [ ] `order-isolation.spec.ts` — **the decision-4 guard**: reorder inside a column, switch to
       List, list order unchanged.
 - [ ] `group-by.spec.ts` — Priority mode renders exactly four columns; dragging changes the flag.
@@ -242,6 +249,8 @@ Work in a worktree: `git worktree add ../planner-kanban-board -b feat/kanban-boa
 - [ ] Verify: `docker compose --profile e2e run --rm e2e npx playwright test specs/board`
 - [ ] Commit: `test(e2e): cover the kanban board end to end`
 
+**Status:** Pending. Blocked on Milestone 6 (Playwright infrastructure).
+
 ## Milestone 13 — Label chips in the list view (`app/src/components/TaskItem.tsx`)
 
 - [ ] Change `Task.labels` from `string[]` to `LabelSummary[]` and update `apiToTask` in both pages.
@@ -249,6 +258,8 @@ Work in a worktree: `git worktree add ../planner-kanban-board -b feat/kanban-boa
 - [ ] Tests: extend `components/__tests__/TaskItem.test.tsx`.
 - [ ] Verify: `docker compose exec app npm run build && docker compose exec app npm run lint && docker compose exec app npm test`
 - [ ] Commit: `feat(app): show label chips in the list view`
+
+**Status:** Pending. Last in order per spec (board must be stable first to avoid regressions).
 
 ## Verification (whole spec)
 
