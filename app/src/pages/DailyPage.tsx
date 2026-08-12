@@ -27,7 +27,7 @@ import {
 } from '../api/client';
 import { ContextMenu, type ContextMenuItem } from '../components/ui/ContextMenu';
 import { flattenCollections } from '../components/CollectionTreeNav';
-import { Calendar, Tag, Folder, Hash, ArrowUp, ArrowDown, Trash2 } from 'lucide-react';
+import { Folder, ArrowUp, ArrowDown, Trash2 } from 'lucide-react';
 
 interface DaySection {
   key: string;

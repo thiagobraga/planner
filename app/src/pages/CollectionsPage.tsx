@@ -43,7 +43,7 @@ import { buildCollectionMenuItems } from '../components/collectionMenuItems';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { SectionDeleteModal } from '../components/SectionDeleteModal';
 import { flattenCollections, getHierarchicalColor } from '../components/CollectionTreeNav';
-import { Calendar, Tag, Folder, Hash, ArrowUp, ArrowDown, Trash2, Pencil, ChevronRight } from 'lucide-react';
+import { Folder, ArrowUp, ArrowDown, Trash2, Pencil, ChevronRight } from 'lucide-react';
 import { useI18n } from '../i18n/I18nContext';
 import { buildStatusListGroups } from '../utils/boardColumns';
 
