@@ -1,0 +1,96 @@
+- generic [ref=e3]:
+  - complementary "Navigation" [ref=e4]:
+    - generic [ref=e6]:
+      - img "Navigation" [ref=e8]
+      - generic [ref=e9]:
+        - heading "Planner" [level=1] [ref=e10]
+        - paragraph [ref=e11]: Your Bullet Journal
+    - navigation "Main navigation" [ref=e12]:
+      - link "Daily" [ref=e13] [cursor=pointer]:
+        - /url: /daily
+      - link "Inbox" [ref=e19] [cursor=pointer]:
+        - /url: /inbox
+      - link "Habits" [ref=e24] [cursor=pointer]:
+        - /url: /habits
+      - link "Monthly" [ref=e32] [cursor=pointer]:
+        - /url: /monthly
+    - generic [ref=e39]:
+      - generic [ref=e40]:
+        - link "Collections" [ref=e41] [cursor=pointer]:
+          - /url: /collections
+        - button "Add collection" [ref=e42] [cursor=pointer]
+      - generic [ref=e44]:
+        - button "Reorder Kanban Lab" [ref=e45] [cursor=pointer]
+        - button "Kanban Lab" [ref=e47] [cursor=pointer]
+    - navigation "Settings" [ref=e49]:
+      - link "Settings" [ref=e50] [cursor=pointer]:
+        - /url: /settings
+      - link "Help" [ref=e56] [cursor=pointer]:
+        - /url: /help
+      - button "Logout" [ref=e63] [cursor=pointer]
+  - main [ref=e69]:
+    - generic [ref=e70]:
+      - generic [ref=e71]:
+        - heading "Kanban Lab" [level=1] [ref=e73]
+        - generic [ref=e77]:
+          - button "Status" [ref=e143] [cursor=pointer]
+          - generic [ref=e78]:
+            - button [ref=e79] [cursor=pointer]
+            - generic [ref=e82] [cursor=pointer]:
+              - checkbox "Show completed" [checked] [ref=e84]
+              - generic [ref=e86]: Show completed
+            - generic [ref=e87] [cursor=pointer]:
+              - checkbox "Move completed to end" [ref=e89]
+              - generic [ref=e91]: Move completed to end
+            - generic [ref=e92]:
+              - button "List" [ref=e93] [cursor=pointer]
+              - button "Kanban" [pressed] [ref=e95] [cursor=pointer]
+            - button "More options" [ref=e101] [cursor=pointer]
+      - generic [ref=e148]:
+        - generic [ref=e149]:
+          - generic [ref=e150]:
+            - heading "Backlog" [level=2] [ref=e152]
+            - generic [ref=e153]: "4"
+            - button "More options for Backlog" [ref=e154] [cursor=pointer]: ···
+          - generic [ref=e155]:
+            - article [ref=e156]:
+              - generic [ref=e157]:
+                - button "Complete task" [ref=e158] [cursor=pointer]
+                - heading "Design board columns" [level=3] [ref=e159]
+                - generic "Priority 4" [ref=e160]
+            - article [ref=e163]:
+              - generic [ref=e164]:
+                - button "Complete task" [ref=e165] [cursor=pointer]
+                - heading "Wire card drag" [level=3] [ref=e166]
+                - generic "Priority 4" [ref=e167]
+            - article [ref=e170]:
+              - generic [ref=e171]:
+                - button "Complete task" [ref=e172] [cursor=pointer]
+                - heading "Verify completion sync" [level=3] [ref=e173]
+                - generic "Priority 4" [ref=e174]
+            - article [ref=e177]:
+              - generic [ref=e178]:
+                - button "Complete task" [ref=e179] [cursor=pointer]
+                - heading "Polish mobile layout" [level=3] [ref=e180]
+                - generic "Priority 4" [ref=e181]
+        - generic [ref=e184]:
+          - generic [ref=e185]:
+            - heading "Todo" [level=2] [ref=e187]
+            - generic [ref=e188]: "0"
+            - button "More options for Todo" [ref=e189] [cursor=pointer]: ···
+          - generic [ref=e190]: Drop work here
+        - generic [ref=e192]:
+          - generic [ref=e193]:
+            - heading "Doing" [level=2] [ref=e195]
+            - generic [ref=e196]: "0"
+            - button "More options for Doing" [ref=e197] [cursor=pointer]: ···
+          - generic [ref=e198]: Drop work here
+        - generic [ref=e200]:
+          - generic [ref=e201]:
+            - heading "Completed" [level=2] [ref=e203]
+            - generic [ref=e204]: "0"
+            - button "More options for Completed" [ref=e205] [cursor=pointer]: ···
+          - generic [ref=e206]: Drop work here
+        - button "Add column" [ref=e208] [cursor=pointer]
+  - status [ref=e140]
+  - status [ref=e141]
