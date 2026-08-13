@@ -108,5 +108,5 @@ export const DEFAULT_BINDINGS: Binding[] = [
   { key: 'Escape', context: 'always', action: 'dialog:close' },
   { keys: ['g', 'i'], context: 'global', action: 'navigate:inbox' },
   { keys: ['g', 't'], context: 'global', action: 'navigate:daily' },
-  { keys: ['g', 'u'], context: 'global', action: 'navigate:upcoming' },
+  { keys: ['g', 'u'], context: 'global', action: 'toggle:upcoming' },
 ];

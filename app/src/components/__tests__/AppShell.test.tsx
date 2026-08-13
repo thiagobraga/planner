@@ -7,6 +7,7 @@ const mockUseQuery = vi.hoisted(() => vi.fn());
 vi.mock('react-router', () => ({
   Outlet: vi.fn(() => <div data-testid="outlet-content">Outlet content</div>),
   useNavigate: vi.fn(() => vi.fn()),
+  useLocation: vi.fn(() => ({ pathname: '/daily' })),
 }));
 
 vi.mock('@tanstack/react-query', () => ({

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef, type CSSProperties } from 'react';
-import { Outlet, useNavigate } from 'react-router';
+import { Outlet, useNavigate, useLocation } from 'react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Sidebar } from './Sidebar';
 import { QuickAdd } from './QuickAdd';
@@ -26,6 +26,7 @@ export function AppShell() {
   const { setLocale, t } = useI18n();
   const updateAvailable = useVersionCheck();
   const navigate = useNavigate();
+  const location = useLocation();
   const qc = useQueryClient();
   const { data: preferences, isPending: preferencesLoading } = useQuery({
     queryKey: ['preferences'],
@@ -142,12 +143,15 @@ export function AppShell() {
         case 'navigate:daily':
           navigate('/daily');
           break;
-        case 'navigate:upcoming':
-          navigate('/upcoming');
+        case 'toggle:upcoming':
+          if (location.pathname !== '/daily') {
+            navigate('/daily');
+          }
+          window.dispatchEvent(new CustomEvent('toggle-upcoming'));
           break;
       }
     },
-    [navigate],
+    [navigate, location.pathname],
   );
 
   useEffect(() => {
