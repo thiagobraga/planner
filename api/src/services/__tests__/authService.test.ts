@@ -124,6 +124,21 @@ describe("register - validation", () => {
     }
   });
 
+  it("rejects missing password", async () => {
+    try {
+      await register({ email: "test@example.com", password: "", displayName: "Test" });
+      expect.fail("should throw");
+    } catch (err) {
+      const e = err as AppError;
+      expect(e.code).toBe("VALIDATION_ERROR");
+      expect(e.details).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ field: "password" }),
+        ])
+      );
+    }
+  });
+
   it("rejects display name outside 1-50 chars", async () => {
     try {
       await register({ email: "test@example.com", password: STRONG_PASSWORD, displayName: "" });
@@ -241,6 +256,25 @@ describe("register - inbox collection", () => {
     expect(color).toBeDefined();
     expect(color).toMatch(COLLECTIONS_COLOR_FORMAT);
   });
+
+  it("registers without a display name", async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+
+    const user = await register({ email: "nodisplay@example.com", password: STRONG_PASSWORD });
+
+    expect(user.displayName).toBeNull();
+  });
+
+  it("rolls back and rethrows when the transaction fails", async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+    mockClientQuery.mockRejectedValueOnce(new Error("db down"));
+
+    await expect(
+      register({ email: "tx@example.com", password: STRONG_PASSWORD, displayName: "Test" }),
+    ).rejects.toThrow("db down");
+    expect(mockClientQuery).toHaveBeenCalledWith("ROLLBACK");
+    expect(mockRelease).toHaveBeenCalled();
+  });
 });
 
 describe("login", () => {
@@ -336,6 +370,31 @@ describe("login - disabled accounts", () => {
     await expect(login("user@example.com", STRONG_PASSWORD)).rejects.toThrow();
     expect(sessionMock.createSession).not.toHaveBeenCalled();
   });
+
+  it("records the attempt and rejects a wrong password", async () => {
+    mockQuery.mockResolvedValueOnce({
+      rows: [
+        {
+          id: "user-1",
+          email: "user@example.com",
+          password_hash: validHash,
+          display_name: "User",
+          role: "user",
+          disabled_at: null,
+        },
+      ],
+    });
+
+    const rateLimitMock = await import("../rateLimitService.js");
+
+    await expect(login("user@example.com", "definitely-not-the-password")).rejects.toThrow(
+      "Invalid email or password.",
+    );
+    expect(rateLimitMock.incrementLoginAttempts).toHaveBeenCalledWith(
+      "user@example.com",
+      "unknown",
+    );
+  });
 });
 
 describe("login - rate limiting", () => {
@@ -425,6 +484,33 @@ describe("confirmPasswordReset - token lifecycle", () => {
       const e = err as AppError;
       expect(e.code).toBe("TOKEN_INVALID");
     }
+  });
+
+  it("rejects missing new password", async () => {
+    try {
+      await confirmPasswordReset("some-token", "");
+      expect.fail("should throw");
+    } catch (err) {
+      const e = err as AppError;
+      expect(e.code).toBe("VALIDATION_ERROR");
+      expect(e.details).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ field: "newPassword" }),
+        ])
+      );
+    }
+  });
+
+  it("rolls back and rethrows when the update fails", async () => {
+    const futureDate = new Date(Date.now() + 60 * 60 * 1000);
+    mockQuery.mockResolvedValueOnce({
+      rows: [{ id: "token-1", user_id: "user-1", expires_at: futureDate.toISOString(), used_at: null }],
+    });
+    mockClientQuery.mockRejectedValueOnce(new Error("db down"));
+
+    await expect(confirmPasswordReset("valid-token", STRONG_PASSWORD)).rejects.toThrow("db down");
+    expect(mockClientQuery).toHaveBeenCalledWith("ROLLBACK");
+    expect(mockRelease).toHaveBeenCalled();
   });
 
   it("succeeds and updates password, removes token", async () => {
