@@ -50,3 +50,12 @@
 
 ### Frontend DailyPage
 - Manual testing documented in FEATURE_SUMMARY.md (browser-based scenarios)
+
+## Follow-up: remove standalone Upcoming page
+
+- [x] Delete `app/src/pages/UpcomingPage.tsx` (dead, unrouted) + its test
+- [x] Repoint `g u` hotkey: `navigate:upcoming` → `toggle:upcoming` (`shortcuts.ts`, `shortcuts.test.ts`)
+- [x] `AppShell.tsx`: dispatch `toggle-upcoming` CustomEvent, navigate to `/daily` first if elsewhere
+- [x] `DailyPage.tsx`: listen for `toggle-upcoming`, extract shared `toggleUpcoming` callback (button + hotkey)
+- [x] Update help dialog copy (`helpContent.ts`, en + pt-BR): Upcoming described as toggle, not page
+- [x] Keep `fetchUpcomingTasks`, `['upcoming']` query invalidations, `page.upcoming` i18n key (reused)

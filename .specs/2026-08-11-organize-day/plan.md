@@ -153,6 +153,23 @@ from `--font-family`. No new colours, no shadows — stays within DESIGN.md.
 
 ---
 
+## Follow-up: remove standalone Upcoming page (2026-08-13)
+
+`UpcomingPage.tsx` was dead code — never routed in `App.tsx`, only rendered mock seed data. The
+inline Upcoming toggle on `DailyPage` (above) is the sole "Upcoming" surface now.
+
+- Deleted `app/src/pages/UpcomingPage.tsx` and its test.
+- Kept `fetchUpcomingTasks` (`client.ts`), `['upcoming']` query-key invalidations (`AppShell.tsx`),
+  and the `page.upcoming` i18n key — all reused by the inline toggle.
+- `g u` hotkey kept, repurposed: was `navigate:upcoming` (dead route), now `toggle:upcoming`.
+  Dispatches a `toggle-upcoming` `CustomEvent` (same pattern as `task-created`); `AppShell`
+  navigates to `/daily` first if elsewhere, `DailyPage` listens and flips `showUpcoming` (fetching
+  on enable, same as clicking the button).
+- Help dialog copy (`helpContent.ts`, en + pt-BR) updated to describe Upcoming as a Daily-page
+  toggle, not a destination page.
+
+---
+
 ## Verification
 
 ```bash
