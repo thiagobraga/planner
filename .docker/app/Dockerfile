@@ -5,6 +5,9 @@ RUN npm ci && npm run build && npm cache clean --force
 
 FROM node:26.7.0-alpine3.24 AS development
 WORKDIR /app
+# Chromium for Playwright e2e tests (playwright.config.ts expects it at
+# /usr/bin/chromium-browser and always launches with --no-sandbox).
+RUN apk add --no-cache chromium
 COPY --chown=node:node --chmod=755 .docker/app/entrypoint.sh /entrypoint.sh
 COPY --chown=node:node app ./
 EXPOSE 5173
