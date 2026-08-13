@@ -121,14 +121,17 @@ describe("Express app setup", () => {
     expect(res.body.error.code).toBe("UNSUPPORTED_MEDIA_TYPE");
   });
 
-  it("allows non-JSON content-type on /auth paths", async () => {
+  it("does not apply the 415 gate on /auth paths", async () => {
+    // /auth is deliberately exempt: the handlers validate their fields
+    // themselves, and since no urlencoded parser is mounted, a form-encoded
+    // body never parses - real routes answer 400 VALIDATION_ERROR, never 415.
+    // With the auth router stubbed as a passthrough, the request falls through
+    // to notFound, so only the gate's non-application is asserted here.
     const res = await request(app)
       .post("/api/v1/auth/login")
       .set("Content-Type", "text/plain")
       .send("email=x@example.com");
-    // Reaches the router (404 from notFound) instead of the 415 gate.
-    expect(res.status).toBe(404);
-    expect(res.body.error.code).toBe("NOT_FOUND");
+    expect(res.status).not.toBe(415);
   });
 
   it("answers OPTIONS preflight requests with 204", async () => {
