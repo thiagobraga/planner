@@ -10,7 +10,7 @@ interface TaskVisibilityControlsProps {
 }
 
 function controlClass(active: boolean): string {
-  return `inline-flex h-6 w-6 items-center justify-center transition-colors duration-[var(--motion-fast)] disabled:cursor-not-allowed disabled:opacity-40 ${
+  return `inline-flex h-5 w-5 items-center justify-center transition-colors duration-[var(--motion-fast)] disabled:cursor-not-allowed disabled:opacity-40 ${
     active
       ? 'bg-dot/60 text-ink'
       : 'bg-transparent text-ink-light hover:bg-dot/30'
@@ -33,7 +33,7 @@ export function TaskVisibilityControls({
     : t('visibility.hideOldNotes');
 
   return (
-    <div className="task-visibility-controls inline-flex h-6 items-center overflow-hidden rounded-[2px] border border-border">
+    <div className="task-visibility-controls inline-flex h-5 items-center overflow-hidden rounded-[2px] border border-border">
       <button
         type="button"
         aria-label={completedLabel}
@@ -44,9 +44,9 @@ export function TaskVisibilityControls({
         className={controlClass(hideCompletedTasks)}
       >
         {hideCompletedTasks ? (
-          <Eye size={14} strokeWidth={1.8} />
+          <Eye size={12} strokeWidth={1.8} />
         ) : (
-          <EyeOff size={14} strokeWidth={1.8} />
+          <EyeOff size={12} strokeWidth={1.8} />
         )}
       </button>
       <button
@@ -58,7 +58,7 @@ export function TaskVisibilityControls({
         onClick={() => onHideOldNotesChange(!hideOldNotes)}
         className={`${controlClass(hideOldNotes)} border-l border-border`}
       >
-        <FileClock size={14} strokeWidth={1.8} />
+        <FileClock size={12} strokeWidth={1.8} />
       </button>
     </div>
   );

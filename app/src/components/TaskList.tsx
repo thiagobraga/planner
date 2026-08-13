@@ -194,7 +194,7 @@ export function TaskList({
           <div aria-hidden className="task-list-slot" style={{ marginLeft: foreignInsertDepth * INDENT_WIDTH }} />
         )}
         {rows.map(({ task, depth }) => (
-          <div key={task.id} role="listitem" className="task-list-item">
+          <div key={task.id} role="listitem" className={`task-list-item${task.moved ? ' task-list-item--moved' : ''}`}>
             {task.id === insertAfterId && (
               <div aria-hidden className="task-list-slot" style={{ marginLeft: foreignInsertDepth * INDENT_WIDTH }} />
             )}

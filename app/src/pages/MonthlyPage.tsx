@@ -25,10 +25,10 @@ export function MonthlyPage() {
           </p>
         </div>
 
-        <div className="page-header-toolbar monthly-page-header-controls absolute bottom-0 right-0 z-20 flex items-center">
+        <div className="page-header-toolbar monthly-page-header-controls flex items-center">
           <Button
             variant="secondary"
-            size="sm"
+            size="xs"
             onClick={() => setSelected({ year: today.getFullYear(), month: today.getMonth() })}
           >
             {t('page.today')}
