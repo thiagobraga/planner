@@ -1,7 +1,6 @@
 import { useState, useCallback, useRef } from 'react';
 import type { ApiTask } from '../api/client';
 import { apiReorganizeTasks, type ReorganizeMove } from '../api/client';
-import { useQueryClient } from '@tanstack/react-query';
 
 type ReorganizeState = 'idle' | 'preview' | 'persisting';
 
@@ -38,7 +37,7 @@ function parseDate(dateStr: string): Date {
 }
 
 // Get date label (Today, Tomorrow, or relative)
-function getDateLabel(dateStr: string, todayStr: string, t?: (key: string) => string): string {
+function getDateLabel(dateStr: string, todayStr: string): string {
   const today = parseDate(todayStr);
   const date = parseDate(dateStr);
 
@@ -57,11 +56,12 @@ export function useReorganize(
   sections: Section[] | null,
   onPreview?: () => void,
   onRevert?: () => void,
+  formatLabel?: (dateStr: string) => string,
+  onConfirmed?: () => void,
 ): UseReorganizeReturn {
   const [state, setState] = useState<ReorganizeState>('idle');
   const [previewData, setPreviewData] = useState<ReorganizePreview | null>(null);
   const savedSectionsRef = useRef<Section[] | null>(null);
-  const queryClient = useQueryClient();
 
   // Calculate if reorganize button should show: ≥8 uncompleted root tasks in today + overdue
   const showButton = useCallback(() => {
@@ -73,8 +73,8 @@ export function useReorganize(
       if (section.date > todayDate) break;
 
       for (const task of section.tasks) {
-        // Count only root tasks (no parentTaskId) of type 'task'
-        if (!task.parentTaskId && task.type === 'task') {
+        // Count only uncompleted root tasks (no parentTaskId) of type 'task'
+        if (!task.parentTaskId && task.type === 'task' && !task.isCompleted) {
           rootTaskCount++;
         }
       }
@@ -89,38 +89,24 @@ export function useReorganize(
     // Save original sections
     savedSectionsRef.current = JSON.parse(JSON.stringify(sections));
 
-    // Collect root tasks from today + overdue sections
-    const tasksToRedistribute: (ApiTask & { originalIndex: number; sectionIndex: number })[] = [];
-
-    for (let sectionIndex = 0; sectionIndex < sections.length; sectionIndex++) {
-      const section = sections[sectionIndex];
-
-      // Stop at future dates
-      if (section.date > todayDate) break;
-
-      for (let taskIndex = 0; taskIndex < section.tasks.length; taskIndex++) {
-        const task = section.tasks[taskIndex];
-
-        // Only root tasks of type 'task'
+    // Collect root tasks from today + overdue sections, in display order
+    const tasksToRedistribute: ApiTask[] = [];
+    for (const section of sections) {
+      if (section.date > todayDate) break; // stop at future dates
+      for (const task of section.tasks) {
         if (!task.parentTaskId && task.type === 'task' && !task.isCompleted) {
-          tasksToRedistribute.push({
-            ...task,
-            originalIndex: taskIndex,
-            sectionIndex,
-          });
+          tasksToRedistribute.push(task);
         }
       }
     }
 
-    // Redistribute: ≤5 tasks per day starting from today
+    // Assign each candidate task a target date: ≤5 tasks per day starting from today
+    const assignments = new Map<string, { newDueDate: string; moved: boolean }>();
     const moves: ReorganizeMove[] = [];
-    const previewSections: Section[] = JSON.parse(JSON.stringify(sections));
-
     let dayOffset = 0;
     let taskCountInCurrentDay = 0;
 
     for (const task of tasksToRedistribute) {
-      // Increment day every 5 tasks
       if (taskCountInCurrentDay >= 5) {
         dayOffset++;
         taskCountInCurrentDay = 0;
@@ -129,56 +115,57 @@ export function useReorganize(
       const targetDate = new Date(parseDate(todayDate));
       targetDate.setDate(targetDate.getDate() + dayOffset);
       const newDueDate = formatDate(targetDate);
+      const moved = task.dueDate !== newDueDate;
 
-      // Record move only if date actually changed
-      if (task.dueDate !== newDueDate) {
-        moves.push({
-          taskId: task.id,
-          dueDate: newDueDate,
-        });
-      }
-
-      // Update preview sections: remove from old, add to new
-      // First, remove from original section
-      const originalSection = previewSections[task.sectionIndex];
-      originalSection.tasks.splice(task.originalIndex, 1);
-
-      // Find or create target section in preview
-      let targetSectionIndex = previewSections.findIndex((s) => s.date === newDueDate);
-      if (targetSectionIndex === -1) {
-        // Create new section
-        const newSection: Section = {
-          date: newDueDate,
-          label: getDateLabel(newDueDate, todayDate),
-          tasks: [],
-        };
-
-        // Insert in chronological order
-        targetSectionIndex = 0;
-        for (let i = 0; i < previewSections.length; i++) {
-          if (previewSections[i].date < newDueDate) {
-            targetSectionIndex = i + 1;
-          } else {
-            break;
-          }
-        }
-        previewSections.splice(targetSectionIndex, 0, newSection);
-      }
-
-      // Add task to target section
-      previewSections[targetSectionIndex].tasks.push({
-        ...task,
-        dueDate: newDueDate,
-      });
+      assignments.set(task.id, { newDueDate, moved });
+      if (moved) moves.push({ taskId: task.id, dueDate: newDueDate });
 
       taskCountInCurrentDay++;
     }
+
+    // Rebuild sections from scratch: never mutate/splice the original arrays by
+    // index, since that index goes stale as sibling tasks are removed from the
+    // same section — filter/regroup fresh instead.
+    const bucketsByDate = new Map<string, Section['tasks']>();
+    const ensureBucket = (date: string) => {
+      let bucket = bucketsByDate.get(date);
+      if (!bucket) {
+        bucket = [];
+        bucketsByDate.set(date, bucket);
+      }
+      return bucket;
+    };
+
+    for (const section of sections) {
+      const bucket = ensureBucket(section.date);
+      for (const task of section.tasks) {
+        const assignment = assignments.get(task.id);
+        if (!assignment) {
+          bucket.push(task); // untouched: completed, subtask, note, or future
+        }
+      }
+    }
+
+    for (const task of tasksToRedistribute) {
+      const assignment = assignments.get(task.id);
+      if (!assignment) continue;
+      const bucket = ensureBucket(assignment.newDueDate);
+      bucket.push({ ...task, dueDate: assignment.newDueDate, moved: assignment.moved });
+    }
+
+    const previewSections: Section[] = Array.from(bucketsByDate.entries())
+      .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+      .map(([date, tasks]) => {
+        const original = sections.find((s) => s.date === date);
+        const label = original?.label ?? formatLabel?.(date) ?? getDateLabel(date, todayDate);
+        return { date, label, tasks };
+      });
 
     setPreviewData({ moves, sections: previewSections });
     setState('preview');
 
     onPreview?.();
-  }, [sections, todayDate, onPreview]);
+  }, [sections, todayDate, onPreview, formatLabel]);
 
   const confirmReorganize = useCallback(async () => {
     if (!previewData || state !== 'preview') return;
@@ -188,19 +175,16 @@ export function useReorganize(
     try {
       await apiReorganizeTasks(previewData.moves);
 
-      // Invalidate relevant queries
-      queryClient.invalidateQueries({ queryKey: ['todayTasks'] });
-      queryClient.invalidateQueries({ queryKey: ['upcomingTasks'] });
-
       setState('idle');
       setPreviewData(null);
       savedSectionsRef.current = null;
+      onConfirmed?.();
     } catch (err) {
       // On error, revert to preview state so user can retry or cancel
       setState('preview');
       throw err;
     }
-  }, [previewData, state, queryClient]);
+  }, [previewData, state, onConfirmed]);
 
   const cancelReorganize = useCallback(() => {
     setState('idle');

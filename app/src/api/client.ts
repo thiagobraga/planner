@@ -323,7 +323,8 @@ export async function fetchTodayTasks(): Promise<{ overdue: ApiTask[]; today: Ap
 }
 
 export async function fetchUpcomingTasks(): Promise<Array<{ date: string; tasks: ApiTask[] }>> {
-  return request('/views/upcoming');
+  const view = await request<{ days: Array<{ date: string; tasks: ApiTask[] }> }>('/views/upcoming');
+  return view.days;
 }
 
 export async function fetchMonthNotes(year: number, month: number): Promise<{

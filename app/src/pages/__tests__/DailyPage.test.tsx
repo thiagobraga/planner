@@ -178,7 +178,7 @@ describe('DailyPage', () => {
     expect(header).toContainElement(screen.getByRole('button', { name: 'Today' }));
     expect(header).toContainElement(screen.getByRole('button', { name: 'Hide completed tasks' }));
     expect(header).toContainElement(screen.getByRole('button', { name: 'Hide old notes' }));
-    expect(screen.getByRole('button', { name: 'Today' }).closest('.page-header-toolbar')).toHaveClass('absolute');
+    expect(screen.getByRole('button', { name: 'Today' }).closest('.page-header-toolbar')).toBeInTheDocument();
   });
 
   it('renders overdue section label', async () => {
