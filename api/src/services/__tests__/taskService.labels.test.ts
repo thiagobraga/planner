@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { AppError } from "../../utils/AppError.js";
 
 const mockQuery = vi.fn();
 const mockClientQuery = vi.fn();
@@ -110,6 +111,14 @@ describe("taskService: labels", () => {
 
       expect(mockConnect).not.toHaveBeenCalled();
     });
+
+    it("rejects a collection the user cannot reach", async () => {
+      mockQuery.mockResolvedValueOnce({ rows: [] }); // collection access -> no match
+
+      await expect(
+        createTask(userId, { title: "New Task", collectionId: "someone-elses" }),
+      ).rejects.toMatchObject({ code: "VALIDATION_ERROR", statusCode: 400 });
+    });
   });
 
   describe("updateTask", () => {
@@ -181,6 +190,31 @@ describe("taskService: labels", () => {
       await updateTask(taskId, userId, { title: "Renamed" });
 
       expect(mockConnect).not.toHaveBeenCalled();
+    });
+
+    it("rejects an empty title", async () => {
+      await expect(updateTask(taskId, userId, { title: "" })).rejects.toThrow(AppError);
+      expect(mockQuery).not.toHaveBeenCalled();
+    });
+
+    it("rejects a title longer than 500 characters", async () => {
+      await expect(updateTask(taskId, userId, { title: "x".repeat(501) })).rejects.toThrow(AppError);
+      expect(mockQuery).not.toHaveBeenCalled();
+    });
+
+    it("rejects a non-integer priority", async () => {
+      await expect(updateTask(taskId, userId, { priority: 2.5 })).rejects.toThrow(AppError);
+      expect(mockQuery).not.toHaveBeenCalled();
+    });
+
+    it("rejects a priority outside 1-4", async () => {
+      await expect(updateTask(taskId, userId, { priority: 5 })).rejects.toThrow(AppError);
+      expect(mockQuery).not.toHaveBeenCalled();
+    });
+
+    it("rejects an invalid type", async () => {
+      await expect(updateTask(taskId, userId, { type: "memo" })).rejects.toThrow(AppError);
+      expect(mockQuery).not.toHaveBeenCalled();
     });
   });
 });

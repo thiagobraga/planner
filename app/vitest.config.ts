@@ -1,13 +1,12 @@
-import { defineConfig } from "vitest/config";
+import { defineProject } from "vitest/config";
 
-export default defineConfig({
+export default defineProject({
   test: {
+    name: "app",
     environment: "jsdom",
     globals: true,
     setupFiles: ["./src/test/setup.ts"],
-    coverage: {
-      provider: "v8",
-      reportsDirectory: "./vitest-coverage",
-    },
+    // e2e/*.spec.ts are Playwright suites, not vitest suites - keep them out.
+    include: ["src/**/*.{test,spec}.{ts,tsx}"],
   },
 });

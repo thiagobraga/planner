@@ -53,7 +53,7 @@ vi.mock("../sessionService.js", () => ({
   touchSession: vi.fn().mockResolvedValue(undefined),
 }));
 
-import { attachSyncServer, publishEvent } from "../syncService.js";
+import { attachSyncServer, publishEvent, getIO } from "../syncService.js";
 import { validateSession, needsTouch, touchSession } from "../sessionService.js";
 
 function captureConnectionHandler(): (...args: unknown[]) => void {
@@ -153,6 +153,44 @@ describe("syncService: Socket.IO server", () => {
     });
   });
 
+  describe("redis subscription fanout", () => {
+    async function triggerRedisMessage(raw: string): Promise<void> {
+      const cb = (global as Record<string, unknown>).__redisCallback as (msg: string) => void;
+      await cb(raw);
+    }
+
+    beforeEach(async () => {
+      vi.clearAllMocks();
+      await attachSyncServer({} as import("http").Server);
+    });
+
+    it("emits to the user room and the collection room when the event has a collectionId", async () => {
+      await triggerRedisMessage(
+        JSON.stringify({ userId: "u1", collectionId: "c1", entityType: "task", eventType: "created" }),
+      );
+      expect(mockIO.to).toHaveBeenCalledWith("user:u1");
+      expect(mockIO.to).toHaveBeenCalledWith("collection:c1");
+    });
+
+    it("emits only to the user room when the event has no collectionId", async () => {
+      await triggerRedisMessage(JSON.stringify({ userId: "u1", entityType: "task", eventType: "created" }));
+      expect(mockIO.to).toHaveBeenCalledWith("user:u1");
+      expect(mockIO.to).not.toHaveBeenCalledWith(expect.stringContaining("collection:"));
+    });
+
+    it("drops malformed messages without emitting", async () => {
+      await triggerRedisMessage("not json {");
+      expect(mockIO.to).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("getIO", () => {
+    it("returns the attached Socket.IO instance", async () => {
+      await attachSyncServer({} as import("http").Server);
+      expect(getIO()).toBe(mockIO);
+    });
+  });
+
   describe("client event session validation", () => {
     beforeEach(async () => {
       vi.clearAllMocks();
@@ -203,6 +241,79 @@ describe("syncService: Socket.IO server", () => {
 
       await taskUpdateHandler({ collectionId: "collection-1" });
       expect(mockSocket.disconnect).toHaveBeenCalled();
+    });
+
+    it("lets task:update through when the session is valid and the collection is owned", async () => {
+      (validateSession as ReturnType<typeof vi.fn>).mockResolvedValue({
+        userId: "user-1",
+        sessionId: 1,
+      });
+
+      const taskUpdateHandler = mockSocket.on.mock.calls.find(
+        (c: unknown[]) => c[0] === "task:update",
+      )?.[1] as (event: { collectionId?: string }) => void;
+
+      await taskUpdateHandler({ collectionId: "collection-1" });
+      expect(mockSocket.disconnect).not.toHaveBeenCalled();
+    });
+
+    it("disconnects on task:update when the collection is not a member of", async () => {
+      (validateSession as ReturnType<typeof vi.fn>).mockResolvedValue({
+        userId: "user-1",
+        sessionId: 1,
+      });
+
+      const taskUpdateHandler = mockSocket.on.mock.calls.find(
+        (c: unknown[]) => c[0] === "task:update",
+      )?.[1] as (event: { collectionId?: string }) => void;
+
+      await taskUpdateHandler({ collectionId: "foreign-collection" });
+      expect(mockSocket.disconnect).toHaveBeenCalled();
+    });
+
+    it("disconnects on task:delete when the collection is not a member of", async () => {
+      (validateSession as ReturnType<typeof vi.fn>).mockResolvedValue({
+        userId: "user-1",
+        sessionId: 1,
+      });
+
+      const taskDeleteHandler = mockSocket.on.mock.calls.find(
+        (c: unknown[]) => c[0] === "task:delete",
+      )?.[1] as (event: { collectionId?: string }) => void;
+
+      await taskDeleteHandler({ collectionId: "foreign-collection" });
+      expect(mockSocket.disconnect).toHaveBeenCalled();
+    });
+
+    it("validates the session on comment:create", async () => {
+      const commentHandler = mockSocket.on.mock.calls.find(
+        (c: unknown[]) => c[0] === "comment:create",
+      )?.[1] as () => Promise<void>;
+
+      await commentHandler();
+      expect(validateSession).toHaveBeenCalled();
+    });
+
+    it("joins the collection room on subscribe:collection when the user is a member", async () => {
+      mockSocket.join.mockClear();
+
+      const subscribeHandler = mockSocket.on.mock.calls.find(
+        (c: unknown[]) => c[0] === "subscribe:collection",
+      )?.[1] as (collectionId: string) => void;
+
+      subscribeHandler("collection-1");
+      expect(mockSocket.join).toHaveBeenCalledWith("collection:collection-1");
+    });
+
+    it("ignores subscribe:collection for a collection the user is not a member of", async () => {
+      mockSocket.join.mockClear();
+
+      const subscribeHandler = mockSocket.on.mock.calls.find(
+        (c: unknown[]) => c[0] === "subscribe:collection",
+      )?.[1] as (collectionId: string) => void;
+
+      subscribeHandler("foreign-collection");
+      expect(mockSocket.join).not.toHaveBeenCalled();
     });
   });
 
@@ -261,6 +372,16 @@ describe("syncService: Socket.IO server", () => {
       mockIO.fetchSockets.mockResolvedValue([socket]);
       (validateSession as ReturnType<typeof vi.fn>).mockResolvedValue(null);
       (needsTouch as ReturnType<typeof vi.fn>).mockReturnValue(true);
+
+      await runOneSweep();
+
+      expect(socket.disconnect).toHaveBeenCalled();
+      expect(touchSession).not.toHaveBeenCalled();
+    });
+
+    it("drops sockets without a rawToken without touching them", async () => {
+      const socket = { data: { userId: "user-1", sessionId: 1 }, disconnect: vi.fn() };
+      mockIO.fetchSockets.mockResolvedValue([socket]);
 
       await runOneSweep();
 
