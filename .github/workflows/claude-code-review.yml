@@ -1,8 +1,12 @@
 name: Claude Code Review
 
+# TEMPORARILY DISABLED (2026-08-12): PR trigger commented out to pause
+# Claude review while the full-coverage-tests campaign is in flight.
+# Re-enable by uncommenting the `pull_request` block below.
 on:
-  pull_request:
-    types: [opened, synchronize, ready_for_review, reopened]
+  # pull_request:
+  #   types: [opened, synchronize, ready_for_review, reopened]
+  workflow_dispatch:
     # Optional: Only run on specific file changes
     # paths:
     #   - "src/**/*.ts"
