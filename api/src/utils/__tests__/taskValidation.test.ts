@@ -26,6 +26,10 @@ describe("validateCreateTask", () => {
     ).not.toThrow();
   });
 
+  it("passes with type event", () => {
+    expect(() => validateCreateTask({ title: "Team standup", type: "event" })).not.toThrow();
+  });
+
   it("rejects missing title", () => {
     expectValidationError(() => validateCreateTask({}), "title", "required");
   });
@@ -90,6 +94,10 @@ describe("validateUpdateTask", () => {
 
   it("rejects invalid type on update", () => {
     expectValidationError(() => validateUpdateTask({ type: "bug" }), "type", "task");
+  });
+
+  it("passes with type event on update", () => {
+    expect(() => validateUpdateTask({ type: "event" })).not.toThrow();
   });
 
   it("rejects malformed dueDate on update", () => {
