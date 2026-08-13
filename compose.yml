@@ -72,6 +72,22 @@ services:
       - "traefik.http.routers.${COMPOSE_PROJECT_NAME:-planner}-api-host-router.tls=true"
       - "traefik.http.routers.${COMPOSE_PROJECT_NAME:-planner}-api-host-router.service=${COMPOSE_PROJECT_NAME:-planner}-api-service"
 
+  # Dev-only static server for the Vitest HTML report, reachable at
+  # https://coverage.<subdomain>.local. Generate the report with
+  # `npx vitest run --reporter=html`; the bind mount serves it as-is.
+  coverage:
+    image: nginx:1.31-alpine
+    container_name: ${COMPOSE_PROJECT_NAME:-planner}-coverage
+    networks: [proxy]
+    volumes:
+      - ./app/dist/html:/usr/share/nginx/html:ro
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.${COMPOSE_PROJECT_NAME:-planner}-coverage-router.rule=Host(`coverage.${APP_SUBDOMAIN:-planner}.local`)"
+      - "traefik.http.routers.${COMPOSE_PROJECT_NAME:-planner}-coverage-router.entrypoints=websecure"
+      - "traefik.http.routers.${COMPOSE_PROJECT_NAME:-planner}-coverage-router.tls=true"
+      - "traefik.http.services.${COMPOSE_PROJECT_NAME:-planner}-coverage-service.loadbalancer.server.port=80"
+
   postgres:
     container_name: ${COMPOSE_PROJECT_NAME:-planner}-postgres
     image: postgres:16-alpine

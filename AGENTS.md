@@ -13,12 +13,15 @@ Required `.env` vars: `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `CORS
 
 ### Dev hosts (Traefik on the `proxy` network)
 
-Add to `/etc/hosts`: `planner.local`, `api.planner.local`, `db.planner.local`.
+Add to `/etc/hosts`: `planner.local`, `api.planner.local`, `db.planner.local`, `coverage.planner.local`.
 
 - `https://planner.local` - app (also serves `/api` and `/socket.io`)
 - `https://api.planner.local` - API directly (e.g. `/api/v1/...`)
 - `https://db.planner.local` - pgAdmin (desktop mode, no master password). The Planner
   database is auto-registered; connect with DB password `planner`.
+- `https://coverage.planner.local` - Vitest HTML report. Generate it with
+  `npx vitest run --reporter=html` (writes to `app/dist/html`); served from
+  `app/` via a static nginx container.
 
 ## Commands
 
