@@ -141,10 +141,6 @@ export function FilterBar({ value: externalValue, onChange, onApply }: FilterBar
   const tokens = tokenize(value);
   const errorKey = validateFilter(value);
 
-  useEffect(() => {
-    if (externalValue !== undefined) setInternalValue(externalValue);
-  }, [externalValue]);
-
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const v = e.target.value;

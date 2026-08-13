@@ -1,4 +1,4 @@
-import { Fragment, useState, useRef, useCallback, useEffect, useMemo } from 'react';
+import { Fragment, useState, useRef, useCallback, useEffect, useLayoutEffect, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
@@ -138,13 +138,13 @@ export function CollectionsPage() {
   } = useTaskVisibilityPreferences(preferences);
   const boardPreferences = useBoardPreferences(id, preferences);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (data?.tasks) {
       setTasks(data.tasks.map(apiToTask));
     }
   }, [data]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (data?.sections) {
       setSections(data.sections);
     }
@@ -532,7 +532,7 @@ export function CollectionsPage() {
     });
 
     return items;
-  }, [collections, contextMenu, invalidate]);
+  }, [collections, contextMenu, invalidate, t]);
 
   // A sub-collection reads as a breadcrumb of its ancestors, so its place in the
   // tree is visible from the page itself. Falls back to the view payload when the

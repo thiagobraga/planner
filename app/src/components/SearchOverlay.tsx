@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { useState, useRef, useLayoutEffect, useCallback, useMemo } from 'react';
 import type { Task } from './TaskItem';
 import { useI18n } from '../i18n/I18nContext';
 
@@ -42,7 +42,7 @@ export function SearchOverlay({
   const [activeIdx, setActiveIdx] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (isOpen) {
       setQuery('');
       setActiveIdx(0);
@@ -97,7 +97,7 @@ export function SearchOverlay({
     [onClose, flatResults, activeIdx, onSelectTask],
   );
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     setActiveIdx(0);
   }, [query]);
 

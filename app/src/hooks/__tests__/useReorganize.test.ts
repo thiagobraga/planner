@@ -90,7 +90,7 @@ describe('useReorganize hook — redistribution algorithm', () => {
         acc[d.dayIndex].push(d);
         return acc;
       },
-      {} as Record<number, any[]>,
+      {} as Record<number, { dayIndex: number; taskInDay: number }[]>,
     );
 
     expect(Object.keys(byDay).length).toBe(2);

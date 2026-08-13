@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useLayoutEffect, useCallback } from 'react';
 
 import { parseNaturalDate, extractNaturalDate } from '../utils/date';
 import { useI18n } from '../i18n/I18nContext';
@@ -15,7 +15,7 @@ export function QuickAdd({ isOpen, onClose, onSubmit }: QuickAddProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const parsed = value ? parseNaturalDate(value, locale) : null;
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (isOpen) {
       setValue('');
       setTimeout(() => inputRef.current?.focus(), 50);

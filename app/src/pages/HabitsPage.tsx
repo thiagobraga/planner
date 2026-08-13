@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Calendar } from 'lucide-react';
 import { getPhrase } from '../utils/phrases';
@@ -170,7 +170,7 @@ export function HabitsPage() {
     return ids;
   }, [sections]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!habitsLoaded || !groupsLoaded) return;
 
     setCollapsedHabitIds((prev) => {
