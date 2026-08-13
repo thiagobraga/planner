@@ -8,6 +8,8 @@
 - [ ] Add `history_depth` column to `preferences` (same or follow-up migration), default `15`
 - [ ] Create `api/src/services/historyService.ts` — `record()`, `undo()`, `redo()`, ring-buffer
       eviction, redo-stack invalidation on fresh push
+- [ ] `undo()`/`redo()` also insert an `activity_events` row (reuse `activityService`'s existing
+      insert) so undo/redo shows in the project activity feed like any other mutation
 - [ ] Add `'history'` to `SyncEntityType` in `syncService.ts`; reuse existing `SyncEventType`
       values per-entity + `'undone'|'redone'` for the meta-event
 - [ ] Wire `historyService.record()` into `taskService.ts`: `createTask`, `updateTask`,
