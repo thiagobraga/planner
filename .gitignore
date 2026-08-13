@@ -46,6 +46,11 @@ pnpm-debug.log*
 coverage/
 api/coverage/
 app/coverage/
+api/vitest-coverage/
+app/vitest-coverage/
+
+# Playwright MCP scratch state
+.playwright-mcp/
 
 # Cache
 .pnpm-store/

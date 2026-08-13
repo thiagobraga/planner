@@ -17,8 +17,6 @@ try {
   // Leave tailwindcss null — plugin will be omitted.
   tailwindcss = null;
 }
-/// <reference types="vitest" />
-
 export default defineConfig({
   plugins: [
     react(),
@@ -65,11 +63,6 @@ export default defineConfig({
       },
     }),
   ],
-  test: {
-    environment: 'jsdom',
-    globals: true,
-    setupFiles: ['./src/test/setup.ts'],
-  },
   // When SKIP_CSS_MINIFY is set (e.g. in pre-push hook), disable CSS minification
   // to avoid lightningcss native binary platform mismatches in restricted environments.
   // JS minification via esbuild continues unchanged.
