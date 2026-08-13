@@ -20,6 +20,10 @@ import {
   updateGroup,
   toggleCompletion,
   deleteGroup,
+  listHabits,
+  deleteHabit,
+  listGroups,
+  createGroup,
 } from "../habitService.js";
 
 beforeEach(() => {
@@ -179,6 +183,75 @@ describe("updateHabit", () => {
     const sql = mockQuery.mock.calls[0]?.[0] as string;
     expect(sql).not.toMatch(/parent_id/);
     expect(sql).not.toMatch(/group_id/);
+  });
+});
+
+describe("listHabits", () => {
+  it("returns [] when the user has no habits", async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+
+    await expect(listHabits("u1")).resolves.toEqual([]);
+    expect(mockQuery).toHaveBeenCalledTimes(1);
+  });
+
+  it("attaches completions to each habit", async () => {
+    mockQuery
+      .mockResolvedValueOnce({ rows: [habitRow(), habitRow({ id: "h2", name: "Ler" })] })
+      .mockResolvedValueOnce({
+        rows: [
+          { habit_id: "h1", iso: "2026-08-01" },
+          { habit_id: "h1", iso: "2026-08-02" },
+        ],
+      });
+
+    const habits = await listHabits("u1");
+
+    expect(habits).toHaveLength(2);
+    expect(habits[0]).toMatchObject({ id: "h1", completions: ["2026-08-01", "2026-08-02"] });
+    expect(habits[1]).toMatchObject({ id: "h2", completions: [] });
+  });
+});
+
+describe("deleteHabit", () => {
+  it("deletes the habit and emits a deleted event", async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [{ id: "h1" }] });
+
+    await expect(deleteHabit("u1", "h1")).resolves.toBeUndefined();
+    expect(mockQuery.mock.calls[0]?.[0]).toMatch(/DELETE FROM habits/);
+  });
+
+  it("throws NOT_FOUND when the habit does not belong to the user", async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+
+    await expect(deleteHabit("u1", "h9")).rejects.toThrow(AppError);
+  });
+});
+
+describe("listGroups", () => {
+  it("returns the user's habit groups", async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [groupRow(), groupRow({ id: "g2", name: "Evening" })] });
+
+    const groups = await listGroups("u1");
+
+    expect(groups).toHaveLength(2);
+    expect(groups[0]).toMatchObject({ id: "g1", name: "Morning routine", icon: null, orderValue: 0 });
+    expect(groups[1]).toMatchObject({ id: "g2", name: "Evening" });
+  });
+});
+
+describe("createGroup", () => {
+  it("creates a group and emits a created event", async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [groupRow()] });
+
+    const group = await createGroup("u1", "Morning routine");
+
+    expect(group).toMatchObject({ id: "g1", name: "Morning routine" });
+    expect(mockQuery.mock.calls[0]?.[0]).toMatch(/INSERT INTO habit_groups/);
+  });
+
+  it("rejects a blank name", async () => {
+    await expect(createGroup("u1", "  ")).rejects.toThrow(AppError);
+    expect(mockQuery).not.toHaveBeenCalled();
   });
 });
 

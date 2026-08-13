@@ -53,7 +53,7 @@ vi.mock("../middleware/notFound.js", () => ({
   }),
 }));
 
-vi.mock("../routes/auth.js", () => ({ default: vi.fn() }));
+vi.mock("../routes/auth.js", () => ({ default: passthrough() }));
 
 vi.mock("../routes/tasks.js", () => ({
   default: vi.fn((_req: Request, _res: Response, next: NextFunction) =>
@@ -110,5 +110,36 @@ describe("Express app setup", () => {
     expect(res.status).toBe(500);
     expect(res.body).toHaveProperty("error");
     expect(res.body.error).toHaveProperty("code", "INTERNAL_ERROR");
+  });
+
+  it("rejects non-JSON content-type on unsafe methods with 415", async () => {
+    const res = await request(app)
+      .post("/api/v1/tasks")
+      .set("Content-Type", "text/plain")
+      .send("title=plain");
+    expect(res.status).toBe(415);
+    expect(res.body.error.code).toBe("UNSUPPORTED_MEDIA_TYPE");
+  });
+
+  it("allows non-JSON content-type on /auth paths", async () => {
+    const res = await request(app)
+      .post("/api/v1/auth/login")
+      .set("Content-Type", "text/plain")
+      .send("email=x@example.com");
+    // Reaches the router (404 from notFound) instead of the 415 gate.
+    expect(res.status).toBe(404);
+    expect(res.body.error.code).toBe("NOT_FOUND");
+  });
+
+  it("answers OPTIONS preflight requests with 204", async () => {
+    const res = await request(app).options("/api/v1/tasks");
+    expect(res.status).toBe(204);
+  });
+
+  it("allows non-JSON content-type on GET requests", async () => {
+    const res = await request(app)
+      .get("/api/v1/labels")
+      .set("Content-Type", "text/plain");
+    expect(res.status).not.toBe(415);
   });
 });

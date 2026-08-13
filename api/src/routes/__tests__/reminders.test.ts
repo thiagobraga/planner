@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import request from "supertest";
 import express from "express";
 import cookieParser from "cookie-parser";
+import { errorHandler } from "../../middleware/errorHandler.js";
 
 vi.mock("../../middleware/auth.js", () => ({
   authMiddleware: (req: { userId?: string }, _res: unknown, next: () => void) => {
@@ -33,12 +34,20 @@ describe("reminders routes", () => {
     app.use(cookieParser());
     app.use((req, res, next) => { req.userId = "test-user"; next(); });
     app.use("/api/v1/reminders", reminderRoutes);
+    app.use(errorHandler);
 
     it("DELETE /api/v1/reminders/:id → calls deleteReminder", async () => {
       mockDeleteReminder.mockResolvedValue({ success: true });
       const res = await request(app).delete("/api/v1/reminders/r1");
       expect(res.status).toBe(200);
       expect(mockDeleteReminder).toHaveBeenCalledWith("r1", "test-user");
+    });
+
+    it("surfaces deleteReminder errors through the error handler", async () => {
+      mockDeleteReminder.mockRejectedValue(new Error("database unavailable"));
+      const res = await request(app).delete("/api/v1/reminders/r1");
+      expect(res.status).toBe(500);
+      expect(res.body.error.code).toBe("INTERNAL_ERROR");
     });
   });
 
@@ -48,6 +57,7 @@ describe("reminders routes", () => {
     app.use(cookieParser());
     app.use((req, res, next) => { req.userId = "test-user"; next(); });
     app.use("/api/v1/tasks/:taskId/reminders", taskReminderRouter);
+    app.use(errorHandler);
 
     it("GET /api/v1/tasks/:taskId/reminders → calls listRemindersForTask", async () => {
       mockListRemindersForTask.mockResolvedValue([{ id: "r1", dueDate: "2026-07-20" }]);
@@ -56,11 +66,25 @@ describe("reminders routes", () => {
       expect(mockListRemindersForTask).toHaveBeenCalledWith("t1", "test-user");
     });
 
+    it("surfaces listRemindersForTask errors through the error handler", async () => {
+      mockListRemindersForTask.mockRejectedValue(new Error("database unavailable"));
+      const res = await request(app).get("/api/v1/tasks/t1/reminders");
+      expect(res.status).toBe(500);
+      expect(res.body.error.code).toBe("INTERNAL_ERROR");
+    });
+
     it("POST /api/v1/tasks/:taskId/reminders → calls createReminder, returns 201", async () => {
       mockCreateReminder.mockResolvedValue({ id: "r1", dueDate: "2026-07-20" });
       const res = await request(app).post("/api/v1/tasks/t1/reminders").send({ remindAt: "2026-07-20" });
       expect(res.status).toBe(201);
       expect(mockCreateReminder).toHaveBeenCalledWith("t1", "test-user", "2026-07-20");
+    });
+
+    it("surfaces createReminder errors through the error handler", async () => {
+      mockCreateReminder.mockRejectedValue(new Error("database unavailable"));
+      const res = await request(app).post("/api/v1/tasks/t1/reminders").send({ remindAt: "2026-07-20" });
+      expect(res.status).toBe(500);
+      expect(res.body.error.code).toBe("INTERNAL_ERROR");
     });
   });
 });
