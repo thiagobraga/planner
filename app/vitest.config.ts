@@ -1,13 +1,10 @@
-import { defineConfig } from "vitest/config";
+import { defineProject } from "vitest/config";
 
-export default defineConfig({
+export default defineProject({
   test: {
+    name: "app",
     environment: "jsdom",
     globals: true,
     setupFiles: ["./src/test/setup.ts"],
-    coverage: {
-      provider: "v8",
-      reportsDirectory: "./vitest-coverage",
-    },
   },
 });

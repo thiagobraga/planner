@@ -1,4 +1,4 @@
-import { defineConfig } from "vitest/config";
+import { defineProject } from "vitest/config";
 
 // Defaults let vitest run from the host (VSCode extension, no shell env)
 // against the docker-published postgres/redis. The ??= never overrides the
@@ -7,14 +7,11 @@ import { defineConfig } from "vitest/config";
 process.env.DATABASE_URL ??= "postgres://planner:planner@localhost:5432/planner";
 process.env.REDIS_URL ??= "redis://:planner@localhost:6379";
 
-export default defineConfig({
+export default defineProject({
   test: {
+    name: "api",
     exclude: ["dist/**", "node_modules/**"],
     globals: false,
     environment: "node",
-    coverage: {
-      provider: "v8",
-      reportsDirectory: "./vitest-coverage",
-    },
   },
 });
