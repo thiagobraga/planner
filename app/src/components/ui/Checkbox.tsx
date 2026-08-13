@@ -12,8 +12,8 @@ export function Checkbox({ label, className = '', checked, ...rest }: CheckboxPr
       <span className="ui-checkbox-box relative inline-flex items-center justify-center shrink-0 w-4 h-4 mt-0.5">
         <input type="checkbox" checked={checked} className="ui-checkbox-input peer sr-only" {...rest} />
         <span
-          className={`ui-checkbox-control w-4 h-4 rounded-[4px] border transition-colors duration-[var(--motion-fast)] ${
-            checked ? 'bg-ink border-ink' : 'bg-[var(--planner-control-bg)] border-border'
+          className={`ui-checkbox-control w-4 h-4 rounded-xs border transition-colors duration-(--motion-fast) ${
+            checked ? 'bg-ink border-ink' : 'bg-(--planner-control-bg) border-border'
           }`}
         />
         {checked && (

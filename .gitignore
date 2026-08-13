@@ -44,12 +44,18 @@ pnpm-debug.log*
 
 # Coverage & Test Output
 coverage/
+vitest-coverage/
 api/coverage/
 app/coverage/
+api/vitest-coverage/
+app/vitest-coverage/
 test-results/
 app/test-results/
 playwright-report/
 app/playwright-report/
+
+# Playwright MCP scratch state
+.playwright-mcp/
 
 # Cache
 .pnpm-store/
@@ -72,3 +78,4 @@ redis_data/
 
 # Local worktree dev-stack overrides (ports, alt project)
 compose.override.yml
+.playwright-mcp/

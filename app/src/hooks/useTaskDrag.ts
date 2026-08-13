@@ -1,16 +1,14 @@
 import { useCallback, useRef, useState } from 'react';
 import type {
   DragEndEvent,
-  DragMoveEvent,
   DragOverEvent,
   DragStartEvent,
 } from '@dnd-kit/core';
-import { usePlannerDrag, usePlannerDragHandlers } from '../contexts/PlannerDragContext';
+import { usePlannerDrag, usePlannerDragHandlers } from '../contexts/usePlannerDrag';
 import { flattenTasks, getSubtreeBlock, projectMove, type FlatRow } from '../utils/taskProjection';
 import { apiMoveTask, type TaskOrderScope } from '../api/client';
 import { trackMove } from '../utils/moveEcho';
-import { createIndentTracker } from '../utils/dragIndent';
-import type { CollectionDropData, DayDropData, TaskDragData } from '../types/drag';
+import type { CollectionDropData, DayDropData, SectionDropData, TaskDragData } from '../types/drag';
 import type { Task } from '../components/TaskItem';
 
 /**
@@ -28,6 +26,7 @@ function toISODate(value: string | null | undefined): string | undefined {
 }
 
 interface UseTaskDragOptions {
+  enabled?: boolean;
   /** Current rows, flat and unordered; the hook builds the tree itself. */
   tasks: Task[];
   /** Apply an optimistic result, and restore a snapshot on failure. */
@@ -54,16 +53,16 @@ interface UseTaskDragOptions {
  * dropped it, because a silently-wrong order that survives reload is worse than
  * a visible snap-back.
  */
-export function useTaskDrag({ tasks, setTasks, scope, onError, onMoved }: UseTaskDragOptions) {
-  const { setOverlay, announce } = usePlannerDrag();
+export function useTaskDrag({ enabled = true, tasks, setTasks, scope, onError, onMoved }: UseTaskDragOptions) {
+  // `indentOffset` is the provider's own tracker, quantised to whole steps.
+  // This hook deliberately keeps no tracker of its own: the preview renders
+  // from the provider's state and the commit reads this, so the two cannot
+  // drift apart the way two separately-updated trackers did.
+  const { setOverlay, announce, indentOffset } = usePlannerDrag();
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
-  const offsetX = useRef(0);
   const snapshot = useRef<Task[] | null>(null);
   /** Last spoken hover target, so an unchanged projection is not repeated. */
   const lastPreview = useRef<string | null>(null);
-  /** Nesting intent, rebased on each row so drift cannot accumulate. */
-  const indent = useRef(createIndentTracker());
-  const overRowId = useRef<string | null>(null);
 
   const rows = flattenTasks(tasks);
 
@@ -73,9 +72,6 @@ export function useTaskDrag({ tasks, setTasks, scope, onError, onMoved }: UseTas
       if (!data) return;
       const id = data.taskId;
       setActiveDragId(id);
-      offsetX.current = 0;
-      indent.current.reset();
-      overRowId.current = null;
       snapshot.current = tasks;
       lastPreview.current = null;
 
@@ -91,11 +87,6 @@ export function useTaskDrag({ tasks, setTasks, scope, onError, onMoved }: UseTas
     [tasks, setOverlay, announce],
   );
 
-  const handleDragMove = useCallback((event: DragMoveEvent) => {
-    indent.current.move(event.delta.x);
-    offsetX.current = indent.current.offset();
-  }, []);
-
   /**
    * Speak the target the row would land on if released now.
    *
@@ -109,18 +100,12 @@ export function useTaskDrag({ tasks, setTasks, scope, onError, onMoved }: UseTas
         | TaskDragData
         | DayDropData
         | CollectionDropData
+        | SectionDropData
         | undefined;
       if (!active) return;
 
-      // Rebase nesting intent whenever the pointer reaches a different row, so
-      // sideways drift on the way there is not read as a request to indent.
-      const overRow = event.over ? String(event.over.id) : null;
-      if (overRow !== overRowId.current) {
-        overRowId.current = overRow;
-        indent.current.enterRow();
-        offsetX.current = indent.current.offset();
-      }
-
+      // Rebasing on each new hovered row happens in the provider, which owns the
+      // one tracker both the preview and the commit read.
       if (!over) {
         if (lastPreview.current !== null) {
           lastPreview.current = null;
@@ -139,13 +124,13 @@ export function useTaskDrag({ tasks, setTasks, scope, onError, onMoved }: UseTas
         return;
       }
 
-      const move = resolveMove({ rows, active, over, offsetX: offsetX.current, scope });
+      const move = resolveMove({ rows, active, over, offsetX: indentOffset(), scope });
       const message = move?.preview ?? 'That is not a valid place to drop this task.';
       if (lastPreview.current === message) return;
       lastPreview.current = message;
       announce(message);
     },
-    [rows, scope, announce],
+    [rows, scope, announce, indentOffset],
   );
 
   const handleDragEnd = useCallback(
@@ -155,6 +140,7 @@ export function useTaskDrag({ tasks, setTasks, scope, onError, onMoved }: UseTas
         | TaskDragData
         | DayDropData
         | CollectionDropData
+        | SectionDropData
         | undefined;
       setActiveDragId(null);
       lastPreview.current = null;
@@ -181,7 +167,7 @@ export function useTaskDrag({ tasks, setTasks, scope, onError, onMoved }: UseTas
         return;
       }
 
-      const move = resolveMove({ rows, active, over, offsetX: offsetX.current, scope });
+      const move = resolveMove({ rows, active, over, offsetX: indentOffset(), scope });
       if (!move) {
         announce('That is not a valid place to drop this task.');
         return;
@@ -240,7 +226,7 @@ export function useTaskDrag({ tasks, setTasks, scope, onError, onMoved }: UseTas
         })
         .finally(untrack);
     },
-    [rows, tasks, scope, setTasks, announce, onError, onMoved],
+    [rows, tasks, scope, setTasks, announce, onError, onMoved, indentOffset],
   );
 
   const handleDragCancel = useCallback(() => {
@@ -259,11 +245,10 @@ export function useTaskDrag({ tasks, setTasks, scope, onError, onMoved }: UseTas
 
   usePlannerDragHandlers('task', {
     onDragStart: handleDragStart,
-    onDragMove: handleDragMove,
     onDragOver: handleDragOver,
     onDragEnd: handleDragEnd,
     onDragCancel: handleDragCancel,
-  });
+  }, { enabled });
 
   return { activeDragId };
 }
@@ -272,6 +257,13 @@ interface ResolvedMove {
   input: Parameters<typeof apiMoveTask>[1];
   parentTaskId: string | null;
   depth: number;
+  /**
+   * A same-space estimate of the server's midpoint, so the optimistic
+   * re-sort (which orders siblings by `orderValue`, same as `flattenTasks`)
+   * lands the row where it was dropped instead of snapping back to its old
+   * slot until the authoritative response arrives.
+   */
+  orderValue: number;
   /** Past tense, spoken once the move has committed. */
   announcement: string;
   /**
@@ -298,7 +290,7 @@ export function resolveMove({
 }: {
   rows: FlatRow<Task>[];
   active: TaskDragData;
-  over: TaskDragData | DayDropData | CollectionDropData;
+  over: TaskDragData | DayDropData | CollectionDropData | SectionDropData;
   offsetX: number;
   scope: TaskOrderScope;
 }): ResolvedMove | null {
@@ -315,6 +307,10 @@ export function resolveMove({
       },
       parentTaskId: null,
       depth: 0,
+      // This page's `rows` cannot see the target collection's real ordering,
+      // so this is a rough "goes last" guess - overwritten by the response
+      // once it lands, same as every other branch here.
+      orderValue: Number.MAX_SAFE_INTEGER,
       announcement: 'Moved to collection.',
       preview: 'Drop to file in this collection.',
     };
@@ -331,8 +327,26 @@ export function resolveMove({
       },
       parentTaskId: null,
       depth: 0,
+      orderValue: Number.MAX_SAFE_INTEGER,
       announcement: `Moved to ${over.date}.`,
       preview: `Drop to move to ${over.date}.`,
+    };
+  }
+
+  // Dropped into a section: move to top-level of that section, keep other fields.
+  if (over.kind === 'section') {
+    return {
+      input: {
+        parentTaskId: null,
+        sectionId: over.sectionId,
+        scope: { kind: 'section', sectionId: over.sectionId },
+        position: Number.MAX_SAFE_INTEGER, // append to end
+      },
+      parentTaskId: null,
+      depth: 0,
+      orderValue: Number.MAX_SAFE_INTEGER,
+      announcement: 'Moved to section.',
+      preview: 'Drop to move to this section.',
     };
   }
 
@@ -344,15 +358,28 @@ export function resolveMove({
   const targetDay = scope.kind === 'day' ? (over.dueDate ?? scope.dueDate) : null;
   const crossesDay = targetDay !== null && targetDay !== active.dueDate;
 
-  // Project against the destination day alone. Daily hands this hook every
-  // rendered date as one flat list, so the rows either side of a drop can
-  // belong to a different day - dropping on the last row of one date read the
-  // first row of the *next* date as its neighbour and parented the task there,
-  // across the boundary. It also made the commit disagree with the slot the
-  // list had been previewing, which is drawn from that day's rows alone.
+  const taskDateKey = (t: Task) =>
+    t.dueDate ? t.dueDate.slice(0, 10) : scope.kind === 'day' ? scope.dueDate : null;
+
+  // Inbox and Collections render every section's tasks in one flat array, so
+  // without this a row-to-row drop would resolve its position against the
+  // whole page - siblings from other sections included - instead of just the
+  // section the target row actually belongs to. Daily has no sections at all,
+  // so this only ever narrows anything on a `collection` scope.
+  const targetSectionId = scope.kind === 'collection' ? (over.sectionId ?? null) : null;
+
   const scopedRows = targetDay
-    ? rows.filter((r) => r.task.dueDate === targetDay || active.subtreeIds.includes(r.id))
-    : rows;
+    ? rows.filter(
+        (r) =>
+          r.task.dueDate === targetDay ||
+          taskDateKey(r.task) === targetDay ||
+          active.subtreeIds.includes(r.id),
+      )
+    : scope.kind === 'collection'
+      ? rows.filter(
+          (r) => (r.task.sectionId ?? null) === targetSectionId || active.subtreeIds.includes(r.id),
+        )
+      : rows;
   if (!scopedRows.some((r) => r.id === over.taskId)) return null;
 
   const projected = projectMove(scopedRows, active.taskId, over.taskId, offsetX);
@@ -367,15 +394,34 @@ export function resolveMove({
     ? { parentId: null, depth: 0, position: projected.position }
     : projected;
 
+  // Same-space estimate of the server's midpoint write: siblings under the
+  // projected parent, in the same scoped list the position was resolved
+  // against, with the dragged subtree excluded so it cannot bracket itself.
+  const orderSiblings = scopedRows.filter(
+    (r) => r.parentId === projection.parentId && !active.subtreeIds.includes(r.id),
+  );
+  const prevSibling = orderSiblings[projection.position - 1]?.task.orderValue;
+  const nextSibling = orderSiblings[projection.position]?.task.orderValue;
+  const orderValue =
+    prevSibling !== undefined && nextSibling !== undefined
+      ? Math.floor((prevSibling + nextSibling) / 2)
+      : prevSibling !== undefined
+        ? prevSibling + 1000
+        : nextSibling !== undefined
+          ? nextSibling - 1000
+          : 0;
+
   return {
     input: {
       parentTaskId: projection.parentId,
       ...(crossesDay ? { dueDate: targetDay } : {}),
+      ...(scope.kind === 'collection' ? { sectionId: targetSectionId } : {}),
       scope: targetDay ? { kind: 'day', dueDate: targetDay } : scope,
       position: projection.position,
     },
     parentTaskId: projection.parentId,
     depth: projection.depth,
+    orderValue,
     announcement: projection.parentId
       ? `Moved under ${scopedRows.find((r) => r.id === projection.parentId)?.task.title ?? 'parent'}.`
       : 'Moved to top level.',
@@ -403,8 +449,14 @@ function applyMoveLocally(tasks: Task[], active: TaskDragData, move: ResolvedMov
         ...task,
         parentTaskId: move.parentTaskId ?? undefined,
         indent: move.depth,
+        // Siblings sort by `orderValue` (`flattenTasks`, `buildSections`); left
+        // at its pre-drag value, the row snaps straight back to its old slot
+        // the instant this optimistic state re-sorts, before the request even
+        // lands.
+        orderValue: move.orderValue,
         ...(move.input.collectionId ? { collectionId: move.input.collectionId } : {}),
         ...(move.input.dueDate !== undefined ? { dueDate: move.input.dueDate ?? undefined } : {}),
+        ...(move.input.sectionId !== undefined ? { sectionId: move.input.sectionId ?? undefined } : {}),
       };
     }
     if (block.has(task.id)) {
@@ -414,6 +466,7 @@ function applyMoveLocally(tasks: Task[], active: TaskDragData, move: ResolvedMov
         indent: Math.max(0, (task.indent ?? 0) + rootDepthDelta),
         ...(move.input.collectionId ? { collectionId: move.input.collectionId } : {}),
         ...(move.input.dueDate !== undefined ? { dueDate: move.input.dueDate ?? undefined } : {}),
+        ...(move.input.sectionId !== undefined ? { sectionId: move.input.sectionId ?? undefined } : {}),
       };
     }
     return task;

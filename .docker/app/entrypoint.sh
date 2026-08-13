@@ -1,5 +1,5 @@
 #!/bin/sh
 set -e
 
-npm install
+npm ci --include=optional
 exec "$@"

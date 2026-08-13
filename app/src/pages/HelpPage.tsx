@@ -41,9 +41,11 @@ export function HelpPage() {
   return (
     <div className="flex w-full min-h-full items-start">
       <div className="flex-1 max-w-162 pb-32">
-        <header className="sticky-page-header">
-          <h1 className="text-[18px] leading-6 font-semibold text-ink m-0">{content.title}</h1>
-          <p className="text-[13px] leading-6 text-ink-light opacity-60 m-0">{content.subtitle}</p>
+        <header className="page-header-copy sticky-page-header max-w-162">
+          <div className="page-header-copy-text">
+            <h1 className="m-0 h-6 p-0 text-[18px] leading-6 font-semibold text-ink">{content.title}</h1>
+            <p className="page-header-subtitle m-0 h-6 p-0 text-[13px] leading-6 text-ink-light opacity-60">{content.subtitle}</p>
+          </div>
         </header>
         <div className="h-12" />
 

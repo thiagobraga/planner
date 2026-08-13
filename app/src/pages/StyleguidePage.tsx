@@ -5,6 +5,7 @@ import { BjTask, MonthlyIcon, PlannerIcon } from '../components/Sidebar';
 import { SidebarNavItem } from '../components/SidebarNavItem';
 import { ChevronRight, Repeat2 } from 'lucide-react';
 import { MonthlyCalendarSpecimen } from '../components/monthly/MonthlyCalendarSpecimen';
+import { MonthSelector } from '../components/monthly/MonthSelector';
 import { DatePickerSpecimen } from '../components/monthly/DatePickerSpecimen';
 import { HabitSpecimen } from '../components/habits/HabitSpecimen';
 import { Button } from '../components/ui/Button';
@@ -20,7 +21,8 @@ import { TaskRowSpecimen } from '../components/ui/TaskRowSpecimen';
 import { CustomSelect } from '../components/ui/CustomSelect';
 import { ContextMenu, ContextMenuItem } from '../components/ui/ContextMenu';
 import { Briefcase, Calendar as CalendarIcon, Tag, ArrowUp, ArrowDown } from 'lucide-react';
-import { fetchPreferences, paletteColorHex } from '../api/client';
+import { fetchPreferences } from '../api/client';
+import { BoardCard } from '../components/board/BoardCard';
 
 // ── Card wrapper ──────────────────────────────────────────────────────────────
 function Card({
@@ -33,11 +35,8 @@ function Card({
   children: React.ReactNode;
 }) {
   return (
-    <section
-      className={`border border-border rounded-[8px] bg-[var(--planner-card-bg)] shadow-subtle p-5 ${span ? 'lg:col-span-2' : ''
-        }`}
-    >
-      <h2 className="text-[11px] font-semibold text-ink uppercase tracking-[0.1em] mb-4">
+    <section className={`${span ? 'lg:col-span-2' : ''}`}>
+      <h2 className="text-[11px] font-semibold text-ink uppercase tracking-widest">
         {title}
       </h2>
       {children}
@@ -50,28 +49,28 @@ const TYPE_SCALE = [
   { label: 'Heading', spec: 'Lora 600 · 22px / 28px', className: 'text-[22px] leading-[28px] font-semibold' },
   { label: 'Body', spec: 'Lora 400 · 16px / 24px', className: 'text-[16px] leading-6' },
   { label: 'Caption', spec: 'Lora 400 · 12px / 18px', className: 'text-[12px] leading-[18px] text-ink-light' },
-  { label: 'Label', spec: 'Lora 500 · 11px / 16px', className: 'text-[11px] leading-4 font-medium uppercase tracking-[0.1em]' },
+  { label: 'Label', spec: 'Lora 500 · 11px / 16px', className: 'text-[11px] leading-4 font-medium uppercase tracking-widest' },
   { label: 'Mono', spec: 'Monospace · 12px / 16px', className: 'text-[12px] leading-4 font-mono' },
 ];
 
 const COLLECTIONS = [
-  { name: 'dev', color: 'green' },
-  { name: 'planner', color: 'lime_green' },
-  { name: 'health', color: 'yellow' },
-  { name: 'senac', color: 'orange' },
-  { name: 'sociopata', color: 'red' },
+  { name: 'dev', color: '#7dbfb2' },
+  { name: 'planner', color: '#d7db96' },
+  { name: 'health', color: '#cbd376' },
+  { name: 'senac', color: '#b97a3a' },
+  { name: 'sociopata', color: '#c98079' },
 ];
 
 const NAV_COLLECTIONS = [
-  { name: 'dev', color: 'green', depth: 0 },
-  { name: 'openclaw', color: 'lime_green', depth: 1 },
-  { name: 'planner', color: 'lime_green', depth: 1 },
-  { name: 'health', color: 'yellow', depth: 0 },
-  { name: 'music', color: 'red', depth: 0 },
-  { name: 'sociopata', color: 'berry_red', depth: 1 },
-  { name: 'senac', color: 'orange', depth: 0 },
-  { name: 'tech', color: 'teal', depth: 0 },
-  { name: 'ai', color: 'mint_green', depth: 1 },
+  { name: 'dev', color: '#7dbfb2', depth: 0 },
+  { name: 'openclaw', color: '#d7db96', depth: 1 },
+  { name: 'planner', color: '#d7db96', depth: 1 },
+  { name: 'health', color: '#cbd376', depth: 0 },
+  { name: 'music', color: '#c98079', depth: 0 },
+  { name: 'sociopata', color: '#d56b64', depth: 1 },
+  { name: 'senac', color: '#b97a3a', depth: 0 },
+  { name: 'tech', color: '#7ea2d6', depth: 0 },
+  { name: 'ai', color: '#a6cfc5', depth: 1 },
 ] as const;
 
 const NAV = [
@@ -117,6 +116,10 @@ export function StyleguidePage() {
   const [radioChoice, setRadioChoice] = useState('a');
   const [toggleOn, setToggleOn] = useState(true);
   const [checkOn, setCheckOn] = useState(false);
+  const [selectedMonth, setSelectedMonth] = useState(() => {
+    const today = new Date();
+    return { year: today.getFullYear(), month: today.getMonth() };
+  });
 
   // CustomSelect state
   const [customSelectValue, setCustomSelectValue] = useState('2');
@@ -137,7 +140,7 @@ export function StyleguidePage() {
         ...COLLECTIONS.map(p => ({
           type: 'item' as const,
           label: p.name,
-          icon: <span className="w-2 h-2 rounded-full" style={{ backgroundColor: `var(--color-${p.color})` }} />,
+          icon: <span className="w-1.75 h-1.75 rounded-full" style={{ backgroundColor: p.color }} />,
           onClick: () => console.log(`Selected ${p.name}`)
         }))
       ]
@@ -151,23 +154,29 @@ export function StyleguidePage() {
 
   return (
     <div className="max-w-5xl pb-24 text-ink">
-      <h1 className="text-lg leading-6 font-semibold text-ink">Styleguide</h1>
-      <p className="text-[13px] leading-6 text-ink-light opacity-70 mb-6">
-        Fonts, colors, components, and tokens to build Planner ecosystem.
-      </p>
+      <header className="page-header-copy sticky-page-header max-w-162">
+        <div className="page-header-copy-text">
+          <h1 className="m-0 h-6 p-0 text-lg leading-6 font-semibold text-ink">Styleguide</h1>
+          <p className="page-header-subtitle m-0 h-6 p-0 text-[13px] leading-6 text-ink-light opacity-70">
+            Fonts, colors, components, and tokens to build Planner ecosystem.
+          </p>
+        </div>
+      </header>
+
+      <div className="h-12" />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-        {/* 11 - Color Palette */}
+        {/* Color Palette */}
         <Card title="Color Palette" span>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div className="lg:col-span-2">
-              <h3 className="text-[10px] text-ink-light uppercase tracking-[0.1em] font-semibold">Primary Palette</h3>
+              <h3 className="text-[10px] text-ink-light uppercase tracking-widest font-semibold">Primary Palette</h3>
               <p className="text-[11px] text-ink-light opacity-70 -mt-2 mb-4">Base neutral and structural colors - calm, readable foundations for content.</p>
               <div className="grid grid-cols-1 gap-4">
                 {PRIMARY_COLORS.map(({ name, var: varName, hex }) => (
                   <div key={varName} className="flex items-start gap-3">
                     <span
-                      className="w-12 h-12 rounded-[6px] border border-border flex-shrink-0"
+                      className="w-12 h-12 rounded-sm border border-border shrink-0"
                       style={{ backgroundColor: hex }}
                       title={varName}
                     />
@@ -181,13 +190,13 @@ export function StyleguidePage() {
               </div>
             </div>
             <div>
-              <h3 className="text-[10px] text-ink-light uppercase tracking-[0.1em] font-semibold -mb-2">Secondary Palette</h3>
+              <h3 className="text-[10px] text-ink-light uppercase tracking-widest font-semibold -mb-2">Secondary Palette</h3>
               <p className="text-[11px] text-ink-light opacity-70 -mt-2 mb-4">Accent and semantic colors - for emphasis, priority, and status signals.</p>
               <div className="grid grid-cols-1 gap-4">
                 {SECONDARY_COLORS.map(({ name, var: varName, hex }) => (
                   <div key={varName} className="flex items-start gap-3">
                     <span
-                      className="w-12 h-12 rounded-[6px] border border-border flex-shrink-0"
+                      className="w-12 h-12 rounded-sm border border-border shrink-0"
                       style={{ backgroundColor: hex }}
                       title={varName}
                     />
@@ -203,13 +212,13 @@ export function StyleguidePage() {
           </div>
         </Card>
 
-        {/* 1 - Interface Typography */}
+        {/* Interface Typography */}
         <Card title="Typography" span>
           <div className="divide-y divide-border">
             {TYPE_SCALE.map(({ label, spec, className }) => (
               <div key={label} className="py-3 grid grid-cols-[180px_1fr] gap-6 items-center">
                 <div className="flex flex-col">
-                  <span className="text-[11px] font-semibold text-ink uppercase tracking-[0.1em]">{label}</span>
+                  <span className="text-[11px] font-semibold text-ink uppercase tracking-widest">{label}</span>
                   <span className="text-[10px] text-ink-light font-mono mt-0.5 whitespace-nowrap">{spec}</span>
                 </div>
                 <span className={`text-ink overflow-hidden ${className}`}>Aa</span>
@@ -218,56 +227,56 @@ export function StyleguidePage() {
           </div>
         </Card>
 
-        {/* 2 - Buttons */}
+        {/* Buttons */}
         <Card title="Buttons" span>
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-x-4 gap-y-3 items-start">
+          <div className="flex flex-col gap-6">
             {([
               { label: 'Primary', variant: 'primary' as const },
               { label: 'Secondary', variant: 'secondary' as const },
               { label: 'Tertiary', variant: 'tertiary' as const },
               { label: 'Destructive', variant: 'destructive' as const },
             ]).map(({ label, variant }) => (
-              <div key={label} className="flex flex-col items-start gap-3">
-                <span className="text-[10px] text-ink-light uppercase tracking-[0.1em] text-left">{label}</span>
-                <Button variant={variant}>{label === 'Destructive' ? 'Delete' : label}</Button>
-                <Button variant={variant} leftIcon={variant === 'destructive' ? <Trash2 /> : <Plus />}>
-                  {variant === 'destructive' ? 'Delete' : 'New item'}
-                </Button>
-                <Button variant={variant} leftIcon={variant === 'destructive' ? <Trash2 /> : <Calendar />}>
-                  {variant === 'destructive' ? 'Clear data' : 'Add date'}
-                </Button>
+              <div key={label} className="flex flex-col gap-2">
+                <span className="text-[10px] text-ink-light uppercase tracking-widest font-semibold block">{label}</span>
+                <div className="flex flex-wrap items-start gap-3">
+                  <Button
+                    variant={variant}
+                    size="lg"
+                    leftIcon={variant === 'destructive' ? <Trash2 /> : <Plus />}
+                  >
+                    {variant === 'destructive' ? 'Delete' : 'Large'}
+                  </Button>
+                  <Button
+                    variant={variant}
+                    size="md"
+                    leftIcon={variant === 'destructive' ? <Trash2 /> : <Calendar />}
+                  >
+                    {variant === 'destructive' ? 'Delete' : 'Medium'}
+                  </Button>
+                  <Button variant={variant} size="sm">
+                    {variant === 'destructive' ? 'Delete' : 'Small'}
+                  </Button>
+                </div>
               </div>
             ))}
-            <div className="flex flex-col items-start gap-3">
-              <span className="text-[10px] text-ink-light uppercase tracking-[0.1em] text-left">Disabled</span>
-              <Button variant="secondary" disabled>Disabled</Button>
-              <Button variant="secondary" leftIcon={<Plus />} disabled>New item</Button>
-              <Button variant="secondary" leftIcon={<Calendar />} disabled>Add date</Button>
-            </div>
-          </div>
-          <div className="mt-6 pt-6 border-t border-border">
-            <span className="text-[10px] text-ink-light uppercase tracking-[0.1em] font-semibold block mb-4">Size Variations</span>
-            <div className="flex flex-col gap-3">
-              <div className="flex flex-col items-start gap-1">
-                <Button variant="secondary" size="lg">Large</Button>
-                <span className="text-[9px] text-ink-light font-mono">lg · 40px · r-8</span>
-              </div>
-              <div className="flex flex-col items-start gap-1">
-                <Button variant="secondary" size="md">Medium</Button>
-                <span className="text-[9px] text-ink-light font-mono">md · 32px · r-6</span>
-              </div>
-              <div className="flex flex-col items-start gap-1">
-                <Button variant="secondary" size="sm">Small</Button>
-                <span className="text-[9px] text-ink-light font-mono">sm · 24px · r-4</span>
+            <div className="flex flex-col gap-2">
+              <span className="text-[10px] text-ink-light uppercase tracking-widest font-semibold block">Disabled</span>
+              <div className="flex flex-wrap items-start gap-3">
+                <Button variant="secondary" size="lg" leftIcon={<Plus />} disabled>
+                  Large
+                </Button>
+                <Button variant="secondary" size="md" leftIcon={<Calendar />} disabled>
+                  Medium
+                </Button>
+                <Button variant="secondary" size="sm" disabled>
+                  Small
+                </Button>
               </div>
             </div>
           </div>
-          <p className="mt-4 text-[11px] leading-5 text-ink-light">
-            lg: 40px / r-8 · md: 32px / r-6 · sm: 24px / r-4 (dot row) · Icons left with 8px spacing.
-          </p>
         </Card>
 
-        {/* 3 - Fields & Controls */}
+        {/* Fields & Controls */}
         <Card title="Forms">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             <div className="flex flex-col gap-4">
@@ -297,7 +306,7 @@ export function StyleguidePage() {
                     value="1"
                     error
                   />
-                  <div className="pb-[180px]">
+                  <div className="pb-45">
                     <CustomSelect
                       placeholder="Select an option..."
                       options={[
@@ -341,20 +350,27 @@ export function StyleguidePage() {
           </div>
         </Card>
 
-        {/* 4 - Chips & Tags */}
+        {/* Chips & Tags */}
         <Card title="Chips & Tags">
           <div className="flex flex-col gap-4">
             <div>
-              <span className="text-[10px] text-ink-light uppercase tracking-[0.1em] block mb-2">Collection chips</span>
+              <span className="text-[10px] text-ink-light uppercase tracking-widest block mb-2">Tag chips</span>
+              <div className="flex flex-wrap gap-2 items-center">
+                <Chip># ai</Chip>
+                <Chip># tech</Chip>
+                <Chip># dev</Chip>
+              </div>
+            </div>
+            <div>
+              <span className="text-[10px] text-ink-light uppercase tracking-widest block mb-2">Collection chips</span>
               <div className="flex flex-wrap gap-2 items-center">
                 {COLLECTIONS.map((p) => (
                   <CollectionChip key={p.name} name={p.name} color={p.color} />
                 ))}
-                <Chip className="text-ink-light">＋ New</Chip>
               </div>
             </div>
             <div>
-              <span className="text-[10px] text-ink-light uppercase tracking-[0.1em] block mb-2">Status</span>
+              <span className="text-[10px] text-ink-light uppercase tracking-widest block mb-2">Status</span>
               <div className="flex flex-wrap gap-2 items-center">
                 <StatusPill status="open" />
                 <StatusPill status="in_progress" />
@@ -363,7 +379,7 @@ export function StyleguidePage() {
               </div>
             </div>
             <div>
-              <span className="text-[10px] text-ink-light uppercase tracking-[0.1em] block mb-2">Priorities</span>
+              <span className="text-[10px] text-ink-light uppercase tracking-widest block mb-2">Priorities</span>
               <div className="flex flex-wrap gap-4 items-center">
                 <PriorityDot priority={1} showLabel />
                 <PriorityDot priority={2} showLabel />
@@ -375,9 +391,9 @@ export function StyleguidePage() {
           </div>
         </Card>
 
-        {/* 5 - Navigation */}
+        {/* Navigation */}
         <Card title="Navigation">
-          <div className="w-[220px] border border-dot bg-[var(--planner-sidebar-bg)] px-3 py-6">
+          <div className="w-55 border border-dot bg-(--planner-sidebar-bg) px-3 py-6">
             <div className="mb-6 ml-3">
               <div className="flex items-start gap-3">
                 <PlannerIcon width={28} height={38} className="mt-1" />
@@ -399,18 +415,18 @@ export function StyleguidePage() {
             </nav>
             <div className="mt-6">
               <div className="flex items-center justify-between px-3">
-                <span className="text-[10px] font-medium uppercase leading-6 tracking-[0.1em] text-ink-light">Collections</span>
+                <span className="text-[10px] font-medium uppercase leading-6 tracking-widest text-ink-light">Collections</span>
                 <span className="flex items-center text-sm leading-none text-ink-light" aria-hidden="true">+</span>
               </div>
               {NAV_COLLECTIONS.map((collection) => (
                 <div
                   key={collection.name}
-                  className={`collection-row flex h-6 items-center gap-[7px] pr-2 text-[13px] text-ink ${collection.depth === 0 ? 'pl-3' : 'pl-[22px]'}`}
+                  className={`collection-row flex h-6 items-center gap-1.75 pr-2 text-[13px] text-ink ${collection.depth === 0 ? 'pl-3' : 'pl-5.5'}`}
                 >
                   <span className="flex w-4 shrink-0 items-center justify-center">
                     <span
-                      className="block h-2 w-2 shrink-0 rounded-full [filter:saturate(0.55)]"
-                      style={{ background: paletteColorHex(collection.color) }}
+                      className="block w-1.75 h-1.75 rounded-full filter-[saturate(0.55)]"
+                      style={{ background: collection.color }}
                     />
                   </span>
                   <span className="truncate text-[13px] text-ink opacity-60">{collection.name}</span>
@@ -420,12 +436,12 @@ export function StyleguidePage() {
           </div>
         </Card>
 
-        {/* 6 - Toolbar / View Options */}
+        {/* Toolbar / View Options */}
         <Card title="Toolbar / View Options" span>
           <ViewToolbar />
         </Card>
 
-        {/* 7 - Task Rows */}
+        {/* Task Rows */}
         <Card title="Task Rows" span>
           <div className="flex flex-col gap-1">
             <TaskRowSpecimen priority={1} title="Review quarterly editorial plan" tags={['editorial', 'planner']} date="Jul 10" flagged />
@@ -435,21 +451,78 @@ export function StyleguidePage() {
           </div>
         </Card>
 
-        {/* 8 - Calendar & Monthly */}
+        {/* Board Card */}
+        <Card title="Board Card">
+          <div className="w-72">
+            <BoardCard
+              task={{
+                id: 'board-card-specimen',
+                title: 'Review the board interaction notes',
+                description: 'Keep the paper texture visible through every surface.',
+                priority: 2,
+                collectionId: 'styleguide',
+                dueDate: '2026-08-14',
+                isCompleted: false,
+                orderValue: 1000,
+                depth: 0,
+                type: 'task',
+                labels: [
+                  { id: 'label-design', name: 'design', color: '#c98079' },
+                  { id: 'label-review', name: 'review', color: '#8ca46a' },
+                ],
+              }}
+              subtasks={[
+                {
+                  id: 'board-card-subtask-1',
+                  title: 'Check spacing',
+                  priority: 4,
+                  collectionId: 'styleguide',
+                  parentTaskId: 'board-card-specimen',
+                  isCompleted: true,
+                  orderValue: 1000,
+                  depth: 0,
+                  type: 'task',
+                },
+                {
+                  id: 'board-card-subtask-2',
+                  title: 'Verify contrast',
+                  priority: 4,
+                  collectionId: 'styleguide',
+                  parentTaskId: 'board-card-specimen',
+                  isCompleted: false,
+                  orderValue: 2000,
+                  depth: 0,
+                  type: 'task',
+                },
+              ]}
+            />
+          </div>
+        </Card>
+
+        {/* Calendar & Monthly */}
         <Card title="Calendar & Monthly">
           <MonthlyCalendarSpecimen compact weekStart={weekStart} />
         </Card>
 
-        {/* 9 - Habit */}
+        {/* Month Selector */}
+        <Card title="Month Selector" span>
+          <MonthSelector
+            year={selectedMonth.year}
+            month={selectedMonth.month}
+            onChange={(year, month) => setSelectedMonth({ year, month })}
+          />
+        </Card>
+
+        {/* Habit */}
         <Card title="Habit" span>
           <HabitSpecimen weekStart={weekStart} />
         </Card>
-        {/* 10 - Calendar */}
+        {/* Calendar */}
         <Card title="Calendar">
           <DatePickerSpecimen weekStart={weekStart} />
         </Card>
 
-        {/* 11 - Essential Tokens */}
+        {/* Essential Tokens */}
         <Card title="Essential Tokens" span>
           <div className="flex flex-col gap-5">
             <TokenRow label="Spacing">
@@ -457,8 +530,8 @@ export function StyleguidePage() {
                 {SPACING.map((s) => (
                   <div key={s} className="flex items-center gap-4">
                     <div className="flex items-center" style={{ gap: `${s}px` }}>
-                      <span className="block h-2 w-2 rounded-[2px] bg-dot" aria-hidden="true" />
-                      <span className="block h-2 w-2 rounded-[2px] bg-dot" aria-hidden="true" />
+                      <span className="block w-1.75 h-1.75 rounded-[2px] bg-dot" aria-hidden="true" />
+                      <span className="block w-1.75 h-1.75 rounded-[2px] bg-dot" aria-hidden="true" />
                     </div>
                     <span className="text-[9px] text-ink-light font-mono leading-none">{s}px</span>
                   </div>
@@ -487,11 +560,11 @@ export function StyleguidePage() {
             <TokenRow label="Shadows">
               <div className="flex gap-3">
                 <div className="flex flex-col items-center gap-1">
-                  <span className="w-10 h-10 rounded-[6px] bg-cream border border-border shadow-subtle" />
+                  <span className="w-10 h-10 rounded-sm bg-cream border border-border shadow-subtle" />
                   <span className="text-[9px] text-ink-light">Subtle</span>
                 </div>
                 <div className="flex flex-col items-center gap-1">
-                  <span className="w-10 h-10 rounded-[6px] bg-cream border border-border shadow-medium" />
+                  <span className="w-10 h-10 rounded-sm bg-cream border border-border shadow-medium" />
                   <span className="text-[9px] text-ink-light">Medium</span>
                 </div>
               </div>
@@ -512,7 +585,7 @@ export function StyleguidePage() {
 
 
 
-        {/* 13 - Context Menu */}
+        {/* Context Menu */}
         <Card title="Context Menu">
           <div className="flex flex-col gap-4">
             <p className="text-[13px] text-ink-light leading-5">
@@ -544,7 +617,7 @@ export function StyleguidePage() {
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="text-[10px] text-ink-light uppercase tracking-[0.1em] block mb-1.5">{label}</label>
+      <label className="text-[10px] text-ink-light uppercase tracking-widest block mb-1.5">{label}</label>
       {children}
     </div>
   );
@@ -553,7 +626,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 function TokenRow({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="grid grid-cols-1 gap-2">
-      <span className="text-[10px] text-ink-light uppercase tracking-[0.1em] block">{label}</span>
+      <span className="text-[10px] text-ink-light uppercase tracking-widest block">{label}</span>
       {children}
     </div>
   );

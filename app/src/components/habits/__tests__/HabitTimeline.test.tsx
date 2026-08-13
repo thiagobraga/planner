@@ -57,7 +57,7 @@ vi.mock('../../../hooks/useSync', () => ({
 /** The node the timeline hands to the drag overlay, captured as it publishes. */
 let overlayNode: React.ReactNode = null;
 
-vi.mock('../../../contexts/PlannerDragContext', () => ({
+vi.mock('../../../contexts/usePlannerDrag', () => ({
   usePlannerDrag: () => ({
     indentSteps: 0,
     overId: null,
@@ -89,8 +89,8 @@ vi.mock('../../ui/StripNavigator', () => ({
   StripNavigator: () => null,
 }));
 
-vi.mock('../HabitNameInput', () => ({
-  HabitNameInput: () => null,
+vi.mock('../../ui/InlineNameInput', () => ({
+  InlineNameInput: () => null,
 }));
 
 import { I18nProvider } from '../../../i18n/I18nContext';
@@ -132,9 +132,9 @@ describe('HabitTimeline', () => {
     render(<HabitTimeline {...defaultProps} />, { wrapper: createWrapper() });
   });
 
-  it('renders the new group button when there are no groups', () => {
+  it('renders the new section button when there are no groups', () => {
     render(<HabitTimeline {...defaultProps} />, { wrapper: createWrapper() });
-    expect(screen.getByText('New group')).toBeInTheDocument();
+    expect(screen.getByText('New section')).toBeInTheDocument();
   });
 
   it('shrinks the habit name column to keep five day columns visible on iPhone-sized screens', async () => {

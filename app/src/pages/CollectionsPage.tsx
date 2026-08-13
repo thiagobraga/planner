@@ -1,12 +1,17 @@
 import { Fragment, useState, useRef, useCallback, useEffect, useMemo } from 'react';
-import { useParams, Link } from 'react-router';
+import { useParams, Link, useNavigate } from 'react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { TaskList } from '../components/TaskList';
-import { TaskVisibilityControls } from '../components/TaskVisibilityControls';
+import { SectionHeader } from '../components/SectionHeader';
+import { InlineNameInput } from '../components/ui/InlineNameInput';
+import { CollectionBoard } from '../components/board/CollectionBoard';
+import { BoardToolbar } from '../components/board/BoardToolbar';
+import { StatusTaskList } from '../components/board/StatusTaskList';
 import { nextOrderValue } from '../utils/order';
 import { extractNaturalDate } from '../utils/date';
-import { setPendingColumn } from '../components/TaskItem';
 import type { Task } from '../components/TaskItem';
+import type { Section } from '../stores/taskStore';
 import {
   fetchCollectionView,
   fetchPreferences,
@@ -14,15 +19,33 @@ import {
   apiUpdateTask,
   apiToggleTask,
   apiDeleteTask,
+  apiCreateCollection,
+  apiUpdateCollection,
+  apiDeleteCollection,
+  apiCreateSection,
+  apiUpdateSection,
+  apiDeleteSection,
+  PALETTE_COLORS,
   type ApiTask,
+  type ApiCollection,
 } from '../api/client';
+import { runOptimistic, patchById, upsertById } from '../stores/optimistic';
 import { useTaskDrag } from '../hooks/useTaskDrag';
+import { useSectionDrag } from '../hooks/useSectionDrag';
 import { useTaskVisibilityPreferences } from '../hooks/useTaskVisibilityPreferences';
+import { useBoardPreferences } from '../hooks/useBoardPreferences';
 import { flattenTasks } from '../utils/taskProjection';
 import { applyIndent } from '../utils/taskTree';
-import { fetchCollections, paletteColorHex } from '../api/client';
+import { fetchCollections } from '../api/client';
 import { ContextMenu, type ContextMenuItem } from '../components/ui/ContextMenu';
+import { ColorPickerPopover } from '../components/ui/ColorPickerPopover';
+import { buildCollectionMenuItems } from '../components/collectionMenuItems';
+import { ConfirmModal } from '../components/ConfirmModal';
+import { SectionDeleteModal } from '../components/SectionDeleteModal';
+import { flattenCollections, getHierarchicalColor } from '../components/CollectionTreeNav';
+import { Folder, ArrowUp, ArrowDown, Trash2, Pencil, ChevronRight } from 'lucide-react';
 import { useI18n } from '../i18n/I18nContext';
+import { buildStatusListGroups } from '../utils/boardColumns';
 
 function apiToTask(t: ApiTask): Task {
   return {
@@ -32,11 +55,12 @@ function apiToTask(t: ApiTask): Task {
     priority: t.priority,
     collectionId: t.collectionId,
     sectionId: t.sectionId,
+    statusId: t.statusId,
     parentTaskId: t.parentTaskId ?? undefined,
     dueDate: t.dueDate ?? undefined,
     isCompleted: t.isCompleted,
     orderValue: t.orderValue,
-    indent: t.depth ?? 0,
+    indent: t.depth,
     type: t.type,
     // Siblings with equal order values fall back to creation time; without it
     // every tie resolves arbitrarily.
@@ -47,15 +71,50 @@ function apiToTask(t: ApiTask): Task {
 let tempCounter = 0;
 function tempId() { return `temp-${++tempCounter}`; }
 
+function buildSectionGroups(tasks: Task[], sections: Section[]) {
+  const groups: Array<{ section: Section | null; tasks: Task[] }> = [];
+
+  // Top-level tasks (sectionId-less)
+  groups.push({
+    section: null,
+    tasks: tasks.filter((t) => !t.sectionId),
+  });
+
+  // One group per section, ordered by orderValue
+  for (const section of [...sections].sort((a, b) => a.orderValue - b.orderValue)) {
+    groups.push({
+      section,
+      tasks: tasks.filter((t) => t.sectionId === section.id),
+    });
+  }
+
+  return groups;
+}
+
 export function CollectionsPage() {
   const { locale, t } = useI18n();
   const { id = '' } = useParams();
+  const navigate = useNavigate();
   const qc = useQueryClient();
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [sections, setSections] = useState<Section[]>([]);
   const [input, setInput] = useState('');
   const [editingId, setEditingId] = useState<string | undefined>();
+  const [editingSectionId, setEditingSectionId] = useState<string | null>(null);
+  const [sectionTaskInput, setSectionTaskInput] = useState<Record<string, string>>({});
   const [, setSelectedId] = useState<string>();
   const [contextMenu, setContextMenu] = useState<{ taskId: string; position: { x: number; y: number } } | null>(null);
+  const [sectionContextMenu, setSectionContextMenu] = useState<{ sectionId: string; position: { x: number; y: number } } | null>(null);
+  const [crumbMenu, setCrumbMenu] = useState<{ collectionId: string; position: { x: number; y: number } } | null>(null);
+  const [crumbColorPicker, setCrumbColorPicker] = useState<
+    { collectionId: string; color: string; position: { x: number; y: number } } | null
+  >(null);
+  const [renamingCrumbId, setRenamingCrumbId] = useState<string | null>(null);
+  const [crumbDraft, setCrumbDraft] = useState('');
+  const [subAddingParentId, setSubAddingParentId] = useState<string | null>(null);
+  const [subNewName, setSubNewName] = useState('');
+  const [deletingCollection, setDeletingCollection] = useState<{ id: string; name: string } | null>(null);
+  const [deletingSection, setDeletingSection] = useState<{ id: string; name: string; taskCount: number } | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -77,10 +136,17 @@ export function CollectionsPage() {
     setHideCompletedTasks,
     setHideOldNotes,
   } = useTaskVisibilityPreferences(preferences);
+  const boardPreferences = useBoardPreferences(id, preferences);
 
   useEffect(() => {
     if (data?.tasks) {
       setTasks(data.tasks.map(apiToTask));
+    }
+  }, [data]);
+
+  useEffect(() => {
+    if (data?.sections) {
+      setSections(data.sections);
     }
   }, [data]);
 
@@ -90,6 +156,7 @@ export function CollectionsPage() {
   );
 
   const { activeDragId } = useTaskDrag({
+    enabled: boardPreferences.view === 'list',
     tasks,
     setTasks,
     scope: { kind: 'collection', collectionId: id },
@@ -101,6 +168,8 @@ export function CollectionsPage() {
     },
   });
 
+  useSectionDrag({ sections, setSections, onError: invalidate });
+
   const handleAddAtEnd = (e: React.FormEvent) => {
     e.preventDefault();
     const trimmed = input.trim();
@@ -108,17 +177,46 @@ export function CollectionsPage() {
     const tid = tempId();
     setInput('');
     const extracted = extractNaturalDate(trimmed, undefined, locale);
-    
+
     setTasks((prev) => [
       ...prev,
       { id: tid, title: extracted.title, priority: 4, isCompleted: false, orderValue: nextOrderValue(prev), type: 'task' },
     ]);
-    apiCreateTask({ 
-      title: extracted.title, 
-      priority: 4, 
+    apiCreateTask({
+      title: extracted.title,
+      priority: 4,
       collectionId: id,
-      dueDate: extracted.dueDate, 
-      recurrenceRule: extracted.recurrenceRule 
+      dueDate: extracted.dueDate,
+      recurrenceRule: extracted.recurrenceRule
+    })
+      .then((created) => {
+        setTasks((prev) => prev.map((t) => (t.id === tid ? apiToTask(created) : t)));
+      })
+      .catch(() => {
+        setTasks((prev) => prev.filter((t) => t.id !== tid));
+        invalidate();
+      });
+  };
+
+  const handleAddSectionTask = (sectionId: string, e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmed = (sectionTaskInput[sectionId] ?? '').trim();
+    if (!trimmed) return;
+    const tid = tempId();
+    setSectionTaskInput((prev) => ({ ...prev, [sectionId]: '' }));
+    const extracted = extractNaturalDate(trimmed, undefined, locale);
+
+    setTasks((prev) => [
+      ...prev,
+      { id: tid, title: extracted.title, priority: 4, isCompleted: false, orderValue: nextOrderValue(prev), type: 'task', sectionId },
+    ]);
+    apiCreateTask({
+      title: extracted.title,
+      priority: 4,
+      collectionId: id,
+      sectionId,
+      dueDate: extracted.dueDate,
+      recurrenceRule: extracted.recurrenceRule,
     })
       .then((created) => {
         setTasks((prev) => prev.map((t) => (t.id === tid ? apiToTask(created) : t)));
@@ -176,6 +274,7 @@ export function CollectionsPage() {
         orderValue: computedOrderValue,
         indent: prev[idx]?.indent,
         parentTaskId: prev[idx]?.parentTaskId,
+        sectionId: prev[idx]?.sectionId,
         type: 'task',
       });
       return next;
@@ -199,6 +298,7 @@ export function CollectionsPage() {
         orderValue: computedOrderValue,
         indent: prev[idx]?.indent,
         parentTaskId: prev[idx]?.parentTaskId,
+        sectionId: prev[idx]?.sectionId,
         type: 'task',
       });
       return next;
@@ -224,14 +324,15 @@ export function CollectionsPage() {
       const currentTask = tasks.find((t) => t.id === taskId);
       const parentTaskId = currentTask?.parentTaskId ?? undefined;
       const currentIndent = currentTask?.indent ?? 0;
-      
+
       const extracted = extractNaturalDate(trimmed, undefined, locale);
-      
+
       // was a new row - create it, keeping whichever type it was opened as
       apiCreateTask({
         title: extracted.title,
         priority: 4,
         collectionId: id,
+        sectionId: currentTask?.sectionId,
         parentTaskId,
         depth: currentIndent,
         type: currentTask?.type ?? 'task',
@@ -289,27 +390,6 @@ export function CollectionsPage() {
       return nextFlat.map(t => t.id === taskId ? { ...t, parentTaskId: parentTaskId ?? undefined } : t);
     });
   }, [invalidate]);
-  const handleNavigate = useCallback((taskId: string, dir: 'up' | 'down', col: number) => {
-    setTasks((prev) => {
-      const idx = prev.findIndex((t) => t.id === taskId);
-      const targetIdx = dir === 'up' ? idx - 1 : idx + 1;
-      if (targetIdx < 0) return prev;
-      if (targetIdx >= prev.length) {
-        requestAnimationFrame(() => {
-          if (inputRef.current) {
-            inputRef.current.focus();
-            const clamped = Math.min(col, inputRef.current.value.length);
-            inputRef.current.setSelectionRange(clamped, clamped);
-          }
-        });
-        return prev;
-      }
-      const target = prev[targetIdx];
-      setPendingColumn(col);
-      setEditingId(target.id);
-      return prev;
-    });
-  }, []);
   const handleToggle = useCallback((taskId: string) => {
     const hideCompleted = preferences?.hideCompletedTasks ?? false;
     const task = tasks.find((t) => t.id === taskId);
@@ -338,31 +418,107 @@ export function CollectionsPage() {
     setContextMenu({ taskId, position });
   }, []);
 
+  const handleSectionRightClick = useCallback((sectionId: string, position: { x: number; y: number }) => {
+    setSectionContextMenu({ sectionId, position });
+  }, []);
+
+  const handleAddSection = useCallback(() => {
+    const sectionId = tempId();
+    setSections((prev) => [
+      ...prev,
+      { id: sectionId, name: '', collectionId: id, orderValue: prev.length * 1000 },
+    ]);
+    setEditingSectionId(sectionId);
+  }, [id]);
+
+  const handleDeleteSection = useCallback((sectionId: string) => {
+    const section = sections.find((s) => s.id === sectionId);
+    if (!section) return;
+    const taskCount = tasks.filter((t) => t.sectionId === sectionId).length;
+    setDeletingSection({ id: sectionId, name: section.name, taskCount });
+  }, [sections, tasks]);
+
+  const handleCommitSectionName = useCallback(
+    (sectionId: string, name: string) => {
+      const trimmed = name.trim();
+      setEditingSectionId(null);
+      if (!trimmed) {
+        if (sectionId.startsWith('temp-')) {
+          setSections((prev) => prev.filter((s) => s.id !== sectionId));
+        } else {
+          handleDeleteSection(sectionId);
+        }
+        return;
+      }
+      setSections((prev) => prev.map((s) => (s.id === sectionId ? { ...s, name: trimmed } : s)));
+      if (sectionId.startsWith('temp-')) {
+        apiCreateSection(id, { name: trimmed })
+          .then((created) => {
+            setSections((prev) =>
+              prev.map((s) => (s.id === sectionId ? created : s))
+            );
+          })
+          .catch(() => {
+            setSections((prev) => prev.filter((s) => s.id !== sectionId));
+          });
+      } else {
+        apiUpdateSection(sectionId, { name: trimmed }).catch(() => {});
+      }
+    },
+    [handleDeleteSection, id]
+  );
+
+  const handleCancelSectionEdit = useCallback((sectionId: string) => {
+    setEditingSectionId(null);
+    if (sectionId.startsWith('temp-')) {
+      setSections((prev) => prev.filter((s) => s.id !== sectionId));
+    }
+  }, []);
+
+  const handleConfirmDeleteSectionAndTasks = useCallback(() => {
+    if (!deletingSection) return;
+    const { id: sectionId } = deletingSection;
+    const taskIds = tasks.filter((t) => t.sectionId === sectionId).map((t) => t.id);
+    setDeletingSection(null);
+    setTasks((prev) => prev.filter((t) => t.sectionId !== sectionId));
+    setSections((prev) => prev.filter((s) => s.id !== sectionId));
+    Promise.all(taskIds.map((taskId) => apiDeleteTask(taskId)))
+      .then(() => apiDeleteSection(sectionId))
+      .catch(() => invalidate());
+  }, [deletingSection, tasks, invalidate]);
+
+  const handleConfirmMoveTasksToTopLevel = useCallback(() => {
+    if (!deletingSection) return;
+    const { id: sectionId } = deletingSection;
+    setDeletingSection(null);
+    setTasks((prev) => prev.map((t) => (t.sectionId === sectionId ? { ...t, sectionId: undefined } : t)));
+    setSections((prev) => prev.filter((s) => s.id !== sectionId));
+    apiDeleteSection(sectionId).catch(() => invalidate());
+  }, [deletingSection, invalidate]);
+
   const projectSubmenuItems = useMemo<ContextMenuItem[]>(() => {
-    const items: ContextMenuItem[] = collections
-      .filter((c) => !c.isInbox)
-      .map((c) => ({
-        type: 'item',
-        label: c.name,
-        icon: (
-          <span
-            className="w-2 h-2 rounded-full inline-block"
-            style={{ backgroundColor: paletteColorHex(c.color) }}
-          />
-        ),
-        onClick: () => {
-          if (contextMenu?.taskId) {
-            apiUpdateTask(contextMenu.taskId, { collectionId: c.id }).catch(() => invalidate());
-          }
-        },
-      }));
+    const items: ContextMenuItem[] = flattenCollections(collections).map((c) => ({
+      type: 'item',
+      label: c.name,
+      icon: (
+        <span
+          className="w-1.75 h-1.75 rounded-full inline-block filter-[saturate(0.55)]"
+          style={{ backgroundColor: c.color, marginLeft: c.depth * 12 }}
+        />
+      ),
+      onClick: () => {
+        if (contextMenu?.taskId) {
+          apiUpdateTask(contextMenu.taskId, { collectionId: c.id }).catch(() => invalidate());
+        }
+      },
+    }));
 
     items.push({
       type: 'item',
-      label: 'No project',
+      label: t('contextMenu.noCollection'),
       icon: (
         <span
-          className="w-2 h-2 rounded-full inline-block bg-transparent border border-ink/20"
+          className="w-1.75 h-1.75 rounded-full inline-block bg-transparent border border-ink/20"
         />
       ),
       onClick: () => {
@@ -389,15 +545,72 @@ export function CollectionsPage() {
     let current = byId.get(id);
     while (current && !seen.has(current.id)) {
       seen.add(current.id);
-      out.unshift({ id: current.id, name: current.name, color: paletteColorHex(current.color) });
+      out.unshift({ id: current.id, name: current.name, color: current.color });
       current = current.parentId ? byId.get(current.parentId) : undefined;
     }
 
     if (out.length > 0) return out;
     return data?.collection
-      ? [{ id: data.collection.id, name: data.collection.name, color: paletteColorHex(data.collection.color) }]
+      ? [{ id: data.collection.id, name: data.collection.name, color: data.collection.color }]
       : [];
   }, [collections, id, data]);
+
+  const setCollectionsCache = useCallback(
+    (updater: (prev: ApiCollection[]) => ApiCollection[]) => {
+      qc.setQueryData<ApiCollection[]>(['collections'], (prev) => updater(prev ?? []));
+    },
+    [qc],
+  );
+
+  // Same flat recolor the sidebar performs: only the targeted crumb changes.
+  const handleCrumbColorCommit = (collectionId: string, color: string) => {
+    void runOptimistic<ApiCollection, ApiCollection>({
+      state: collections,
+      apply: (prev) => patchById(prev, collectionId, { color }),
+      call: () => apiUpdateCollection(collectionId, { color }),
+      onApply: (next) => qc.setQueryData<ApiCollection[]>(['collections'], next),
+      onRevert: (snapshot) => qc.setQueryData<ApiCollection[]>(['collections'], snapshot),
+      onSuccess: (updated) => setCollectionsCache((prev) => upsertById(prev, updated)),
+    }).catch(() => qc.invalidateQueries({ queryKey: ['collections'] }));
+  };
+
+  const handleCrumbRename = (collectionId: string) => {
+    const trimmed = crumbDraft.trim();
+    if (renamingCrumbId !== collectionId) return;
+    setRenamingCrumbId(null);
+    if (!trimmed) return;
+    setCollectionsCache((prev) => patchById(prev, collectionId, { name: trimmed }));
+    apiUpdateCollection(collectionId, { name: trimmed }).catch(() =>
+      qc.invalidateQueries({ queryKey: ['collections'] }),
+    );
+  };
+
+  const handleCrumbCommitSub = () => {
+    if (!subAddingParentId) return;
+    const parentId = subAddingParentId;
+    const trimmed = subNewName.trim();
+    setSubAddingParentId(null);
+    setSubNewName('');
+    if (!trimmed) return;
+    const color = getHierarchicalColor('temp-id', parentId, collections);
+    apiCreateCollection({ name: trimmed, color: color || PALETTE_COLORS[0], parentId })
+      .then((created) => setCollectionsCache((prev) => [...prev, created]))
+      .catch(() => qc.invalidateQueries({ queryKey: ['collections'] }));
+  };
+
+  // A section being named for the first time renders as an inline input in the
+  // "+ New section" row itself, rather than up in the grouped list, so the
+  // input appears exactly where the user clicked.
+  const addingSection = sections.find((s) => s.id.startsWith('temp-'));
+  const [topLevelGroup, ...sectionGroups] = buildSectionGroups(
+    tasks,
+    sections.filter((s) => !s.id.startsWith('temp-')),
+  );
+  const statusListGroups = useMemo(
+    () => buildStatusListGroups(tasks, data?.statuses ?? [], data?.completionStatusId ?? null),
+    [data?.completionStatusId, data?.statuses, tasks],
+  );
+  const showStatusGroups = boardPreferences.groupBy === 'status' && statusListGroups.length > 0;
 
   return (
     <div
@@ -408,23 +621,41 @@ export function CollectionsPage() {
       }}
     >
       <header className="page-header-copy sticky-page-header max-w-162">
+        <div className="page-header-copy-text">
         <h1 className="collections-page-title flex h-6 items-center gap-2 text-lg leading-6 font-semibold text-ink">
         {trail.map((crumb, i) => {
           const isCurrent = i === trail.length - 1;
           return (
             <Fragment key={crumb.id}>
               {i > 0 && (
-                <span className="collections-page-title-separator font-normal text-ink-light opacity-50" aria-hidden="true">
-                  /
-                </span>
+                <ChevronRight size={13} className="collections-page-title-separator font-normal mx-1 text-ink-light opacity-50" aria-hidden="true" />
               )}
-              <span className="collections-page-crumb flex min-w-0 items-center gap-2">
+              <span
+                className="collections-page-crumb flex min-w-0 items-center gap-2"
+                onContextMenu={(e) => {
+                  e.preventDefault();
+                  setCrumbMenu({ collectionId: crumb.id, position: { x: e.clientX, y: e.clientY } });
+                }}
+              >
                 <span
                   aria-hidden="true"
-                  className="h-2 w-2 shrink-0 rounded-full"
+                  className="w-1.75 h-1.75 shrink-0 rounded-full"
                   style={{ background: crumb.color }}
                 />
-                {isCurrent ? (
+                {renamingCrumbId === crumb.id ? (
+                  <input
+                    autoFocus
+                    aria-label={t('common.rename')}
+                    value={crumbDraft}
+                    onChange={(e) => setCrumbDraft(e.target.value)}
+                    onBlur={() => handleCrumbRename(crumb.id)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') handleCrumbRename(crumb.id);
+                      if (e.key === 'Escape') setRenamingCrumbId(null);
+                    }}
+                    className="min-w-0 flex-1 border-0 border-b border-dot bg-transparent p-0 text-lg leading-6 font-semibold text-ink outline-none"
+                  />
+                ) : isCurrent ? (
                   <span className="truncate">{crumb.name}</span>
                 ) : (
                   <Link
@@ -439,39 +670,111 @@ export function CollectionsPage() {
           );
         })}
         </h1>
+        {subAddingParentId && (
+          <div className="collections-page-sub-input flex h-6 items-center">
+            <input
+              autoFocus
+              value={subNewName}
+              onChange={(e) => setSubNewName(e.target.value)}
+              onBlur={handleCrumbCommitSub}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleCrumbCommitSub();
+                if (e.key === 'Escape') {
+                  setSubAddingParentId(null);
+                  setSubNewName('');
+                }
+              }}
+              placeholder={t('page.collectionName')}
+              className="h-6 w-full min-w-0 border-0 border-b border-dot bg-transparent p-0 text-[13px] leading-6 text-ink outline-none"
+            />
+          </div>
+        )}
+        </div>
+
+        <div className="page-header-toolbar collection-page-header-controls absolute bottom-0 right-0 z-20 flex items-center">
+          <BoardToolbar
+            view={boardPreferences.view}
+            groupBy={boardPreferences.groupBy}
+            hideCompletedTasks={preferences?.hideCompletedTasks ?? false}
+            hideOldNotes={preferences?.hideOldNotes ?? false}
+            preferencesDisabled={!preferences || visibilityPreferencesPending}
+            onViewChange={boardPreferences.setView}
+            onGroupByChange={boardPreferences.setGroupBy}
+            onHideCompletedTasksChange={setHideCompletedTasks}
+            onHideOldNotesChange={setHideOldNotes}
+          />
+        </div>
       </header>
 
-      <div className="page-header-toolbar collection-page-header-controls sticky top-0 z-20 -mt-6 ml-auto w-fit">
-        <TaskVisibilityControls
-          hideCompletedTasks={preferences?.hideCompletedTasks ?? false}
-          hideOldNotes={preferences?.hideOldNotes ?? false}
-          disabled={!preferences || visibilityPreferencesPending}
-          onHideCompletedTasksChange={setHideCompletedTasks}
-          onHideOldNotesChange={setHideOldNotes}
-        />
-      </div>
-
-      <div className="max-w-162">
+      <div className={boardPreferences.view === 'kanban' ? 'w-full' : 'max-w-162'}>
+        {boardPreferences.view === 'kanban' && data ? (
+          <CollectionBoard
+            collectionId={id}
+            queryKey={['collection', id]}
+            groupBy={boardPreferences.groupBy}
+            tasks={data.tasks}
+            statuses={data.statuses}
+            completionStatusId={data.completionStatusId}
+            sections={data.sections}
+            boardOrder={data.boardOrder}
+            onToggle={(taskId) => handleToggle(taskId)}
+          />
+        ) : (
+        <>
         <div className="h-6" />
 
-      <TaskList
-        tasks={tasks}
-        containerId={`collection:${id}`}
-        activeDragId={activeDragId}
-        editingId={editingId}
-        onTaskToggle={handleToggle}
-        onStartEdit={handleStartEdit}
-        onEditCommit={handleEditCommit}
-        onEditCancel={handleEditCancel}
-        onDelete={handleDelete}
-        onAddBelow={handleAddBelow}
-        onIndent={handleIndent}
-        onNavigate={handleNavigate}
-        onConvertType={handleConvertType}
-        onRightClick={handleRightClick}
-      />
+        {showStatusGroups ? (
+          <StatusTaskList
+            groups={statusListGroups}
+            afterFirstGroup={(
+              <form onSubmit={handleAddAtEnd} className="flex h-6 items-center">
+                <span className="w-6 shrink-0 select-none text-center text-[10px] leading-6 text-ink opacity-25">•</span>
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  placeholder={t('common.addTask')}
+                  className="task-input task-add-input flex-1 border-none bg-transparent p-0 text-sm leading-6 text-ink outline-none"
+                  spellCheck={false}
+                  onKeyDown={handleAddNoteKeyDown}
+                />
+              </form>
+            )}
+            taskListProps={{
+              collectionId: id,
+              activeDragId,
+              editingId,
+              onTaskToggle: handleToggle,
+              onStartEdit: handleStartEdit,
+              onEditCommit: handleEditCommit,
+              onEditCancel: handleEditCancel,
+              onDelete: handleDelete,
+              onAddBelow: handleAddBelow,
+              onIndent: handleIndent,
+              onConvertType: handleConvertType,
+              onRightClick: handleRightClick,
+            }}
+          />
+        ) : (
+          <TaskList
+            tasks={topLevelGroup.tasks}
+            containerId={`collection:${id}`}
+            activeDragId={activeDragId}
+            editingId={editingId}
+            onTaskToggle={handleToggle}
+            onStartEdit={handleStartEdit}
+            onEditCommit={handleEditCommit}
+            onEditCancel={handleEditCancel}
+            onDelete={handleDelete}
+            onAddBelow={handleAddBelow}
+            onIndent={handleIndent}
+            onConvertType={handleConvertType}
+            onRightClick={handleRightClick}
+          />
+        )}
 
-        <form
+        {!showStatusGroups && <form
         onSubmit={handleAddAtEnd}
         className="flex items-center h-6"
       >
@@ -486,22 +789,95 @@ export function CollectionsPage() {
           placeholder={t('common.addTask')}
           className="task-input task-add-input flex-1 text-sm leading-6 text-ink bg-transparent border-none outline-none p-0"
           spellCheck={false}
-          onKeyDown={(e) => {
-            if (handleAddNoteKeyDown(e)) return;
-            if (e.key === 'ArrowUp') {
-              e.preventDefault();
-              setTasks((prev) => {
-                if (prev.length === 0) return prev;
-                const col = (e.target as HTMLInputElement).selectionStart ?? 0;
-                const last = prev[prev.length - 1];
-                setPendingColumn(col);
-                setEditingId(last.id);
-                return prev;
-              });
-            }
-          }}
+          onKeyDown={handleAddNoteKeyDown}
         />
-        </form>
+        </form>}
+
+        {!showStatusGroups && <>
+        <SortableContext
+          items={sectionGroups.map((group) => group.section!.id)}
+          strategy={verticalListSortingStrategy}
+        >
+        {sectionGroups.map((group) => (
+          <Fragment key={group.section!.id}>
+            <div className="h-6" />
+            <SectionHeader
+              section={group.section!}
+              collectionId={id ?? ''}
+              isEditing={editingSectionId === group.section!.id}
+              onEdit={() => setEditingSectionId(group.section!.id)}
+              onCommitName={(name) => handleCommitSectionName(group.section!.id, name)}
+              onCancelEdit={() => handleCancelSectionEdit(group.section!.id)}
+              onDelete={() => handleDeleteSection(group.section!.id)}
+              onRightClick={(position) => handleSectionRightClick(group.section!.id, position)}
+            />
+            <TaskList
+              tasks={group.tasks}
+              containerId={`section:${group.section!.id}`}
+              sectionId={group.section!.id}
+              collectionId={id}
+              activeDragId={activeDragId}
+              editingId={editingId}
+              onTaskToggle={handleToggle}
+              onStartEdit={handleStartEdit}
+              onEditCommit={handleEditCommit}
+              onEditCancel={handleEditCancel}
+              onDelete={handleDelete}
+              onAddBelow={handleAddBelow}
+              onIndent={handleIndent}
+              onConvertType={handleConvertType}
+              onRightClick={handleRightClick}
+            />
+            <form
+              onSubmit={(e) => handleAddSectionTask(group.section!.id, e)}
+              className="flex items-center h-6"
+            >
+              <span className="w-6 text-center text-[10px] leading-6 text-ink opacity-25 select-none shrink-0">
+                •
+              </span>
+              <input
+                type="text"
+                value={sectionTaskInput[group.section!.id] ?? ''}
+                onChange={(e) =>
+                  setSectionTaskInput((prev) => ({ ...prev, [group.section!.id]: e.target.value }))
+                }
+                placeholder={t('common.addTask')}
+                className="task-input task-add-input flex-1 text-sm leading-6 text-ink bg-transparent border-none outline-none p-0"
+                spellCheck={false}
+              />
+            </form>
+          </Fragment>
+        ))}
+        </SortableContext>
+
+        <div className="h-6" />
+
+        {addingSection ? (
+          <div className="flex h-6 w-full min-w-0 items-center pr-2">
+            <span className="flex h-6 w-6 shrink-0 items-center justify-center text-ink-light opacity-35">+</span>
+            <InlineNameInput
+              defaultValue=""
+              placeholder={t('page.newSection')}
+              className="uppercase tracking-widest text-[10px] font-semibold text-ink-light"
+              onCommit={(name) => handleCommitSectionName(addingSection.id, name)}
+              onCancel={() => handleCancelSectionEdit(addingSection.id)}
+            />
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={handleAddSection}
+            className="group flex h-6 w-full min-w-0 items-center pr-2 text-ink-light opacity-35 transition-opacity hover:opacity-100"
+          >
+            <span className="flex h-6 w-6 shrink-0 items-center justify-center">+</span>
+            <span className="min-w-0 flex-1 truncate text-left uppercase tracking-widest text-[10px] font-semibold">
+              {t('page.newSection')}
+            </span>
+          </button>
+        )}
+        </>}
+        </>
+        )}
       </div>
 
       {contextMenu && (
@@ -509,18 +885,94 @@ export function CollectionsPage() {
           position={contextMenu.position}
           onClose={() => setContextMenu(null)}
           items={[
-            { type: 'item', label: 'Date', disabled: true },
-            { type: 'item', label: 'Priority', disabled: true },
-            { type: 'item', label: 'Project', submenu: projectSubmenuItems },
-            { type: 'item', label: 'Tags', disabled: true },
+            // { type: 'item', label: 'Date', icon: <Calendar size={14} />, disabled: true },
+            // { type: 'item', label: 'Priority', icon: <Tag size={14} />, disabled: true },
+            { type: 'item', label: t('contextMenu.collection'), icon: <Folder size={14} />, submenu: projectSubmenuItems },
+            // { type: 'item', label: 'Tags', icon: <Hash size={14} />, disabled: true },
             { type: 'separator' },
-            { type: 'item', label: 'Add above', onClick: () => handleAddAbove(contextMenu.taskId) },
-            { type: 'item', label: 'Add below', onClick: () => handleAddBelow(contextMenu.taskId) },
+            { type: 'item', label: t('contextMenu.addAbove'), icon: <ArrowUp size={14} />, onClick: () => handleAddAbove(contextMenu.taskId) },
+            { type: 'item', label: t('contextMenu.addBelow'), icon: <ArrowDown size={14} />, onClick: () => handleAddBelow(contextMenu.taskId) },
             { type: 'separator' },
-            { type: 'item', label: 'Delete', destructive: true, onClick: () => handleDelete(contextMenu.taskId) },
+            { type: 'item', label: t('common.delete'), icon: <Trash2 size={14} />, destructive: true, onClick: () => handleDelete(contextMenu.taskId) },
           ]}
         />
       )}
+
+      {sectionContextMenu && (
+        <ContextMenu
+          position={sectionContextMenu.position}
+          onClose={() => setSectionContextMenu(null)}
+          items={[
+            { type: 'item', label: t('common.rename'), icon: <Pencil size={14} />, onClick: () => setEditingSectionId(sectionContextMenu.sectionId) },
+            { type: 'separator' },
+            { type: 'item', label: t('common.delete'), icon: <Trash2 size={14} />, destructive: true, onClick: () => handleDeleteSection(sectionContextMenu.sectionId) },
+          ]}
+        />
+      )}
+
+      {crumbMenu && (
+        <ContextMenu
+          position={crumbMenu.position}
+          onClose={() => setCrumbMenu(null)}
+          items={buildCollectionMenuItems(t, {
+            onChangeColor: () =>
+              setCrumbColorPicker({
+                collectionId: crumbMenu.collectionId,
+                color: trail.find((c) => c.id === crumbMenu.collectionId)?.color ?? '#65788a',
+                position: crumbMenu.position,
+              }),
+            onStartRename: () => {
+              setCrumbDraft(trail.find((c) => c.id === crumbMenu.collectionId)?.name ?? '');
+              setRenamingCrumbId(crumbMenu.collectionId);
+            },
+            onAddSub: () => {
+              setSubNewName('');
+              setSubAddingParentId(crumbMenu.collectionId);
+            },
+            onDelete: () =>
+              setDeletingCollection({
+                id: crumbMenu.collectionId,
+                name: trail.find((c) => c.id === crumbMenu.collectionId)?.name ?? '',
+              }),
+          })}
+        />
+      )}
+
+      {crumbColorPicker && (
+        <ColorPickerPopover
+          position={crumbColorPicker.position}
+          value={crumbColorPicker.color}
+          onCommit={(color) => handleCrumbColorCommit(crumbColorPicker.collectionId, color)}
+          onClose={() => setCrumbColorPicker(null)}
+        />
+      )}
+
+      <ConfirmModal
+        isOpen={deletingCollection !== null}
+        title={t('page.deleteCollection')}
+        message={t('page.deleteCollectionMessage', { name: deletingCollection?.name ?? '' })}
+        confirmLabel={t('common.delete')}
+        cancelLabel={t('common.cancel')}
+        onConfirm={() => {
+          if (!deletingCollection) return;
+          const target = deletingCollection.id;
+          setDeletingCollection(null);
+          setCollectionsCache((prev) => prev.filter((c) => c.id !== target));
+          apiDeleteCollection(target)
+            .then(() => navigate('/daily'))
+            .catch(() => qc.invalidateQueries({ queryKey: ['collections'] }));
+        }}
+        onCancel={() => setDeletingCollection(null)}
+      />
+
+      <SectionDeleteModal
+        isOpen={deletingSection !== null}
+        sectionName={deletingSection?.name ?? ''}
+        taskCount={deletingSection?.taskCount ?? 0}
+        onDeleteTasks={handleConfirmDeleteSectionAndTasks}
+        onMoveToTopLevel={handleConfirmMoveTasksToTopLevel}
+        onCancel={() => setDeletingSection(null)}
+      />
     </div>
   );
 }

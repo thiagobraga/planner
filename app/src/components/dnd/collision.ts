@@ -10,17 +10,23 @@ import { containerForGroup } from '../../utils/habitProjection';
  * drag would try to reparent itself into a Daily section.
  */
 const ALLOWED_TARGETS: Record<DragKind, ReadonlySet<DropKind>> = {
-  task: new Set<DropKind>(['task', 'day', 'collection']),
+  task: new Set<DropKind>(['task', 'day', 'collection', 'section', 'board-column', 'card-subtasks']),
   habit: new Set<DropKind>(['habit', 'habit-section']),
   // A group reorders against other group headers; it is never filed into a
   // section, least of all its own.
   'habit-group': new Set<DropKind>(['habit-group']),
   // Collections reorder among themselves; they are never filed into a day or task.
   collection: new Set<DropKind>(['collection']),
+  // Section headers reorder among themselves - never against the `section`
+  // kind a task is filed into, which is a different-shaped target entirely.
+  'section-header': new Set<DropKind>(['section-header']),
+  'board-column': new Set<DropKind>(['board-column-header']),
 };
 
 /** Containers are regions; rows are points on a list. They resolve differently. */
-const CONTAINER_KINDS: ReadonlySet<DropKind> = new Set<DropKind>(['day', 'collection', 'habit-section']);
+const CONTAINER_KINDS: ReadonlySet<DropKind> = new Set<DropKind>([
+  'day', 'collection', 'habit-section', 'section', 'board-column', 'card-subtasks',
+]);
 
 /**
  * A sidebar collection row plays both parts, depending on what is being dragged.
@@ -44,12 +50,20 @@ function containerKindsFor(activeKind: DragKind): ReadonlySet<DropKind> {
  */
 function containerIdOf(data: DropData | undefined): string | null {
   if (!data) return null;
-  if (data.kind === 'task' || data.kind === 'day' || data.kind === 'habit') return data.containerId;
+  if (
+    data.kind === 'task'
+    || data.kind === 'day'
+    || data.kind === 'habit'
+    || data.kind === 'section'
+    || data.kind === 'board-column'
+  )
+    return data.containerId;
   // A habit section names itself the way its rows name it, so the rows inside
   // it can be matched against it. Without this the section - which the pointer
   // is always inside, since it holds the rows - beat every row it contains, and
   // a habit drop could only ever append at depth 0.
   if (data.kind === 'habit-section') return containerForGroup(data.groupId);
+  if (data.kind === 'card-subtasks') return `card:${data.taskId}`;
   return null;
 }
 
@@ -113,8 +127,10 @@ export const plannerCollisionDetection: CollisionDetection = (args) => {
     : [];
 
   if (containerHits.length > 0) {
-    const hitIds = new Set(containerHits.map((hit) => hit.id));
-    const hit = containers.find((c) => hitIds.has(c.id));
+    const containersById = new Map(containers.map((container) => [container.id, container]));
+    const hit = containerHits
+      .map((collision) => containersById.get(collision.id))
+      .find((container) => container !== undefined);
     const scope = containerIdOf(hit?.data.current as DropData | undefined);
     const inside = scope
       ? rows.filter((r) => containerIdOf(r.data.current as DropData | undefined) === scope)
@@ -122,7 +138,31 @@ export const plannerCollisionDetection: CollisionDetection = (args) => {
 
     // Rows still win inside their own container - dropping onto a task within a
     // day means "next to that task", not "somewhere in that day".
-    if (inside.length > 0) return closestCenter({ ...args, droppableContainers: inside });
+    if (inside.length > 0) {
+      const lastRow = inside[inside.length - 1];
+      const lastRect = args.droppableRects.get(lastRow.id);
+      const pointerY =
+        args.pointerCoordinates?.y ??
+        (args.collisionRect ? args.collisionRect.top + args.collisionRect.height / 2 : null);
+      if (lastRect && pointerY !== null) {
+        // A drag arriving from a *different* list has no "insert before the
+        // last row" to preserve - that reading only makes sense to someone
+        // already reordering within this list, who can reach for the row
+        // above the last one to get it. A foreign drop landing anywhere on
+        // the last row - which, dragging in from below, is usually the first
+        // row it reaches, well before the pointer crosses that row's own
+        // midpoint - overwhelmingly means "add it here at the end", not
+        // "slot in just above the last item". Requiring the stricter
+        // past-center threshold here is what made a cross-day drop aimed at
+        // the end of a short list land one slot short of it instead.
+        const foreignDrag = 'containerId' in activeData && activeData.containerId !== scope;
+        const threshold = foreignDrag ? lastRect.top : lastRect.top + lastRect.height / 2;
+        if (pointerY >= threshold) {
+          return containerHits;
+        }
+      }
+      return closestCenter({ ...args, droppableContainers: inside });
+    }
     return containerHits;
   }
 

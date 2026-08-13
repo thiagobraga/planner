@@ -14,6 +14,7 @@ const mockIO = {
   use: vi.fn(),
   on: vi.fn(),
   to: vi.fn().mockReturnValue({ emit: vi.fn() }),
+  fetchSockets: vi.fn().mockResolvedValue([]),
 };
 
 vi.mock("http", () => ({
@@ -48,10 +49,12 @@ vi.mock("../../db/redis.js", () => ({
 vi.mock("../sessionService.js", () => ({
   validateSession: vi.fn(),
   buildCookieName: vi.fn().mockReturnValue("planner_session"),
+  needsTouch: vi.fn().mockReturnValue(false),
+  touchSession: vi.fn().mockResolvedValue(undefined),
 }));
 
 import { attachSyncServer, publishEvent } from "../syncService.js";
-import { validateSession } from "../sessionService.js";
+import { validateSession, needsTouch, touchSession } from "../sessionService.js";
 
 function captureConnectionHandler(): (...args: unknown[]) => void {
   return mockIO.on.mock.calls.find((c: unknown[]) => c[0] === "connection")?.[1] as (...args: unknown[]) => void;
@@ -200,6 +203,69 @@ describe("syncService: Socket.IO server", () => {
 
       await taskUpdateHandler({ collectionId: "collection-1" });
       expect(mockSocket.disconnect).toHaveBeenCalled();
+    });
+  });
+
+  // The sweep that drops sockets whose session died is also the only thing
+  // that runs on a tab nobody is touching, so it doubles as that tab's
+  // keep-alive. Without it an idle-but-open tab expired out from under itself:
+  // the sweep would notice, close the socket, and the reconnect would come back
+  // UNAUTHORIZED and log the user out with no action of theirs involved.
+  describe("session revalidation sweep", () => {
+    const REVALIDATION_INTERVAL_MS = 60_000;
+
+    async function runOneSweep(): Promise<void> {
+      vi.useFakeTimers();
+      try {
+        await attachSyncServer({} as import("http").Server);
+        await vi.advanceTimersByTimeAsync(REVALIDATION_INTERVAL_MS);
+      } finally {
+        vi.useRealTimers();
+      }
+    }
+
+    beforeEach(() => {
+      mockIO.fetchSockets.mockResolvedValue([
+        { data: { userId: "user-1", sessionId: 1, rawToken: "live-token" }, disconnect: vi.fn() },
+      ]);
+    });
+
+    it("keeps a connected tab's session alive when its idle window has gone stale", async () => {
+      (validateSession as ReturnType<typeof vi.fn>).mockResolvedValue({
+        userId: "user-1",
+        sessionId: 1,
+        lastSeenAt: new Date(0),
+      });
+      (needsTouch as ReturnType<typeof vi.fn>).mockReturnValue(true);
+
+      await runOneSweep();
+
+      expect(touchSession).toHaveBeenCalledWith(1);
+    });
+
+    it("does not write on every sweep, only once the touch interval has passed", async () => {
+      (validateSession as ReturnType<typeof vi.fn>).mockResolvedValue({
+        userId: "user-1",
+        sessionId: 1,
+        lastSeenAt: new Date(),
+      });
+      (needsTouch as ReturnType<typeof vi.fn>).mockReturnValue(false);
+
+      await runOneSweep();
+
+      expect(touchSession).not.toHaveBeenCalled();
+    });
+
+    it("drops the socket and does not touch when the session is already gone", async () => {
+      const socket = { data: { userId: "user-1", sessionId: 1, rawToken: "dead-token" }, disconnect: vi.fn() };
+      mockIO.fetchSockets.mockResolvedValue([socket]);
+      (validateSession as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+      (needsTouch as ReturnType<typeof vi.fn>).mockReturnValue(true);
+
+      await runOneSweep();
+
+      expect(socket.disconnect).toHaveBeenCalled();
+      expect(touchSession).not.toHaveBeenCalled();
     });
   });
 });

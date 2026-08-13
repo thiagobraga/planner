@@ -14,6 +14,7 @@ import { csrfProtection } from "./middleware/csrf.js";
 import { requestContext } from "./middleware/requestContext.js";
 import { originCheck } from "./middleware/origin.js";
 import { authMiddleware } from "./middleware/auth.js";
+import { deleteExpiredSessions } from "./services/sessionService.js";
 import authRoutes from "./routes/auth.js";
 import { BUILD_VERSION, LATEST_VERSION } from "./utils/buildInfo.js";
 
@@ -150,6 +151,20 @@ app.use(errorHandler);
 
 const httpServer = createServer(app);
 
+// Expired and revoked rows are dead weight - validateSession already refuses
+// them, so nothing reads them again. Sweeping hourly keeps the table from
+// growing without bound now that sessions live for months.
+const SESSION_CLEANUP_INTERVAL_MS = 60 * 60 * 1000;
+
+function startSessionCleanup(): void {
+  const timer = setInterval(() => {
+    deleteExpiredSessions().catch((err) => {
+      console.error("[sessions] cleanup failed:", err);
+    });
+  }, SESSION_CLEANUP_INTERVAL_MS);
+  timer.unref();
+}
+
 async function start() {
   try {
     await connectRedis();
@@ -157,6 +172,8 @@ async function start() {
   } catch (err) {
     console.error("⚠️  SYNC DISABLED: Redis/Socket.IO startup failed. Real-time updates will not work.", err);
   }
+
+  startSessionCleanup();
 
   httpServer.listen(PORT, () => {
     console.log(`Backend listening on port ${PORT}`);

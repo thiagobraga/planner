@@ -204,10 +204,16 @@ export async function apiRegister(
   email: string,
   password: string,
   displayName?: string,
+  timeZone?: string,
 ): Promise<AuthUser> {
   const data = await request<{ user: AuthUser }>('/auth/register', {
     method: 'POST',
-    body: JSON.stringify(displayName ? { email, password, displayName } : { email, password }),
+    body: JSON.stringify({
+      email,
+      password,
+      ...(displayName ? { displayName } : {}),
+      ...(timeZone ? { timeZone } : {}),
+    }),
   });
   return data.user;
 }
@@ -254,10 +260,33 @@ export interface ApiTask {
   dueDate?: string;
   isCompleted: boolean;
   orderValue: number;
-  depth?: number;
+  depth: number;
   type: 'task' | 'note';
   createdAt?: string;
+  completedAt?: string | null;
+  statusId?: string | null;
+  labels?: LabelSummary[];
 }
+
+export interface LabelSummary {
+  id: string;
+  name: string;
+  color: string;
+}
+
+export interface ApiStatus {
+  id: string;
+  collectionId: string;
+  name: string;
+  color: string;
+  orderValue: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type BoardGroupBy = 'status' | 'section' | 'priority';
+export type BoardViewMode = 'list' | 'kanban';
+export type BoardViewModes = Record<string, { view?: BoardViewMode; groupBy?: BoardGroupBy }>;
 
 export interface Preferences {
   userId: string;
@@ -272,25 +301,25 @@ export interface Preferences {
   smallCaps: boolean;
   hideCompletedTasks: boolean;
   hideOldNotes: boolean;
+  collapsedCollectionIds: string[];
+  boardViewModes: BoardViewModes;
+  dateFormat?: string;
 }
 
-export async function fetchInboxTasks(): Promise<{ tasks: ApiTask[]; collectionId: string | null }> {
+export async function fetchInboxTasks(): Promise<{
+  tasks: ApiTask[];
+  collectionId: string | null;
+  inboxCollectionId?: string;
+  sections: ApiSection[];
+  statuses: ApiStatus[];
+  completionStatusId: string | null;
+  boardOrder: BoardOrder;
+}> {
   return request('/views/inbox');
 }
 
 export async function fetchTodayTasks(): Promise<{ overdue: ApiTask[]; today: ApiTask[] }> {
   return request('/views/today');
-}
-
-export interface DailyTimelineView {
-  days: Array<{ date: string; tasks: ApiTask[] }>;
-  start: string;
-  end: string;
-}
-
-export async function fetchDailyTimeline(start: string, end: string): Promise<DailyTimelineView> {
-  const query = new URLSearchParams({ start, end });
-  return request(`/views/timeline?${query.toString()}`);
 }
 
 export async function fetchUpcomingTasks(): Promise<Array<{ date: string; tasks: ApiTask[] }>> {
@@ -320,6 +349,7 @@ export async function apiCreateTask(input: {
   title: string;
   priority?: number;
   collectionId?: string;
+  sectionId?: string;
   dueDate?: string;
   parentTaskId?: string;
   depth?: number;
@@ -335,7 +365,7 @@ export async function apiCreateTask(input: {
 
 export async function apiUpdateTask(
   id: string,
-  updates: Partial<Pick<ApiTask, 'title' | 'priority' | 'dueDate' | 'depth' | 'type' | 'collectionId'>> & {
+  updates: Partial<Pick<ApiTask, 'title' | 'priority' | 'dueDate' | 'depth' | 'type' | 'collectionId' | 'sectionId'>> & {
     parentTaskId?: string | null;
   },
 ): Promise<ApiTask> {
@@ -367,11 +397,14 @@ export async function apiDeleteTask(id: string): Promise<void> {
  *
  * These are independent orderings of the same task - see migration 025. A drag
  * inside a collection reorders the collection scope and leaves the day scope
- * alone, and vice versa.
+ * alone, and vice versa. A drag into a section updates the section scope.
  */
 export type TaskOrderScope =
   | { kind: 'collection'; collectionId: string }
-  | { kind: 'day'; dueDate: string };
+  | { kind: 'day'; dueDate: string }
+  | { kind: 'section'; sectionId: string }
+  | { kind: 'status'; collectionId: string; statusId: string | null }
+  | { kind: 'priority'; collectionId: string; priority: number };
 
 export interface TaskMoveInput {
   /** New parent, or null to place at the top level. */
@@ -380,6 +413,10 @@ export interface TaskMoveInput {
   collectionId?: string;
   /** ISO YYYY-MM-DD; null clears the date. Omit to keep the current one. */
   dueDate?: string | null;
+  /** Omit to keep the task's current section. */
+  sectionId?: string | null;
+  statusId?: string | null;
+  priority?: number;
   /** The list the task lands in. */
   scope: TaskOrderScope;
   /** Zero-based index within that scope. Clamped server-side. */
@@ -394,6 +431,9 @@ export interface MovedTaskSummary {
   dueDate: string | null;
   orderValue: number;
   depth: number;
+  statusId: string | null;
+  priority: number;
+  isCompleted: boolean;
 }
 
 export interface TaskMoveResponse {
@@ -425,34 +465,30 @@ export interface ApiCollection {
   updatedAt: string;
 }
 
-export const PALETTE_COLORS: ReadonlyArray<{ name: string; hex: string }> = [
-  { name: 'berry_red', hex: '#b8255f' },
-  { name: 'red', hex: '#db4035' },
-  { name: 'orange', hex: '#ff9933' },
-  { name: 'yellow', hex: '#fad000' },
-  { name: 'olive_green', hex: '#afb83b' },
-  { name: 'lime_green', hex: '#7ecc49' },
-  { name: 'green', hex: '#299438' },
-  { name: 'mint_green', hex: '#6accbc' },
-  { name: 'teal', hex: '#158fad' },
-  { name: 'sky_blue', hex: '#14aaf5' },
-  { name: 'light_blue', hex: '#96c3eb' },
-  { name: 'blue', hex: '#4073ff' },
-  { name: 'grape', hex: '#884dff' },
-  { name: 'violet', hex: '#af38eb' },
-  { name: 'lavender', hex: '#eb96eb' },
-  { name: 'magenta', hex: '#e05194' },
-  { name: 'salmon', hex: '#ff8d85' },
-  { name: 'charcoal', hex: '#808080' },
-  { name: 'grey', hex: '#b8b8b8' },
-  { name: 'taupe', hex: '#ccac93' },
+// Collection colors intentionally stay soft and muted so they sit on top of
+// the paper surface instead of competing with the page chrome.
+export const PALETTE_COLORS: readonly string[] = [
+  '#d56b64',
+  '#c98079',
+  '#b97a3a',
+  '#cbd376',
+  '#b7bf4e',
+  '#d7db96',
+  '#7dbfb2',
+  '#a6cfc5',
+  '#7ea2d6',
+  '#6fa0d5',
+  '#adb9c1',
+  '#65788a',
+  '#b08b8a',
+  '#c2a29e',
+  '#d6c7b0',
+  '#d16d73',
+  '#cc8b85',
+  '#6f7780',
+  '#bababa',
+  '#ac918f',
 ];
-
-const PALETTE_COLOR_HEX = new Map(PALETTE_COLORS.map((c) => [c.name, c.hex]));
-
-export function paletteColorHex(name: string | undefined): string {
-  return (name && PALETTE_COLOR_HEX.get(name)) || 'var(--color-ink-light)';
-}
 
 export async function fetchCollections(): Promise<ApiCollection[]> {
   return request('/collections');
@@ -483,6 +519,17 @@ export async function apiDeleteCollection(id: string): Promise<void> {
   await request<unknown>(`/collections/${id}`, { method: 'DELETE' });
 }
 
+export async function fetchSavedColors(): Promise<string[]> {
+  return request<string[]>('/saved-colors');
+}
+
+export async function apiAddSavedColor(color: string): Promise<string[]> {
+  return request<string[]>('/saved-colors', {
+    method: 'POST',
+    body: JSON.stringify({ color }),
+  });
+}
+
 export async function apiArchiveCollection(id: string): Promise<ApiCollection> {
   return request<ApiCollection>(`/collections/${id}/archive`, { method: 'POST' });
 }
@@ -491,10 +538,119 @@ export interface CollectionView {
   collection: { id: string; name: string; color: string; isInbox: boolean };
   tasks: ApiTask[];
   collectionId: string;
+  sections: ApiSection[];
+  statuses: ApiStatus[];
+  completionStatusId: string | null;
+  boardOrder: BoardOrder;
+}
+
+export interface BoardOrder {
+  status: Record<string, number>;
+  priority: Record<string, number>;
 }
 
 export async function fetchCollectionView(id: string): Promise<CollectionView> {
   return request<CollectionView>(`/views/collection/${id}`);
+}
+
+// ── Statuses ──────────────────────────────────────────────────────────────────
+
+export async function fetchStatuses(collectionId: string): Promise<ApiStatus[]> {
+  return request<ApiStatus[]>(`/collections/${collectionId}/statuses`);
+}
+
+export async function apiSeedStatuses(collectionId: string): Promise<ApiStatus[]> {
+  return request<ApiStatus[]>(`/collections/${collectionId}/statuses/seed`, { method: 'POST' });
+}
+
+export async function apiCreateStatus(
+  collectionId: string,
+  input: { name: string; color?: string },
+): Promise<ApiStatus> {
+  return request<ApiStatus>(`/collections/${collectionId}/statuses`, {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+}
+
+export async function apiUpdateStatus(
+  statusId: string,
+  input: Partial<{ name: string; color: string; position: number }>,
+): Promise<ApiStatus> {
+  return request<ApiStatus>(`/statuses/${statusId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(input),
+  });
+}
+
+export async function apiSetCollectionCompletionStatus(
+  collectionId: string,
+  statusId: string,
+): Promise<{ completionStatusId: string }> {
+  return request<{ completionStatusId: string }>(`/collections/${collectionId}/completion-status`, {
+    method: 'PATCH',
+    body: JSON.stringify({ statusId }),
+  });
+}
+
+export async function apiDeleteStatus(statusId: string, reassignToStatusId?: string): Promise<void> {
+  const search = reassignToStatusId ? `?reassignTo=${encodeURIComponent(reassignToStatusId)}` : '';
+  await request<unknown>(`/statuses/${statusId}${search}`, { method: 'DELETE' });
+}
+
+// ── Labels ────────────────────────────────────────────────────────────────────
+
+export async function fetchLabels(): Promise<LabelSummary[]> {
+  return request<LabelSummary[]>('/labels');
+}
+
+export async function apiCreateLabel(input: { name: string; color?: string }): Promise<LabelSummary> {
+  return request<LabelSummary>('/labels', { method: 'POST', body: JSON.stringify(input) });
+}
+
+export async function apiUpdateLabel(
+  labelId: string,
+  input: Partial<{ name: string; color: string }>,
+): Promise<LabelSummary> {
+  return request<LabelSummary>(`/labels/${labelId}`, { method: 'PATCH', body: JSON.stringify(input) });
+}
+
+export async function apiDeleteLabel(labelId: string): Promise<void> {
+  await request<unknown>(`/labels/${labelId}`, { method: 'DELETE' });
+}
+
+// ── Sections ──────────────────────────────────────────────────────────────────
+
+export interface ApiSection {
+  id: string;
+  name: string;
+  collectionId: string;
+  orderValue: number;
+}
+
+export async function fetchSections(collectionId: string): Promise<ApiSection[]> {
+  return request<ApiSection[]>(`/collections/${collectionId}/sections`);
+}
+
+export async function apiCreateSection(collectionId: string, input: { name: string }): Promise<ApiSection> {
+  return request<ApiSection>(`/collections/${collectionId}/sections`, {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+}
+
+export async function apiUpdateSection(
+  sectionId: string,
+  updates: Partial<{ name: string; position: number }>,
+): Promise<ApiSection> {
+  return request<ApiSection>(`/sections/${sectionId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(updates),
+  });
+}
+
+export async function apiDeleteSection(sectionId: string): Promise<void> {
+  await request<unknown>(`/sections/${sectionId}`, { method: 'DELETE' });
 }
 
 // ── Habits ───────────────────────────────────────────────────────────────────

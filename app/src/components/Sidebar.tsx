@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useDroppable } from '@dnd-kit/core';
 import { ChevronRight, Repeat2, Settings, HelpCircle, LogOut, FolderOpen, ShieldCheck, Users, type LucideIcon } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
-import { usePlannerDrag } from '../contexts/PlannerDragContext';
+import { usePlannerDrag } from '../contexts/usePlannerDrag';
 import { CollectionTreeNav } from './CollectionTreeNav';
 import { SidebarNavItem } from './SidebarNavItem';
 import { fetchCollections } from '../api/client';
@@ -65,8 +65,8 @@ type NavItem = { to: string; labelKey: TranslationKey; Icon: LucideIcon | React.
 const NAV_ITEMS: NavItem[] = [
   { to: '/daily', labelKey: 'nav.daily', Icon: BjTask },
   { to: '/inbox', labelKey: 'nav.inbox', Icon: ChevronRight },
-  { to: '/monthly', labelKey: 'nav.monthly', Icon: MonthlyIcon },
   { to: '/habits', labelKey: 'nav.habits', Icon: Repeat2 },
+  { to: '/monthly', labelKey: 'nav.monthly', Icon: MonthlyIcon },
 ];
 
 /**
@@ -97,7 +97,7 @@ function InboxNavItem({ label, icon }: { label: string; icon: ReactNode }) {
       onClickCapture={(e) => {
         if (activeDrag) e.preventDefault();
       }}
-      className={isTaskTarget ? 'rounded-[4px] outline outline-1 outline-dot' : undefined}
+      className={isTaskTarget ? 'rounded-xs outline outline-dot' : undefined}
     >
       <SidebarNavItem to="/inbox" label={label} icon={icon} />
     </div>
@@ -117,7 +117,7 @@ export function Sidebar({ isOpen, onClose, collapsed = false, updateAvailable = 
   if (collapsed) {
     return (
       <aside
-        className="sidebar sidebar-collapsed w-12 h-full flex flex-col items-center border-r border-dot bg-[var(--planner-sidebar-bg)] py-6 shrink-0 overflow-y-auto"
+        className="sidebar sidebar-collapsed w-12 h-full flex flex-col items-center border-r border-dot bg-(--planner-sidebar-bg) py-6 shrink-0 overflow-y-auto"
         aria-label={t('nav.navigation')}
       >
         {/* Logo mark */}
@@ -211,7 +211,7 @@ export function Sidebar({ isOpen, onClose, collapsed = false, updateAvailable = 
 
   const sidebarContent = (
     <aside
-      className={`sidebar-drawer ${isOpen !== false ? 'sidebar-drawer--open' : ''} w-[220px] h-full flex flex-col border-r border-dot bg-[var(--planner-sidebar-bg)] relative overflow-y-auto shrink-0`}
+      className={`sidebar-drawer ${isOpen !== false ? 'sidebar-drawer--open' : ''} w-55 h-full flex flex-col border-r border-dot bg-(--planner-sidebar-bg) relative overflow-y-auto shrink-0`}
       aria-label={t('nav.navigation')}
     >
       {/* Logo */}
@@ -225,7 +225,7 @@ export function Sidebar({ isOpen, onClose, collapsed = false, updateAvailable = 
               Planner
             </h1>
             <p className="text-[13px] leading-6 text-ink-light m-0 p-0 opacity-60 h-6">
-              Bulletjournal online
+              Your Bullet Journal
             </p>
           </div>
         </div>
@@ -268,8 +268,8 @@ export function Sidebar({ isOpen, onClose, collapsed = false, updateAvailable = 
             </>
           )}
           <UpdateToast updateAvailable={updateAvailable} />
+          {isAdmin && <SidebarNavItem to="/styleguide" label={t('nav.styleguide')} icon={<StyleguideIcon size={15} />} />}
           <SidebarNavItem to="/settings" label={t('common.settings')} icon={<Settings size={15} strokeWidth={1.5} />} />
-          <SidebarNavItem to="/styleguide" label={t('nav.styleguide')} icon={<StyleguideIcon size={15} />} />
           <SidebarNavItem to="/help" label={t('nav.help')} icon={<HelpCircle size={15} strokeWidth={1.5} />} />
 
           <div className="border-t border-dot my-4 mx-0"></div>

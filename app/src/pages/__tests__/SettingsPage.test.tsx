@@ -169,24 +169,42 @@ describe('SettingsPage', () => {
     const timeZoneInput = await screen.findByLabelText('Time zone');
     expect(timeZoneInput).toHaveValue('Europe/London');
 
+    fireEvent.focus(timeZoneInput);
     fireEvent.change(timeZoneInput, { target: { value: 'America' } });
 
-    const timeZoneOptions = Array.from(document.querySelectorAll('datalist option')).map((option) =>
-      option.getAttribute('value'),
+    const listbox = await screen.findByRole('listbox', { name: 'Time zone' });
+    const optionLabels = Array.from(listbox.querySelectorAll('[role="option"]')).map(
+      (option) => option.textContent,
     );
-    expect(timeZoneOptions).toContain('America/New_York');
-    expect(timeZoneOptions).toContain('America/Los_Angeles');
-    expect(timeZoneOptions).not.toContain('Europe/London');
+    expect(optionLabels).toContain('America/New_York');
+    expect(optionLabels).toContain('America/Los_Angeles');
+    expect(optionLabels).not.toContain('Europe/London');
 
-    fireEvent.change(timeZoneInput, { target: { value: 'UTC' } });
+    fireEvent.click(screen.getByRole('option', { name: 'America/New_York' }));
 
-    await waitFor(() => expect(mockUpdatePreferences).toHaveBeenCalledWith({ timeZone: 'UTC' }));
+    await waitFor(() =>
+      expect(mockUpdatePreferences).toHaveBeenCalledWith({ timeZone: 'America/New_York' }),
+    );
 
     const monday = screen.getByRole('radio', { name: 'Monday' });
     fireEvent.click(monday);
 
     await waitFor(() => expect(mockUpdatePreferences).toHaveBeenCalledWith({ weekStart: 'monday' }));
     expect(monday).toBeChecked();
+  });
+
+  it('shows a message when no time zones match the search, and reverts an unmatched draft on blur', async () => {
+    renderPage();
+
+    const timeZoneInput = await screen.findByLabelText('Time zone');
+    fireEvent.focus(timeZoneInput);
+    fireEvent.change(timeZoneInput, { target: { value: 'Nowhere' } });
+
+    expect(await screen.findByText('No time zones match your search.')).toBeInTheDocument();
+
+    fireEvent.blur(timeZoneInput);
+
+    await waitFor(() => expect(timeZoneInput).toHaveValue('Europe/London'));
   });
 
   it('persists the selected application language through preferences', async () => {

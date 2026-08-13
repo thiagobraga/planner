@@ -3,7 +3,14 @@ import { login, register, requestPasswordReset, confirmPasswordReset } from "../
 import { validate, type ValidationError } from "../utils/validate.js";
 import { AppError } from "../utils/AppError.js";
 import { authMiddleware } from "../middleware/auth.js";
-import { buildCookieName, buildCookieOptions, revokeSession } from "../services/sessionService.js";
+import {
+  buildCookieName,
+  buildCookieOptions,
+  buildClearCookieOptions,
+  revokeSession,
+  validateSession,
+} from "../services/sessionService.js";
+import { CSRF_COOKIE_NAME, buildCsrfCookieOptions } from "../middleware/csrf.js";
 import { securityLog } from "../utils/securityLogger.js";
 import {
   checkLoginRate,
@@ -38,8 +45,8 @@ router.post("/register", async (req: Request, res: Response, next: NextFunction)
       return;
     }
 
-    const { email, password, displayName } = req.body;
-    const user = await register({ email, password, displayName });
+    const { email, password, displayName, timeZone } = req.body;
+    const user = await register({ email, password, displayName, timeZone });
     // Counted on success only - a rejected attempt (typo, weak password) should
     // not burn a legitimate user's quota.
     await incrementRegistrationAttempts(req.ip ?? "unknown");
@@ -99,13 +106,29 @@ router.post("/login", async (req: Request, res: Response, next: NextFunction) =>
   }
 });
 
-router.post("/logout", authMiddleware, async (req: Request, res: Response, next: NextFunction) => {
+// Deliberately not behind authMiddleware, and deliberately always 200.
+//
+// Logging out is idempotent: there is nothing a caller can do about "your
+// session was already gone", and gating it on a live session meant the one
+// request whose entire purpose is to tear a session down was the request that
+// failed loudest when that session had expired - a 401 in the console and a
+// rejected promise, on every single expiry.
+//
+// Dropping the auth gate does not open a cross-site logout: the session cookie
+// is SameSite=Lax, so a POST from another origin carries no cookie and there is
+// no session for this handler to find.
+router.post("/logout", async (req: Request, res: Response, next: NextFunction) => {
   try {
-    if (req.sessionId) {
-      await revokeSession(req.sessionId);
-      securityLog.authLogout(req, req.userId!, req.sessionId);
+    const rawToken = req.cookies?.[buildCookieName()] as string | undefined;
+    if (rawToken) {
+      const session = await validateSession(rawToken);
+      if (session) {
+        await revokeSession(session.sessionId);
+        securityLog.authLogout(req, session.userId, session.sessionId);
+      }
     }
-    res.clearCookie(buildCookieName(), { path: "/" });
+    res.clearCookie(buildCookieName(), buildClearCookieOptions());
+    res.clearCookie(CSRF_COOKIE_NAME, buildCsrfCookieOptions());
     res.json({ success: true });
   } catch (err) {
     next(err);

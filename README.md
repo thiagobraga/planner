@@ -1,22 +1,26 @@
-<p align="center">
+<h1 align="center">
   <img src="app/public/images/bulletjournal-planner-192x192.png" alt="Planner" width="96">
-</p>
-
-<h1 align="center">Planner</h1>
-
-<p align="center">
-  Beautiful and easy-to-use Bullet Journal task management.
-</p>
+  <br>
+  Planner
+</h1>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Next.js-000000?style=flat-square&logo=nextdotjs&logoColor=white" alt="Next.js">
-  <img src="https://img.shields.io/badge/React-149ECA?style=flat-square&logo=react&logoColor=white" alt="React">
-  <img src="https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript">
-  <img src="https://img.shields.io/badge/Tailwind_CSS-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white" alt="Tailwind CSS">
-  <img src="https://img.shields.io/badge/license-MIT-3DA639?style=flat-square" alt="MIT License">
+  Beautiful and easy-to-use Bullet Journal task management
 </p>
 
----
+<p align="center">
+  <img src="https://img.shields.io/badge/%E2%80%8B-React-f5f0e8?style=flat&logoColor=f5f0e8&logo=react" alt="React">
+  <img src="https://img.shields.io/badge/%E2%80%8B-TypeScript-f5f0e8?style=flat&logo=typescript&logoColor=f5f0e8" alt="TypeScript">
+  <img src="https://img.shields.io/badge/%E2%80%8B-Tailwind-f5f0e8?style=flat&logoColor=f5f0e8&logo=tailwindcss" alt="Tailwind">
+  <img src="https://img.shields.io/badge/%E2%80%8B-Vite-f5f0e8?style=flat&logoColor=f5f0e8&logo=vite" alt="Vite">
+  <br>
+  <img src="https://img.shields.io/badge/%E2%80%8B-Docker-f5f0e8?style=flat&logoColor=f5f0e8&logo=docker" alt="Docker">
+  <img src="https://img.shields.io/badge/%E2%80%8B-PostgreSQL-f5f0e8?style=flat&logoColor=f5f0e8&logo=postgresql" alt="PostgreSQL">
+  <img src="https://img.shields.io/badge/license-MIT-f5f0e8?style=flat" alt="MIT License" />
+  <br>
+  <img src="https://github.com/thiagobraga/planner/actions/workflows/pipeline.yml/badge.svg" alt="Pipeline badge" />
+  <img alt="GitHub Repo stars" src="https://img.shields.io/github/stars/thiagobraga/planner?style=social" alt="Github repository stars" />
+</p>
 
 ## About
 
@@ -36,32 +40,17 @@ It supports daily planning, monthly organization, habit tracking, collections, t
 - **List and Kanban Visualizations**: Multiple ways to visualize your workspace.
 - **Modern Routing Architecture**: Built on React Router v7 with declarative Splat path configuration.
 
-## Tech Stack
-
-![React](https://img.shields.io/badge/React-149ECA?style=for-the-badge&logo=react&logoColor=white)
-![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
-![Express.js](https://img.shields.io/badge/Express.js-000000?style=for-the-badge&logo=express&logoColor=white)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-336791?style=for-the-badge&logo=postgresql&logoColor=white)
-![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)
-![Vite](https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white)
-![Vitest](https://img.shields.io/badge/Vitest-6E9F18?style=for-the-badge&logo=vitest&logoColor=white)
-![Zustand](https://img.shields.io/badge/Zustand-000000?style=for-the-badge&logo=zustand&logoColor=white)
-![TanStack Query](https://img.shields.io/badge/TanStack_Query-FF4154?style=for-the-badge&logo=react-query&logoColor=white)
-![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
-
 ## Installation
 
 ### Requirements
 
-- Node.js 20 or newer
-- Docker and Docker Compose
+- Docker
+- Docker Compose
 
 ### Setup
 
 ```bash
 cp .env.example .env
-
-# Installs deps, runs migrations, starts api (4000) + app (5173) + Postgres + Redis
 docker compose up -d
 ```
 
@@ -106,13 +95,13 @@ Optional but recommended — they run the same checks CI does, so a red
 pipeline shows up locally instead of on GitHub. Enable once per clone:
 
 ```bash
-./scripts/setup-hooks.sh     # sets core.hooksPath to .githooks/
+./.hooks/setup-hooks.sh     # sets core.hooksPath to .hooks/
 ```
 
-| Hook | Runs | Typical time |
-| ---------- | ------------------------ | ------------ |
-| pre-commit | `lint`                   | 2–8s         |
-| pre-push   | `lint`, `test`, `build`  | ~30s/package |
+| Hook       | Runs                    | Typical time |
+| ---------- | ----------------------- | ------------ |
+| pre-commit | `lint`                  | 2–8s         |
+| pre-push   | `lint`, `test`, `build` | ~30s/package |
 
 Both only check the packages your change actually touches, so a docs-only
 commit does no work and an `api/` change never waits on the app suite.

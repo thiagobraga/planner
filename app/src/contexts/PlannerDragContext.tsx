@@ -1,8 +1,5 @@
 import {
-  createContext,
   useCallback,
-  useContext,
-  useEffect,
   useMemo,
   useRef,
   useState,
@@ -11,6 +8,7 @@ import {
 import {
   DndContext,
   DragOverlay,
+  MeasuringStrategy,
   useSensor,
   useSensors,
   type DragStartEvent,
@@ -18,6 +16,7 @@ import {
   type DragOverEvent,
   type DragEndEvent,
   type Announcements,
+  type MeasuringConfiguration,
 } from '@dnd-kit/core';
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import {
@@ -28,87 +27,13 @@ import {
 import { plannerCollisionDetection } from '../components/dnd/collision';
 import { createIndentTracker } from '../utils/dragIndent';
 import type { DragData, DragKind } from '../types/drag';
-
-/** The page grid. One indent step of horizontal drag equals one nesting level. */
-export const INDENT_PX = 24;
-
-export interface DragHandlers {
-  onDragStart?: (event: DragStartEvent) => void;
-  onDragMove?: (event: DragMoveEvent) => void;
-  onDragOver?: (event: DragOverEvent) => void;
-  onDragEnd?: (event: DragEndEvent) => void;
-  onDragCancel?: () => void;
-}
-
-/** What the floating overlay shows while a drag is in flight. */
-export interface DragOverlayInfo {
-  title: string;
-  /** Descendants carried along, so the overlay can say "+3". */
-  descendantCount: number;
-}
-
-interface PlannerDragContextValue {
-  activeDrag: DragData | null;
-  overlay: DragOverlayInfo | null;
-  setOverlay: (info: DragOverlayInfo | null) => void;
-  /**
-   * The rows being dragged, rendered by whichever list owns them.
-   *
-   * The provider cannot build this itself - it knows a drag is in flight but
-   * nothing about what a task row looks like - so the owning list hands it up.
-   * Falls back to a title chip when no list has claimed the drag.
-   */
-  overlayNode: ReactNode | null;
-  setOverlayNode: (node: ReactNode | null) => void;
-  /**
-   * False until the pointer actually travels. Lets a list hold its layout
-   * completely still on pickup: pressing a row must not reflow anything until
-   * the user has expressed movement.
-   */
-  hasMoved: boolean;
-  /**
-   * Horizontal drag distance, quantised to whole indent steps.
-   *
-   * Quantised rather than raw so lists re-render only when the projected
-   * nesting level actually changes, instead of on every pointer move.
-   */
-  indentSteps: number;
-  /** The droppable currently under the pointer, for positioning the indicator. */
-  overId: string | null;
-  /** Speak a message through the shared live region. */
-  announce: (message: string) => void;
-  registerHandlers: (kind: DragKind, handlers: DragHandlers) => () => void;
-}
-
-const PlannerDragContext = createContext<PlannerDragContextValue | null>(null);
-
-export function usePlannerDrag(): PlannerDragContextValue {
-  const ctx = useContext(PlannerDragContext);
-  if (!ctx) throw new Error('usePlannerDrag must be used inside PlannerDragProvider');
-  return ctx;
-}
-
-/**
- * Registers this component's drag handlers for one entity kind, for as long as
- * it is mounted. The currently routed page claims 'task' or 'habit'; the sidebar
- * claims 'collection'. Handlers are held in a ref, so a component may pass fresh
- * closures every render without re-registering.
- */
-export function usePlannerDragHandlers(kind: DragKind, handlers: DragHandlers): void {
-  const { registerHandlers } = usePlannerDrag();
-  const ref = useRef(handlers);
-  ref.current = handlers;
-
-  useEffect(() => {
-    return registerHandlers(kind, {
-      onDragStart: (e) => ref.current.onDragStart?.(e),
-      onDragMove: (e) => ref.current.onDragMove?.(e),
-      onDragOver: (e) => ref.current.onDragOver?.(e),
-      onDragEnd: (e) => ref.current.onDragEnd?.(e),
-      onDragCancel: () => ref.current.onDragCancel?.(),
-    });
-  }, [kind, registerHandlers]);
-}
+import {
+  PlannerDragContext,
+  INDENT_PX,
+  type DragHandlers,
+  type DragOverlayInfo,
+  type PlannerDragContextValue,
+} from './usePlannerDrag';
 
 /**
  * The app's single DndContext, wrapping both the Sidebar and the routed page.
@@ -144,7 +69,29 @@ export function usePlannerDragHandlers(kind: DragKind, handlers: DragHandlers): 
  * The band is tightened to 8%, and horizontal scrolling is switched off
  * entirely: sideways movement means nesting here, never travel.
  */
-const AUTO_SCROLL = { threshold: { x: 0, y: 0.08 } } as const;
+const AUTO_SCROLL = {
+  horizontal: { threshold: { x: 0.08, y: 0 } },
+  vertical: { threshold: { x: 0, y: 0.08 } },
+} as const;
+
+/**
+ * dnd-kit's default (`MeasuringStrategy.WhileDragging`) re-measures every
+ * registered droppable's rect on every animation frame of a drag - and this
+ * app has exactly one `DndContext` for the whole shell, so that means every
+ * task row across every rendered day, every habit, every sidebar collection,
+ * on every pointer move, for the entire gesture. A performance trace of a
+ * single task drag showed the main thread saturated with back-to-back 30-40ms
+ * script chunks for the whole ~5s gesture, largely `@dnd-kit/utilities` rect
+ * recalculation and the React re-renders it forces.
+ *
+ * Sortable rows shift via CSS transform, computed from each row's rect
+ * measured once at drag start plus the live index delta - dnd-kit does not
+ * need a fresh DOM measurement to keep that correct while the pointer moves.
+ * Measuring once up front is the standard fix for exactly this cost.
+ */
+const MEASURING: MeasuringConfiguration = {
+  droppable: { strategy: MeasuringStrategy.BeforeDragging },
+};
 
 const SILENT_ANNOUNCEMENTS: Announcements = {
   onDragStart: () => undefined,
@@ -161,6 +108,7 @@ export function PlannerDragProvider({ children }: { children: ReactNode }) {
   const [announcement, setAnnouncement] = useState('');
   const [indentSteps, setIndentSteps] = useState(0);
   const [overId, setOverId] = useState<string | null>(null);
+  const [autoScrollAxis, setAutoScrollAxis] = useState<'horizontal' | 'vertical'>('vertical');
   const handlersRef = useRef(new Map<DragKind, DragHandlers>());
   /** Nesting intent, rebased per row so drift cannot accumulate into a preview. */
   const indent = useRef(createIndentTracker());
@@ -179,6 +127,20 @@ export function PlannerDragProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const announce = useCallback((message: string) => setAnnouncement(message), []);
+
+  /**
+   * The live nesting intent, snapped to the same whole step the preview draws.
+   *
+   * Quantising here rather than handing back raw pixels is the point: the
+   * preview renders `Math.round(offset / INDENT_PX)` steps, so a commit reading
+   * the unrounded offset would disagree with it for every pointer position that
+   * is not exactly on a step boundary. Both sides now round the same number the
+   * same way.
+   */
+  const indentOffset = useCallback(
+    () => Math.round(indent.current.offset() / INDENT_PX) * INDENT_PX,
+    [],
+  );
 
   /** Route an event to whichever page registered the kind being dragged. */
   const dispatch = useCallback(
@@ -207,7 +169,12 @@ export function PlannerDragProvider({ children }: { children: ReactNode }) {
 
   const handleDragMove = useCallback(
     (event: DragMoveEvent) => {
-      if (event.delta.x !== 0 || event.delta.y !== 0) setHasMoved(true);
+      // Activation itself already required crossing PRESS_ACTIVATION.distance
+      // (see dnd/sensors.ts), so by the time a move event reaches here the
+      // pointer has genuinely travelled - this just reuses the same distance
+      // rather than trusting a bare delta != 0, which single-pixel coalescing
+      // noise could otherwise satisfy.
+      if (Math.hypot(event.delta.x, event.delta.y) > PRESS_ACTIVATION.distance) setHasMoved(true);
       indent.current.move(event.delta.x);
       const steps = Math.round(indent.current.offset() / INDENT_PX);
       setIndentSteps((prev) => (prev === steps ? prev : steps));
@@ -292,11 +259,24 @@ export function PlannerDragProvider({ children }: { children: ReactNode }) {
       setOverlayNode,
       hasMoved,
       indentSteps,
+      indentOffset,
       overId,
       announce,
       registerHandlers,
+      setAutoScrollAxis,
     }),
-    [activeDrag, overlay, overlayNode, hasMoved, indentSteps, overId, announce, registerHandlers],
+    [
+      activeDrag,
+      overlay,
+      overlayNode,
+      hasMoved,
+      indentSteps,
+      indentOffset,
+      overId,
+      announce,
+      registerHandlers,
+      setAutoScrollAxis,
+    ],
   );
 
   return (
@@ -304,7 +284,8 @@ export function PlannerDragProvider({ children }: { children: ReactNode }) {
       <DndContext
         sensors={sensors}
         collisionDetection={plannerCollisionDetection}
-        autoScroll={AUTO_SCROLL}
+        autoScroll={AUTO_SCROLL[autoScrollAxis]}
+        measuring={MEASURING}
         accessibility={{ announcements: SILENT_ANNOUNCEMENTS, restoreFocus: false }}
         onDragStart={handleDragStart}
         onDragMove={handleDragMove}
@@ -328,7 +309,7 @@ export function PlannerDragProvider({ children }: { children: ReactNode }) {
           {overlayNode ? (
             <div className="planner-drag-overlay planner-drag-overlay--block">{overlayNode}</div>
           ) : overlay ? (
-            <div className="planner-drag-overlay flex items-center gap-2 rounded-[8px] border border-dot bg-cream px-2 py-1 text-[13px] text-ink shadow-[0_4px_16px_rgba(44,44,44,0.18)]">
+            <div className="planner-drag-overlay flex items-center gap-2 rounded-[8px] border border-dot px-2 py-1 text-[13px] text-ink shadow-[0_4px_16px_rgba(44,44,44,0.18)]" style={{ backgroundColor: 'var(--planner-overlay-bg)' }}>
               <span className="planner-drag-overlay-title truncate max-w-[280px]">
                 {overlay.title}
               </span>

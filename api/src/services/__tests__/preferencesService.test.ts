@@ -38,6 +38,9 @@ const prefsRow = {
   hide_completed_tasks: false,
   hide_old_notes: false,
   locale: "en",
+  date_format: "MMM DD ddd",
+  collapsed_collection_ids: [],
+  board_view_modes: {},
 };
 
 describe("validatePreferences", () => {
@@ -86,6 +89,45 @@ describe("validatePreferences", () => {
     expect(() => validatePreferences({ locale: "pt-BR" })).not.toThrow();
   });
 
+  it("accepts an array of collection UUIDs", () => {
+    expect(() => validatePreferences({
+      collapsedCollectionIds: ["11111111-1111-4111-8111-111111111111"],
+    })).not.toThrow();
+  });
+
+  it("rejects malformed collapsed collection IDs", () => {
+    expect(() => validatePreferences({ collapsedCollectionIds: "bad" as unknown as string[] })).toThrow(AppError);
+    expect(() => validatePreferences({ collapsedCollectionIds: ["not-a-uuid"] })).toThrow(AppError);
+    expect(() => validatePreferences({ collapsedCollectionIds: [123 as unknown as string] })).toThrow(AppError);
+  });
+
+  it("accepts valid per-collection board modes", () => {
+    expect(() => validatePreferences({
+      boardViewModes: {
+        "11111111-1111-4111-8111-111111111111": { view: "kanban", groupBy: "status" },
+      },
+    })).not.toThrow();
+  });
+
+  it("rejects malformed board mode keys, values, and oversized maps", () => {
+    expect(() => validatePreferences({
+      boardViewModes: { "not-a-uuid": { view: "kanban" } },
+    })).toThrow(AppError);
+    expect(() => validatePreferences({
+      boardViewModes: {
+        "11111111-1111-4111-8111-111111111111": { view: "grid" as "kanban" },
+      },
+    })).toThrow(AppError);
+
+    const oversized = Object.fromEntries(
+      Array.from({ length: 201 }, (_, index) => [
+        `00000000-0000-4000-8000-${String(index).padStart(12, "0")}`,
+        { groupBy: "priority" as const },
+      ]),
+    );
+    expect(() => validatePreferences({ boardViewModes: oversized })).toThrow(AppError);
+  });
+
   it("aggregates multiple errors", () => {
     try {
       validatePreferences({ timeZone: "x", theme: "y", weekStart: "z" });
@@ -108,6 +150,8 @@ describe("getPreferences", () => {
     expect(p.hideCompletedTasks).toBe(false);
     expect(p.hideOldNotes).toBe(false);
     expect(p.locale).toBe("en");
+    expect(p.collapsedCollectionIds).toEqual([]);
+    expect(p.boardViewModes).toEqual({});
   });
 
   it("404s when no preferences", async () => {
@@ -180,8 +224,45 @@ describe("updatePreferences", () => {
     expect(sql).toMatch(/locale = \$1/);
   });
 
+  it("normalizes and persists collapsed collection IDs in the sync payload", async () => {
+    const collectionId = "11111111-1111-4111-8111-111111111111";
+    mockQuery.mockResolvedValueOnce({
+      rows: [{ ...prefsRow, collapsed_collection_ids: [collectionId] }],
+    });
+
+    const p = await updatePreferences("u1", {
+      collapsedCollectionIds: [collectionId, collectionId],
+    });
+
+    expect(p.collapsedCollectionIds).toEqual([collectionId]);
+    expect(mockQuery.mock.calls[0][0]).toMatch(/collapsed_collection_ids = \$1/);
+    expect(mockQuery.mock.calls[0][1]).toEqual([[collectionId], "u1"]);
+    expect(mockBuildEvent).toHaveBeenCalledWith(expect.objectContaining({ payload: p }));
+  });
+
+  it("persists board view modes as one JSONB field", async () => {
+    const boardViewModes = {
+      "11111111-1111-4111-8111-111111111111": { view: "kanban" as const, groupBy: "priority" as const },
+    };
+    mockQuery.mockResolvedValueOnce({ rows: [{ ...prefsRow, board_view_modes: boardViewModes }] });
+
+    const p = await updatePreferences("u1", { boardViewModes });
+
+    expect(p.boardViewModes).toEqual(boardViewModes);
+    expect(mockQuery.mock.calls[0][0]).toMatch(/board_view_modes = \$1/);
+    expect(mockQuery.mock.calls[0][1]).toEqual([boardViewModes, "u1"]);
+  });
+
   it("rejects invalid input before db call", async () => {
     await expect(updatePreferences("u1", { theme: "neon" })).rejects.toBeInstanceOf(AppError);
     expect(mockQuery).not.toHaveBeenCalled();
+  });
+
+  it("rejects invalid collapsed collection IDs before db call", async () => {
+    await expect(updatePreferences("u1", {
+      collapsedCollectionIds: ["not-a-uuid"],
+    })).rejects.toBeInstanceOf(AppError);
+    expect(mockQuery).not.toHaveBeenCalled();
+    expect(mockPublishEvent).not.toHaveBeenCalled();
   });
 });

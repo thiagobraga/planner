@@ -2,6 +2,7 @@ import { v4 as uuidv4 } from 'uuid';
 import pool from '../db/pool.js';
 import { AppError } from '../utils/AppError.js';
 import { validate, type ValidationError } from '../utils/validate.js';
+import { validateColor } from '../utils/color.js';
 import { buildEvent, publishEvent } from './syncService.js';
 
 function publishCollectionEvent(
@@ -21,29 +22,6 @@ function publishCollectionEvent(
     }),
   ).catch((err) => console.error('[sync] publish failed', err));
 }
-
-const SUPPORTED_COLORS = [
-  'berry_red',
-  'red',
-  'orange',
-  'yellow',
-  'olive_green',
-  'lime_green',
-  'green',
-  'mint_green',
-  'teal',
-  'sky_blue',
-  'light_blue',
-  'blue',
-  'grape',
-  'violet',
-  'lavender',
-  'magenta',
-  'salmon',
-  'charcoal',
-  'grey',
-  'taupe',
-] as const;
 
 interface CollectionRow {
   id: string;
@@ -145,14 +123,8 @@ export async function createCollection(userId: string, input: CreateCollectionIn
     errors.push({ field: 'name', message: 'Name must be between 1 and 120 characters' });
   }
 
-  if (
-    !input.color ||
-    !SUPPORTED_COLORS.includes(input.color as (typeof SUPPORTED_COLORS)[number])
-  ) {
-    errors.push({ field: 'color', message: 'Color is not in the supported palette' });
-  }
-
   validate(errors);
+  const color = validateColor(input.color);
 
   // Check unique name per user
   const duplicateCheck = await pool.query(
@@ -187,7 +159,7 @@ export async function createCollection(userId: string, input: CreateCollectionIn
     `INSERT INTO collections (id, user_id, parent_id, name, color)
      VALUES ($1, $2, $3, $4, $5)
      RETURNING *`,
-    [id, userId, input.parentId ?? null, input.name, input.color],
+    [id, userId, input.parentId ?? null, input.name, color],
   );
 
   const created = formatCollection(result.rows[0] as CollectionRow);
@@ -221,13 +193,11 @@ export async function updateCollection(collectionId: string, userId: string, inp
     }
   }
 
-  if (input.color !== undefined) {
-    if (!SUPPORTED_COLORS.includes(input.color as (typeof SUPPORTED_COLORS)[number])) {
-      errors.push({ field: 'color', message: 'Color is not in the supported palette' });
-    }
-  }
-
   validate(errors);
+
+  if (input.color !== undefined) {
+    validateColor(input.color);
+  }
 
   // Check unique name per user (exclude self)
   if (input.name !== undefined) {

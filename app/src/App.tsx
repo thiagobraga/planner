@@ -41,7 +41,7 @@ function AppRoutes() {
           <Route path="/habits" element={<HabitsPage />} />
           <Route path="/settings" element={<Navigate to="/settings/general" replace />} />
           <Route path="/settings/:section" element={<SettingsPage />} />
-          <Route path="/styleguide" element={<StyleguidePage />} />
+          <Route path="/styleguide" element={isAdmin ? <StyleguidePage /> : <Navigate to="/daily" replace />} />
           <Route path="/help" element={<HelpPage />} />
           <Route path="/collections" element={<CollectionsIndexPage />} />
           <Route path="/collection/:id" element={<CollectionsPage />} />

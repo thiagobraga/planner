@@ -67,8 +67,8 @@ interface CapturedHandlers {
 
 let registered: CapturedHandlers | null = null;
 
-vi.mock('../../contexts/PlannerDragContext', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../contexts/PlannerDragContext')>();
+vi.mock('../../contexts/usePlannerDrag', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../contexts/usePlannerDrag')>();
   return {
     ...actual,
     usePlannerDragHandlers: (kind: string, handlers: CapturedHandlers) => {
@@ -78,26 +78,26 @@ vi.mock('../../contexts/PlannerDragContext', async (importOriginal) => {
   };
 });
 
-function drop(event: Partial<DragEndEvent>) {
-  act(() => {
+async function drop(event: Partial<DragEndEvent>) {
+  await act(async () => {
     registered?.onDragEnd?.(event as DragEndEvent);
   });
 }
 
-function start(event: Partial<DragStartEvent>) {
-  act(() => {
+async function start(event: Partial<DragStartEvent>) {
+  await act(async () => {
     registered?.onDragStart?.(event as DragStartEvent);
   });
 }
 
-function move(deltaX: number) {
-  act(() => {
+async function move(deltaX: number) {
+  await act(async () => {
     registered?.onDragMove?.({ delta: { x: deltaX, y: 0 } } as DragMoveEvent);
   });
 }
 
-function hover(event: Partial<DragOverEvent>) {
-  act(() => {
+async function hover(event: Partial<DragOverEvent>) {
+  await act(async () => {
     registered?.onDragOver?.(event as DragOverEvent);
   });
 }
@@ -131,10 +131,10 @@ describe('useHabitDrag: habit moves', () => {
     return emitted;
   }
 
-  it('reorders a root habit and sends its new sibling position', () => {
+  it('reorders a root habit and sends its new sibling position', async () => {
     mount();
 
-    drop({
+    await drop({
       active: drag({ kind: 'habit', habitId: 'c', parentId: null, groupId: null, childIds: [] }),
       over: over({ kind: 'habit', habitId: 'a', parentId: null, groupId: null, childIds: [] }),
     } as unknown as DragEndEvent);
@@ -146,7 +146,7 @@ describe('useHabitDrag: habit moves', () => {
     });
   });
 
-  it('files a habit into a group when dropped on that section', () => {
+  it('files a habit into a group when dropped on that section', async () => {
     render(
       <PlannerDragProvider>
         <Harness
@@ -156,7 +156,7 @@ describe('useHabitDrag: habit moves', () => {
       </PlannerDragProvider>,
     );
 
-    drop({
+    await drop({
       active: drag({ kind: 'habit', habitId: 'a', parentId: null, groupId: null, childIds: [] }),
       over: over({ kind: 'habit-section', groupId: 'morning' }),
     } as unknown as DragEndEvent);
@@ -168,7 +168,7 @@ describe('useHabitDrag: habit moves', () => {
     });
   });
 
-  it('moves a habit back out of a group into the ungrouped list', () => {
+  it('moves a habit back out of a group into the ungrouped list', async () => {
     render(
       <PlannerDragProvider>
         <Harness
@@ -178,7 +178,7 @@ describe('useHabitDrag: habit moves', () => {
       </PlannerDragProvider>,
     );
 
-    drop({
+    await drop({
       active: drag({
         kind: 'habit',
         habitId: 'grouped',
@@ -196,7 +196,7 @@ describe('useHabitDrag: habit moves', () => {
     });
   });
 
-  it('refuses to nest a habit that has sub-habits', () => {
+  it('refuses to nest a habit that has sub-habits', async () => {
     render(
       <PlannerDragProvider>
         <Harness
@@ -205,7 +205,7 @@ describe('useHabitDrag: habit moves', () => {
       </PlannerDragProvider>,
     );
 
-    drop({
+    await drop({
       active: drag({
         kind: 'habit',
         habitId: 'parent',
@@ -220,10 +220,10 @@ describe('useHabitDrag: habit moves', () => {
     expect(moveHabit).toHaveBeenCalledWith('parent', expect.objectContaining({ parentId: null }));
   });
 
-  it('does nothing when the drag is released outside any target', () => {
+  it('does nothing when the drag is released outside any target', async () => {
     mount();
 
-    drop({
+    await drop({
       active: drag({ kind: 'habit', habitId: 'a', parentId: null, groupId: null, childIds: [] }),
       over: null,
     } as unknown as DragEndEvent);
@@ -246,7 +246,7 @@ describe('useHabitDrag: habit moves', () => {
       </PlannerDragProvider>,
     );
 
-    drop({
+    await drop({
       active: drag({ kind: 'habit', habitId: 'c', parentId: null, groupId: null, childIds: [] }),
       over: over({ kind: 'habit', habitId: 'a', parentId: null, groupId: null, childIds: [] }),
     } as unknown as DragEndEvent);
@@ -272,7 +272,7 @@ describe('useHabitDrag: nesting intent', () => {
     };
   }
 
-  it('rebases sideways drift on each new row instead of accumulating it', () => {
+  it('rebases sideways drift on each new row instead of accumulating it', async () => {
     render(
       <PlannerDragProvider>
         <Harness habits={habits} />
@@ -287,20 +287,20 @@ describe('useHabitDrag: nesting intent', () => {
       childIds: [],
     });
 
-    start({ active } as unknown as DragStartEvent);
+    await start({ active } as unknown as DragStartEvent);
     // Drift far to the right on the way down the list...
-    hover({ active, over: habitRow('a') } as unknown as DragOverEvent);
-    move(96);
+    await hover({ active, over: habitRow('a') } as unknown as DragOverEvent);
+    await move(96);
     // ...then settle on a different row without any further sideways movement.
-    hover({ active, over: habitRow('b') } as unknown as DragOverEvent);
+    await hover({ active, over: habitRow('b') } as unknown as DragOverEvent);
 
-    drop({ active, over: habitRow('b') } as unknown as DragEndEvent);
+    await drop({ active, over: habitRow('b') } as unknown as DragEndEvent);
 
     // Drift accrued reaching row 'b' is not nesting intent expressed at row 'b'.
     expect(moveHabit).toHaveBeenCalledWith('c', expect.objectContaining({ parentId: null }));
   });
 
-  it('still reads sideways movement made on the target row as nesting', () => {
+  it('still reads sideways movement made on the target row as nesting', async () => {
     render(
       <PlannerDragProvider>
         <Harness habits={habits} />
@@ -315,18 +315,18 @@ describe('useHabitDrag: nesting intent', () => {
       childIds: [],
     });
 
-    start({ active } as unknown as DragStartEvent);
-    hover({ active, over: habitRow('b') } as unknown as DragOverEvent);
-    move(96);
+    await start({ active } as unknown as DragStartEvent);
+    await hover({ active, over: habitRow('b') } as unknown as DragOverEvent);
+    await move(96);
 
-    drop({ active, over: habitRow('b') } as unknown as DragEndEvent);
+    await drop({ active, over: habitRow('b') } as unknown as DragEndEvent);
 
     expect(moveHabit).toHaveBeenCalledWith('c', expect.objectContaining({ parentId: 'a' }));
   });
 });
 
 describe('useHabitDrag: unsaved rows', () => {
-  it('refuses to move a habit that has no server id yet', () => {
+  it('refuses to move a habit that has no server id yet', async () => {
     const emitted: ApiHabit[][] = [];
     render(
       <PlannerDragProvider>
@@ -337,7 +337,7 @@ describe('useHabitDrag: unsaved rows', () => {
       </PlannerDragProvider>,
     );
 
-    drop({
+    await drop({
       active: drag({
         kind: 'habit',
         habitId: 'temp-habit-1',
@@ -352,7 +352,7 @@ describe('useHabitDrag: unsaved rows', () => {
     expect(emitted).toEqual([]);
   });
 
-  it('refuses to move a group that has no server id yet', () => {
+  it('refuses to move a group that has no server id yet', async () => {
     const emitted: ApiHabitGroup[][] = [];
     render(
       <PlannerDragProvider>
@@ -367,7 +367,7 @@ describe('useHabitDrag: unsaved rows', () => {
       </PlannerDragProvider>,
     );
 
-    drop({
+    await drop({
       active: drag({ kind: 'habit-group', groupId: 'temp-2' }),
       over: over({ kind: 'habit-group', groupId: 'g1' } as unknown as HabitSectionDropData),
     } as unknown as DragEndEvent);
@@ -384,14 +384,14 @@ describe('useHabitDrag: group moves', () => {
     { id: 'g3', name: 'Three', orderValue: 2000 },
   ];
 
-  it('reorders a group to the requested position', () => {
+  it('reorders a group to the requested position', async () => {
     render(
       <PlannerDragProvider>
         <Harness habits={[]} groups={groups} />
       </PlannerDragProvider>,
     );
 
-    drop({
+    await drop({
       active: drag({ kind: 'habit-group', groupId: 'g3' }),
       over: over({ kind: 'habit-group', groupId: 'g1' } as unknown as HabitSectionDropData),
     } as unknown as DragEndEvent);
@@ -399,7 +399,7 @@ describe('useHabitDrag: group moves', () => {
     expect(moveGroup).toHaveBeenCalledWith('g3', { position: 0 });
   });
 
-  it('renumbers groups optimistically with gap-based order values', () => {
+  it('renumbers groups optimistically with gap-based order values', async () => {
     const emitted: ApiHabitGroup[][] = [];
     render(
       <PlannerDragProvider>
@@ -411,7 +411,7 @@ describe('useHabitDrag: group moves', () => {
       </PlannerDragProvider>,
     );
 
-    drop({
+    await drop({
       active: drag({ kind: 'habit-group', groupId: 'g3' }),
       over: over({ kind: 'habit-group', groupId: 'g1' } as unknown as HabitSectionDropData),
     } as unknown as DragEndEvent);
@@ -420,14 +420,14 @@ describe('useHabitDrag: group moves', () => {
     expect(emitted[0]?.map((g) => g.orderValue)).toEqual([0, 1000, 2000]);
   });
 
-  it('ignores a group dropped on itself', () => {
+  it('ignores a group dropped on itself', async () => {
     render(
       <PlannerDragProvider>
         <Harness habits={[]} groups={groups} />
       </PlannerDragProvider>,
     );
 
-    drop({
+    await drop({
       active: drag({ kind: 'habit-group', groupId: 'g2' }),
       over: over({ kind: 'habit-group', groupId: 'g2' } as unknown as HabitSectionDropData),
     } as unknown as DragEndEvent);

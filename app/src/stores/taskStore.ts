@@ -14,6 +14,13 @@ interface Task {
   orderValue: number;
 }
 
+export interface Section {
+  id: string;
+  name: string;
+  collectionId: string;
+  orderValue: number;
+}
+
 interface TaskState {
   tasks: Task[];
   setTasks: (tasks: Task[]) => void;

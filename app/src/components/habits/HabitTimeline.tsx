@@ -1,19 +1,19 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { ChevronDown, ChevronRight, MoreHorizontal, Plus } from 'lucide-react';
+import { ChevronDown, ChevronRight, MoreHorizontal, Plus, Pencil, Smile, Trash2 } from 'lucide-react';
 import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { ContextMenu } from '../ui/ContextMenu';
 import { MonthSelector, type MonthSelectorHandle } from '../monthly/MonthSelector';
 import { StripNavigator } from '../ui/StripNavigator';
 import { HabitDot, dotAriaProps } from './HabitDot';
-import { HabitNameInput } from './HabitNameInput';
+import { InlineNameInput } from '../ui/InlineNameInput';
 import { NO_DRAG_ATTR } from '../dnd/sensors';
 import { HabitDragHandle } from './HabitDragHandle';
 import { HabitBlockPreview } from './HabitBlockPreview';
 import { fmtISO, weekdayInitials } from '../../utils/date';
 import { useI18n } from '../../i18n/I18nContext';
 import { dayState, flattenHabits, type HabitNode, type HabitSections } from '../../utils/habitTree';
-import { usePlannerDrag } from '../../contexts/PlannerDragContext';
+import { usePlannerDrag } from '../../contexts/usePlannerDrag';
 import {
   flattenHabitRows,
   projectHabitMove,
@@ -501,12 +501,12 @@ export function HabitTimeline({
                   key={row.key}
                   type="button"
                   onClick={onAddGroup}
-                  className="habit-timeline-add-group group flex h-6 w-full min-w-0 items-center pr-2 text-ink-light transition-colors hover:text-ink"
+                  className="habit-timeline-add-group group flex h-6 w-full min-w-0 items-center pr-2 text-ink-light opacity-35 transition-opacity hover:opacity-100"
                 >
-                  <span className="flex h-6 w-6 shrink-0 items-center justify-center">
-                    <Plus size={14} strokeWidth={2} />
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center">+</span>
+                  <span className="min-w-0 flex-1 truncate text-left uppercase tracking-widest text-[10px] font-semibold">
+                    {t('page.newSection')}
                   </span>
-                  <span className="min-w-0 flex-1 truncate text-left text-sm leading-6">{t('page.newGroup')}</span>
                 </button>
               );
             }
@@ -544,7 +544,7 @@ export function HabitTimeline({
                     </span>
                   )}
                   {isEditing('group', row.group.id) ? (
-                    <HabitNameInput
+                    <InlineNameInput
                       defaultValue={row.group.name}
                       className="uppercase tracking-[0.1em] text-[10px] font-semibold text-ink-light"
                       onCommit={(name) => onCommitEdit(target, name)}
@@ -606,7 +606,7 @@ export function HabitTimeline({
                 )}
 
                 {isEditing('habit', node.id) ? (
-                  <HabitNameInput
+                  <InlineNameInput
                     defaultValue={node.name}
                     placeholder={t('page.habitName')}
                     onCommit={(name) => onCommitEdit(target, name)}
@@ -721,12 +721,13 @@ export function HabitTimeline({
           position={{ x: menu.x, y: menu.y }}
           onClose={() => setMenu(null)}
           items={[
-            { type: 'item', label: t('common.rename'), onClick: () => onStartEdit(menu.target) },
+            { type: 'item', label: t('common.rename'), icon: <Pencil size={14} />, onClick: () => onStartEdit(menu.target) },
             ...(menu.target.kind === 'group'
               ? [
                 {
                   type: 'item' as const,
                   label: menuGroup?.icon ? t('habit.removeIcon') : t('habit.addIcon'),
+                  icon: <Smile size={14} />,
                   onClick: () => onToggleGroupIcon(menu.target.id),
                 },
               ]
@@ -736,6 +737,7 @@ export function HabitTimeline({
                 {
                   type: 'item' as const,
                   label: t('habit.addSubHabit'),
+                  icon: <Plus size={14} />,
                   onClick: () => onAddHabit({ groupId: null, parentId: menu.target.id }),
                 },
               ]
@@ -744,6 +746,7 @@ export function HabitTimeline({
             {
               type: 'item',
               label: menu.target.kind === 'group' ? t('habit.deleteGroup') : t('common.delete'),
+              icon: <Trash2 size={14} />,
               destructive: true,
               onClick: () => onDelete(menu.target),
             },

@@ -9,14 +9,14 @@ import {
   projectMove,
   INDENT_WIDTH,
 } from '../utils/taskProjection';
-import { usePlannerDrag } from '../contexts/PlannerDragContext';
+import { usePlannerDrag } from '../contexts/usePlannerDrag';
 import { TaskBlockPreview } from './TaskBlockPreview';
-import type { DayDropData } from '../types/drag';
+import type { DayDropData, SectionDropData } from '../types/drag';
 import { useI18n } from '../i18n/I18nContext';
 
 type TaskCallbacks = Pick<
   TaskItemProps,
-  'onStartEdit' | 'onEditCommit' | 'onEditCancel' | 'onDelete' | 'onAddBelow' | 'onIndent' | 'onNavigate' | 'onConvertType' | 'onRightClick'
+  'onStartEdit' | 'onEditCommit' | 'onEditCancel' | 'onDelete' | 'onAddBelow' | 'onIndent' | 'onConvertType' | 'onRightClick'
 >;
 
 interface TaskListProps extends TaskCallbacks {
@@ -31,6 +31,13 @@ interface TaskListProps extends TaskCallbacks {
    * collection lists, which are addressed by container id alone.
    */
   dayDate?: string;
+  /**
+   * Set on Collections/Inbox when grouping tasks by section. Creates a section
+   * drop target so tasks can be moved into this section.
+   */
+  sectionId?: string;
+  /** Required when sectionId is set; used to populate SectionDropData. */
+  collectionId?: string;
   /** The task currently being dragged, so its descendants can be dimmed. */
   activeDragId?: string | null;
   /** Rendered next to a row's title - Daily uses it for the collection chip. */
@@ -54,6 +61,8 @@ export function TaskList({
   hideDueDate,
   containerId,
   dayDate,
+  sectionId,
+  collectionId,
   activeDragId,
   renderBadge,
   onTaskToggle,
@@ -63,16 +72,17 @@ export function TaskList({
   onDelete,
   onAddBelow,
   onIndent,
-  onNavigate,
   onConvertType,
   onRightClick,
 }: TaskListProps) {
   const { t } = useI18n();
-  const { activeDrag, indentSteps, overId, hasMoved, setOverlayNode } = usePlannerDrag();
+  const { indentSteps, overId, hasMoved, setOverlayNode } = usePlannerDrag();
 
-  const dropData: DayDropData | undefined = dayDate
+  const dropData: DayDropData | SectionDropData | undefined = dayDate
     ? { kind: 'day', date: dayDate, containerId }
-    : undefined;
+    : sectionId && collectionId
+      ? { kind: 'section', sectionId, collectionId, containerId }
+      : undefined;
 
   // Registered even when empty: an empty day or collection still has to accept a
   // drop, and a SortableContext with no items cannot receive one.
@@ -166,13 +176,19 @@ export function TaskList({
         ref={setNodeRef}
         role="list"
         aria-label={t('task.list')}
-        // An empty list claims a row of drop area while a drag is in flight, so
-        // an empty date can be hovered at all. The class cancels its own height
-        // with a negative margin - see the note on the rule for why it has to
-        // cost the layout nothing.
-        className={`task-list flex flex-col gap-0 ${
-          activeDrag && rows.length === 0 ? 'task-list--empty-target' : ''
-        }`}
+        // Every list claims a row of drop area below itself, so the 24px seam
+        // before the next date is never a dead zone no droppable covers. The
+        // class cancels its own height with a negative margin - see the note on
+        // the rule for why it has to cost the layout nothing.
+        //
+        // Applied unconditionally rather than only while `activeDrag` is set:
+        // dnd-kit measures every droppable's rect once at drag start
+        // (`MeasuringStrategy.BeforeDragging`), which runs before React has
+        // committed the re-render that would add a drag-conditional class. The
+        // padding therefore was not part of the measured rect, and the hit area
+        // that lets a row drop *below* the last one never existed for the rest
+        // of the gesture.
+        className="task-list task-list--drag-target flex flex-col gap-0"
       >
         {showEmptyInsert && (
           <div aria-hidden className="task-list-slot" style={{ marginLeft: foreignInsertDepth * INDENT_WIDTH }} />
@@ -202,7 +218,6 @@ export function TaskList({
               onDelete={onDelete}
               onAddBelow={onAddBelow}
               onIndent={onIndent}
-              onNavigate={onNavigate}
               onConvertType={onConvertType}
               onRightClick={onRightClick}
             />

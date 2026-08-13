@@ -72,7 +72,7 @@ vi.mock("../../utils/AppError.js", () => ({
 import { register, login, requestPasswordReset, confirmPasswordReset } from "../authService.js";
 import { hashPassword } from "../passwordService.js";
 
-const STRONG_PASSWORD = "correct-horse-battery-staple";
+const STRONG_PASSWORD = "Correct-horse-battery-staple-2";
 let validHash: string;
 
 beforeAll(async () => {
@@ -121,6 +121,21 @@ describe("register - validation", () => {
     } catch (err) {
       const e = err as AppError;
       expect(e.code).toBe("VALIDATION_ERROR");
+    }
+  });
+
+  it("rejects missing password", async () => {
+    try {
+      await register({ email: "test@example.com", password: "", displayName: "Test" });
+      expect.fail("should throw");
+    } catch (err) {
+      const e = err as AppError;
+      expect(e.code).toBe("VALIDATION_ERROR");
+      expect(e.details).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ field: "password" }),
+        ])
+      );
     }
   });
 
@@ -174,6 +189,91 @@ describe("register - validation", () => {
       expect(e.code).toBe("EMAIL_IN_USE");
       expect(e.statusCode).toBe(409);
     }
+  });
+});
+
+describe("register - time zone", () => {
+  function preferencesInsertCall() {
+    return mockClientQuery.mock.calls.find(([sql]) =>
+      String(sql).includes("INSERT INTO preferences"),
+    );
+  }
+
+  it("stores a valid IANA time zone passed at registration", async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+
+    await register({
+      email: "tz@example.com",
+      password: STRONG_PASSWORD,
+      displayName: "Test",
+      timeZone: "America/Sao_Paulo",
+    });
+
+    const call = preferencesInsertCall();
+    expect(call?.[1]).toEqual(expect.arrayContaining(["America/Sao_Paulo"]));
+  });
+
+  it("defaults to UTC when no time zone is provided", async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+
+    await register({ email: "no-tz@example.com", password: STRONG_PASSWORD, displayName: "Test" });
+
+    const call = preferencesInsertCall();
+    expect(call?.[1]).toEqual(expect.arrayContaining(["UTC"]));
+  });
+
+  it("defaults to UTC when the given time zone is not a valid IANA zone", async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+
+    await register({
+      email: "bad-tz@example.com",
+      password: STRONG_PASSWORD,
+      displayName: "Test",
+      timeZone: "Not/AZone",
+    });
+
+    const call = preferencesInsertCall();
+    expect(call?.[1]).toEqual(expect.arrayContaining(["UTC"]));
+  });
+});
+
+describe("register - inbox collection", () => {
+  // Migration 033 added collections_color_format; a named palette colour here
+  // aborts the whole registration transaction.
+  const COLLECTIONS_COLOR_FORMAT =
+    /^(#([0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})|rgba?\([^)]+\)|hsla?\([^)]+\))$/i;
+
+  it("seeds the Inbox with a colour the collections CHECK constraint accepts", async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+
+    await register({ email: "inbox@example.com", password: STRONG_PASSWORD, displayName: "Test" });
+
+    const call = mockClientQuery.mock.calls.find(([sql]) =>
+      String(sql).includes("INSERT INTO collections"),
+    );
+    const color = String(call?.[0]).match(/'(#[0-9a-fA-F]{3,8})'/)?.[1];
+
+    expect(color).toBeDefined();
+    expect(color).toMatch(COLLECTIONS_COLOR_FORMAT);
+  });
+
+  it("registers without a display name", async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+
+    const user = await register({ email: "nodisplay@example.com", password: STRONG_PASSWORD });
+
+    expect(user.displayName).toBeNull();
+  });
+
+  it("rolls back and rethrows when the transaction fails", async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+    mockClientQuery.mockRejectedValueOnce(new Error("db down"));
+
+    await expect(
+      register({ email: "tx@example.com", password: STRONG_PASSWORD, displayName: "Test" }),
+    ).rejects.toThrow("db down");
+    expect(mockClientQuery).toHaveBeenCalledWith("ROLLBACK");
+    expect(mockRelease).toHaveBeenCalled();
   });
 });
 
@@ -270,6 +370,31 @@ describe("login - disabled accounts", () => {
     await expect(login("user@example.com", STRONG_PASSWORD)).rejects.toThrow();
     expect(sessionMock.createSession).not.toHaveBeenCalled();
   });
+
+  it("records the attempt and rejects a wrong password", async () => {
+    mockQuery.mockResolvedValueOnce({
+      rows: [
+        {
+          id: "user-1",
+          email: "user@example.com",
+          password_hash: validHash,
+          display_name: "User",
+          role: "user",
+          disabled_at: null,
+        },
+      ],
+    });
+
+    const rateLimitMock = await import("../rateLimitService.js");
+
+    await expect(login("user@example.com", "definitely-not-the-password")).rejects.toThrow(
+      "Invalid email or password.",
+    );
+    expect(rateLimitMock.incrementLoginAttempts).toHaveBeenCalledWith(
+      "user@example.com",
+      "unknown",
+    );
+  });
 });
 
 describe("login - rate limiting", () => {
@@ -359,6 +484,33 @@ describe("confirmPasswordReset - token lifecycle", () => {
       const e = err as AppError;
       expect(e.code).toBe("TOKEN_INVALID");
     }
+  });
+
+  it("rejects missing new password", async () => {
+    try {
+      await confirmPasswordReset("some-token", "");
+      expect.fail("should throw");
+    } catch (err) {
+      const e = err as AppError;
+      expect(e.code).toBe("VALIDATION_ERROR");
+      expect(e.details).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ field: "newPassword" }),
+        ])
+      );
+    }
+  });
+
+  it("rolls back and rethrows when the update fails", async () => {
+    const futureDate = new Date(Date.now() + 60 * 60 * 1000);
+    mockQuery.mockResolvedValueOnce({
+      rows: [{ id: "token-1", user_id: "user-1", expires_at: futureDate.toISOString(), used_at: null }],
+    });
+    mockClientQuery.mockRejectedValueOnce(new Error("db down"));
+
+    await expect(confirmPasswordReset("valid-token", STRONG_PASSWORD)).rejects.toThrow("db down");
+    expect(mockClientQuery).toHaveBeenCalledWith("ROLLBACK");
+    expect(mockRelease).toHaveBeenCalled();
   });
 
   it("succeeds and updates password, removes token", async () => {

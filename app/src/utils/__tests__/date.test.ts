@@ -81,6 +81,7 @@ describe('week start date helpers', () => {
 
 describe('Brazilian Portuguese natural dates', () => {
   it.each([
+    ['ontem', -1],
     ['hoje', 0],
     ['amanhã', 1],
     ['em 3 dias', 3],
@@ -117,5 +118,6 @@ describe('Brazilian Portuguese natural dates', () => {
 
   it('keeps English phrases working by default', () => {
     expect(extractNaturalDate('Plan tomorrow').title).toBe('Plan');
+    expect(extractNaturalDate('Review yesterday').title).toBe('Review');
   });
 });

@@ -3,7 +3,7 @@ import { Server as IOServer, type Socket } from "socket.io";
 import pool from "../db/pool.js";
 import { redisPubClient, redisSubClient } from "../db/redis.js";
 import { CORS_ORIGIN } from "../config.js";
-import { validateSession, buildCookieName } from "./sessionService.js";
+import { validateSession, buildCookieName, needsTouch, touchSession } from "./sessionService.js";
 import { currentSourceId } from "../middleware/requestContext.js";
 
 const SYNC_CHANNEL = "sync";
@@ -15,7 +15,7 @@ interface SocketData {
   rawToken?: string;
 }
 
-export type SyncEntityType = "task" | "collection" | "section" | "label" | "comment" | "reminder" | "preferences" | "habit" | "habit_completion" | "habit_group";
+export type SyncEntityType = "task" | "collection" | "section" | "status" | "label" | "comment" | "reminder" | "preferences" | "habit" | "habit_completion" | "habit_group";
 export type SyncEventType = "created" | "updated" | "deleted" | "completed" | "uncompleted";
 
 export interface SyncEvent {
@@ -73,6 +73,17 @@ function startSessionRevalidation(io: IOServer): NodeJS.Timeout {
         const session = await validateSession(rawToken);
         if (!session) {
           socket.disconnect();
+          continue;
+        }
+        // A tab that is open and connected is a tab in use, so this sweep
+        // doubles as the keep-alive for it. Without this, a session only ever
+        // slid on REST traffic, and a tab left sitting on a view that issues
+        // none (the version poll is public and unauthenticated) idled out from
+        // under itself - the sweep would then be what noticed, disconnect the
+        // socket, and the reconnect would come back UNAUTHORIZED and log the
+        // user out with no interaction of theirs involved.
+        if (needsTouch(session)) {
+          touchSession(session.sessionId).catch(() => {});
         }
       }
     } catch {

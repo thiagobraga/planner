@@ -4,7 +4,7 @@ import { ChevronRight } from 'lucide-react';
 
 export interface ContextMenuItem {
   type: 'item' | 'separator';
-  label?: string;
+  label?: React.ReactNode;
   icon?: React.ReactNode;
   disabled?: boolean;
   destructive?: boolean;
@@ -83,7 +83,7 @@ function ContextMenuRoot({ items, position, onClose }: ContextMenuRootProps) {
         isRoot={true}
       />
     </div>,
-    document.body
+    document.querySelector('.app-shell') ?? document.body
   );
 }
 
@@ -108,9 +108,9 @@ function MenuPanel({
 }: MenuPanelProps) {
   const panelRef = useRef<HTMLDivElement>(null);
   const [coords, setCoords] = useState({ top: position.y, left: position.x });
-  
+
   const [highlightedIndex, setHighlightedIndex] = useState<number>(0);
-  
+
   // Find first non-disabled item on mount
   useEffect(() => {
     const firstActive = items.findIndex(i => i.type === 'item' && !i.disabled);
@@ -136,17 +136,17 @@ function MenuPanel({
         newLeft = position.x - rect.width - 180; // approximate width of parent + panel
       }
     }
-    
+
     if (newTop + rect.height > vh - padding) {
       newTop = vh - rect.height - padding;
     }
-    
+
     newLeft = Math.max(padding, newLeft);
     newTop = Math.max(padding, newTop);
 
     setCoords({ top: newTop, left: newLeft });
   }, [position, isRoot]);
-  
+
   // If we are not the active panel (because a submenu is open), we shouldn't steal keyboard events
   const isActivePanel = activePath.length === level;
 
@@ -154,7 +154,7 @@ function MenuPanel({
   const openSubmenuIndex = activePath[level];
   const activeItem = items[openSubmenuIndex];
   const hasSubmenu = activeItem?.type === 'item' && activeItem.submenu && activeItem.submenu.length > 0;
-  
+
   // Keep the highlighted index synced with the open submenu
   useEffect(() => {
     if (openSubmenuIndex !== undefined) {
@@ -213,7 +213,7 @@ function MenuPanel({
         break;
     }
   };
-  
+
   // Focus this panel when it becomes the active panel
   useEffect(() => {
     if (isActivePanel && panelRef.current) {
@@ -227,7 +227,7 @@ function MenuPanel({
         ref={panelRef}
         tabIndex={-1}
         onKeyDown={handleKeyDown}
-        className="ui-context-menu-panel fixed z-50 py-1 bg-cream border border-border rounded-md shadow-medium pointer-events-auto min-w-[180px]"
+        className="ui-context-menu-panel fixed z-50 min-w-45 rounded-md border border-border bg-(--planner-overlay-bg,var(--color-cream)) py-1 shadow-medium pointer-events-auto"
         style={{ top: coords.top, left: coords.left, outline: 'none' }}
         role="menu"
       >
@@ -237,24 +237,24 @@ function MenuPanel({
               <div
                 key={`sep-${index}`}
                 role="separator"
-                className="ui-context-menu-separator h-[1px] bg-border my-1 mx-3"
+                className="ui-context-menu-separator h-px bg-border my-1 mx-3"
               />
             );
           }
 
           const isHighlighted = highlightedIndex === index;
           const isSubmenuOpen = openSubmenuIndex === index;
-          
-          let itemClass = `flex items-center justify-between h-8 px-3 mx-1 rounded-[4px] text-[14px] font-journal cursor-pointer select-none outline-none transition-colors duration-75 `;
-          
+
+          let itemClass = `flex items-center justify-between h-6 px-3 mx-1 rounded-xs text-sm cursor-pointer select-none outline-none transition-colors duration-75 `;
+
           if (item.disabled) {
             itemClass += `opacity-40 cursor-not-allowed text-ink-light `;
           } else if (item.destructive) {
             itemClass += `text-accent `;
             if (isHighlighted || isSubmenuOpen) itemClass += `bg-accent/10 `;
           } else {
-            itemClass += `text-ink `;
-            if (isHighlighted || isSubmenuOpen) itemClass += `bg-[#d4cfc7]/40 `;
+            itemClass += `text-ink-light `;
+            if (isHighlighted || isSubmenuOpen) itemClass += `bg-[var(--planner-overlay-hover-bg,rgba(212,207,199,0.4))] `;
           }
 
           return (
@@ -289,7 +289,7 @@ function MenuPanel({
               }}
             >
               <div className="ui-context-menu-item-content flex items-center gap-2">
-                {item.icon && <span className="ui-context-menu-item-icon flex-shrink-0">{item.icon}</span>}
+                {item.icon && <span className="ui-context-menu-item-icon shrink-0">{item.icon}</span>}
                 <span className="ui-context-menu-item-label truncate">{item.label}</span>
               </div>
               {item.submenu && (
@@ -299,7 +299,7 @@ function MenuPanel({
           );
         })}
       </div>
-      
+
       {/* Recursively render submenu if active */}
       {hasSubmenu && (
         <SubMenuWrapper

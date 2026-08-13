@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { PlannerPointerSensor, NO_DRAG_ATTR, DRAG_HANDLE_ATTR } from '../sensors';
+import { PlannerPointerSensor, NO_DRAG_ATTR } from '../sensors';
 
 const handler = PlannerPointerSensor.activators[0].handler;
 
@@ -41,21 +41,11 @@ describe('PlannerPointerSensor activator', () => {
     expect(fire(el, { pointerType: 'touch' })).toBe(false);
   });
 
-  it('rejects a touch drag started outside the handle', () => {
-    expect(fire(document.createElement('div'), { pointerType: 'touch' })).toBe(false);
+  it('starts a touch drag from anywhere on the row (non no-drag)', () => {
+    expect(fire(document.createElement('div'), { pointerType: 'touch' })).toBe(true);
   });
 
-  it('rejects a pen drag started outside the handle', () => {
-    expect(fire(document.createElement('div'), { pointerType: 'pen' })).toBe(false);
-  });
-
-  it('starts a touch drag from the handle', () => {
-    const handle = elementWithAttr(DRAG_HANDLE_ATTR);
-    expect(fire(handle, { pointerType: 'touch' })).toBe(true);
-  });
-
-  it('starts a pen drag from the handle', () => {
-    const handle = elementWithAttr(DRAG_HANDLE_ATTR);
-    expect(fire(handle, { pointerType: 'pen' })).toBe(true);
+  it('starts a pen drag from anywhere on the row (non no-drag)', () => {
+    expect(fire(document.createElement('div'), { pointerType: 'pen' })).toBe(true);
   });
 });

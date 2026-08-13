@@ -73,7 +73,7 @@ export function CustomSelect({
         triggerRef.current &&
         !triggerRef.current.contains(e.target as Node)
       ) {
-        if (!alwaysOpen) setIsOpen(false);
+        setIsOpen(false);
       }
     }
 
@@ -228,7 +228,7 @@ export function CustomSelect({
       )}
 
       {isOpen && (alwaysOpen ? (
-        <div className="ui-custom-select-dropdown absolute z-10 p-1 bg-[var(--planner-control-bg)] border border-border rounded-md shadow-medium left-0 right-0 top-full mt-1">
+        <div className="ui-custom-select-dropdown absolute z-10 p-1 bg-(--planner-overlay-bg,var(--color-cream)) border border-border rounded-md shadow-medium left-0 right-0 top-full mt-1">
           <ul
               id={`${id}-listbox`}
               role="listbox"
@@ -271,7 +271,7 @@ export function CustomSelect({
         createPortal(
           <div
             ref={floatingRef}
-            className="ui-custom-select-dropdown fixed z-50 p-1 bg-[var(--planner-control-bg)] border border-border rounded-md shadow-medium"
+            className="ui-custom-select-dropdown fixed z-50 p-1 bg-(--planner-overlay-bg,var(--color-cream)) border border-border rounded-md shadow-medium"
             style={{
               top,
               left,

@@ -26,6 +26,7 @@ const BLOCKLIST: string[] = [
   "monkey",
   "dragon",
   "master",
+  "admin",
   "planner",
   "bulletjournal",
   "dev@planner.local",
@@ -43,6 +44,18 @@ function isBlocklisted(value: string): boolean {
   );
 }
 
+function hasRequiredCharacters(value: string): boolean {
+  return /\p{Ll}/u.test(value) && /\p{Lu}/u.test(value);
+}
+
+function hasNumber(value: string): boolean {
+  return /\p{N}/u.test(value);
+}
+
+function hasSymbol(value: string): boolean {
+  return /[^\p{L}\p{N}\s]/u.test(value);
+}
+
 export function validatePassword(raw: string): string {
   const password = normalizeNfc(raw);
 
@@ -58,6 +71,30 @@ export function validatePassword(raw: string): string {
     throw new AppError({
       code: "WEAK_PASSWORD",
       message: `Password must be at most ${MAX_LENGTH} characters`,
+      statusCode: 400,
+    });
+  }
+
+  if (!hasRequiredCharacters(password)) {
+    throw new AppError({
+      code: "WEAK_PASSWORD",
+      message: "Password must include uppercase and lowercase letters",
+      statusCode: 400,
+    });
+  }
+
+  if (!hasNumber(password)) {
+    throw new AppError({
+      code: "WEAK_PASSWORD",
+      message: "Password must include at least one number",
+      statusCode: 400,
+    });
+  }
+
+  if (!hasSymbol(password)) {
+    throw new AppError({
+      code: "WEAK_PASSWORD",
+      message: "Password must include at least one symbol",
       statusCode: 400,
     });
   }

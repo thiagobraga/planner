@@ -11,9 +11,24 @@ Planner is a task manager with a paper-journal aesthetic (warm cream, Lora serif
 ```bash
 cp .env.example .env          # fill POSTGRES_PASSWORD, CORS_ORIGIN
 docker compose up -d          # installs deps, runs migrations, starts api (4000) + app (5173)
+bash .hooks/setup-hooks.sh    # one-time: points git at the versioned hooks in .hooks/
 ```
 
 Required `.env` vars: `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `CORS_ORIGIN`.
+
+### Git hooks
+
+`core.hooksPath` is local git config - it is **not** set by cloning and does not
+carry over automatically. Every fresh clone (including a new `git worktree add`
+off a *different* repo checkout) needs `bash .hooks/setup-hooks.sh` run once, or
+`pre-commit`/`pre-push` silently never run - no error, no warning, commits and
+pushes just skip straight past lint/test/build. If you're an AI agent starting
+work in a repo you haven't set up before, run this before your first commit:
+
+```bash
+git config --get core.hooksPath   # expect ".hooks" - if empty or anything else, hooks are OFF
+bash .hooks/setup-hooks.sh
+```
 
 ### Dev hosts (Traefik on the `proxy` network)
 
@@ -225,6 +240,7 @@ Full spec: `DESIGN.md`.
 - No error handling for impossible cases; trust framework guarantees
 - Commits: Conventional Commits (`feat:`, `fix:`, `chore:`, etc.), many small per file/feature
 - Add `Co-Authored-By` on the last line of every commit body matching the model that wrote the code
+  - For GitHub Copilot CLI: `Co-Authored-By: Copilot (<model-used> <effort>) <copilot@github.com>` (e.g., `Co-Authored-By: Copilot (claude-haiku-4.5 xhigh) <copilot@github.com>`)
   - For OpenCode: `Co-Authored-By: OpenCode (<real model name and effort>) <noreply@opencode.ai>` (e.g., `Co-Authored-By: OpenCode (DeepSeek V4 Flash Free) <noreply@opencode.ai>`)
   - For Codex: `Co-Authored-By: Codex (<real model name and effort>) <codex@openai.com>` (e.g., `Co-Authored-By: Codex (gpt-4o) <codex@openai.com>`)
   - For Antigravity: `Co-Authored-By: Antigravity (<real model name and effort>) <noreply@antigravity.ai>` (e.g., `Co-Authored-By: Antigravity (Gemini 2.5 Pro) <noreply@antigravity.ai>`)
@@ -238,14 +254,14 @@ Full spec: `DESIGN.md`.
 
 All AI agents (Claude, Codex, Antigravity, Opencode) must follow this when entering Plan mode:
 
-1. **Create a new folder** under `.specs/<slug>/` named after the feature being planned (short kebab-case).
-2. Write **`.specs/<slug>/plan.md`** — high-level strategy, approach, and architecture decisions.
-3. Write **`.specs/<slug>/task.md`** — detailed breakdown of the plan into actionable tasks. Use these markers:
+1. **Create a new folder** under `.specs/` with the naming pattern: `yyyy-mm-dd-<short-kebab-case-slug>` (e.g., `2026-08-04-exact-colors`).
+2. Write **`.specs/yyyy-mm-dd-slug/plan.md`** — high-level strategy, approach, and architecture decisions.
+3. Write **`.specs/yyyy-mm-dd-slug/task.md`** — detailed breakdown of the plan into actionable tasks. Use these markers:
    - `[ ]` not started
    - `[~]` in progress
    - `[x]` completed
 4. **Update `task.md`** as work progresses — mark tasks `[~]` when started, `[x]` when done.
-5. Refer to existing `.specs/` folders for naming patterns.
+5. Refer to existing `.specs/` folders for naming pattern precedent.
 
 ## "Work on this spec" Workflow
 
@@ -253,7 +269,7 @@ When instructed to "work on this specs <some spec>", you must:
 
 1. **Read the Spec:** Start by carefully reading the provided `<spec path>`.
 2. **Isolate the Environment:**
-   - Pick a short kebab-case slug for the feature (e.g. `task-filters`).
+   - Use the spec folder's date-slug naming (e.g., `2026-08-04-exact-colors` → worktree slug is `exact-colors`).
    - Create a new Git worktree and branch:
      ```bash
      cd /p/projects/planner
@@ -273,13 +289,11 @@ When instructed to "work on this specs <some spec>", you must:
    - The feature instance is now reachable at `https://<agent>.planner.local`, fully isolated from the main `https://planner.local`. Traefik routes, container names, and volumes are all namespaced automatically.
 4. **Implementation & Verification:**
    - Implement the feature according to the spec.
-   - **Open a browser** at `https://<agent>.planner.local` to visually verify the implementation so the user can see it. Take screenshots for the PR.
-   - Do *not* commit screenshots to version control.
+   - **Open a browser** at `https://<agent>.planner.local` to visually verify the implementation so the user can see it.
 5. **Cleanup & PR:**
    - Once complete, tear down the isolated stack: `docker compose down -v` (from the worktree directory).
    - Remove the worktree: `cd /p/projects/planner && git worktree remove ../planner-<slug>`.
    - Create a Pull Request against the `main` branch.
-   - Insert (upload or paste) the screenshots directly into the PR comments.
    - Provide the PR link to the user.
    - Always do your best and ask for clarification if any requirements are unclear.
 

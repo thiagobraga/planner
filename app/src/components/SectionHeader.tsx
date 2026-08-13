@@ -1,0 +1,116 @@
+import { useState } from 'react';
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import { HabitDragHandle } from './habits/HabitDragHandle';
+import { InlineNameInput } from './ui/InlineNameInput';
+import { NO_DRAG_ATTR } from './dnd/sensors';
+import { useI18n } from '../i18n/I18nContext';
+import type { Section } from '../stores/taskStore';
+
+interface SectionHeaderProps {
+  section: Section;
+  collectionId: string;
+  isEditing: boolean;
+  onEdit: () => void;
+  onCommitName: (name: string) => void;
+  onCancelEdit: () => void;
+  onDelete: () => void;
+  onRightClick?: (position: { x: number; y: number }) => void;
+}
+
+export function SectionHeader({
+  section,
+  collectionId,
+  isEditing,
+  onEdit,
+  onCommitName,
+  onCancelEdit,
+  onDelete,
+  onRightClick,
+}: SectionHeaderProps) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: section.id,
+    data: { kind: 'section-header', sectionId: section.id, collectionId },
+  });
+
+  return (
+    <div
+      ref={setNodeRef}
+      {...attributes}
+      {...listeners}
+      style={{
+        transform: CSS.Transform.toString(transform),
+        transition,
+        opacity: isDragging ? 0.4 : 1,
+      }}
+      className="group flex h-6 min-w-0 items-center pr-2"
+      aria-label={section.name}
+      onContextMenu={(e) => {
+        if (!onRightClick) return;
+        e.preventDefault();
+        onRightClick({ x: e.clientX, y: e.clientY });
+      }}
+    >
+      <HabitDragHandle label={section.name} />
+      {isEditing ? (
+        <InlineNameInput
+          defaultValue={section.name}
+          className="uppercase tracking-widest text-[10px] font-semibold text-ink-light"
+          onCommit={onCommitName}
+          onCancel={onCancelEdit}
+        />
+      ) : (
+        <>
+          <span
+            style={{ lineHeight: 'var(--task-line-height, 24px)' }}
+            className="min-w-0 flex-1 cursor-text truncate text-[10px] font-semibold uppercase tracking-widest text-ink-light"
+            onDoubleClick={onEdit}
+          >
+            {section.name}
+          </span>
+          <SectionOptionsButton label={section.name} onDelete={onDelete} />
+        </>
+      )}
+    </div>
+  );
+}
+
+function SectionOptionsButton({
+  label,
+  onDelete,
+}: {
+  label: string;
+  onDelete: () => void;
+}) {
+  const { t } = useI18n();
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  return (
+    <div className="relative">
+      <button
+        type="button"
+        aria-label={`Options for section ${label}`}
+        {...{ [NO_DRAG_ATTR]: '' }}
+        style={{ lineHeight: 'var(--task-line-height, 24px)' }}
+        className="flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-xs text-ink-light opacity-0 transition-opacity duration-75 hover:bg-dot/30 hover:text-ink focus:opacity-100 group-hover:opacity-100"
+        onClick={() => setMenuOpen(!menuOpen)}
+      >
+        <span className="text-sm">⋯</span>
+      </button>
+      {menuOpen && (
+        <div className="absolute right-0 top-6 z-50 rounded-xs border border-ink-light/20 shadow-lg" style={{ backgroundColor: 'var(--planner-overlay-bg)' }}>
+          <button
+            type="button"
+            className="w-full px-3 py-2 text-left text-sm text-ink hover:bg-dot/10 first:rounded-t-xs last:rounded-b-xs"
+            onClick={() => {
+              onDelete();
+              setMenuOpen(false);
+            }}
+          >
+            {t('contextMenu.deleteSection')}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}

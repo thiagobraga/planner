@@ -43,7 +43,7 @@ describe("session lifecycle: create → validate → revoke", () => {
     const userId = "user-lifecycle-1";
     mockQuery
       .mockResolvedValueOnce({ rows: [] })
-      .mockResolvedValueOnce({ rows: [{ id: 1, user_id: userId }] })
+      .mockResolvedValueOnce({ rows: [{ id: 1, user_id: userId, last_seen_at: null }] })
       .mockResolvedValueOnce({ rows: [] })
       .mockResolvedValueOnce({ rows: [] });
 
@@ -51,7 +51,7 @@ describe("session lifecycle: create → validate → revoke", () => {
     expect(rawToken).toHaveLength(43);
 
     const ctx1 = await validateSession(rawToken);
-    expect(ctx1).toEqual({ userId, sessionId: 1 });
+    expect(ctx1).toEqual({ userId, sessionId: 1, lastSeenAt: null });
 
     await revokeSession(1);
 
@@ -83,7 +83,7 @@ describe("session lifecycle: create → validate → revoke", () => {
     mockQuery
       .mockResolvedValueOnce({ rows: [] })
       .mockResolvedValueOnce({ rows: [] })
-      .mockResolvedValueOnce({ rows: [{ id: 10, user_id: "user-revoke-all" }] })
+      .mockResolvedValueOnce({ rows: [{ id: 10, user_id: "user-revoke-all", last_seen_at: null }] })
       .mockResolvedValueOnce({ rows: [] })
       .mockResolvedValueOnce({ rows: [] })
       .mockResolvedValueOnce({ rows: [] });
@@ -106,11 +106,11 @@ describe("session lifecycle: create → validate → revoke", () => {
     mockQuery
       .mockResolvedValueOnce({ rows: [] })
       .mockResolvedValueOnce({ rows: [] })
-      .mockResolvedValueOnce({ rows: [{ id: 20, user_id: "user-a" }] })
-      .mockResolvedValueOnce({ rows: [{ id: 21, user_id: "user-b" }] })
+      .mockResolvedValueOnce({ rows: [{ id: 20, user_id: "user-a", last_seen_at: null }] })
+      .mockResolvedValueOnce({ rows: [{ id: 21, user_id: "user-b", last_seen_at: null }] })
       .mockResolvedValueOnce({ rows: [] })
       .mockResolvedValueOnce({ rows: [] })
-      .mockResolvedValueOnce({ rows: [{ id: 21, user_id: "user-b" }] });
+      .mockResolvedValueOnce({ rows: [{ id: 21, user_id: "user-b", last_seen_at: null }] });
 
     const tA = await createSession("user-a");
     const tB = await createSession("user-b");

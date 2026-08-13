@@ -40,10 +40,10 @@ describe("collections routes", () => {
   });
 
   it("POST /api/v1/collections → calls createCollection, returns 201", async () => {
-    mockCreateCollection.mockResolvedValue({ id: "c1", name: "Work", color: "blue" });
-    const res = await request(app).post("/api/v1/collections").send({ name: "Work", color: "blue" });
+    mockCreateCollection.mockResolvedValue({ id: "c1", name: "Work", color: "#65788a" });
+    const res = await request(app).post("/api/v1/collections").send({ name: "Work", color: "#65788a" });
     expect(res.status).toBe(201);
-    expect(mockCreateCollection).toHaveBeenCalledWith("test-user", { name: "Work", color: "blue" });
+    expect(mockCreateCollection).toHaveBeenCalledWith("test-user", { name: "Work", color: "#65788a" });
   });
 
   it("PATCH /api/v1/collections/:id → calls updateCollection", async () => {

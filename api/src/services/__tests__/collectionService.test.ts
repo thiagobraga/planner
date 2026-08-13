@@ -49,7 +49,7 @@ function makeRow(overrides: Record<string, unknown> = {}) {
     user_id: "user-1",
     parent_id: null,
     name: "My Collection",
-    color: "blue",
+    color: "#65788a",
     is_inbox: false,
     is_archived: false,
     order_value: 0,
@@ -83,18 +83,18 @@ describe("collectionService", () => {
   describe("createCollection", () => {
     it("inserts and publishes sync event for valid input", async () => {
       mockQuery.mockResolvedValueOnce({ rows: [] }); // duplicate check
-      mockQuery.mockResolvedValueOnce({ rows: [makeRow({ id: "fixed-uuid-for-test", name: "New", color: "green" })] });
+      mockQuery.mockResolvedValueOnce({ rows: [makeRow({ id: "fixed-uuid-for-test", name: "New", color: "#7dbfb2" })] });
 
-      const col = await createCollection("user-1", { name: "New", color: "green" });
+      const col = await createCollection("user-1", { name: "New", color: "#7dbfb2" });
 
       expect(col.id).toBe("fixed-uuid-for-test");
       expect(col.name).toBe("New");
-      expect(col.color).toBe("green");
+      expect(col.color).toBe("#7dbfb2");
       expect(mockPublishEvent).toHaveBeenCalledTimes(1);
     });
 
     it("throws on empty name", async () => {
-      await expect(createCollection("user-1", { name: "", color: "blue" })).rejects.toThrow();
+      await expect(createCollection("user-1", { name: "", color: "#65788a" })).rejects.toThrow();
     });
 
     it("throws on invalid color", async () => {
@@ -104,7 +104,7 @@ describe("collectionService", () => {
     it("throws on duplicate name", async () => {
       mockQuery.mockResolvedValueOnce({ rows: [{ id: "existing" }] });
 
-      await expect(createCollection("user-1", { name: "dup", color: "blue" })).rejects.toMatchObject({
+      await expect(createCollection("user-1", { name: "dup", color: "#65788a" })).rejects.toMatchObject({
         code: "VALIDATION_ERROR",
       });
     });
@@ -115,7 +115,7 @@ describe("collectionService", () => {
       mockQuery.mockResolvedValueOnce({ rows: [{ max_depth: 1 }] }); // depth check
       mockQuery.mockResolvedValueOnce({ rows: [makeRow({ id: "fixed-uuid-for-test", parent_id: "parent-1" })] });
 
-      const col = await createCollection("user-1", { name: "Child", color: "blue", parentId: "parent-1" });
+      const col = await createCollection("user-1", { name: "Child", color: "#65788a", parentId: "parent-1" });
 
       expect(col.parentId).toBe("parent-1");
       expect(mockPublishEvent).toHaveBeenCalledTimes(1);
@@ -126,7 +126,7 @@ describe("collectionService", () => {
       mockQuery.mockResolvedValueOnce({ rows: [makeRow({ id: "parent-1" })] }); // ownership check
       mockQuery.mockResolvedValueOnce({ rows: [{ max_depth: 4 }] }); // depth check
 
-      await expect(createCollection("user-1", { name: "Too deep", color: "blue", parentId: "parent-1" })).rejects.toMatchObject({
+      await expect(createCollection("user-1", { name: "Too deep", color: "#65788a", parentId: "parent-1" })).rejects.toMatchObject({
         code: "MAX_DEPTH_EXCEEDED",
       });
     });
@@ -142,6 +142,33 @@ describe("collectionService", () => {
 
       expect(col.name).toBe("Renamed");
       expect(mockPublishEvent).toHaveBeenCalledTimes(1);
+    });
+
+    it("a color-only update touches only the target row and publishes once", async () => {
+      mockQuery.mockResolvedValueOnce({ rows: [makeRow()] }); // ownership check
+      mockQuery.mockResolvedValueOnce({ rows: [makeRow({ color: "#d56b64" })] }); // update
+
+      const col = await updateCollection("col-1", "user-1", { color: "#d56b64" });
+
+      expect(col.color).toBe("#d56b64");
+      // Ownership check + the single UPDATE: no duplicate-name lookup, no descendant
+      // walk, no cascading writes to children.
+      expect(mockQuery).toHaveBeenCalledTimes(2);
+      const [updateSql, updateValues] = mockQuery.mock.calls[1] as [string, unknown[]];
+      expect(updateSql).toContain("UPDATE collections SET");
+      expect(updateSql).toContain("color = $1");
+      expect(updateSql).not.toContain("parent_id");
+      expect(updateValues).toEqual(["#d56b64", "col-1"]);
+      expect(mockPublishEvent).toHaveBeenCalledTimes(1);
+    });
+
+    it("rejects an invalid color before writing", async () => {
+      mockQuery.mockResolvedValueOnce({ rows: [makeRow()] }); // ownership check
+
+      await expect(updateCollection("col-1", "user-1", { color: "not-a-color" })).rejects.toMatchObject({
+        code: "VALIDATION_ERROR",
+      });
+      expect(mockQuery).toHaveBeenCalledTimes(1);
     });
 
     it("throws on inbox rename", async () => {

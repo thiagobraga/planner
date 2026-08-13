@@ -9,8 +9,8 @@ import {
 
 describe("validatePassword", () => {
   it("accepts a valid long passphrase", () => {
-    const pw = validatePassword("correct horse battery staple");
-    expect(pw).toBe("correct horse battery staple");
+    const pw = validatePassword("Correct horse battery staple 2!");
+    expect(pw).toBe("Correct horse battery staple 2!");
   });
 
   it("rejects a password shorter than 15 characters", () => {
@@ -21,17 +21,33 @@ describe("validatePassword", () => {
     expect(() => validatePassword("a".repeat(129))).toThrow(/at most 128/);
   });
 
+  it("rejects a password without uppercase and lowercase letters", () => {
+    expect(() => validatePassword("lowercase phrase 2!")).toThrow(/uppercase and lowercase/);
+  });
+
+  it("rejects a password without a number", () => {
+    expect(() => validatePassword("Correct phrase without number!")).toThrow(/one number/);
+  });
+
+  it("rejects a password without a symbol", () => {
+    expect(() => validatePassword("Correct phrase with number 2")).toThrow(/one symbol/);
+  });
+
   it("rejects a blocklisted password", () => {
-    expect(() => validatePassword("password123456789!")).toThrow(/too common/);
+    expect(() => validatePassword("Password123456789!")).toThrow(/too common/);
   });
 
   it("rejects planner project name in password", () => {
     expect(() => validatePassword("MyPlannerPassphrase1!")).toThrow(/too common/);
   });
 
+  it("rejects admin in a password", () => {
+    expect(() => validatePassword("MyAdminPassphrase1!")).toThrow(/too common/);
+  });
+
   it("normalises NFC-equivalent input", () => {
-    const composed = "\u00E9" + "a".repeat(15); // é + 15 a's = 16 chars, NFC
-    const decomposed = "\u0065\u0301" + "a".repeat(15); // é + 15 a's = 17 chars, NFD
+    const composed = "É\u00E9" + "a".repeat(12) + "2!";
+    const decomposed = "E\u0301e\u0301" + "a".repeat(12) + "2!";
     const result1 = validatePassword(composed);
     const result2 = validatePassword(decomposed);
     // Both should NFC-normalize to é + 15 a's = 16 chars
@@ -40,7 +56,7 @@ describe("validatePassword", () => {
   });
 
   it("allows spaces, unicode, and paste", () => {
-    const pw = validatePassword("  spaces  漢字  パスワード   ".padEnd(15, "x"));
+    const pw = validatePassword("  Spaces  漢字  パスワード 2!  ".padEnd(15, "x"));
     expect(pw).toBeTruthy();
     expect(pw.length).toBeGreaterThanOrEqual(15);
   });

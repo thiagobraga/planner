@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react';
-import { paletteColorHex } from '../../api/client';
 
 export interface ChipProps {
   children: ReactNode;
@@ -10,7 +9,7 @@ export interface ChipProps {
 export function Chip({ children, className = '' }: ChipProps) {
   return (
     <span
-      className={`ui-chip inline-flex items-center text-[11px] leading-6 px-2 rounded-[8px] bg-dot text-ink whitespace-nowrap ${className}`}
+      className={`ui-chip inline-flex items-center text-[11px] leading-5 px-2 rounded-sm bg-dot/40 text-ink whitespace-nowrap ${className}`}
     >
       {children}
     </span>
@@ -19,7 +18,7 @@ export function Chip({ children, className = '' }: ChipProps) {
 
 export interface CollectionChipProps {
   name: string;
-  /** Named collection color (see PALETTE_COLORS); falls back to ink-light. */
+  /** Literal CSS color value (hex/rgb(a)/hsl(a)); falls back to ink-light. */
   color?: string;
   className?: string;
 }
@@ -28,11 +27,11 @@ export interface CollectionChipProps {
 export function CollectionChip({ name, color, className = '' }: CollectionChipProps) {
   return (
     <span
-      className={`ui-collection-chip inline-flex items-center gap-1.5 text-[11px] leading-6 px-2 rounded-[8px] bg-dot/60 text-ink whitespace-nowrap ${className}`}
+      className={`ui-collection-chip inline-flex items-center gap-1.5 text-[11px] leading-4.5 px-1 rounded-xs bg-dot/30 text-ink/65 whitespace-nowrap ${className}`}
     >
       <span
-        className="ui-collection-chip-dot w-2 h-2 rounded-full shrink-0 [filter:saturate(0.55)]"
-        style={{ backgroundColor: paletteColorHex(color) }}
+        className="ui-collection-chip-dot w-1.75 h-1.75 rounded-full shrink-0 filter-[saturate(0.55)]"
+        style={{ backgroundColor: color || 'var(--color-ink-light)' }}
       />
       {name}
     </span>

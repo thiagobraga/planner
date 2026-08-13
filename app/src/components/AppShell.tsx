@@ -8,13 +8,13 @@ import { Button } from './ui/Button';
 import { matchKey, createMatcherState, DEFAULT_BINDINGS } from '../hooks/shortcuts';
 import type { MatcherState } from '../hooks/shortcuts';
 import { useSync } from '../hooks/useSync';
-import { fetchPreferences, apiUpdatePreferences, type Preferences, apiCreateTask } from '../api/client';
+import { fetchPreferences, type Preferences, apiCreateTask } from '../api/client';
 import { ensureFontLoaded, type FontOption } from '../utils/fontLoader';
 import { updateDocumentThemeColor } from '../utils/theme';
-import { getDetectedTimeZone } from '../utils/date';
 import { PlannerDragProvider } from '../contexts/PlannerDragContext';
 import { useI18n } from '../i18n/I18nContext';
 import { useVersionCheck } from '../hooks/useVersionCheck';
+import { useTaskSelectionStore } from '../stores/taskSelectionStore';
 
 const FONT_CLASSES: Record<FontOption, string> = {
   lora: 'font-journal',
@@ -33,20 +33,15 @@ export function AppShell() {
     retry: 2,
   });
 
-  useEffect(() => {
-    if (preferences && !preferences.timeZone) {
-      const detected = getDetectedTimeZone();
-      apiUpdatePreferences({ timeZone: detected }).then((updated) => {
-        qc.setQueryData<Preferences>(['preferences'], updated);
-      });
-    }
-  }, [preferences, qc]);
-
-
   useSync(useCallback((event) => {
     if (event.entityType === 'collection') {
       qc.invalidateQueries({ queryKey: ['collections'] });
       qc.invalidateQueries({ queryKey: ['collection'] });
+    } else if (event.entityType === 'status' || event.entityType === 'label') {
+      qc.invalidateQueries({ queryKey: ['collection'] });
+      qc.invalidateQueries({ queryKey: ['inbox'] });
+      qc.invalidateQueries({ queryKey: ['today'] });
+      qc.invalidateQueries({ queryKey: ['upcoming'] });
     } else if (event.entityType === 'preferences') {
       if (event.payload && typeof event.payload === 'object') {
         qc.setQueryData<Preferences>(['preferences'], event.payload as Preferences);
@@ -66,13 +61,19 @@ export function AppShell() {
   const pageBackground = isWhiteBackground ? '#ffffff' : 'var(--color-cream)';
   const shellThemeStyle = {
     backgroundColor: pageBackground,
-    '--color-dot': isWhiteBackground ? '#e5e1d8' : '#d8d3cb',
+    '--color-dot': isWhiteBackground ? '#d4d4d4' : '#d8d3cb',
     '--color-sidebar-bg': isWhiteBackground ? '#f1f1f1' : '#ebe6de',
     '--planner-page-bg': pageBackground,
     '--planner-sidebar-bg': 'var(--color-sidebar-bg)',
     '--planner-card-bg': 'var(--color-sidebar-bg)',
+    '--planner-board-column-bg': isWhiteBackground ? 'rgba(241, 241, 241, 0.72)' : 'rgba(235, 230, 222, 0.68)',
+    '--planner-board-card-bg': isWhiteBackground ? 'rgba(255, 255, 255, 0.82)' : 'rgba(245, 240, 232, 0.82)',
     '--planner-sidebar-active-bg': isWhiteBackground ? 'rgba(212, 212, 212, 0.55)' : 'rgba(212, 207, 199, 0.5)',
     '--planner-sidebar-hover-bg': isWhiteBackground ? 'rgba(212, 212, 212, 0.35)' : 'rgba(212, 207, 199, 0.4)',
+    '--planner-task-selection-bg': isWhiteBackground ? 'rgba(212, 212, 212, 0.75)' : 'rgba(212, 207, 199, 0.75)',
+    '--planner-task-hover-bg': isWhiteBackground ? 'rgba(212, 212, 212, 0.4)' : 'rgba(212, 207, 199, 0.4)',
+    '--planner-overlay-bg': pageBackground,
+    '--planner-overlay-hover-bg': isWhiteBackground ? 'rgba(212, 212, 212, 0.35)' : 'rgba(212, 207, 199, 0.4)',
     '--planner-control-bg': isWhiteBackground ? '#ffffff' : 'rgba(245, 240, 232, 0.2)',
     '--planner-control-bg-hover': isWhiteBackground ? '#f5f5f5' : 'rgba(245, 240, 232, 0.35)',
     '--planner-toggle-off-bg': isWhiteBackground ? '#dedede' : 'var(--color-dot)',
@@ -167,6 +168,19 @@ export function AppShell() {
     return () => window.removeEventListener('keydown', handler);
   }, [isTextInputFocused, handleAction]);
 
+  useEffect(() => {
+    // pointerdown, not click: a press held past the drag sensor's activation
+    // delay makes dnd-kit swallow the click that follows it (see the note on
+    // TaskItem's onPointerUp), which would otherwise make an outside click
+    // silently fail to deselect too.
+    const handler = (e: PointerEvent) => {
+      if ((e.target as HTMLElement).closest('[data-task-id]')) return;
+      useTaskSelectionStore.getState().clearSelection();
+    };
+    document.addEventListener('pointerdown', handler);
+    return () => document.removeEventListener('pointerdown', handler);
+  }, []);
+
   return (
     <div
       className={`app-shell flex h-screen overflow-hidden ${FONT_CLASSES[preferences?.font ?? 'lora']}${preferences?.smallCaps ? ' small-caps' : ''}`}
@@ -178,7 +192,8 @@ export function AppShell() {
           type="button"
           aria-label={t('nav.open')}
           onClick={() => setSidebarOpen(true)}
-          className="app-shell-mobile-menu-btn mobile-menu-btn hidden fixed top-3 left-3 z-[60] bg-cream border border-dot rounded py-1 px-2 text-base cursor-pointer"
+          className="app-shell-mobile-menu-btn mobile-menu-btn hidden fixed top-3 left-3 z-[60] border border-dot rounded py-1 px-2 text-base cursor-pointer"
+          style={{ backgroundColor: 'var(--planner-control-bg)' }}
         >
           ☰
         </button>
@@ -218,9 +233,17 @@ export function AppShell() {
         onClose={() => setQuickAddOpen(false)}
         onSubmit={(title, dueDate, recurrenceRule) => {
           if (import.meta.env.DEV) console.log('Quick add:', { title, dueDate, recurrenceRule });
-          apiCreateTask({ title, dueDate, recurrenceRule }).catch((err) => {
-            console.error('Failed to quick add task:', err);
-          });
+          apiCreateTask({ title, dueDate, recurrenceRule })
+            .then((created) => {
+              qc.invalidateQueries({ queryKey: ['today'] });
+              qc.invalidateQueries({ queryKey: ['upcoming'] });
+              qc.invalidateQueries({ queryKey: ['inbox'] });
+              qc.invalidateQueries({ queryKey: ['tasks'] });
+              window.dispatchEvent(new CustomEvent('task-created', { detail: created }));
+            })
+            .catch((err) => {
+              console.error('Failed to quick add task:', err);
+            });
         }}
       />
 
@@ -240,7 +263,8 @@ export function AppShell() {
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="app-shell-help-dialog-content bg-cream border border-dot rounded-md py-6 px-8 min-w-[320px] shadow-[0_8px_32px_rgba(44,44,44,0.15)]"
+            className="app-shell-help-dialog-content border border-dot rounded-md py-6 px-8 min-w-[320px] shadow-[0_8px_32px_rgba(44,44,44,0.15)]"
+            style={{ backgroundColor: 'var(--planner-overlay-bg)' }}
           >
             <h2 className="app-shell-help-title text-base font-semibold text-ink mb-4">
               {t('shell.keyboardShortcuts')}

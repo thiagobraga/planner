@@ -29,7 +29,7 @@ function fillForm() {
     target: { value: 'new@example.com' },
   });
   fireEvent.change(screen.getByPlaceholderText('Password'), {
-    target: { value: 'correct-horse-battery-staple' },
+    target: { value: 'Correct-horse-battery-staple-2' },
   });
 }
 
@@ -39,13 +39,63 @@ beforeEach(() => {
 });
 
 describe('RegisterPage', () => {
-  it('renders the three fields and the submit button', () => {
+  it('renders the account fields and the submit button', () => {
     renderPage();
 
     expect(screen.getByPlaceholderText('Email')).toBeInTheDocument();
-    expect(screen.getByPlaceholderText('Display name (optional)')).toBeInTheDocument();
+    expect(screen.queryByPlaceholderText('Display name (optional)')).not.toBeInTheDocument();
     expect(screen.getByPlaceholderText('Password')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Create account' })).toBeInTheDocument();
+    expect(screen.getByRole('list', { name: 'Password requirements' })).toBeInTheDocument();
+    expect(screen.getByText('Uppercase and lowercase letters')).toBeInTheDocument();
+    expect(screen.getByText('At least one number')).toBeInTheDocument();
+    expect(screen.getByText('At least one symbol')).toBeInTheDocument();
+  });
+
+  it('marks password requirements as they are met', () => {
+    renderPage();
+
+    const passwordInput = screen.getByPlaceholderText('Password');
+    const lengthRequirement = screen.getByRole('listitem', {
+      name: 'At least 15 characters: not met',
+    });
+    const commonRequirement = screen.getByRole('listitem', {
+      name: 'Avoid passwords like planner, password, admin...: not met',
+    });
+
+    expect(lengthRequirement).toHaveAttribute('data-met', 'false');
+    expect(commonRequirement).toHaveAttribute('data-met', 'false');
+
+    fireEvent.change(passwordInput, { target: { value: 'Correct-horse-battery-staple-2' } });
+
+    expect(lengthRequirement).toHaveAttribute('data-met', 'true');
+    expect(commonRequirement).toHaveAttribute('data-met', 'true');
+    expect(lengthRequirement).toHaveTextContent('×');
+    expect(commonRequirement).toHaveTextContent('×');
+    expect(
+      screen.getByRole('listitem', { name: 'Uppercase and lowercase letters: met' }),
+    ).toHaveTextContent('×');
+    expect(screen.getByRole('listitem', { name: 'At least one number: met' })).toHaveTextContent('×');
+    expect(screen.getByRole('listitem', { name: 'At least one symbol: met' })).toHaveTextContent('×');
+
+    fireEvent.change(passwordInput, { target: { value: 'planner-planner-planner' } });
+
+    expect(lengthRequirement).toHaveAttribute('data-met', 'true');
+    expect(commonRequirement).toHaveAttribute('data-met', 'false');
+    expect(commonRequirement).toHaveTextContent('•');
+  });
+
+  it('shows and hides the password', () => {
+    renderPage();
+
+    const passwordInput = screen.getByPlaceholderText('Password');
+    expect(passwordInput).toHaveAttribute('type', 'password');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Show password' }));
+    expect(passwordInput).toHaveAttribute('type', 'text');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Hide password' }));
+    expect(passwordInput).toHaveAttribute('type', 'password');
   });
 
   it('registers and navigates to /daily on success', async () => {
@@ -53,35 +103,15 @@ describe('RegisterPage', () => {
     renderPage();
 
     fillForm();
-    fireEvent.change(screen.getByPlaceholderText('Display name (optional)'), {
-      target: { value: 'Alice' },
-    });
     fireEvent.click(screen.getByRole('button', { name: 'Create account' }));
 
     await waitFor(() => {
       expect(mockRegister).toHaveBeenCalledWith(
         'new@example.com',
-        'correct-horse-battery-staple',
-        'Alice',
+        'Correct-horse-battery-staple-2',
       );
     });
     expect(mockNavigate).toHaveBeenCalledWith('/daily', { replace: true });
-  });
-
-  it('omits an empty display name', async () => {
-    mockRegister.mockResolvedValueOnce(undefined);
-    renderPage();
-
-    fillForm();
-    fireEvent.click(screen.getByRole('button', { name: 'Create account' }));
-
-    await waitFor(() => {
-      expect(mockRegister).toHaveBeenCalledWith(
-        'new@example.com',
-        'correct-horse-battery-staple',
-        undefined,
-      );
-    });
   });
 
   it('places VALIDATION_ERROR details on the matching fields', async () => {

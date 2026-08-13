@@ -1,11 +1,11 @@
 import { useEffect, useState, useRef, useLayoutEffect, useImperativeHandle, type CSSProperties } from 'react';
 import { StripNavigator } from '../ui/StripNavigator';
-import { useI18n } from '../../i18n/I18nContext';
+import { useI18n, type Locale } from '../../i18n/I18nContext';
 
 const MONTH_WINDOW = 3;
 const MONTH_STRIP_RANGE = MONTH_WINDOW * 2;
 const MONTH_STRIP_GAP = 24;
-const MONTH_CARD_SIZE = 96;
+const MONTH_CARD_SIZE = 60;
 const MONTH_STRIP_DURATION_MS = 220;
 
 type MonthTile = {
@@ -19,12 +19,17 @@ function shiftMonth(year: number, month: number, delta: number): Omit<MonthTile,
   return { year: next.getFullYear(), month: next.getMonth() };
 }
 
-function buildMonthStrip(year: number, month: number): MonthTile[] {
-  return Array.from({ length: MONTH_STRIP_RANGE * 2 + 1 }, (_, index) => {
-    const offset = index - MONTH_STRIP_RANGE;
+function buildMonthStrip(year: number, month: number, range: number): MonthTile[] {
+  return Array.from({ length: range * 2 + 1 }, (_, index) => {
+    const offset = index - range;
     const date = new Date(year, month + offset, 1);
     return { year: date.getFullYear(), month: date.getMonth(), offset };
   });
+}
+
+function formatMonthLabel(year: number, month: number, locale: Locale): string {
+  const label = new Intl.DateTimeFormat(locale, { month: 'short' }).format(new Date(year, month, 1));
+  return (locale === 'pt-BR' ? label.replaceAll('.', '') : label).toLocaleUpperCase(locale);
 }
 
 export interface MonthSelectorProps {
@@ -84,18 +89,20 @@ export const MonthSelector = ({
     },
   }));
 
-  const monthStrip = buildMonthStrip(selectedYear, selectedMonth);
-  const totalStripCards = renderRange * 2 + 1;
+  const bufferRange = renderRange * 2;
+  const monthStrip = buildMonthStrip(selectedYear, selectedMonth, bufferRange);
+  const today = new Date();
+  const totalStripCards = monthStrip.length;
   const stripStep = MONTH_CARD_SIZE + MONTH_STRIP_GAP;
-  // Compute centering offset and snap it to the nearest dot-grid multiple (24px).
-  // This keeps every card edge on the dot grid while approximately centering the selected month.
+  // Snap the centering offset to the dot grid while approximately centering the selected month.
   const rawCenteringOffset = viewportWidth > 0
-    ? viewportWidth / 2 - renderRange * stripStep - MONTH_CARD_SIZE / 2
+    ? viewportWidth / 2 - bufferRange * stripStep - MONTH_CARD_SIZE / 2
     : 0;
   const centeringOffset = Math.round(rawCenteringOffset / MONTH_STRIP_GAP) * MONTH_STRIP_GAP;
   const stripOffset = centeringOffset - (pendingMonth?.offset ?? 0) * stripStep;
   const stripTrackStyle = {
     width: `${MONTH_CARD_SIZE * totalStripCards + MONTH_STRIP_GAP * (totalStripCards - 1)}px`,
+    gridTemplateColumns: `repeat(${totalStripCards}, ${MONTH_CARD_SIZE}px)`,
     transform: `translateX(${stripOffset}px)`,
     transition: suppressStripTransition || !pendingMonth ? 'none' : `transform ${MONTH_STRIP_DURATION_MS}ms ease-in-out`,
   } satisfies CSSProperties;
@@ -123,7 +130,7 @@ export const MonthSelector = ({
   };
 
   return (
-    <div className={`monthly-strip flex w-full min-w-0 items-start gap-(--dot-grid) ${className}`}>
+    <div className={`monthly-strip flex w-full min-w-0 items-center gap-(--dot-grid) ${className}`}>
       <StripNavigator
         direction="previous"
         aria-label={t('page.previousMonth')}
@@ -133,7 +140,7 @@ export const MonthSelector = ({
 
       <div ref={viewportRef} className="monthly-strip-viewport flex min-w-0 flex-1 items-center justify-start overflow-hidden">
         <div
-          className="month-strip-track grid grid-cols-[repeat(5,96px)] gap-[24px] sm:grid-cols-[repeat(13,96px)]"
+          className="month-strip-track grid gap-[24px]"
           style={stripTrackStyle}
           onTransitionEnd={(event) => {
             if (event.propertyName === 'transform') {
@@ -145,16 +152,15 @@ export const MonthSelector = ({
             const activeYear = pendingMonth?.year ?? selectedYear;
             const activeMonth = pendingMonth?.month ?? selectedMonth;
             const isSelected = year === activeYear && month === activeMonth;
+            const isCurrentMonth = year === today.getFullYear() && month === today.getMonth();
             const yearLabel = String(year);
-            const mobileVisibility = Math.abs(offset) > 2 ? 'hidden sm:flex' : 'flex';
-
             return (
               <button
                 type="button"
                 key={`${year}-${month}`}
                 onClick={() => selectMonth({ year, month }, offset)}
                 aria-current={isSelected ? 'date' : undefined}
-                className={`month-strip-card ${mobileVisibility} h-6 min-w-0 flex-row items-center justify-center gap-1 border text-center cursor-pointer transition-colors duration-(--motion-fast) ${
+                className={`month-strip-card relative flex h-12 min-w-0 flex-col items-center justify-center border text-center cursor-pointer transition-colors duration-(--motion-fast) ${isCurrentMonth ? 'month-strip-card--current' : ''} ${
                   isSelected
                     ? 'border-ink-light text-ink'
                     : 'border-border/80 text-ink-light hover:border-dot hover:text-ink'
@@ -165,11 +171,9 @@ export const MonthSelector = ({
                 }
               >
                 <span className={`month-strip-card-month text-[11px] leading-5 tracking-[0.08em] sm:text-[11px] sm:tracking-widest ${isSelected ? 'font-semibold' : 'font-medium'}`}>
-                  {new Intl.DateTimeFormat(locale, { month: 'short' })
-                    .format(new Date(year, month, 1))
-                    .toLocaleUpperCase(locale)}
+                  {formatMonthLabel(year, month, locale)}
                 </span>
-                <span className={`month-strip-card-year text-[11px] leading-5 tracking-[0.08em] sm:text-[11px] sm:tracking-widest ${isSelected ? 'font-semibold' : 'font-medium'}`}>
+                <span className={`month-strip-card-year text-[11px] leading-5 tracking-[0.08em] text-ink-light sm:text-[11px] sm:tracking-widest ${isSelected ? 'font-medium' : 'font-normal'}`}>
                   {yearLabel}
                 </span>
               </button>

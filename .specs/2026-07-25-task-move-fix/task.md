@@ -16,8 +16,15 @@
 - [x] `app/src/hooks/useTaskDrag.ts`: update `.then()` handler types; add no-op-diff guard to preserve object identity for unchanged tasks
 - [x] `api/src/services/__tests__/taskService.move.test.ts`: update gap-write assertions, add collision-fallback test, split day-scope seeded/unseeded test cases
 - [x] Optional: migration `031_task_collection_scope_index.sql` adding `idx_tasks_collection_scope_ordered` (use `db-migration` skill)
-- [x] Run `docker compose exec api npm test && docker compose exec app npm test`, both builds
-- [~] Manual verification: wrong-position repro, response payload size in Network tab, React Profiler re-render check, cross-collection/cross-date drags
+- [x] `api/src/services/taskService.ts`: in `renumberDayScope`, return `position` as `orderValue` in `MovedTaskSummary` so day-scoped task ordering is preserved in frontend state without snapping back to `createdAt`
+- [x] `api/src/services/viewService.ts`: in `getTodayView` and `getUpcomingView`, select `COALESCE(o.position, t.order_value) AS order_value` so tasks carry effective day position
+- [x] `api/src/services/taskService.ts`: `moveTask`'s post-commit `moved` query (the subtree re-read at line ~998) reported raw `tasks.order_value` for day-scoped moves - always `0`/stale, since day moves only ever write `task_order.position`. The client applies `moved` as the authoritative patch right after the optimistic reorder, so this handed every day-scoped move an `orderValue: 0` the instant the request resolved, snapping the row back to the front of the list - this is the reported "orderValue: 0" bug. Fixed by LEFT JOINing `task_order` in that query and reporting `day_position ?? order_value`. Regression test: `taskService.move.test.ts` > "reports the day position, not the untouched collection order_value, in `moved`".
+- [x] `app/src/hooks/useTaskDrag.ts`: `applyMoveLocally` never set `orderValue` on the optimistically-moved task, so the immediate re-sort (siblings order by `orderValue`) left the row exactly where it started until the response patched it - a second, independent cause of the same-looking unreliability. Added a same-space midpoint estimate (`ResolvedMove.orderValue`) computed in `resolveMove` and applied in `applyMoveLocally`. Regression tests: `useTaskDrag.parity.test.ts` > "optimistic orderValue matches the projected slot".
+- [ ] `app/src/hooks/useSync.ts` / `AppShell.tsx`: update state / invalidate queries when a task is created via QuickAdd so tasks created for yesterday or today immediately appear on `DailyPage` without manual refresh
+- [ ] `app/src/hooks/useTaskDrag.ts`: update `scopedRows` filter to preserve undated tasks belonging to the current view section
+- [ ] `app/src/utils/taskProjection.ts` & `TaskList.tsx` & `collision.ts`: support dropping after the last item in a list or container
+- [ ] Write unit & integration tests covering yesterday QuickAdd creation, day-scope reordering persistence, end-of-list drops, and subtask reparenting
+- [ ] Manual browser verification: QuickAdd yesterday task, drag to last position, drag as child under last task, subtask reordering and persistence
   - [x] Wrong-position repro (Daily): registered a throwaway test account against
     the running isolated stack (localhost:5174/4001, shared dev DB), created 3
     day-scoped tasks A/B/C, dragged A past C. Confirmed directly in Postgres
@@ -34,6 +41,89 @@
     traced the payload-size and orderValue-correctness claims through the
     actual code and pinned them with tests instead; a human should still spot
     check this in a real browser before/after merging if that matters.
+
+## Follow-up video (2026-08-04 22:30) — post-fix repro
+
+User recorded a second pass after the `orderValue: 0` fix above landed. Basic
+same-day and cross-day reordering is now stable and persists across reloads
+(confirmed in-video: dragging "Talk to someone" around the AUG 04 list, and
+across the day boundary into AUG 05/Today, both survive the round-trip). Two
+bugs remained, captured as tasks typed directly into the app during the
+recording (`AUG 05 WED · TODAY`):
+
+- [x] **"Fix: moving to last not working"** — dragging a task from one day's
+  list and dropping it intending the *last* position of the target day
+  landed it one slot too early instead. Traced to `app/src/components/dnd/collision.ts`:
+  a populated list's last row only counted as "append past the end" once the
+  pointer crossed *below that row's own vertical midpoint*. Dragging in from
+  a source list rendered further down the page (AUG 04, below TODAY) means
+  the pointer reaches TODAY's last row from underneath and typically first
+  lands on its upper half or center - never crossing the midpoint - so it
+  resolved as "insert before the last row" instead of "append". Fixed by
+  relaxing the threshold to the last row's *top* edge specifically for a
+  foreign drag (one whose source container differs from the target's): a
+  drop arriving from elsewhere and landing anywhere on the last row
+  overwhelmingly means "add it to the end", not "slot in just above the last
+  item" - and that narrower reading is still reachable by hovering the row
+  above the last one instead. Same-list reordering keeps the stricter
+  midpoint threshold unchanged, so "insert directly before the last row" by
+  hovering it is still possible there. Regression tests:
+  `collision.test.ts` > "cross-day drop aimed at the end of a short list".
+- [x] **"Fix: also fix these bugs I showed here"** — user followed up with a
+  Chrome performance trace (`Trace-20260804T230002.json.gz`) of the same
+  drag gesture. It showed the main thread saturated with back-to-back
+  30-40ms script chunks for the whole ~5s gesture (window ~47050890000 to
+  ~47056000000 in trace timestamps) - not the network requests, which were
+  fast (40-110ms each), but continuous scripting during the drag itself.
+  Breakdown of that window: 369 calls into `react-dom`'s `dispatchContinuousEvent`
+  (the `pointermove` handler), 254 calls into `@dnd-kit/utilities` rect
+  recalculation, 31 calls to dnd-kit's `handleMove`. Root cause: `DndContext`
+  in `app/src/contexts/PlannerDragContext.tsx` had no `measuring` config, so
+  dnd-kit used its default `MeasuringStrategy.WhileDragging` - re-measuring
+  every registered droppable's rect on every animation frame, and this app
+  has exactly one `DndContext` for the whole shell, so that means every task
+  row across every rendered day, every habit, every sidebar collection, on
+  every pointer move. Fixed by setting `droppable: { strategy:
+  MeasuringStrategy.BeforeDragging }`: sortable rows shift via CSS transform
+  computed from each row's rect measured once at drag start plus the live
+  index delta, so dnd-kit does not need continuous re-measurement to keep
+  that correct - this is the standard dnd-kit performance fix for exactly
+  this shape of setup. Stale rects during a saturated main thread are also a
+  plausible contributor to the "moving to last" bug above being harder to
+  hit reliably than the isolated collision.ts fix alone would suggest.
+  `TaskItem` was already `memo`-wrapped with stable props across drag
+  frames, so no additional per-row memoization work was needed on top of
+  this. No dedicated regression test - this is a `DndContext` configuration
+  change with no independently-observable behavior at the unit level; the
+  existing collision/drag test suites (775 tests) all still pass unchanged,
+  confirming no functional regression. Verify with a fresh performance trace
+  after this lands.
+
+## Follow-up: cross-day drop into a gap between sections (2026-08-04, live report)
+
+User reported dragging "Teste 2" (AUG 04 TUE) up onto AUG 05 WED, aimed to
+land after "Note test" (WED's last row, a note), was not possible - even
+after the collision.ts and dnd-kit measuring fixes above landed.
+
+- [x] Root cause was a real dead zone, not covered by the earlier collision.ts
+  fix: sections sit `mt-6` (24px) apart in `DailyPage.tsx`, and each day's
+  `TaskList` container (`app/src/components/TaskList.tsx`) wraps only its own
+  rows with no padding - its droppable rect stops exactly at the last row's
+  bottom edge. Dragging up from a lower-rendered date crosses that 24px seam
+  on the way to the section above; while the pointer is in it, *no* day's
+  droppable claims the hit (`plannerCollisionDetection`'s `containerHits` is
+  empty), so it falls through to plain nearest-row `closestCenter` matching
+  across every rendered row - which resolves to "insert before" the nearest
+  row, bypassing the foreign-drag/last-row append logic entirely, since that
+  logic only runs once a container hit already exists. Fixed by generalizing
+  the existing `.task-list--empty-target` trick (which reserved 24px of
+  droppable area for an *empty* date only, via `min-height` + equal negative
+  `margin-bottom` so it costs no layout) into `.task-list--drag-target`: same
+  cancel-out-the-margin trick, but `padding-bottom` instead of `min-height`
+  so it adds space regardless of whether the list already has content, and
+  applied to every list while a drag is in flight rather than only an empty
+  one. Closes the dead zone for every date, not just this one repro.
+  Regression tests: `TaskList.dragTarget.test.tsx`.
 
 ## Migrated from .specs/2026-07-25-drag-polish-defects/task.md
 

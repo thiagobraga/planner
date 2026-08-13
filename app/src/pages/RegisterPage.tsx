@@ -7,14 +7,16 @@ import { Button } from '../components/ui/Button';
 import { ApiError } from '../api/client';
 import { useCountdown, formatCountdown } from '../hooks/useCountdown';
 import { useI18n } from '../i18n/I18nContext';
+import { PasswordRequirements } from '../components/PasswordRequirements';
+import { Eye, EyeOff } from 'lucide-react';
 
 export function RegisterPage() {
   const { t } = useI18n();
   const { register } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
-  const [displayName, setDisplayName] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [formError, setFormError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -26,7 +28,7 @@ export function RegisterPage() {
     setFormError('');
     setLoading(true);
     try {
-      await register(email, password, displayName || undefined);
+      await register(email, password);
       navigate('/daily', { replace: true });
     } catch (err) {
       if (err instanceof ApiError) {
@@ -66,17 +68,7 @@ export function RegisterPage() {
           errorText={fieldErrors.email}
         />
         <Input
-          type="text"
-          placeholder={t('auth.displayName')}
-          value={displayName}
-          onChange={(e) => setDisplayName(e.target.value)}
-          autoComplete="name"
-          aria-label={t('auth.displayName')}
-          error={Boolean(fieldErrors.displayName)}
-          errorText={fieldErrors.displayName}
-        />
-        <Input
-          type="password"
+          type={showPassword ? 'text' : 'password'}
           placeholder={t('auth.password')}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
@@ -85,7 +77,19 @@ export function RegisterPage() {
           aria-label={t('auth.password')}
           error={Boolean(fieldErrors.password)}
           errorText={fieldErrors.password}
+          trailing={(
+            <button
+              type="button"
+              className="flex h-6 w-6 items-center justify-center border-0 bg-transparent text-ink-light hover:text-ink"
+              aria-label={t(showPassword ? 'auth.hidePassword' : 'auth.showPassword')}
+              title={t(showPassword ? 'auth.hidePassword' : 'auth.showPassword')}
+              onClick={() => setShowPassword((visible) => !visible)}
+            >
+              {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+            </button>
+          )}
         />
+        <PasswordRequirements password={password} />
 
         {formError && (
           <AuthFormError>
@@ -93,12 +97,12 @@ export function RegisterPage() {
           </AuthFormError>
         )}
 
-        <Button type="submit" variant="primary" disabled={loading || throttled}>
+        <Button type="submit" variant="primary" className="mt-3" disabled={loading || throttled}>
           {loading ? '…' : t('auth.createAccountButton')}
         </Button>
       </form>
 
-      <p className="mt-6 text-center">
+      <p className="mt-2 text-center">
         <AuthLink to="/login">{t('auth.signInExisting')}</AuthLink>
       </p>
     </AuthShell>

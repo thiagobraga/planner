@@ -184,6 +184,7 @@ button,
 /* Dotted paper background grid, offset 12px to center dots in cells */
 .main-content {
   flex: 1;
+  min-width: 0;
   overflow-y: auto;
   padding: 24px;
   background-image: radial-gradient(circle, var(--color-dot) 1px, transparent 1px);
@@ -192,18 +193,413 @@ button,
   background-attachment: local;
 }
 
+.board-scroll {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  padding: 24px 0 48px;
+  scroll-padding-inline: 24px;
+}
+
+.collection-detail-page,
+.inbox-page {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.board-grid {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 288px;
+  align-items: start;
+  gap: 24px;
+  width: max-content;
+  min-height: 480px;
+  padding-right: 24px;
+}
+
+.board-column {
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--color-ink-lighter) 60%, transparent);
+  border-radius: 12px;
+  background: var(--planner-board-column-bg);
+  backdrop-filter: blur(2px);
+}
+
+.board-column-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 0 12px;
+  border-bottom: 1px solid color-mix(in srgb, var(--color-ink-lighter) 55%, transparent);
+}
+
+.board-column-header h2 {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 24px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.board-column-dot {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+}
+
+.board-column-count {
+  min-width: 24px;
+  color: var(--color-ink-light);
+  font-size: 11px;
+  line-height: 24px;
+  text-align: center;
+}
+
+.board-column-menu {
+  width: 24px;
+  border: 0;
+  background: transparent;
+  color: var(--color-ink-light);
+  font-size: 14px;
+  letter-spacing: 1px;
+}
+
+.board-column-cards {
+  display: grid;
+  gap: 12px;
+  min-height: 96px;
+  padding: 12px;
+}
+
+.board-card {
+  display: grid;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid color-mix(in srgb, var(--color-ink-lighter) 68%, transparent);
+  border-radius: 8px;
+  background: var(--planner-board-card-bg);
+}
+
+.board-card-topline {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) 18px;
+  gap: 6px;
+  align-items: start;
+}
+
+.board-card-topline h3 {
+  overflow-wrap: anywhere;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 24px;
+}
+
+.board-card-check {
+  display: grid;
+  width: 16px;
+  height: 16px;
+  margin-top: 4px;
+  place-items: center;
+  border: 1px solid var(--color-ink-lighter);
+  border-radius: 50%;
+  background: transparent;
+  color: var(--color-cream);
+}
+
+.board-card-check.is-complete {
+  border-color: var(--color-accent);
+  background: var(--color-accent);
+}
+
+.board-card-priority {
+  display: flex;
+  height: 24px;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-ink-lighter);
+}
+
+.board-card-priority.priority-1 { color: var(--color-accent); }
+.board-card-priority.priority-2 { color: var(--color-priority-2); }
+.board-card-priority.priority-3 { color: var(--color-priority-3); }
+
+.board-card-labels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.board-card-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 24px;
+  padding: 0 8px;
+  border: 1px solid;
+  border-radius: 999px;
+  font-size: 10px;
+  line-height: 22px;
+}
+
+.board-card-chip > span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.board-card-description {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--color-ink-light);
+  font-size: 11px;
+  line-height: 18px;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.board-card-checklist {
+  display: grid;
+  gap: 6px;
+  padding-top: 6px;
+  border-top: 1px dashed color-mix(in srgb, var(--color-ink-lighter) 65%, transparent);
+}
+
+.board-card-checklist-count,
+.board-card-date {
+  color: var(--color-ink-light);
+  font-size: 10px;
+  line-height: 18px;
+}
+
+.board-card-checklist-row {
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr);
+  gap: 6px;
+  align-items: start;
+  font-size: 11px;
+  line-height: 18px;
+}
+
+.board-card-checklist-row input {
+  width: 13px;
+  height: 13px;
+  margin-top: 2px;
+  accent-color: var(--color-accent);
+}
+
+.board-card-date {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.board-column-empty {
+  display: grid;
+  min-height: 72px;
+  place-items: center;
+  border: 1px dashed color-mix(in srgb, var(--color-ink-lighter) 55%, transparent);
+  border-radius: 8px;
+  color: var(--color-ink-light);
+  font-size: 11px;
+  opacity: 0.65;
+}
+
+.status-task-groups {
+  display: grid;
+  gap: 24px;
+}
+
+.status-task-group-header {
+  display: grid;
+  height: 24px;
+  grid-template-columns: 8px minmax(0, 1fr) 24px;
+  gap: 8px;
+  align-items: center;
+  color: var(--color-ink-light);
+}
+
+.status-task-group-header h2:last-child {
+  grid-column: 2 / -1;
+}
+
+.status-task-group-header > span:first-child {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+
+.status-task-group-header h2 {
+  overflow: hidden;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 24px;
+  letter-spacing: 0.12em;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.status-task-group-header > span:last-child {
+  font-size: 10px;
+  line-height: 24px;
+  text-align: center;
+}
+
+.board-add-column {
+  display: flex;
+  min-height: 48px;
+  align-items: center;
+  gap: 8px;
+  padding: 0 16px;
+  border: 1px dashed var(--color-ink-lighter);
+  border-radius: 12px;
+  background: transparent;
+  color: var(--color-ink-light);
+  font: inherit;
+}
+
+.board-loading {
+  display: grid;
+  min-height: 240px;
+  place-items: center;
+  color: var(--color-ink-light);
+}
+
+.board-group-select {
+  width: 112px;
+  height: 24px;
+  padding-inline: 8px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--planner-overlay-bg) 92%, transparent);
+  font-size: 12px;
+}
+
+.board-page-toolbar .ui-custom-select:has(.board-group-select) {
+  flex: none;
+  width: 112px;
+}
+
+.board-group-select .ui-custom-select-value,
+.board-group-select .ui-custom-select-chevron {
+  font-size: 12px;
+}
+
+.board-page-toolbar {
+  display: flex;
+  min-width: 0;
+  min-height: 24px;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.board-toolbar-kanban-controls,
+.board-toolbar-primary-controls {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+}
+
+.board-toolbar-group-label {
+  color: var(--color-ink-light);
+  font-size: 12px;
+  line-height: 24px;
+}
+
+@media (max-width: 1023px) {
+  .collection-detail-page > .sticky-page-header,
+  .inbox-page > .sticky-page-header {
+    flex-direction: column;
+  }
+
+  .collection-page-header-controls,
+  .inbox-page-header-controls {
+    position: static;
+    align-self: stretch;
+    justify-content: flex-end;
+    margin-top: 12px;
+  }
+
+  .board-page-toolbar {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+}
+
+@media (max-width: 639px) {
+  .collection-page-header-controls,
+  .inbox-page-header-controls {
+    width: 100%;
+    padding-left: 0;
+    background: transparent;
+  }
+
+  .board-page-toolbar,
+  .board-toolbar-kanban-controls {
+    width: 100%;
+  }
+
+  .board-toolbar-kanban-controls {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+}
+
+@media (max-width: 639px) {
+  .board-scroll {
+    width: 100%;
+  }
+
+  .board-grid {
+    grid-auto-columns: min(288px, calc(100vw - 72px));
+  }
+}
+
+/*
+ * Positioning shell for a page header: spans the full row so the toolbar
+ * (an absolutely-positioned child, anchored bottom-right) has the true right
+ * edge to sit against, and carries the one sticky context both title and
+ * toolbar stick together under. Splitting title-and-toolbar into two
+ * independently-stickied siblings, each cancelling its own margin, used to
+ * leave a fractional-pixel remainder whenever a sibling's rendered height
+ * wasn't exactly what its -mt-6 assumed - see page-header-copy-text below.
+ */
 .sticky-page-header {
   position: sticky;
   top: -24px;
   z-index: 10;
+  /*
+   * flex, not the default block: an inline-flex child (page-header-copy-text)
+   * sitting in a block's inline formatting context is laid out inside an
+   * anonymous line box sized off this element's font metrics, which reserved
+   * a fractional strut above it that a plain height/margin audit never turns
+   * up. flex removes that formatting context - the child lays out at its own
+   * height, full stop.
+   */
+  display: flex;
+  align-items: flex-start;
+  width: 100%;
+  padding-top: 24px;
+  margin-top: -24px;
+  background-color: var(--planner-page-bg);
+}
+
+/* The title/subtitle column - shrunk to its own content, unlike the header
+ * shell around it, so the sticky background only paints behind the text. */
+.page-header-copy-text {
   display: inline-flex;
   flex-direction: column;
   align-items: flex-start;
   width: fit-content;
   max-width: 100%;
-  padding-top: 24px;
-  margin-top: -24px;
-  background-color: var(--planner-page-bg);
 }
 
 .monthly-current-day-label {
@@ -250,6 +646,17 @@ button,
   background-color: var(--planner-monthly-strip-hover) !important;
 }
 
+.month-strip-card--current::before {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  border-top: 10px solid var(--color-accent);
+  border-right: 10px solid transparent;
+  content: '';
+}
+
 /* Task item row */
 .task-item {
   position: relative;
@@ -262,7 +669,7 @@ button,
   transition: opacity 150ms;
 
   &:hover {
-    background: rgba(212, 207, 199, 0.4);
+    background: var(--planner-task-hover-bg);
 
     & .drag-handle {
       opacity: 0.5 !important;
@@ -273,6 +680,14 @@ button,
     outline: 2px solid var(--color-ink);
     outline-offset: -2px;
     border-radius: 4px;
+  }
+}
+
+.task-item--selected {
+  background: var(--planner-task-selection-bg);
+
+  &:hover {
+    background: var(--planner-task-selection-bg);
   }
 }
 /*
@@ -407,25 +822,38 @@ button,
 }
 
 /*
-  A date with no tasks still has to be reachable by a drag: an empty list
-  collapses to zero height, which leaves its droppable with no area for the
-  pointer to be inside, so an empty date could never be hovered and never drew a
-  landing slot.
+  Every date's droppable needs to reach into the 24px gap below it while a drag
+  is in flight, not just an empty one.
 
-  The row of drop area is claimed only while a drag is in flight, and is undone
-  by an equal negative margin, so the list occupies exactly as much space as it
-  did before. Both halves matter:
+  An empty list collapses to zero height, leaving its droppable with no area
+  for the pointer to be inside, so an empty date could never be hovered and
+  never drew a landing slot. A populated list has the opposite version of the
+  same gap: it stops exactly at its last row, so a task dragged in from a date
+  rendered further down the page - crossing that 24px seam on the way to the
+  section above - passed through a dead zone no droppable claimed, fell back to
+  plain nearest-row matching, and landed inserted *before* the last row instead
+  of appended after it.
 
-  - reserving it permanently left a blank line under every empty date;
-  - reserving it *without* the negative margin grew the content by 24px on
-    pickup, and dnd-kit answers a mid-drag layout shift by moving the scroll
-    position - so pressing a row scrolled the page and released it back.
+  The row of drop area is undone by an equal negative margin, so the list
+  occupies exactly as much space as it did before. That negative margin is what
+  makes permanent reservation free: reserving the padding *without* it grew the
+  content by 24px, which as a mid-drag shift made dnd-kit move the scroll
+  position - pressing a row scrolled the page and released it back.
 
-  The height it takes therefore overlaps the 24px gap below the section, which
-  is empty by construction, and the page does not move at all.
+  The class is applied unconditionally rather than toggled on drag start.
+  `MeasuringStrategy.BeforeDragging` measures each droppable's rect once, before
+  React commits the render that would add a drag-conditional class, so the
+  padding was absent from the measured rect and the seam stayed a dead zone for
+  the whole gesture - the exact bug this rule exists to prevent.
+
+  Padding rather than min-height so it adds space unconditionally instead of
+  only when the list has none of its own yet - the same rule now covers both
+  the empty list and the populated one. The height it takes overlaps the 24px
+  gap below the section, which is otherwise empty, and the page does not move
+  at all.
 */
-.task-list--empty-target {
-  min-height: var(--dot-grid);
+.task-list--drag-target {
+  padding-bottom: var(--dot-grid);
   margin-bottom: calc(-1 * var(--dot-grid));
 }
 
@@ -543,7 +971,7 @@ textarea:focus-visible {
   display: flex;
 }
 
-/* Collection rows - reveal row actions on hover */
+/* Collection rows */
 .collection-row {
   border-radius: 4px;
 
@@ -555,14 +983,6 @@ textarea:focus-visible {
 .collection-row--active:hover {
   background: var(--planner-sidebar-active-bg);
 }
-.collection-row__action {
-  opacity: 0;
-  transition: opacity 120ms ease;
-}
-.collection-row:hover .collection-row__action {
-  opacity: 0.7;
-}
-
 /* Collections index page */
 .collections-index-page {
   --page-header-toolbar-space: 48px;
@@ -621,229 +1041,6 @@ textarea:focus-visible {
 }
 .collections-index-menu button[data-destructive] {
   color: var(--color-accent);
-}
-
-/* Daily continuous timeline */
-.daily-timeline-layout {
-  display: grid;
-  grid-template-columns: minmax(0, 648px) 216px;
-  gap: 48px;
-  max-width: 912px;
-  align-items: start;
-}
-.daily-timeline-feed {
-  grid-column: 1;
-  grid-row: 2;
-  overflow-anchor: none;
-}
-.daily-timeline-main {
-  grid-column: 1;
-  grid-row: 1;
-}
-.daily-timeline-sentinel {
-  height: 1px;
-  pointer-events: none;
-}
-.daily-timeline-day {
-  animation: daily-day-reveal 240ms ease-out both;
-  contain: layout style;
-  scroll-margin-top: 72px;
-}
-.daily-timeline-day__heading {
-  display: flex;
-  align-items: center;
-  gap: 24px;
-}
-.daily-timeline-day__today-mark {
-  color: var(--color-accent);
-  font-size: 9px;
-  letter-spacing: 0.12em;
-}
-.daily-timeline-day--today .daily-timeline-day__heading::before {
-  content: '';
-  width: 12px;
-  height: 1px;
-  background: var(--color-accent);
-}
-.daily-timeline-sidebar {
-  grid-column: 2;
-  grid-row: 1 / span 2;
-  position: sticky;
-  top: 24px;
-  z-index: 10;
-}
-
-.daily-calendar {
-  width: 216px;
-  box-sizing: border-box;
-  padding: 24px;
-  border: 1px solid var(--color-dot);
-  border-radius: 8px;
-  background:
-    linear-gradient(180deg, rgba(255, 249, 239, 0.58), rgba(235, 230, 222, 0.38)),
-    var(--planner-page-bg, var(--color-cream));
-}
-.daily-calendar__eyebrow {
-  height: 24px;
-  color: var(--color-accent);
-  font-size: 9px;
-  font-weight: 600;
-  line-height: 24px;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-}
-.daily-calendar__month-row {
-  display: grid;
-  grid-template-columns: 24px 1fr 24px;
-  align-items: center;
-  height: 24px;
-  margin-bottom: 24px;
-}
-.daily-calendar__month {
-  overflow: hidden;
-  color: var(--color-ink);
-  font-size: 12px;
-  font-weight: 600;
-  line-height: 24px;
-  text-align: center;
-  text-overflow: ellipsis;
-  text-transform: capitalize;
-  white-space: nowrap;
-}
-.daily-calendar__arrow {
-  display: grid;
-  width: 24px;
-  height: 24px;
-  place-items: center;
-  border: 0;
-  border-radius: 4px;
-  background: transparent;
-  color: var(--color-ink-light);
-}
-.daily-calendar__arrow:hover,
-.daily-calendar__arrow:focus-visible {
-  background: var(--planner-sidebar-hover-bg);
-  color: var(--color-ink);
-}
-.daily-calendar__weekdays,
-.daily-calendar__days {
-  display: grid;
-  grid-template-columns: repeat(7, 24px);
-}
-.daily-calendar__weekdays span {
-  height: 24px;
-  color: var(--color-ink-light);
-  font-size: 8px;
-  font-weight: 600;
-  line-height: 24px;
-  text-align: center;
-  opacity: 0.72;
-}
-.daily-calendar__day {
-  position: relative;
-  display: grid;
-  width: 24px;
-  height: 24px;
-  padding: 0;
-  place-items: center;
-  border: 1px solid transparent;
-  border-radius: 50%;
-  background: transparent;
-  color: var(--color-ink-light);
-  font: inherit;
-  font-size: 10px;
-  line-height: 24px;
-}
-.daily-calendar__day:hover,
-.daily-calendar__day:focus-visible {
-  border-color: var(--color-dot);
-  background: rgba(245, 240, 232, 0.7);
-  color: var(--color-ink);
-  outline: none;
-}
-.daily-calendar__day--today {
-  border-color: color-mix(in srgb, var(--color-accent) 55%, transparent);
-  color: var(--color-accent);
-}
-.daily-calendar__day--active {
-  border-color: var(--color-ink);
-  background: var(--color-ink);
-  color: var(--color-cream);
-}
-.daily-calendar__day--active.daily-calendar__day--today {
-  border-color: var(--color-accent);
-  background: var(--color-accent);
-}
-.daily-calendar__loaded-mark {
-  position: absolute;
-  bottom: 2px;
-  width: 2px;
-  height: 2px;
-  border-radius: 50%;
-  background: currentColor;
-  opacity: 0.55;
-}
-.daily-calendar__today-link {
-  display: flex;
-  width: 100%;
-  height: 24px;
-  margin-top: 24px;
-  align-items: center;
-  gap: 0;
-  border: 0;
-  background: transparent;
-  color: var(--color-ink-light);
-  font: inherit;
-  font-size: 9px;
-  line-height: 24px;
-  letter-spacing: 0.04em;
-}
-.daily-calendar__today-link:hover,
-.daily-calendar__today-link:focus-visible {
-  color: var(--color-accent);
-}
-.daily-calendar__today-rule {
-  width: 24px;
-  height: 1px;
-  margin-right: 24px;
-  background: var(--color-accent);
-}
-
-@keyframes daily-day-reveal {
-  from { opacity: 0; transform: translateY(-6px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .daily-timeline-day { animation: none; }
-}
-
-@media (max-width: 959px) {
-  .daily-timeline-layout {
-    grid-template-columns: minmax(0, 648px);
-    max-width: 648px;
-  }
-  .daily-timeline-sidebar {
-    grid-column: 1;
-    grid-row: 2;
-    position: static;
-    width: min(100%, 360px);
-    margin-top: 24px;
-  }
-  .daily-timeline-feed {
-    grid-column: 1;
-    grid-row: 3;
-  }
-  .daily-timeline-sidebar .daily-calendar {
-    width: 100%;
-  }
-  .daily-timeline-sidebar .daily-calendar__weekdays,
-  .daily-timeline-sidebar .daily-calendar__days {
-    grid-template-columns: repeat(7, minmax(24px, 1fr));
-  }
-  .daily-timeline-sidebar .daily-calendar__day {
-    justify-self: center;
-  }
 }
 
 /* Mobile sidebar drawer - below 640px the collapsed sidebar is shown instead, no drawer needed */

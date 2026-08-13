@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { CollectionsPage } from '../CollectionsPage';
@@ -11,7 +11,11 @@ import {
   apiToggleTask,
   apiUpdateTask,
   apiDeleteTask,
+  apiDeleteSection,
   apiUpdatePreferences,
+  apiUpdateCollection,
+  fetchSavedColors,
+  apiAddSavedColor,
 } from '../../api/client';
 
 const mockFetchCollectionView = vi.mocked(fetchCollectionView);
@@ -21,7 +25,11 @@ const mockApiCreateTask = vi.mocked(apiCreateTask);
 const mockApiToggleTask = vi.mocked(apiToggleTask);
 const mockApiUpdateTask = vi.mocked(apiUpdateTask);
 const mockApiDeleteTask = vi.mocked(apiDeleteTask);
+const mockApiDeleteSection = vi.mocked(apiDeleteSection);
 const mockApiUpdatePreferences = vi.mocked(apiUpdatePreferences);
+const mockApiUpdateCollection = vi.mocked(apiUpdateCollection);
+const mockFetchSavedColors = vi.mocked(fetchSavedColors);
+const mockApiAddSavedColor = vi.mocked(apiAddSavedColor);
 
 vi.mock('../../api/client', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../../api/client')>()),
@@ -32,7 +40,13 @@ vi.mock('../../api/client', async (importOriginal) => ({
   apiToggleTask: vi.fn(),
   apiUpdateTask: vi.fn(),
   apiDeleteTask: vi.fn(),
+  apiDeleteSection: vi.fn(),
   apiUpdatePreferences: vi.fn(),
+  apiUpdateCollection: vi.fn(),
+  apiCreateCollection: vi.fn(),
+  apiDeleteCollection: vi.fn(),
+  fetchSavedColors: vi.fn(),
+  apiAddSavedColor: vi.fn(),
 }));
 
 vi.mock('../../contexts/AuthContext', () => ({
@@ -41,6 +55,10 @@ vi.mock('../../contexts/AuthContext', () => ({
 
 vi.mock('../../hooks/useTaskDrag', () => ({
   useTaskDrag: vi.fn(() => ({ activeDragId: null })),
+}));
+
+vi.mock('../../hooks/useSectionDrag', () => ({
+  useSectionDrag: vi.fn(),
 }));
 
 vi.mock('../../components/TaskList', () => ({
@@ -54,7 +72,7 @@ vi.mock('../../components/TaskList', () => ({
 }));
 
 const collectionViewData = {
-  collection: { id: 'test-collection-id', name: 'Test Collection', color: 'berry_red', isInbox: false },
+  collection: { id: 'test-collection-id', name: 'Test Collection', color: '#d56b64', isInbox: false },
   tasks: [
     {
       id: 'task-1',
@@ -67,6 +85,7 @@ const collectionViewData = {
     },
   ],
   collectionId: 'test-collection-id',
+  sections: [],
 };
 
 const defaultPreferences = {
@@ -110,12 +129,40 @@ beforeEach(() => {
   mockApiToggleTask.mockReset();
   mockApiUpdateTask.mockReset();
   mockApiDeleteTask.mockReset();
+  mockApiDeleteSection.mockReset();
   mockApiUpdatePreferences.mockReset();
+  mockApiUpdateCollection.mockReset();
+  mockFetchSavedColors.mockReset();
+  mockApiAddSavedColor.mockReset();
 
   mockFetchCollectionView.mockResolvedValue(collectionViewData);
   mockFetchCollections.mockResolvedValue([]);
   mockFetchPreferences.mockResolvedValue(defaultPreferences);
+  mockFetchSavedColors.mockResolvedValue([]);
+  mockApiAddSavedColor.mockResolvedValue([]);
 });
+
+const parentCollection = {
+  id: 'parent-id',
+  userId: 'u1',
+  name: 'Parent',
+  color: '#7dbfb2',
+  parentId: null,
+  isInbox: false,
+  isArchived: false,
+  orderValue: 0,
+  createdAt: '',
+  updatedAt: '',
+};
+
+const childCollection = {
+  ...parentCollection,
+  id: 'test-collection-id',
+  name: 'Test Collection',
+  color: '#d56b64',
+  parentId: 'parent-id',
+  orderValue: 1,
+};
 
 describe('CollectionsPage', () => {
   it('renders the collection name in the breadcrumb', async () => {
@@ -125,9 +172,9 @@ describe('CollectionsPage', () => {
     const header = title.closest('header');
 
     expect(header).toBeInTheDocument();
-    expect(header).not.toContainElement(screen.getByRole('button', { name: 'Hide completed tasks' }));
-    expect(header).not.toContainElement(screen.getByRole('button', { name: 'Hide old notes' }));
-    expect(screen.getByRole('button', { name: 'Hide old notes' }).closest('.page-header-toolbar')).toHaveClass('sticky', 'ml-auto');
+    expect(header).toContainElement(screen.getByRole('button', { name: 'Hide completed tasks' }));
+    expect(header).toContainElement(screen.getByRole('button', { name: 'Hide old notes' }));
+    expect(screen.getByRole('button', { name: 'Hide old notes' }).closest('.page-header-toolbar')).toHaveClass('absolute', 'right-0');
   });
 
   it('updates completed-task visibility from the header toolbar', async () => {
@@ -154,8 +201,34 @@ describe('CollectionsPage', () => {
   it('renders add task input', async () => {
     renderPage();
 
-    const input = await screen.findByPlaceholderText('Add task…');
+    const input = await screen.findByPlaceholderText('New task…');
     expect(input).toBeInTheDocument();
+  });
+
+  it('asks what to do with tasks when a populated section name is blanked', async () => {
+    mockFetchCollectionView.mockResolvedValue({
+      ...collectionViewData,
+      tasks: [{ ...collectionViewData.tasks[0], sectionId: 'section-1' }],
+      sections: [{
+        id: 'section-1',
+        name: 'Work',
+        collectionId: 'test-collection-id',
+        orderValue: 0,
+      }],
+    });
+    renderPage();
+
+    fireEvent.doubleClick(await screen.findByText('Work'));
+    const input = screen.getByDisplayValue('Work');
+    fireEvent.change(input, { target: { value: '' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+
+    expect(await screen.findByRole('dialog', { name: 'Delete "Work"?' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Delete section and tasks' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Move tasks to top-level' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Cancel' })).toBeInTheDocument();
+    expect(mockApiDeleteTask).not.toHaveBeenCalled();
+    expect(mockApiDeleteSection).not.toHaveBeenCalled();
   });
 
   it('uses the collection id from URL params', async () => {
@@ -163,5 +236,71 @@ describe('CollectionsPage', () => {
 
     await screen.findByText('Test Collection');
     expect(mockFetchCollectionView).toHaveBeenCalledWith('test-collection-id');
+  });
+
+  describe('breadcrumb context menu', () => {
+    async function openCrumbMenu(name: string) {
+      mockFetchCollections.mockResolvedValue([parentCollection, childCollection]);
+      renderPage();
+      const crumb = (await screen.findByText(name)).closest('.collections-page-crumb')!;
+      fireEvent.contextMenu(crumb, { clientX: 120, clientY: 30 });
+      return screen.getByRole('menu');
+    }
+
+    it('offers the same collection actions as the sidebar', async () => {
+      const menu = await openCrumbMenu('Test Collection');
+      const labels = within(menu)
+        .getAllByRole('menuitem')
+        .map((item) => item.textContent);
+
+      expect(labels).toEqual(['Change color…', 'Rename', 'Add sub-collection', 'Delete']);
+    });
+
+    it('targets the crumb that was right-clicked, not the current collection', async () => {
+      const menu = await openCrumbMenu('Parent');
+      fireEvent.click(within(menu).getByText('Change color…'));
+
+      const picker = await screen.findByRole('dialog', { name: 'Change color' });
+      expect(within(picker).getByLabelText('Color value')).toHaveValue('#7dbfb2');
+    });
+
+    it('recolors the crumb collection without touching its children', async () => {
+      mockApiUpdateCollection.mockResolvedValue({ ...parentCollection, color: '#b7bf4e' });
+
+      const menu = await openCrumbMenu('Parent');
+      fireEvent.click(within(menu).getByText('Change color…'));
+
+      const picker = await screen.findByRole('dialog', { name: 'Change color' });
+      const input = within(picker).getByLabelText('Color value');
+      fireEvent.change(input, { target: { value: '#b7bf4e' } });
+      fireEvent.keyDown(input, { key: 'Enter' });
+
+      await waitFor(() =>
+        expect(mockApiUpdateCollection).toHaveBeenCalledWith('parent-id', { color: '#b7bf4e' }),
+      );
+      expect(mockApiUpdateCollection).toHaveBeenCalledTimes(1);
+      // The child crumb keeps the colour it already had.
+      await waitFor(() =>
+        expect(
+          (screen.getByText('Test Collection').closest('.collections-page-crumb') as HTMLElement)
+            .firstElementChild,
+        ).toHaveStyle({ background: '#d56b64' }),
+      );
+    });
+
+    it('renames the crumb collection inline', async () => {
+      mockApiUpdateCollection.mockResolvedValue({ ...childCollection, name: 'Renamed' });
+
+      const menu = await openCrumbMenu('Test Collection');
+      fireEvent.click(within(menu).getByText('Rename'));
+
+      const input = await screen.findByLabelText('Rename');
+      fireEvent.change(input, { target: { value: 'Renamed' } });
+      fireEvent.keyDown(input, { key: 'Enter' });
+
+      await waitFor(() =>
+        expect(mockApiUpdateCollection).toHaveBeenCalledWith('test-collection-id', { name: 'Renamed' }),
+      );
+    });
   });
 });

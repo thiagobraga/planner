@@ -2,7 +2,9 @@ import crypto from 'node:crypto';
 import pool from '../db/pool.js';
 import { AppError } from '../utils/AppError.js';
 import { validate, type ValidationError } from '../utils/validate.js';
+import { isValidEmail } from '../utils/email.js';
 import { securityLog } from '../utils/securityLogger.js';
+import { isValidIanaTimezone } from './preferencesService.js';
 import { validatePassword, hashPassword, verifyArgon2id } from './passwordService.js';
 import { createSession } from './sessionService.js';
 import { sendPasswordResetEmail } from './emailService.js';
@@ -12,9 +14,6 @@ import {
   incrementLoginAttempts,
   clearLoginRate,
 } from './rateLimitService.js';
-
-const EMAIL_REGEX =
-  /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
 
 export type UserRole = 'user' | 'admin';
 
@@ -29,12 +28,13 @@ export interface RegisterInput {
   email: string;
   password: string;
   displayName?: string;
+  timeZone?: string;
 }
 
 export async function register(input: RegisterInput): Promise<UserData> {
   const errors: ValidationError[] = [];
 
-  if (!input.email || !EMAIL_REGEX.test(input.email)) {
+  if (!isValidEmail(input.email)) {
     errors.push({ field: 'email', message: 'Email must be a valid RFC 5322 address' });
   }
 
@@ -85,12 +85,15 @@ export async function register(input: RegisterInput): Promise<UserData> {
     );
 
     await client.query(
+      // Migration 033 replaced the named palette with exact hex and added a
+      // CHECK constraint; the old 'grey' literal fails it and broke register.
       `INSERT INTO collections (id, user_id, name, color, is_inbox)
-       VALUES ($1, $2, 'Inbox', 'grey', true)`,
+       VALUES ($1, $2, 'Inbox', '#bababa', true)`,
       [collectionId, userId],
     );
 
-    await client.query(`INSERT INTO preferences (user_id) VALUES ($1)`, [userId]);
+    const timeZone = input.timeZone && isValidIanaTimezone(input.timeZone) ? input.timeZone : 'UTC';
+    await client.query(`INSERT INTO preferences (user_id, time_zone) VALUES ($1, $2)`, [userId, timeZone]);
 
     await client.query('COMMIT');
   } catch (err) {

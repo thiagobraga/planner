@@ -23,7 +23,7 @@ vi.mock('../../contexts/AuthContext', () => ({
   useAuth: vi.fn(() => ({ logout: mockLogout, user: authState.user })),
 }));
 
-vi.mock('../../contexts/PlannerDragContext', () => ({
+vi.mock('../../contexts/usePlannerDrag', () => ({
   usePlannerDrag: vi.fn(() => ({ activeDrag: null, overId: null })),
 }));
 
@@ -56,7 +56,7 @@ describe('Sidebar', () => {
   it('renders Planner branding', () => {
     render(<Sidebar />);
     expect(screen.getByText('Planner')).toBeInTheDocument();
-    expect(screen.getByText('Bulletjournal online')).toBeInTheDocument();
+    expect(screen.getByText('Your Bullet Journal')).toBeInTheDocument();
   });
 
   it('renders collapsed mode with icon-only bar', () => {
@@ -105,9 +105,21 @@ describe('Sidebar', () => {
     expect(screen.getByText('Settings')).toBeInTheDocument();
   });
 
-  it('renders styleguide link in expanded mode', () => {
+  it('hides the styleguide link from a regular user in expanded mode', () => {
+    render(<Sidebar />);
+    expect(screen.queryByText('Styleguide')).not.toBeInTheDocument();
+  });
+
+  it('renders styleguide link for an admin in expanded mode', () => {
+    authState.user = { role: 'admin' };
     render(<Sidebar />);
     expect(screen.getByText('Styleguide')).toBeInTheDocument();
+  });
+
+  it('renders styleguide link for an admin in collapsed mode', () => {
+    authState.user = { role: 'admin' };
+    render(<Sidebar collapsed />);
+    expect(screen.getByTitle('Styleguide')).toBeInTheDocument();
   });
 
   it('renders CollectionTreeNav in expanded mode', () => {

@@ -1,9 +1,9 @@
 import { render, screen, fireEvent } from '@testing-library/react';
-import { DndContext } from '@dnd-kit/core';
 import { SortableContext } from '@dnd-kit/sortable';
 import { describe, it, expect, vi } from 'vitest';
 import { TaskItem, type Task } from '../TaskItem';
-import { NO_DRAG_ATTR, DRAG_HANDLE_ATTR } from '../dnd/sensors';
+import { NO_DRAG_ATTR } from '../dnd/sensors';
+import { PlannerDragProvider } from '../../contexts/PlannerDragContext';
 
 function renderRow(props: Partial<React.ComponentProps<typeof TaskItem>> = {}, task: Partial<Task> = {}) {
   const full: Task = {
@@ -16,27 +16,26 @@ function renderRow(props: Partial<React.ComponentProps<typeof TaskItem>> = {}, t
     ...task,
   };
   return render(
-    <DndContext>
+    <PlannerDragProvider>
       <SortableContext items={[full.id]}>
         <TaskItem task={full} {...props} />
       </SortableContext>
-    </DndContext>,
+    </PlannerDragProvider>,
   );
 }
 
 const row = () => screen.getByRole('button', { name: 'Write the thing' });
 
-describe('TaskItem: click no longer selects', () => {
-  it('does nothing on a single click', () => {
+describe('TaskItem: click selection', () => {
+  it('selects task row on single click', () => {
     const onStartEdit = vi.fn();
     renderRow({ onStartEdit });
 
     fireEvent.click(row());
 
     expect(onStartEdit).not.toHaveBeenCalled();
-    // Selection is gone entirely, so no row ever reports itself as selected.
-    expect(row()).not.toHaveAttribute('aria-selected');
-    expect(row().className).not.toContain('task-item--selected');
+    expect(row()).toHaveAttribute('aria-selected', 'true');
+    expect(row().className).toContain('task-item--selected');
   });
 
   it('opens inline editing on double-click', () => {
@@ -74,6 +73,18 @@ describe('TaskItem: toggle stays isolated', () => {
   });
 });
 
+describe('TaskItem: edit keyboard behavior', () => {
+  it('leaves arrow keys to the input without committing the row', () => {
+    const onEditCommit = vi.fn();
+    renderRow({ isEditing: true, onEditCommit });
+
+    const input = screen.getByRole('textbox');
+    expect(fireEvent.keyDown(input, { key: 'ArrowUp' })).toBe(true);
+    expect(fireEvent.keyDown(input, { key: 'ArrowDown' })).toBe(true);
+    expect(onEditCommit).not.toHaveBeenCalled();
+  });
+});
+
 describe('TaskItem: drag surfaces', () => {
   it('marks the toggle as non-draggable so its press is not swallowed', () => {
     renderRow();
@@ -89,13 +100,7 @@ describe('TaskItem: drag surfaces', () => {
   it('leaves the row itself draggable', () => {
     renderRow();
     expect(row().closest(`[${NO_DRAG_ATTR}]`)).toBeNull();
-  });
-
-  it('exposes a named, focusable drag handle for keyboard dragging', () => {
-    renderRow();
-    const handle = screen.getByRole('button', { name: 'Reorder Write the thing' });
-    expect(handle).toHaveAttribute(DRAG_HANDLE_ATTR);
-    expect(handle).toHaveAttribute('tabIndex', '0');
+    expect(row()).toHaveAttribute('aria-roledescription', 'sortable');
   });
 });
 

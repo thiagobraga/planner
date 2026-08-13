@@ -41,6 +41,7 @@ function taskRow(over: Partial<Record<string, unknown>> = {}) {
     order_value: 0,
     depth: 0,
     type: "task",
+    status_id: null,
     created_at: "2026-01-01T00:00:00Z",
     updated_at: "2026-01-01T00:00:00Z",
     ...over,
@@ -264,7 +265,7 @@ describe("moveTask ordering scopes", () => {
     (pool.query as ReturnType<typeof vi.fn>).mockResolvedValue({ rows: [taskRow()] });
     const tx = stubSuccessfulMove([
       [/WITH RECURSIVE/, [{ id: taskId, parent_task_id: null, depth: 0, collection_id: collectionId, section_id: null, due_date: null }]],
-      [/SELECT id, order_value, due_date FROM tasks/, [
+      [/SELECT id, order_value, due_date, status_id, priority, is_completed FROM tasks/, [
         { id: "sib-a", order_value: 0, due_date: null },
         { id: "sib-b", order_value: 1000, due_date: null },
       ]],
@@ -284,7 +285,7 @@ describe("moveTask ordering scopes", () => {
     (pool.query as ReturnType<typeof vi.fn>).mockResolvedValue({ rows: [taskRow()] });
     const tx = stubSuccessfulMove([
       [/WITH RECURSIVE/, [{ id: taskId, parent_task_id: null, depth: 0, collection_id: collectionId, section_id: null, due_date: null }]],
-      [/SELECT id, order_value, due_date FROM tasks/, [{ id: "sib-a", order_value: 0, due_date: null }]],
+      [/SELECT id, order_value, due_date, status_id, priority, is_completed FROM tasks/, [{ id: "sib-a", order_value: 0, due_date: null }]],
     ]);
 
     await moveTask(taskId, userId, { parentTaskId: null, scope: scopeCollection, position: 99 });
@@ -300,7 +301,7 @@ describe("moveTask ordering scopes", () => {
     const tx = stubSuccessfulMove([
       [/WITH RECURSIVE/, [{ id: taskId, parent_task_id: null, depth: 0, collection_id: collectionId, section_id: null, due_date: null }]],
       // sib-a and sib-b sit at adjacent values - no integer room between them.
-      [/SELECT id, order_value, due_date FROM tasks/, [
+      [/SELECT id, order_value, due_date, status_id, priority, is_completed FROM tasks/, [
         { id: "sib-a", order_value: 0, due_date: null },
         { id: "sib-b", order_value: 1, due_date: null },
       ]],
@@ -344,23 +345,20 @@ describe("moveTask ordering scopes", () => {
 
     const dayWrites = tx.calls.filter((c) => /INSERT INTO task_order/.test(c.sql)).map((c) => c.params);
     expect(dayWrites).toEqual([
-      [userId, taskId, "2026-07-18", 0],
-      [userId, "other-1", "2026-07-18", 1000],
-      [userId, "other-2", "2026-07-18", 2000],
+      [userId, taskId, "day", "2026-07-18", 0],
+      [userId, "other-1", "day", "2026-07-18", 1000],
+      [userId, "other-2", "day", "2026-07-18", 2000],
     ]);
     // The whole point of the separate table: a Daily drag must not renumber the
     // collection's ordering.
     expect(tx.calls.some((c) => /SET order_value/.test(c.sql))).toBe(false);
 
-    // `orderValue` in the response must report each row's real
-    // tasks.order_value, not the task_order.position just written above -
-    // DailyPage sorts by orderValue against every other task's untouched
-    // tasks.order_value, so leaking the day position here reintroduces the
-    // mixed-number-space bug this branch exists to fix.
+    // `orderValue` in the response reports the effective day position so
+    // DailyPage preserves the newly reordered state without snapping back.
     expect(result.reordered.map((r) => ({ id: r.id, orderValue: r.orderValue }))).toEqual([
-      { id: taskId, orderValue: 47000 },
-      { id: "other-1", orderValue: 5000 },
-      { id: "other-2", orderValue: 9000 },
+      { id: taskId, orderValue: 0 },
+      { id: "other-1", orderValue: 1000 },
+      { id: "other-2", orderValue: 2000 },
     ]);
   });
 
@@ -373,9 +371,6 @@ describe("moveTask ordering scopes", () => {
         { task_id: "other-2", position: 1000 },
       ]],
     ]);
-    // order_value (47000) deliberately differs from the midpoint position
-    // (500) about to be written, so the assertion below would fail if the
-    // response ever reported the day position instead.
     (pool.query as ReturnType<typeof vi.fn>).mockResolvedValue({
       rows: [taskRow({ due_date: "2026-07-18", order_value: 47000 })],
     });
@@ -388,19 +383,68 @@ describe("moveTask ordering scopes", () => {
 
     const dayWrites = tx.calls.filter((c) => /INSERT INTO task_order/.test(c.sql)).map((c) => c.params);
     // Between other-1 (0) and other-2 (1000): only the moved task is written.
-    expect(dayWrites).toEqual([[userId, taskId, "2026-07-18", 500]]);
+    expect(dayWrites).toEqual([[userId, taskId, "day", "2026-07-18", 500]]);
     expect(tx.calls.some((c) => /SET order_value/.test(c.sql))).toBe(false);
 
-    // The reported orderValue is the moved task's real tasks.order_value
-    // (47000), not the task_order.position (500) just written.
+    // The reported orderValue is the day position (500) just written.
     expect(result.reordered).toEqual([
       {
         id: taskId,
         parentTaskId: null,
         collectionId,
         dueDate: "2026-07-18",
-        orderValue: 47000,
+        orderValue: 500,
         depth: 0,
+        statusId: null,
+        priority: 4,
+        isCompleted: false,
+      },
+    ]);
+  });
+
+  it("reports the day position, not the untouched collection order_value, in `moved`", async () => {
+    // A day-scoped move never writes `tasks.order_value` - it stays at
+    // whatever the collection last set it to (47000 here, deliberately unlike
+    // the day position). The client applies `moved` as the authoritative
+    // patch after a drag; if it reported the raw column, every day-scoped
+    // move would hand the client `orderValue: 47000` (or, for a task that has
+    // never had a collection order written, literally `0`) and the row would
+    // snap back to the front of the list the instant that "authoritative"
+    // patch lands - the optimistic reorder was correct, the patch undid it.
+    const tx = mockTransaction([
+      [/WITH RECURSIVE/, [{ id: taskId, parent_task_id: null, depth: 0, collection_id: collectionId, section_id: null, due_date: "2026-07-18" }]],
+      [/LEFT JOIN task_order/, [
+        { task_id: "other-1", position: 0 },
+        { task_id: "other-2", position: 1000 },
+      ]],
+    ]);
+    (pool.query as ReturnType<typeof vi.fn>).mockImplementation(async (sql: string) => {
+      // The post-commit subtree read joins `task_order` to recover the day
+      // position for whichever tasks moved; simulate that join's result.
+      if (/LEFT JOIN task_order/.test(sql)) {
+        return { rows: [taskRow({ due_date: "2026-07-18", order_value: 47000, day_position: 500 })] };
+      }
+      return { rows: [taskRow({ due_date: "2026-07-18", order_value: 47000 })] };
+    });
+
+    const result = await moveTask(taskId, userId, {
+      parentTaskId: null,
+      scope: { kind: "day", dueDate: "2026-07-18" },
+      position: 1,
+    });
+
+    void tx;
+    expect(result.moved).toEqual([
+      {
+        id: taskId,
+        parentTaskId: null,
+        collectionId,
+        dueDate: "2026-07-18",
+        orderValue: 500,
+        depth: 0,
+        statusId: null,
+        priority: 4,
+        isCompleted: false,
       },
     ]);
   });
@@ -440,7 +484,7 @@ describe("moveTask onto a sidebar collection", () => {
 
     const rootWrite = tx.calls.find((c) => /UPDATE tasks\s+SET parent_task_id/.test(c.sql));
     expect(rootWrite).toBeDefined();
-    const [parentTaskId, destCollectionId, , dueDate, depth] = rootWrite!.params as unknown[];
+    const [parentTaskId, destCollectionId, , dueDate, , , , , , depth] = rootWrite!.params as unknown[];
 
     // Detached from its old parent and promoted to the root of Inbox...
     expect(parentTaskId).toBeNull();
@@ -459,16 +503,118 @@ describe("moveTask onto a sidebar collection", () => {
   });
 });
 
+describe("moveTask section scope", () => {
+  const sectionId = "section-1";
+
+  it("files the task into an explicit section when dropped on a sibling row", async () => {
+    // Dropped onto another top-level row: no destParent, so the only signal
+    // that this belongs in a section is the explicit `sectionId` on the input -
+    // this is the row-to-row drag gesture, not the empty-section-container one.
+    (pool.query as ReturnType<typeof vi.fn>).mockResolvedValue({
+      rows: [taskRow({ section_id: null })],
+    });
+    const tx = mockTransaction([
+      [/WITH RECURSIVE/, [{ id: taskId, parent_task_id: null, depth: 0, collection_id: collectionId, section_id: null, due_date: null }]],
+    ]);
+
+    await moveTask(taskId, userId, {
+      parentTaskId: null,
+      sectionId,
+      scope: scopeCollection,
+      position: 0,
+    });
+
+    const rootWrite = tx.calls.find((c) => /UPDATE tasks\s+SET parent_task_id/.test(c.sql));
+    const [, , destSectionId] = rootWrite!.params as unknown[];
+    expect(destSectionId).toBe(sectionId);
+
+    const scopeQuery = tx.calls.find((c) => /section_id IS NOT DISTINCT FROM/.test(c.sql));
+    expect(scopeQuery?.params).toEqual([collectionId, sectionId, null, taskId]);
+  });
+
+  it("files the task into a section via an explicit section scope, dropped on the empty container", async () => {
+    (pool.query as ReturnType<typeof vi.fn>).mockResolvedValue({
+      rows: [taskRow({ section_id: null })],
+    });
+    mockTransaction([
+      [/WITH RECURSIVE/, [{ id: taskId, parent_task_id: null, depth: 0, collection_id: collectionId, section_id: null, due_date: null }]],
+    ]);
+
+    const result = await moveTask(taskId, userId, {
+      parentTaskId: null,
+      sectionId,
+      scope: { kind: "section", sectionId },
+      position: Number.MAX_SAFE_INTEGER,
+    });
+
+    expect(result.reordered).toHaveLength(1);
+  });
+
+  it("preserves the task's current section when a plain reorder omits sectionId", async () => {
+    (pool.query as ReturnType<typeof vi.fn>).mockResolvedValue({
+      rows: [taskRow({ section_id: sectionId })],
+    });
+    const tx = mockTransaction([
+      [/WITH RECURSIVE/, [{ id: taskId, parent_task_id: null, depth: 0, collection_id: collectionId, section_id: sectionId, due_date: null }]],
+    ]);
+
+    await moveTask(taskId, userId, {
+      parentTaskId: null,
+      scope: scopeCollection,
+      position: 0,
+    });
+
+    const rootWrite = tx.calls.find((c) => /UPDATE tasks\s+SET parent_task_id/.test(c.sql));
+    const [, , destSectionId] = rootWrite!.params as unknown[];
+    expect(destSectionId).toBe(sectionId);
+  });
+
+  it("rejects a section scope without a section id", async () => {
+    await expectRejection(
+      moveTask(taskId, userId, {
+        parentTaskId: null,
+        scope: { kind: "section" } as unknown as Parameters<typeof moveTask>[2]["scope"],
+        position: 0,
+      }),
+      "scope.sectionId",
+      /Section scope requires a section id/,
+    );
+  });
+});
+
 describe("moveTask subtree propagation", () => {
+  const sourceSectionId = "section-1";
+  const targetSectionId = "section-2";
   const subtree = [
-    { id: taskId, parent_task_id: null, depth: 0, collection_id: collectionId, section_id: null, due_date: "2026-07-18" },
-    { id: "child-1", parent_task_id: taskId, depth: 1, collection_id: collectionId, section_id: null, due_date: "2026-07-18" },
-    { id: "grand-1", parent_task_id: "child-1", depth: 2, collection_id: collectionId, section_id: null, due_date: "2026-07-18" },
+    {
+      id: taskId,
+      parent_task_id: null,
+      depth: 0,
+      collection_id: collectionId,
+      section_id: sourceSectionId,
+      due_date: "2026-07-18",
+    },
+    {
+      id: "child-1",
+      parent_task_id: taskId,
+      depth: 1,
+      collection_id: collectionId,
+      section_id: sourceSectionId,
+      due_date: "2026-07-18",
+    },
+    {
+      id: "grand-1",
+      parent_task_id: "child-1",
+      depth: 2,
+      collection_id: collectionId,
+      section_id: sourceSectionId,
+      due_date: "2026-07-18",
+    },
   ];
 
-  it("moves every descendant's collection when crossing collections", async () => {
+  it("clears the root section and rewrites descendants when crossing collections", async () => {
     (pool.query as ReturnType<typeof vi.fn>).mockResolvedValue({
-      rows: [taskRow({ due_date: "2026-07-18" })],
+      rows: [taskRow({ due_date: "2026-07-18", section_id: sourceSectionId })],
     });
     const tx = mockTransaction([[/WITH RECURSIVE/, subtree]]);
 
@@ -479,8 +625,33 @@ describe("moveTask subtree propagation", () => {
       position: 0,
     });
 
-    const collectionWrite = tx.calls.find((c) => /SET collection_id = \$1, section_id = NULL/.test(c.sql));
-    expect(collectionWrite?.params).toEqual(["collection-2", ["child-1", "grand-1"]]);
+    const rootWrite = tx.calls.find((c) => /UPDATE tasks\s+SET parent_task_id/.test(c.sql));
+    const [, , destSectionId] = rootWrite!.params as unknown[];
+    expect(destSectionId).toBeNull();
+
+    const collectionWrite = tx.calls.find((c) => /SET collection_id = \$1,[\s\S]*section_id = \$2/.test(c.sql));
+    expect(collectionWrite?.params).toEqual(["collection-2", null, ["child-1", "grand-1"]]);
+  });
+
+  it("rewrites descendant sections when moving within the same collection", async () => {
+    (pool.query as ReturnType<typeof vi.fn>).mockResolvedValue({
+      rows: [taskRow({ due_date: "2026-07-18", section_id: sourceSectionId })],
+    });
+    const tx = mockTransaction([[/WITH RECURSIVE/, subtree]]);
+
+    await moveTask(taskId, userId, {
+      parentTaskId: null,
+      sectionId: targetSectionId,
+      scope: scopeCollection,
+      position: 0,
+    });
+
+    const rootWrite = tx.calls.find((c) => /UPDATE tasks\s+SET parent_task_id/.test(c.sql));
+    const [, , destSectionId] = rootWrite!.params as unknown[];
+    expect(destSectionId).toBe(targetSectionId);
+
+    const sectionWrite = tx.calls.find((c) => /SET collection_id = \$1, section_id = \$2/.test(c.sql));
+    expect(sectionWrite?.params).toEqual([collectionId, targetSectionId, ["child-1", "grand-1"]]);
   });
 
   it("keeps the due date when only the collection changes", async () => {
@@ -542,7 +713,7 @@ describe("moveTask subtree propagation", () => {
     expect(depthWrite?.params).toEqual([2, ["child-1", "grand-1"]]);
   });
 
-  it("does not touch completion, priority or title", async () => {
+  it("only allows completion and priority changes on the moved root", async () => {
     (pool.query as ReturnType<typeof vi.fn>).mockResolvedValue({
       rows: [taskRow({ is_completed: true, priority: 1 })],
     });
@@ -551,7 +722,10 @@ describe("moveTask subtree propagation", () => {
     await moveTask(taskId, userId, { parentTaskId: null, scope: scopeCollection, position: 0 });
 
     const writes = tx.calls.filter((c) => /^UPDATE tasks/m.test(c.sql.trim()));
-    for (const write of writes) {
+    const rootWrite = writes.find((write) => /SET parent_task_id/.test(write.sql));
+    expect(rootWrite?.sql).toMatch(/priority = COALESCE/);
+    expect(rootWrite?.sql).not.toMatch(/title|description|recurrence_rule/);
+    for (const write of writes.filter((candidate) => candidate !== rootWrite)) {
       expect(write.sql).not.toMatch(/is_completed|priority|title|description|recurrence_rule/);
     }
   });

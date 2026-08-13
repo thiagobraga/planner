@@ -1,11 +1,10 @@
 import { create } from 'zustand';
-import { paletteColorHex, type ApiCollection } from '../api/client';
+import type { ApiCollection } from '../api/client';
 
 export interface CollectionTreeNode {
   id: string;
   name: string;
-  color: string; // resolved hex for display
-  colorName: string; // palette name for the API
+  color: string;
   parentId: string | null;
   orderValue: number;
   isInbox: boolean;
@@ -40,8 +39,7 @@ export function buildCollectionTree(collections: ApiCollection[]): CollectionTre
     byId.set(p.id, {
       id: p.id,
       name: p.name,
-      color: paletteColorHex(p.color),
-      colorName: p.color,
+      color: p.color,
       parentId: p.parentId,
       orderValue: p.orderValue,
       isInbox: p.isInbox,

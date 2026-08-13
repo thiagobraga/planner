@@ -6,7 +6,7 @@
 // handlers never reach back into component state to find it.
 
 /** Discriminator for anything that can be picked up. */
-export type DragKind = 'task' | 'habit' | 'habit-group' | 'collection';
+export type DragKind = 'task' | 'habit' | 'habit-group' | 'collection' | 'section-header' | 'board-column';
 
 /**
  * Discriminator for anything that can be dropped on.
@@ -15,8 +15,27 @@ export type DragKind = 'task' | 'habit' | 'habit-group' | 'collection';
  * `habit-section` is the region beneath it, which accepts habits. They are
  * separate kinds because they resolve differently: a header by closest-center
  * like any sortable row, a section by pointer intersection like any container.
+ *
+ * `section-header` is the same split for task sections: `section` is the
+ * region a task can be filed into, `section-header` is the row a section drag
+ * reorders against. Distinct tags, not the shared `section` one, because a
+ * task drag and a section-header drag would otherwise both match the same
+ * droppables despite wanting entirely different targets.
  */
-export type DropKind = 'task' | 'habit' | 'habit-group' | 'habit-section' | 'collection' | 'day';
+export type DropKind =
+  | 'task'
+  | 'habit'
+  | 'habit-group'
+  | 'habit-section'
+  | 'collection'
+  | 'day'
+  | 'section'
+  | 'section-header'
+  | 'board-column'
+  | 'board-column-header'
+  | 'card-subtasks';
+
+export type BoardGroupBy = 'status' | 'section' | 'priority';
 
 /**
  * Which ordered list a task position refers to.
@@ -27,7 +46,10 @@ export type DropKind = 'task' | 'habit' | 'habit-group' | 'habit-section' | 'col
  */
 export type TaskOrderScope =
   | { kind: 'collection'; collectionId: string }
-  | { kind: 'day'; dueDate: string };
+  | { kind: 'day'; dueDate: string }
+  | { kind: 'section'; sectionId: string }
+  | { kind: 'status'; collectionId: string; statusId: string | null }
+  | { kind: 'priority'; collectionId: string; priority: number };
 
 export interface TaskDragData {
   kind: 'task';
@@ -35,6 +57,8 @@ export interface TaskDragData {
   /** Null at the top level. */
   parentTaskId: string | null;
   collectionId: string;
+  /** Null when the row sits outside any section. */
+  sectionId: string | null;
   /** ISO YYYY-MM-DD, or null for an undated task. */
   dueDate: string | null;
   /** 0-based nesting level; max 5. */
@@ -123,11 +147,56 @@ export interface DayDropData {
   containerId: string;
 }
 
+/** A task section as a drop target: tasks can be dropped here to move into the section. */
+export interface SectionDropData {
+  kind: 'section';
+  sectionId: string;
+  collectionId: string;
+  containerId: string;
+}
+
+/** A section header, draggable to reorder sections within their collection. */
+export interface SectionHeaderDragData {
+  kind: 'section-header';
+  sectionId: string;
+  collectionId: string;
+}
+
+export interface BoardColumnDragData {
+  kind: 'board-column';
+  columnId: string;
+  collectionId: string;
+  groupBy: BoardGroupBy;
+}
+
+export interface BoardColumnDropData {
+  kind: 'board-column';
+  columnId: string;
+  collectionId: string;
+  groupBy: BoardGroupBy;
+  containerId: string;
+}
+
+export interface BoardColumnHeaderDropData {
+  kind: 'board-column-header';
+  columnId: string;
+  collectionId: string;
+  groupBy: BoardGroupBy;
+}
+
+export interface CardSubtasksDropData {
+  kind: 'card-subtasks';
+  taskId: string;
+  collectionId: string;
+}
+
 export type DragData =
   | TaskDragData
   | HabitDragData
   | HabitGroupDragData
-  | CollectionDragData;
+  | CollectionDragData
+  | SectionHeaderDragData
+  | BoardColumnDragData;
 
 export type DropData =
   | TaskDragData
@@ -135,7 +204,12 @@ export type DropData =
   | HabitGroupDragData
   | HabitSectionDropData
   | CollectionDropData
-  | DayDropData;
+  | DayDropData
+  | SectionDropData
+  | SectionHeaderDragData
+  | BoardColumnDropData
+  | BoardColumnHeaderDropData
+  | CardSubtasksDropData;
 
 export function isTaskDrag(data: DragData | undefined): data is TaskDragData {
   return data?.kind === 'task';
