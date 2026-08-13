@@ -60,7 +60,7 @@ function apiToTask(t: ApiTask): Task {
     dueDate: t.dueDate ?? undefined,
     isCompleted: t.isCompleted,
     orderValue: t.orderValue,
-    indent: t.depth ?? 0,
+    indent: t.depth,
     type: t.type,
     // Siblings with equal order values fall back to creation time; without it
     // every tie resolves arbitrarily.

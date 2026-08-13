@@ -69,7 +69,7 @@ function apiToTask(t: ApiTask): Task {
     priority: t.priority,
     isCompleted: t.isCompleted,
     orderValue: t.orderValue,
-    indent: t.depth ?? 0,
+    indent: t.depth,
     collectionId: t.collectionId,
     sectionId: t.sectionId,
     parentTaskId: t.parentTaskId ?? undefined,

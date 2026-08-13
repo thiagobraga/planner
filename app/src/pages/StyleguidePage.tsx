@@ -464,6 +464,7 @@ export function StyleguidePage() {
                 dueDate: '2026-08-14',
                 isCompleted: false,
                 orderValue: 1000,
+                depth: 0,
                 type: 'task',
                 labels: [
                   { id: 'label-design', name: 'design', color: '#c98079' },
@@ -479,6 +480,7 @@ export function StyleguidePage() {
                   parentTaskId: 'board-card-specimen',
                   isCompleted: true,
                   orderValue: 1000,
+                  depth: 0,
                   type: 'task',
                 },
                 {
@@ -489,6 +491,7 @@ export function StyleguidePage() {
                   parentTaskId: 'board-card-specimen',
                   isCompleted: false,
                   orderValue: 2000,
+                  depth: 0,
                   type: 'task',
                 },
               ]}
