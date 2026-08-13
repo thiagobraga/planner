@@ -622,73 +622,73 @@ export function CollectionsPage() {
     >
       <header className="page-header-copy sticky-page-header max-w-162">
         <div className="page-header-copy-text">
-        <h1 className="collections-page-title flex h-6 items-center gap-2 text-lg leading-6 font-semibold text-ink">
-        {trail.map((crumb, i) => {
-          const isCurrent = i === trail.length - 1;
-          return (
-            <Fragment key={crumb.id}>
-              {i > 0 && (
-                <ChevronRight size={13} className="collections-page-title-separator font-normal mx-1 text-ink-light opacity-50" aria-hidden="true" />
-              )}
-              <span
-                className="collections-page-crumb flex min-w-0 items-center gap-2"
-                onContextMenu={(e) => {
-                  e.preventDefault();
-                  setCrumbMenu({ collectionId: crumb.id, position: { x: e.clientX, y: e.clientY } });
-                }}
-              >
-                <span
-                  aria-hidden="true"
-                  className="w-1.75 h-1.75 shrink-0 rounded-full"
-                  style={{ background: crumb.color }}
+          <h1 className="collections-page-title flex h-6 items-center gap-2 text-lg leading-6 font-semibold text-ink m-0 p-0">
+              {trail.map((crumb, i) => {
+                const isCurrent = i === trail.length - 1;
+                return (
+                  <Fragment key={crumb.id}>
+                    {i > 0 && (
+                      <ChevronRight size={13} className="collections-page-title-separator font-normal mx-1 text-ink-light opacity-50" aria-hidden="true" />
+                    )}
+                    <span
+                      className="collections-page-crumb flex min-w-0 items-center gap-2"
+                      onContextMenu={(e) => {
+                        e.preventDefault();
+                        setCrumbMenu({ collectionId: crumb.id, position: { x: e.clientX, y: e.clientY } });
+                      }}
+                    >
+                      <span
+                        aria-hidden="true"
+                        className="w-1.75 h-1.75 shrink-0 rounded-full"
+                        style={{ background: crumb.color }}
+                      />
+                      {renamingCrumbId === crumb.id ? (
+                        <input
+                          autoFocus
+                          aria-label={t('common.rename')}
+                          value={crumbDraft}
+                          onChange={(e) => setCrumbDraft(e.target.value)}
+                          onBlur={() => handleCrumbRename(crumb.id)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') handleCrumbRename(crumb.id);
+                            if (e.key === 'Escape') setRenamingCrumbId(null);
+                          }}
+                          className="min-w-0 flex-1 border-0 border-b border-dot bg-transparent p-0 text-lg leading-6 font-semibold text-ink outline-none"
+                        />
+                      ) : isCurrent ? (
+                        <span className="truncate">{crumb.name}</span>
+                      ) : (
+                        <Link
+                          to={`/collection/${crumb.id}`}
+                          className="truncate text-ink-light transition-colors hover:text-ink"
+                        >
+                          {crumb.name}
+                        </Link>
+                      )}
+                    </span>
+                  </Fragment>
+                );
+              })}
+            </h1>
+            {subAddingParentId && (
+              <div className="collections-page-sub-input flex h-6 items-center">
+                <input
+                  autoFocus
+                  value={subNewName}
+                  onChange={(e) => setSubNewName(e.target.value)}
+                  onBlur={handleCrumbCommitSub}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleCrumbCommitSub();
+                    if (e.key === 'Escape') {
+                      setSubAddingParentId(null);
+                      setSubNewName('');
+                    }
+                  }}
+                  placeholder={t('page.collectionName')}
+                  className="h-6 w-full min-w-0 border-0 border-b border-dot bg-transparent p-0 text-[13px] leading-6 text-ink outline-none"
                 />
-                {renamingCrumbId === crumb.id ? (
-                  <input
-                    autoFocus
-                    aria-label={t('common.rename')}
-                    value={crumbDraft}
-                    onChange={(e) => setCrumbDraft(e.target.value)}
-                    onBlur={() => handleCrumbRename(crumb.id)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') handleCrumbRename(crumb.id);
-                      if (e.key === 'Escape') setRenamingCrumbId(null);
-                    }}
-                    className="min-w-0 flex-1 border-0 border-b border-dot bg-transparent p-0 text-lg leading-6 font-semibold text-ink outline-none"
-                  />
-                ) : isCurrent ? (
-                  <span className="truncate">{crumb.name}</span>
-                ) : (
-                  <Link
-                    to={`/collection/${crumb.id}`}
-                    className="truncate text-ink-light transition-colors hover:text-ink"
-                  >
-                    {crumb.name}
-                  </Link>
-                )}
-              </span>
-            </Fragment>
-          );
-        })}
-        </h1>
-        {subAddingParentId && (
-          <div className="collections-page-sub-input flex h-6 items-center">
-            <input
-              autoFocus
-              value={subNewName}
-              onChange={(e) => setSubNewName(e.target.value)}
-              onBlur={handleCrumbCommitSub}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') handleCrumbCommitSub();
-                if (e.key === 'Escape') {
-                  setSubAddingParentId(null);
-                  setSubNewName('');
-                }
-              }}
-              placeholder={t('page.collectionName')}
-              className="h-6 w-full min-w-0 border-0 border-b border-dot bg-transparent p-0 text-[13px] leading-6 text-ink outline-none"
-            />
-          </div>
-        )}
+              </div>
+            )}
         </div>
 
         <div className="page-header-toolbar collection-page-header-controls absolute bottom-0 right-0 z-20 flex items-center">
