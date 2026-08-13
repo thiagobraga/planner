@@ -450,6 +450,18 @@ export async function apiMoveTask(id: string, input: TaskMoveInput): Promise<Tas
   });
 }
 
+export interface ReorganizeMove {
+  taskId: string;
+  dueDate: string;
+}
+
+export async function apiReorganizeTasks(moves: ReorganizeMove[]): Promise<{ updated: number }> {
+  return request<{ updated: number }>('/tasks/reorganize', {
+    method: 'POST',
+    body: JSON.stringify({ moves }),
+  });
+}
+
 // ── Collections ────────────────────────────────────────────────────────────────
 
 export interface ApiCollection {

@@ -317,6 +317,10 @@ export const englishCatalog = {
   'admin.throttledIps': 'Throttled IPs',
   'admin.failedLoginAttempts': 'Failed logins (window)',
   'admin.rateLimitNote': 'Failed-login figures cover the live 15-minute rate-limit window, not all time.',
+  'reorganize.button': 'Reorganize',
+  'reorganize.confirm': 'Confirm?',
+  'common.yes': 'Yes',
+  'common.no': 'No',
   'update.available': 'New version available',
   'update.refresh': 'Refresh',
 } as const;

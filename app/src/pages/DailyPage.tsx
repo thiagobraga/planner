@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState, useEffect, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSync } from '../hooks/useSync';
+import { useReorganize, type Section as ReorganizeSection } from '../hooks/useReorganize';
 import { isEchoedMove, isStructuralMove } from '../utils/moveEcho';
 import { TaskList } from '../components/TaskList';
 import { TaskVisibilityControls } from '../components/TaskVisibilityControls';
@@ -17,6 +18,7 @@ import { useI18n } from '../i18n/I18nContext';
 import { getPhrase } from '../utils/phrases';
 import {
   fetchTodayTasks,
+  fetchUpcomingTasks,
   fetchCollections,
   fetchPreferences,
   apiToggleTask,
@@ -127,6 +129,8 @@ export function DailyPage() {
   const [, setSelectedId] = useState<string>();
   const [contextMenu, setContextMenu] = useState<{ taskId: string; position: { x: number; y: number } } | null>(null);
   const [input, setInput] = useState('');
+  const [showUpcoming, setShowUpcoming] = useState(false);
+  const [upcomingSections, setUpcomingSections] = useState<DaySection[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const todaySectionRef = useRef<HTMLDivElement>(null);
   const loadRequestId = useRef(0);
@@ -167,6 +171,44 @@ export function DailyPage() {
       setSections(buildSections([], [], locale, currentToday, dateFormat));
     });
   }, [locale, dateFormat]);
+
+  const fetchUpcomingFromApi = useCallback(() => {
+    fetchUpcomingTasks().then((upcoming) => {
+      const upcomingByDate = new Map<string, Task[]>();
+      for (const group of upcoming) {
+        const tasks = group.tasks.map(apiToTask);
+        upcomingByDate.set(group.date, tasks);
+      }
+
+      const result: DaySection[] = [];
+      for (const [date, tasks] of upcomingByDate) {
+        result.push({
+          key: date,
+          label: dayLabel(dateFromISO(date), locale, prefs?.dateFormat),
+          tasks,
+        });
+      }
+
+      setUpcomingSections(result);
+    }).catch(() => {
+      setUpcomingSections([]);
+    });
+  }, [locale, prefs?.dateFormat]);
+
+  // Convert DaySection[] to ReorganizeSection[] for useReorganize hook
+  const reorganizeSections = useMemo<ReorganizeSection[] | null>(
+    () =>
+      sections.map((s) => ({
+        date: s.key,
+        label: s.label,
+        tasks: s.tasks,
+      })),
+    [sections],
+  );
+
+  const reorg = useReorganize(todayKey, reorganizeSections, () => {
+    setShowUpcoming(true);
+  });
 
   const handleToday = useCallback(() => {
     todaySectionRef.current?.scrollIntoView({
@@ -662,6 +704,44 @@ export function DailyPage() {
         </div>
 
         <div className="page-header-toolbar daily-page-header-controls absolute bottom-0 right-0 z-20 flex items-center gap-2">
+          {reorg.state === 'preview' ? (
+            <span className="reorganize-confirm inline-flex items-center gap-1 text-[13px]">
+              {t('reorganize.confirm')}
+              <button
+                className="text-accent underline text-decoration-color-accent cursor-pointer hover:opacity-80"
+                onClick={() => {
+                  reorg.confirmReorganize().catch((err) => console.error('Reorganize failed', err));
+                }}
+              >
+                {t('common.yes')}
+              </button>
+              <span>·</span>
+              <button
+                className="text-accent underline text-decoration-color-accent cursor-pointer hover:opacity-80"
+                onClick={reorg.cancelReorganize}
+              >
+                {t('common.no')}
+              </button>
+            </span>
+          ) : (
+            reorg.showButton && (
+              <Button variant="secondary" size="sm" onClick={reorg.startPreview}>
+                {t('reorganize.button')}
+              </Button>
+            )
+          )}
+
+          <Button
+            variant={showUpcoming ? 'primary' : 'secondary'}
+            size="sm"
+            onClick={() => {
+              setShowUpcoming((v) => !v);
+              if (!showUpcoming) fetchUpcomingFromApi();
+            }}
+          >
+            {t('page.upcoming')}
+          </Button>
+
           <Button variant="secondary" size="sm" onClick={handleToday}>
             {t('page.today')}
           </Button>
@@ -676,7 +756,46 @@ export function DailyPage() {
       </header>
 
       <div className="max-w-162">
-        {sections.map((section) => {
+        {showUpcoming && upcomingSections.map((section) => {
+          const tomorrow = new Date(dateFromISO(todayKey));
+          tomorrow.setDate(tomorrow.getDate() + 1);
+          const tomorrowKey = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')}`;
+          const isTomorrow = section.key === tomorrowKey;
+          return (
+            <div
+              key={`upcoming-${section.key}`}
+              data-day-date={section.key}
+              className="mt-6"
+            >
+              <div style={{ lineHeight: 'var(--task-line-height, 24px)' }} className="text-[11px] tracking-[0.08em] uppercase text-ink-light h-6 m-0 font-semibold">
+                {section.label}
+                {isTomorrow && <> · TOMORROW</>}
+              </div>
+
+              <TaskList
+                tasks={section.tasks}
+                containerId={`day:${section.key}`}
+                dayDate={section.key}
+                activeDragId={activeDragId}
+                renderBadge={renderBadge}
+                editingId={editingId}
+                dimNotes={false}
+                hideDueDate
+                onTaskToggle={handleToggle}
+                onStartEdit={handleStartEdit}
+                onEditCommit={handleEditCommit}
+                onEditCancel={handleEditCancel}
+                onDelete={handleDelete}
+                onAddBelow={handleAddBelow}
+                onIndent={handleIndent}
+                onConvertType={handleConvertType}
+                onRightClick={handleRightClick}
+              />
+            </div>
+          );
+        })}
+
+        {(reorg.state === 'preview' ? (reorg.previewSections?.map(s => ({ key: s.date, label: s.label, tasks: s.tasks as Task[] })) ?? []) : sections)?.map((section) => {
           const isToday = section.key === todayKey;
           const dimNotes = section.key < todayKey;
           return (

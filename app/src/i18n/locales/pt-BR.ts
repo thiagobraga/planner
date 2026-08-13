@@ -319,6 +319,10 @@ export const portugueseBrazilCatalog = {
   'admin.throttledIps': 'IPs limitados',
   'admin.failedLoginAttempts': 'Logins falhos (janela)',
   'admin.rateLimitNote': 'Os números de login falho cobrem a janela ativa de 15 minutos do limitador, não todo o histórico.',
+  'reorganize.button': 'Reorganizar',
+  'reorganize.confirm': 'Confirmar?',
+  'common.yes': 'Sim',
+  'common.no': 'Não',
   'update.available': 'Nova versão disponível',
   'update.refresh': 'Atualizar',
 } satisfies TranslationCatalog;
