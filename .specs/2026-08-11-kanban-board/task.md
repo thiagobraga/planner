@@ -122,6 +122,10 @@ Synced on complete/reopen/move.
 
 ## Milestone 6 — Playwright harness (`e2e/`)
 
+**2026-08-14 reconciliation:** The repository now owns Playwright under `app/e2e/`, including the
+Chromium config, CI job, coverage fixture, scripts, and ignored artifacts. Extend that established
+harness instead of creating a second root package or Compose-only runner.
+
 - [ ] Create `e2e/package.json` with `@playwright/test` only.
 - [ ] `e2e/playwright.config.ts` — `baseURL` from `E2E_BASE_URL` (default
       `https://planner.local`), `ignoreHTTPSErrors: true`, chromium project, trace/video on first
@@ -144,6 +148,9 @@ Synced on complete/reopen/move.
       `GEMINI.md`.
 - [ ] Verify: `docker compose --profile e2e run --rm e2e`
 - [ ] Commit: `chore(e2e): add playwright harness`
+
+**Status:** In progress. Current app-level infrastructure replaces the obsolete root package and
+Compose runner; auth/API/drag fixtures and Kanban-specific coverage remain.
 
 ## Milestone 7 — Board drag plumbing (`app/src/types/drag.ts`)
 
@@ -249,7 +256,8 @@ Synced on complete/reopen/move.
 - [ ] Verify: `docker compose --profile e2e run --rm e2e npx playwright test specs/board`
 - [ ] Commit: `test(e2e): cover the kanban board end to end`
 
-**Status:** Pending. Blocked on Milestone 6 (Playwright infrastructure).
+**Status:** In progress. Reusing the app-level Playwright infrastructure added after this plan was
+written; authenticated API and real pointer-drag fixtures remain part of this milestone.
 
 ## Milestone 13 — Label chips in the list view (`app/src/components/TaskItem.tsx`)
 
@@ -259,7 +267,7 @@ Synced on complete/reopen/move.
 - [ ] Verify: `docker compose exec app npm run build && docker compose exec app npm run lint && docker compose exec app npm test`
 - [ ] Commit: `feat(app): show label chips in the list view`
 
-**Status:** Pending. Last in order per spec (board must be stable first to avoid regressions).
+**Status:** In progress. Implement after the structured-label data flow is locked by focused tests.
 
 ## Verification (whole spec)
 
