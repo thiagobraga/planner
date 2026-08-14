@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { MonthlyRows } from '../components/monthly/MonthlyRows';
+import { PageHeader } from '../components/PageHeader';
 import { Button } from '../components/ui/Button';
 import { getPhrase } from '../utils/phrases';
 import { useI18n } from '../i18n/I18nContext';
@@ -15,17 +16,11 @@ export function MonthlyPage() {
 
   return (
     <div className="monthly-page relative w-full">
-      <header className="page-header-copy sticky-page-header max-w-162">
-        <div className="page-header-copy-text">
-          <h1 className="text-[18px] leading-6 h-6 font-semibold text-ink m-0 p-0">
-            {t('page.monthly')}
-          </h1>
-          <p className="page-header-subtitle text-[13px] leading-6 h-6 text-ink-light opacity-60 m-0 p-0">
-            {phrase}
-          </p>
-        </div>
-
-        <div className="page-header-toolbar monthly-page-header-controls flex items-center">
+      <PageHeader
+        title={t('page.monthly')}
+        subtitle={phrase}
+        toolbarClassName="monthly-page-header-controls flex items-center"
+        toolbar={
           <Button
             variant="secondary"
             size="xs"
@@ -33,8 +28,8 @@ export function MonthlyPage() {
           >
             {t('page.today')}
           </Button>
-        </div>
-      </header>
+        }
+      />
 
       <div className="max-w-[832px]">
         <div className="h-6" />

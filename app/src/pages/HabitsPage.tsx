@@ -8,6 +8,8 @@ import { HabitCalendar } from '../components/habits/HabitCalendar';
 import { useHabitDrag } from '../hooks/useHabitDrag';
 import { isEchoedMove } from '../utils/moveEcho';
 import { Button } from '../components/ui/Button';
+import { ButtonGroup } from '../components/ui/ButtonGroup';
+import { PageHeader } from '../components/PageHeader';
 import { startOfDay } from '../utils/date';
 import { flattenHabits, type HabitNode } from '../utils/habitTree';
 import { randomHabitGroupIcon } from '../utils/habitGroupIcon';
@@ -393,44 +395,29 @@ export function HabitsPage() {
 
   return (
     <div className="habits-page relative w-full max-w-none">
-      <header className="page-header-copy sticky-page-header max-w-162">
-        <div className="page-header-copy-text">
-          <h1 className="m-0 h-6 p-0 text-[18px] leading-6 font-semibold text-ink">
-            {t('page.habits')}
-          </h1>
-          <p className="page-header-subtitle m-0 h-6 p-0 text-[13px] leading-6 text-ink-light opacity-60">
-            {phrase}
-          </p>
-        </div>
+      <PageHeader
+        title={t('page.habits')}
+        subtitle={phrase}
+        toolbarClassName="habits-page-header-controls flex items-center gap-2"
+        toolbar={
+          <>
+            <Button variant="secondary" size="xs" onClick={handleToday}>
+              {t('page.today')}
+            </Button>
 
-        <div className="page-header-toolbar habits-page-header-controls flex items-center gap-2">
-          <Button variant="secondary" size="xs" onClick={handleToday}>
-            {t('page.today')}
-          </Button>
-
-          <div className="habits-page-view-toggle inline-flex items-center rounded-[2px] border border-border h-5 overflow-hidden">
-            {(
-              [
-                { mode: 'timeline' as const, label: t('page.timelineView'), Icon: DotsConnectedIcon },
-                { mode: 'calendar' as const, label: t('page.calendarView'), Icon: Calendar },
-              ]
-            ).map(({ mode, label, Icon }, i) => (
-              <button
-                key={mode}
-                type="button"
-                aria-label={label}
-                aria-pressed={view === mode}
-                onClick={() => setView(mode)}
-                className={`habits-page-view-toggle-button inline-flex items-center justify-center h-5 w-5 transition-colors duration-[var(--motion-fast)] ${
-                  i > 0 ? 'border-l border-border' : ''
-                } ${view === mode ? 'bg-dot/60 text-ink' : 'bg-transparent text-ink-light hover:bg-dot/30'}`}
-              >
-                <Icon size={12} strokeWidth={1.8} />
-              </button>
-            ))}
-          </div>
-        </div>
-      </header>
+            <ButtonGroup<HabitsView>
+              mode="single"
+              value={view}
+              onChange={setView}
+              size="xs"
+              items={[
+                { value: 'timeline', label: t('page.timelineView'), icon: <DotsConnectedIcon size={12} strokeWidth={1.8} /> },
+                { value: 'calendar', label: t('page.calendarView'), icon: <Calendar size={12} strokeWidth={1.8} /> },
+              ]}
+            />
+          </>
+        }
+      />
 
       {view === 'timeline' ? (
         <HabitTimeline

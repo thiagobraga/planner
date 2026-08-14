@@ -4,6 +4,8 @@ export interface PageHeaderProps {
   title: ReactNode;
   subtitle?: string;
   toolbar?: ReactNode;
+  /** Extra content in `.page-header-copy-text`, after the title/subtitle (e.g. CollectionsPage's inline sub-collection input). */
+  afterTitle?: ReactNode;
   /** Extra classes on the `.page-header-toolbar` div (e.g. a page-specific responsive hook). */
   toolbarClassName?: string;
   /** Extra classes on the `<h1>` (e.g. CollectionsPage's breadcrumb-trail layout). */
@@ -19,6 +21,7 @@ export function PageHeader({
   title,
   subtitle,
   toolbar,
+  afterTitle,
   toolbarClassName = '',
   titleClassName = '',
   className = '',
@@ -32,6 +35,7 @@ export function PageHeader({
             {subtitle}
           </p>
         )}
+        {afterTitle}
       </div>
 
       {toolbar && <div className={`page-header-toolbar ${toolbarClassName}`}>{toolbar}</div>}
