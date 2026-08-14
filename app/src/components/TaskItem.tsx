@@ -8,6 +8,7 @@ import { useI18n } from '../i18n/I18nContext';
 import { useTaskSelectionStore } from '../stores/taskSelectionStore';
 import { usePlannerDrag } from '../contexts/usePlannerDrag';
 import { priorityClasses } from './taskPriorityClasses';
+import type { LabelSummary } from '../api/client';
 
 export interface Task {
   id: string;
@@ -22,7 +23,7 @@ export interface Task {
   recurrenceRule?: object | null;
   isCompleted: boolean;
   orderValue: number;
-  labels?: string[];
+  labels?: LabelSummary[];
   indent?: number;
   type: 'task' | 'note';
   createdAt?: string;
@@ -358,14 +359,20 @@ export const TaskItem = memo(function TaskItem({
               </span>
             )}
 
-            {task.labels?.map((label) => (
-              <span
-                key={label}
-                className="task-item-label h-6 flex items-center text-[10px] px-1.5 rounded-md bg-dot text-ink ml-1 whitespace-nowrap"
-              >
-                @{label}
+            {task.labels && task.labels.length > 0 && (
+              <span className="task-item-labels ml-1.5 flex flex-wrap gap-1.5">
+                {task.labels.map((label) => (
+                  <span
+                    key={label.id}
+                    className="board-card-chip task-item-label-chip"
+                    style={{ borderColor: label.color }}
+                  >
+                    <span aria-hidden="true" style={{ backgroundColor: label.color }} />
+                    {label.name}
+                  </span>
+                ))}
               </span>
-            ))}
+            )}
           </>
         )}
       </span>
