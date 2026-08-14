@@ -8,7 +8,6 @@ import { TaskVisibilityControls } from '../components/TaskVisibilityControls';
 import { PageHeader } from '../components/PageHeader';
 import { CollectionChip } from '../components/ui/Chip';
 import { Button } from '../components/ui/Button';
-import { ButtonGroup } from '../components/ui/ButtonGroup';
 import type { Task } from '../components/TaskItem';
 import { extractNaturalDate, fmtISOInTimeZone } from '../utils/date';
 import { nextOrderValue } from '../utils/order';
@@ -864,16 +863,13 @@ export function DailyPage() {
               )
             )}
 
-            <ButtonGroup<'today' | 'upcoming'>
-              mode="single"
-              value={showUpcoming ? 'upcoming' : 'today'}
-              onChange={setDailyView}
-              size="xs"
-              items={[
-                { value: 'today', label: t('page.today') },
-                { value: 'upcoming', label: t('page.upcoming') },
-              ]}
-            />
+            <Button variant={!showUpcoming ? 'primary' : 'secondary'} size="xs" onClick={() => setDailyView('today')}>
+              {t('page.today')}
+            </Button>
+
+            <Button variant={showUpcoming ? 'primary' : 'secondary'} size="xs" onClick={() => setDailyView('upcoming')}>
+              {t('page.upcoming')}
+            </Button>
 
             <TaskVisibilityControls
               hideCompletedTasks={prefs?.hideCompletedTasks ?? false}
