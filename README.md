@@ -85,6 +85,36 @@ planner/
 
 See [DESIGN.md](./DESIGN.md) for detailed design system specification, component library, and visual guidelines. Data flow, service architecture, and real-time sync mechanisms documented in [CLAUDE.md](./CLAUDE.md).
 
+## Testing & Coverage
+
+Two coverage reports are browsable on the coverage host — the Vitest report at
+`https://coverage.planner.local` (root) and the Playwright e2e report at
+`https://coverage.planner.local/e2e/`. Both are served by a static nginx
+container from `app/coverage-reports/` (kept outside `dist/` so app builds
+never wipe them):
+
+```bash
+docker compose up -d                                    # includes the coverage container
+docker compose exec app npx vitest run --reporter=html  # Vitest report (coverage-reports/)
+docker compose exec app npm run test:e2e:coverage       # E2E report (coverage-reports/e2e/)
+```
+
+### E2E coverage (Playwright)
+
+`test:e2e:coverage` builds the app with istanbul instrumentation
+(`VITE_COVERAGE=true`), runs Playwright against a `vite preview` server
+(auto-started on port 4173), collects a `window.__coverage__` snapshot after
+each test into `coverage-e2e/raw/`, and merges them into `coverage-reports/e2e/`.
+Coverage is opt-in — plain `npm run test:e2e` stays unchanged and
+un-instrumented. (Note: only frontend code is covered; API routes hit during
+e2e are not counted.)
+
+### Prerequisites
+
+- The `coverage.planner.local` entry in `/etc/hosts` (TLS is provided by Traefik and is pre-configured for this host). In isolated worktree stacks the host is `coverage.<agent>.planner.local`, e.g. `coverage.claude.planner.local`.
+- The Vitest HTML reporter is opt-in: it is only generated when `--reporter=html` is passed (see `app/vitest.config.ts`); the Playwright report is generated only by `test:e2e:coverage`.
+- Both reports are served from `app/coverage-reports/` — the nginx bind mount stays valid across regenerations (only file contents change, never the directory itself).
+
 ## Contributing
 
 Contributions are welcome.

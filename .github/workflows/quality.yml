@@ -171,22 +171,28 @@ jobs:
       - name: Build app
         working-directory: app
         run: npm run build
-      - name: Start app (vite preview)
-        working-directory: app
-        run: |
-          nohup npx vite preview --port 5173 --host > /tmp/app.log 2>&1 &
-          for i in $(seq 1 60); do curl -sf http://127.0.0.1:5173/ > /dev/null 2>&1 && break || sleep 1; done
+        env:
+          # Instrumented build so e2e runs collect coverage (see test:e2e:coverage)
+          VITE_COVERAGE: "true"
       - name: Install Playwright chromium
         working-directory: app
         run: npx playwright install --with-deps chromium
       - name: Run e2e tests
         working-directory: app
         env:
-          PLAYWRIGHT_BASE_URL: http://127.0.0.1:5173
+          PLAYWRIGHT_COVERAGE: "1"
           PLAYWRIGHT_API_URL: http://127.0.0.1:4000
         run: npx playwright test
+      - name: Generate e2e coverage report
+        working-directory: app
+        run: node e2e/merge-coverage.ts
+      - name: Upload e2e coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-coverage-report
+          path: app/dist/html/e2e
       - name: Show server logs on failure
         if: failure()
         run: |
           echo "=== api.log ==="; tail -50 /tmp/api.log
-          echo "=== app.log ==="; tail -50 /tmp/app.log
+          echo "=== app.log ==="; cat /tmp/app.log 2>/dev/null || echo "(no app.log - webServer logs are in the playwright output)"
