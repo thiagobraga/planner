@@ -2,6 +2,10 @@
 
 Purpose: concise, actionable guidance for Copilot/CLI sessions in this repo.
 
+## Project
+
+Planner is a task manager with a paper-journal aesthetic (warm cream, Lora serif, dotted grid). Two independent npm packages: `api/` (Express + PostgreSQL + Redis) and `app/` (React + Vite). Real-time sync via Socket.IO backed by Redis Pub/Sub. Auth uses JWT (7-day expiry) with DB-side session revocation.
+
 ## Multi-Agent Instruction Synchronization Rule
 
 Whenever updating AI agent instructions, conventions, or specs workflows, you MUST synchronize and apply the changes across all agent files: `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, and `.github/copilot-instructions.md`.

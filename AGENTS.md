@@ -1,6 +1,10 @@
-# Planner - Agent Onboarding & Guidelines
+# AGENTS.md
 
-Task manager with a paper-journal aesthetic (warm cream, Lora serif, dotted grid). Two independent npm packages: `api/` (Express + PostgreSQL + Redis) and `app/` (React + Vite).
+This file provides guidance to AI agents when working with code in this repository.
+
+## Project
+
+Planner is a task manager with a paper-journal aesthetic (warm cream, Lora serif, dotted grid). Two independent npm packages: `api/` (Express + PostgreSQL + Redis) and `app/` (React + Vite). Real-time sync via Socket.IO backed by Redis Pub/Sub. Auth uses JWT (7-day expiry) with DB-side session revocation.
 
 ## Multi-Agent Instruction Synchronization Rule
 
