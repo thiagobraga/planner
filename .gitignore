@@ -45,6 +45,7 @@ pnpm-debug.log*
 # Coverage & Test Output
 coverage/
 vitest-coverage/
+html/
 api/coverage/
 app/coverage/
 api/vitest-coverage/
@@ -53,6 +54,8 @@ test-results/
 app/test-results/
 playwright-report/
 app/playwright-report/
+app/coverage-e2e/
+app/coverage-reports/
 
 # Playwright MCP scratch state
 .playwright-mcp/

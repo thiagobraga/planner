@@ -17,7 +17,7 @@ export default defineProject({
     // e2e/*.spec.ts are Playwright suites, not vitest suites - keep them out.
     include: ["src/**/*.{test,spec}.{ts,tsx}"],
     reporters: htmlReportRequested
-      ? [["html", { outputFile: "./dist/html/index.html", open: false }]]
+      ? [["html", { outputFile: "./coverage-reports/index.html", open: false }]]
       : [],
   },
 });

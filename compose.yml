@@ -72,15 +72,17 @@ services:
       - "traefik.http.routers.${COMPOSE_PROJECT_NAME:-planner}-api-host-router.tls=true"
       - "traefik.http.routers.${COMPOSE_PROJECT_NAME:-planner}-api-host-router.service=${COMPOSE_PROJECT_NAME:-planner}-api-service"
 
-  # Dev-only static server for the Vitest HTML report, reachable at
-  # https://coverage.<subdomain>.local. Generate the report with
-  # `npx vitest run --reporter=html`; the bind mount serves it as-is.
+  # Dev-only static server for the Vitest HTML report (/) and the Playwright
+  # e2e coverage report (/e2e/), reachable at https://coverage.<subdomain>.local.
+  # Reports live in app/coverage-reports/ (outside dist/) so app builds never
+  # wipe them. Generate with `npx vitest run --reporter=html` and
+  # `npm run test:e2e:coverage` respectively.
   coverage:
     image: nginx:1.31-alpine
     container_name: ${COMPOSE_PROJECT_NAME:-planner}-coverage
     networks: [proxy]
     volumes:
-      - ./app/dist/html:/usr/share/nginx/html:ro
+      - ./app/coverage-reports:/usr/share/nginx/html:ro
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.${COMPOSE_PROJECT_NAME:-planner}-coverage-router.rule=Host(`coverage.${APP_SUBDOMAIN:-planner}.local`)"
