@@ -29,7 +29,7 @@ export function TaskVisibilityControls({
   ];
 
   return (
-    <ButtonGroup<VisibilityToggle>
+    <ButtonGroup
       mode="multi"
       value={value}
       disabled={disabled}

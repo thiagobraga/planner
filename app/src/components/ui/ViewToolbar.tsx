@@ -68,7 +68,7 @@ export function ViewToolbar({
       )}
 
       {/* Segmented List / Kanban toggle */}
-      <ButtonGroup<ViewMode>
+      <ButtonGroup
         mode="single"
         value={view}
         onChange={setView}
@@ -93,7 +93,7 @@ export function ViewToolbar({
       {!viewOnly && <button
         type="button"
         aria-label={t('toolbar.moreOptions')}
-        className="inline-flex items-center justify-center w-9 h-9 rounded-[8px] text-ink-light hover:bg-dot/30 transition-colors duration-[var(--motion-fast)] mr-1"
+        className="inline-flex items-center justify-center w-9 h-9 rounded-md text-ink-light hover:bg-dot/30 transition-colors duration-(--motion-fast) mr-1"
       >
         <MoreHorizontal size={18} strokeWidth={1.5} />
       </button>}

@@ -405,7 +405,7 @@ export function HabitsPage() {
               {t('page.today')}
             </Button>
 
-            <ButtonGroup<HabitsView>
+            <ButtonGroup
               mode="single"
               value={view}
               onChange={setView}
