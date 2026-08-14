@@ -1,6 +1,6 @@
-# Copilot instructions for Planner
+# copilot-instructions.md
 
-Purpose: concise, actionable guidance for Copilot/CLI sessions in this repo.
+This file provides guidance to GitHub Copilot CLI when working with code in this repository.
 
 ## Project
 
