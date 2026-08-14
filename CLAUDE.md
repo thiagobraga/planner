@@ -253,7 +253,7 @@ Full spec: `DESIGN.md`.
   - OpenCode: `Co-Authored-By: OpenCode (<real model name and effort>) <noreply@opencode.ai>`
   - Codex: `Co-Authored-By: Codex (<real model name and effort>) <codex@openai.com>`
   - Antigravity: `Co-Authored-By: Antigravity (<real model name and effort>) <noreply@antigravity.ai>`
-  - Claude Code adds its own trailer automatically.
+  - Claude Code: `Co-Authored-By: Claude (<model>) <noreply@anthropic.com>` (e.g. `Claude (Sonnet 5)`). No separate reasoning-effort tier is exposed for Claude Code - model choice (Haiku/Sonnet/Opus) is the only capability lever, so effort is omitted.
 - No AI Slop / Em Dash Ban: Avoid AI slop in comments. Never use em dashes (`—` or `–`) anywhere in code or documentation; use simple dashes `-`.
 - UI Screenshots: Save visual test screenshots to `./app/dist/screenshots/*.png` inside the worktree and display them as clickable markdown links.
 - Validate only at system boundaries (user input, external APIs).
