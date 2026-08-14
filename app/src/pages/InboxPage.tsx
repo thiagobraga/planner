@@ -6,7 +6,6 @@ import { SectionHeader } from '../components/SectionHeader';
 import { InlineNameInput } from '../components/ui/InlineNameInput';
 import { CollectionBoard } from '../components/board/CollectionBoard';
 import { BoardToolbar } from '../components/board/BoardToolbar';
-import { StatusTaskList } from '../components/board/StatusTaskList';
 import type { Task } from '../components/TaskItem';
 import type { Section } from '../stores/taskStore';
 import {
@@ -38,7 +37,6 @@ import { applyIndent } from '../utils/taskTree';
 import { useSync } from '../hooks/useSync';
 import { isEchoedMove } from '../utils/moveEcho';
 import { useI18n } from '../i18n/I18nContext';
-import { buildStatusListGroups } from '../utils/boardColumns';
 
 function apiToTask(t: ApiTask): Task {
   return {
@@ -520,11 +518,8 @@ export function InboxPage() {
     tasks,
     sections.filter((s) => !s.id.startsWith('temp-')),
   );
-  const statusListGroups = useMemo(
-    () => buildStatusListGroups(tasks, data?.statuses ?? [], data?.completionStatusId ?? null),
-    [data?.completionStatusId, data?.statuses, tasks],
-  );
-  const showStatusGroups = boardPreferences.groupBy === 'status' && statusListGroups.length > 0;
+  // List view always groups by section, regardless of the Kanban groupBy
+  // preference - status/priority grouping only applies to the Kanban board.
 
   return (
     <div
@@ -577,58 +572,23 @@ export function InboxPage() {
           <>
             <div className="h-6" />
 
-            {showStatusGroups ? (
-              <StatusTaskList
-                groups={statusListGroups}
-                afterFirstGroup={(
-                  <form onSubmit={handleAddAtEnd} className="flex h-6 items-center">
-                    <span className="w-6 shrink-0 select-none text-center text-[10px] leading-6 text-ink opacity-25">•</span>
-                    <input
-                      ref={inputRef}
-                      type="text"
-                      value={input}
-                      onChange={(e) => setInput(e.target.value)}
-                      placeholder={t('common.addTask')}
-                      className="task-input task-add-input flex-1 border-none bg-transparent p-0 text-[14px] leading-6 text-ink outline-none"
-                      spellCheck={false}
-                      onKeyDown={handleAddNoteKeyDown}
-                    />
-                  </form>
-                )}
-                taskListProps={{
-                  collectionId: inboxCollectionId,
-                  activeDragId,
-                  editingId,
-                  onTaskToggle: handleToggle,
-                  onStartEdit: handleStartEdit,
-                  onEditCommit: handleEditCommit,
-                  onEditCancel: handleEditCancel,
-                  onDelete: handleDelete,
-                  onAddBelow: handleAddBelow,
-                  onIndent: handleIndent,
-                  onConvertType: handleConvertType,
-                  onRightClick: handleRightClick,
-                }}
-              />
-            ) : (
-              <TaskList
-                tasks={topLevelGroup.tasks}
-                containerId="collection:inbox"
-                activeDragId={activeDragId}
-                editingId={editingId}
-                onTaskToggle={handleToggle}
-                onStartEdit={handleStartEdit}
-                onEditCommit={handleEditCommit}
-                onEditCancel={handleEditCancel}
-                onDelete={handleDelete}
-                onAddBelow={handleAddBelow}
-                onIndent={handleIndent}
-                onConvertType={handleConvertType}
-                onRightClick={handleRightClick}
-              />
-            )}
+            <TaskList
+              tasks={topLevelGroup.tasks}
+              containerId="collection:inbox"
+              activeDragId={activeDragId}
+              editingId={editingId}
+              onTaskToggle={handleToggle}
+              onStartEdit={handleStartEdit}
+              onEditCommit={handleEditCommit}
+              onEditCancel={handleEditCancel}
+              onDelete={handleDelete}
+              onAddBelow={handleAddBelow}
+              onIndent={handleIndent}
+              onConvertType={handleConvertType}
+              onRightClick={handleRightClick}
+            />
 
-            {!showStatusGroups && <form
+            <form
               onSubmit={handleAddAtEnd}
               className="flex items-center h-6"
             >
@@ -645,10 +605,9 @@ export function InboxPage() {
                 spellCheck={false}
                 onKeyDown={handleAddNoteKeyDown}
               />
-            </form>}
+            </form>
 
-            {!showStatusGroups && <>
-              <SortableContext
+            <SortableContext
                 items={sectionGroups.map((group) => group.section!.id)}
                 strategy={verticalListSortingStrategy}
               >
@@ -729,7 +688,6 @@ export function InboxPage() {
                   </span>
                 </button>
               )}
-            </>}
           </>
         )}
       </div>
