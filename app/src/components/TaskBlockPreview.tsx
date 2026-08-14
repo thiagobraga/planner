@@ -45,6 +45,10 @@ export function TaskBlockPreview({ rows }: TaskBlockPreviewProps) {
             <span className="w-6 text-center text-[10px] font-normal leading-6 overflow-hidden text-ink select-none shrink-0">
               -
             </span>
+          ) : task.type === 'event' ? (
+            <span className="w-6 text-center text-base font-normal leading-6 overflow-hidden text-ink select-none shrink-0">
+              ○
+            </span>
           ) : task.isCompleted ? (
             <span
               style={{

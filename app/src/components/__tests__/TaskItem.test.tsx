@@ -149,4 +149,101 @@ describe('TaskItem - task/note conversion', () => {
 
     expect(screen.getByRole('button', { name: /complete|reopen/i })).toBeInTheDocument();
   });
+
+  it('pressing "(" on an empty task input converts to event without committing', () => {
+    const onConvertType = vi.fn();
+    const onEditCommit = vi.fn();
+    renderTaskItem(baseTask, { onConvertType, onEditCommit });
+
+    const input = screen.getByRole('textbox');
+    fireEvent.keyDown(input, { key: '(' });
+
+    expect(onConvertType).toHaveBeenCalledWith('t1', 'event');
+    expect(onEditCommit).not.toHaveBeenCalled();
+  });
+
+  it('does not fire task->event conversion on an already-event row', () => {
+    const onConvertType = vi.fn();
+    renderTaskItem({ ...baseTask, type: 'event' }, { onConvertType });
+
+    const input = screen.getByRole('textbox');
+    fireEvent.keyDown(input, { key: '(' });
+
+    expect(onConvertType).not.toHaveBeenCalled();
+  });
+
+  it.each(['[', ']', '*'])('pressing "%s" on an empty event input converts back to task', (key) => {
+    const onConvertType = vi.fn();
+    renderTaskItem({ ...baseTask, type: 'event' }, { onConvertType });
+
+    const input = screen.getByRole('textbox');
+    fireEvent.keyDown(input, { key });
+
+    expect(onConvertType).toHaveBeenCalledWith('t1', 'task');
+  });
+
+  it('converts a task with existing text when space follows a leading "("', () => {
+    const onConvertType = vi.fn();
+    renderTaskItem({ ...baseTask, title: '(Team standup' }, { onConvertType });
+
+    const input = screen.getByRole('textbox') as HTMLInputElement;
+    input.setSelectionRange(1, 1);
+    fireEvent.keyDown(input, { key: ' ' });
+
+    expect(onConvertType).toHaveBeenCalledWith('t1', 'event');
+    expect(input.value).toBe('Team standup');
+  });
+
+  it('renders a plain non-interactive circle bullet for events, no checkbox', () => {
+    renderTaskItem({ ...baseTask, type: 'event', title: 'Team standup' }, { isEditing: false });
+
+    expect(screen.queryByRole('button', { name: /complete|reopen/i })).not.toBeInTheDocument();
+    expect(screen.getByText('○')).toBeInTheDocument();
+  });
+
+  describe('mobile onChange fallback', () => {
+    it('converts to note when the input value becomes just "-" (no keydown)', () => {
+      const onConvertType = vi.fn();
+      renderTaskItem(baseTask, { onConvertType });
+
+      const input = screen.getByRole('textbox') as HTMLInputElement;
+      fireEvent.change(input, { target: { value: '-' } });
+
+      expect(onConvertType).toHaveBeenCalledWith('t1', 'note');
+      expect(input.value).toBe('');
+    });
+
+    it('converts to event and strips a leading "( " typed via a virtual keyboard', () => {
+      const onConvertType = vi.fn();
+      renderTaskItem(baseTask, { onConvertType });
+
+      const input = screen.getByRole('textbox') as HTMLInputElement;
+      fireEvent.change(input, { target: { value: '( Team standup' } });
+
+      expect(onConvertType).toHaveBeenCalledWith('t1', 'event');
+      expect(input.value).toBe('Team standup');
+    });
+
+    it('does not convert when the marker is not at the start of the value', () => {
+      const onConvertType = vi.fn();
+      renderTaskItem(baseTask, { onConvertType });
+
+      const input = screen.getByRole('textbox') as HTMLInputElement;
+      fireEvent.change(input, { target: { value: 'Buy (milk' } });
+
+      expect(onConvertType).not.toHaveBeenCalled();
+      expect(input.value).toBe('Buy (milk');
+    });
+
+    it('does not re-convert an already-matching type', () => {
+      const onConvertType = vi.fn();
+      renderTaskItem({ ...baseTask, type: 'event' }, { onConvertType });
+
+      const input = screen.getByRole('textbox') as HTMLInputElement;
+      fireEvent.change(input, { target: { value: '( still an event' } });
+
+      expect(onConvertType).not.toHaveBeenCalled();
+      expect(input.value).toBe('( still an event');
+    });
+  });
 });

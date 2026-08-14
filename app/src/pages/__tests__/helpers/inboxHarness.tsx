@@ -64,13 +64,14 @@ export function inboxBeforeEach(refs: InboxMockRefs): void {
   });
 }
 
-export function renderPage() {
-  const client = new QueryClient({
+export function renderPage(
+  client = new QueryClient({
     defaultOptions: {
       queries: { retry: false },
       mutations: { retry: false },
     },
-  });
+  }),
+) {
   return render(
     <QueryClientProvider client={client}>
       <MemoryRouter>

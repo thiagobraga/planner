@@ -54,7 +54,7 @@ describe('QuickAdd', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Add Task' }));
 
     expect(dateUtils.extractNaturalDate).toHaveBeenCalledWith('buy groceries', undefined, 'en');
-    expect(onSubmit).toHaveBeenCalledWith('buy groceries', undefined, undefined);
+    expect(onSubmit).toHaveBeenCalledWith('buy groceries', undefined, undefined, 'task');
     expect(onClose).toHaveBeenCalled();
   });
 
@@ -71,7 +71,7 @@ describe('QuickAdd', () => {
     fireEvent.change(input, { target: { value: 'call mom today' } });
     fireEvent.click(screen.getByRole('button', { name: 'Add Task' }));
 
-    expect(onSubmit).toHaveBeenCalledWith('call mom', '2026-07-20', undefined);
+    expect(onSubmit).toHaveBeenCalledWith('call mom', '2026-07-20', undefined, 'task');
   });
 
   it('shows NLP date preview when date is parsed', () => {
@@ -114,5 +114,59 @@ describe('QuickAdd', () => {
     render(<QuickAdd isOpen={true} onClose={onClose} onSubmit={onSubmit} />);
     fireEvent.click(screen.getByRole('button', { name: 'Add Task' }));
     expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  describe('BuJo prefix detection', () => {
+    beforeEach(() => {
+      vi.mocked(dateUtils.parseNaturalDate).mockReturnValue(null);
+    });
+
+    it('strips a leading "( " prefix and submits type event', () => {
+      vi.mocked(dateUtils.extractNaturalDate).mockReturnValue({ title: 'Team standup' });
+
+      render(<QuickAdd isOpen={true} onClose={onClose} onSubmit={onSubmit} />);
+      const input = screen.getByLabelText('Task title');
+      fireEvent.change(input, { target: { value: '( Team standup' } });
+      fireEvent.click(screen.getByRole('button', { name: 'Add Task' }));
+
+      expect(dateUtils.extractNaturalDate).toHaveBeenCalledWith('Team standup', undefined, 'en');
+      expect(onSubmit).toHaveBeenCalledWith('Team standup', undefined, undefined, 'event');
+    });
+
+    it('strips a leading "- " prefix and submits type note', () => {
+      vi.mocked(dateUtils.extractNaturalDate).mockReturnValue({ title: 'Shopping list' });
+
+      render(<QuickAdd isOpen={true} onClose={onClose} onSubmit={onSubmit} />);
+      const input = screen.getByLabelText('Task title');
+      fireEvent.change(input, { target: { value: '- Shopping list' } });
+      fireEvent.click(screen.getByRole('button', { name: 'Add Task' }));
+
+      expect(dateUtils.extractNaturalDate).toHaveBeenCalledWith('Shopping list', undefined, 'en');
+      expect(onSubmit).toHaveBeenCalledWith('Shopping list', undefined, undefined, 'note');
+    });
+
+    it('strips a leading "* " prefix and keeps type task', () => {
+      vi.mocked(dateUtils.extractNaturalDate).mockReturnValue({ title: 'Buy groceries' });
+
+      render(<QuickAdd isOpen={true} onClose={onClose} onSubmit={onSubmit} />);
+      const input = screen.getByLabelText('Task title');
+      fireEvent.change(input, { target: { value: '* Buy groceries' } });
+      fireEvent.click(screen.getByRole('button', { name: 'Add Task' }));
+
+      expect(dateUtils.extractNaturalDate).toHaveBeenCalledWith('Buy groceries', undefined, 'en');
+      expect(onSubmit).toHaveBeenCalledWith('Buy groceries', undefined, undefined, 'task');
+    });
+
+    it('leaves a marker alone when it is not followed by whitespace', () => {
+      vi.mocked(dateUtils.extractNaturalDate).mockReturnValue({ title: '(parenthetical) note' });
+
+      render(<QuickAdd isOpen={true} onClose={onClose} onSubmit={onSubmit} />);
+      const input = screen.getByLabelText('Task title');
+      fireEvent.change(input, { target: { value: '(parenthetical) note' } });
+      fireEvent.click(screen.getByRole('button', { name: 'Add Task' }));
+
+      expect(dateUtils.extractNaturalDate).toHaveBeenCalledWith('(parenthetical) note', undefined, 'en');
+      expect(onSubmit).toHaveBeenCalledWith('(parenthetical) note', undefined, undefined, 'task');
+    });
   });
 });

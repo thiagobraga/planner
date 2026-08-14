@@ -1,4 +1,5 @@
 import { fireEvent, screen, waitFor } from '@testing-library/react';
+import { QueryClient } from '@tanstack/react-query';
 import { describe, it, expect, vi } from 'vitest';
 import {
   basePreferences,
@@ -136,6 +137,26 @@ describe('InboxPage', () => {
     });
     expect(screen.getByText('Write tests')).toBeInTheDocument();
     expect(screen.getAllByTestId(/^task-item-/)).toHaveLength(2);
+  });
+
+  it('hydrates the task list when mounting with fresh inbox cache data', () => {
+    const client = new QueryClient({
+      defaultOptions: {
+        queries: { retry: false },
+        mutations: { retry: false },
+      },
+    });
+    client.setQueryData(['inbox'], {
+      ...baseInboxData,
+      tasks: sampleTasks,
+      collectionId: 'col-1',
+    });
+
+    renderPage(client);
+
+    expect(screen.getByText('Dump it here. Sort it later.')).toBeInTheDocument();
+    expect(screen.getByText('Buy groceries')).toBeInTheDocument();
+    expect(screen.getByText('Write tests')).toBeInTheDocument();
   });
 
   it('renders the add-task input', async () => {
@@ -476,6 +497,17 @@ describe('InboxPage', () => {
 
       await waitFor(() => expect(mockApiUpdateTask).toHaveBeenCalledWith('task-1', { type: 'note' }));
       expect(screen.getByTestId('task-type-task-1')).toHaveTextContent('note');
+    });
+
+    it('converts a task to an event via the API', async () => {
+      mockFetchInboxTasks.mockResolvedValue({ tasks: sampleTasks, collectionId: 'col-1' });
+      renderPage();
+
+      await screen.findByText('Buy groceries');
+      fireEvent.click(screen.getByTestId('convert-event-task-1'));
+
+      await waitFor(() => expect(mockApiUpdateTask).toHaveBeenCalledWith('task-1', { type: 'event' }));
+      expect(screen.getByTestId('task-type-task-1')).toHaveTextContent('event');
     });
 
     it('converts a temp row locally without an API call', async () => {

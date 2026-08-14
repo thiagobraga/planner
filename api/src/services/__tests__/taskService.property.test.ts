@@ -231,7 +231,7 @@ describe('Task type validation', () => {
         fc.string().filter((s) => s !== 'task' && s !== 'note' && s !== 'event'),
         async (type) => {
           try {
-            await createTask(userId, { title: 'Valid', type: type as 'task' | 'note' });
+            await createTask(userId, { title: 'Valid', type: type as 'task' | 'note' | 'event' });
             expect.fail('should throw');
           } catch (err) {
             const e = err as AppError;

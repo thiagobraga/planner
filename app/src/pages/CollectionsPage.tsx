@@ -348,7 +348,7 @@ export function CollectionsPage() {
       apiUpdateTask(taskId, { title: trimmed }).catch(() => invalidate());
     }
   }, [id, tasks, invalidate, locale]);
-  const handleConvertType = useCallback((taskId: string, type: 'task' | 'note') => {
+  const handleConvertType = useCallback((taskId: string, type: 'task' | 'note' | 'event') => {
     setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, type } : t)));
     if (!taskId.startsWith('temp-')) {
       apiUpdateTask(taskId, { type }).catch(() => invalidate());
