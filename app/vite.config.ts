@@ -1,9 +1,16 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import istanbul from "vite-plugin-istanbul";
 // Dynamically import the tailwindcss Vite plugin so a missing native binary for
 // `lightningcss` inside the pre-push docker environment doesn't abort config
 // parsing. If the import fails, fall back to null and omit the plugin.
 import { VitePWA } from "vite-plugin-pwa";
+
+// E2E coverage is opt-in: `vite-plugin-istanbul` only instruments when
+// VITE_COVERAGE=true (see test:e2e:coverage), keeping normal dev/build runs
+// untouched. forceBuildInstrument makes it work in production builds too
+// (otherwise the plugin only applies to the dev server).
+const coverageInstrumentation = process.env.VITE_COVERAGE === "true";
 
 let tailwindcss: any = null;
 try {
@@ -21,7 +28,20 @@ export default defineConfig({
   plugins: [
     react(),
     tailwindcss && tailwindcss(),
+    coverageInstrumentation &&
+      istanbul({
+        include: ["src/**/*.{ts,tsx}"],
+        exclude: ["src/**/*.test.*", "src/**/*.spec.*", "src/test/**"],
+        extension: [".ts", ".tsx"],
+        requireEnv: true,
+        forceBuildInstrument: true,
+      }),
+    // PWA is disabled for coverage-instrumented builds: the instrumented
+    // bundle exceeds workbox's precache size limit, and a coverage build is
+    // never deployed (no SW needed). The plugin stays registered so
+    // main.tsx's `virtual:pwa-register` import keeps resolving.
     VitePWA({
+      disable: coverageInstrumentation,
       registerType: "autoUpdate",
       manifest: false,
       injectRegister: false,
@@ -75,6 +95,9 @@ export default defineConfig({
   build: {
     minify: 'esbuild',
     cssMinify: process.env.SKIP_CSS_MINIFY ? false : 'esbuild',
+    // Sourcemaps are required for istanbul coverage to map bundles back to TS
+    // sources; only enabled for coverage-instrumented builds.
+    sourcemap: coverageInstrumentation ? true : undefined,
   },
   server: {
     port: 5173,
