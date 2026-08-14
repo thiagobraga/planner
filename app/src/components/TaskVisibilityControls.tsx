@@ -1,5 +1,6 @@
 import { Eye, EyeOff, FileClock } from 'lucide-react';
 import { useI18n } from '../i18n/I18nContext';
+import { ButtonGroup } from './ui/ButtonGroup';
 
 interface TaskVisibilityControlsProps {
   hideCompletedTasks: boolean;
@@ -9,13 +10,7 @@ interface TaskVisibilityControlsProps {
   onHideOldNotesChange: (value: boolean) => void;
 }
 
-function controlClass(active: boolean): string {
-  return `inline-flex h-5 w-5 items-center justify-center transition-colors duration-[var(--motion-fast)] disabled:cursor-not-allowed disabled:opacity-40 ${
-    active
-      ? 'bg-dot/60 text-ink'
-      : 'bg-transparent text-ink-light hover:bg-dot/30'
-  }`;
-}
+type VisibilityToggle = 'completed' | 'oldNotes';
 
 export function TaskVisibilityControls({
   hideCompletedTasks,
@@ -25,41 +20,36 @@ export function TaskVisibilityControls({
   onHideOldNotesChange,
 }: TaskVisibilityControlsProps) {
   const { t } = useI18n();
-  const completedLabel = hideCompletedTasks
-    ? t('visibility.showCompleted')
-    : t('visibility.hideCompleted');
-  const oldNotesLabel = hideOldNotes
-    ? t('visibility.showOldNotes')
-    : t('visibility.hideOldNotes');
+  const completedLabel = hideCompletedTasks ? t('visibility.showCompleted') : t('visibility.hideCompleted');
+  const oldNotesLabel = hideOldNotes ? t('visibility.showOldNotes') : t('visibility.hideOldNotes');
+
+  const value: VisibilityToggle[] = [
+    ...(hideCompletedTasks ? (['completed'] as const) : []),
+    ...(hideOldNotes ? (['oldNotes'] as const) : []),
+  ];
 
   return (
-    <div className="task-visibility-controls inline-flex h-5 items-center overflow-hidden rounded-[2px] border border-border">
-      <button
-        type="button"
-        aria-label={completedLabel}
-        aria-pressed={hideCompletedTasks}
-        title={completedLabel}
-        disabled={disabled}
-        onClick={() => onHideCompletedTasksChange(!hideCompletedTasks)}
-        className={controlClass(hideCompletedTasks)}
-      >
-        {hideCompletedTasks ? (
-          <Eye size={12} strokeWidth={1.8} />
-        ) : (
-          <EyeOff size={12} strokeWidth={1.8} />
-        )}
-      </button>
-      <button
-        type="button"
-        aria-label={oldNotesLabel}
-        aria-pressed={hideOldNotes}
-        title={oldNotesLabel}
-        disabled={disabled}
-        onClick={() => onHideOldNotesChange(!hideOldNotes)}
-        className={`${controlClass(hideOldNotes)} border-l border-border`}
-      >
-        <FileClock size={12} strokeWidth={1.8} />
-      </button>
-    </div>
+    <ButtonGroup<VisibilityToggle>
+      mode="multi"
+      value={value}
+      disabled={disabled}
+      className="task-visibility-controls"
+      onChange={(clicked) => {
+        if (clicked === 'completed') onHideCompletedTasksChange(!hideCompletedTasks);
+        else onHideOldNotesChange(!hideOldNotes);
+      }}
+      items={[
+        {
+          value: 'completed',
+          label: completedLabel,
+          icon: hideCompletedTasks ? <Eye size={12} strokeWidth={1.8} /> : <EyeOff size={12} strokeWidth={1.8} />,
+        },
+        {
+          value: 'oldNotes',
+          label: oldNotesLabel,
+          icon: <FileClock size={12} strokeWidth={1.8} />,
+        },
+      ]}
+    />
   );
 }
