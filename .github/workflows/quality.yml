@@ -178,11 +178,6 @@ jobs:
         env:
           # Instrumented build so e2e runs collect coverage (see test:e2e:coverage)
           VITE_COVERAGE: "true"
-      - name: Start app
-        working-directory: app
-        run: |
-          nohup npm run preview -- --host 127.0.0.1 --port 4173 > /tmp/app.log 2>&1 &
-          for i in $(seq 1 60); do curl -s -o /dev/null http://127.0.0.1:4173 && break || sleep 1; done
       - name: Install Playwright chromium
         working-directory: app
         run: npx playwright install --with-deps chromium
@@ -209,4 +204,4 @@ jobs:
         if: failure()
         run: |
           echo "=== api.log ==="; tail -50 /tmp/api.log
-          echo "=== app.log ==="; cat /tmp/app.log 2>/dev/null || echo "(no app.log - webServer logs are in the playwright output)"
+          echo "App webServer logs are in the Playwright output."

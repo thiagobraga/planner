@@ -292,4 +292,5 @@ chips in task rows.
 
 **Status:** Complete. Final live-browser state had zero console errors and all observed auth,
 preferences, collection-view, and status-seed requests returned HTTP 200. Review screenshot:
-`app/dist/screenshots/kanban-board-remaining.png`.
+`app/dist/screenshots/kanban-board-remaining.png`. The CI coverage-mode webServer lifecycle also
+passed all 17 Playwright tests after removing the duplicate workflow preview process.
