@@ -54,6 +54,9 @@ test-results/
 app/test-results/
 playwright-report/
 app/playwright-report/
+app/e2e/test-results/
+app/e2e/playwright-report/
+app/e2e/storageState.json
 app/coverage-e2e/
 app/coverage-reports/
 
