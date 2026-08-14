@@ -1,4 +1,5 @@
-import { test, expect } from '@playwright/test';
+import { expect } from '@playwright/test';
+import { test } from './coverage-fixture';
 
 const API_URL = process.env.PLAYWRIGHT_API_URL || 'http://api:4000';
 
