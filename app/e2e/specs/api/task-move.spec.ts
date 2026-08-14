@@ -106,7 +106,7 @@ test.describe('Task move API', () => {
     });
 
     try {
-      const [sourceBacklog, sourceTodo, sourceDoing] = await api.seedStatuses(sourceCollection.id);
+      const [sourceBacklog, , sourceDoing] = await api.seedStatuses(sourceCollection.id);
       const [targetBacklog, targetTodo, targetDoing] = await api.seedStatuses(targetCollection.id);
       expect(sourceBacklog.id).toBeTruthy();
       expect(targetBacklog.id).toBeTruthy();
