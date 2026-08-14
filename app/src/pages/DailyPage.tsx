@@ -5,8 +5,10 @@ import { useReorganize, type Section as ReorganizeSection } from '../hooks/useRe
 import { isEchoedMove, isStructuralMove } from '../utils/moveEcho';
 import { TaskList } from '../components/TaskList';
 import { TaskVisibilityControls } from '../components/TaskVisibilityControls';
+import { PageHeader } from '../components/PageHeader';
 import { CollectionChip } from '../components/ui/Chip';
 import { Button } from '../components/ui/Button';
+import { ButtonGroup } from '../components/ui/ButtonGroup';
 import type { Task } from '../components/TaskItem';
 import { extractNaturalDate, fmtISOInTimeZone } from '../utils/date';
 import { nextOrderValue } from '../utils/order';
@@ -278,6 +280,23 @@ export function DailyPage() {
       return next;
     });
   }, [fetchUpcomingFromApi]);
+
+  // Today/Upcoming as a single-select ButtonGroup: picking "today" also
+  // scrolls (handleToday's existing behavior), picking "upcoming" enables it.
+  const setDailyView = useCallback(
+    (v: 'today' | 'upcoming') => {
+      if (v === 'upcoming') {
+        if (!showUpcoming) {
+          setShowUpcoming(true);
+          fetchUpcomingFromApi();
+        }
+      } else {
+        setShowUpcoming(false);
+        handleToday();
+      }
+    },
+    [showUpcoming, fetchUpcomingFromApi, handleToday],
+  );
 
   useEffect(() => {
     window.addEventListener('toggle-upcoming', toggleUpcoming);
@@ -812,64 +831,60 @@ export function DailyPage() {
         inputRef.current?.focus();
       }}
     >
-      <header className="page-header-copy sticky-page-header max-w-162">
-        <div className="page-header-copy-text">
-          <h1 className="m-0 h-6 p-0 text-[18px] leading-6 font-semibold text-ink">
-            {t('page.daily')}
-          </h1>
-          <p className="page-header-subtitle daily-page-header-subtitle m-0 h-6 p-0 text-[13px] leading-6 text-ink-light opacity-60">
-            {phrase}
-          </p>
-        </div>
+      <PageHeader
+        title={t('page.daily')}
+        subtitle={phrase}
+        toolbarClassName="daily-page-header-controls flex items-center gap-2"
+        toolbar={
+          <>
+            {reorg.state === 'preview' ? (
+              <span className="reorganize-confirm inline-flex items-center gap-1 text-[13px]">
+                {t('reorganize.confirm')}
+                <button
+                  className="text-accent underline text-decoration-color-accent cursor-pointer hover:opacity-80"
+                  onClick={() => {
+                    reorg.confirmReorganize().catch((err) => console.error('Reorganize failed', err));
+                  }}
+                >
+                  {t('common.yes')}
+                </button>
+                <span>·</span>
+                <button
+                  className="text-accent underline text-decoration-color-accent cursor-pointer hover:opacity-80"
+                  onClick={reorg.cancelReorganize}
+                >
+                  {t('common.no')}
+                </button>
+              </span>
+            ) : (
+              reorg.showButton && (
+                <Button variant="secondary" size="xs" onClick={reorg.startPreview}>
+                  {t('reorganize.button')}
+                </Button>
+              )
+            )}
 
-        <div className="page-header-toolbar daily-page-header-controls flex items-center gap-2">
-          {reorg.state === 'preview' ? (
-            <span className="reorganize-confirm inline-flex items-center gap-1 text-[13px]">
-              {t('reorganize.confirm')}
-              <button
-                className="text-accent underline text-decoration-color-accent cursor-pointer hover:opacity-80"
-                onClick={() => {
-                  reorg.confirmReorganize().catch((err) => console.error('Reorganize failed', err));
-                }}
-              >
-                {t('common.yes')}
-              </button>
-              <span>·</span>
-              <button
-                className="text-accent underline text-decoration-color-accent cursor-pointer hover:opacity-80"
-                onClick={reorg.cancelReorganize}
-              >
-                {t('common.no')}
-              </button>
-            </span>
-          ) : (
-            reorg.showButton && (
-              <Button variant="secondary" size="xs" onClick={reorg.startPreview}>
-                {t('reorganize.button')}
-              </Button>
-            )
-          )}
+            <ButtonGroup<'today' | 'upcoming'>
+              mode="single"
+              value={showUpcoming ? 'upcoming' : 'today'}
+              onChange={setDailyView}
+              size="xs"
+              items={[
+                { value: 'today', label: t('page.today') },
+                { value: 'upcoming', label: t('page.upcoming') },
+              ]}
+            />
 
-          <Button
-            variant={showUpcoming ? 'primary' : 'secondary'}
-            size="xs"
-            onClick={toggleUpcoming}
-          >
-            {t('page.upcoming')}
-          </Button>
-
-          <Button variant="secondary" size="xs" onClick={handleToday}>
-            {t('page.today')}
-          </Button>
-          <TaskVisibilityControls
-            hideCompletedTasks={prefs?.hideCompletedTasks ?? false}
-            hideOldNotes={prefs?.hideOldNotes ?? false}
-            disabled={!prefs || visibilityPreferencesPending}
-            onHideCompletedTasksChange={setHideCompletedTasks}
-            onHideOldNotesChange={setHideOldNotes}
-          />
-        </div>
-      </header>
+            <TaskVisibilityControls
+              hideCompletedTasks={prefs?.hideCompletedTasks ?? false}
+              hideOldNotes={prefs?.hideOldNotes ?? false}
+              disabled={!prefs || visibilityPreferencesPending}
+              onHideCompletedTasksChange={setHideCompletedTasks}
+              onHideOldNotesChange={setHideOldNotes}
+            />
+          </>
+        }
+      />
 
       <div className="max-w-162">
         {(previewFutureSections ?? (showUpcoming ? [...upcomingSections].reverse() : [])).map((section) => {

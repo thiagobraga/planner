@@ -142,7 +142,7 @@ export const portugueseBrazilCatalog = {
   'page.inbox': 'Entrada',
   'page.monthly': 'Mensal',
   'page.habits': 'Hábitos',
-  'page.upcoming': 'Próximas',
+  'page.upcoming': 'Próximos dias',
   'page.today': 'Hoje',
   'page.noTasks': 'Nenhuma tarefa ainda.',
   'page.noTasksToday': 'Nenhuma tarefa para hoje.',
