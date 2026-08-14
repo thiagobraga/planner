@@ -107,6 +107,9 @@ export const DEFAULT_BINDINGS: Binding[] = [
   { key: 'Delete', context: 'global', action: 'task:confirmDelete' },
   { key: 'Escape', context: 'always', action: 'dialog:close' },
   { keys: ['g', 'i'], context: 'global', action: 'navigate:inbox' },
-  { keys: ['g', 't'], context: 'global', action: 'navigate:daily' },
+  { keys: ['g', 'd'], context: 'global', action: 'navigate:daily' },
+  { keys: ['g', 'm'], context: 'global', action: 'navigate:monthly' },
+  { keys: ['g', 'h'], context: 'global', action: 'navigate:habits' },
+  { keys: ['g', 's'], context: 'global', action: 'navigate:settings' },
   { keys: ['g', 'u'], context: 'global', action: 'toggle:upcoming' },
 ];

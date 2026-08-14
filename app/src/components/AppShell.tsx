@@ -143,6 +143,15 @@ export function AppShell() {
         case 'navigate:daily':
           navigate('/daily');
           break;
+        case 'navigate:monthly':
+          navigate('/monthly');
+          break;
+        case 'navigate:habits':
+          navigate('/habits');
+          break;
+        case 'navigate:settings':
+          navigate('/settings');
+          break;
         case 'toggle:upcoming':
           if (location.pathname !== '/daily') {
             navigate('/daily');
@@ -280,7 +289,10 @@ export function AppShell() {
                   ['/', t('common.search')],
                   ['?', t('shell.togglePanel')],
                   ['g i', t('shell.goInbox')],
-                  ['g t', t('shell.goToday')],
+                  ['g d', t('shell.goDaily')],
+                  ['g m', t('shell.goMonthly')],
+                  ['g h', t('shell.goHabits')],
+                  ['g s', t('shell.goSettings')],
                   ['g u', t('shell.goUpcoming')],
                   ['Enter', t('shell.editSelected')],
                   ['Delete', t('shell.deleteSelected')],
