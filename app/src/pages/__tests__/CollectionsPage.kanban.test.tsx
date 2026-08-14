@@ -94,7 +94,7 @@ describe('CollectionsPage kanban wiring', () => {
     expect(screen.getByRole('button', { name: 'Kanban' })).toHaveAttribute('aria-pressed', 'true');
   });
 
-  it('keeps status columns as section headings after switching to list', async () => {
+  it('ignores the status groupBy preference and lists by section after switching to list', async () => {
     vi.mocked(fetchCollectionView).mockResolvedValue({
       collection: { id: collectionId, name: 'Kanban Lab', color: '#c98079', isInbox: false },
       collectionId,
@@ -120,7 +120,8 @@ describe('CollectionsPage kanban wiring', () => {
 
     renderPage();
 
-    expect(await screen.findByRole('heading', { name: 'Backlog' })).toBeInTheDocument();
+    expect(await screen.findByTestId('task-list')).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Backlog' })).not.toBeInTheDocument();
     expect(screen.queryByTestId('collection-board')).not.toBeInTheDocument();
   });
 });

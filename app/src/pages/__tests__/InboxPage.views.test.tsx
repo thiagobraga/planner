@@ -163,7 +163,7 @@ inboxBeforeEach({ mockFetchInboxTasks, mockApiCreateTask, mockApiUpdateTask, moc
       await waitFor(() => expect(mockApiToggleTask).toHaveBeenCalledWith('task-1', true));
     });
 
-    it('renders status groups with counts and the add form after the first group', async () => {
+    it('ignores status grouping in list view and always lists by section', async () => {
       mockFetchInboxTasks.mockResolvedValue({
         ...baseInboxData,
         inboxCollectionId: 'col-1',
@@ -181,16 +181,12 @@ inboxBeforeEach({ mockFetchInboxTasks, mockApiCreateTask, mockApiUpdateTask, moc
       mockApiCreateTask.mockResolvedValue(createdTask({ title: 'Ship it' }));
       renderPage();
 
-      await screen.findByRole('heading', { name: 'Backlog' });
-      const headings = screen.getAllByRole('heading');
-      expect(headings.map((h) => h.textContent)).toEqual(['Inbox', 'Backlog', 'Done']);
+      await screen.findByText('Buy groceries');
+      expect(screen.queryByRole('heading', { name: 'Backlog' })).not.toBeInTheDocument();
+      expect(screen.queryByRole('heading', { name: 'Done' })).not.toBeInTheDocument();
 
-      await waitFor(() => expect(taskListCalls('status:st-1').length).toBeGreaterThan(0));
-      const backlogTasks = taskListCalls('status:st-1').at(-1)![0].tasks.map((t) => t.id);
-      expect(backlogTasks).toEqual(expect.arrayContaining(['task-1', 'task-2']));
-
-      const doneTasks = taskListCalls('status:st-2').at(-1)![0].tasks.map((t) => t.id);
-      expect(doneTasks).toEqual(['task-3']);
+      const inboxTasks = taskListCalls('collection:inbox').at(-1)![0].tasks.map((t) => t.id);
+      expect(inboxTasks).toEqual(expect.arrayContaining(['task-1', 'task-2', 'task-3']));
 
       const input = screen.getByPlaceholderText('New task…');
       fireEvent.change(input, { target: { value: 'Ship it' } });

@@ -7,7 +7,6 @@ import { SectionHeader } from '../components/SectionHeader';
 import { InlineNameInput } from '../components/ui/InlineNameInput';
 import { CollectionBoard } from '../components/board/CollectionBoard';
 import { BoardToolbar } from '../components/board/BoardToolbar';
-import { StatusTaskList } from '../components/board/StatusTaskList';
 import { nextOrderValue } from '../utils/order';
 import { extractNaturalDate } from '../utils/date';
 import type { Task } from '../components/TaskItem';
@@ -45,7 +44,6 @@ import { SectionDeleteModal } from '../components/SectionDeleteModal';
 import { flattenCollections, getHierarchicalColor } from '../components/CollectionTreeNav';
 import { Folder, ArrowUp, ArrowDown, Trash2, Pencil, ChevronRight } from 'lucide-react';
 import { useI18n } from '../i18n/I18nContext';
-import { buildStatusListGroups } from '../utils/boardColumns';
 
 function apiToTask(t: ApiTask): Task {
   return {
@@ -606,12 +604,6 @@ export function CollectionsPage() {
     tasks,
     sections.filter((s) => !s.id.startsWith('temp-')),
   );
-  const statusListGroups = useMemo(
-    () => buildStatusListGroups(tasks, data?.statuses ?? [], data?.completionStatusId ?? null),
-    [data?.completionStatusId, data?.statuses, tasks],
-  );
-  const showStatusGroups = boardPreferences.groupBy === 'status' && statusListGroups.length > 0;
-
   return (
     <div
       className="collection-detail-page relative w-full cursor-text"
@@ -723,58 +715,23 @@ export function CollectionsPage() {
         <>
         <div className="h-6" />
 
-        {showStatusGroups ? (
-          <StatusTaskList
-            groups={statusListGroups}
-            afterFirstGroup={(
-              <form onSubmit={handleAddAtEnd} className="flex h-6 items-center">
-                <span className="w-6 shrink-0 select-none text-center text-[10px] leading-6 text-ink opacity-25">•</span>
-                <input
-                  ref={inputRef}
-                  type="text"
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  placeholder={t('common.addTask')}
-                  className="task-input task-add-input flex-1 border-none bg-transparent p-0 text-sm leading-6 text-ink outline-none"
-                  spellCheck={false}
-                  onKeyDown={handleAddNoteKeyDown}
-                />
-              </form>
-            )}
-            taskListProps={{
-              collectionId: id,
-              activeDragId,
-              editingId,
-              onTaskToggle: handleToggle,
-              onStartEdit: handleStartEdit,
-              onEditCommit: handleEditCommit,
-              onEditCancel: handleEditCancel,
-              onDelete: handleDelete,
-              onAddBelow: handleAddBelow,
-              onIndent: handleIndent,
-              onConvertType: handleConvertType,
-              onRightClick: handleRightClick,
-            }}
-          />
-        ) : (
-          <TaskList
-            tasks={topLevelGroup.tasks}
-            containerId={`collection:${id}`}
-            activeDragId={activeDragId}
-            editingId={editingId}
-            onTaskToggle={handleToggle}
-            onStartEdit={handleStartEdit}
-            onEditCommit={handleEditCommit}
-            onEditCancel={handleEditCancel}
-            onDelete={handleDelete}
-            onAddBelow={handleAddBelow}
-            onIndent={handleIndent}
-            onConvertType={handleConvertType}
-            onRightClick={handleRightClick}
-          />
-        )}
+        <TaskList
+          tasks={topLevelGroup.tasks}
+          containerId={`collection:${id}`}
+          activeDragId={activeDragId}
+          editingId={editingId}
+          onTaskToggle={handleToggle}
+          onStartEdit={handleStartEdit}
+          onEditCommit={handleEditCommit}
+          onEditCancel={handleEditCancel}
+          onDelete={handleDelete}
+          onAddBelow={handleAddBelow}
+          onIndent={handleIndent}
+          onConvertType={handleConvertType}
+          onRightClick={handleRightClick}
+        />
 
-        {!showStatusGroups && <form
+        <form
         onSubmit={handleAddAtEnd}
         className="flex items-center h-6"
       >
@@ -791,9 +748,8 @@ export function CollectionsPage() {
           spellCheck={false}
           onKeyDown={handleAddNoteKeyDown}
         />
-        </form>}
+        </form>
 
-        {!showStatusGroups && <>
         <SortableContext
           items={sectionGroups.map((group) => group.section!.id)}
           strategy={verticalListSortingStrategy}
@@ -875,7 +831,6 @@ export function CollectionsPage() {
             </span>
           </button>
         )}
-        </>}
         </>
         )}
       </div>
