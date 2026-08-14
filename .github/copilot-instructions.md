@@ -1,4 +1,4 @@
-# copilot-instructions.md
+# COPILOT-INSTRUCTIONS.md
 
 This file provides guidance to GitHub Copilot CLI when working with code in this repository.
 
