@@ -7,6 +7,7 @@ import { InlineNameInput } from '../components/ui/InlineNameInput';
 import { CollectionBoard } from '../components/board/CollectionBoard';
 import { BoardToolbar } from '../components/board/BoardToolbar';
 import { PageHeader } from '../components/PageHeader';
+import { Toolbar } from '../components/ui/Toolbar';
 import type { Task } from '../components/TaskItem';
 import type { Section } from '../stores/taskStore';
 import {
@@ -533,19 +534,20 @@ export function InboxPage() {
       <PageHeader
         title={t('page.inbox')}
         subtitle={phrase}
-        toolbarClassName="inbox-page-header-controls flex items-center"
         toolbar={
-          <BoardToolbar
-            view={boardPreferences.view}
-            groupBy={boardPreferences.groupBy}
-            hideCompletedTasks={preferences?.hideCompletedTasks ?? false}
-            hideOldNotes={preferences?.hideOldNotes ?? false}
-            preferencesDisabled={!preferences || visibilityPreferencesPending}
-            onViewChange={boardPreferences.setView}
-            onGroupByChange={boardPreferences.setGroupBy}
-            onHideCompletedTasksChange={setHideCompletedTasks}
-            onHideOldNotesChange={setHideOldNotes}
-          />
+          <Toolbar className="inbox-page-header-controls">
+            <BoardToolbar
+              view={boardPreferences.view}
+              groupBy={boardPreferences.groupBy}
+              hideCompletedTasks={preferences?.hideCompletedTasks ?? false}
+              hideOldNotes={preferences?.hideOldNotes ?? false}
+              preferencesDisabled={!preferences || visibilityPreferencesPending}
+              onViewChange={boardPreferences.setView}
+              onGroupByChange={boardPreferences.setGroupBy}
+              onHideCompletedTasksChange={setHideCompletedTasks}
+              onHideOldNotesChange={setHideOldNotes}
+            />
+          </Toolbar>
         }
       />
 

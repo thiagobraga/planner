@@ -3,11 +3,10 @@ import type { ReactNode } from 'react';
 export interface PageHeaderProps {
   title: ReactNode;
   subtitle?: string;
+  /** A `<Toolbar>` element - PageHeader renders it as-is; Toolbar owns its own layout classes. */
   toolbar?: ReactNode;
   /** Extra content in `.page-header-copy-text`, after the title/subtitle (e.g. CollectionsPage's inline sub-collection input). */
   afterTitle?: ReactNode;
-  /** Extra classes on the `.page-header-toolbar` div (e.g. a page-specific responsive hook). */
-  toolbarClassName?: string;
   /** Extra classes on the `<h1>` (e.g. CollectionsPage's breadcrumb-trail layout). */
   titleClassName?: string;
   /** Extra classes on the outer `<header>`. */
@@ -17,15 +16,7 @@ export interface PageHeaderProps {
 // De-dups the header markup every page (Daily/Monthly/Habits/Inbox/Collections)
 // repeated verbatim. Wraps the current, already-settled CSS classes as-is -
 // no positioning/CSS changes - see .specs/2026-08-14-page-header-button-group.
-export function PageHeader({
-  title,
-  subtitle,
-  toolbar,
-  afterTitle,
-  toolbarClassName = '',
-  titleClassName = '',
-  className = '',
-}: PageHeaderProps) {
+export function PageHeader({ title, subtitle, toolbar, afterTitle, titleClassName = '', className = '' }: PageHeaderProps) {
   return (
     <header className={`page-header-copy sticky-page-header max-w-162 ${className}`}>
       <div className="page-header-copy-text">
@@ -38,7 +29,7 @@ export function PageHeader({
         {afterTitle}
       </div>
 
-      {toolbar && <div className={`page-header-toolbar ${toolbarClassName}`}>{toolbar}</div>}
+      {toolbar}
     </header>
   );
 }

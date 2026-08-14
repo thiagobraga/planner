@@ -8,6 +8,8 @@ import { TaskVisibilityControls } from '../components/TaskVisibilityControls';
 import { PageHeader } from '../components/PageHeader';
 import { CollectionChip } from '../components/ui/Chip';
 import { Button } from '../components/ui/Button';
+import { ButtonGroup } from '../components/ui/ButtonGroup';
+import { Toolbar } from '../components/ui/Toolbar';
 import type { Task } from '../components/TaskItem';
 import { extractNaturalDate, fmtISOInTimeZone } from '../utils/date';
 import { nextOrderValue } from '../utils/order';
@@ -833,9 +835,8 @@ export function DailyPage() {
       <PageHeader
         title={t('page.daily')}
         subtitle={phrase}
-        toolbarClassName="daily-page-header-controls flex items-center gap-2"
         toolbar={
-          <>
+          <Toolbar className="daily-page-header-controls">
             {reorg.state === 'preview' ? (
               <span className="reorganize-confirm inline-flex items-center gap-1 text-[13px]">
                 {t('reorganize.confirm')}
@@ -863,13 +864,16 @@ export function DailyPage() {
               )
             )}
 
-            <Button variant={!showUpcoming ? 'primary' : 'secondary'} size="xs" onClick={() => setDailyView('today')}>
-              {t('page.today')}
-            </Button>
-
-            <Button variant={showUpcoming ? 'primary' : 'secondary'} size="xs" onClick={() => setDailyView('upcoming')}>
-              {t('page.upcoming')}
-            </Button>
+            <ButtonGroup<'today' | 'upcoming'>
+              mode="single"
+              value={showUpcoming ? 'upcoming' : 'today'}
+              onChange={setDailyView}
+              size="xs"
+              items={[
+                { value: 'today', label: t('page.today') },
+                { value: 'upcoming', label: t('page.upcoming') },
+              ]}
+            />
 
             <TaskVisibilityControls
               hideCompletedTasks={prefs?.hideCompletedTasks ?? false}
@@ -878,7 +882,7 @@ export function DailyPage() {
               onHideCompletedTasksChange={setHideCompletedTasks}
               onHideOldNotesChange={setHideOldNotes}
             />
-          </>
+          </Toolbar>
         }
       />
 

@@ -46,7 +46,7 @@ describe('ButtonGroup', () => {
   });
 
   describe('rounding', () => {
-    it('rounds only the outer corners of the first and last segment', () => {
+    it('flattens only the touching side of each segment', () => {
       const items = [
         { value: 'a' as const, label: 'A' },
         { value: 'b' as const, label: 'B' },
@@ -55,20 +55,23 @@ describe('ButtonGroup', () => {
       render(<ButtonGroup mode="single" value="a" onChange={vi.fn()} items={items} size="xs" />);
       const [first, middle, last] = items.map((i) => screen.getByRole('button', { name: i.label }));
 
-      expect(first.className).toMatch(/rounded-l/);
-      expect(first.className).not.toMatch(/rounded-r/);
-      expect(last.className).toMatch(/rounded-r/);
-      expect(last.className).not.toMatch(/rounded-l/);
-      expect(middle.className).not.toMatch(/rounded-l|rounded-r/);
+      // First keeps its left corners rounded, right corners flattened.
+      expect(first.className).not.toMatch(/rounded-l-none/);
+      expect(first.className).toMatch(/rounded-r-none/);
+      // Middle segments are square on both touching sides.
+      expect(middle.className).toMatch(/rounded-l-none/);
+      expect(middle.className).toMatch(/rounded-r-none/);
+      // Last keeps its right corners rounded, left corners flattened.
+      expect(last.className).toMatch(/rounded-l-none/);
+      expect(last.className).not.toMatch(/rounded-r-none/);
     });
 
-    it('rounds both corners when there is only one segment', () => {
+    it('gets no corner overrides when there is only one segment', () => {
       render(
         <ButtonGroup mode="single" value="a" onChange={vi.fn()} items={[{ value: 'a' as const, label: 'A' }]} />,
       );
       const only = screen.getByRole('button', { name: 'A' });
-      expect(only.className).toMatch(/rounded-l/);
-      expect(only.className).toMatch(/rounded-r/);
+      expect(only.className).not.toMatch(/rounded-l-none|rounded-r-none/);
     });
   });
 

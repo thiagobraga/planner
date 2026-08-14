@@ -9,6 +9,7 @@ import { useHabitDrag } from '../hooks/useHabitDrag';
 import { isEchoedMove } from '../utils/moveEcho';
 import { Button } from '../components/ui/Button';
 import { ButtonGroup } from '../components/ui/ButtonGroup';
+import { Toolbar } from '../components/ui/Toolbar';
 import { PageHeader } from '../components/PageHeader';
 import { startOfDay } from '../utils/date';
 import { flattenHabits, type HabitNode } from '../utils/habitTree';
@@ -398,9 +399,8 @@ export function HabitsPage() {
       <PageHeader
         title={t('page.habits')}
         subtitle={phrase}
-        toolbarClassName="habits-page-header-controls flex items-center gap-2"
         toolbar={
-          <>
+          <Toolbar className="habits-page-header-controls">
             <Button variant="secondary" size="xs" onClick={handleToday}>
               {t('page.today')}
             </Button>
@@ -415,7 +415,7 @@ export function HabitsPage() {
                 { value: 'calendar', label: t('page.calendarView'), icon: <Calendar size={12} strokeWidth={1.8} /> },
               ]}
             />
-          </>
+          </Toolbar>
         }
       />
 

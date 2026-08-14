@@ -2,9 +2,9 @@ import { expect, type Page } from '@playwright/test';
 import { test } from './coverage-fixture';
 
 /**
- * Covers the PageHeader/ButtonGroup unification: Today/Upcoming order (Today
- * first, each its own pill - not joined), the list/kanban segmented toggle,
- * and the completed/notes segmented toggle.
+ * Covers the PageHeader/ButtonGroup/Toolbar unification: Today/Upcoming as a
+ * joined ButtonGroup (Today first), the list/kanban segmented toggle, and
+ * the completed/notes segmented toggle.
  */
 
 async function registerAndLogin(page: Page) {
@@ -24,7 +24,7 @@ test.describe('Header toolbar controls', () => {
     await registerAndLogin(page);
   });
 
-  test('Today/Upcoming render in order, each as its own button (not a joined group)', async ({ page }) => {
+  test('Today/Upcoming render as a joined ButtonGroup, Today first', async ({ page }) => {
     await page.goto('/daily');
 
     const controls = page.locator('.daily-page-header-controls');
@@ -40,16 +40,22 @@ test.describe('Header toolbar controls', () => {
     );
     expect(order).toEqual(['Today', 'Upcoming']);
 
-    // Today is the active (filled) pill by default; Upcoming is not.
+    // Today is the active (filled) segment by default; Upcoming is not.
+    await expect(today).toHaveAttribute('aria-pressed', 'true');
     await expect(today).toHaveClass(/bg-ink/);
+    await expect(upcoming).toHaveAttribute('aria-pressed', 'false');
     await expect(upcoming).not.toHaveClass(/bg-ink/);
 
-    // Clicking Upcoming flips which pill is filled - they stay two separate
-    // buttons throughout (no aria-pressed / role=group, unlike a ButtonGroup).
+    // Only the touching corners are flattened - Today's right side, Upcoming's left.
+    await expect(today).toHaveClass(/rounded-r-none/);
+    await expect(upcoming).toHaveClass(/rounded-l-none/);
+
+    // Clicking Upcoming flips which segment is active.
     await upcoming.click();
+    await expect(upcoming).toHaveAttribute('aria-pressed', 'true');
     await expect(upcoming).toHaveClass(/bg-ink/);
+    await expect(today).toHaveAttribute('aria-pressed', 'false');
     await expect(today).not.toHaveClass(/bg-ink/);
-    await expect(controls).not.toHaveAttribute('role', 'group');
   });
 
   test('list/kanban toggle switches the active segment on Inbox', async ({ page }) => {

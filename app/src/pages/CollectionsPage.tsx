@@ -8,6 +8,7 @@ import { InlineNameInput } from '../components/ui/InlineNameInput';
 import { CollectionBoard } from '../components/board/CollectionBoard';
 import { BoardToolbar } from '../components/board/BoardToolbar';
 import { PageHeader } from '../components/PageHeader';
+import { Toolbar } from '../components/ui/Toolbar';
 import { nextOrderValue } from '../utils/order';
 import { extractNaturalDate } from '../utils/date';
 import type { Task } from '../components/TaskItem';
@@ -686,19 +687,20 @@ export function CollectionsPage() {
             </div>
           )
         }
-        toolbarClassName="collection-page-header-controls flex items-center"
         toolbar={
-          <BoardToolbar
-            view={boardPreferences.view}
-            groupBy={boardPreferences.groupBy}
-            hideCompletedTasks={preferences?.hideCompletedTasks ?? false}
-            hideOldNotes={preferences?.hideOldNotes ?? false}
-            preferencesDisabled={!preferences || visibilityPreferencesPending}
-            onViewChange={boardPreferences.setView}
-            onGroupByChange={boardPreferences.setGroupBy}
-            onHideCompletedTasksChange={setHideCompletedTasks}
-            onHideOldNotesChange={setHideOldNotes}
-          />
+          <Toolbar className="collection-page-header-controls">
+            <BoardToolbar
+              view={boardPreferences.view}
+              groupBy={boardPreferences.groupBy}
+              hideCompletedTasks={preferences?.hideCompletedTasks ?? false}
+              hideOldNotes={preferences?.hideOldNotes ?? false}
+              preferencesDisabled={!preferences || visibilityPreferencesPending}
+              onViewChange={boardPreferences.setView}
+              onGroupByChange={boardPreferences.setGroupBy}
+              onHideCompletedTasksChange={setHideCompletedTasks}
+              onHideOldNotesChange={setHideOldNotes}
+            />
+          </Toolbar>
         }
       />
 
