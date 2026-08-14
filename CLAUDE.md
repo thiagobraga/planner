@@ -244,17 +244,20 @@ Full spec: `DESIGN.md`.
 - Optimistic updates go through helpers in `stores/optimistic.ts`.
 - All routes are under `/api/v1/`; add new routes to `routes/index.ts`.
 - Mandatory TDD & Full Coverage: Test-Driven Development (red-green-refactor) is required. Write unit tests, real DB/Redis integration tests (no mock-DB pattern), and Playwright E2E tests for features and bugfixes.
-- No AI Slop / Em Dash Ban: Avoid AI slop in comments. Never use em dashes (`—` or `–`) anywhere in code or documentation; use simple dashes `-`.
-- UI Screenshots: Save visual test screenshots to `./app/dist/screenshots/*.png` inside the worktree and display them as clickable markdown links.
-- Validate only at system boundaries (user input, external APIs).
-- Comments only for non-obvious WHY - never for WHAT.
-- Commits: Conventional Commits (`feat:`, `fix:`, `chore:`, etc.), many small per file/feature.
+- Mandatory Conventional Commits: All commits MUST strictly follow Conventional Commits (`feat:`, `fix:`, `docs:`, `style:`, `refactor:`, `test:`, `chore:`, etc.). Create small, focused commits per file or logical feature.
+- User Prompt Commit Aliases:
+  - `commit` or `gcm` -> Stage and commit using Conventional Commits format with required `Co-Authored-By` trailer.
+  - `commit and push`, `gcp`, or `gcmp` -> Stage, commit (with Conventional Commits + `Co-Authored-By` trailer), and push to remote branch (`git push`).
 - Add `Co-Authored-By` trailer matching the model on the last line of every commit body:
   - GitHub Copilot CLI: `Co-Authored-By: Copilot (<model-used> <effort>) <copilot@github.com>`
   - OpenCode: `Co-Authored-By: OpenCode (<real model name and effort>) <noreply@opencode.ai>`
   - Codex: `Co-Authored-By: Codex (<real model name and effort>) <codex@openai.com>`
   - Antigravity: `Co-Authored-By: Antigravity (<real model name and effort>) <noreply@antigravity.ai>`
   - Claude Code adds its own trailer automatically.
+- No AI Slop / Em Dash Ban: Avoid AI slop in comments. Never use em dashes (`—` or `–`) anywhere in code or documentation; use simple dashes `-`.
+- UI Screenshots: Save visual test screenshots to `./app/dist/screenshots/*.png` inside the worktree and display them as clickable markdown links.
+- Validate only at system boundaries (user input, external APIs).
+- Comments only for non-obvious WHY - never for WHAT.
 - No backwards-compat shims for removed code - delete cleanly.
 - Node ≥ 24 required.
 
