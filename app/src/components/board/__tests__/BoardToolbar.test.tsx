@@ -28,16 +28,16 @@ describe('BoardToolbar', () => {
     expect(within(toolbar!).queryByText('Group by')).not.toBeInTheDocument();
   });
 
-  it('orders group controls, view switch, and visibility controls in kanban', () => {
+  it('orders the view switch, group controls, and visibility controls in kanban', () => {
     render(<BoardToolbar {...baseProps} view="kanban" />);
 
     const toolbar = screen.getByText('Group by').closest('.board-page-toolbar');
     expect(toolbar).not.toBeNull();
     const buttons = within(toolbar!).getAllByRole('button');
     expect(buttons.map((button) => button.textContent?.trim())).toEqual([
-      'Status',
       'List',
       'Kanban',
+      'Status',
       '',
       '',
     ]);

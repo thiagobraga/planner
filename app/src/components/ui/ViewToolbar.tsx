@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { SlidersHorizontal, List, LayoutGrid, MoreHorizontal } from 'lucide-react';
+import { SlidersHorizontal, List, Columns3, MoreHorizontal } from 'lucide-react';
 import { Button } from './Button';
 import { Checkbox } from './Checkbox';
 import { useI18n } from '../../i18n/I18nContext';
@@ -70,7 +70,7 @@ export function ViewToolbar({
       <div className={`ml-auto inline-flex items-center border border-border overflow-hidden ${compact ? 'h-6 rounded-[4px]' : 'rounded-[8px] mr-2.5'}`}>
         {([
           { mode: 'list' as const, label: t('toolbar.list'), Icon: List },
-          { mode: 'kanban' as const, label: t('toolbar.kanban'), Icon: LayoutGrid },
+          { mode: 'kanban' as const, label: t('toolbar.kanban'), Icon: Columns3 },
         ]).map(({ mode, label, Icon }, i) => (
           <button
             key={mode}

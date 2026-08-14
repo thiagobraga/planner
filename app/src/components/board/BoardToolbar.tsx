@@ -21,13 +21,6 @@ export function BoardToolbar(props: BoardToolbarProps) {
 
   return (
     <div className="board-page-toolbar">
-      {props.view === 'kanban' && (
-        <div className="board-toolbar-kanban-controls">
-          <span className="board-toolbar-group-label">{t('board.groupBy')}</span>
-          <GroupBySelect value={props.groupBy} onChange={props.onGroupByChange} />
-        </div>
-      )}
-
       <div className="board-toolbar-primary-controls">
         <ViewToolbar
           view={props.view}
@@ -35,6 +28,12 @@ export function BoardToolbar(props: BoardToolbarProps) {
           viewOnly
           compact
         />
+        {props.view === 'kanban' && (
+          <div className="board-toolbar-kanban-controls">
+            <span className="board-toolbar-group-label">{t('board.groupBy')}</span>
+            <GroupBySelect value={props.groupBy} onChange={props.onGroupByChange} />
+          </div>
+        )}
         <TaskVisibilityControls
           hideCompletedTasks={props.hideCompletedTasks}
           hideOldNotes={props.hideOldNotes}
