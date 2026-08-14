@@ -51,6 +51,7 @@ function apiToTask(t: ApiTask): Task {
     dueDate: t.dueDate ?? undefined,
     isCompleted: t.isCompleted,
     orderValue: t.orderValue,
+    labels: t.labels,
     indent: t.depth,
     type: t.type,
     createdAt: t.createdAt,

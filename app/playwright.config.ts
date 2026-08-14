@@ -1,21 +1,28 @@
 import { defineConfig, devices } from '@playwright/test';
 
+import { BASE_URL } from './e2e/fixtures/api';
+
 // Coverage mode (test:e2e:coverage) serves the instrumented build via vite
-// preview; the normal flow keeps targeting the dev server on 5173.
+// preview; the normal flow uses the configured app base URL.
 const isCoverage = process.env.PLAYWRIGHT_COVERAGE === '1';
 const baseURL =
-  process.env.PLAYWRIGHT_BASE_URL || (isCoverage ? 'http://127.0.0.1:4173' : 'http://127.0.0.1:5173');
+  isCoverage
+    ? process.env.E2E_BASE_URL || process.env.PLAYWRIGHT_BASE_URL || 'http://127.0.0.1:4173'
+    : BASE_URL;
 
 export default defineConfig({
   testDir: './e2e',
+  outputDir: './e2e/test-results',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
+  retries: process.env.CI ? 1 : 0,
   workers: 1,
-  reporter: 'list',
+  reporter: [['list'], ['html', { outputFolder: './e2e/playwright-report', open: 'never' }]],
+  globalSetup: './e2e/global-setup.ts',
   use: {
     baseURL,
     trace: 'on-first-retry',
+    video: 'on-first-retry',
     ignoreHTTPSErrors: true,
     launchOptions: {
       ...(process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH
