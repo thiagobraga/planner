@@ -48,7 +48,7 @@ Add to `/etc/hosts`: `planner.local`, `api.planner.local`, `db.planner.local`, `
 - `https://planner.local` - app (also serves `/api` and `/socket.io`)
 - `https://api.planner.local` - API directly (e.g. `/api/v1/...`)
 - `https://db.planner.local` - pgAdmin (desktop mode, DB password `planner`)
-- `https://coverage.planner.local` - Vitest HTML report (writes to `app/dist/html`, served via static nginx container)
+- `https://coverage.planner.local` - Vitest HTML report & E2E coverage (writes to `app/coverage-reports`, served via static nginx container)
 
 ## Commands
 
