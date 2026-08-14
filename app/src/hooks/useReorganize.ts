@@ -137,11 +137,10 @@ export function useReorganize(
     };
 
     for (const section of sections) {
-      const bucket = ensureBucket(section.date);
       for (const task of section.tasks) {
         const assignment = assignments.get(task.id);
         if (!assignment) {
-          bucket.push(task); // untouched: completed, subtask, note, or future
+          ensureBucket(section.date).push(task); // untouched: completed, subtask, note, or future
         }
       }
     }

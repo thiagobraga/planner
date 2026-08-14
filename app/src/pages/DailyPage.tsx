@@ -799,6 +799,7 @@ export function DailyPage() {
         ? (reorg.previewSections ?? [])
             .filter((s) => s.date <= todayKey)
             .map((s) => ({ key: s.date, label: s.label, tasks: s.tasks as Task[] }))
+            .reverse()
         : null,
     [reorg.state, reorg.previewSections, todayKey],
   );
