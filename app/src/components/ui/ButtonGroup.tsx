@@ -65,7 +65,7 @@ export function ButtonGroup<T extends string>({
               if (itemDisabled) return;
               onChange(item.value);
             }}
-            className={`${!isFirst ? 'rounded-l-none' : ''} ${!isLast ? 'rounded-r-none' : ''}`}
+            className={`${!isFirst ? 'rounded-l-none -ml-px' : ''} ${!isLast ? 'rounded-r-none' : ''}`}
           >
             {item.icon}
             {showLabel && <span>{item.label}</span>}

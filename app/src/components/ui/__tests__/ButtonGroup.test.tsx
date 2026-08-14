@@ -66,6 +66,18 @@ describe('ButtonGroup', () => {
       expect(last.className).not.toMatch(/rounded-r-none/);
     });
 
+    it('overlaps each non-first segment onto the previous border, avoiding a doubled seam', () => {
+      const items = [
+        { value: 'a' as const, label: 'A' },
+        { value: 'b' as const, label: 'B' },
+      ];
+      render(<ButtonGroup mode="single" value="a" onChange={vi.fn()} items={items} />);
+      const [first, second] = items.map((i) => screen.getByRole('button', { name: i.label }));
+
+      expect(first.className).not.toMatch(/-ml-px/);
+      expect(second.className).toMatch(/-ml-px/);
+    });
+
     it('gets no corner overrides when there is only one segment', () => {
       render(
         <ButtonGroup mode="single" value="a" onChange={vi.fn()} items={[{ value: 'a' as const, label: 'A' }]} />,
