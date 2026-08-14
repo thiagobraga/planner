@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { SlidersHorizontal, ListTodo, Kanban, MoreHorizontal } from 'lucide-react';
+import { SlidersHorizontal, Kanban, MoreHorizontal, List } from 'lucide-react';
 import { Button } from './Button';
 import { ButtonGroup } from './ButtonGroup';
 import { Checkbox } from './Checkbox';
@@ -72,14 +72,14 @@ export function ViewToolbar({
         mode="single"
         value={view}
         onChange={setView}
-        size={compact ? 'sm' : 'md'}
+        size='xs'
         className={`ml-auto ${compact ? '' : 'mr-2.5'}`}
         items={[
           {
             value: 'list',
             label: t('toolbar.list'),
             showLabel: true,
-            icon: <ListTodo size={compact ? 12 : 15} strokeWidth={1.5} />,
+            icon: <List size={compact ? 12 : 15} strokeWidth={1.5} />,
           },
           {
             value: 'kanban',

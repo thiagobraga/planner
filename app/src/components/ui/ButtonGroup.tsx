@@ -93,7 +93,7 @@ export function ButtonGroup<T extends string>({
               if (itemDisabled) return;
               onChange(item.value);
             }}
-            className={`ui-button-group-item inline-flex items-center justify-center font-journal leading-none whitespace-nowrap transition-colors duration-[var(--motion-fast)] disabled:cursor-not-allowed disabled:opacity-40 ${s.height} ${s.padding} ${s.text} ${s.gap} ${
+            className={`ui-button-group-item inline-flex items-center justify-center font-journal leading-none whitespace-nowrap transition-colors duration-(--motion-fast) disabled:cursor-not-allowed disabled:opacity-40 ${s.height} ${s.padding} ${s.text} ${s.gap} ${
               i > 0 ? 'border-l border-ink' : ''
             } ${i === 0 ? s.radiusL : ''} ${i === items.length - 1 ? s.radiusR : ''} ${
               active ? 'bg-ink text-cream' : 'bg-transparent text-ink hover:bg-dot/30'
