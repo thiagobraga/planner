@@ -276,21 +276,25 @@ When instructed to work on a spec or task:
 
 1. **Read the Spec / Request**: Review requirements carefully.
 2. **Isolate Environment**:
-   - Create worktree: `git worktree add ../planner-<slug> -b feat/<slug>`
+   - Create worktree & branch: `git worktree add ../planner-<slug> -b feat/<slug>`
    - Subagents use numbered subdomains (e.g. `claude2.planner.local`, `codex2.planner.local`, `antigravity2.planner.local`).
-3. **Local Dev Setup**:
+3. **Local Dev Setup & Draft PR**:
    - Copy `.env.example` to `.env` in worktree root.
    - Set `COMPOSE_PROJECT_NAME=planner-<agent>` and `APP_SUBDOMAIN=<agent>.planner`.
    - Run `bash .hooks/setup-hooks.sh`.
    - Start stack: `docker compose up -d`.
-4. **Implementation & Verification**:
-   - Implement feature following TDD and coding conventions.
-   - Visually verify in browser at `https://<agent>.planner.local` and capture screenshot links to `./app/dist/screenshots/*.png`.
-5. **Worktree Teardown & PR Protocol**:
+   - **Open Draft PR**: Push initial branch and open a Pull Request against `main` marked as **Draft** before starting development.
+4. **Live Browser Session**:
+   - Launch Chrome browser using Playwright at `https://<agent>.planner.local` right as development starts to inspect UI live throughout development.
+5. **Implementation, Testing & Milestone Commits**:
+   - Implement feature following TDD (unit, integration, Playwright E2E) and coding conventions.
+   - Save visual test screenshots to `./app/dist/screenshots/*.png` inside worktree and display them as clickable markdown links.
+   - **Checkpoint Commits & Push**: At every checkpoint, milestone, or completed block of a feature, create small Conventional Commits with `Co-Authored-By` trailer and push to remote branch (`git push`).
+6. **Worktree Teardown & PR Finalization Protocol**:
+   - Mark Draft PR as Ready for Review once implementation and verification are complete.
    - Keep worktree stack running during review; do NOT tear down automatically.
    - Only tear down when explicitly asked (e.g., "accept PR and remove leftovers", "remove leftovers", "tear down worktrees").
    - For "worktrees cleanup", verify branches are merged to `main`, list safe worktrees to remove, and request confirmation before running `docker compose down -v` and `git worktree remove`.
-   - Create Pull Request against `main` and share PR link.
 
 ## Gemini CLI Notes
 
