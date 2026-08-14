@@ -608,12 +608,6 @@ button,
   background: transparent;
 }
 
-/* TEMPORARY: hides every page's header subtitle so the header is one line.
-   Remove this rule to restore subtitles. */
-.page-header-subtitle {
-  display: none;
-}
-
 .habit-timeline-days-viewport {
   scrollbar-width: none;
   touch-action: pan-x;

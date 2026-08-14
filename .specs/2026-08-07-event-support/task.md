@@ -42,6 +42,7 @@
 
 - [x] Hydrate Inbox local task and section state from fresh React Query cache data on remount
 - [x] Add a regression test for returning to Inbox while its query data remains fresh
+- [x] Restore page subtitles by removing the temporary global CSS hide
 - [x] Verify Inbox -> collection -> Inbox restores tasks, heading, and subtitle in the live browser
 
 **Known spec inconsistency**: the plan's "Add event indicator rendering" step explicitly requires the `○` indicator to be non-clickable ("like notes - events are informational markers, not toggleable checkboxes"), but the plan's manual verification section assumes events have a toggleable checkbox. Implemented per the explicit design decision: events cannot be completed via the indicator, consistent with notes.
