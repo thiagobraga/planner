@@ -515,17 +515,10 @@ button,
 }
 
 @media (max-width: 1023px) {
-  .collection-detail-page > .sticky-page-header,
-  .inbox-page > .sticky-page-header {
-    flex-direction: column;
-  }
-
   .collection-page-header-controls,
   .inbox-page-header-controls {
-    position: static;
     align-self: stretch;
-    justify-content: flex-end;
-    margin-top: 12px;
+    justify-content: flex-start;
   }
 
   .board-page-toolbar {
@@ -585,11 +578,19 @@ button,
    * height, full stop.
    */
   display: flex;
+  flex-direction: column;
   align-items: flex-start;
   width: 100%;
   padding-top: 24px;
   margin-top: -24px;
   background-color: var(--planner-page-bg);
+}
+
+/* Toolbar row under the title, left-aligned - replaces the old absolutely
+   positioned top-right toolbar on every page sharing .sticky-page-header. */
+.page-header-toolbar {
+  position: static;
+  height: 24px;
 }
 
 /* The title/subtitle column - shrunk to its own content, unlike the header
@@ -605,6 +606,12 @@ button,
 .monthly-current-day-label {
   color: var(--color-moss);
   background: transparent;
+}
+
+/* TEMPORARY: hides every page's header subtitle so the header is one line.
+   Remove this rule to restore subtitles. */
+.page-header-subtitle {
+  display: none;
 }
 
 .habit-timeline-days-viewport {
@@ -870,6 +877,36 @@ button,
   border-radius: 3px;
   border: 1px dashed var(--color-dot);
   background: color-mix(in srgb, var(--color-ink-light) 4%, transparent);
+}
+
+/* A row Reorganize would move to a new date, while the user reviews the preview. */
+.task-list-item--moved {
+  background: color-mix(in srgb, var(--color-ink-light, #8b867e) 14%, var(--color-cream));
+  border-radius: 3px;
+  transition: background 150ms ease;
+}
+
+.reorganize-confirm {
+  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.reorganize-confirm button {
+  background: none;
+  border: none;
+  color: var(--color-accent, #c9483b);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  font-family: var(--font-family, 'Lora');
+  padding: 0;
+  margin: 0;
+  font-size: 13px;
+  transition: opacity 150ms ease;
+}
+.reorganize-confirm button:hover {
+  opacity: 0.8;
 }
 
 @media (prefers-reduced-motion: reduce) {

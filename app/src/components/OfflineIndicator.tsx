@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useLayoutEffect, useState } from 'react';
 import { useOnlineStatus } from '../hooks/useOnlineStatus';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -24,7 +24,7 @@ export function OfflineIndicator() {
   const isOnline = useOnlineStatus(isAuthenticated);
   const [showOffline, setShowOffline] = useState(false);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!isOnline) {
       const delay = navigator.onLine ? SOCKET_OFFLINE_DELAY_MS : BROWSER_OFFLINE_DELAY_MS;
       const timer = setTimeout(() => setShowOffline(true), delay);

@@ -26,6 +26,8 @@ export interface Task {
   indent?: number;
   type: 'task' | 'note';
   createdAt?: string;
+  /** Set on Reorganize preview rows whose due date would change, for a highlight. */
+  moved?: boolean;
 }
 
 export interface TaskItemProps {

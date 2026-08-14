@@ -1,8 +1,18 @@
 import { Router, type Request, type Response, type NextFunction } from "express";
-import { createTask, updateTask, completeTask, reopenTask, reorderTask, moveTask, deleteTask } from "../services/taskService.js";
+import { createTask, updateTask, completeTask, reopenTask, reorderTask, moveTask, deleteTask, reorganizeTasks, type ReorganizeMove } from "../services/taskService.js";
 import { validateCreateTask, validateUpdateTask, validateReorderPosition } from "../utils/taskValidation.js";
 
 const router: ReturnType<typeof Router> = Router();
+
+router.post("/reorganize", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const moves: ReorganizeMove[] = req.body.moves || [];
+    const result = await reorganizeTasks(req.userId!, moves);
+    res.json(result);
+  } catch (err) {
+    next(err);
+  }
+});
 
 router.post("/", async (req: Request, res: Response, next: NextFunction) => {
   try {

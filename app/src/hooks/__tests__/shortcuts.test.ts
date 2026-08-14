@@ -52,18 +52,39 @@ describe('shortcuts matcher', () => {
     expect(a2).toBe('navigate:inbox');
   });
 
-  it('g+t navigates to daily', () => {
+  it('g+d navigates to daily', () => {
     const s0 = createMatcherState();
     const { nextState: s1 } = matchKey(DEFAULT_BINDINGS, s0, ev('g', { timestamp: 0 }));
-    const { action } = matchKey(DEFAULT_BINDINGS, s1, ev('t', { timestamp: 100 }));
+    const { action } = matchKey(DEFAULT_BINDINGS, s1, ev('d', { timestamp: 100 }));
     expect(action).toBe('navigate:daily');
   });
 
-  it('g+u navigates to upcoming', () => {
+  it('g+m navigates to monthly', () => {
+    const s0 = createMatcherState();
+    const { nextState: s1 } = matchKey(DEFAULT_BINDINGS, s0, ev('g', { timestamp: 0 }));
+    const { action } = matchKey(DEFAULT_BINDINGS, s1, ev('m', { timestamp: 100 }));
+    expect(action).toBe('navigate:monthly');
+  });
+
+  it('g+h navigates to habits', () => {
+    const s0 = createMatcherState();
+    const { nextState: s1 } = matchKey(DEFAULT_BINDINGS, s0, ev('g', { timestamp: 0 }));
+    const { action } = matchKey(DEFAULT_BINDINGS, s1, ev('h', { timestamp: 100 }));
+    expect(action).toBe('navigate:habits');
+  });
+
+  it('g+s navigates to settings', () => {
+    const s0 = createMatcherState();
+    const { nextState: s1 } = matchKey(DEFAULT_BINDINGS, s0, ev('g', { timestamp: 0 }));
+    const { action } = matchKey(DEFAULT_BINDINGS, s1, ev('s', { timestamp: 100 }));
+    expect(action).toBe('navigate:settings');
+  });
+
+  it('g+u toggles upcoming', () => {
     const s0 = createMatcherState();
     const { nextState: s1 } = matchKey(DEFAULT_BINDINGS, s0, ev('g', { timestamp: 0 }));
     const { action } = matchKey(DEFAULT_BINDINGS, s1, ev('u', { timestamp: 999 }));
-    expect(action).toBe('navigate:upcoming');
+    expect(action).toBe('toggle:upcoming');
   });
 
   it('chord expires after CHORD_WINDOW_MS', () => {

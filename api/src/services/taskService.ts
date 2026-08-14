@@ -1686,3 +1686,175 @@ export async function deleteTask(taskId: string, userId: string): Promise<{ succ
 
   return { success: true };
 }
+
+export interface ReorganizeMove {
+  taskId: string;
+  dueDate: string;
+}
+
+export async function reorganizeTasks(
+  userId: string,
+  moves: ReorganizeMove[],
+): Promise<{ updated: number }> {
+  // Validate input
+  if (!Array.isArray(moves) || moves.length === 0) {
+    throw new AppError({
+      code: 'VALIDATION_ERROR',
+      message: 'Validation failed',
+      statusCode: 400,
+      details: [{ field: 'moves', message: 'moves array must be non-empty' }],
+    });
+  }
+
+  if (moves.length > 100) {
+    throw new AppError({
+      code: 'VALIDATION_ERROR',
+      message: 'Validation failed',
+      statusCode: 400,
+      details: [{ field: 'moves', message: 'moves array must not exceed 100 items' }],
+    });
+  }
+
+  // Validate all dates are ISO 8601 format
+  const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+  for (const move of moves) {
+    if (!dateRegex.test(move.dueDate)) {
+      throw new AppError({
+        code: 'VALIDATION_ERROR',
+        message: 'Validation failed',
+        statusCode: 400,
+        details: [
+          {
+            field: 'moves',
+            message: `Invalid date format: ${move.dueDate}. Expected YYYY-MM-DD`,
+          },
+        ],
+      });
+    }
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    // Fetch all tasks to be moved, lock them, verify ownership and root status
+    const taskIds = moves.map((m) => m.taskId);
+    const tasksResult = await client.query(
+      `SELECT t.* FROM tasks t
+       WHERE t.id = ANY($1)
+         AND (
+           t.user_id = $2
+           OR t.collection_id IN (
+             SELECT collection_id FROM collaborators WHERE user_id = $2
+           )
+         )
+       FOR UPDATE`,
+      [taskIds, userId],
+    );
+
+    const fetchedTasks = tasksResult.rows as TaskRow[];
+
+    // Verify all tasks were found
+    if (fetchedTasks.length !== taskIds.length) {
+      throw new AppError({
+        code: 'NOT_FOUND',
+        message: 'One or more tasks not found or not accessible',
+        statusCode: 404,
+      });
+    }
+
+    // Verify all tasks are root (no parent) and uncompleted
+    for (const task of fetchedTasks) {
+      if (task.parent_task_id !== null) {
+        throw new AppError({
+          code: 'VALIDATION_ERROR',
+          message: 'Validation failed',
+          statusCode: 400,
+          details: [
+            {
+              field: 'moves',
+              message: `Task ${task.id} is a subtask and cannot be reorganized`,
+            },
+          ],
+        });
+      }
+
+      if (task.is_completed) {
+        throw new AppError({
+          code: 'VALIDATION_ERROR',
+          message: 'Validation failed',
+          statusCode: 400,
+          details: [
+            {
+              field: 'moves',
+              message: `Task ${task.id} is completed and cannot be reorganized`,
+            },
+          ],
+        });
+      }
+    }
+
+    // Update each root task and its descendants
+    let updateCount = 0;
+    const updatedTasks: TaskRow[] = [];
+
+    for (const move of moves) {
+      const task = fetchedTasks.find((t) => t.id === move.taskId);
+      if (!task) continue;
+
+      // Skip if date didn't actually change
+      if (task.due_date === move.dueDate) {
+        continue;
+      }
+
+      // Update root task
+      await client.query(
+        `UPDATE tasks SET due_date = $1, updated_at = NOW() WHERE id = $2`,
+        [move.dueDate, move.taskId],
+      );
+
+      // Update all descendants to inherit new due_date
+      await client.query(
+        `WITH RECURSIVE descendants AS (
+           SELECT id FROM tasks WHERE parent_task_id = $1
+           UNION ALL
+           SELECT t.id FROM tasks t
+           INNER JOIN descendants d ON t.parent_task_id = d.id
+         )
+         UPDATE tasks SET due_date = $2, updated_at = NOW()
+         WHERE id IN (SELECT id FROM descendants)`,
+        [move.taskId, move.dueDate],
+      );
+
+      updateCount++;
+
+      // Fetch updated task for event publishing
+      const updated = await client.query('SELECT * FROM tasks WHERE id = $1', [move.taskId]);
+      updatedTasks.push(updated.rows[0] as TaskRow);
+    }
+
+    await client.query('COMMIT');
+
+    // Publish events after transaction commit
+    for (const updated of updatedTasks) {
+      const [formatted] = await attachLabels([formatTask(updated)]);
+      publishEvent(
+        buildEvent({
+          entityType: 'task',
+          eventType: 'updated',
+          entityId: formatted.id,
+          userId,
+          collectionId: formatted.collectionId,
+          payload: formatted,
+        }),
+      ).catch((err) => console.error('[sync] publish failed', err));
+    }
+
+    return { updated: updateCount };
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
+  }
+}

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useLayoutEffect, useRef } from 'react';
 import type { Task } from './TaskItem';
 import { useI18n } from '../i18n/I18nContext';
 
@@ -52,7 +52,7 @@ export function TaskDetail({ task, onClose, onUpdate, onDelete }: TaskDetailProp
   const [confirmDelete, setConfirmDelete] = useState(false);
   const titleRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (task) {
       setTitle(task.title);
       setDescription(task.description ?? '');

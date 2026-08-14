@@ -95,9 +95,9 @@ export function AdminDashboardPage() {
             {t('admin.dashboardSubtitle')}
           </p>
         </div>
-        <div className="page-header-toolbar absolute bottom-0 right-0 z-20">
+        <div className="page-header-toolbar">
           <Button
-            size="sm"
+            size="xs"
             variant="tertiary"
             leftIcon={<RefreshCw strokeWidth={1.5} />}
             onClick={() => qc.invalidateQueries({ queryKey: ['admin', 'stats'] })}

@@ -1,4 +1,4 @@
-import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router';
@@ -301,6 +301,7 @@ export function SettingsPage() {
   const [timeZoneDraft, setTimeZoneDraft] = useState(detectedTimeZone);
   const [isTimeZoneOpen, setIsTimeZoneOpen] = useState(false);
   const [timeZoneHighlight, setTimeZoneHighlight] = useState(0);
+  const [timeZoneTriggerWidth, setTimeZoneTriggerWidth] = useState(200);
   const timeZoneTriggerRef = useRef<HTMLDivElement>(null);
   const timeZoneFloatingRef = useRef<HTMLDivElement>(null);
   const timeZoneListboxRef = useRef<HTMLUListElement>(null);
@@ -311,6 +312,10 @@ export function SettingsPage() {
     { placement: 'below', align: 'start' },
     isTimeZoneOpen,
   );
+
+  useLayoutEffect(() => {
+    setTimeZoneTriggerWidth(timeZoneTriggerRef.current?.offsetWidth ?? 200);
+  }, [isTimeZoneOpen]);
 
   useEffect(() => {
     if (!isSettingsSection(section)) {
@@ -323,7 +328,7 @@ export function SettingsPage() {
     queryFn: fetchPreferences,
   });
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     setTimeZoneDraft(preferences?.timeZone ?? detectedTimeZone);
   }, [detectedTimeZone, preferences?.timeZone]);
 
@@ -632,7 +637,7 @@ export function SettingsPage() {
                               style={{
                                 top: timeZoneTop,
                                 left: timeZoneLeft,
-                                width: timeZoneTriggerRef.current?.offsetWidth || 200,
+                                width: timeZoneTriggerWidth,
                               }}
                             >
                               {filteredTimeZones.length > 0 ? (
@@ -676,7 +681,7 @@ export function SettingsPage() {
                                 <p className="px-2 py-2 text-sm text-ink-light">{t('settings.noTimeZonesFound')}</p>
                               )}
                             </div>,
-                            timeZoneTriggerRef.current?.closest('.app-shell') ?? document.body,
+                            document.body,
                           )}
                       </div>
                     </section>

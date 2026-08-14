@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Calendar } from 'lucide-react';
 import { getPhrase } from '../utils/phrases';
@@ -170,7 +170,7 @@ export function HabitsPage() {
     return ids;
   }, [sections]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!habitsLoaded || !groupsLoaded) return;
 
     setCollapsedHabitIds((prev) => {
@@ -403,12 +403,12 @@ export function HabitsPage() {
           </p>
         </div>
 
-        <div className="page-header-toolbar habits-page-header-controls absolute bottom-0 right-0 z-20 flex items-center gap-2">
-          <Button variant="secondary" size="sm" onClick={handleToday}>
+        <div className="page-header-toolbar habits-page-header-controls flex items-center gap-2">
+          <Button variant="secondary" size="xs" onClick={handleToday}>
             {t('page.today')}
           </Button>
 
-          <div className="habits-page-view-toggle inline-flex items-center rounded-[2px] border border-border h-6 overflow-hidden">
+          <div className="habits-page-view-toggle inline-flex items-center rounded-[2px] border border-border h-5 overflow-hidden">
             {(
               [
                 { mode: 'timeline' as const, label: t('page.timelineView'), Icon: DotsConnectedIcon },
@@ -421,11 +421,11 @@ export function HabitsPage() {
                 aria-label={label}
                 aria-pressed={view === mode}
                 onClick={() => setView(mode)}
-                className={`habits-page-view-toggle-button inline-flex items-center justify-center h-6 w-6 transition-colors duration-[var(--motion-fast)] ${
+                className={`habits-page-view-toggle-button inline-flex items-center justify-center h-5 w-5 transition-colors duration-[var(--motion-fast)] ${
                   i > 0 ? 'border-l border-border' : ''
                 } ${view === mode ? 'bg-dot/60 text-ink' : 'bg-transparent text-ink-light hover:bg-dot/30'}`}
               >
-                <Icon size={14} strokeWidth={1.8} />
+                <Icon size={12} strokeWidth={1.8} />
               </button>
             ))}
           </div>

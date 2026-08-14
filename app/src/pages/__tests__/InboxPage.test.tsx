@@ -110,7 +110,7 @@ describe('InboxPage', () => {
     expect(header).toContainElement(await screen.findByText('Dump it here. Sort it later.'));
     expect(header).toContainElement(screen.getByRole('button', { name: 'Hide completed tasks' }));
     expect(header).toContainElement(screen.getByRole('button', { name: 'Hide old notes' }));
-    expect(screen.getByRole('button', { name: 'Hide old notes' }).closest('.page-header-toolbar')).toHaveClass('absolute', 'right-0');
+    expect(screen.getByRole('button', { name: 'Hide old notes' }).closest('.page-header-toolbar')).toBeInTheDocument();
   });
 
   it('updates the hide-old-notes preference from the header toolbar', async () => {

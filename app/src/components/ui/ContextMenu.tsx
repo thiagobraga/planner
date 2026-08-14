@@ -112,7 +112,7 @@ function MenuPanel({
   const [highlightedIndex, setHighlightedIndex] = useState<number>(0);
 
   // Find first non-disabled item on mount
-  useEffect(() => {
+  useLayoutEffect(() => {
     const firstActive = items.findIndex(i => i.type === 'item' && !i.disabled);
     setHighlightedIndex(firstActive >= 0 ? firstActive : -1);
   }, [items]);

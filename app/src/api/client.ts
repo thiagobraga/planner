@@ -323,7 +323,8 @@ export async function fetchTodayTasks(): Promise<{ overdue: ApiTask[]; today: Ap
 }
 
 export async function fetchUpcomingTasks(): Promise<Array<{ date: string; tasks: ApiTask[] }>> {
-  return request('/views/upcoming');
+  const view = await request<{ days: Array<{ date: string; tasks: ApiTask[] }> }>('/views/upcoming');
+  return view.days;
 }
 
 export async function fetchMonthNotes(year: number, month: number): Promise<{
@@ -447,6 +448,18 @@ export async function apiMoveTask(id: string, input: TaskMoveInput): Promise<Tas
   return request<TaskMoveResponse>(`/tasks/${id}/move`, {
     method: 'PATCH',
     body: JSON.stringify(input),
+  });
+}
+
+export interface ReorganizeMove {
+  taskId: string;
+  dueDate: string;
+}
+
+export async function apiReorganizeTasks(moves: ReorganizeMove[]): Promise<{ updated: number }> {
+  return request<{ updated: number }>('/tasks/reorganize', {
+    method: 'POST',
+    body: JSON.stringify({ moves }),
   });
 }
 

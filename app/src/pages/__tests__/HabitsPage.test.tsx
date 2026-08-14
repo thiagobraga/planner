@@ -129,7 +129,7 @@ describe('HabitsPage', () => {
     expect(header).toContainElement(screen.getByRole('button', { name: 'Today' }));
     expect(header).toContainElement(screen.getByLabelText('Timeline view'));
     expect(header).toContainElement(screen.getByLabelText('Calendar view'));
-    expect(screen.getByRole('button', { name: 'Today' }).closest('.page-header-toolbar')).toHaveClass('absolute');
+    expect(screen.getByRole('button', { name: 'Today' }).closest('.page-header-toolbar')).toBeInTheDocument();
   });
 
   it('renders view toggle buttons (Timeline/Calendar)', () => {

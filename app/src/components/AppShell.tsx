@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef, type CSSProperties } from 'react';
-import { Outlet, useNavigate } from 'react-router';
+import { Outlet, useNavigate, useLocation } from 'react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Sidebar } from './Sidebar';
 import { QuickAdd } from './QuickAdd';
@@ -26,6 +26,7 @@ export function AppShell() {
   const { setLocale, t } = useI18n();
   const updateAvailable = useVersionCheck();
   const navigate = useNavigate();
+  const location = useLocation();
   const qc = useQueryClient();
   const { data: preferences, isPending: preferencesLoading } = useQuery({
     queryKey: ['preferences'],
@@ -142,12 +143,24 @@ export function AppShell() {
         case 'navigate:daily':
           navigate('/daily');
           break;
-        case 'navigate:upcoming':
-          navigate('/upcoming');
+        case 'navigate:monthly':
+          navigate('/monthly');
+          break;
+        case 'navigate:habits':
+          navigate('/habits');
+          break;
+        case 'navigate:settings':
+          navigate('/settings');
+          break;
+        case 'toggle:upcoming':
+          if (location.pathname !== '/daily') {
+            navigate('/daily');
+          }
+          window.dispatchEvent(new CustomEvent('toggle-upcoming'));
           break;
       }
     },
-    [navigate],
+    [navigate, location.pathname],
   );
 
   useEffect(() => {
@@ -276,7 +289,10 @@ export function AppShell() {
                   ['/', t('common.search')],
                   ['?', t('shell.togglePanel')],
                   ['g i', t('shell.goInbox')],
-                  ['g t', t('shell.goToday')],
+                  ['g d', t('shell.goDaily')],
+                  ['g m', t('shell.goMonthly')],
+                  ['g h', t('shell.goHabits')],
+                  ['g s', t('shell.goSettings')],
                   ['g u', t('shell.goUpcoming')],
                   ['Enter', t('shell.editSelected')],
                   ['Delete', t('shell.deleteSelected')],

@@ -256,6 +256,9 @@ export function StyleguidePage() {
                   <Button variant={variant} size="sm">
                     {variant === 'destructive' ? 'Delete' : 'Small'}
                   </Button>
+                  <Button variant={variant} size="xs">
+                    {variant === 'destructive' ? 'Delete' : 'Tiny'}
+                  </Button>
                 </div>
               </div>
             ))}
@@ -270,6 +273,9 @@ export function StyleguidePage() {
                 </Button>
                 <Button variant="secondary" size="sm" disabled>
                   Small
+                </Button>
+                <Button variant="secondary" size="xs" disabled>
+                  Tiny
                 </Button>
               </div>
             </div>

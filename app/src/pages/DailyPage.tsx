@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState, useEffect, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSync } from '../hooks/useSync';
+import { useReorganize, type Section as ReorganizeSection } from '../hooks/useReorganize';
 import { isEchoedMove, isStructuralMove } from '../utils/moveEcho';
 import { TaskList } from '../components/TaskList';
 import { TaskVisibilityControls } from '../components/TaskVisibilityControls';
@@ -17,6 +18,7 @@ import { useI18n } from '../i18n/I18nContext';
 import { getPhrase } from '../utils/phrases';
 import {
   fetchTodayTasks,
+  fetchUpcomingTasks,
   fetchCollections,
   fetchPreferences,
   apiToggleTask,
@@ -118,6 +120,16 @@ function buildSections(
 let tempCounter = 0;
 function tempId() { return `temp-daily-${++tempCounter}`; }
 
+const SHOW_UPCOMING_STORAGE_KEY = 'planner.daily.showUpcoming.v1';
+
+function loadShowUpcoming(): boolean {
+  try {
+    return window.localStorage.getItem(SHOW_UPCOMING_STORAGE_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
 export function DailyPage() {
   const { locale, t } = useI18n();
   const phrase = useMemo(() => getPhrase('daily', locale), [locale]);
@@ -127,6 +139,9 @@ export function DailyPage() {
   const [, setSelectedId] = useState<string>();
   const [contextMenu, setContextMenu] = useState<{ taskId: string; position: { x: number; y: number } } | null>(null);
   const [input, setInput] = useState('');
+  const [showUpcoming, setShowUpcoming] = useState(loadShowUpcoming);
+  const [upcomingSections, setUpcomingSections] = useState<DaySection[]>([]);
+  const [upcomingInputs, setUpcomingInputs] = useState<Record<string, string>>({});
   const inputRef = useRef<HTMLInputElement>(null);
   const todaySectionRef = useRef<HTMLDivElement>(null);
   const loadRequestId = useRef(0);
@@ -168,6 +183,63 @@ export function DailyPage() {
     });
   }, [locale, dateFormat]);
 
+  const fetchUpcomingFromApi = useCallback(() => {
+    fetchUpcomingTasks().then((upcoming) => {
+      const upcomingByDate = new Map<string, Task[]>();
+      for (const group of upcoming) {
+        if (group.date <= todayKey) continue; // today+past render in the main section list
+        if (group.tasks.length === 0) continue; // don't render empty days
+        const tasks = group.tasks.map(apiToTask);
+        upcomingByDate.set(group.date, tasks);
+      }
+
+      const result: DaySection[] = [];
+      for (const [date, tasks] of upcomingByDate) {
+        result.push({
+          key: date,
+          label: dayLabel(dateFromISO(date), locale, prefs?.dateFormat),
+          tasks,
+        });
+      }
+
+      setUpcomingSections(result);
+    }).catch(() => {
+      setUpcomingSections([]);
+    });
+  }, [locale, prefs?.dateFormat, todayKey]);
+
+  // Convert DaySection[] to ReorganizeSection[] for useReorganize hook
+  const reorganizeSections = useMemo<ReorganizeSection[] | null>(
+    () =>
+      sections.map((s) => ({
+        date: s.key,
+        label: s.label,
+        tasks: s.tasks,
+      })),
+    [sections],
+  );
+
+  const formatReorganizeLabel = useCallback(
+    (dateStr: string) => dayLabel(dateFromISO(dateStr), locale, prefs?.dateFormat),
+    [locale, prefs?.dateFormat],
+  );
+
+  const onReorganizeConfirmed = useCallback(() => {
+    replaceTodayFromApi();
+    if (showUpcoming) fetchUpcomingFromApi();
+  }, [replaceTodayFromApi, showUpcoming, fetchUpcomingFromApi]);
+
+  const reorg = useReorganize(
+    todayKey,
+    reorganizeSections,
+    () => {
+      setShowUpcoming(true);
+    },
+    undefined,
+    formatReorganizeLabel,
+    onReorganizeConfirmed,
+  );
+
   const handleToday = useCallback(() => {
     todaySectionRef.current?.scrollIntoView({
       behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
@@ -198,6 +270,27 @@ export function DailyPage() {
     window.addEventListener('task-created', handleTaskCreated);
     return () => window.removeEventListener('task-created', handleTaskCreated);
   }, [replaceTodayFromApi]);
+
+  const toggleUpcoming = useCallback(() => {
+    setShowUpcoming((v) => {
+      const next = !v;
+      if (next) fetchUpcomingFromApi();
+      return next;
+    });
+  }, [fetchUpcomingFromApi]);
+
+  useEffect(() => {
+    window.addEventListener('toggle-upcoming', toggleUpcoming);
+    return () => window.removeEventListener('toggle-upcoming', toggleUpcoming);
+  }, [toggleUpcoming]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(SHOW_UPCOMING_STORAGE_KEY, showUpcoming ? '1' : '0');
+    } catch {
+      // view preference only - fine if storage is unavailable
+    }
+  }, [showUpcoming]);
 
   useSync(useCallback((event) => {
     if (event.entityType !== 'task') return;
@@ -552,6 +645,49 @@ export function DailyPage() {
     });
   };
 
+  const handleAddUpcoming = (dateKey: string, e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmed = (upcomingInputs[dateKey] ?? '').trim();
+    if (!trimmed) return;
+    const tid = tempId();
+    setUpcomingInputs((prev) => ({ ...prev, [dateKey]: '' }));
+
+    const section = upcomingSections.find((s) => s.key === dateKey);
+    const newOrderValue = nextOrderValue(section ? section.tasks : []);
+
+    setUpcomingSections((prev) =>
+      prev.map((s) =>
+        s.key === dateKey
+          ? {
+            ...s,
+            tasks: [
+              ...s.tasks,
+              { id: tid, title: trimmed, priority: 4, isCompleted: false, orderValue: newOrderValue, type: 'task' },
+            ],
+          }
+          : s
+      )
+    );
+
+    apiCreateTask({
+      title: trimmed,
+      priority: 4,
+      dueDate: dateKey,
+      type: 'task',
+      orderValue: newOrderValue,
+    }).then((created) => {
+      const createdTask = apiToTask(created);
+      setUpcomingSections((prev) =>
+        prev.map((s) => ({
+          ...s,
+          tasks: s.tasks.map((t) => (t.id === tid ? createdTask : t)),
+        }))
+      );
+    }).catch(() => {
+      // keep local version - it's in localStorage
+    });
+  };
+
   const handleAddTodayKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key !== '-' || input !== '') {
       return;
@@ -643,6 +779,30 @@ export function DailyPage() {
     return items;
   }, [collections, contextMenu, replaceTodayFromApi, setAllTasks]);
 
+  // During a Reorganize preview, future days render in the same slot/order as
+  // the real Upcoming toggle (above today), not interleaved into the today+
+  // overdue list — matching the non-preview layout the user already knows.
+  // Furthest day first, nearest (tomorrow) last, right above Today.
+  const previewFutureSections = useMemo(
+    () =>
+      reorg.state === 'preview'
+        ? (reorg.previewSections ?? [])
+            .filter((s) => s.date > todayKey)
+            .map((s) => ({ key: s.date, label: s.label, tasks: s.tasks as Task[] }))
+            .reverse()
+        : null,
+    [reorg.state, reorg.previewSections, todayKey],
+  );
+  const previewTodaySections = useMemo(
+    () =>
+      reorg.state === 'preview'
+        ? (reorg.previewSections ?? [])
+            .filter((s) => s.date <= todayKey)
+            .map((s) => ({ key: s.date, label: s.label, tasks: s.tasks as Task[] }))
+        : null,
+    [reorg.state, reorg.previewSections, todayKey],
+  );
+
   return (
     <div
       className="daily-page relative w-full cursor-text"
@@ -661,8 +821,43 @@ export function DailyPage() {
           </p>
         </div>
 
-        <div className="page-header-toolbar daily-page-header-controls absolute bottom-0 right-0 z-20 flex items-center gap-2">
-          <Button variant="secondary" size="sm" onClick={handleToday}>
+        <div className="page-header-toolbar daily-page-header-controls flex items-center gap-2">
+          {reorg.state === 'preview' ? (
+            <span className="reorganize-confirm inline-flex items-center gap-1 text-[13px]">
+              {t('reorganize.confirm')}
+              <button
+                className="text-accent underline text-decoration-color-accent cursor-pointer hover:opacity-80"
+                onClick={() => {
+                  reorg.confirmReorganize().catch((err) => console.error('Reorganize failed', err));
+                }}
+              >
+                {t('common.yes')}
+              </button>
+              <span>·</span>
+              <button
+                className="text-accent underline text-decoration-color-accent cursor-pointer hover:opacity-80"
+                onClick={reorg.cancelReorganize}
+              >
+                {t('common.no')}
+              </button>
+            </span>
+          ) : (
+            reorg.showButton && (
+              <Button variant="secondary" size="xs" onClick={reorg.startPreview}>
+                {t('reorganize.button')}
+              </Button>
+            )
+          )}
+
+          <Button
+            variant={showUpcoming ? 'primary' : 'secondary'}
+            size="xs"
+            onClick={toggleUpcoming}
+          >
+            {t('page.upcoming')}
+          </Button>
+
+          <Button variant="secondary" size="xs" onClick={handleToday}>
             {t('page.today')}
           </Button>
           <TaskVisibilityControls
@@ -676,7 +871,65 @@ export function DailyPage() {
       </header>
 
       <div className="max-w-162">
-        {sections.map((section) => {
+        {(previewFutureSections ?? (showUpcoming ? [...upcomingSections].reverse() : [])).map((section) => {
+          const tomorrow = new Date(dateFromISO(todayKey));
+          tomorrow.setDate(tomorrow.getDate() + 1);
+          const tomorrowKey = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')}`;
+          const isTomorrow = section.key === tomorrowKey;
+          return (
+            <div
+              key={`upcoming-${section.key}`}
+              data-day-date={section.key}
+              className="mt-6"
+            >
+              <div style={{ lineHeight: 'var(--task-line-height, 24px)' }} className="text-[11px] tracking-[0.08em] uppercase text-ink-light h-6 m-0 font-semibold">
+                {section.label}
+                {isTomorrow && <> · <span className="text-moss">TOMORROW</span></>}
+              </div>
+
+              <TaskList
+                tasks={section.tasks}
+                containerId={`day:${section.key}`}
+                dayDate={section.key}
+                activeDragId={activeDragId}
+                renderBadge={renderBadge}
+                editingId={editingId}
+                dimNotes={false}
+                hideDueDate
+                onTaskToggle={handleToggle}
+                onStartEdit={handleStartEdit}
+                onEditCommit={handleEditCommit}
+                onEditCancel={handleEditCancel}
+                onDelete={handleDelete}
+                onAddBelow={handleAddBelow}
+                onIndent={handleIndent}
+                onConvertType={handleConvertType}
+                onRightClick={handleRightClick}
+              />
+
+              {previewFutureSections === null && (
+                <form
+                  onSubmit={(e) => handleAddUpcoming(section.key, e)}
+                  className="flex items-center h-6"
+                >
+                  <span className="w-6 text-center text-[10px] leading-6 text-ink opacity-25 select-none shrink-0">
+                    •
+                  </span>
+                  <input
+                    type="text"
+                    value={upcomingInputs[section.key] ?? ''}
+                    onChange={(e) => setUpcomingInputs((prev) => ({ ...prev, [section.key]: e.target.value }))}
+                    placeholder={t('common.addTask')}
+                    className="task-input task-add-input flex-1 text-[14px] leading-6 text-ink bg-transparent border-none outline-none p-0"
+                    spellCheck={false}
+                  />
+                </form>
+              )}
+            </div>
+          );
+        })}
+
+        {(previewTodaySections ?? sections)?.map((section) => {
           const isToday = section.key === todayKey;
           const dimNotes = section.key < todayKey;
           return (

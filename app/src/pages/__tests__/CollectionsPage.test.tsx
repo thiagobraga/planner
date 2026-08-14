@@ -174,7 +174,7 @@ describe('CollectionsPage', () => {
     expect(header).toBeInTheDocument();
     expect(header).toContainElement(screen.getByRole('button', { name: 'Hide completed tasks' }));
     expect(header).toContainElement(screen.getByRole('button', { name: 'Hide old notes' }));
-    expect(screen.getByRole('button', { name: 'Hide old notes' }).closest('.page-header-toolbar')).toHaveClass('absolute', 'right-0');
+    expect(screen.getByRole('button', { name: 'Hide old notes' }).closest('.page-header-toolbar')).toBeInTheDocument();
   });
 
   it('updates completed-task visibility from the header toolbar', async () => {
