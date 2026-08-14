@@ -42,13 +42,17 @@ logs/
 npm-debug.log*
 pnpm-debug.log*
 
-# Coverage
+# Coverage & Test Output
 coverage/
 vitest-coverage/
 api/coverage/
 app/coverage/
 api/vitest-coverage/
 app/vitest-coverage/
+test-results/
+app/test-results/
+playwright-report/
+app/playwright-report/
 
 # Playwright MCP scratch state
 .playwright-mcp/

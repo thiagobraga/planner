@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import request from "supertest";
-import { createApp } from "./testUtils.js";
+import express from "express";
+import cookieParser from "cookie-parser";
+import { errorHandler } from "../../middleware/errorHandler.js";
 
 vi.mock("../../middleware/auth.js", () => ({
   authMiddleware: (req: { userId?: string }, _res: unknown, next: () => void) => {
@@ -19,7 +21,12 @@ vi.mock("../../services/preferencesService.js", () => ({
 
 import preferencesRoutes from "../preferences.js";
 
-const app = createApp(preferencesRoutes, "/api/v1/preferences");
+const app = express();
+app.use(express.json());
+app.use(cookieParser());
+app.use((req, res, next) => { req.userId = "test-user"; next(); });
+app.use("/api/v1/preferences", preferencesRoutes);
+app.use(errorHandler);
 
 describe("preferences routes", () => {
   beforeEach(() => {
@@ -64,5 +71,19 @@ describe("preferences routes", () => {
       hideCompletedTasks: true,
       collapsedCollectionIds: [collectionId],
     });
+  });
+
+  it("surfaces getPreferences errors through the error handler", async () => {
+    mockGetPreferences.mockRejectedValue(new Error("database unavailable"));
+    const res = await request(app).get("/api/v1/preferences");
+    expect(res.status).toBe(500);
+    expect(res.body.error.code).toBe("INTERNAL_ERROR");
+  });
+
+  it("surfaces updatePreferences errors through the error handler", async () => {
+    mockUpdatePreferences.mockRejectedValue(new Error("database unavailable"));
+    const res = await request(app).patch("/api/v1/preferences").send({ font: "lora" });
+    expect(res.status).toBe(500);
+    expect(res.body.error.code).toBe("INTERNAL_ERROR");
   });
 });

@@ -63,6 +63,12 @@ export default defineConfig({
       },
     }),
   ],
+  test: {
+    environment: 'happy-dom',
+    globals: true,
+    setupFiles: ['./src/test/setup.ts'],
+    include: ['src/**/*.{test,spec}.{ts,tsx}'],
+  },
   // When SKIP_CSS_MINIFY is set (e.g. in pre-push hook), disable CSS minification
   // to avoid lightningcss native binary platform mismatches in restricted environments.
   // JS minification via esbuild continues unchanged.
@@ -73,7 +79,7 @@ export default defineConfig({
   server: {
     port: 5173,
     host: true,
-    allowedHosts: [".planner.local", "planner.local"],
+    allowedHosts: true,
     watch: {
       usePolling: true,
     },

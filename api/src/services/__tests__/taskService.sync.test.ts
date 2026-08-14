@@ -16,8 +16,7 @@ vi.mock("../../db/redis.js", () => ({
   redisSubClient: { subscribe: vi.fn().mockResolvedValue(undefined) },
 }));
 
-import { createTask, updateTask, completeTask, reopenTask, deleteTask } from "../taskService.js";
-import { redisPubClient } from "../../db/redis.js";
+import { createTask, updateTask, completeTask, reopenTask, deleteTask } from "../taskService.js";import { redisPubClient } from "../../db/redis.js";
 import pool from "../../db/pool.js";
 
 const userId = "user-1";
@@ -243,6 +242,49 @@ describe("taskService: sync event emission", () => {
       expect(event2.entityType).toBe("task");
       expect(event2.eventType).toBe("created");
       expect(event2.entityId).toBe("new-task-uuid");
+    });
+
+    it("clones labels onto the recurring task's next instance", async () => {
+      const recurringTask = {
+        ...mockTaskRow,
+        recurrence_rule: { type: "daily", interval: 1 },
+        due_date: "2026-05-17",
+      };
+
+      const newClonedTask = {
+        ...recurringTask,
+        id: "new-task-uuid",
+        due_date: "2026-05-18",
+      };
+
+      (pool.query as ReturnType<typeof vi.fn>)
+        .mockResolvedValueOnce({ rows: [recurringTask] }) // verifyTaskAccess
+        .mockResolvedValueOnce({ rows: [recurringTask] }) // SELECT * FROM tasks (updated original)
+        .mockResolvedValueOnce({ rows: [] }) // attachLabels(formattedOld)
+        .mockResolvedValueOnce({ rows: [] }); // attachLabels(formattedNew)
+
+      const clientQuery = vi
+        .fn()
+        .mockResolvedValueOnce(undefined) // BEGIN
+        .mockResolvedValueOnce(undefined) // UPDATE tasks (mark complete)
+        .mockResolvedValueOnce({ rows: [newClonedTask] }) // INSERT cloned task
+        .mockResolvedValueOnce({ rows: [{ label_id: "label-1" }] }) // SELECT label_id
+        .mockResolvedValueOnce(undefined) // INSERT task_labels
+        .mockResolvedValueOnce(undefined) // INSERT activity event
+        .mockResolvedValueOnce({ rows: [{ status_id: null, previous_status_id: null }] }) // syncStatusToCompletion: task lookup
+        .mockResolvedValueOnce({ rows: [] }) // syncStatusToCompletion: no collection completion status configured yet
+        .mockResolvedValueOnce(undefined); // COMMIT
+
+      (pool.connect as ReturnType<typeof vi.fn>).mockReturnValue({ query: clientQuery, release: vi.fn() });
+
+      await completeTask(taskId, userId);
+
+      const labelInsert = clientQuery.mock.calls.find(
+        (c: unknown[]) => typeof c[0] === "string" && (c[0] as string).includes("INSERT INTO task_labels"),
+      );
+      expect(labelInsert).toBeDefined();
+      // [newId (generated), labelId]
+      expect(labelInsert?.[1]?.[1]).toBe("label-1");
     });
   });
 

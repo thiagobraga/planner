@@ -6,52 +6,64 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Planner is a task manager with a paper-journal aesthetic (warm cream, Lora serif, dotted grid). Two independent npm packages: `api/` (Express + PostgreSQL + Redis) and `app/` (React + Vite). Real-time sync via Socket.IO backed by Redis Pub/Sub. Auth uses JWT (7-day expiry) with DB-side session revocation.
 
+## Multi-Agent Instruction Synchronization Rule
+
+Whenever updating AI agent instructions, conventions, or specs workflows, you MUST synchronize and apply the changes across all agent files: `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, and `.github/copilot-instructions.md`.
+
+## Andrej Karpathy Engineering Principles
+
+When starting development, apply Karpathy core engineering principles:
+- **First-Principles Reasoning**: Understand root requirements and underlying systems before writing code.
+- **Extreme Simplicity**: Build the simplest working solution; avoid premature abstractions and unneeded complexity.
+- **Clean & Readable**: Write clear, self-explanatory code with zero fluff.
+- **Deep Understanding**: Inspect exact definitions and trace dataflows before modifying existing logic.
+
+## Direct Task Worktree Prompting
+
+If a user requests a coding task directly (without an existing spec or running `/plan`), the agent MUST ask whether the user wants to create a Git worktree, branch, or isolated development environment before writing code, so implementation can be tested safely.
+
 ## Quickstart
 
 ```bash
 cp .env.example .env          # fill POSTGRES_PASSWORD, CORS_ORIGIN
 docker compose up -d          # installs deps, runs migrations, starts api (4000) + app (5173)
-bash .hooks/setup-hooks.sh    # one-time: points git at the versioned hooks in .hooks/
+bash .hooks/setup-hooks.sh    # one-time: points git at versioned hooks in .hooks/
 ```
 
 Required `.env` vars: `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `CORS_ORIGIN`.
 
-### Git hooks
+### Git Hooks
 
-`core.hooksPath` is local git config - it is **not** set by cloning and does not
-carry over automatically. Every fresh clone (including a new `git worktree add`
-off a *different* repo checkout) needs `bash .hooks/setup-hooks.sh` run once, or
-`pre-commit`/`pre-push` silently never run - no error, no warning, commits and
-pushes just skip straight past lint/test/build. If you're an AI agent starting
-work in a repo you haven't set up before, run this before your first commit:
+`core.hooksPath` is local git config and does not carry over automatically on fresh clones or new worktrees. Run `bash .hooks/setup-hooks.sh` before your first commit:
 
 ```bash
-git config --get core.hooksPath   # expect ".hooks" - if empty or anything else, hooks are OFF
+git config --get core.hooksPath   # expect ".hooks" - if empty, run setup script
 bash .hooks/setup-hooks.sh
 ```
 
 ### Dev hosts (Traefik on the `proxy` network)
 
-Add to `/etc/hosts`: `planner.local`, `api.planner.local`, `db.planner.local`.
+Add to `/etc/hosts`: `planner.local`, `api.planner.local`, `db.planner.local`, `coverage.planner.local`.
 
 - `https://planner.local` - app (also serves `/api` and `/socket.io`)
 - `https://api.planner.local` - API directly (e.g. `/api/v1/...`)
-- `https://db.planner.local` - pgAdmin (desktop mode, no master password). The Planner
-  database is auto-registered; connect with DB password `planner`.
+- `https://db.planner.local` - pgAdmin (desktop mode, DB password `planner`)
+- `https://coverage.planner.local` - Vitest HTML report & E2E coverage (writes to `app/coverage-reports`, served via static nginx container)
 
 ## Commands
 
-| Command                                                              | What it does                          |
-| ---------------------------------------------------------------------- | -------------------------------------- |
-| `docker compose up -d`                                                | Start api (4000) + app (5173) + Postgres + Redis |
-| `docker compose exec api npm run build`                               | Build API                             |
-| `docker compose exec app npm run build`                               | Build app                             |
-| `docker compose exec api npm run lint`                                | Lint API                              |
-| `docker compose exec app npm run lint`                                | Lint app                              |
-| `docker compose exec api npm test && docker compose exec app npm test` | All tests (Vitest)                    |
-| `docker compose exec api npm test`                                    | API tests only                        |
-| `docker compose exec app npm test`                                    | App tests only                        |
-| `docker compose exec api npm exec vitest run src/path/to/file.test.ts` | Single test file                      |
+| Command | What it does |
+| --- | --- |
+| `docker compose up -d` | Start api (4000) + app (5173) + Postgres + Redis |
+| `docker compose exec api npm run build` | Build API |
+| `docker compose exec app npm run build` | Build app |
+| `docker compose exec api npm run lint` | Lint API |
+| `docker compose exec app npm run lint` | Lint app |
+| `docker compose exec api npm test && docker compose exec app npm test` | All tests (Vitest) |
+| `docker compose exec api npm test` | API tests only |
+| `docker compose exec app npm test` | App tests only |
+| `docker compose exec api npm exec vitest run src/path/to/file.test.ts` | Single API test file |
+| `docker compose exec app npm run test:e2e` | Playwright E2E tests |
 
 ## Architecture
 
@@ -107,23 +119,20 @@ All routes under `/api/v1/`. Route files: `auth`, `tasks`, `collections`, `label
 
 ### Pages & Routes
 
-| Route              | Page             | Purpose                                |
-| ------------------ | ---------------- | -------------------------------------- |
-| `/today` (default) | `TodayPage`      | Overdue + today sections               |
-| `/inbox`           | `InboxPage`      | Unprocessed tasks; also `/collection/:id` |
-| `/upcoming`        | `UpcomingPage`   | 7-day preview                          |
-| `/monthly`         | `MonthlyPage`    | Monthly calendar                       |
-| `/habits`          | `HabitsPage`     | Habit streaks (12-week grid)           |
-| `/collections`     | `CollectionsPage`| Collection/project management          |
-| `/settings`        | `SettingsPage`   | Font, theme, preferences               |
-| `/styleguide`      | `StyleguidePage` | Design system reference                |
+| Route | Page | Purpose |
+| --- | --- | --- |
+| `/today` (default) | `TodayPage` | Overdue + today sections |
+| `/inbox` | `InboxPage` | Unprocessed tasks; also `/collection/:id` |
+| `/upcoming` | `UpcomingPage` | 7-day preview |
+| `/monthly` | `MonthlyPage` | Monthly calendar |
+| `/habits` | `HabitsPage` | Habit streaks (12-week grid) |
+| `/collections` | `CollectionsPage` | Collection/project management |
+| `/settings` | `SettingsPage` | Font, theme, preferences |
+| `/styleguide` | `StyleguidePage` | Design system reference |
 
-`AppShell` wraps all routes: sidebar, keyboard dispatch, QuickAdd/Search dialogs.
+`AppShell` wraps all logged-in routes: sidebar, keyboard dispatch, QuickAdd/Search dialogs.
 
-Logged-out routes sit outside `AppShell` and share `components/AuthShell.tsx`:
-`/login`, `/register`, `/forgot-password`, `/reset-password?token=`.
-`/auth/register` creates no session - `AuthContext.register()` chains into
-`login()` so session creation stays in one place.
+Logged-out routes sit outside `AppShell` and share `components/AuthShell.tsx`: `/login`, `/register`, `/forgot-password`, `/reset-password?token=`. `/auth/register` creates no session - `AuthContext.register()` chains into `login()`.
 
 ## Key Files
 
@@ -207,11 +216,11 @@ Redis: three clients from `db/redis.ts` - `redisClient` (general), `redisPubClie
 
 Three layers, each with a distinct role:
 
-| Layer            | Tool                           | Scope                           |
-| ---------------- | ------------------------------ | ------------------------------- |
-| Server cache     | React Query (`queryClient.ts`) | API data, staleTime 60s         |
-| Optimistic local | `stores/optimistic.ts`         | Mutations before server confirm |
-| Global client    | Zustand `taskStore.ts`         | Cross-component task list       |
+| Layer | Tool | Scope |
+| --- | --- | --- |
+| Server cache | React Query (`queryClient.ts`) | API data, staleTime 60s |
+| Optimistic local | `stores/optimistic.ts` | Mutations before server confirm |
+| Global client | Zustand `taskStore.ts` | Cross-component task list |
 
 Pattern for mutations: `runOptimistic({ apply, revert })` → fire API call → on error, auto-revert after 2s.
 
@@ -225,75 +234,57 @@ Pattern for mutations: `runOptimistic({ apply, revert })` → fire API call → 
 
 Full spec: `DESIGN.md`.
 
-## Coding Conventions
+## Coding Conventions & Development Rules
 
-- TypeScript strict mode; no `any` without justification
-- Every mutation must call `publishEvent()` in `services/syncService.ts` after DB write
-- Auth middleware validates JWT **and** queries DB for session validity on every request
-- React Query manages server state; Zustand manages client-side optimistic state
-- Optimistic updates go through helpers in `stores/optimistic.ts`
-- All routes are under `/api/v1/`; add new routes to `routes/index.ts`
-- Property-based tests use `fast-check` alongside standard unit tests
-- No mock databases in integration tests - use real PostgreSQL
-- Validate only at system boundaries (user input, external APIs)
-- Comments only for non-obvious WHY - never for WHAT
-- No error handling for impossible cases; trust framework guarantees
-- Commits: Conventional Commits (`feat:`, `fix:`, `chore:`, etc.), many small per file/feature
-- Add `Co-Authored-By` on the last line of every commit body matching the model that wrote the code
-  - For GitHub Copilot CLI: `Co-Authored-By: Copilot (<model-used> <effort>) <copilot@github.com>` (e.g., `Co-Authored-By: Copilot (claude-haiku-4.5 xhigh) <copilot@github.com>`)
-  - For OpenCode: `Co-Authored-By: OpenCode (<real model name and effort>) <noreply@opencode.ai>` (e.g., `Co-Authored-By: OpenCode (DeepSeek V4 Flash Free) <noreply@opencode.ai>`)
-  - For Codex: `Co-Authored-By: Codex (<real model name and effort>) <codex@openai.com>` (e.g., `Co-Authored-By: Codex (gpt-4o) <codex@openai.com>`)
-  - For Antigravity: `Co-Authored-By: Antigravity (<real model name and effort>) <noreply@antigravity.ai>` (e.g., `Co-Authored-By: Antigravity (Gemini 2.5 Pro) <noreply@antigravity.ai>`)
-  - Claude Code already adds its own `Co-Authored-By` trailer automatically
-- No backwards-compat shims for removed code - delete cleanly
-- Tests: Vitest; integration tests hit real DB (no mock-DB pattern)
-- Always write unit tests and e2e tests if possible for each new feature or bugfix. The goal is to always keep app with high test coverage as possible.
-- Node ≥ 24 required
+- TypeScript strict mode; no `any` without justification.
+- Dedicated type files: All interfaces and types must live in dedicated files under `app/src/types/` or `api/src/types/`.
+- Every mutation must call `publishEvent()` in `services/syncService.ts` after DB write.
+- Auth middleware validates JWT **and** queries DB for session validity on every request.
+- React Query manages server state; Zustand manages client-side optimistic state.
+- Optimistic updates go through helpers in `stores/optimistic.ts`.
+- All routes are under `/api/v1/`; add new routes to `routes/index.ts`.
+- Mandatory TDD & Full Coverage: Test-Driven Development (red-green-refactor) is required. Write unit tests, real DB/Redis integration tests (no mock-DB pattern), and Playwright E2E tests for features and bugfixes.
+- No AI Slop / Em Dash Ban: Avoid AI slop in comments. Never use em dashes (`—` or `–`) anywhere in code or documentation; use simple dashes `-`.
+- UI Screenshots: Save visual test screenshots to `./app/dist/screenshots/*.png` inside the worktree and display them as clickable markdown links.
+- Validate only at system boundaries (user input, external APIs).
+- Comments only for non-obvious WHY - never for WHAT.
+- Commits: Conventional Commits (`feat:`, `fix:`, `chore:`, etc.), many small per file/feature.
+- Add `Co-Authored-By` trailer matching the model on the last line of every commit body:
+  - GitHub Copilot CLI: `Co-Authored-By: Copilot (<model-used> <effort>) <copilot@github.com>`
+  - OpenCode: `Co-Authored-By: OpenCode (<real model name and effort>) <noreply@opencode.ai>`
+  - Codex: `Co-Authored-By: Codex (<real model name and effort>) <codex@openai.com>`
+  - Antigravity: `Co-Authored-By: Antigravity (<real model name and effort>) <noreply@antigravity.ai>`
+  - Claude Code adds its own trailer automatically.
+- No backwards-compat shims for removed code - delete cleanly.
+- Node ≥ 24 required.
 
 ## Plan Mode — Specs Convention
 
-All AI agents (Claude, Codex, Antigravity, Opencode) must follow this when entering Plan mode:
+All AI agents (Claude, Codex, Antigravity, OpenCode) must follow this when entering Plan mode:
 
 1. **Create a new folder** under `.specs/` with the naming pattern: `yyyy-mm-dd-<short-kebab-case-slug>` (e.g., `2026-08-04-exact-colors`).
-2. Write **`.specs/yyyy-mm-dd-slug/plan.md`** — high-level strategy, approach, and architecture decisions.
-3. Write **`.specs/yyyy-mm-dd-slug/task.md`** — detailed breakdown of the plan into actionable tasks. Use these markers:
-   - `[ ]` not started
-   - `[~]` in progress
-   - `[x]` completed
-4. **Update `task.md`** as work progresses — mark tasks `[~]` when started, `[x]` when done.
-5. Refer to existing `.specs/` folders for naming pattern precedent.
+2. Write **`.specs/yyyy-mm-dd-slug/plan.md`** - high-level strategy, approach, and architecture decisions.
+3. Write **`.specs/yyyy-mm-dd-slug/task.md`** - detailed breakdown of the plan into actionable tasks using markers: `[ ]` not started, `[~]` in progress, `[x]` completed.
+4. **Update `task.md`** as work progresses.
 
-## "Work on this spec" Workflow
+## "Work on this spec" & Worktree Lifecycle Workflow
 
-When instructed to "work on this specs <some spec>", you must:
+When instructed to work on a spec or task:
 
-1. **Read the Spec:** Start by carefully reading the provided `<spec path>`.
-2. **Isolate the Environment:**
-   - Use the spec folder's date-slug naming (e.g., `2026-08-04-exact-colors` → worktree slug is `exact-colors`).
-   - Create a new Git worktree and branch:
-     ```bash
-     cd /p/projects/planner
-     git worktree add ../planner-<slug> -b feat/<slug>
-     cd ../planner-<slug>
-     ```
-3. **Local Development Setup (Compose isolation):**
-   - Copy `.env.example` to `.env` in the worktree root and fill in the required values.
-   - Use your agent's pre-configured subdomain (`claude.planner`, `codex.planner`, or `antigravity.planner`) in `.env` to isolate Docker resources:
-     ```bash
-     COMPOSE_PROJECT_NAME=planner-<agent>
-     APP_SUBDOMAIN=<agent>.planner
-     ```
-     *(Substitute `<agent>` with `claude`, `codex`, or `antigravity` depending on which AI agent model you are).*
-   - Note: `/etc/hosts` and SSL certificates are pre-configured for `claude.planner.local`, `codex.planner.local`, and `antigravity.planner.local`.
-   - Start the isolated stack: `docker compose up -d`.
-   - The feature instance is now reachable at `https://<agent>.planner.local`, fully isolated from the main `https://planner.local`. Traefik routes, container names, and volumes are all namespaced automatically.
-4. **Implementation & Verification:**
-   - Implement the feature according to the spec.
-   - **Open a browser** at `https://<agent>.planner.local` to visually verify the implementation so the user can see it.
-5. **Cleanup & PR:**
-   - Once complete, tear down the isolated stack: `docker compose down -v` (from the worktree directory).
-   - Remove the worktree: `cd /p/projects/planner && git worktree remove ../planner-<slug>`.
-   - Create a Pull Request against the `main` branch.
-   - Provide the PR link to the user.
-   - Always do your best and ask for clarification if any requirements are unclear.
-
+1. **Read the Spec / Request**: Review requirements carefully.
+2. **Isolate Environment**:
+   - Create worktree: `git worktree add ../planner-<slug> -b feat/<slug>`
+   - Subagents use numbered subdomains (e.g. `claude2.planner.local`, `codex2.planner.local`, `antigravity2.planner.local`).
+3. **Local Dev Setup**:
+   - Copy `.env.example` to `.env` in worktree root.
+   - Set `COMPOSE_PROJECT_NAME=planner-<agent>` and `APP_SUBDOMAIN=<agent>.planner`.
+   - Run `bash .hooks/setup-hooks.sh`.
+   - Start stack: `docker compose up -d`.
+4. **Implementation & Verification**:
+   - Implement feature following TDD and coding conventions.
+   - Visually verify in browser at `https://<agent>.planner.local` and capture screenshot links to `./app/dist/screenshots/*.png`.
+5. **Worktree Teardown & PR Protocol**:
+   - Keep worktree stack running during review; do NOT tear down automatically.
+   - Only tear down when explicitly asked (e.g., "accept PR and remove leftovers", "remove leftovers", "tear down worktrees").
+   - For "worktrees cleanup", verify branches are merged to `main`, list safe worktrees to remove, and request confirmation before running `docker compose down -v` and `git worktree remove`.
+   - Create Pull Request against `main` and share PR link.
