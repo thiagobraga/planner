@@ -253,7 +253,7 @@ Full spec: `DESIGN.md`.
   - OpenCode: `Co-Authored-By: OpenCode (<real model name and effort>) <noreply@opencode.ai>`
   - Codex: `Co-Authored-By: Codex (<real model name and effort>) <codex@openai.com>`
   - Antigravity: `Co-Authored-By: Antigravity (<real model name and effort>) <noreply@antigravity.ai>`
-  - Claude Code adds its own trailer automatically.
+  - Claude Code: `Co-Authored-By: Claude (<model>) <noreply@anthropic.com>` (e.g. `Claude (Sonnet 5)`). No separate reasoning-effort tier is exposed for Claude Code - model choice (Haiku/Sonnet/Opus) is the only capability lever, so effort is omitted.
 - No AI Slop / Em Dash Ban: Avoid AI slop in comments. Never use em dashes (`—` or `–`) anywhere in code or documentation; use simple dashes `-`.
 - UI Screenshots: Save visual test screenshots to `./app/dist/screenshots/*.png` inside the worktree and display them as clickable markdown links.
 - Validate only at system boundaries (user input, external APIs).
@@ -278,6 +278,7 @@ When instructed to work on a spec or task:
 2. **Isolate Environment**:
    - Create worktree & branch: `git worktree add ../planner-<slug> -b feat/<slug>`
    - Subagents use numbered subdomains (e.g. `claude2.planner.local`, `codex2.planner.local`, `antigravity2.planner.local`).
+   - **New host = regenerate SSL first**: any new subdomain needs a trusted cert before it's reachable over https, or the browser session in step 4 fails with `ERR_CERT_AUTHORITY_INVALID`. Add the new domain(s) to `/p/linux/scripts/mkcert.conf` (or confirm a wildcard already covers it), run `bash /p/linux/scripts/mkcert-local` to regenerate `/p/projects/traefik/certs/localhost.pem`, then `docker restart traefik` to pick it up. Do this once per new subdomain, before adding its `/etc/hosts` entries.
 3. **Local Dev Setup & Draft PR**:
    - Copy `.env.example` to `.env` in worktree root.
    - Set `COMPOSE_PROJECT_NAME=planner-<agent>` and `APP_SUBDOMAIN=<agent>.planner`.

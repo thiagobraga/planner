@@ -1167,10 +1167,6 @@ textarea:focus-visible {
     text-overflow: ellipsis;
     white-space: nowrap;
   }
-  .page-header-toolbar {
-    padding-left: 8px;
-    background: linear-gradient(to right, transparent, var(--planner-page-bg) 8px);
-  }
 
   .sidebar-drawer {
     position: fixed;
