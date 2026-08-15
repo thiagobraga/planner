@@ -30,6 +30,15 @@ const mockApiUpdatePreferences = vi.mocked(apiUpdatePreferences);
 const mockApiUpdateCollection = vi.mocked(apiUpdateCollection);
 const mockFetchSavedColors = vi.mocked(fetchSavedColors);
 const mockApiAddSavedColor = vi.mocked(apiAddSavedColor);
+const taskListMock = vi.hoisted(() =>
+  vi.fn(({ tasks }: { tasks: { id: string; title: string; labels?: unknown[] }[] }) => (
+    <div data-testid="task-list">
+      {tasks.map((t, i) => (
+        <div key={i}>{t.title}</div>
+      ))}
+    </div>
+  )),
+);
 
 vi.mock('../../api/client', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../../api/client')>()),
@@ -62,13 +71,7 @@ vi.mock('../../hooks/useSectionDrag', () => ({
 }));
 
 vi.mock('../../components/TaskList', () => ({
-  TaskList: ({ tasks }: { tasks: { title: string }[] }) => (
-    <div data-testid="task-list">
-      {tasks.map((t, i) => (
-        <div key={i}>{t.title}</div>
-      ))}
-    </div>
-  ),
+  TaskList: taskListMock,
 }));
 
 const collectionViewData = {
@@ -134,6 +137,7 @@ beforeEach(() => {
   mockApiUpdateCollection.mockReset();
   mockFetchSavedColors.mockReset();
   mockApiAddSavedColor.mockReset();
+  taskListMock.mockClear();
 
   mockFetchCollectionView.mockResolvedValue(collectionViewData);
   mockFetchCollections.mockResolvedValue([]);
@@ -236,6 +240,26 @@ describe('CollectionsPage', () => {
 
     await screen.findByText('Test Collection');
     expect(mockFetchCollectionView).toHaveBeenCalledWith('test-collection-id');
+  });
+
+  it('preserves structured labels in the task mapper', async () => {
+    mockFetchCollectionView.mockResolvedValue({
+      ...collectionViewData,
+      tasks: [
+        {
+          ...collectionViewData.tasks[0],
+          labels: [{ id: 'label-1', name: 'feature', color: '#7dbfb2' }],
+        },
+      ],
+    });
+
+    renderPage();
+
+    await screen.findByText('Task 1');
+    expect(taskListMock).toHaveBeenCalled();
+    expect(taskListMock.mock.calls.at(-1)?.[0].tasks[0].labels).toEqual([
+      { id: 'label-1', name: 'feature', color: '#7dbfb2' },
+    ]);
   });
 
   describe('breadcrumb context menu', () => {

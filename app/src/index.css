@@ -227,6 +227,14 @@ button,
   backdrop-filter: blur(2px);
 }
 
+.board-column.is-dragging {
+  opacity: 0.45;
+}
+
+.board-column.is-over .board-column-cards {
+  background: color-mix(in srgb, var(--color-dot) 14%, transparent);
+}
+
 .board-column-header {
   display: flex;
   align-items: center;
@@ -245,6 +253,11 @@ button,
   line-height: 24px;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.board-column-name-input {
+  font-size: 13px;
+  font-weight: 600;
 }
 
 .board-column-dot {
@@ -285,6 +298,10 @@ button,
   border: 1px solid color-mix(in srgb, var(--color-ink-lighter) 68%, transparent);
   border-radius: 8px;
   background: var(--planner-board-card-bg);
+}
+
+.board-card.is-dragging {
+  opacity: 0.4;
 }
 
 .board-card-topline {
@@ -371,6 +388,16 @@ button,
   border-top: 1px dashed color-mix(in srgb, var(--color-ink-lighter) 65%, transparent);
 }
 
+.board-card-checklist.is-empty {
+  min-height: 12px;
+  padding-top: 0;
+  border-top-color: transparent;
+}
+
+.board-card-checklist.is-over {
+  background: color-mix(in srgb, var(--color-dot) 18%, transparent);
+}
+
 .board-card-checklist-count,
 .board-card-date {
   color: var(--color-ink-light);
@@ -385,6 +412,10 @@ button,
   align-items: start;
   font-size: 11px;
   line-height: 18px;
+}
+
+.board-card-checklist-row.is-dragging {
+  opacity: 0.4;
 }
 
 .board-card-checklist-row input {
@@ -463,6 +494,18 @@ button,
   background: transparent;
   color: var(--color-ink-light);
   font: inherit;
+}
+
+.board-add-column-input {
+  background: var(--planner-board-column-bg);
+}
+
+.board-error {
+  min-height: 24px;
+  margin-bottom: 12px;
+  color: var(--color-accent);
+  font-size: 12px;
+  line-height: 24px;
 }
 
 .board-loading {
