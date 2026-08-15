@@ -213,7 +213,7 @@ describe("taskService: labels", () => {
     });
 
     it("rejects an invalid type", async () => {
-      await expect(updateTask(taskId, userId, { type: "memo" })).rejects.toThrow(AppError);
+      await expect(updateTask(taskId, userId, { type: "memo" } as never)).rejects.toThrow(AppError);
       expect(mockQuery).not.toHaveBeenCalled();
     });
   });

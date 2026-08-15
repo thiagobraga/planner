@@ -149,6 +149,7 @@ export function DailyPage() {
   const inputRef = useRef<HTMLInputElement>(null);
   const todaySectionRef = useRef<HTMLDivElement>(null);
   const loadRequestId = useRef(0);
+  const rawTodayRef = useRef<{ overdue: Task[]; today: Task[] } | null>(null);
   const sectionsRef = useRef(sections);
   useEffect(() => {
     sectionsRef.current = sections;
@@ -166,13 +167,20 @@ export function DailyPage() {
 
   const todayKey = useMemo(() => fmtISOInTimeZone(new Date(), prefs?.timeZone), [prefs?.timeZone]);
 
-  // Reads the format from `prefs` rather than `prefsRef`, and depends on it, so
-  // the first load is re-run once preferences arrive. `prefsRef` is populated by
-  // an effect that runs *after* render, and the mount effect below fires this
-  // before that has happened - so a ref read here always saw `undefined` on the
-  // first pass and rendered the default format, with nothing scheduled to
-  // correct it.
   const dateFormat = prefs?.dateFormat ?? 'MMM DD ddd';
+  const localeRef = useRef(locale);
+  useEffect(() => {
+    localeRef.current = locale;
+  }, [locale]);
+  const dateFormatRef = useRef(dateFormat);
+  useEffect(() => {
+    dateFormatRef.current = dateFormat;
+  }, [dateFormat]);
+
+  // Stable identity (no locale/dateFormat deps) so preferences arriving after
+  // the initial fetch reformats the already-fetched sections in place - see the
+  // effect below - instead of re-triggering this whole network round trip.
+  // Reads locale/dateFormat live via refs rather than closing over them.
   const replaceTodayFromApi = useCallback(() => {
     const requestId = ++loadRequestId.current;
     const currentToday = fmtISOInTimeZone(new Date(), prefsRef.current?.timeZone);
@@ -180,12 +188,27 @@ export function DailyPage() {
       if (requestId !== loadRequestId.current) return;
       const overdueTasks = (response.overdue || []).map(apiToTask);
       const todayTasks = (response.today || []).map(apiToTask);
-      setSections(buildSections(overdueTasks, todayTasks, locale, currentToday, dateFormat));
+      rawTodayRef.current = { overdue: overdueTasks, today: todayTasks };
+      setSections(buildSections(overdueTasks, todayTasks, localeRef.current, currentToday, dateFormatRef.current));
     }).catch(() => {
       if (requestId !== loadRequestId.current) return;
-      setSections(buildSections([], [], locale, currentToday, dateFormat));
+      rawTodayRef.current = { overdue: [], today: [] };
+      setSections(buildSections([], [], localeRef.current, currentToday, dateFormatRef.current));
     });
-  }, [locale, dateFormat]);
+  }, []);
+
+  // Preferences (locale/dateFormat/timeZone) often resolve after the initial
+  // fetch above already rendered with defaults. Reformat the cached raw tasks
+  // locally rather than refetching - the task data hasn't changed, only its
+  // labels - so the Organize button and task list settle after one network
+  // round trip instead of two.
+  useEffect(() => {
+    if (!rawTodayRef.current) return;
+    const currentToday = fmtISOInTimeZone(new Date(), prefs?.timeZone);
+    setSections(
+      buildSections(rawTodayRef.current.overdue, rawTodayRef.current.today, locale, currentToday, dateFormat),
+    );
+  }, [locale, dateFormat, prefs?.timeZone]);
 
   const fetchUpcomingFromApi = useCallback(() => {
     fetchUpcomingTasks().then((upcoming) => {

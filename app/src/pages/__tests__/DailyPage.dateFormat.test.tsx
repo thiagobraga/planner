@@ -226,4 +226,18 @@ describe('DailyPage: the date format preference survives a drag', () => {
     // back, and both have to keep the user's format.
     await waitFor(() => expect(dayHeaders(container)).toEqual(['06/08 THU · Today', '05/08 WED']));
   });
+
+  it('fetches today tasks once, reformatting locally once preferences resolve', async () => {
+    const { container } = renderPage();
+
+    // Preferences resolve after the tasks fetch in this suite's default mock
+    // ordering. The format still has to end up right (proving the reformat
+    // happened)...
+    await waitFor(() => expect(dayHeaders(container)).toEqual(['06/08 THU · Today', '05/08 WED']));
+
+    // ...without a second network round trip. A duplicate `views/today` call
+    // here previously delayed everything gated on the fetched task count (e.g.
+    // the Organize button) by a full extra round trip.
+    expect(mockFetchTodayTasks).toHaveBeenCalledTimes(1);
+  });
 });

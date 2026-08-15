@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { SlidersHorizontal, Kanban, MoreHorizontal, List } from 'lucide-react';
+import { SlidersHorizontal, List, Kanban, MoreHorizontal } from 'lucide-react';
 import { Button } from './Button';
 import { ButtonGroup } from './ButtonGroup';
 import { Checkbox } from './Checkbox';

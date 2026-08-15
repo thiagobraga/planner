@@ -29,9 +29,12 @@
       (.github/workflows/quality.yml: integration suite runs in the existing api job against
       Postgres/Redis services; new `e2e` job boots API + vite preview and runs Playwright,
       dumping server logs on failure)
-- [ ] Merge PRs and update spec tasks to [x] as completed
-      (open PR for feat/test-coverage-phase2-continued against main; contains the three
-      phase-2 suites fixed for current main, ~537 new test lines, and the e2e CI job)
+- [x] Merge PRs and update spec tasks to [x] as completed
+      (PR #112 feat/test-coverage-phase2-continued merged 2026-08-13; contains the three
+      phase-2 suites fixed for current main, ~537 new test lines, and the e2e CI job.
+      Verified 2026-08-14 on main: API 908 tests / 90.87% stmts, app 1003 tests /
+      72.55% stmts, sessionLifecycle integration 4/4, offline queue isolation 5/5,
+      Playwright productionHardening 5/5; CI quality.yml runs integration + e2e jobs)
 
 Workflow notes
 
