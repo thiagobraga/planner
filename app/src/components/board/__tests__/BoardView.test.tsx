@@ -8,6 +8,8 @@ describe('BoardView', () => {
     render(
       <PlannerDragProvider>
         <BoardView
+          collectionId="collection-1"
+          groupBy="status"
           columns={[
             { id: 'status:backlog', value: 'backlog', title: 'Backlog', tasks: [] },
             { id: 'status:doing', value: 'doing', title: 'Doing', tasks: [] },

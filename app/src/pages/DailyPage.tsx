@@ -5,8 +5,11 @@ import { useReorganize, type Section as ReorganizeSection } from '../hooks/useRe
 import { isEchoedMove, isStructuralMove } from '../utils/moveEcho';
 import { TaskList } from '../components/TaskList';
 import { TaskVisibilityControls } from '../components/TaskVisibilityControls';
+import { PageHeader } from '../components/PageHeader';
 import { CollectionChip } from '../components/ui/Chip';
 import { Button } from '../components/ui/Button';
+import { ButtonGroup } from '../components/ui/ButtonGroup';
+import { Toolbar } from '../components/ui/Toolbar';
 import type { Task } from '../components/TaskItem';
 import { extractNaturalDate, fmtISOInTimeZone } from '../utils/date';
 import { nextOrderValue } from '../utils/order';
@@ -71,6 +74,7 @@ function apiToTask(t: ApiTask): Task {
     priority: t.priority,
     isCompleted: t.isCompleted,
     orderValue: t.orderValue,
+    labels: t.labels,
     indent: t.depth,
     collectionId: t.collectionId,
     sectionId: t.sectionId,
@@ -145,6 +149,7 @@ export function DailyPage() {
   const inputRef = useRef<HTMLInputElement>(null);
   const todaySectionRef = useRef<HTMLDivElement>(null);
   const loadRequestId = useRef(0);
+  const rawTodayRef = useRef<{ overdue: Task[]; today: Task[] } | null>(null);
   const sectionsRef = useRef(sections);
   useEffect(() => {
     sectionsRef.current = sections;
@@ -162,13 +167,20 @@ export function DailyPage() {
 
   const todayKey = useMemo(() => fmtISOInTimeZone(new Date(), prefs?.timeZone), [prefs?.timeZone]);
 
-  // Reads the format from `prefs` rather than `prefsRef`, and depends on it, so
-  // the first load is re-run once preferences arrive. `prefsRef` is populated by
-  // an effect that runs *after* render, and the mount effect below fires this
-  // before that has happened - so a ref read here always saw `undefined` on the
-  // first pass and rendered the default format, with nothing scheduled to
-  // correct it.
   const dateFormat = prefs?.dateFormat ?? 'MMM DD ddd';
+  const localeRef = useRef(locale);
+  useEffect(() => {
+    localeRef.current = locale;
+  }, [locale]);
+  const dateFormatRef = useRef(dateFormat);
+  useEffect(() => {
+    dateFormatRef.current = dateFormat;
+  }, [dateFormat]);
+
+  // Stable identity (no locale/dateFormat deps) so preferences arriving after
+  // the initial fetch reformats the already-fetched sections in place - see the
+  // effect below - instead of re-triggering this whole network round trip.
+  // Reads locale/dateFormat live via refs rather than closing over them.
   const replaceTodayFromApi = useCallback(() => {
     const requestId = ++loadRequestId.current;
     const currentToday = fmtISOInTimeZone(new Date(), prefsRef.current?.timeZone);
@@ -176,12 +188,27 @@ export function DailyPage() {
       if (requestId !== loadRequestId.current) return;
       const overdueTasks = (response.overdue || []).map(apiToTask);
       const todayTasks = (response.today || []).map(apiToTask);
-      setSections(buildSections(overdueTasks, todayTasks, locale, currentToday, dateFormat));
+      rawTodayRef.current = { overdue: overdueTasks, today: todayTasks };
+      setSections(buildSections(overdueTasks, todayTasks, localeRef.current, currentToday, dateFormatRef.current));
     }).catch(() => {
       if (requestId !== loadRequestId.current) return;
-      setSections(buildSections([], [], locale, currentToday, dateFormat));
+      rawTodayRef.current = { overdue: [], today: [] };
+      setSections(buildSections([], [], localeRef.current, currentToday, dateFormatRef.current));
     });
-  }, [locale, dateFormat]);
+  }, []);
+
+  // Preferences (locale/dateFormat/timeZone) often resolve after the initial
+  // fetch above already rendered with defaults. Reformat the cached raw tasks
+  // locally rather than refetching - the task data hasn't changed, only its
+  // labels - so the Organize button and task list settle after one network
+  // round trip instead of two.
+  useEffect(() => {
+    if (!rawTodayRef.current) return;
+    const currentToday = fmtISOInTimeZone(new Date(), prefs?.timeZone);
+    setSections(
+      buildSections(rawTodayRef.current.overdue, rawTodayRef.current.today, locale, currentToday, dateFormat),
+    );
+  }, [locale, dateFormat, prefs?.timeZone]);
 
   const fetchUpcomingFromApi = useCallback(() => {
     fetchUpcomingTasks().then((upcoming) => {
@@ -278,6 +305,23 @@ export function DailyPage() {
       return next;
     });
   }, [fetchUpcomingFromApi]);
+
+  // Today/Upcoming as a single-select ButtonGroup: picking "today" also
+  // scrolls (handleToday's existing behavior), picking "upcoming" enables it.
+  const setDailyView = useCallback(
+    (v: 'today' | 'upcoming') => {
+      if (v === 'upcoming') {
+        if (!showUpcoming) {
+          setShowUpcoming(true);
+          fetchUpcomingFromApi();
+        }
+      } else {
+        setShowUpcoming(false);
+        handleToday();
+      }
+    },
+    [showUpcoming, fetchUpcomingFromApi, handleToday],
+  );
 
   useEffect(() => {
     window.addEventListener('toggle-upcoming', toggleUpcoming);
@@ -812,64 +856,59 @@ export function DailyPage() {
         inputRef.current?.focus();
       }}
     >
-      <header className="page-header-copy sticky-page-header max-w-162">
-        <div className="page-header-copy-text">
-          <h1 className="m-0 h-6 p-0 text-[18px] leading-6 font-semibold text-ink">
-            {t('page.daily')}
-          </h1>
-          <p className="page-header-subtitle daily-page-header-subtitle m-0 h-6 p-0 text-[13px] leading-6 text-ink-light opacity-60">
-            {phrase}
-          </p>
-        </div>
+      <PageHeader
+        title={t('page.daily')}
+        subtitle={phrase}
+        toolbar={
+          <Toolbar className="daily-page-header-controls">
+            {reorg.state === 'preview' ? (
+              <span className="reorganize-confirm inline-flex items-center gap-1 text-[13px]">
+                {t('reorganize.confirm')}
+                <button
+                  className="text-accent underline text-decoration-color-accent cursor-pointer hover:opacity-80"
+                  onClick={() => {
+                    reorg.confirmReorganize().catch((err) => console.error('Reorganize failed', err));
+                  }}
+                >
+                  {t('common.yes')}
+                </button>
+                <span>·</span>
+                <button
+                  className="text-accent underline text-decoration-color-accent cursor-pointer hover:opacity-80"
+                  onClick={reorg.cancelReorganize}
+                >
+                  {t('common.no')}
+                </button>
+              </span>
+            ) : (
+              reorg.showButton && (
+                <Button variant="secondary" size="xs" onClick={reorg.startPreview}>
+                  {t('reorganize.button')}
+                </Button>
+              )
+            )}
 
-        <div className="page-header-toolbar daily-page-header-controls flex items-center gap-2">
-          {reorg.state === 'preview' ? (
-            <span className="reorganize-confirm inline-flex items-center gap-1 text-[13px]">
-              {t('reorganize.confirm')}
-              <button
-                className="text-accent underline text-decoration-color-accent cursor-pointer hover:opacity-80"
-                onClick={() => {
-                  reorg.confirmReorganize().catch((err) => console.error('Reorganize failed', err));
-                }}
-              >
-                {t('common.yes')}
-              </button>
-              <span>·</span>
-              <button
-                className="text-accent underline text-decoration-color-accent cursor-pointer hover:opacity-80"
-                onClick={reorg.cancelReorganize}
-              >
-                {t('common.no')}
-              </button>
-            </span>
-          ) : (
-            reorg.showButton && (
-              <Button variant="secondary" size="xs" onClick={reorg.startPreview}>
-                {t('reorganize.button')}
-              </Button>
-            )
-          )}
+            <ButtonGroup<'today' | 'upcoming'>
+              mode="single"
+              value={showUpcoming ? 'upcoming' : 'today'}
+              onChange={setDailyView}
+              size="xs"
+              items={[
+                { value: 'today', label: t('page.today') },
+                { value: 'upcoming', label: t('page.upcoming') },
+              ]}
+            />
 
-          <Button
-            variant={showUpcoming ? 'primary' : 'secondary'}
-            size="xs"
-            onClick={toggleUpcoming}
-          >
-            {t('page.upcoming')}
-          </Button>
-
-          <Button variant="secondary" size="xs" onClick={handleToday}>
-            {t('page.today')}
-          </Button>
-          <TaskVisibilityControls
-            hideCompletedTasks={prefs?.hideCompletedTasks ?? false}
-            hideOldNotes={prefs?.hideOldNotes ?? false}
-            disabled={!prefs || visibilityPreferencesPending}
-            onHideCompletedTasksChange={setHideCompletedTasks}
-            onHideOldNotesChange={setHideOldNotes}
-          />
-        </div>
-      </header>
+            <TaskVisibilityControls
+              hideCompletedTasks={prefs?.hideCompletedTasks ?? false}
+              hideOldNotes={prefs?.hideOldNotes ?? false}
+              disabled={!prefs || visibilityPreferencesPending}
+              onHideCompletedTasksChange={setHideCompletedTasks}
+              onHideOldNotesChange={setHideOldNotes}
+            />
+          </Toolbar>
+        }
+      />
 
       <div className="max-w-162">
         {(previewFutureSections ?? (showUpcoming ? [...upcomingSections].reverse() : [])).map((section) => {

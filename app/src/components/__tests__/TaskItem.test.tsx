@@ -246,4 +246,23 @@ describe('TaskItem - task/note conversion', () => {
       expect(input.value).toBe('( still an event');
     });
   });
+
+  it('renders structured label chips', () => {
+    renderTaskItem(
+      {
+        ...baseTask,
+        labels: [
+          { id: 'label-1', name: 'feature', color: '#7dbfb2' },
+          { id: 'label-2', name: 'bug', color: '#c9483b' },
+        ],
+      },
+      { isEditing: false },
+    );
+
+    const featureChip = screen.getByText('feature');
+    expect(featureChip.closest('.board-card-chip')).toBeInTheDocument();
+    expect(screen.getByText('bug').closest('.board-card-chip')).toBeInTheDocument();
+    expect(screen.queryByText('@feature')).not.toBeInTheDocument();
+    expect(screen.queryByText('@bug')).not.toBeInTheDocument();
+  });
 });

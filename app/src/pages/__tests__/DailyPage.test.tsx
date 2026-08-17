@@ -16,6 +16,17 @@ import {
 const mockFetchTodayTasks = vi.mocked(fetchTodayTasks);
 const mockFetchPreferences = vi.mocked(fetchPreferences);
 const mockFetchCollections = vi.mocked(fetchCollections);
+const taskListMock = vi.hoisted(() =>
+  vi.fn(({ tasks }: { tasks: { id: string; title: string; labels?: unknown[] }[] }) => (
+    <div data-testid="task-list">
+      {tasks.map((t) => (
+        <div key={t.id} data-testid={`task-${t.id}`}>
+          {t.title}
+        </div>
+      ))}
+    </div>
+  )),
+);
 
 const basePreferences: Preferences = {
   userId: 'user-1',
@@ -63,15 +74,7 @@ vi.mock('../../hooks/useMidnightTimer', () => ({
 }));
 
 vi.mock('../../components/TaskList', () => ({
-  TaskList: ({ tasks }: { tasks: { id: string; title: string }[] }) => (
-    <div data-testid="task-list">
-      {tasks.map((t) => (
-        <div key={t.id} data-testid={`task-${t.id}`}>
-          {t.title}
-        </div>
-      ))}
-    </div>
-  ),
+  TaskList: taskListMock,
 }));
 
 vi.mock('../../utils/phrases', () => ({
@@ -164,6 +167,7 @@ beforeEach(() => {
   mockFetchTodayTasks.mockResolvedValue({ overdue: [overdueTask], today: [todayTask] });
   mockFetchPreferences.mockResolvedValue(basePreferences);
   mockFetchCollections.mockResolvedValue(mockCollections);
+  taskListMock.mockClear();
 });
 
 describe('DailyPage', () => {
@@ -202,6 +206,29 @@ describe('DailyPage', () => {
     renderPage();
 
     expect(await screen.findByPlaceholderText('New task…')).toBeInTheDocument();
+  });
+
+  it('preserves structured labels in the daily task mapper', async () => {
+    mockFetchTodayTasks.mockResolvedValue({
+      overdue: [
+        {
+          ...overdueTask,
+          labels: [{ id: 'label-1', name: 'feature', color: '#7dbfb2' }],
+        },
+      ],
+      today: [todayTask],
+    });
+
+    renderPage();
+
+    await screen.findByText('Overdue task');
+    const overdueCall = taskListMock.mock.calls.find(([props]) =>
+      props.tasks.some((task) => task.id === 'task-overdue-1'),
+    );
+
+    expect(overdueCall?.[0].tasks[0].labels).toEqual([
+      { id: 'label-1', name: 'feature', color: '#7dbfb2' },
+    ]);
   });
 
   it('triggers refetch and scrolls to today section when midnight timer fires', async () => {

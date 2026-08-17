@@ -7,6 +7,8 @@ import { SectionHeader } from '../components/SectionHeader';
 import { InlineNameInput } from '../components/ui/InlineNameInput';
 import { CollectionBoard } from '../components/board/CollectionBoard';
 import { BoardToolbar } from '../components/board/BoardToolbar';
+import { PageHeader } from '../components/PageHeader';
+import { Toolbar } from '../components/ui/Toolbar';
 import { nextOrderValue } from '../utils/order';
 import { extractNaturalDate } from '../utils/date';
 import type { Task } from '../components/TaskItem';
@@ -58,6 +60,7 @@ function apiToTask(t: ApiTask): Task {
     dueDate: t.dueDate ?? undefined,
     isCompleted: t.isCompleted,
     orderValue: t.orderValue,
+    labels: t.labels,
     indent: t.depth,
     type: t.type,
     // Siblings with equal order values fall back to creation time; without it
@@ -612,10 +615,11 @@ export function CollectionsPage() {
         inputRef.current?.focus();
       }}
     >
-      <header className="page-header-copy sticky-page-header max-w-162">
-        <div className="page-header-copy-text">
-          <h1 className="collections-page-title flex h-6 items-center gap-2 text-lg leading-6 font-semibold text-ink m-0 p-0">
-              {trail.map((crumb, i) => {
+      <PageHeader
+        titleClassName="collections-page-title flex items-center gap-2"
+        title={
+          <>
+            {trail.map((crumb, i) => {
                 const isCurrent = i === trail.length - 1;
                 return (
                   <Fragment key={crumb.id}>
@@ -661,42 +665,45 @@ export function CollectionsPage() {
                   </Fragment>
                 );
               })}
-            </h1>
-            {subAddingParentId && (
-              <div className="collections-page-sub-input flex h-6 items-center">
-                <input
-                  autoFocus
-                  value={subNewName}
-                  onChange={(e) => setSubNewName(e.target.value)}
-                  onBlur={handleCrumbCommitSub}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') handleCrumbCommitSub();
-                    if (e.key === 'Escape') {
-                      setSubAddingParentId(null);
-                      setSubNewName('');
-                    }
-                  }}
-                  placeholder={t('page.collectionName')}
-                  className="h-6 w-full min-w-0 border-0 border-b border-dot bg-transparent p-0 text-[13px] leading-6 text-ink outline-none"
-                />
-              </div>
-            )}
-        </div>
-
-        <div className="page-header-toolbar collection-page-header-controls flex items-center">
-          <BoardToolbar
-            view={boardPreferences.view}
-            groupBy={boardPreferences.groupBy}
-            hideCompletedTasks={preferences?.hideCompletedTasks ?? false}
-            hideOldNotes={preferences?.hideOldNotes ?? false}
-            preferencesDisabled={!preferences || visibilityPreferencesPending}
-            onViewChange={boardPreferences.setView}
-            onGroupByChange={boardPreferences.setGroupBy}
-            onHideCompletedTasksChange={setHideCompletedTasks}
-            onHideOldNotesChange={setHideOldNotes}
-          />
-        </div>
-      </header>
+          </>
+        }
+        afterTitle={
+          subAddingParentId && (
+            <div className="collections-page-sub-input flex h-6 items-center">
+              <input
+                autoFocus
+                value={subNewName}
+                onChange={(e) => setSubNewName(e.target.value)}
+                onBlur={handleCrumbCommitSub}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleCrumbCommitSub();
+                  if (e.key === 'Escape') {
+                    setSubAddingParentId(null);
+                    setSubNewName('');
+                  }
+                }}
+                placeholder={t('page.collectionName')}
+                className="h-6 w-full min-w-0 border-0 border-b border-dot bg-transparent p-0 text-[13px] leading-6 text-ink outline-none"
+              />
+            </div>
+          )
+        }
+        toolbar={
+          <Toolbar className="collection-page-header-controls">
+            <BoardToolbar
+              view={boardPreferences.view}
+              groupBy={boardPreferences.groupBy}
+              hideCompletedTasks={preferences?.hideCompletedTasks ?? false}
+              hideOldNotes={preferences?.hideOldNotes ?? false}
+              preferencesDisabled={!preferences || visibilityPreferencesPending}
+              onViewChange={boardPreferences.setView}
+              onGroupByChange={boardPreferences.setGroupBy}
+              onHideCompletedTasksChange={setHideCompletedTasks}
+              onHideOldNotesChange={setHideOldNotes}
+            />
+          </Toolbar>
+        }
+      />
 
       <div className={boardPreferences.view === 'kanban' ? 'w-full' : 'max-w-162'}>
         {boardPreferences.view === 'kanban' && data ? (

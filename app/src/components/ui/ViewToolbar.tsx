@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { SlidersHorizontal, List, Columns3, MoreHorizontal } from 'lucide-react';
+import { SlidersHorizontal, List, Kanban, MoreHorizontal } from 'lucide-react';
 import { Button } from './Button';
+import { ButtonGroup } from './ButtonGroup';
 import { Checkbox } from './Checkbox';
 import { useI18n } from '../../i18n/I18nContext';
 
@@ -67,30 +68,32 @@ export function ViewToolbar({
       )}
 
       {/* Segmented List / Kanban toggle */}
-      <div className={`ml-auto inline-flex items-center border border-border overflow-hidden ${compact ? 'h-6 rounded-[4px]' : 'rounded-[8px] mr-2.5'}`}>
-        {([
-          { mode: 'list' as const, label: t('toolbar.list'), Icon: List },
-          { mode: 'kanban' as const, label: t('toolbar.kanban'), Icon: Columns3 },
-        ]).map(({ mode, label, Icon }, i) => (
-          <button
-            key={mode}
-            type="button"
-            aria-pressed={view === mode}
-            onClick={() => setView(mode)}
-            className={`inline-flex items-center font-journal leading-none transition-colors duration-[var(--motion-fast)] ${compact ? 'h-6 gap-1 px-2 text-[12px]' : 'h-9 gap-1.5 px-3 text-sm'} ${
-              i > 0 ? 'border-l border-border' : ''
-            } ${view === mode ? 'bg-dot/60 text-ink' : 'bg-transparent text-ink-light hover:bg-dot/30'}`}
-          >
-            <Icon size={compact ? 12 : 15} strokeWidth={1.5} />
-            {label}
-          </button>
-        ))}
-      </div>
+      <ButtonGroup
+        mode="single"
+        value={view}
+        onChange={setView}
+        size='xs'
+        className={`ml-auto ${compact ? '' : 'mr-2.5'}`}
+        items={[
+          {
+            value: 'list',
+            label: t('toolbar.list'),
+            showLabel: true,
+            icon: <List size={compact ? 12 : 15} strokeWidth={1.5} />,
+          },
+          {
+            value: 'kanban',
+            label: t('toolbar.kanban'),
+            showLabel: true,
+            icon: <Kanban size={compact ? 12 : 15} strokeWidth={1.5} />,
+          },
+        ]}
+      />
 
       {!viewOnly && <button
         type="button"
         aria-label={t('toolbar.moreOptions')}
-        className="inline-flex items-center justify-center w-9 h-9 rounded-[8px] text-ink-light hover:bg-dot/30 transition-colors duration-[var(--motion-fast)] mr-1"
+        className="inline-flex items-center justify-center w-9 h-9 rounded-md text-ink-light hover:bg-dot/30 transition-colors duration-(--motion-fast) mr-1"
       >
         <MoreHorizontal size={18} strokeWidth={1.5} />
       </button>}

@@ -1,22 +1,51 @@
 import { CalendarDays, Check, Flag } from 'lucide-react';
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import type { ApiTask } from '../../api/client';
+import type { TaskDragData } from '../../types/drag';
+import { NO_DRAG_ATTR } from '../dnd/sensors';
 import { BoardCardChecklist } from './BoardCardChecklist';
 import { useI18n } from '../../i18n/I18nContext';
 
 interface BoardCardProps {
   task: ApiTask;
   subtasks: ApiTask[];
+  containerId?: string;
+  subtreeIds?: string[];
   onToggle?: (taskId: string, completed: boolean) => void;
 }
 
-export function BoardCard({ task, subtasks, onToggle }: BoardCardProps) {
+export function BoardCard({ task, subtasks, containerId = '', subtreeIds, onToggle }: BoardCardProps) {
   const { t } = useI18n();
+  const dragData: TaskDragData = {
+    kind: 'task',
+    taskId: task.id,
+    parentTaskId: task.parentTaskId ?? null,
+    collectionId: task.collectionId,
+    sectionId: task.sectionId ?? null,
+    dueDate: task.dueDate ?? null,
+    depth: task.depth ?? 0,
+    containerId,
+    subtreeIds: subtreeIds ?? [task.id, ...subtasks.map((subtask) => subtask.id)],
+  };
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: task.id,
+    data: dragData,
+  });
   return (
-    <article className="board-card" data-card-id={task.id}>
+    <article
+      ref={setNodeRef}
+      {...attributes}
+      {...listeners}
+      className={`board-card ${isDragging ? 'is-dragging' : ''}`}
+      data-card-id={task.id}
+      style={{ transform: CSS.Transform.toString(transform), transition }}
+    >
       <div className="board-card-topline">
         <button
           type="button"
           className={`board-card-check ${task.isCompleted ? 'is-complete' : ''}`}
+          {...{ [NO_DRAG_ATTR]: '' }}
           aria-label={task.isCompleted ? t('board.reopenTask') : t('board.completeTask')}
           onClick={() => onToggle?.(task.id, !task.isCompleted)}
         >
@@ -41,7 +70,7 @@ export function BoardCard({ task, subtasks, onToggle }: BoardCardProps) {
 
       {task.description && <p className="board-card-description">{task.description}</p>}
 
-      <BoardCardChecklist tasks={subtasks} onToggle={onToggle} />
+      <BoardCardChecklist parentTask={task} tasks={subtasks} onToggle={onToggle} />
 
       {(task.dueDate || task.completedAt) && (
         <footer className="board-card-date">

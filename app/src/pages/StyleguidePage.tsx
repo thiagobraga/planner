@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Plus, Calendar, Trash2, Search } from 'lucide-react';
+import { Plus, Calendar, Trash2, Search, ListTodo, Kanban, EyeOff, FileClock } from 'lucide-react';
 import { BjTask, MonthlyIcon, PlannerIcon } from '../components/Sidebar';
 import { SidebarNavItem } from '../components/SidebarNavItem';
 import { ChevronRight, Repeat2 } from 'lucide-react';
@@ -9,6 +9,7 @@ import { MonthSelector } from '../components/monthly/MonthSelector';
 import { DatePickerSpecimen } from '../components/monthly/DatePickerSpecimen';
 import { HabitSpecimen } from '../components/habits/HabitSpecimen';
 import { Button } from '../components/ui/Button';
+import { ButtonGroup } from '../components/ui/ButtonGroup';
 import { Input } from '../components/ui/Input';
 import { Checkbox } from '../components/ui/Checkbox';
 import { Radio } from '../components/ui/Radio';
@@ -114,6 +115,9 @@ export function StyleguidePage() {
   const weekStart = preferences?.weekStart ?? 'sunday';
 
   const [radioChoice, setRadioChoice] = useState('a');
+  const [buttonGroupView, setButtonGroupView] = useState<'list' | 'kanban'>('list');
+  const [buttonGroupVisibility, setButtonGroupVisibility] = useState<('completed' | 'notes')[]>(['completed']);
+  const [buttonGroupIconOnly, setButtonGroupIconOnly] = useState<'timeline' | 'calendar' | 'board'>('timeline');
   const [toggleOn, setToggleOn] = useState(true);
   const [checkOn, setCheckOn] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState(() => {
@@ -278,6 +282,75 @@ export function StyleguidePage() {
                   Tiny
                 </Button>
               </div>
+            </div>
+          </div>
+        </Card>
+
+        <Card title="Button Group" span>
+          <div className="flex flex-col gap-6">
+            <div className="flex flex-col gap-2">
+              <span className="text-[10px] text-ink-light uppercase tracking-widest font-semibold block">
+                Single-select (list / kanban)
+              </span>
+              <ButtonGroup<'list' | 'kanban'>
+                mode="single"
+                value={buttonGroupView}
+                onChange={setButtonGroupView}
+                items={[
+                  { value: 'list', label: 'List view', showLabel: true, icon: <ListTodo size={12} strokeWidth={1.5} /> },
+                  { value: 'kanban', label: 'Kanban view', showLabel: true, icon: <Kanban size={12} strokeWidth={1.5} /> },
+                ]}
+              />
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <span className="text-[10px] text-ink-light uppercase tracking-widest font-semibold block">
+                Multi-select, label-only (Today / Upcoming)
+              </span>
+              <ButtonGroup<'today' | 'upcoming'>
+                mode="single"
+                value="today"
+                onChange={() => {}}
+                items={[
+                  { value: 'today', label: 'Today' },
+                  { value: 'upcoming', label: 'Upcoming' },
+                ]}
+              />
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <span className="text-[10px] text-ink-light uppercase tracking-widest font-semibold block">
+                Multi-select, independent toggles (completed / notes)
+              </span>
+              <ButtonGroup<'completed' | 'notes'>
+                mode="multi"
+                value={buttonGroupVisibility}
+                onChange={(clicked) =>
+                  setButtonGroupVisibility((prev) =>
+                    prev.includes(clicked) ? prev.filter((v) => v !== clicked) : [...prev, clicked],
+                  )
+                }
+                items={[
+                  { value: 'completed', label: 'Hide completed', icon: <EyeOff size={12} strokeWidth={1.8} /> },
+                  { value: 'notes', label: 'Hide old notes', icon: <FileClock size={12} strokeWidth={1.8} /> },
+                ]}
+              />
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <span className="text-[10px] text-ink-light uppercase tracking-widest font-semibold block">
+                Icon-only, three segments
+              </span>
+              <ButtonGroup<'timeline' | 'calendar' | 'board'>
+                mode="single"
+                value={buttonGroupIconOnly}
+                onChange={setButtonGroupIconOnly}
+                items={[
+                  { value: 'timeline', label: 'Timeline view', icon: <Repeat2 size={12} strokeWidth={1.8} /> },
+                  { value: 'calendar', label: 'Calendar view', icon: <Calendar size={12} strokeWidth={1.8} /> },
+                  { value: 'board', label: 'Board view', icon: <Kanban size={12} strokeWidth={1.8} />, disabled: true },
+                ]}
+              />
             </div>
           </div>
         </Card>

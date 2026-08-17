@@ -122,28 +122,36 @@ Synced on complete/reopen/move.
 
 ## Milestone 6 — Playwright harness (`e2e/`)
 
-- [ ] Create `e2e/package.json` with `@playwright/test` only.
-- [ ] `e2e/playwright.config.ts` — `baseURL` from `E2E_BASE_URL` (default
+**2026-08-14 reconciliation:** The repository now owns Playwright under `app/e2e/`, including the
+Chromium config, CI job, coverage fixture, scripts, and ignored artifacts. Extend that established
+harness instead of creating a second root package or Compose-only runner.
+
+- [x] Reuse `app/package.json`, which already owns `@playwright/test` and the E2E scripts.
+- [x] `app/playwright.config.ts` - `baseURL` from `E2E_BASE_URL` (default
       `https://planner.local`), `ignoreHTTPSErrors: true`, chromium project, trace/video on first
       retry, `retries: 1` in CI.
-- [ ] `e2e/global-setup.ts` — register a throwaway user over the REST API, write
+- [x] `app/e2e/global-setup.ts` - register a throwaway user over the REST API, write
       `storageState.json` with `planner_token` in localStorage.
-- [ ] `e2e/fixtures/api.ts` — authed fetch helper; specs build their own data over the API and
+- [x] `app/e2e/fixtures/api.ts` - authed fetch helper; specs build their own data over the API and
       never share a collection.
-- [ ] `e2e/fixtures/drag.ts` — `dragCard(page, from, to)` using
+- [x] `app/e2e/fixtures/drag.ts` - `dragCard(page, from, to)` using
       `mouse.move → mouse.down → several mouse.move steps → mouse.up` with a settle after `down`.
       `locator.dragTo()` does **not** clear dnd-kit's 6px activation distance.
-- [ ] Add an `e2e` compose profile service on `mcr.microsoft.com/playwright:v1.x-noble`.
-- [ ] `e2e/specs/api/statuses.spec.ts` — DB-backed CRUD, seeding idempotency, last-column 409.
-- [ ] `e2e/specs/api/task-move.spec.ts` — status/priority scopes write `task_order`, leave
+- [x] Reconciled: use the established app Playwright runner instead of adding a second Compose
+      profile and dependency package.
+- [x] `app/e2e/specs/api/statuses.spec.ts` - DB-backed CRUD, seeding idempotency, last-column 409.
+- [x] `app/e2e/specs/api/task-move.spec.ts` - status/priority scopes write `task_order`, leave
       `order_value` untouched, cross-collection nulls `status_id`.
-- [ ] Add the CI job to `.github/workflows/quality.yml` (boot the stack, wait for health, run the
+- [x] Add the CI job to `.github/workflows/quality.yml` (boot the stack, wait for health, run the
       suite, upload traces on failure).
-- [ ] Add `e2e/storageState.json`, `e2e/test-results/`, `e2e/playwright-report/` to `.gitignore`.
-- [ ] Document the commands and the Vitest-vs-Playwright split in `CLAUDE.md`, `AGENTS.md` and
-      `GEMINI.md`.
-- [ ] Verify: `docker compose --profile e2e run --rm e2e`
-- [ ] Commit: `chore(e2e): add playwright harness`
+- [x] Add `app/e2e/storageState.json`, `app/e2e/test-results/`, and
+      `app/e2e/playwright-report/` to `.gitignore`.
+- [x] The synchronized agent instructions already document the app Playwright command and the
+      Vitest/Playwright coverage split.
+- [x] Verify: app-level full Playwright suite passed (9 tests before board specs were added).
+- [x] Commit: `f702659 test(e2e): add authenticated planner harness`
+
+**Status:** Complete. The app-level harness replaces the obsolete root package and Compose runner.
 
 ## Milestone 7 — Board drag plumbing (`app/src/types/drag.ts`)
 
@@ -198,10 +206,9 @@ Synced on complete/reopen/move.
 - [x] Completion status columns tick the card optimistically.
 - [x] a11y announcements using the `board.a11y.*` keys.
 - [x] Set `enabled: view === 'list'` on the existing `useTaskDrag` call sites.
-- [x] Tests: `useBoardDrag.test.ts`, `useBoardDrag.reparent.test.ts`,
-      `useBoardDrag.completion.test.ts`.
+- [x] Tests: `useBoardDrag.test.ts` and `useBoardDrag.integration.test.tsx`.
 - [x] Verify: `docker compose exec app npm run build && docker compose exec app npm run lint && docker compose exec app npm test`
-- [x] Commit: `feat(app): drag cards between board columns`
+- [x] Commit: `1dc07c7 feat(app): complete kanban interactions`
 
 **Status:** Complete. Card dragging with optimistic updates and completion sync.
 
@@ -216,7 +223,7 @@ Synced on complete/reopen/move.
 - [x] Confirmation dialog before setting `completion_status_id` on a non-empty column.
 - [x] Tests: extend the board component tests.
 - [x] Verify: `docker compose exec app npm run build && docker compose exec app npm run lint && docker compose exec app npm test`
-- [x] Commit: `feat(app): reorder, rename and delete board columns`
+- [x] Commit: `1dc07c7 feat(app): complete kanban interactions`
 
 **Status:** Complete. Column CRUD wired to API with completion status designation.
 
@@ -233,46 +240,57 @@ Synced on complete/reopen/move.
 
 **Status:** Complete. Board wired into both collections and inbox pages with persistent preferences.
 
-## Milestone 12 — Board e2e (`e2e/specs/board/`)
+## Milestone 12 — Board e2e (`app/e2e/specs/board/`)
 
 ⚠️ **Milestone 6 (Playwright harness) must complete first.** The e2e tests depend on the test infrastructure.
 
-- [ ] `seed.spec.ts` — first open seeds exactly four columns; reload does not seed eight.
-- [ ] `drag-card.spec.ts` — drag between columns persists across reload.
-- [ ] `completion-sync.spec.ts` — drop into completion status strikes it through in List; unticking
+- [x] `seed.spec.ts` - first open seeds exactly four columns; reload does not seed eight.
+- [x] `drag-card.spec.ts` - drag between columns persists across reload.
+- [x] `completion-sync.spec.ts` - drop into completion status strikes it through in List; unticking
       there returns the card to its previous column.
-- [ ] `order-isolation.spec.ts` — **the decision-4 guard**: reorder inside a column, switch to
+- [x] `order-isolation.spec.ts` - **the decision-4 guard**: reorder inside a column, switch to
       List, list order unchanged.
-- [ ] `group-by.spec.ts` — Priority mode renders exactly four columns; dragging changes the flag.
-- [ ] `subtask-reparent.spec.ts` — drag a subtask onto another card; both counts update.
-- [ ] `columns.spec.ts` — rename, recolor, reorder, delete-with-reassign, last-column 409.
-- [ ] Verify: `docker compose --profile e2e run --rm e2e npx playwright test specs/board`
-- [ ] Commit: `test(e2e): cover the kanban board end to end`
+- [x] `group-by.spec.ts` - Priority mode renders exactly four columns; dragging changes the flag.
+- [x] `subtask-reparent.spec.ts` - drag a subtask onto another card; both counts update.
+- [x] `columns.spec.ts` - rename, recolor, reorder, delete-with-reassign, last-column 409.
+- [x] Verify: live-stack board suite passed, 8 tests in 15.4 seconds.
+- [x] Commit: `d142da8 test(e2e): cover kanban board workflows`
 
-**Status:** Pending. Blocked on Milestone 6 (Playwright infrastructure).
+**Status:** Complete. All seven scenarios use isolated API fixtures and real pointer interaction.
 
 ## Milestone 13 — Label chips in the list view (`app/src/components/TaskItem.tsx`)
 
-- [ ] Change `Task.labels` from `string[]` to `LabelSummary[]` and update `apiToTask` in both pages.
-- [ ] Render chips in `TaskItem` using the same `<Chip>` treatment as the board.
-- [ ] Tests: extend `components/__tests__/TaskItem.test.tsx`.
-- [ ] Verify: `docker compose exec app npm run build && docker compose exec app npm run lint && docker compose exec app npm test`
-- [ ] Commit: `feat(app): show label chips in the list view`
+- [x] Change `Task.labels` from `string[]` to `LabelSummary[]` and update `apiToTask` in Collections,
+      Inbox, and Daily.
+- [x] Render chips in `TaskItem` using the same treatment as the board.
+- [x] Tests: extend `components/__tests__/TaskItem.test.tsx` and cover all three page mappers.
+- [x] Verify: focused app suites (4 files / 78 tests), app build, and app lint.
+- [x] Commit: `b371561 feat(app): show label chips in list views`
 
-**Status:** Pending. Last in order per spec (board must be stable first to avoid regressions).
+**Status:** Complete. Structured labels now survive every list-page mapper and render as colored
+chips in task rows.
 
 ## Verification (whole spec)
 
-- [ ] `docker compose exec api npm run build && docker compose exec api npm run lint`
-- [ ] `docker compose exec app npm run build && docker compose exec app npm run lint`
-- [ ] `docker compose exec api npm test && docker compose exec app npm test`
-- [ ] `docker compose --profile e2e run --rm e2e`
-- [ ] Restart the api container twice — migrations 037/038/039 apply once and are idempotent.
-- [ ] Manual: horizontal auto-scroll on a wide board.
-- [ ] Manual: both background themes — dot grid reads through columns and cards, no shadows, no
+- [x] API build and lint passed.
+- [x] App build and lint passed with zero errors and 39 warnings.
+- [x] API tests passed: 88 files / 908 tests. App tests passed: 115 files / 1,027 tests.
+- [x] Full app-level Playwright suite passed against `https://codex2.planner.local`: 17 tests.
+- [x] Restarted the api container twice. Both starts reported `migration:completed` with
+      `applied: 0` and returned to `Backend listening on port 4000`.
+- [x] Manual: horizontal auto-scroll reached `scrollLeft: 913` right and `scrollLeft: 0` left on
+      the 1,560px-wide board; both card moves persisted.
+- [x] Manual: both background themes - dot grid reads through columns and cards, no shadows, no
       colored stripes.
-- [ ] Manual: 24px baseline holds for column and card heights; accent under budget.
-- [ ] Manual: `/styleguide` shows the Board specimen.
-- [ ] Manual: board on `/inbox`; view + group-by survive a reload and stay per-collection.
-- [ ] `docker compose down -v` and `git worktree remove ../planner-kanban-board`.
-- [ ] Open the PR against `main` and hand the link to the user.
+- [x] Manual: 24px grid, 288px columns, 24px column gaps, and 48px headers hold; accent-filled
+      viewport area remained below the 10 percent budget.
+- [x] Manual: `/styleguide` shows the real Board Card specimen for an admin account.
+- [x] Manual: `/inbox` persisted Kanban + Priority across reload while the regular collection
+      independently retained Kanban + Status.
+- [x] Keep the `planner-codex2` stack and worktree running for review.
+- [x] Draft PR 114 is open against `main`.
+
+**Status:** Complete. Final live-browser state had zero console errors and all observed auth,
+preferences, collection-view, and status-seed requests returned HTTP 200. Review screenshot:
+`app/dist/screenshots/kanban-board-remaining.png`. The CI coverage-mode webServer lifecycle also
+passed all 17 Playwright tests after removing the duplicate workflow preview process.

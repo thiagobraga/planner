@@ -6,6 +6,8 @@ import { SectionHeader } from '../components/SectionHeader';
 import { InlineNameInput } from '../components/ui/InlineNameInput';
 import { CollectionBoard } from '../components/board/CollectionBoard';
 import { BoardToolbar } from '../components/board/BoardToolbar';
+import { PageHeader } from '../components/PageHeader';
+import { Toolbar } from '../components/ui/Toolbar';
 import type { Task } from '../components/TaskItem';
 import type { Section } from '../stores/taskStore';
 import {
@@ -51,6 +53,7 @@ function apiToTask(t: ApiTask): Task {
     dueDate: t.dueDate ?? undefined,
     isCompleted: t.isCompleted,
     orderValue: t.orderValue,
+    labels: t.labels,
     indent: t.depth,
     type: t.type,
     createdAt: t.createdAt,
@@ -530,31 +533,25 @@ export function InboxPage() {
         inputRef.current?.focus();
       }}
     >
-      <header className="page-header-copy sticky-page-header max-w-162">
-        <div className="page-header-copy-text">
-          <h1 className="text-[18px] leading-6 h-6 font-semibold text-ink m-0 p-0">
-            {t('page.inbox')}
-          </h1>
-
-          <p className="page-header-subtitle text-[13px] leading-6 h-6 text-ink-light opacity-60 m-0 p-0">
-            {phrase}
-          </p>
-        </div>
-
-        <div className="page-header-toolbar inbox-page-header-controls flex items-center">
-          <BoardToolbar
-            view={boardPreferences.view}
-            groupBy={boardPreferences.groupBy}
-            hideCompletedTasks={preferences?.hideCompletedTasks ?? false}
-            hideOldNotes={preferences?.hideOldNotes ?? false}
-            preferencesDisabled={!preferences || visibilityPreferencesPending}
-            onViewChange={boardPreferences.setView}
-            onGroupByChange={boardPreferences.setGroupBy}
-            onHideCompletedTasksChange={setHideCompletedTasks}
-            onHideOldNotesChange={setHideOldNotes}
-          />
-        </div>
-      </header>
+      <PageHeader
+        title={t('page.inbox')}
+        subtitle={phrase}
+        toolbar={
+          <Toolbar className="inbox-page-header-controls">
+            <BoardToolbar
+              view={boardPreferences.view}
+              groupBy={boardPreferences.groupBy}
+              hideCompletedTasks={preferences?.hideCompletedTasks ?? false}
+              hideOldNotes={preferences?.hideOldNotes ?? false}
+              preferencesDisabled={!preferences || visibilityPreferencesPending}
+              onViewChange={boardPreferences.setView}
+              onGroupByChange={boardPreferences.setGroupBy}
+              onHideCompletedTasksChange={setHideCompletedTasks}
+              onHideOldNotesChange={setHideOldNotes}
+            />
+          </Toolbar>
+        }
+      />
 
       <div className={boardPreferences.view === 'kanban' ? 'w-full' : 'max-w-162'}>
         {boardPreferences.view === 'kanban' && data && inboxCollectionId ? (

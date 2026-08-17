@@ -142,8 +142,12 @@ jobs:
     env:
       DATABASE_URL: postgres://planner:planner-test@localhost:5432/planner_test
       REDIS_URL: redis://localhost:6379
-      CORS_ORIGIN: http://127.0.0.1:5173
+      CORS_ORIGIN: http://127.0.0.1:4173
       CSRF_SECRET: test-csrf-secret-not-for-production
+      E2E_BASE_URL: http://127.0.0.1:4173
+      E2E_API_URL: http://127.0.0.1:4000/api/v1
+      PLAYWRIGHT_BASE_URL: http://127.0.0.1:4173
+      PLAYWRIGHT_API_URL: http://127.0.0.1:4000
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -164,7 +168,7 @@ jobs:
         run: |
           npx tsx src/db/migrate.ts
           nohup node dist/index.js > /tmp/api.log 2>&1 &
-          for i in $(seq 1 60); do curl -s -o /dev/null http://127.0.0.1:4000/api/v1/views/today && break || sleep 1; done
+          for i in $(seq 1 60); do curl -s -o /dev/null http://127.0.0.1:4000/api/v1/health && break || sleep 1; done
       - name: Install app dependencies
         working-directory: app
         run: npm ci
@@ -181,18 +185,23 @@ jobs:
         working-directory: app
         env:
           PLAYWRIGHT_COVERAGE: "1"
-          PLAYWRIGHT_API_URL: http://127.0.0.1:4000
         run: npx playwright test
       - name: Generate e2e coverage report
         working-directory: app
         run: node e2e/merge-coverage.ts
       - name: Upload e2e coverage report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: e2e-coverage-report
           path: app/dist/html/e2e
+      - name: Upload Playwright traces
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-traces
+          path: app/e2e/test-results
       - name: Show server logs on failure
         if: failure()
         run: |
           echo "=== api.log ==="; tail -50 /tmp/api.log
-          echo "=== app.log ==="; cat /tmp/app.log 2>/dev/null || echo "(no app.log - webServer logs are in the playwright output)"
+          echo "App webServer logs are in the Playwright output."

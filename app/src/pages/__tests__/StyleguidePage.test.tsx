@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, within, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { StyleguidePage } from '../StyleguidePage';
 import { fetchPreferences, type Preferences } from '../../api/client';
@@ -49,6 +49,7 @@ describe('StyleguidePage (smoke)', () => {
     expect(await screen.findByText('Color Palette')).toBeInTheDocument();
     expect(screen.getByText('Typography')).toBeInTheDocument();
     expect(screen.getByText('Buttons')).toBeInTheDocument();
+    expect(screen.getByText('Button Group')).toBeInTheDocument();
     expect(screen.getByText('Forms')).toBeInTheDocument();
     expect(screen.getByText('Chips & Tags')).toBeInTheDocument();
     expect(screen.getByText('Navigation')).toBeInTheDocument();
@@ -86,6 +87,24 @@ describe('StyleguidePage (smoke)', () => {
     expect(await screen.findByText('Checkbox')).toBeInTheDocument();
     expect(screen.getByText('Radio')).toBeInTheDocument();
     expect(screen.getByText('Toggle')).toBeInTheDocument();
+  });
+
+  it('renders an interactive Button Group specimen', async () => {
+    renderPage();
+
+    const kanban = await screen.findByRole('button', { name: 'Kanban view' });
+    const list = screen.getByRole('button', { name: 'List view' });
+    expect(list).toHaveAttribute('aria-pressed', 'true');
+    expect(kanban).toHaveAttribute('aria-pressed', 'false');
+
+    fireEvent.click(kanban);
+
+    expect(kanban).toHaveAttribute('aria-pressed', 'true');
+    expect(list).toHaveAttribute('aria-pressed', 'false');
+
+    // The disabled icon-only segment stays inert.
+    const board = screen.getByRole('button', { name: 'Board view' });
+    expect(board).toBeDisabled();
   });
 
   it('renders context menu with interaction', async () => {
