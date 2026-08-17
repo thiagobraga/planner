@@ -190,13 +190,13 @@ jobs:
         working-directory: app
         run: node e2e/merge-coverage.ts
       - name: Upload e2e coverage report
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: e2e-coverage-report
           path: app/dist/html/e2e
       - name: Upload Playwright traces
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: playwright-traces
           path: app/e2e/test-results
