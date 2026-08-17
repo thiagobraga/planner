@@ -606,7 +606,7 @@ export function DailyPage() {
     setSelectedId(tid);
   }, [updateSections]);
 
-  const handleConvertType = useCallback((id: string, type: 'task' | 'note') => {
+  const handleConvertType = useCallback((id: string, type: 'task' | 'note' | 'event') => {
     updateSections((prev) =>
       prev.map((s) => ({
         ...s,

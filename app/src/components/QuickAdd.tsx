@@ -6,8 +6,19 @@ import { useI18n } from '../i18n/I18nContext';
 interface QuickAddProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (title: string, dueDate?: string, recurrenceRule?: object | null) => void;
+  onSubmit: (
+    title: string,
+    dueDate?: string,
+    recurrenceRule?: object | null,
+    type?: 'task' | 'note' | 'event',
+  ) => void;
 }
+
+/** BuJo rapid-logging prefixes, mirroring TaskItem's inline conversion markers. */
+const QUICK_ADD_PREFIXES: Record<string, 'note' | 'event'> = {
+  '-': 'note',
+  '(': 'event',
+};
 
 export function QuickAdd({ isOpen, onClose, onSubmit }: QuickAddProps) {
   const { locale, t } = useI18n();
@@ -34,10 +45,18 @@ export function QuickAdd({ isOpen, onClose, onSubmit }: QuickAddProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const trimmed = value.trim();
+    let trimmed = value.trim();
     if (!trimmed) return;
+
+    let type: 'task' | 'note' | 'event' = 'task';
+    const prefixMatch = trimmed.match(/^([-*(])\s+(.+)/);
+    if (prefixMatch) {
+      type = QUICK_ADD_PREFIXES[prefixMatch[1]] ?? 'task';
+      trimmed = prefixMatch[2];
+    }
+
     const extracted = extractNaturalDate(trimmed, undefined, locale);
-    onSubmit(extracted.title, extracted.dueDate, extracted.recurrenceRule);
+    onSubmit(extracted.title, extracted.dueDate, extracted.recurrenceRule, type);
     onClose();
   };
 

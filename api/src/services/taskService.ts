@@ -255,7 +255,7 @@ export interface CreateTaskInput {
   labelIds?: string[];
   dueDate?: string | null;
   recurrenceRule?: object | null;
-  type?: 'task' | 'note';
+  type?: 'task' | 'note' | 'event';
   orderValue?: number;
 }
 
@@ -283,12 +283,12 @@ export async function createTask(userId: string, input: CreateTaskInput) {
   }
 
   // Validate type
-  if (input.type !== undefined && input.type !== 'task' && input.type !== 'note') {
+  if (input.type !== undefined && input.type !== 'task' && input.type !== 'note' && input.type !== 'event') {
     throw new AppError({
       code: 'VALIDATION_ERROR',
       message: 'Validation failed',
       statusCode: 400,
-      details: [{ field: 'type', message: "type must be 'task' or 'note'" }],
+      details: [{ field: 'type', message: "type must be 'task', 'note', or 'event'" }],
     });
   }
 
@@ -415,7 +415,7 @@ export interface UpdateTaskInput {
   dueDate?: string | null;
   recurrenceRule?: object | null;
   labelIds?: string[];
-  type?: 'task' | 'note';
+  type?: 'task' | 'note' | 'event';
 }
 
 export async function updateTask(taskId: string, userId: string, input: UpdateTaskInput) {
@@ -444,12 +444,12 @@ export async function updateTask(taskId: string, userId: string, input: UpdateTa
   }
 
   // Validate type if provided
-  if (input.type !== undefined && input.type !== 'task' && input.type !== 'note') {
+  if (input.type !== undefined && input.type !== 'task' && input.type !== 'note' && input.type !== 'event') {
     throw new AppError({
       code: 'VALIDATION_ERROR',
       message: 'Validation failed',
       statusCode: 400,
-      details: [{ field: 'type', message: "type must be 'task' or 'note'" }],
+      details: [{ field: 'type', message: "type must be 'task', 'note', or 'event'" }],
     });
   }
 

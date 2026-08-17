@@ -150,7 +150,7 @@ export const taskListMock = vi.fn(
     onDelete?: (id: string) => void;
     onAddBelow?: (id: string) => void;
     onIndent?: (id: string, dir: 1 | -1) => void;
-    onConvertType?: (id: string, type: 'task' | 'note') => void;
+    onConvertType?: (id: string, type: 'task' | 'note' | 'event') => void;
     onRightClick?: (id: string, position: { x: number; y: number }) => void;
   }) => (
     <div data-testid={`task-list-${containerId}`} role="list">
@@ -200,6 +200,9 @@ export const taskListMock = vi.fn(
             onClick={() => onConvertType?.(task.id, task.type === 'note' ? 'task' : 'note')}
           >
             convert
+          </button>
+          <button data-testid={`convert-event-${task.id}`} onClick={() => onConvertType?.(task.id, 'event')}>
+            convert to event
           </button>
           <button
             data-testid={`context-${task.id}`}

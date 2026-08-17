@@ -29,8 +29,8 @@ export function validateCreateTask(input: TaskInput): void {
     }
   }
 
-  if (input.type !== undefined && input.type !== "task" && input.type !== "note") {
-    errors.push({ field: "type", message: "Type must be 'task' or 'note'" });
+  if (input.type !== undefined && input.type !== "task" && input.type !== "note" && input.type !== "event") {
+    errors.push({ field: "type", message: "Type must be 'task', 'note', or 'event'" });
   }
 
   if (input.dueDate !== undefined && input.dueDate !== null) {
@@ -71,8 +71,8 @@ export function validateUpdateTask(input: TaskInput): void {
     }
   }
 
-  if (input.type !== undefined && input.type !== "task" && input.type !== "note") {
-    errors.push({ field: "type", message: "Type must be 'task' or 'note'" });
+  if (input.type !== undefined && input.type !== "task" && input.type !== "note" && input.type !== "event") {
+    errors.push({ field: "type", message: "Type must be 'task', 'note', or 'event'" });
   }
 
   if (input.dueDate !== undefined && input.dueDate !== null) {

@@ -25,7 +25,7 @@ export interface Task {
   orderValue: number;
   labels?: LabelSummary[];
   indent?: number;
-  type: 'task' | 'note';
+  type: 'task' | 'note' | 'event';
   createdAt?: string;
   /** Set on Reorganize preview rows whose due date would change, for a highlight. */
   moved?: boolean;
@@ -66,7 +66,7 @@ export interface TaskItemProps {
   onDelete?: (id: string) => void;
   onAddBelow?: (id: string) => void;
   onIndent?: (id: string, dir: 1 | -1) => void;
-  onConvertType?: (id: string, type: 'task' | 'note') => void;
+  onConvertType?: (id: string, type: 'task' | 'note' | 'event') => void;
   onRightClick?: (id: string, position: { x: number; y: number }) => void;
 }
 
@@ -88,11 +88,12 @@ function formatDueDate(value: string, locale: 'en' | 'pt-BR'): string {
  * Markdown-style prefixes that switch a row's type when typed at the start of
  * the line, mirroring how the same characters read in the journal itself.
  */
-const CONVERSION_MARKERS: Record<string, 'task' | 'note'> = {
+const CONVERSION_MARKERS: Record<string, 'task' | 'note' | 'event'> = {
   '-': 'note',
   '[': 'task',
   ']': 'task',
   '*': 'task',
+  '(': 'event',
 };
 
 export const TaskItem = memo(function TaskItem({
@@ -200,10 +201,13 @@ export const TaskItem = memo(function TaskItem({
     } else if (e.key === '-' && e.currentTarget.value === '' && task.type !== 'note') {
       e.preventDefault();
       onConvertType?.(task.id, 'note');
+    } else if (e.key === '(' && e.currentTarget.value === '' && task.type !== 'event') {
+      e.preventDefault();
+      onConvertType?.(task.id, 'event');
     } else if (
       (e.key === '[' || e.key === ']' || e.key === '*') &&
       e.currentTarget.value === '' &&
-      task.type === 'note'
+      task.type !== 'task'
     ) {
       e.preventDefault();
       onConvertType?.(task.id, 'task');
@@ -222,6 +226,21 @@ export const TaskItem = memo(function TaskItem({
       e.preventDefault();
       onIndent?.(task.id, e.shiftKey ? -1 : 1);
       requestAnimationFrame(() => editRef.current?.focus());
+    }
+  };
+
+  // Mobile virtual keyboards often send keydown as key: 'Unidentified' (or skip
+  // it) for '-', '*', '(', so the char lands in the input untouched; this
+  // catches it after the fact and applies the same marker conversion.
+  const handleEditChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    const match = value.match(/^([-*(]|\[|\])(\s|$)/);
+    const target = match ? CONVERSION_MARKERS[match[1]] : undefined;
+    if (match && target && task.type !== target) {
+      const input = e.currentTarget;
+      input.value = value.slice(match[0].length);
+      input.setSelectionRange(0, 0);
+      onConvertType?.(task.id, target);
     }
   };
 
@@ -303,6 +322,13 @@ export const TaskItem = memo(function TaskItem({
         >
           -
         </span>
+      ) : task.type === 'event' ? (
+        <span
+          aria-hidden="true"
+          className="task-item-event-indicator h-6 w-6 flex items-center justify-center text-base font-normal text-ink select-none shrink-0"
+        >
+          ○
+        </span>
       ) : (
         <button
           type="button"
@@ -338,6 +364,7 @@ export const TaskItem = memo(function TaskItem({
             className="task-item-title-input task-input flex-1 w-full h-6 text-sm text-ink bg-transparent border-0 outline-none p-0"
             spellCheck={false}
             onKeyDown={handleEditKeyDown}
+            onChange={handleEditChange}
             onBlur={handleEditBlur}
           />
         ) : (

@@ -196,7 +196,7 @@ describe('Property 9: Task priority validation', () => {
 });
 
 describe('Task type validation', () => {
-  it("accepts 'task' and 'note', defaulting to 'task' when omitted", async () => {
+  it("accepts 'task', 'note' and 'event', defaulting to 'task' when omitted", async () => {
     mockQuery
       .mockResolvedValueOnce({ rows: [{ id: collectionId }] }) // inbox
       .mockResolvedValueOnce({ rows: [{ id: collectionId }] }) // collection access
@@ -214,15 +214,24 @@ describe('Task type validation', () => {
 
     const note = await createTask(userId, { title: 'Valid', type: 'note' });
     expect(note.type).toBe('note');
+
+    mockQuery
+      .mockResolvedValueOnce({ rows: [{ id: collectionId }] })
+      .mockResolvedValueOnce({ rows: [{ id: collectionId }] })
+      .mockResolvedValueOnce({ rows: [makeTaskRow({ type: 'event' })] })
+      .mockResolvedValueOnce({ rows: [] }); // attachLabels
+
+    const event = await createTask(userId, { title: 'Valid', type: 'event' });
+    expect(event.type).toBe('event');
   });
 
-  it("rejects any type value other than 'task' or 'note'", async () => {
+  it("rejects any type value other than 'task', 'note', or 'event'", async () => {
     await fc.assert(
       fc.asyncProperty(
-        fc.string().filter((s) => s !== 'task' && s !== 'note'),
+        fc.string().filter((s) => s !== 'task' && s !== 'note' && s !== 'event'),
         async (type) => {
           try {
-            await createTask(userId, { title: 'Valid', type: type as 'task' | 'note' });
+            await createTask(userId, { title: 'Valid', type: type as 'task' | 'note' | 'event' });
             expect.fail('should throw');
           } catch (err) {
             const e = err as AppError;
@@ -234,6 +243,87 @@ describe('Task type validation', () => {
         },
       ),
       { numRuns: 50 },
+    );
+  });
+
+  it("updateTask accepts changing type to 'event'", async () => {
+    const taskId = 'task-1';
+    // verifyTaskAccess
+    mockQuery.mockResolvedValueOnce({ rows: [makeTaskRow({ id: taskId })] });
+    // update query
+    mockQuery.mockResolvedValueOnce({ rows: [makeTaskRow({ id: taskId, type: 'event' })] });
+    // attachLabels
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+
+    const result = await updateTask(taskId, userId, { type: 'event' });
+    expect(result.type).toBe('event');
+  });
+
+  it('completing a recurring event preserves type on the cloned instance', async () => {
+    const taskId = 'recurring-event';
+
+    // verifyTaskAccess
+    mockQuery.mockResolvedValueOnce({
+      rows: [
+        makeTaskRow({
+          id: taskId,
+          type: 'event',
+          due_date: '2026-01-01',
+          recurrence_rule: { type: 'daily', interval: 1 },
+        }),
+      ],
+    });
+
+    // client.query calls in order: BEGIN, mark old complete, insert clone (real
+    // data needed), then labels/activity/syncStatus/COMMIT all fall through to
+    // the {rows: []} default set in beforeEach - none of them read a value.
+    mockClientQuery
+      .mockResolvedValueOnce({ rows: [] }) // BEGIN
+      .mockResolvedValueOnce({ rows: [] }) // mark current completed
+      .mockResolvedValueOnce({ rows: [makeTaskRow({ id: 'new-id', type: 'event' })] }); // insert clone
+
+    // final SELECT for the old (now-completed) task
+    mockQuery.mockResolvedValueOnce({ rows: [makeTaskRow({ id: taskId, type: 'event', is_completed: true })] });
+    // attachLabels for old task
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+    // attachLabels for new task
+    mockQuery.mockResolvedValueOnce({ rows: [] });
+
+    await completeTask(taskId, userId);
+
+    const insertCall = mockClientQuery.mock.calls[2];
+    expect(insertCall[0]).toContain('INSERT INTO tasks');
+    // type is the 14th positional param in the clone INSERT
+    expect(insertCall[1][13]).toBe('event');
+  });
+
+  it('round-trips all three types through create then a no-op update (fetch)', async () => {
+    await fc.assert(
+      fc.asyncProperty(fc.constantFrom('task', 'note', 'event'), async (type) => {
+        vi.clearAllMocks();
+        const taskId = `task-${type}`;
+
+        // create
+        mockQuery
+          .mockResolvedValueOnce({ rows: [{ id: collectionId }] }) // inbox
+          .mockResolvedValueOnce({ rows: [{ id: collectionId }] }) // collection access
+          .mockResolvedValueOnce({ rows: [makeTaskRow({ id: taskId, type })] }) // insert
+          .mockResolvedValueOnce({ rows: [] }); // attachLabels
+
+        const created = await createTask(userId, { title: 'Round trip', type });
+        expect(created.type).toBe(type);
+
+        // fetch: updateTask with no fields short-circuits to verifyTaskAccess +
+        // attachLabels(formatTask(...)) with no UPDATE query - the closest thing
+        // this service module has to a plain "get by id".
+        mockQuery
+          .mockResolvedValueOnce({ rows: [makeTaskRow({ id: taskId, type })] }) // verifyTaskAccess
+          .mockResolvedValueOnce({ rows: [] }); // attachLabels
+
+        const fetched = await updateTask(taskId, userId, {});
+        expect(fetched.type).toBe(type);
+      }),
+      { numRuns: 10 },
     );
   });
 });

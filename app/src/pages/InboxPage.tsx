@@ -84,9 +84,10 @@ function buildSectionGroups(tasks: Task[], sections: Section[]) {
 export function InboxPage() {
   const { locale, t } = useI18n();
   const qc = useQueryClient();
+  const cachedInbox = qc.getQueryData<Awaited<ReturnType<typeof fetchInboxTasks>>>(['inbox']);
   const phrase = useMemo(() => getPhrase('inbox', locale), [locale]);
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [sections, setSections] = useState<Section[]>([]);
+  const [tasks, setTasks] = useState<Task[]>(() => cachedInbox?.tasks.map(apiToTask) ?? []);
+  const [sections, setSections] = useState<Section[]>(() => cachedInbox?.sections ?? []);
   const [input, setInput] = useState('');
   const [editingId, setEditingId] = useState<string | undefined>();
   const [editingSectionId, setEditingSectionId] = useState<string | null>(null);
@@ -334,7 +335,7 @@ export function InboxPage() {
     }
   }, [tasks, invalidate, locale]);
 
-  const handleConvertType = useCallback((taskId: string, type: 'task' | 'note') => {
+  const handleConvertType = useCallback((taskId: string, type: 'task' | 'note' | 'event') => {
     setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, type } : t)));
     if (!taskId.startsWith('temp-')) {
       apiUpdateTask(taskId, { type }).catch(() => invalidate());

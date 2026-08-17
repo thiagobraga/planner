@@ -244,9 +244,9 @@ export function AppShell() {
       <QuickAdd
         isOpen={quickAddOpen}
         onClose={() => setQuickAddOpen(false)}
-        onSubmit={(title, dueDate, recurrenceRule) => {
-          if (import.meta.env.DEV) console.log('Quick add:', { title, dueDate, recurrenceRule });
-          apiCreateTask({ title, dueDate, recurrenceRule })
+        onSubmit={(title, dueDate, recurrenceRule, type) => {
+          if (import.meta.env.DEV) console.log('Quick add:', { title, dueDate, recurrenceRule, type });
+          apiCreateTask({ title, dueDate, recurrenceRule, type })
             .then((created) => {
               qc.invalidateQueries({ queryKey: ['today'] });
               qc.invalidateQueries({ queryKey: ['upcoming'] });

@@ -261,7 +261,7 @@ export interface ApiTask {
   isCompleted: boolean;
   orderValue: number;
   depth: number;
-  type: 'task' | 'note';
+  type: 'task' | 'note' | 'event';
   createdAt?: string;
   completedAt?: string | null;
   statusId?: string | null;
@@ -354,7 +354,7 @@ export async function apiCreateTask(input: {
   dueDate?: string;
   parentTaskId?: string;
   depth?: number;
-  type?: 'task' | 'note';
+  type?: 'task' | 'note' | 'event';
   recurrenceRule?: object | null;
   orderValue?: number;
 }): Promise<ApiTask> {
