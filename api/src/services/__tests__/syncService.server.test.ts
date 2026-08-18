@@ -14,6 +14,7 @@ const mockIO = {
   use: vi.fn(),
   on: vi.fn(),
   to: vi.fn().mockReturnValue({ emit: vi.fn() }),
+  emit: vi.fn(),
   fetchSockets: vi.fn().mockResolvedValue([]),
 };
 
@@ -40,10 +41,14 @@ vi.mock("../../db/redis.js", () => ({
   redisPubClient: { publish: vi.fn().mockResolvedValue(1) },
   redisSubClient: {
     subscribe: vi.fn().mockImplementation((channel: string, callback: (msg: string) => void) => {
-      (global as Record<string, unknown>).__redisCallback = callback;
+      ((global as Record<string, unknown>).__redisCallbacks as Record<string, (msg: string) => void>)[channel] = callback;
       return Promise.resolve(undefined);
     }),
   },
+}));
+
+vi.mock("../../utils/buildInfo.js", () => ({
+  LATEST_VERSION: "1.2.3",
 }));
 
 vi.mock("../sessionService.js", () => ({
@@ -53,8 +58,10 @@ vi.mock("../sessionService.js", () => ({
   touchSession: vi.fn().mockResolvedValue(undefined),
 }));
 
-import { attachSyncServer, publishEvent, getIO } from "../syncService.js";
+import { attachSyncServer, publishEvent, publishVersionAnnouncement, getIO } from "../syncService.js";
 import { validateSession, needsTouch, touchSession } from "../sessionService.js";
+
+(global as Record<string, unknown>).__redisCallbacks = {};
 
 function captureConnectionHandler(): (...args: unknown[]) => void {
   return mockIO.on.mock.calls.find((c: unknown[]) => c[0] === "connection")?.[1] as (...args: unknown[]) => void;
@@ -79,6 +86,41 @@ describe("syncService: Socket.IO server", () => {
     expect(io).toBe(mockIO);
     expect(mockIO.use).toHaveBeenCalled();
     expect(mockIO.on).toHaveBeenCalledWith("connection", expect.any(Function));
+  });
+
+  it("subscribes to both the sync and version Redis channels", async () => {
+    const httpServer = {} as import("http").Server;
+    await attachSyncServer(httpServer);
+    const { redisSubClient } = await import("../../db/redis.js");
+    expect(redisSubClient.subscribe).toHaveBeenCalledWith("sync", expect.any(Function));
+    expect(redisSubClient.subscribe).toHaveBeenCalledWith("version", expect.any(Function));
+  });
+
+  it("emits the current version to a freshly connected socket", async () => {
+    (validateSession as ReturnType<typeof vi.fn>).mockResolvedValue({
+      userId: "user-1",
+      sessionId: 1,
+    });
+    mockSocket.data = { userId: "user-1", sessionId: 1, rawToken: "valid-token" };
+    mockSocket.emit.mockClear();
+
+    const httpServer = {} as import("http").Server;
+    await attachSyncServer(httpServer);
+    const handler = captureConnectionHandler();
+    await handler(mockSocket);
+
+    expect(mockSocket.emit).toHaveBeenCalledWith("version", { version: "1.2.3" });
+  });
+
+  describe("publishVersionAnnouncement", () => {
+    it("publishes the version to the version Redis channel", async () => {
+      await publishVersionAnnouncement("1.2.3");
+      const { redisPubClient } = await import("../../db/redis.js");
+      expect(redisPubClient.publish).toHaveBeenCalledWith(
+        "version",
+        JSON.stringify({ version: "1.2.3" }),
+      );
+    });
   });
 
   describe("socket auth middleware", () => {
@@ -154,9 +196,9 @@ describe("syncService: Socket.IO server", () => {
   });
 
   describe("redis subscription fanout", () => {
-    async function triggerRedisMessage(raw: string): Promise<void> {
-      const cb = (global as Record<string, unknown>).__redisCallback as (msg: string) => void;
-      await cb(raw);
+    async function triggerRedisMessage(raw: string, channel = "sync"): Promise<void> {
+      const cbs = (global as Record<string, unknown>).__redisCallbacks as Record<string, (msg: string) => void>;
+      await cbs[channel](raw);
     }
 
     beforeEach(async () => {
@@ -181,6 +223,16 @@ describe("syncService: Socket.IO server", () => {
     it("drops malformed messages without emitting", async () => {
       await triggerRedisMessage("not json {");
       expect(mockIO.to).not.toHaveBeenCalled();
+    });
+
+    it("broadcasts a version-channel message globally to every connected client", async () => {
+      await triggerRedisMessage(JSON.stringify({ version: "1.2.4" }), "version");
+      expect(mockIO.emit).toHaveBeenCalledWith("version", { version: "1.2.4" });
+    });
+
+    it("drops malformed version-channel messages without emitting", async () => {
+      await triggerRedisMessage("not json {", "version");
+      expect(mockIO.emit).not.toHaveBeenCalled();
     });
   });
 

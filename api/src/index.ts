@@ -8,7 +8,7 @@ import routes from "./routes/index.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import { notFound } from "./middleware/notFound.js";
 import { connectRedis } from "./db/redis.js";
-import { attachSyncServer } from "./services/syncService.js";
+import { attachSyncServer, publishVersionAnnouncement } from "./services/syncService.js";
 import { PORT, CORS_ORIGIN, DISABLE_RATE_LIMITS_IN_DEV, IS_PRODUCTION } from "./config.js";
 import { csrfProtection } from "./middleware/csrf.js";
 import { requestContext } from "./middleware/requestContext.js";
@@ -169,6 +169,7 @@ async function start() {
   try {
     await connectRedis();
     await attachSyncServer(httpServer);
+    await publishVersionAnnouncement(LATEST_VERSION);
   } catch (err) {
     console.error("⚠️  SYNC DISABLED: Redis/Socket.IO startup failed. Real-time updates will not work.", err);
   }
