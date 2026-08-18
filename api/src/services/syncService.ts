@@ -5,8 +5,10 @@ import { redisPubClient, redisSubClient } from "../db/redis.js";
 import { CORS_ORIGIN } from "../config.js";
 import { validateSession, buildCookieName, needsTouch, touchSession } from "./sessionService.js";
 import { currentSourceId } from "../middleware/requestContext.js";
+import { LATEST_VERSION } from "../utils/buildInfo.js";
 
 const SYNC_CHANNEL = "sync";
+const VERSION_CHANNEL = "version";
 const SESSION_REVALIDATION_INTERVAL_MS = 60_000;
 
 interface SocketData {
@@ -107,6 +109,12 @@ export async function publishEvent(event: SyncEvent): Promise<void> {
   }
 }
 
+// A version announcement has no userId/entityType, so it doesn't fit
+// SyncEvent - kept as its own publish helper rather than shoehorned in.
+export async function publishVersionAnnouncement(version: string): Promise<void> {
+  await redisPubClient.publish(VERSION_CHANNEL, JSON.stringify({ version }));
+}
+
 export function buildEvent(input: Omit<SyncEvent, "id" | "emittedAt"> & { id?: string }): SyncEvent {
   return {
     id: input.id ?? `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
@@ -185,6 +193,7 @@ export async function attachSyncServer(httpServer: HTTPServer): Promise<IOServer
     const userId = data.userId;
     console.log(`[sync] socket connected user=${userId} id=${socket.id}`);
     socket.join(userRoom(userId));
+    socket.emit("version", { version: LATEST_VERSION });
 
     const collectionIds = await loadUserCollectionIds(userId);
     for (const pid of collectionIds) {
@@ -229,6 +238,20 @@ export async function attachSyncServer(httpServer: HTTPServer): Promise<IOServer
     if (event.collectionId) {
       io.to(collectionRoom(event.collectionId)).emit("sync", event);
     }
+  });
+
+  // The only global broadcast in this file - everything else above is
+  // room-scoped to user:*/collection:*. A version announcement has no
+  // particular recipient, so every connected client gets it.
+  await redisSubClient.subscribe(VERSION_CHANNEL, (raw: string) => {
+    let payload: { version: string };
+    try {
+      payload = JSON.parse(raw) as { version: string };
+    } catch {
+      return;
+    }
+
+    io.emit("version", payload);
   });
 
   console.log("[sync] Redis subscription ready");
