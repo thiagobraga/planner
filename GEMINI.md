@@ -261,13 +261,13 @@ Full spec: `DESIGN.md`.
 - No backwards-compat shims for removed code - delete cleanly.
 - Node ≥ 24 required.
 
-## Plan Mode — Specs Convention
+## Plan Mode - Specs Convention
 
 All AI agents (Claude, Codex, Antigravity, OpenCode) must follow this when entering Plan mode:
 
 1. **Create a new folder** under `.specs/` with the naming pattern: `yyyy-mm-dd-<short-kebab-case-slug>` (e.g., `2026-08-04-exact-colors`).
-2. Write **`.specs/yyyy-mm-dd-slug/plan.md`** - high-level strategy, approach, and architecture decisions.
-3. Write **`.specs/yyyy-mm-dd-slug/task.md`** - detailed breakdown of the plan into actionable tasks using markers: `[ ]` not started, `[~]` in progress, `[x]` completed.
+2. Write **`.specs/yyyy-mm-dd-slug/plan.md`** - user-focused and highly readable specification explaining WHAT the feature does from a user perspective (like a person requesting a feature), focusing on behavior, user flows, and intent rather than implementation details. Include a centralized **Relevant Files** section listing all affected files.
+3. Write **`.specs/yyyy-mm-dd-slug/task.md`** - technical breakdown describing HOW it is implemented, organized into numbered tasks and nested subtasks with checkboxes (`[ ]` not started, `[~]` in progress, `[x]` completed), exact code references, file paths, and architecture/engineering details.
 4. **Update `task.md`** as work progresses.
 
 ## "Work on this spec" & Worktree Lifecycle Workflow
