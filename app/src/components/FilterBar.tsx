@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { useI18n } from '../i18n/I18nContext';
 import type { TranslationKey } from '../i18n/catalogs';
 
