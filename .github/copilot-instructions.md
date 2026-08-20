@@ -277,7 +277,6 @@ When instructed to work on a spec or task:
 1. **Read the Spec / Request**: Review requirements carefully.
 2. **Isolate Environment**:
    - Create worktree & branch: `git worktree add ../planner-<slug> -b feat/<slug>`
-   - Subagents use numbered subdomains (e.g. `claude2.planner.local`, `codex2.planner.local`, `antigravity2.planner.local`).
    - **New host = regenerate SSL first**: any new subdomain needs a trusted cert before it's reachable over https, or the browser session in step 4 fails with `ERR_CERT_AUTHORITY_INVALID`. Add the new domain(s) to `/p/linux/scripts/mkcert.conf` (or confirm a wildcard already covers it), run `bash /p/linux/scripts/mkcert-local` to regenerate `/p/projects/traefik/certs/localhost.pem`, then `docker restart traefik` to pick it up. Do this once per new subdomain, before adding its `/etc/hosts` entries.
 3. **Local Dev Setup & Draft PR**:
    - Copy `.env.example` to `.env` in worktree root.
