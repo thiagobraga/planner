@@ -99,16 +99,14 @@ describe('InboxPage', () => {
     renderPage();
 
     expect(screen.getByText('Inbox')).toBeInTheDocument();
-    expect(screen.getByText('Dump it here. Sort it later.')).toBeInTheDocument();
     expect(screen.getByPlaceholderText('New task…')).toBeInTheDocument();
     expect(inboxList().querySelectorAll('[role="listitem"]')).toHaveLength(0);
   });
 
-  it('renders the header with Inbox title and a phrase', async () => {
+  it('renders the header with Inbox title and controls', async () => {
     renderPage();
 
     const header = screen.getByText('Inbox').closest('header');
-    expect(header).toContainElement(await screen.findByText('Dump it here. Sort it later.'));
     expect(header).toContainElement(screen.getByRole('button', { name: 'Hide completed tasks' }));
     expect(header).toContainElement(screen.getByRole('button', { name: 'Hide old notes' }));
     expect(screen.getByRole('button', { name: 'Hide old notes' }).closest('.page-header-toolbar')).toBeInTheDocument();
@@ -154,7 +152,6 @@ describe('InboxPage', () => {
 
     renderPage(client);
 
-    expect(screen.getByText('Dump it here. Sort it later.')).toBeInTheDocument();
     expect(screen.getByText('Buy groceries')).toBeInTheDocument();
     expect(screen.getByText('Write tests')).toBeInTheDocument();
   });

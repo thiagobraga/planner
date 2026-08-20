@@ -32,7 +32,6 @@ import { useSectionDrag } from '../hooks/useSectionDrag';
 import { useTaskVisibilityPreferences } from '../hooks/useTaskVisibilityPreferences';
 import { useBoardPreferences } from '../hooks/useBoardPreferences';
 import { flattenTasks } from '../utils/taskProjection';
-import { getPhrase } from '../utils/phrases';
 import { nextOrderValue } from '../utils/order';
 import { extractNaturalDate } from '../utils/date';
 import { applyIndent } from '../utils/taskTree';
@@ -85,7 +84,6 @@ export function InboxPage() {
   const { locale, t } = useI18n();
   const qc = useQueryClient();
   const cachedInbox = qc.getQueryData<Awaited<ReturnType<typeof fetchInboxTasks>>>(['inbox']);
-  const phrase = useMemo(() => getPhrase('inbox', locale), [locale]);
   const [tasks, setTasks] = useState<Task[]>(() => cachedInbox?.tasks.map(apiToTask) ?? []);
   const [sections, setSections] = useState<Section[]>(() => cachedInbox?.sections ?? []);
   const [input, setInput] = useState('');
@@ -535,7 +533,6 @@ export function InboxPage() {
     >
       <PageHeader
         title={t('page.inbox')}
-        subtitle={phrase}
         toolbar={
           <Toolbar className="inbox-page-header-controls">
             <BoardToolbar

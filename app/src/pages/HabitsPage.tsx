@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Calendar } from 'lucide-react';
-import { getPhrase } from '../utils/phrases';
 import { useSync } from '../hooks/useSync';
 import { HabitTimeline, type HabitEditTarget } from '../components/habits/HabitTimeline';
 import { HabitCalendar } from '../components/habits/HabitCalendar';
@@ -76,8 +75,7 @@ function isTemp(id: string) {
 }
 
 export function HabitsPage() {
-  const { locale, t } = useI18n();
-  const phrase = useMemo(() => getPhrase('habits', locale), [locale]);
+  const { t } = useI18n();
   const today = useMemo(() => startOfDay(new Date()), []);
   const queryClient = useQueryClient();
 
@@ -398,7 +396,6 @@ export function HabitsPage() {
     <div className="habits-page relative w-full max-w-none">
       <PageHeader
         title={t('page.habits')}
-        subtitle={phrase}
         toolbar={
           <Toolbar className="habits-page-header-controls">
             <Button variant="secondary" size="xs" onClick={handleToday}>

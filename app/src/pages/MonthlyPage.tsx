@@ -3,12 +3,10 @@ import { MonthlyRows } from '../components/monthly/MonthlyRows';
 import { PageHeader } from '../components/PageHeader';
 import { Button } from '../components/ui/Button';
 import { Toolbar } from '../components/ui/Toolbar';
-import { getPhrase } from '../utils/phrases';
 import { useI18n } from '../i18n/I18nContext';
 
 export function MonthlyPage() {
-  const { locale, t } = useI18n();
-  const phrase = useMemo(() => getPhrase('monthly', locale), [locale]);
+  const { t } = useI18n();
   const today = useMemo(() => new Date(), []);
   const [selected, setSelected] = useState(() => ({
     year: today.getFullYear(),
@@ -19,7 +17,6 @@ export function MonthlyPage() {
     <div className="monthly-page relative w-full">
       <PageHeader
         title={t('page.monthly')}
-        subtitle={phrase}
         toolbar={
           <Toolbar className="monthly-page-header-controls">
             <Button

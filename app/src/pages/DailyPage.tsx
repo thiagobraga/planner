@@ -18,7 +18,6 @@ import { useTaskDrag } from '../hooks/useTaskDrag';
 import { useTaskVisibilityPreferences } from '../hooks/useTaskVisibilityPreferences';
 import { useMidnightTimer } from '../hooks/useMidnightTimer';
 import { useI18n } from '../i18n/I18nContext';
-import { getPhrase } from '../utils/phrases';
 import {
   fetchTodayTasks,
   fetchUpcomingTasks,
@@ -136,7 +135,6 @@ function loadShowUpcoming(): boolean {
 
 export function DailyPage() {
   const { locale, t } = useI18n();
-  const phrase = useMemo(() => getPhrase('daily', locale), [locale]);
   const qc = useQueryClient();
   const [sections, setSections] = useState<DaySection[]>([]);
   const [editingId, setEditingId] = useState<string>();
@@ -858,7 +856,6 @@ export function DailyPage() {
     >
       <PageHeader
         title={t('page.daily')}
-        subtitle={phrase}
         toolbar={
           <Toolbar className="daily-page-header-controls">
             {reorg.state === 'preview' ? (

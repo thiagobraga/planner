@@ -30,13 +30,12 @@ vi.mock('../../utils/phrases', () => ({
 }));
 
 describe('MonthlyPage', () => {
-  it('renders header with phrase', () => {
+  it('renders header with controls', () => {
     render(<MonthlyPage />);
 
     const header = screen.getByText('Monthly').closest('header');
 
     expect(header).toBeInTheDocument();
-    expect(header).toContainElement(screen.getByText('See the full month at a glance'));
     expect(header).toContainElement(screen.getByRole('button', { name: 'Today' }));
     expect(screen.getByRole('button', { name: 'Today' }).closest('.page-header-toolbar')).toBeInTheDocument();
   });

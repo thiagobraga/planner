@@ -119,13 +119,12 @@ beforeEach(() => {
 });
 
 describe('HabitsPage', () => {
-  it('renders header with "Habits" title and phrase', () => {
+  it('renders header with "Habits" title and controls', () => {
     renderPage();
 
     const header = screen.getByText('Habits').closest('header');
 
     expect(header).toBeInTheDocument();
-    expect(header).toContainElement(screen.getByText('Small reps build large lives.'));
     expect(header).toContainElement(screen.getByRole('button', { name: 'Today' }));
     expect(header).toContainElement(screen.getByLabelText('Timeline view'));
     expect(header).toContainElement(screen.getByLabelText('Calendar view'));

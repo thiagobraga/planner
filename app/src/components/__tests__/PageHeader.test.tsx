@@ -24,13 +24,13 @@ describe('PageHeader', () => {
     expect(screen.getByText('Sub-project')).toBeInTheDocument();
   });
 
-  it('renders the subtitle when provided', () => {
+  it('does not render the subtitle even when provided', () => {
     render(<PageHeader title="Daily" subtitle="A phrase for today" />);
-    expect(screen.getByText('A phrase for today')).toBeInTheDocument();
+    expect(screen.queryByText('A phrase for today')).not.toBeInTheDocument();
   });
 
-  it('omits the subtitle paragraph when not provided', () => {
-    const { container } = render(<PageHeader title="Daily" />);
+  it('omits the subtitle paragraph', () => {
+    const { container } = render(<PageHeader title="Daily" subtitle="A phrase for today" />);
     expect(container.querySelector('.page-header-subtitle')).not.toBeInTheDocument();
   });
 
