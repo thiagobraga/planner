@@ -1,4 +1,4 @@
-import { Fragment, useState, useRef, useCallback, useEffect, useMemo } from 'react';
+import { Fragment, useState, useRef, useCallback, useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { TaskList } from '../components/TaskList';
@@ -478,8 +478,8 @@ export function InboxPage() {
     apiDeleteSection(sectionId).catch(() => invalidate());
   }, [deletingSection, invalidate]);
 
-  const projectSubmenuItems = useMemo<ContextMenuItem[]>(() => {
-    const items: ContextMenuItem[] = flattenCollections(collections).map((c) => ({
+  const projectSubmenuItems: ContextMenuItem[] = [
+    ...flattenCollections(collections).map((c) => ({
       type: 'item',
       label: c.name,
       icon: (
@@ -491,9 +491,8 @@ export function InboxPage() {
       onClick: () => {
         apiUpdateTask(contextMenu!.taskId, { collectionId: c.id }).catch(() => invalidate());
       },
-    }));
-
-    items.push({
+    })),
+    {
       type: 'item',
       label: t('contextMenu.noCollection'),
       icon: (
@@ -507,10 +506,8 @@ export function InboxPage() {
           apiUpdateTask(contextMenu!.taskId, { collectionId: inbox.id }).catch(() => invalidate());
         }
       },
-    });
-
-    return items;
-  }, [collections, contextMenu?.taskId, invalidate, t]);
+    },
+  ];
 
   // A section being named for the first time renders as an inline input in the
   // "+ New section" row itself, rather than up in the grouped list, so the

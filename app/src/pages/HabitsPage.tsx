@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Calendar } from 'lucide-react';
 import { useSync } from '../hooks/useSync';
@@ -171,18 +171,14 @@ export function HabitsPage() {
     return ids;
   }, [sections]);
 
-  useLayoutEffect(() => {
-    if (!habitsLoaded || !groupsLoaded) return;
-
-    setCollapsedHabitIds((prev) => {
-      const next = pruneCollapsedHabitIds(prev, habitIds);
-      return next.size === prev.size ? prev : next;
-    });
-  }, [habitsLoaded, groupsLoaded, habitIds]);
+  const visibleCollapsedHabitIds = useMemo(
+    () => (habitsLoaded && groupsLoaded ? pruneCollapsedHabitIds(collapsedHabitIds, habitIds) : collapsedHabitIds),
+    [collapsedHabitIds, groupsLoaded, habitsLoaded, habitIds],
+  );
 
   useEffect(() => {
-    saveCollapsedHabitIds(collapsedHabitIds);
-  }, [collapsedHabitIds]);
+    saveCollapsedHabitIds(visibleCollapsedHabitIds);
+  }, [visibleCollapsedHabitIds]);
 
   const toggleHabitCollapsed = useCallback((id: string) => {
     setCollapsedHabitIds((prev) => {
@@ -425,7 +421,7 @@ export function HabitsPage() {
           onMonthChange={handleMonthChange}
           todaySignal={todaySignal}
           editing={editing}
-          collapsed={collapsedHabitIds}
+          collapsed={visibleCollapsedHabitIds}
           activeDragId={activeDragId}
           onToggleCollapse={toggleHabitCollapsed}
           onToggleDay={handleToggleDay}

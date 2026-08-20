@@ -779,8 +779,8 @@ export function DailyPage() {
     setContextMenu({ taskId: id, position });
   }, []);
 
-  const projectSubmenuItems = useMemo<ContextMenuItem[]>(() => {
-    const items: ContextMenuItem[] = flattenCollections(collections).map((c) => ({
+  const projectSubmenuItems: ContextMenuItem[] = [
+    ...flattenCollections(collections).map((c) => ({
       type: 'item',
       label: c.name,
       icon: (
@@ -796,9 +796,8 @@ export function DailyPage() {
           apiUpdateTask(taskId, { collectionId: c.id }).catch(() => replaceTodayFromApi());
         }
       },
-    }));
-
-    items.push({
+    })),
+    {
       type: 'item',
       label: t('contextMenu.noCollection'),
       icon: (
@@ -816,10 +815,8 @@ export function DailyPage() {
           }
         }
       },
-    });
-
-    return items;
-  }, [collections, contextMenu, replaceTodayFromApi, setAllTasks]);
+    },
+  ];
 
   // During a Reorganize preview, future days render in the same slot/order as
   // the real Upcoming toggle (above today), not interleaved into the today+
