@@ -34,7 +34,7 @@
     "@playwright/test": "^1.62.0",
     "@rolldown/binding-linux-x64-gnu": "1.2.4",
     "@rolldown/binding-linux-x64-musl": "1.2.4",
-    "@rollup/rollup-linux-x64-gnu": "4.62.4",
+    "@rollup/rollup-linux-x64-gnu": "4.62.5",
     "@rollup/rollup-linux-x64-musl": "4.62.4",
     "@tailwindcss/vite": "^4.3.3",
     "@testing-library/dom": "^10.4.1",
