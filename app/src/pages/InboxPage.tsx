@@ -38,7 +38,6 @@ import { applyIndent } from '../utils/taskTree';
 import { useSync } from '../hooks/useSync';
 import { isEchoedMove } from '../utils/moveEcho';
 import { useI18n } from '../i18n/I18nContext';
-import { getPhrase } from '../utils/phrases';
 
 function apiToTask(t: ApiTask): Task {
   return {
@@ -531,7 +530,6 @@ export function InboxPage() {
     >
       <PageHeader
         title={t('page.inbox')}
-        subtitle={getPhrase('inbox', locale)}
         toolbar={
           <Toolbar className="inbox-page-header-controls">
             <BoardToolbar

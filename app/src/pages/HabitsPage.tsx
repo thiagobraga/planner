@@ -26,7 +26,6 @@ import {
 } from '../utils/habitTree';
 import type { LucideProps } from 'lucide-react';
 import { useI18n } from '../i18n/I18nContext';
-import { getPhrase } from '../utils/phrases';
 
 import {
   fetchHabits,
@@ -393,7 +392,6 @@ export function HabitsPage() {
     <div className="habits-page relative w-full max-w-none">
       <PageHeader
         title={t('page.habits')}
-        subtitle={getPhrase('habits', locale)}
         toolbar={
           <Toolbar className="habits-page-header-controls">
             <Button variant="secondary" size="xs" onClick={handleToday}>

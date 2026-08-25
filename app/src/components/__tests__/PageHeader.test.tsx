@@ -24,16 +24,14 @@ describe('PageHeader', () => {
     expect(screen.getByText('Sub-project')).toBeInTheDocument();
   });
 
-  it('renders the subtitle when provided', () => {
+  it('does not render the subtitle even when provided', () => {
     render(<PageHeader title="Daily" subtitle="A phrase for today" />);
-    expect(screen.getByText('A phrase for today')).toBeInTheDocument();
+    expect(screen.queryByText('A phrase for today')).not.toBeInTheDocument();
   });
 
-  it('includes the subtitle paragraph with correct classes', () => {
+  it('omits the subtitle paragraph', () => {
     const { container } = render(<PageHeader title="Daily" subtitle="A phrase for today" />);
-    const subtitle = container.querySelector('.page-header-subtitle');
-    expect(subtitle).toBeInTheDocument();
-    expect(subtitle).toHaveClass('m-0', 'h-6', 'p-0', 'text-[13px]', 'leading-6', 'text-ink-light', 'opacity-60');
+    expect(container.querySelector('.page-header-subtitle')).not.toBeInTheDocument();
   });
 
   it('renders the toolbar slot as-is, without wrapping it in its own div', () => {

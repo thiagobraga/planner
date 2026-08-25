@@ -18,7 +18,6 @@ import { useTaskDrag } from '../hooks/useTaskDrag';
 import { useTaskVisibilityPreferences } from '../hooks/useTaskVisibilityPreferences';
 import { useMidnightTimer } from '../hooks/useMidnightTimer';
 import { useI18n } from '../i18n/I18nContext';
-import { getPhrase } from '../utils/phrases';
 import {
   fetchTodayTasks,
   fetchUpcomingTasks,
@@ -854,7 +853,6 @@ export function DailyPage() {
     >
       <PageHeader
         title={t('page.daily')}
-        subtitle={getPhrase('daily', locale)}
         toolbar={
           <Toolbar className="daily-page-header-controls">
             {reorg.state === 'preview' ? (
