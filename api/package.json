@@ -37,7 +37,7 @@
     "@rolldown/binding-linux-x64-musl": "1.2.4",
     "@types/cookie-parser": "^1.4.10",
     "@types/express": "^5.0.0",
-    "@types/node": "^26.1.2",
+    "@types/node": "^26.5.0",
     "@types/pg": "^8.11.10",
     "@types/sanitize-html": "^2.16.1",
     "@types/supertest": "^7.2.1",
