@@ -1,13 +1,13 @@
-FROM node:26.7.0-alpine3.24 AS build
+FROM node:26.8.1-alpine3.24 AS build
 WORKDIR /app
 COPY --chown=node:node app ./
 RUN npm ci && npm run build && npm cache clean --force
 
-FROM node:26.7.0-alpine3.24 AS development
+FROM node:26.8.1-alpine3.24 AS development
 WORKDIR /app
 # Chromium for Playwright e2e tests (playwright.config.ts pins it via
 # PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH and always launches with --no-sandbox).
-RUN apk add --no-cache chromium
+RUN apk upgrade --no-cache && apk add --no-cache chromium
 ENV PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium-browser
 COPY --chown=node:node --chmod=755 .docker/app/entrypoint.sh /entrypoint.sh
 COPY --chown=node:node app ./
@@ -16,6 +16,7 @@ ENTRYPOINT ["/entrypoint.sh"]
 CMD ["npm", "run", "dev"]
 
 FROM nginx:1.31-alpine AS production
+RUN apk upgrade --no-cache
 COPY --from=build /app/dist /usr/share/nginx/html
 COPY .docker/app/nginx.conf /etc/nginx/conf.d/default.conf
 RUN mkdir -p /var/run/nginx && chown -R nginx:nginx /var/cache/nginx /var/run/nginx /etc/nginx/conf.d
