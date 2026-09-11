@@ -87,6 +87,6 @@ describe('HelpPage (smoke)', () => {
     render(<HelpPage />);
 
     expect(observers.length).toBeGreaterThan(0);
-    expect(observers[0].observe).toHaveBeenCalled();
+    expect(observers[observers.length - 1].observe).toHaveBeenCalled();
   });
 });
