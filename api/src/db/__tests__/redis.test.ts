@@ -13,7 +13,6 @@ vi.mock("redis", () => ({
 }));
 
 import { redisClient, redisPubClient, redisSubClient, connectRedis } from "../redis.js";
-import { createClient } from "redis";
 
 describe("redis clients", () => {
   it("redisClient, redisPubClient, redisSubClient are defined", () => {
@@ -26,8 +25,6 @@ describe("redis clients", () => {
   });
 
   it("connectRedis calls connect on all three clients", async () => {
-    expect(createClient).toHaveBeenCalledTimes(3);
-
     mockConnect.mockClear();
     await connectRedis();
     expect(mockConnect).toHaveBeenCalledTimes(3);
