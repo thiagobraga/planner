@@ -34,7 +34,7 @@
   },
   "devDependencies": {
     "@rolldown/binding-linux-x64-gnu": "1.2.4",
-    "@rolldown/binding-linux-x64-musl": "1.2.4",
+    "@rolldown/binding-linux-x64-musl": "1.2.8",
     "@types/cookie-parser": "^1.4.10",
     "@types/express": "^5.0.0",
     "@types/node": "^26.1.2",
