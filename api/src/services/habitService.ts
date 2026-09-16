@@ -308,14 +308,19 @@ export async function deleteHabit(userId: string, habitId: string): Promise<void
 }
 
 export async function archiveHabit(userId: string, habitId: string): Promise<void> {
+  const habit = await getOwnedHabit(userId, habitId);
+
   const result = await pool.query(
-    `UPDATE habits SET archived_at = NOW() WHERE id = $1 AND user_id = $2 AND archived_at IS NULL RETURNING id`,
+    `UPDATE habits SET archived_at = NOW() WHERE (id = $1 OR parent_id = $1) AND user_id = $2 AND archived_at IS NULL RETURNING id`,
     [habitId, userId],
   );
   if (result.rows.length === 0) {
     throw new AppError({ code: "NOT_FOUND", message: "Habit not found", statusCode: 404 });
   }
-  emit(userId, "habit", "deleted", habitId);
+
+  for (const row of result.rows as { id: string }[]) {
+    emit(userId, "habit", "deleted", row.id);
+  }
 }
 
 export interface CompletionResult {
