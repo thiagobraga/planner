@@ -6,15 +6,16 @@ Planner currently supports email/password authentication only, using Argon2id pa
 
 ### Current Auth Architecture (reference)
 
-| Layer | Implementation |
-|-------|---------------|
-| Password hashing | Argon2id (`argon2` package) |
-| Sessions | Opaque tokens, SHA-256 hashed, stored in `sessions` table |
-| Cookie | `planner_session` (HttpOnly, Secure, SameSite=Lax) |
-| Rate limiting | Redis-backed, 10 attempts / 15 min |
-| Frontend state | React Context (`AuthContext.tsx`), no Zustand store for auth |
+| Layer            | Implementation                                               |
+| ---------------- | ------------------------------------------------------------ |
+| Password hashing | Argon2id (`argon2` package)                                  |
+| Sessions         | Opaque tokens, SHA-256 hashed, stored in `sessions` table    |
+| Cookie           | `planner_session` (HttpOnly, Secure, SameSite=Lax)           |
+| Rate limiting    | Redis-backed, 10 attempts / 15 min                           |
+| Frontend state   | React Context (`AuthContext.tsx`), no Zustand store for auth |
 
 Key files:
+
 - [`authService.ts`](file:///p/projects/planner/api/src/services/authService.ts) — register/login logic
 - [`sessionService.ts`](file:///p/projects/planner/api/src/services/sessionService.ts) — opaque token creation/validation
 - [`auth.ts` (middleware)](file:///p/projects/planner/api/src/middleware/auth.ts) — cookie extraction + session check
@@ -51,6 +52,7 @@ sequenceDiagram
 ```
 
 **Why this approach over Passport.js?**
+
 - Fewer dependencies (just `google-auth-library` vs `passport` + `passport-google-oauth20` + `express-session`)
 - No server-side redirect flow needed (popup-based)
 - No Google access/refresh tokens stored (we only verify the ID token and discard it)
@@ -62,32 +64,36 @@ sequenceDiagram
 
 ### Data We Receive from Google
 
-| Field | Stored? | Purpose |
-|-------|---------|---------|
-| `sub` (Google user ID) | ✅ As `google_id` | Account linking |
-| `email` | ✅ In `users.email` | Account identification |
-| `name` / `given_name` | ✅ As `display_name` | Display name (first-time only) |
-| `picture` | ❌ Not stored | Not needed |
-| `email_verified` | ❌ Checked, not stored | Verification gate |
-| ID Token | ❌ Verified and discarded | Authentication |
+| Field                  | Stored?                   | Purpose                        |
+| ---------------------- | ------------------------- | ------------------------------ |
+| `sub` (Google user ID) | ✅ As `google_id`         | Account linking                |
+| `email`                | ✅ In `users.email`       | Account identification         |
+| `name` / `given_name`  | ✅ As `display_name`      | Display name (first-time only) |
+| `picture`              | ❌ Not stored             | Not needed                     |
+| `email_verified`       | ❌ Checked, not stored    | Verification gate              |
+| ID Token               | ❌ Verified and discarded | Authentication                 |
 
 ### Compliance Analysis
 
 #### 1. Legal Basis for Processing
+
 - **GDPR Art. 6(1)(b)** / **LGPD Art. 7(V)**: Processing necessary for performance of contract (providing the Planner service). Login is a contractual necessity — no separate consent checkbox needed.
 - The privacy policy must explain the Google OAuth data processing.
 
 #### 2. Data Minimization (GDPR Art. 5(1)(c) / LGPD Art. 6(III))
+
 - We store only `google_id`, `email`, and `display_name` — the minimum needed for account operation.
 - No Google access tokens, refresh tokens, or profile pictures are stored.
 - ID token is verified server-side and immediately discarded.
 
 #### 3. Right to Deletion (GDPR Art. 17 / LGPD Art. 18(VI))
+
 - Account deletion must remove the `google_id` column value.
 - Already handled by `ON DELETE CASCADE` on user-related tables.
 - If a dedicated `oauth_accounts` table is used, it must also cascade.
 
 #### 4. Privacy Policy Requirements
+
 - [ ] Disclose Google as a third-party authentication provider
 - [ ] List exactly what data is received (`email`, `name`, `Google user ID`)
 - [ ] Explain that no Google tokens are stored
@@ -95,11 +101,13 @@ sequenceDiagram
 - [ ] Provide DPO / contact information for data inquiries
 
 #### 5. Cookie Impact
+
 - Session cookie (`planner_session`) is "strictly necessary" — no consent banner impact.
 - No additional cookies are introduced by server-side ID token verification.
 - The Google Identity Services JavaScript library may set its own cookies — these are covered under Google's privacy policy.
 
 #### 6. Data Processing Agreement
+
 - Google's OAuth/API Terms of Service serve as the DPA for ID token verification.
 - No additional agreement needed since we don't store Google tokens or access Google APIs beyond verification.
 
@@ -237,17 +245,17 @@ function useGoogleLogin(onSuccess: (idToken: string) => void) {
 Add "Sign in with Google" button below the existing email/password form:
 
 ```
-┌─────────────────────────────┐
+┌-----------------------------┐
 │  Email: [_______________]   │
 │  Password: [____________]   │
 │  [      Log in         ]    │
 │                             │
-│  ── ── ── or ── ── ──      │
+│  -- -- -- or -- -- --      │
 │                             │
 │  [G  Sign in with Google ]  │
 │                             │
 │  Forgot password? Register  │
-└─────────────────────────────┘
+└-----------------------------┘
 ```
 
 - Use Google's branding guidelines: white/neutral button with Google "G" logo
@@ -284,6 +292,7 @@ export async function apiLoginWithGoogle(idToken: string) {
 ## Testing
 
 ### Backend
+
 - [ ] Unit test: `loginWithGoogle` creates new user when `google_id` not found
 - [ ] Unit test: `loginWithGoogle` links existing email user to Google account
 - [ ] Unit test: `loginWithGoogle` logs in existing Google-linked user
@@ -294,6 +303,7 @@ export async function apiLoginWithGoogle(idToken: string) {
 - [ ] Integration test: Google OAuth route with mocked token verification
 
 ### Frontend
+
 - [ ] Unit test: Login page renders Google sign-in button
 - [ ] Unit test: Register page renders Google sign-up button
 - [ ] Unit test: `AuthContext.loginWithGoogle` updates state correctly
@@ -318,6 +328,7 @@ export async function apiLoginWithGoogle(idToken: string) {
 
 > [!NOTE]
 > **Google Cloud Project Setup**: Owner (Thiago) will create the Google Cloud project and OAuth credentials. Requirements:
+>
 > - Google Cloud Console → APIs & Services → Credentials → OAuth 2.0 Client ID (Web application)
 > - Authorized JavaScript origins: `https://planner.local`, production domain
 > - Authorized redirect URIs: not needed (popup flow, no server redirect)
