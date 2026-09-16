@@ -60,25 +60,25 @@ Open [http://localhost:5173](http://localhost:5173) in your browser.
 
 ```text
 planner/
-├── api/
-│   ├── src/
-│   │   ├── index.ts
-│   │   ├── middleware/
-│   │   ├── routes/
-│   │   ├── services/
-│   │   └── db/
-│   └── package.json
-├── app/
-│   ├── src/
-│   │   ├── pages/
-│   │   ├── components/
-│   │   ├── hooks/
-│   │   ├── stores/
-│   │   ├── api/
-│   │   └── utils/
-│   └── package.json
-├── docs/
-└── compose.yml
+├-- api/
+│   ├-- src/
+│   │   ├-- index.ts
+│   │   ├-- middleware/
+│   │   ├-- routes/
+│   │   ├-- services/
+│   │   └-- db/
+│   └-- package.json
+├-- app/
+│   ├-- src/
+│   │   ├-- pages/
+│   │   ├-- components/
+│   │   ├-- hooks/
+│   │   ├-- stores/
+│   │   ├-- api/
+│   │   └-- utils/
+│   └-- package.json
+├-- docs/
+└-- compose.yml
 ```
 
 ## Architecture
