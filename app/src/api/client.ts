@@ -720,6 +720,10 @@ export async function apiDeleteHabit(id: string): Promise<void> {
   await request<unknown>(`/habits/${id}`, { method: 'DELETE' });
 }
 
+export async function apiArchiveHabit(id: string): Promise<void> {
+  await request<unknown>(`/habits/${id}/archive`, { method: 'POST' });
+}
+
 // A leaf completion stays a single-item response. A parent completion resolves
 // its sub-habits server-side and returns one result per affected child.
 export async function apiToggleHabitCompletion(
@@ -760,6 +764,10 @@ export async function apiUpdateHabitGroup(
 // Habits in the group are ungrouped, not deleted.
 export async function apiDeleteHabitGroup(id: string): Promise<void> {
   await request<unknown>(`/habit-groups/${id}`, { method: 'DELETE' });
+}
+
+export async function apiArchiveHabitGroup(id: string): Promise<void> {
+  await request<unknown>(`/habit-groups/${id}/archive`, { method: 'POST' });
 }
 
 // Habit structural moves -----------------------------------------------------

@@ -279,6 +279,8 @@ export const portugueseBrazilCatalog = {
   'habit.removeIcon': 'Remover ícone',
   'habit.addIcon': 'Adicionar ícone',
   'habit.addSubHabit': 'Adicionar sub-hábito',
+  'habit.archive': 'Arquivar',
+  'habit.archiveGroup': 'Arquivar grupo',
   'habit.deleteGroup': 'Excluir grupo',
   'habit.optionsFor': 'Opções para {{name}}',
   'admin.usersTitle': 'Usuários',
