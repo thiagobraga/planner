@@ -468,6 +468,17 @@ export async function archiveHabitGroup(userId: string, groupId: string): Promis
     throw new AppError({ code: "NOT_FOUND", message: "Habit group not found", statusCode: 404 });
   }
   emit(userId, "habit_group", "deleted", groupId);
+
+  const habitsResult = await pool.query(
+    `UPDATE habits SET archived_at = NOW()
+     WHERE user_id = $2 AND archived_at IS NULL
+       AND (group_id = $1 OR parent_id IN (SELECT id FROM habits WHERE group_id = $1 AND user_id = $2))
+     RETURNING id`,
+    [groupId, userId],
+  );
+  for (const row of habitsResult.rows as { id: string }[]) {
+    emit(userId, "habit", "deleted", row.id);
+  }
 }
 
 export interface MoveHabitInput {
