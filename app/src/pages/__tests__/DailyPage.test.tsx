@@ -234,15 +234,44 @@ describe('DailyPage', () => {
     const scrollIntoViewMock = vi.fn();
     window.HTMLElement.prototype.scrollIntoView = scrollIntoViewMock;
 
-    renderPage();
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      vi.setSystemTime(today);
+      renderPage();
 
-    await screen.findByText('Daily');
-    expect(mockFetchTodayTasks).toHaveBeenCalledTimes(1);
+      await screen.findByText('Daily');
+      expect(mockFetchTodayTasks).toHaveBeenCalledTimes(1);
 
-    expect(capturedMidnightCb).toBeTypeOf('function');
-    await act(async () => { capturedMidnightCb!(); });
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      vi.setSystemTime(tomorrow);
+      expect(capturedMidnightCb).toBeTypeOf('function');
+      await act(async () => { capturedMidnightCb!(); });
 
-    expect(mockFetchTodayTasks).toHaveBeenCalledTimes(2);
-    expect(scrollIntoViewMock).toHaveBeenCalled();
+      expect(mockFetchTodayTasks).toHaveBeenCalledTimes(2);
+      expect(scrollIntoViewMock).toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('keeps the "Add task" input on the new day after midnight rolls over', async () => {
+    window.HTMLElement.prototype.scrollIntoView = vi.fn();
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      vi.setSystemTime(today);
+      renderPage();
+      expect(await screen.findByPlaceholderText('New task…')).toBeInTheDocument();
+
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      vi.setSystemTime(tomorrow);
+      mockFetchTodayTasks.mockResolvedValue({ overdue: [], today: [] });
+      await act(async () => { capturedMidnightCb!(); });
+
+      expect(await screen.findByPlaceholderText('New task…')).toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
