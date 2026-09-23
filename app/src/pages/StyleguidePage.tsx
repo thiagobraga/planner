@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Plus, Calendar, Trash2, Search, ListTodo, Kanban, EyeOff, FileClock } from 'lucide-react';
-import { BjTask, MonthlyIcon, PlannerIcon } from '../components/Sidebar';
+import { CalendarDayIcon, MonthlyIcon, PlannerIcon } from '../components/Sidebar';
 import { SidebarNavItem } from '../components/SidebarNavItem';
 import { ChevronRight, Repeat2 } from 'lucide-react';
 import { MonthlyCalendarSpecimen } from '../components/monthly/MonthlyCalendarSpecimen';
@@ -75,7 +75,7 @@ const NAV_COLLECTIONS = [
 ] as const;
 
 const NAV = [
-  { label: 'Daily', Icon: BjTask, active: true },
+  { label: 'Daily', Icon: CalendarDayIcon, active: true },
   { label: 'Inbox', Icon: ChevronRight, active: false },
   { label: 'Monthly', Icon: MonthlyIcon, active: false },
   { label: 'Habits', Icon: Repeat2, active: false },
