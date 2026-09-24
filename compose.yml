@@ -15,6 +15,12 @@ services:
     environment:
       VITE_API_URL: http://api:4000
     depends_on: [api]
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:5173/"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+      start_period: 60s
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.${COMPOSE_PROJECT_NAME:-planner}-app-router.rule=Host(`${APP_SUBDOMAIN:-planner}.local`)"
@@ -54,6 +60,12 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:4000/api/v1/health"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+      start_period: 60s
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.${COMPOSE_PROJECT_NAME:-planner}-api-router.rule=Host(`${APP_SUBDOMAIN:-planner}.local`) && PathPrefix(`/api`)"
@@ -80,6 +92,7 @@ services:
   coverage:
     image: nginx:1.31-alpine
     container_name: ${COMPOSE_PROJECT_NAME:-planner}-coverage
+    profiles: [debug]
     networks: [proxy]
     volumes:
       - ./app/coverage-reports:/usr/share/nginx/html:ro
