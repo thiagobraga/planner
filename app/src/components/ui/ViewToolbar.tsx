@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { SlidersHorizontal, List, Kanban, MoreHorizontal } from 'lucide-react';
+import { SlidersHorizontal, List, Kanban, Calendar, MoreHorizontal } from 'lucide-react';
 import { Button } from './Button';
 import { ButtonGroup } from './ButtonGroup';
 import { Checkbox } from './Checkbox';
 import { useI18n } from '../../i18n/I18nContext';
 
-export type ViewMode = 'list' | 'kanban';
+export type ViewMode = 'list' | 'kanban' | 'calendar';
 
 export interface ViewToolbarProps {
   view?: ViewMode;
@@ -18,6 +18,7 @@ export interface ViewToolbarProps {
   className?: string;
   viewOnly?: boolean;
   compact?: boolean;
+  showCalendar?: boolean;
 }
 
 // View-options toolbar: Filter · Show completed · Move completed to end · List/Kanban · overflow.
@@ -32,6 +33,7 @@ export function ViewToolbar({
   className = '',
   viewOnly = false,
   compact = false,
+  showCalendar = false,
 }: ViewToolbarProps) {
   const { t } = useI18n();
   const [viewState, setViewState] = useState<ViewMode>('list');
@@ -67,7 +69,7 @@ export function ViewToolbar({
         </>
       )}
 
-      {/* Segmented List / Kanban toggle */}
+      {/* Segmented List / Kanban / Calendar toggle */}
       <ButtonGroup
         mode="single"
         value={view}
@@ -87,6 +89,12 @@ export function ViewToolbar({
             showLabel: true,
             icon: <Kanban size={compact ? 12 : 15} strokeWidth={1.5} />,
           },
+          ...(showCalendar ? [{
+            value: 'calendar' as const,
+            label: t('toolbar.calendar'),
+            showLabel: true,
+            icon: <Calendar size={compact ? 12 : 15} strokeWidth={1.5} />,
+          }] : []),
         ]}
       />
 

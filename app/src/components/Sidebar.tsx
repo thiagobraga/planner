@@ -91,7 +91,6 @@ const NAV_ITEMS: NavItem[] = [
   { to: '/daily', labelKey: 'nav.daily', Icon: CalendarDayIcon },
   { to: '/inbox', labelKey: 'nav.inbox', Icon: ChevronRight },
   { to: '/habits', labelKey: 'nav.habits', Icon: Repeat2 },
-  { to: '/monthly', labelKey: 'nav.monthly', Icon: MonthlyIcon },
 ];
 
 /**

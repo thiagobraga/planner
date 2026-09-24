@@ -7,6 +7,7 @@ import { SectionHeader } from '../components/SectionHeader';
 import { InlineNameInput } from '../components/ui/InlineNameInput';
 import { CollectionBoard } from '../components/board/CollectionBoard';
 import { BoardToolbar } from '../components/board/BoardToolbar';
+import { MonthlyView } from '../components/monthly/MonthlyView';
 import { PageHeader } from '../components/PageHeader';
 import { Toolbar } from '../components/ui/Toolbar';
 import { nextOrderValue } from '../utils/order';
@@ -696,6 +697,7 @@ export function CollectionsPage() {
               hideCompletedTasks={preferences?.hideCompletedTasks ?? false}
               hideOldNotes={preferences?.hideOldNotes ?? false}
               preferencesDisabled={!preferences || visibilityPreferencesPending}
+              showCalendar
               onViewChange={boardPreferences.setView}
               onGroupByChange={boardPreferences.setGroupBy}
               onHideCompletedTasksChange={setHideCompletedTasks}
@@ -705,7 +707,7 @@ export function CollectionsPage() {
         }
       />
 
-      <div className={boardPreferences.view === 'kanban' ? 'w-full' : 'max-w-162'}>
+      <div className={boardPreferences.view === 'kanban' ? 'w-full' : boardPreferences.view === 'calendar' ? 'max-w-[832px]' : 'max-w-162'}>
         {boardPreferences.view === 'kanban' && data ? (
           <CollectionBoard
             collectionId={id}
@@ -718,6 +720,11 @@ export function CollectionsPage() {
             boardOrder={data.boardOrder}
             onToggle={(taskId) => handleToggle(taskId)}
           />
+        ) : boardPreferences.view === 'calendar' ? (
+          <>
+            <div className="h-6" />
+            <MonthlyView tasks={tasks} onToggle={(taskId) => handleToggle(taskId)} />
+          </>
         ) : (
         <>
         <div className="h-6" />

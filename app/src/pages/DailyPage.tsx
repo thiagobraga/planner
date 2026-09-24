@@ -31,7 +31,8 @@ import {
 } from '../api/client';
 import { ContextMenu, type ContextMenuItem } from '../components/ui/ContextMenu';
 import { flattenCollections } from '../components/CollectionTreeNav';
-import { Folder, ArrowUp, ArrowDown, Trash2 } from 'lucide-react';
+import { Folder, ArrowUp, ArrowDown, Trash2, Calendar } from 'lucide-react';
+import { MonthlyView } from '../components/monthly/MonthlyView';
 
 interface DaySection {
   key: string;
@@ -142,6 +143,7 @@ export function DailyPage() {
   const [contextMenu, setContextMenu] = useState<{ taskId: string; position: { x: number; y: number } } | null>(null);
   const [input, setInput] = useState('');
   const [showUpcoming, setShowUpcoming] = useState(loadShowUpcoming);
+  const [showCalendar, setShowCalendar] = useState(false);
   const [upcomingSections, setUpcomingSections] = useState<DaySection[]>([]);
   const [upcomingInputs, setUpcomingInputs] = useState<Record<string, string>>({});
   const inputRef = useRef<HTMLInputElement>(null);
@@ -299,6 +301,7 @@ export function DailyPage() {
   }, [replaceTodayFromApi]);
 
   const toggleUpcoming = useCallback(() => {
+    setShowCalendar(false);
     setShowUpcoming((v) => {
       const next = !v;
       if (next) fetchUpcomingFromApi();
@@ -306,16 +309,23 @@ export function DailyPage() {
     });
   }, [fetchUpcomingFromApi]);
 
-  // Today/Upcoming as a single-select ButtonGroup: picking "today" also
-  // scrolls (handleToday's existing behavior), picking "upcoming" enables it.
+  // Today/Upcoming/Calendar as a single-select ButtonGroup: picking "today" also
+  // scrolls (handleToday's existing behavior), picking "upcoming" enables it,
+  // picking "calendar" switches to monthly view.
   const setDailyView = useCallback(
-    (v: 'today' | 'upcoming') => {
-      if (v === 'upcoming') {
+    (v: 'today' | 'upcoming' | 'calendar') => {
+      if (v === 'calendar') {
+        setShowCalendar(true);
+        setShowUpcoming(false);
+        fetchUpcomingFromApi();
+      } else if (v === 'upcoming') {
+        setShowCalendar(false);
         if (!showUpcoming) {
           setShowUpcoming(true);
           fetchUpcomingFromApi();
         }
       } else {
+        setShowCalendar(false);
         setShowUpcoming(false);
         handleToday();
       }
@@ -887,14 +897,15 @@ export function DailyPage() {
               )
             )}
 
-            <ButtonGroup<'today' | 'upcoming'>
+            <ButtonGroup<'today' | 'upcoming' | 'calendar'>
               mode="single"
-              value={showUpcoming ? 'upcoming' : 'today'}
+              value={showCalendar ? 'calendar' : showUpcoming ? 'upcoming' : 'today'}
               onChange={setDailyView}
               size="xs"
               items={[
                 { value: 'today', label: t('page.today') },
                 { value: 'upcoming', label: t('page.upcoming') },
+                { value: 'calendar', label: t('toolbar.calendar'), icon: <Calendar size={12} strokeWidth={1.5} /> },
               ]}
             />
 
@@ -909,7 +920,22 @@ export function DailyPage() {
         }
       />
 
-      <div className="max-w-162">
+      {showCalendar ? (
+        <div className="max-w-[832px]">
+          <div className="h-6" />
+          <MonthlyView
+            tasks={Array.from(
+              new Map(
+                [...sections, ...upcomingSections]
+                  .flatMap((s) => s.tasks)
+                  .map((t) => [t.id, t]),
+              ).values(),
+            )}
+            onToggle={handleToggle}
+          />
+        </div>
+      ) : (
+        <div className="max-w-162">
         {(previewFutureSections ?? (showUpcoming ? [...upcomingSections].reverse() : [])).map((section) => {
           const tomorrow = new Date(dateFromISO(todayKey));
           tomorrow.setDate(tomorrow.getDate() + 1);
@@ -1027,6 +1053,7 @@ export function DailyPage() {
           );
         })}
       </div>
+      )}
 
       {contextMenu && (
         <ContextMenu

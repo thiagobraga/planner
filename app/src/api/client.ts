@@ -285,7 +285,7 @@ export interface ApiStatus {
 }
 
 export type BoardGroupBy = 'status' | 'section' | 'priority';
-export type BoardViewMode = 'list' | 'kanban';
+export type BoardViewMode = 'list' | 'kanban' | 'calendar';
 export type BoardViewModes = Record<string, { view?: BoardViewMode; groupBy?: BoardGroupBy }>;
 
 export interface Preferences {

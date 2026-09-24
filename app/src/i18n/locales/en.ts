@@ -245,6 +245,7 @@ export const englishCatalog = {
   'toolbar.moveCompleted': 'Move completed to end',
   'toolbar.list': 'List',
   'toolbar.kanban': 'Kanban',
+  'toolbar.calendar': 'Calendar',
   'board.group.status': 'Status',
   'board.group.section': 'Section',
   'board.group.priority': 'Priority',

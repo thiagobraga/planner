@@ -59,12 +59,6 @@ describe('shortcuts matcher', () => {
     expect(action).toBe('navigate:daily');
   });
 
-  it('g+m navigates to monthly', () => {
-    const s0 = createMatcherState();
-    const { nextState: s1 } = matchKey(DEFAULT_BINDINGS, s0, ev('g', { timestamp: 0 }));
-    const { action } = matchKey(DEFAULT_BINDINGS, s1, ev('m', { timestamp: 100 }));
-    expect(action).toBe('navigate:monthly');
-  });
 
   it('g+h navigates to habits', () => {
     const s0 = createMatcherState();
