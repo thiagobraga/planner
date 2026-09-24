@@ -49,7 +49,7 @@ describe('Sidebar', () => {
     render(<Sidebar />);
     expect(screen.getByText('Daily')).toBeInTheDocument();
     expect(screen.getByText('Inbox')).toBeInTheDocument();
-    expect(screen.getByText('Monthly')).toBeInTheDocument();
+    expect(screen.queryByText('Monthly')).not.toBeInTheDocument();
     expect(screen.getByText('Habits')).toBeInTheDocument();
   });
 
@@ -74,7 +74,7 @@ describe('Sidebar', () => {
     render(<Sidebar collapsed />);
     expect(screen.getByTitle('Daily')).toBeInTheDocument();
     expect(screen.getByTitle('Inbox')).toBeInTheDocument();
-    expect(screen.getByTitle('Monthly')).toBeInTheDocument();
+    expect(screen.queryByTitle('Monthly')).not.toBeInTheDocument();
     expect(screen.getByTitle('Habits')).toBeInTheDocument();
   });
 

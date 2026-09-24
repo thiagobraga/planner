@@ -143,9 +143,6 @@ export function AppShell() {
         case 'navigate:daily':
           navigate('/daily');
           break;
-        case 'navigate:monthly':
-          navigate('/monthly');
-          break;
         case 'navigate:habits':
           navigate('/habits');
           break;
@@ -290,7 +287,6 @@ export function AppShell() {
                   ['?', t('shell.togglePanel')],
                   ['g i', t('shell.goInbox')],
                   ['g d', t('shell.goDaily')],
-                  ['g m', t('shell.goMonthly')],
                   ['g h', t('shell.goHabits')],
                   ['g s', t('shell.goSettings')],
                   ['g u', t('shell.goUpcoming')],

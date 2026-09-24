@@ -13,7 +13,6 @@ import { CollectionsPage } from './pages/CollectionsPage';
 import { CollectionsIndexPage } from './pages/CollectionsIndexPage';
 import { DailyPage } from './pages/DailyPage';
 import { HabitsPage } from './pages/HabitsPage';
-import { MonthlyPage } from './pages/MonthlyPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { StyleguidePage } from './pages/StyleguidePage';
 import { HelpPage } from './pages/HelpPage';
@@ -37,7 +36,6 @@ function AppRoutes() {
           <Route path="/today" element={<Navigate to="/daily" replace />} />
           <Route path="/daily" element={<DailyPage />} />
           <Route path="/inbox" element={<InboxPage />} />
-          <Route path="/monthly" element={<MonthlyPage />} />
           <Route path="/habits" element={<HabitsPage />} />
           <Route path="/settings" element={<Navigate to="/settings/general" replace />} />
           <Route path="/settings/:section" element={<SettingsPage />} />
