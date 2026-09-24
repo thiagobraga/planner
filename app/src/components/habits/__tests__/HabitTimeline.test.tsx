@@ -134,7 +134,10 @@ describe('HabitTimeline', () => {
 
   it('renders the new section button when there are no groups', () => {
     render(<HabitTimeline {...defaultProps} />, { wrapper: createWrapper() });
-    expect(screen.getByText('New section')).toBeInTheDocument();
+    const button = screen.getByRole('button', { name: /New section/i });
+    expect(button).toBeInTheDocument();
+    expect(button).toHaveClass('opacity-0');
+    expect(button).toHaveClass('hover:opacity-100');
   });
 
   it('shrinks the habit name column to keep five day columns visible on iPhone-sized screens', async () => {

@@ -503,7 +503,7 @@ export function HabitTimeline({
                   key={row.key}
                   type="button"
                   onClick={onAddGroup}
-                  className="habit-timeline-add-group group flex h-6 w-full min-w-0 items-center pr-2 text-ink-light opacity-35 transition-opacity hover:opacity-100"
+                  className="habit-timeline-add-group group flex h-6 w-full min-w-0 items-center pr-2 text-ink-light opacity-0 transition-opacity hover:opacity-100 focus-visible:opacity-100"
                 >
                   <span className="flex h-6 w-6 shrink-0 items-center justify-center">+</span>
                   <span className="min-w-0 flex-1 truncate text-left uppercase tracking-widest text-[10px] font-semibold">
