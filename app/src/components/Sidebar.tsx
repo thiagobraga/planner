@@ -1,7 +1,17 @@
 import { NavLink, useNavigate } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import { useDroppable } from '@dnd-kit/core';
-import { ChevronRight, Repeat2, Settings, HelpCircle, LogOut, FolderOpen, ShieldCheck, Users, type LucideIcon } from 'lucide-react';
+import {
+  ChevronRight,
+  Repeat2,
+  Settings,
+  HelpCircle,
+  LogOut,
+  FolderOpen,
+  ShieldCheck,
+  Users,
+  type LucideIcon,
+} from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { usePlannerDrag } from '../contexts/usePlannerDrag';
 import { CollectionTreeNav } from './CollectionTreeNav';
@@ -27,22 +37,25 @@ export const CalendarDayIcon = ({ size = 15 }: { size?: number }) => {
   const { data: prefs } = usePreferences();
   const timeZone = prefs?.timeZone;
   const [now, setNow] = useState(() => new Date());
-  useMidnightTimer(useCallback(() => setNow(new Date()), []), timeZone);
+  useMidnightTimer(
+    useCallback(() => setNow(new Date()), []),
+    timeZone,
+  );
   const day = Number(fmtISOInTimeZone(now, timeZone).slice(8));
 
   return (
-    <svg width={size} height={size} viewBox="0 0 15 15" fill="none" aria-hidden="true">
-      <rect x="1.5" y="2" width="12" height="11.5" rx="1.5" stroke="currentColor" strokeWidth="1.2" />
-      <path d="M1.5 5H13.5" stroke="currentColor" strokeWidth="1.2" />
-      <path d="M4.5 1V3M10.5 1V3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+    <svg width={size} height={size} viewBox='0 0 15 15' fill='none' aria-hidden='true'>
+      <path
+        d='M3.5 0V5M11.5 0V5M1.5 2.5H13.5C14.0523 2.5 14.5 2.94772 14.5 3.5V13.5C14.5 14.0523 14.0523 14.5 13.5 14.5H1.5C0.947716 14.5 0.5 14.0523 0.5 13.5V3.5C0.5 2.94772 0.947715 2.5 1.5 2.5Z'
+        stroke='currentColor'
+      />
       <text
-        data-testid="daily-day-number"
-        x="7.5"
-        y="11.6"
-        textAnchor="middle"
-        fontSize="6.5"
-        fontWeight="700"
-        fill="currentColor"
+        data-testid='daily-day-number'
+        x='7.5'
+        y='11.8'
+        textAnchor='middle'
+        fontSize='8'
+        fill='currentColor'
       >
         {day}
       </text>
@@ -51,26 +64,34 @@ export const CalendarDayIcon = ({ size = 15 }: { size?: number }) => {
 };
 
 export const MonthlyIcon = ({ size = 15 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 15 15" fill="none" aria-hidden="true">
-    <circle cx="3" cy="4" r="1" fill="currentColor" />
-    <circle cx="3" cy="7.5" r="1" fill="currentColor" />
-    <circle cx="3" cy="11" r="1" fill="currentColor" />
-    <path d="M6 4H12" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-    <path d="M6 7.5H12" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
-    <path d="M6 11H12" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+  <svg width={size} height={size} viewBox='0 0 15 15' fill='none' aria-hidden='true'>
+    <circle cx='3' cy='4' r='1' fill='currentColor' />
+    <circle cx='3' cy='7.5' r='1' fill='currentColor' />
+    <circle cx='3' cy='11' r='1' fill='currentColor' />
+    <path d='M6 4H12' stroke='currentColor' strokeWidth='1.4' strokeLinecap='round' />
+    <path d='M6 7.5H12' stroke='currentColor' strokeWidth='1.4' strokeLinecap='round' />
+    <path d='M6 11H12' stroke='currentColor' strokeWidth='1.4' strokeLinecap='round' />
   </svg>
 );
 
 export const StyleguideIcon = ({ size = 15 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 15 15" fill="none" aria-hidden="true">
-    <rect x="2" y="2" width="11" height="11" rx="1.5" stroke="currentColor" strokeWidth="1.2" />
-    <path d="M4 5.5H11" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
-    <path d="M4 8H11" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
-    <path d="M4 10.5H8.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+  <svg width={size} height={size} viewBox='0 0 15 15' fill='none' aria-hidden='true'>
+    <rect x='2' y='2' width='11' height='11' rx='1.5' stroke='currentColor' strokeWidth='1.2' />
+    <path d='M4 5.5H11' stroke='currentColor' strokeWidth='1.2' strokeLinecap='round' />
+    <path d='M4 8H11' stroke='currentColor' strokeWidth='1.2' strokeLinecap='round' />
+    <path d='M4 10.5H8.5' stroke='currentColor' strokeWidth='1.2' strokeLinecap='round' />
   </svg>
 );
 
-export const PlannerIcon = ({ width, height, className = '' }: { width: number; height: number; className?: string }) => {
+export const PlannerIcon = ({
+  width,
+  height,
+  className = '',
+}: {
+  width: number;
+  height: number;
+  className?: string;
+}) => {
   const { t } = useI18n();
   return (
     <img
@@ -85,9 +106,13 @@ export const PlannerIcon = ({ width, height, className = '' }: { width: number; 
 
 type ReactNode = React.ReactNode;
 
-type NavItem = { to: string; labelKey: TranslationKey; Icon: LucideIcon | React.ComponentType<{ size?: number }> };
+export type NavItem = {
+  to: string;
+  labelKey: TranslationKey;
+  Icon: LucideIcon | React.ComponentType<{ size?: number }>;
+};
 
-const NAV_ITEMS: NavItem[] = [
+export const NAV_ITEMS: NavItem[] = [
   { to: '/daily', labelKey: 'nav.daily', Icon: CalendarDayIcon },
   { to: '/inbox', labelKey: 'nav.inbox', Icon: ChevronRight },
   { to: '/habits', labelKey: 'nav.habits', Icon: Repeat2 },
@@ -103,7 +128,10 @@ const NAV_ITEMS: NavItem[] = [
  * the page the user is still working in.
  */
 function InboxNavItem({ label, icon }: { label: string; icon: ReactNode }) {
-  const { data: collections = [] } = useQuery({ queryKey: ['collections'], queryFn: fetchCollections });
+  const { data: collections = [] } = useQuery({
+    queryKey: ['collections'],
+    queryFn: fetchCollections,
+  });
   const inboxId = collections.find((c) => c.isInbox)?.id ?? null;
   const { activeDrag, overId } = usePlannerDrag();
 
@@ -123,12 +151,17 @@ function InboxNavItem({ label, icon }: { label: string; icon: ReactNode }) {
       }}
       className={isTaskTarget ? 'rounded-xs outline outline-dot' : undefined}
     >
-      <SidebarNavItem to="/inbox" label={label} icon={icon} />
+      <SidebarNavItem to='/inbox' label={label} icon={icon} />
     </div>
   );
 }
 
-export function Sidebar({ isOpen, onClose, collapsed = false, updateAvailable = false }: SidebarProps) {
+export function Sidebar({
+  isOpen,
+  onClose,
+  collapsed = false,
+  updateAvailable = false,
+}: SidebarProps) {
   const { t } = useI18n();
   const { logout, user } = useAuth();
   const navigate = useNavigate();
@@ -141,48 +174,59 @@ export function Sidebar({ isOpen, onClose, collapsed = false, updateAvailable = 
   if (collapsed) {
     return (
       <aside
-        className="sidebar sidebar-collapsed w-12 h-full flex flex-col items-center border-r border-dot bg-(--planner-sidebar-bg) py-6 shrink-0 overflow-y-auto"
+        className='sidebar sidebar-collapsed w-12 h-full flex flex-col items-center border-r border-dot bg-(--planner-sidebar-bg) py-6 shrink-0 overflow-y-auto'
         aria-label={t('nav.navigation')}
       >
         {/* Logo mark */}
-        <div className="sidebar-logo mb-6" title="Planner">
-          <PlannerIcon width={16} height={16} className="mt-1" />
+        <div className='sidebar-logo mb-6' title='Planner'>
+          <PlannerIcon width={16} height={16} className='mt-1' />
         </div>
 
-        <nav aria-label={t('nav.main')} className="sidebar-nav flex flex-col gap-0.5 w-full items-center">
+        <nav
+          aria-label={t('nav.main')}
+          className='sidebar-nav flex flex-col gap-0.5 w-full items-center'
+        >
           {NAV_ITEMS.map((entry) => (
             <NavLink
               key={entry.to}
               to={entry.to}
               title={t(entry.labelKey)}
-              className={({ isActive }) => (isActive ? 'sidebar-icon-link sidebar-icon-link--active' : 'sidebar-icon-link')}
+              className={({ isActive }) =>
+                isActive ? 'sidebar-icon-link sidebar-icon-link--active' : 'sidebar-icon-link'
+              }
             >
               <entry.Icon size={16} strokeWidth={1.5} />
             </NavLink>
           ))}
           <NavLink
-            to="/collections"
+            to='/collections'
             title={t('nav.collections')}
-            className={({ isActive }) => (isActive ? 'sidebar-icon-link sidebar-icon-link--active' : 'sidebar-icon-link')}
+            className={({ isActive }) =>
+              isActive ? 'sidebar-icon-link sidebar-icon-link--active' : 'sidebar-icon-link'
+            }
           >
             <FolderOpen size={16} strokeWidth={1.5} />
           </NavLink>
         </nav>
 
-        <div className="mt-auto flex flex-col gap-0.5 w-full items-center pb-6">
+        <div className='mt-auto flex flex-col gap-0.5 w-full items-center pb-6'>
           {isAdmin && (
             <>
               <NavLink
-                to="/admin/dashboard"
+                to='/admin/dashboard'
                 title={t('nav.adminDashboard')}
-                className={({ isActive }) => (isActive ? 'sidebar-icon-link sidebar-icon-link--active' : 'sidebar-icon-link')}
+                className={({ isActive }) =>
+                  isActive ? 'sidebar-icon-link sidebar-icon-link--active' : 'sidebar-icon-link'
+                }
               >
                 <ShieldCheck size={16} strokeWidth={1.5} />
               </NavLink>
               <NavLink
-                to="/admin/users"
+                to='/admin/users'
                 title={t('nav.adminUsers')}
-                className={({ isActive }) => (isActive ? 'sidebar-icon-link sidebar-icon-link--active' : 'sidebar-icon-link')}
+                className={({ isActive }) =>
+                  isActive ? 'sidebar-icon-link sidebar-icon-link--active' : 'sidebar-icon-link'
+                }
               >
                 <Users size={16} strokeWidth={1.5} />
               </NavLink>
@@ -191,40 +235,46 @@ export function Sidebar({ isOpen, onClose, collapsed = false, updateAvailable = 
 
           <UpdateToast updateAvailable={updateAvailable} />
           <NavLink
-            to="/settings"
+            to='/settings'
             title={t('common.settings')}
-            className={({ isActive }) => (isActive ? 'sidebar-icon-link sidebar-icon-link--active' : 'sidebar-icon-link')}
+            className={({ isActive }) =>
+              isActive ? 'sidebar-icon-link sidebar-icon-link--active' : 'sidebar-icon-link'
+            }
           >
             <Settings size={16} strokeWidth={1.5} />
           </NavLink>
 
           <NavLink
-            to="/styleguide"
+            to='/styleguide'
             title={t('nav.styleguide')}
-            className={({ isActive }) => (isActive ? 'sidebar-icon-link sidebar-icon-link--active' : 'sidebar-icon-link')}
+            className={({ isActive }) =>
+              isActive ? 'sidebar-icon-link sidebar-icon-link--active' : 'sidebar-icon-link'
+            }
           >
             <StyleguideIcon size={16} />
           </NavLink>
 
           <NavLink
-            to="/help"
+            to='/help'
             title={t('nav.help')}
-            className={({ isActive }) => (isActive ? 'sidebar-icon-link sidebar-icon-link--active' : 'sidebar-icon-link')}
+            className={({ isActive }) =>
+              isActive ? 'sidebar-icon-link sidebar-icon-link--active' : 'sidebar-icon-link'
+            }
           >
             <HelpCircle size={16} strokeWidth={1.5} />
           </NavLink>
 
-          <div className="w-8 h-px bg-dot opacity-30 my-1"></div>
+          <div className='w-8 h-px bg-dot opacity-30 my-1'></div>
 
           <a
-            href="#"
-            role="button"
+            href='#'
+            role='button'
             onClick={(e) => {
               e.preventDefault();
               handleLogout();
             }}
             title={t('nav.logout')}
-            className="sidebar-icon-link"
+            className='sidebar-icon-link'
           >
             <LogOut size={16} strokeWidth={1.5} />
           </a>
@@ -239,16 +289,14 @@ export function Sidebar({ isOpen, onClose, collapsed = false, updateAvailable = 
       aria-label={t('nav.navigation')}
     >
       {/* Logo */}
-      <div className="mb-6 ml-3">
-        <div className="flex items-start gap-3">
-          <div className="shrink-0">
-            <PlannerIcon width={28} height={38} className="mt-1" />
+      <div className='mb-6 ml-3'>
+        <div className='flex items-start gap-3'>
+          <div className='shrink-0'>
+            <PlannerIcon width={28} height={38} className='mt-1' />
           </div>
           <div>
-            <h1 className="text-lg leading-6 font-semibold text-ink m-0 p-0 h-6">
-              Planner
-            </h1>
-            <p className="text-[13px] leading-6 text-ink-light m-0 p-0 opacity-60 h-6">
+            <h1 className='text-lg leading-6 font-semibold text-ink m-0 p-0 h-6'>Planner</h1>
+            <p className='text-[13px] leading-6 text-ink-light m-0 p-0 opacity-60 h-6'>
               Your Bullet Journal
             </p>
           </div>
@@ -256,16 +304,20 @@ export function Sidebar({ isOpen, onClose, collapsed = false, updateAvailable = 
       </div>
 
       {/* Main nav */}
-      <nav aria-label={t('nav.main')} className="flex flex-col">
+      <nav aria-label={t('nav.main')} className='flex flex-col'>
         {NAV_ITEMS.map((entry) =>
           entry.to === '/inbox' ? (
-            <InboxNavItem key={entry.to} label={t(entry.labelKey)} icon={<entry.Icon size={15} strokeWidth={1.5} />} />
+            <InboxNavItem
+              key={entry.to}
+              label={t(entry.labelKey)}
+              icon={<entry.Icon size={15} strokeWidth={1.5} />}
+            />
           ) : (
             <SidebarNavItem
               key={entry.to}
               to={entry.to}
               label={t(entry.labelKey)}
-              icon={<entry.Icon size={15} strokeWidth={1.5} />}
+              icon={<entry.Icon size={entry.to === '/daily' ? 18 : 15} strokeWidth={1.5} />}
             />
           ),
         )}
@@ -275,30 +327,48 @@ export function Sidebar({ isOpen, onClose, collapsed = false, updateAvailable = 
       <CollectionTreeNav />
 
       {/* Footer utilities */}
-      <div className="mt-auto pt-4">
-        <nav aria-label={t('common.settings')} className="flex flex-col">
+      <div className='mt-auto pt-4'>
+        <nav aria-label={t('common.settings')} className='flex flex-col'>
           {isAdmin && (
             <>
               <SidebarNavItem
-                to="/admin/dashboard"
+                to='/admin/dashboard'
                 label={t('nav.admin')}
                 icon={<ShieldCheck size={15} strokeWidth={1.5} />}
               />
               <SidebarNavItem
-                to="/admin/users"
+                to='/admin/users'
                 label={t('nav.adminUsers')}
                 icon={<Users size={15} strokeWidth={1.5} />}
               />
             </>
           )}
           <UpdateToast updateAvailable={updateAvailable} />
-          {isAdmin && <SidebarNavItem to="/styleguide" label={t('nav.styleguide')} icon={<StyleguideIcon size={15} />} />}
-          <SidebarNavItem to="/settings" label={t('common.settings')} icon={<Settings size={15} strokeWidth={1.5} />} />
-          <SidebarNavItem to="/help" label={t('nav.help')} icon={<HelpCircle size={15} strokeWidth={1.5} />} />
+          {isAdmin && (
+            <SidebarNavItem
+              to='/styleguide'
+              label={t('nav.styleguide')}
+              icon={<StyleguideIcon size={15} />}
+            />
+          )}
+          <SidebarNavItem
+            to='/settings'
+            label={t('common.settings')}
+            icon={<Settings size={15} strokeWidth={1.5} />}
+          />
+          <SidebarNavItem
+            to='/help'
+            label={t('nav.help')}
+            icon={<HelpCircle size={15} strokeWidth={1.5} />}
+          />
 
-          <div className="border-t border-dot my-4 mx-0"></div>
+          <div className='border-t border-dot my-4 mx-0'></div>
 
-          <SidebarNavItem label={t('nav.logout')} icon={<LogOut size={15} strokeWidth={1.5} />} onClick={handleLogout} />
+          <SidebarNavItem
+            label={t('nav.logout')}
+            icon={<LogOut size={15} strokeWidth={1.5} />}
+            onClick={handleLogout}
+          />
         </nav>
       </div>
     </aside>
@@ -310,7 +380,7 @@ export function Sidebar({ isOpen, onClose, collapsed = false, updateAvailable = 
       <div
         className={`sidebar-overlay ${isOpen ? 'sidebar-overlay--visible' : ''}`}
         onClick={onClose}
-        aria-hidden="true"
+        aria-hidden='true'
       />
       {sidebarContent}
     </>
