@@ -327,4 +327,12 @@ describe('CollectionsPage', () => {
       );
     });
   });
+
+  it('renders the "+ New section" button with opacity-0 and hover:opacity-100 classes', async () => {
+    renderPage();
+    const button = await screen.findByRole('button', { name: /New section/i });
+    expect(button).toBeInTheDocument();
+    expect(button).toHaveClass('opacity-0');
+    expect(button).toHaveClass('hover:opacity-100');
+  });
 });
