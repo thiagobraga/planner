@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, act } from '@testing-library/react';
+import { render, screen, act, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { DailyPage } from '../DailyPage';
@@ -178,10 +178,12 @@ describe('DailyPage', () => {
     const header = title.closest('header');
 
     expect(header).toBeInTheDocument();
-    expect(header).toContainElement(screen.getByRole('button', { name: 'Today' }));
-    expect(header).toContainElement(screen.getByRole('button', { name: 'Hide completed tasks' }));
-    expect(header).toContainElement(screen.getByRole('button', { name: 'Hide old notes' }));
-    expect(screen.getByRole('button', { name: 'Today' }).closest('.page-header-toolbar')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'More options' }));
+    expect(header).toContainElement(screen.getByRole('button', { name: 'List' }));
+    expect(header).toContainElement(screen.getByRole('checkbox', { name: 'Completed tasks' }));
+    expect(header).toContainElement(screen.getByRole('checkbox', { name: 'Old notes' }));
+    expect(header).toContainElement(screen.getByRole('checkbox', { name: 'Next days' }));
+    expect(screen.getByRole('button', { name: 'List' }).closest('.page-header-toolbar')).toBeInTheDocument();
   });
 
   it('renders overdue section label', async () => {

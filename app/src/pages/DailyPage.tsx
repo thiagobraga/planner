@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState, useEffect, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router';
 import { useSync } from '../hooks/useSync';
 import { useReorganize, type Section as ReorganizeSection } from '../hooks/useReorganize';
 import { isEchoedMove, isStructuralMove } from '../utils/moveEcho';
@@ -8,8 +9,10 @@ import { TaskVisibilityControls } from '../components/TaskVisibilityControls';
 import { PageHeader } from '../components/PageHeader';
 import { CollectionChip } from '../components/ui/Chip';
 import { Button } from '../components/ui/Button';
-import { ButtonGroup } from '../components/ui/ButtonGroup';
-import { Toolbar } from '../components/ui/Toolbar';
+import { Checkbox } from '../components/ui/Checkbox';
+import { ViewToolbar } from '../components/ui/ViewToolbar';
+import { Toolbar, ToolbarSectionLabel } from '../components/ui/Toolbar';
+import { DailyWeekBoard } from '../components/board/DailyWeekBoard';
 import type { Task } from '../components/TaskItem';
 import { extractNaturalDate, fmtISOInTimeZone } from '../utils/date';
 import { nextOrderValue } from '../utils/order';
@@ -17,11 +20,14 @@ import { applyIndent, getParentCandidate } from '../utils/taskTree';
 import { useTaskDrag } from '../hooks/useTaskDrag';
 import { useTaskVisibilityPreferences } from '../hooks/useTaskVisibilityPreferences';
 import { useMidnightTimer } from '../hooks/useMidnightTimer';
+import { useBoardPreferences } from '../hooks/useBoardPreferences';
 import { useI18n } from '../i18n/I18nContext';
 import {
   fetchTodayTasks,
   fetchUpcomingTasks,
   fetchCollections,
+  fetchInboxTasks,
+  fetchCollectionView,
   fetchPreferences,
   apiToggleTask,
   apiCreateTask,
@@ -31,8 +37,7 @@ import {
 } from '../api/client';
 import { ContextMenu, type ContextMenuItem } from '../components/ui/ContextMenu';
 import { flattenCollections } from '../components/CollectionTreeNav';
-import { Folder, ArrowUp, ArrowDown, Trash2, Calendar } from 'lucide-react';
-import { MonthlyView } from '../components/monthly/MonthlyView';
+import { Folder, ArrowUp, ArrowDown, Trash2, Calendar, Kanban, List } from 'lucide-react';
 
 interface DaySection {
   key: string;
@@ -136,14 +141,16 @@ function loadShowUpcoming(): boolean {
 
 export function DailyPage() {
   const { locale, t } = useI18n();
+  const navigate = useNavigate();
   const qc = useQueryClient();
   const [sections, setSections] = useState<DaySection[]>([]);
   const [editingId, setEditingId] = useState<string>();
   const [, setSelectedId] = useState<string>();
   const [contextMenu, setContextMenu] = useState<{ taskId: string; position: { x: number; y: number } } | null>(null);
+  const [pageContextMenu, setPageContextMenu] = useState<{ x: number; y: number } | null>(null);
   const [input, setInput] = useState('');
   const [showUpcoming, setShowUpcoming] = useState(loadShowUpcoming);
-  const [showCalendar, setShowCalendar] = useState(false);
+  const [weekAnchor, setWeekAnchor] = useState(() => new Date());
   const [upcomingSections, setUpcomingSections] = useState<DaySection[]>([]);
   const [upcomingInputs, setUpcomingInputs] = useState<Record<string, string>>({});
   const inputRef = useRef<HTMLInputElement>(null);
@@ -159,6 +166,8 @@ export function DailyPage() {
     queryKey: ['preferences'],
     queryFn: fetchPreferences,
   });
+  const boardPreferences = useBoardPreferences('daily', prefs);
+  const dailyBoard = boardPreferences.view !== 'list';
 
   const prefsRef = useRef(prefs);
   useEffect(() => {
@@ -178,14 +187,31 @@ export function DailyPage() {
     dateFormatRef.current = dateFormat;
   }, [dateFormat]);
 
-  // Stable identity (no locale/dateFormat deps) so preferences arriving after
+  // No locale/dateFormat deps, so preferences arriving after
   // the initial fetch reformats the already-fetched sections in place - see the
   // effect below - instead of re-triggering this whole network round trip.
   // Reads locale/dateFormat live via refs rather than closing over them.
   const replaceTodayFromApi = useCallback(() => {
     const requestId = ++loadRequestId.current;
     const currentToday = fmtISOInTimeZone(new Date(), prefsRef.current?.timeZone);
-    fetchTodayTasks().then((response) => {
+    const loadTasks = async () => {
+      if (!dailyBoard) return fetchTodayTasks();
+      const [todayView, collections] = await Promise.all([fetchTodayTasks(), fetchCollections()]);
+      const views = await Promise.all([
+        fetchInboxTasks(),
+        ...collections.filter((collection) => !collection.isInbox && !collection.isArchived)
+          .map((collection) => fetchCollectionView(collection.id)),
+      ]);
+      const tasks = [
+        ...new Map([
+          ...todayView.overdue,
+          ...todayView.today,
+          ...views.flatMap((view) => view.tasks).filter((task) => task.dueDate),
+        ].map((task) => [task.id, task])).values(),
+      ];
+      return { overdue: [], today: tasks };
+    };
+    loadTasks().then((response) => {
       if (requestId !== loadRequestId.current) return;
       const overdueTasks = (response.overdue || []).map(apiToTask);
       const todayTasks = (response.today || []).map(apiToTask);
@@ -196,7 +222,7 @@ export function DailyPage() {
       rawTodayRef.current = { overdue: [], today: [] };
       setSections(buildSections([], [], localeRef.current, currentToday, dateFormatRef.current));
     });
-  }, []);
+  }, [dailyBoard]);
 
   // Preferences (locale/dateFormat/timeZone) often resolve after the initial
   // fetch above already rendered with defaults. Reformat the cached raw tasks
@@ -699,6 +725,15 @@ export function DailyPage() {
     });
   };
 
+  const handleBoardCreate = async (title: string, dueDate?: string) => {
+    const created = apiToTask(await apiCreateTask({ title, dueDate, priority: 4, type: 'task' }));
+    // An older board response must not replace the card we just saved.
+    ++loadRequestId.current;
+    setAllTasks((tasks) => [...tasks.filter((task) => task.id !== created.id), created]);
+    qc.invalidateQueries({ queryKey: ['inbox'] });
+    qc.invalidateQueries({ queryKey: ['collection'] });
+  };
+
   const handleAddUpcoming = (dateKey: string, e: React.FormEvent) => {
     e.preventDefault();
     const trimmed = (upcomingInputs[dateKey] ?? '').trim();
@@ -865,6 +900,11 @@ export function DailyPage() {
         if ((e.target as HTMLElement).closest('input, button, [role="button"]')) return;
         inputRef.current?.focus();
       }}
+      onContextMenu={(event) => {
+        if ((event.target as HTMLElement).closest('input, button, [role="button"], [data-task-id], [data-card-id]')) return;
+        event.preventDefault();
+        setPageContextMenu({ x: event.clientX, y: event.clientY });
+      }}
     >
       <PageHeader
         title={t('page.daily')}
@@ -897,18 +937,16 @@ export function DailyPage() {
               )
             )}
 
-            <ButtonGroup<'today' | 'upcoming' | 'calendar'>
-              mode="single"
-              value={showCalendar ? 'calendar' : showUpcoming ? 'upcoming' : 'today'}
-              onChange={setDailyView}
-              size="xs"
-              items={[
-                { value: 'today', label: t('page.today') },
-                { value: 'upcoming', label: t('page.upcoming') },
-                { value: 'calendar', label: t('toolbar.calendar'), icon: <Calendar size={12} strokeWidth={1.5} /> },
-              ]}
+            <ToolbarSectionLabel>{t('menu.view')}</ToolbarSectionLabel>
+            <ViewToolbar
+              view={boardPreferences.view}
+              onViewChange={boardPreferences.setView}
+              onCalendarClick={() => navigate('/monthly')}
+              viewOnly
+              compact
             />
 
+            <ToolbarSectionLabel>{t('menu.show')}</ToolbarSectionLabel>
             <TaskVisibilityControls
               hideCompletedTasks={prefs?.hideCompletedTasks ?? false}
               hideOldNotes={prefs?.hideOldNotes ?? false}
@@ -916,26 +954,73 @@ export function DailyPage() {
               onHideCompletedTasksChange={setHideCompletedTasks}
               onHideOldNotesChange={setHideOldNotes}
             />
+
+            <Checkbox
+              checked={showUpcoming}
+              onChange={(e) => setDailyView(e.target.checked ? 'upcoming' : 'today')}
+              label={t('page.nextDays')}
+            />
           </Toolbar>
         }
       />
 
-      {showCalendar ? (
-        <div className="max-w-[832px]">
-          <div className="h-6" />
-          <MonthlyView
-            tasks={Array.from(
-              new Map(
-                [...sections, ...upcomingSections]
-                  .flatMap((s) => s.tasks)
-                  .map((t) => [t.id, t]),
-              ).values(),
-            )}
-            onToggle={handleToggle}
-          />
-        </div>
+      {pageContextMenu && (
+        <ContextMenu
+          position={pageContextMenu}
+          onClose={() => setPageContextMenu(null)}
+          items={[
+            { type: 'item', label: t('toolbar.list'), icon: <List size={14} />, onClick: () => boardPreferences.setView('list') },
+            { type: 'item', label: t('toolbar.kanbanLists'), icon: <Kanban size={14} />, onClick: () => boardPreferences.setView('kanban-list') },
+            { type: 'item', label: t('toolbar.kanbanCards'), icon: <Kanban size={14} />, onClick: () => boardPreferences.setView('kanban') },
+            { type: 'item', label: t('toolbar.calendar'), icon: <Calendar size={14} />, onClick: () => navigate('/monthly') },
+            { type: 'separator' },
+            {
+              type: 'item',
+              label: `${prefs?.hideCompletedTasks ? '○' : '✓'} ${t('visibility.completedTasks')}`,
+              onClick: () => setHideCompletedTasks(!(prefs?.hideCompletedTasks ?? false)),
+            },
+            {
+              type: 'item',
+              label: `${prefs?.hideOldNotes ? '○' : '✓'} ${t('visibility.oldNotes')}`,
+              onClick: () => setHideOldNotes(!(prefs?.hideOldNotes ?? false)),
+            },
+            {
+              type: 'item',
+              label: `${showUpcoming ? '✓' : '○'} ${t('page.nextDays')}`,
+              onClick: () => setDailyView(showUpcoming ? 'today' : 'upcoming'),
+            },
+          ]}
+        />
+      )}
+
+      {dailyBoard ? (
+        <DailyWeekBoard
+          tasks={allTasks}
+          weekAnchor={weekAnchor}
+          today={dateFromISO(todayKey)}
+          todayKey={todayKey}
+          weekStart={prefs?.weekStart ?? 'sunday'}
+          dateFormat={dateFormat}
+          onWeekChange={setWeekAnchor}
+          onToggle={handleToggle}
+          onCreate={handleBoardCreate}
+          presentation={boardPreferences.view === 'list' ? 'kanban' : boardPreferences.view}
+          taskListProps={{
+            activeDragId,
+            editingId,
+            renderBadge,
+            onStartEdit: handleStartEdit,
+            onEditCommit: handleEditCommit,
+            onEditCancel: handleEditCancel,
+            onDelete: handleDelete,
+            onAddBelow: handleAddBelow,
+            onIndent: handleIndent,
+            onConvertType: handleConvertType,
+            onRightClick: handleRightClick,
+          }}
+        />
       ) : (
-        <div className="max-w-162">
+      <div className="max-w-162">
         {(previewFutureSections ?? (showUpcoming ? [...upcomingSections].reverse() : [])).map((section) => {
           const tomorrow = new Date(dateFromISO(todayKey));
           tomorrow.setDate(tomorrow.getDate() + 1);
