@@ -95,7 +95,7 @@ describe("config", () => {
     });
 
     it("reads from DATABASE_URL_FILE", async () => {
-      const url = "postgres://user:pass@host:5432/db";
+      const url = `postgres://${process.env.POSTGRES_USER ?? "planner"}:${process.env.POSTGRES_PASSWORD ?? "planner"}@host:5432/db`;
       mockFsStore.contents = { "/run/secrets/database_url": `${url}\n` };
       process.env.NODE_ENV = "test";
       process.env.DATABASE_URL_FILE = "/run/secrets/database_url";

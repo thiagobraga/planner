@@ -17,6 +17,10 @@ jobs:
     defaults:
       run:
         working-directory: api
+    env:
+      POSTGRES_USER: planner
+      POSTGRES_PASSWORD: planner-test
+      REDIS_PASSWORD: planner
     services:
       postgres:
         image: postgres:16-alpine
@@ -52,13 +56,13 @@ jobs:
       - name: Migrate schema
         run: npx tsx src/db/migrate.ts
         env:
-          DATABASE_URL: postgres://planner:planner-test@localhost:5432/planner_test
-          REDIS_URL: redis://localhost:6379
+          DATABASE_URL: postgres://${{ env.POSTGRES_USER }}:${{ env.POSTGRES_PASSWORD }}@localhost:5432/planner_test
+          REDIS_URL: redis://:${{ env.REDIS_PASSWORD }}@localhost:6379
           NODE_ENV: test
       - run: npm run coverage
         env:
-          DATABASE_URL: postgres://planner:planner-test@localhost:5432/planner_test
-          REDIS_URL: redis://localhost:6379
+          DATABASE_URL: postgres://${{ env.POSTGRES_USER }}:${{ env.POSTGRES_PASSWORD }}@localhost:5432/planner_test
+          REDIS_URL: redis://:${{ env.REDIS_PASSWORD }}@localhost:6379
           CORS_ORIGIN: http://localhost:5173
           CSRF_SECRET: test-csrf-secret-not-for-production
           NODE_ENV: test
@@ -116,6 +120,10 @@ jobs:
     name: E2E — Playwright
     needs: [api, app]
     runs-on: ubuntu-24.04
+    env:
+      POSTGRES_USER: planner
+      POSTGRES_PASSWORD: planner-test
+      REDIS_PASSWORD: planner
     services:
       postgres:
         image: postgres:16-alpine
@@ -140,8 +148,11 @@ jobs:
         ports:
           - 6379:6379
     env:
-      DATABASE_URL: postgres://planner:planner-test@localhost:5432/planner_test
-      REDIS_URL: redis://localhost:6379
+      POSTGRES_USER: planner
+      POSTGRES_PASSWORD: planner-test
+      REDIS_PASSWORD: planner
+      DATABASE_URL: postgres://${{ env.POSTGRES_USER }}:${{ env.POSTGRES_PASSWORD }}@localhost:5432/planner_test
+      REDIS_URL: redis://:${{ env.REDIS_PASSWORD }}@localhost:6379
       CORS_ORIGIN: http://127.0.0.1:4173
       CSRF_SECRET: test-csrf-secret-not-for-production
       E2E_BASE_URL: http://127.0.0.1:4173
