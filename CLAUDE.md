@@ -290,6 +290,7 @@ When instructed to work on a spec or task:
    - **Open Draft PR**: Push initial branch and open a Pull Request against `main` marked as **Draft** before starting development.
 4. **Live Browser Session**:
    - Launch Chrome browser using Playwright at `https://<agent>.planner.local` right as development starts to inspect UI live throughout development.
+   - For any rendered frontend change, open the affected route in the Playwright MCP browser preview before reporting completion. Verify the page is not blank, exercise the changed control, inspect console errors, and capture desktop plus narrow-screen screenshots in `app/dist/screenshots/`.
 5. **Implementation, Testing & Milestone Commits**:
    - Implement feature following TDD (unit, integration, Playwright E2E) and coding conventions.
    - Save visual test screenshots to `./app/dist/screenshots/*.png` inside worktree and display them as clickable markdown links.
