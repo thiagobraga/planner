@@ -14,6 +14,7 @@ interface BoardToolbarProps {
   onGroupByChange: (groupBy: BoardGroupBy) => void;
   onHideCompletedTasksChange: (value: boolean) => void;
   onHideOldNotesChange: (value: boolean) => void;
+  showCalendar?: boolean;
 }
 
 export function BoardToolbar(props: BoardToolbarProps) {
@@ -27,6 +28,7 @@ export function BoardToolbar(props: BoardToolbarProps) {
           onViewChange={props.onViewChange}
           viewOnly
           compact
+          showCalendar={props.showCalendar}
         />
         {props.view === 'kanban' && (
           <div className="board-toolbar-kanban-controls">

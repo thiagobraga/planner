@@ -247,6 +247,7 @@ export const portugueseBrazilCatalog = {
   'toolbar.moveCompleted': 'Mover concluídas para o fim',
   'toolbar.list': 'Lista',
   'toolbar.kanban': 'Kanban',
+  'toolbar.calendar': 'Calendário',
   'board.group.status': 'Status',
   'board.group.section': 'Seção',
   'board.group.priority': 'Prioridade',
