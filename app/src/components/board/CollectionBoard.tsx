@@ -36,7 +36,7 @@ interface CollectionBoardProps {
   sections: ApiSection[];
   boardOrder: BoardOrder;
   onToggle?: (taskId: string, completed: boolean) => void;
-  presentation?: Exclude<BoardViewMode, 'list'>;
+  presentation?: Exclude<BoardViewMode, 'list' | 'calendar'>;
   taskListProps?: TaskListCallbacks & { editingId?: string; activeDragId?: string | null };
 }
 

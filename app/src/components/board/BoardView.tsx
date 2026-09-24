@@ -21,7 +21,7 @@ interface BoardViewProps {
   onMarkCompletion?: (columnId: string) => void;
   onDeleteColumn?: (columnId: string) => void;
   onCreateTask?: (title: string, column: BoardColumnModel) => Promise<void>;
-  presentation?: Exclude<BoardViewMode, 'list'>;
+  presentation?: Exclude<BoardViewMode, 'list' | 'calendar'>;
   taskListProps?: TaskListCallbacks & { editingId?: string; activeDragId?: string | null };
 }
 

@@ -719,7 +719,7 @@ export function CollectionsPage() {
             sections={data.sections}
             boardOrder={data.boardOrder}
             onToggle={(taskId) => handleToggle(taskId)}
-            presentation={boardPreferences.view}
+            presentation={boardPreferences.view === 'kanban-list' ? 'kanban-list' : 'kanban'}
             taskListProps={{
               activeDragId,
               editingId,

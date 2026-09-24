@@ -328,7 +328,6 @@ export function DailyPage() {
   }, [replaceTodayFromApi]);
 
   const toggleUpcoming = useCallback(() => {
-    setShowCalendar(false);
     setShowUpcoming((v) => {
       const next = !v;
       if (next) fetchUpcomingFromApi();
@@ -336,23 +335,15 @@ export function DailyPage() {
     });
   }, [fetchUpcomingFromApi]);
 
-  // Today/Upcoming/Calendar as a single-select ButtonGroup: picking "today" also
-  // scrolls (handleToday's existing behavior), picking "upcoming" enables it,
-  // picking "calendar" switches to monthly view.
+  // Picking "today" scrolls to today; picking "upcoming" enables future sections.
   const setDailyView = useCallback(
-    (v: 'today' | 'upcoming' | 'calendar') => {
-      if (v === 'calendar') {
-        setShowCalendar(true);
-        setShowUpcoming(false);
-        fetchUpcomingFromApi();
-      } else if (v === 'upcoming') {
-        setShowCalendar(false);
+    (v: 'today' | 'upcoming') => {
+      if (v === 'upcoming') {
         if (!showUpcoming) {
           setShowUpcoming(true);
           fetchUpcomingFromApi();
         }
       } else {
-        setShowCalendar(false);
         setShowUpcoming(false);
         handleToday();
       }

@@ -156,25 +156,6 @@ describe('InboxPage', () => {
 
     expect(screen.getByText('Buy groceries')).toBeInTheDocument();
     expect(screen.getByText('Write tests')).toBeInTheDocument();
-  it('preserves structured labels in the inbox task mapper', async () => {
-    mockFetchInboxTasks.mockResolvedValue({
-      tasks: [
-        {
-          ...sampleTasks[0],
-          labels: [{ id: 'label-1', name: 'feature', color: '#7dbfb2' }],
-        },
-      ],
-      collectionId: 'col-1',
-    });
-    renderPage();
-
-    await waitFor(() => {
-      expect(screen.getByText('Buy groceries')).toBeInTheDocument();
-    });
-    expect(mockTaskList).toHaveBeenCalled();
-    expect(mockTaskList.mock.calls.at(-1)?.[0].tasks[0].labels).toEqual([
-      { id: 'label-1', name: 'feature', color: '#7dbfb2' },
-    ]);
   });
 
   it('preserves structured labels in the inbox task mapper', async () => {
