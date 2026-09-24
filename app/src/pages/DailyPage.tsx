@@ -163,10 +163,8 @@ export function DailyPage() {
     prefsRef.current = prefs;
   }, [prefs]);
 
-  const [todayKey, setTodayKey] = useState(() => fmtISOInTimeZone(new Date(), prefs?.timeZone));
-  useEffect(() => {
-    setTodayKey(fmtISOInTimeZone(new Date(), prefs?.timeZone));
-  }, [prefs?.timeZone]);
+  const [now, setNow] = useState(() => new Date());
+  const todayKey = useMemo(() => fmtISOInTimeZone(now, prefs?.timeZone), [now, prefs?.timeZone]);
 
   const dateFormat = prefs?.dateFormat ?? 'MMM DD ddd';
   const localeRef = useRef(locale);
@@ -278,7 +276,7 @@ export function DailyPage() {
   useMidnightTimer(
     useCallback(() => {
       qc.invalidateQueries({ queryKey: ['today'] });
-      setTodayKey(fmtISOInTimeZone(new Date(), prefsRef.current?.timeZone));
+      setNow(new Date());
       replaceTodayFromApi();
       handleToday();
     }, [qc, replaceTodayFromApi, handleToday]),
