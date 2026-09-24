@@ -21,7 +21,8 @@ describe('BoardToolbar', () => {
     expect(toolbar).not.toBeNull();
     expect(within(toolbar!).getAllByRole('button').map((button) => button.getAttribute('aria-label'))).toEqual([
       'List',
-      'Kanban',
+      'Kanban lists',
+      'Kanban cards',
     ]);
     expect(within(toolbar!).getByRole('checkbox', { name: 'Completed tasks' })).toBeInTheDocument();
     expect(within(toolbar!).getByRole('checkbox', { name: 'Old notes' })).toBeInTheDocument();
@@ -36,7 +37,8 @@ describe('BoardToolbar', () => {
     const buttons = within(toolbar!).getAllByRole('button');
     expect(buttons.map((button) => button.getAttribute('aria-label') ?? button.textContent?.trim())).toEqual([
       'List',
-      'Kanban',
+      'Kanban lists',
+      'Kanban cards',
       'Status',
     ]);
   });

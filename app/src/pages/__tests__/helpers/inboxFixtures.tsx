@@ -220,13 +220,18 @@ export const collectionBoardMock = vi.fn(
   ({
     collectionId,
     groupBy,
+    presentation,
+    tasks,
     onToggle,
   }: {
     collectionId: string;
     groupBy: string;
+    presentation?: string;
+    tasks?: { id: string; title: string }[];
     onToggle?: (taskId: string) => void;
   }) => (
-    <div data-testid="collection-board" data-collection-id={collectionId} data-group-by={groupBy}>
+    <div data-testid="collection-board" data-collection-id={collectionId} data-group-by={groupBy} data-presentation={presentation}>
+      {tasks?.map((task) => <span key={task.id}>{task.title}</span>)}
       <button data-testid="board-toggle-task-1" onClick={() => onToggle?.('task-1')}>
         toggle task-1
       </button>

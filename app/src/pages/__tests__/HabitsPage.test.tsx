@@ -123,6 +123,7 @@ describe('HabitsPage', () => {
     renderPage();
 
     const header = screen.getByText('Habits').closest('header');
+    fireEvent.click(screen.getByRole('button', { name: 'More options' }));
 
     expect(header).toBeInTheDocument();
     expect(header).toContainElement(screen.getByRole('button', { name: 'Today' }));
@@ -133,6 +134,7 @@ describe('HabitsPage', () => {
 
   it('renders view toggle buttons (Timeline/Calendar)', () => {
     renderPage();
+    fireEvent.click(screen.getByRole('button', { name: 'More options' }));
 
     expect(screen.getByLabelText('Timeline view')).toBeInTheDocument();
     expect(screen.getByLabelText('Calendar view')).toBeInTheDocument();
@@ -147,6 +149,7 @@ describe('HabitsPage', () => {
 
   it('Today button is present', () => {
     renderPage();
+    fireEvent.click(screen.getByRole('button', { name: 'More options' }));
 
     expect(screen.getByRole('button', { name: 'Today' })).toBeInTheDocument();
   });
