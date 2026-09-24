@@ -1,6 +1,5 @@
-import { Eye, EyeOff, FileClock } from 'lucide-react';
 import { useI18n } from '../i18n/I18nContext';
-import { ButtonGroup } from './ui/ButtonGroup';
+import { Checkbox } from './ui/Checkbox';
 
 interface TaskVisibilityControlsProps {
   hideCompletedTasks: boolean;
@@ -10,8 +9,8 @@ interface TaskVisibilityControlsProps {
   onHideOldNotesChange: (value: boolean) => void;
 }
 
-type VisibilityToggle = 'completed' | 'oldNotes';
-
+// Checkbox reads as "show X" - checked means visible, so it inverts the
+// hide* state it is backed by.
 export function TaskVisibilityControls({
   hideCompletedTasks,
   hideOldNotes,
@@ -20,36 +19,21 @@ export function TaskVisibilityControls({
   onHideOldNotesChange,
 }: TaskVisibilityControlsProps) {
   const { t } = useI18n();
-  const completedLabel = hideCompletedTasks ? t('visibility.showCompleted') : t('visibility.hideCompleted');
-  const oldNotesLabel = hideOldNotes ? t('visibility.showOldNotes') : t('visibility.hideOldNotes');
-
-  const value: VisibilityToggle[] = [
-    ...(hideCompletedTasks ? (['completed'] as const) : []),
-    ...(hideOldNotes ? (['oldNotes'] as const) : []),
-  ];
 
   return (
-    <ButtonGroup
-      mode="multi"
-      value={value}
-      disabled={disabled}
-      className="task-visibility-controls"
-      onChange={(clicked) => {
-        if (clicked === 'completed') onHideCompletedTasksChange(!hideCompletedTasks);
-        else onHideOldNotesChange(!hideOldNotes);
-      }}
-      items={[
-        {
-          value: 'completed',
-          label: completedLabel,
-          icon: hideCompletedTasks ? <Eye size={12} strokeWidth={1.8} /> : <EyeOff size={12} strokeWidth={1.8} />,
-        },
-        {
-          value: 'oldNotes',
-          label: oldNotesLabel,
-          icon: <FileClock size={12} strokeWidth={1.8} />,
-        },
-      ]}
-    />
+    <div className="task-visibility-controls flex flex-col gap-3">
+      <Checkbox
+        checked={!hideCompletedTasks}
+        disabled={disabled}
+        onChange={(e) => onHideCompletedTasksChange(!e.target.checked)}
+        label={t('visibility.completedTasks')}
+      />
+      <Checkbox
+        checked={!hideOldNotes}
+        disabled={disabled}
+        onChange={(e) => onHideOldNotesChange(!e.target.checked)}
+        label={t('visibility.oldNotes')}
+      />
+    </div>
   );
 }

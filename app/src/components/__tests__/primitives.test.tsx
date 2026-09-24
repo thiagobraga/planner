@@ -155,6 +155,16 @@ describe('CustomSelect', () => {
     expect(onChange).toHaveBeenCalledWith('b');
   });
 
+  it('selects a portal option on pointer down', () => {
+    const onChange = vi.fn();
+    render(<CustomSelect options={[{ value: 'a', label: 'A' }]} onChange={onChange} />);
+
+    fireEvent.click(screen.getByRole('button'));
+    fireEvent.pointerDown(screen.getByRole('option', { name: 'A' }));
+
+    expect(onChange).toHaveBeenCalledWith('a');
+  });
+
   it('closes on outside click in normal mode', () => {
     render(<CustomSelect options={[{ value: 'a', label: 'A' }]} />);
 
@@ -239,7 +249,8 @@ describe('ViewToolbar', () => {
     expect(screen.getByText('Show completed')).toBeInTheDocument();
     expect(screen.getByText('Move completed to end')).toBeInTheDocument();
     expect(screen.getByText('List')).toBeInTheDocument();
-    expect(screen.getByText('Kanban')).toBeInTheDocument();
+    expect(screen.getByText('Kanban lists')).toBeInTheDocument();
+    expect(screen.getByText('Kanban cards')).toBeInTheDocument();
   });
 
   it('calls onFilter when Filter button is clicked', () => {
@@ -249,11 +260,18 @@ describe('ViewToolbar', () => {
     expect(onFilter).toHaveBeenCalledTimes(1);
   });
 
-  it('calls onViewChange when Kanban is clicked', () => {
+  it('calls onViewChange when Kanban cards is clicked', () => {
     const onViewChange = vi.fn();
     render(<ViewToolbar onViewChange={onViewChange} />);
-    fireEvent.click(screen.getByText('Kanban'));
+    fireEvent.click(screen.getByText('Kanban cards'));
     expect(onViewChange).toHaveBeenCalledWith('kanban');
+  });
+
+  it('calls onViewChange when Kanban lists is clicked', () => {
+    const onViewChange = vi.fn();
+    render(<ViewToolbar onViewChange={onViewChange} />);
+    fireEvent.click(screen.getByText('Kanban lists'));
+    expect(onViewChange).toHaveBeenCalledWith('kanban-list');
   });
 
   it('calls onShowCompletedChange when checkbox is toggled', () => {
