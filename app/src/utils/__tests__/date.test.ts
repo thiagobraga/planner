@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   buildMonthDays,
   weekdayColumnIndex,
@@ -119,5 +119,55 @@ describe('Brazilian Portuguese natural dates', () => {
   it('keeps English phrases working by default', () => {
     expect(extractNaturalDate('Plan tomorrow').title).toBe('Plan');
     expect(extractNaturalDate('Review yesterday').title).toBe('Review');
+  });
+
+  it('parses "todo dia N" as a monthly recurrence on day N', () => {
+    const today = new Date();
+    const dayAfterToday = Math.min(today.getDate() + 1, 28);
+    const parsed = parseNaturalDate(`Pagar aluguel todo dia ${dayAfterToday}`, 'pt-BR');
+
+    expect(parsed?.text).toBe(`todo dia ${dayAfterToday}`);
+    expect(parsed?.recurrenceRule).toEqual({ type: 'monthly', interval: 1, dayOfMonth: dayAfterToday });
+    expect(parsed?.isoDate.endsWith(String(dayAfterToday).padStart(2, '0'))).toBe(true);
+  });
+
+  it('rolls "todo dia N" into next month once day N has already passed', () => {
+    const fixedToday = new Date(2026, 8, 20); // Sep 20, 2026
+    const realDate = Date;
+    vi.useFakeTimers();
+    vi.setSystemTime(fixedToday);
+
+    const parsed = parseNaturalDate('Pagar aluguel todo dia 5', 'pt-BR');
+
+    expect(parsed?.recurrenceRule).toEqual({ type: 'monthly', interval: 1, dayOfMonth: 5 });
+    expect(parsed?.isoDate).toBe('2026-10-05');
+
+    vi.useRealTimers();
+    expect(Date).toBe(realDate);
+  });
+
+  it('clamps "todo dia 31" to the last day of shorter months', () => {
+    const fixedToday = new Date(2026, 3, 15); // Apr 15, 2026 (30-day month)
+    vi.useFakeTimers();
+    vi.setSystemTime(fixedToday);
+
+    const parsed = parseNaturalDate('Pagar aluguel todo dia 31', 'pt-BR');
+
+    expect(parsed?.recurrenceRule).toEqual({ type: 'monthly', interval: 1, dayOfMonth: 31 });
+    expect(parsed?.isoDate).toBe('2026-04-30');
+
+    vi.useRealTimers();
+  });
+
+  it('strips the day number from the title and keeps recurrence metadata', () => {
+    expect(extractNaturalDate('Pagar aluguel todo dia 15', undefined, 'pt-BR')).toMatchObject({
+      title: 'Pagar aluguel',
+      recurrenceRule: { type: 'monthly', interval: 1, dayOfMonth: 15 },
+    });
+  });
+
+  it('ignores an out-of-range day and falls back to plain "todo dia" (daily)', () => {
+    const parsed = parseNaturalDate('Pagar aluguel todo dia 40', 'pt-BR');
+    expect(parsed?.recurrenceRule).toEqual({ type: 'daily', interval: 1 });
   });
 });

@@ -277,6 +277,8 @@ export const englishCatalog = {
   'habit.removeIcon': 'Remove icon',
   'habit.addIcon': 'Add icon',
   'habit.addSubHabit': 'Add sub-habit',
+  'habit.archive': 'Archive',
+  'habit.archiveGroup': 'Archive group',
   'habit.deleteGroup': 'Delete group',
   'habit.optionsFor': 'Options for {{name}}',
   'admin.usersTitle': 'Users',

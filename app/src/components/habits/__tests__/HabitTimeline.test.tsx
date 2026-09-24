@@ -217,7 +217,7 @@ describe('HabitTimeline', () => {
       Array.from(screen.getByTestId('context-menu').querySelectorAll('button')).map(
         (button) => button.textContent,
       ),
-    ).toEqual(['Rename', 'Remove icon', 'Delete group']);
+    ).toEqual(['Rename', 'Remove icon', 'Archive group', 'Delete group']);
     fireEvent.click(screen.getByRole('button', { name: 'Remove icon' }));
     expect(onToggleGroupIcon).toHaveBeenCalledWith('morning');
   });

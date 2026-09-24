@@ -163,7 +163,8 @@ export function DailyPage() {
     prefsRef.current = prefs;
   }, [prefs]);
 
-  const todayKey = useMemo(() => fmtISOInTimeZone(new Date(), prefs?.timeZone), [prefs?.timeZone]);
+  const [now, setNow] = useState(() => new Date());
+  const todayKey = useMemo(() => fmtISOInTimeZone(now, prefs?.timeZone), [now, prefs?.timeZone]);
 
   const dateFormat = prefs?.dateFormat ?? 'MMM DD ddd';
   const localeRef = useRef(locale);
@@ -275,6 +276,7 @@ export function DailyPage() {
   useMidnightTimer(
     useCallback(() => {
       qc.invalidateQueries({ queryKey: ['today'] });
+      setNow(new Date());
       replaceTodayFromApi();
       handleToday();
     }, [qc, replaceTodayFromApi, handleToday]),
@@ -779,9 +781,9 @@ export function DailyPage() {
     setContextMenu({ taskId: id, position });
   }, []);
 
-  const projectSubmenuItems: ContextMenuItem[] = [
-    ...flattenCollections(collections).map((c) => ({
-      type: 'item',
+  const projectSubmenuItems = useMemo<ContextMenuItem[]>(() => {
+    const items: ContextMenuItem[] = flattenCollections(collections).map((c) => ({
+      type: 'item' as const,
       label: c.name,
       icon: (
         <span
@@ -796,9 +798,10 @@ export function DailyPage() {
           apiUpdateTask(taskId, { collectionId: c.id }).catch(() => replaceTodayFromApi());
         }
       },
-    })),
-    {
-      type: 'item',
+    }));
+
+    items.push({
+      type: 'item' as const,
       label: t('contextMenu.noCollection'),
       icon: (
         <span
@@ -815,8 +818,10 @@ export function DailyPage() {
           }
         }
       },
-    },
-  ];
+    });
+
+    return items;
+  }, [collections, contextMenu?.taskId, setAllTasks, apiUpdateTask, replaceTodayFromApi, t]);
 
   // During a Reorganize preview, future days render in the same slot/order as
   // the real Upcoming toggle (above today), not interleaved into the today+

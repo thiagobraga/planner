@@ -74,6 +74,24 @@ const english: HelpContent = {
         'Choose your font, toggle the dot-grid background, switch between beige and white, or enable small caps.',
       ],
     },
+    {
+      id: 'smart-dates',
+      title: 'Smart Date Recognition',
+      paragraphs: [
+        'Type a date phrase anywhere you add a task - Quick Add, Daily, Inbox, or a Collection - and Planner reads it out of the title, sets the due date, and removes the phrase from the task text. Phrases that imply a repeating schedule also set up recurrence.',
+      ],
+      items: [
+        'today, tomorrow, yesterday',
+        'monday, tuesday, wednesday, thursday, friday, saturday, sunday - nearest upcoming occurrence',
+        'next monday (or any weekday) - the following week\'s occurrence',
+        'in 3 days (any number of days)',
+        'next week',
+        'every day - recurring daily',
+        'every week - recurring weekly',
+        'every month - recurring monthly, same day of month as today',
+        'every monday (or any weekday) - recurring weekly on that weekday',
+      ],
+    },
   ],
   shortcutsTitle: 'Keyboard Shortcuts',
   shortcuts: [
@@ -149,6 +167,25 @@ const portugueseBrazil: HelpContent = {
       items: [
         'Escolha o idioma e como o calendário lida com fuso horário e início da semana.',
         'Escolha a fonte, alterne os pontos do fundo, use bege ou branco e ative versaletes.',
+      ],
+    },
+    {
+      id: 'smart-dates',
+      title: 'Reconhecimento inteligente de datas',
+      paragraphs: [
+        'Digite uma data em qualquer lugar onde você cria uma tarefa - Adição rápida, Diário, Caixa de entrada ou uma Coleção - e o Planner reconhece a frase no título, define a data de vencimento e remove a frase do texto da tarefa. Frases que indicam repetição também configuram a recorrência.',
+      ],
+      items: [
+        'hoje, amanhã, ontem',
+        'segunda, terça, quarta, quinta, sexta, sábado, domingo (com ou sem "-feira") - próxima ocorrência',
+        'próxima segunda-feira (ou qualquer dia) - ocorrência da semana seguinte',
+        'em 3 dias (qualquer número de dias)',
+        'próxima semana',
+        'todo dia / todos os dias - recorrência diária',
+        'toda semana - recorrência semanal',
+        'todo mês - recorrência mensal, no mesmo dia do mês de hoje',
+        'todo domingo (ou qualquer dia) - recorrência semanal nesse dia',
+        'todo dia 15 (qualquer número de 1 a 31) - recorrência mensal nesse dia do mês',
       ],
     },
   ],

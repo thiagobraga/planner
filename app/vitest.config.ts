@@ -18,6 +18,6 @@ export default defineProject({
     include: ["src/**/*.{test,spec}.{ts,tsx}"],
     reporters: htmlReportRequested
       ? [["html", { outputFile: "./coverage-reports/index.html", open: false }]]
-      : [],
+      : ["default"],
   },
 });

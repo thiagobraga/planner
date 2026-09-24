@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Sidebar } from '../Sidebar';
 
@@ -51,6 +51,22 @@ describe('Sidebar', () => {
     expect(screen.getByText('Inbox')).toBeInTheDocument();
     expect(screen.getByText('Monthly')).toBeInTheDocument();
     expect(screen.getByText('Habits')).toBeInTheDocument();
+  });
+
+  it('shows today\'s day number on the Daily icon and rolls it over at midnight', () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'Date'] });
+    try {
+      vi.setSystemTime(new Date(2026, 8, 23, 23, 59, 0));
+      render(<Sidebar />);
+      expect(screen.getByTestId('daily-day-number')).toHaveTextContent('23');
+
+      act(() => {
+        vi.advanceTimersByTime(2 * 60 * 1000);
+      });
+      expect(screen.getByTestId('daily-day-number')).toHaveTextContent('24');
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('renders Planner branding', () => {

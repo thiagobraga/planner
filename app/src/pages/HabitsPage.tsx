@@ -33,10 +33,12 @@ import {
   apiCreateHabit,
   apiUpdateHabit,
   apiDeleteHabit,
+  apiArchiveHabit,
   apiToggleHabitCompletion,
   apiCreateHabitGroup,
   apiUpdateHabitGroup,
   apiDeleteHabitGroup,
+  apiArchiveHabitGroup,
   type ApiHabit,
   type ApiHabitGroup,
 } from '../api/client';
@@ -356,6 +358,21 @@ export function HabitsPage() {
     [setGroups, setHabits, removeHabitLocally, invalidate],
   );
 
+  const handleArchive = useCallback(
+    (target: HabitEditTarget) => {
+      if (target.kind === 'group') {
+        setGroups((prev) => prev.filter((g) => g.id !== target.id));
+        if (!isTemp(target.id)) apiArchiveHabitGroup(target.id).catch(() => invalidate());
+        return;
+      }
+
+      // Archiving a parent hides its sub-habits as well.
+      removeHabitLocally(target.id);
+      if (!isTemp(target.id)) apiArchiveHabit(target.id).catch(() => invalidate());
+    },
+    [setGroups, removeHabitLocally, invalidate],
+  );
+
   const handleToggleGroupIcon = useCallback(
     (id: string) => {
       const group = groups.find((candidate) => candidate.id === id);
@@ -432,6 +449,7 @@ export function HabitsPage() {
           onAddGroup={handleAddGroup}
           onToggleGroupIcon={handleToggleGroupIcon}
           onDelete={handleDelete}
+          onArchive={handleArchive}
         />
       ) : (
         <HabitCalendar

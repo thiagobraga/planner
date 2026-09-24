@@ -11,6 +11,10 @@ import type { CollectionDropData } from '../types/drag';
 import { useI18n } from '../i18n/I18nContext';
 import type { TranslationKey } from '../i18n/catalogs';
 import { UpdateToast } from './UpdateToast';
+import { useCallback, useState } from 'react';
+import { usePreferences } from '../hooks/usePreferences';
+import { useMidnightTimer } from '../hooks/useMidnightTimer';
+import { fmtISOInTimeZone } from '../utils/date';
 
 interface SidebarProps {
   isOpen?: boolean;
@@ -19,11 +23,32 @@ interface SidebarProps {
   updateAvailable?: boolean;
 }
 
-export const BjTask = ({ size = 15 }: { size?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 15 15" fill="none" stroke="currentColor" strokeWidth="1.2">
-    <circle cx="7.5" cy="7.5" r="1.5" fill="currentColor" />
-  </svg>
-);
+export const CalendarDayIcon = ({ size = 15 }: { size?: number }) => {
+  const { data: prefs } = usePreferences();
+  const timeZone = prefs?.timeZone;
+  const [now, setNow] = useState(() => new Date());
+  useMidnightTimer(useCallback(() => setNow(new Date()), []), timeZone);
+  const day = Number(fmtISOInTimeZone(now, timeZone).slice(8));
+
+  return (
+    <svg width={size} height={size} viewBox="0 0 15 15" fill="none" aria-hidden="true">
+      <rect x="1.5" y="2" width="12" height="11.5" rx="1.5" stroke="currentColor" strokeWidth="1.2" />
+      <path d="M1.5 5H13.5" stroke="currentColor" strokeWidth="1.2" />
+      <path d="M4.5 1V3M10.5 1V3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+      <text
+        data-testid="daily-day-number"
+        x="7.5"
+        y="11.6"
+        textAnchor="middle"
+        fontSize="6.5"
+        fontWeight="700"
+        fill="currentColor"
+      >
+        {day}
+      </text>
+    </svg>
+  );
+};
 
 export const MonthlyIcon = ({ size = 15 }: { size?: number }) => (
   <svg width={size} height={size} viewBox="0 0 15 15" fill="none" aria-hidden="true">
@@ -63,7 +88,7 @@ type ReactNode = React.ReactNode;
 type NavItem = { to: string; labelKey: TranslationKey; Icon: LucideIcon | React.ComponentType<{ size?: number }> };
 
 const NAV_ITEMS: NavItem[] = [
-  { to: '/daily', labelKey: 'nav.daily', Icon: BjTask },
+  { to: '/daily', labelKey: 'nav.daily', Icon: CalendarDayIcon },
   { to: '/inbox', labelKey: 'nav.inbox', Icon: ChevronRight },
   { to: '/habits', labelKey: 'nav.habits', Icon: Repeat2 },
   { to: '/monthly', labelKey: 'nav.monthly', Icon: MonthlyIcon },

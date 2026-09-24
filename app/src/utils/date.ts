@@ -174,6 +174,30 @@ export function parseNaturalDate(input: string, locale: 'en' | 'pt-BR' = 'en'): 
     resolve: (m: RegExpMatchArray) => Date | null;
     recurrence?: object | ((m: RegExpMatchArray) => object);
   }> = [
+    // pt-BR only, and must come before the plain "todo dia" (daily) pattern
+    // below - that regex's word boundary already matches the "todo dia"
+    // prefix of "todo dia 15", so without this earlier, more specific match,
+    // a trailing day number would be misread as daily and left dangling in
+    // the title.
+    ...(locale === 'pt-BR'
+      ? [
+          {
+            re: /\btodo dia (\d{1,2})\b/u,
+            resolve: (m: RegExpMatchArray) => {
+              const day = parseInt(m[1], 10);
+              if (day < 1 || day > 31) return null;
+              const daysInThisMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+              const clampedThisMonth = Math.min(day, daysInThisMonth);
+              if (clampedThisMonth >= today.getDate()) {
+                return new Date(today.getFullYear(), today.getMonth(), clampedThisMonth);
+              }
+              const daysInNextMonth = new Date(today.getFullYear(), today.getMonth() + 2, 0).getDate();
+              return new Date(today.getFullYear(), today.getMonth() + 1, Math.min(day, daysInNextMonth));
+            },
+            recurrence: (m: RegExpMatchArray) => ({ type: 'monthly', interval: 1, dayOfMonth: parseInt(m[1], 10) }),
+          },
+        ]
+      : []),
     {
       re: locale === 'pt-BR' ? /(?:\btodo dia\b|\btodos os dias\b)/u : /\bevery day\b/,
       resolve: () => today,

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { ChevronDown, ChevronRight, MoreHorizontal, Plus, Pencil, Smile, Trash2 } from 'lucide-react';
+import { ChevronDown, ChevronRight, MoreHorizontal, Plus, Pencil, Smile, Trash2, Archive } from 'lucide-react';
 import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { ContextMenu } from '../ui/ContextMenu';
@@ -77,6 +77,7 @@ export interface HabitTimelineProps {
   onAddGroup: () => void;
   onToggleGroupIcon: (id: string) => void;
   onDelete: (target: HabitEditTarget) => void;
+  onArchive: (target: HabitEditTarget) => void;
 }
 
 interface DayCell {
@@ -130,6 +131,7 @@ export function HabitTimeline({
   onAddGroup,
   onToggleGroupIcon,
   onDelete,
+  onArchive,
 }: HabitTimelineProps) {
   const { locale, t } = useI18n();
   const [menu, setMenu] = useState<{ target: HabitEditTarget; canAddSub: boolean; x: number; y: number } | null>(null);
@@ -743,6 +745,12 @@ export function HabitTimeline({
               ]
               : []),
             { type: 'separator' },
+            {
+              type: 'item',
+              label: menu.target.kind === 'group' ? t('habit.archiveGroup') : t('habit.archive'),
+              icon: <Archive size={14} />,
+              onClick: () => onArchive(menu.target),
+            },
             {
               type: 'item',
               label: menu.target.kind === 'group' ? t('habit.deleteGroup') : t('common.delete'),
