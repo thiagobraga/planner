@@ -115,7 +115,7 @@ export function StyleguidePage() {
   const weekStart = preferences?.weekStart ?? 'sunday';
 
   const [radioChoice, setRadioChoice] = useState('a');
-  const [buttonGroupView, setButtonGroupView] = useState<'list' | 'kanban'>('list');
+  const [buttonGroupView, setButtonGroupView] = useState<'list' | 'kanban-list' | 'kanban'>('list');
   const [buttonGroupVisibility, setButtonGroupVisibility] = useState<('completed' | 'notes')[]>(['completed']);
   const [buttonGroupIconOnly, setButtonGroupIconOnly] = useState<'timeline' | 'calendar' | 'board'>('timeline');
   const [toggleOn, setToggleOn] = useState(true);
@@ -271,15 +271,16 @@ export function StyleguidePage() {
           <div className="flex flex-col gap-6">
             <div className="flex flex-col gap-2">
               <span className="text-[10px] text-ink-light uppercase tracking-widest font-semibold block">
-                Single-select (list / kanban)
+                Single-select (list / kanban lists / kanban cards)
               </span>
-              <ButtonGroup<'list' | 'kanban'>
+              <ButtonGroup<'list' | 'kanban-list' | 'kanban'>
                 mode="single"
                 value={buttonGroupView}
                 onChange={setButtonGroupView}
                 items={[
                   { value: 'list', label: 'List view', showLabel: true, icon: <ListTodo size={12} strokeWidth={1.5} /> },
-                  { value: 'kanban', label: 'Kanban view', showLabel: true, icon: <Kanban size={12} strokeWidth={1.5} /> },
+                  { value: 'kanban-list', label: 'Kanban lists view', showLabel: true, icon: <span aria-hidden="true">▥</span> },
+                  { value: 'kanban', label: 'Kanban cards view', showLabel: true, icon: <Kanban size={12} strokeWidth={1.5} /> },
                 ]}
               />
             </div>

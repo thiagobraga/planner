@@ -707,8 +707,8 @@ export function CollectionsPage() {
         }
       />
 
-      <div className={boardPreferences.view === 'kanban' ? 'w-full' : boardPreferences.view === 'calendar' ? 'max-w-[832px]' : 'max-w-162'}>
-        {boardPreferences.view === 'kanban' && data ? (
+      <div className={boardPreferences.view !== 'list' ? 'w-full' : 'max-w-162'}>
+        {boardPreferences.view !== 'list' && boardPreferences.view !== 'calendar' && data ? (
           <CollectionBoard
             collectionId={id}
             queryKey={['collection', id]}
@@ -719,6 +719,19 @@ export function CollectionsPage() {
             sections={data.sections}
             boardOrder={data.boardOrder}
             onToggle={(taskId) => handleToggle(taskId)}
+            presentation={boardPreferences.view}
+            taskListProps={{
+              activeDragId,
+              editingId,
+              onStartEdit: handleStartEdit,
+              onEditCommit: handleEditCommit,
+              onEditCancel: handleEditCancel,
+              onDelete: handleDelete,
+              onAddBelow: handleAddBelow,
+              onIndent: handleIndent,
+              onConvertType: handleConvertType,
+              onRightClick: handleRightClick,
+            }}
           />
         ) : boardPreferences.view === 'calendar' ? (
           <>

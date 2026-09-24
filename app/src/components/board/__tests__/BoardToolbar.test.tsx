@@ -17,14 +17,14 @@ describe('BoardToolbar', () => {
   it('keeps the list toolbar to the view switch followed by visibility controls', () => {
     render(<BoardToolbar {...baseProps} view="list" />);
 
-    const toolbar = screen.getByText('List').closest('.board-page-toolbar');
+    const toolbar = screen.getByRole('button', { name: 'List' }).closest('.board-page-toolbar');
     expect(toolbar).not.toBeNull();
-    expect(within(toolbar!).getAllByRole('button').map((button) => button.textContent)).toEqual([
+    expect(within(toolbar!).getAllByRole('button').map((button) => button.getAttribute('aria-label'))).toEqual([
       'List',
       'Kanban',
-      '',
-      '',
     ]);
+    expect(within(toolbar!).getByRole('checkbox', { name: 'Completed tasks' })).toBeInTheDocument();
+    expect(within(toolbar!).getByRole('checkbox', { name: 'Old notes' })).toBeInTheDocument();
     expect(within(toolbar!).queryByText('Group by')).not.toBeInTheDocument();
   });
 
@@ -34,12 +34,10 @@ describe('BoardToolbar', () => {
     const toolbar = screen.getByText('Group by').closest('.board-page-toolbar');
     expect(toolbar).not.toBeNull();
     const buttons = within(toolbar!).getAllByRole('button');
-    expect(buttons.map((button) => button.textContent?.trim())).toEqual([
+    expect(buttons.map((button) => button.getAttribute('aria-label') ?? button.textContent?.trim())).toEqual([
       'List',
       'Kanban',
       'Status',
-      '',
-      '',
     ]);
   });
 });

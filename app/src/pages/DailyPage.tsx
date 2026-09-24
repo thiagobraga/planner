@@ -13,6 +13,7 @@ import { Checkbox } from '../components/ui/Checkbox';
 import { ViewToolbar } from '../components/ui/ViewToolbar';
 import { Toolbar, ToolbarSectionLabel } from '../components/ui/Toolbar';
 import { DailyWeekBoard } from '../components/board/DailyWeekBoard';
+import { MonthlyView } from '../components/monthly/MonthlyView';
 import type { Task } from '../components/TaskItem';
 import { extractNaturalDate, fmtISOInTimeZone } from '../utils/date';
 import { nextOrderValue } from '../utils/order';
@@ -167,7 +168,7 @@ export function DailyPage() {
     queryFn: fetchPreferences,
   });
   const boardPreferences = useBoardPreferences('daily', prefs);
-  const dailyBoard = boardPreferences.view !== 'list';
+  const dailyBoard = boardPreferences.view === 'kanban-list' || boardPreferences.view === 'kanban';
 
   const prefsRef = useRef(prefs);
   useEffect(() => {
@@ -941,7 +942,7 @@ export function DailyPage() {
             <ViewToolbar
               view={boardPreferences.view}
               onViewChange={boardPreferences.setView}
-              onCalendarClick={() => navigate('/monthly')}
+              showCalendar
               viewOnly
               compact
             />
@@ -972,7 +973,7 @@ export function DailyPage() {
             { type: 'item', label: t('toolbar.list'), icon: <List size={14} />, onClick: () => boardPreferences.setView('list') },
             { type: 'item', label: t('toolbar.kanbanLists'), icon: <Kanban size={14} />, onClick: () => boardPreferences.setView('kanban-list') },
             { type: 'item', label: t('toolbar.kanbanCards'), icon: <Kanban size={14} />, onClick: () => boardPreferences.setView('kanban') },
-            { type: 'item', label: t('toolbar.calendar'), icon: <Calendar size={14} />, onClick: () => navigate('/monthly') },
+            { type: 'item', label: t('toolbar.calendar'), icon: <Calendar size={14} />, onClick: () => boardPreferences.setView('calendar') },
             { type: 'separator' },
             {
               type: 'item',
@@ -993,7 +994,12 @@ export function DailyPage() {
         />
       )}
 
-      {dailyBoard ? (
+      {boardPreferences.view === 'calendar' ? (
+        <div className="max-w-[832px]">
+          <div className="h-6" />
+          <MonthlyView tasks={allTasks} onToggle={handleToggle} />
+        </div>
+      ) : dailyBoard ? (
         <DailyWeekBoard
           tasks={allTasks}
           weekAnchor={weekAnchor}

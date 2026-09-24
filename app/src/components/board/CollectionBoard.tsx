@@ -2,7 +2,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   ApiError,
+  apiCreateTask,
   apiCreateStatus,
+  apiMoveTask,
   apiSetCollectionCompletionStatus,
   apiSeedStatuses,
   apiUpdateSection,
@@ -15,6 +17,9 @@ import {
 } from '../../api/client';
 import { useI18n } from '../../i18n/I18nContext';
 import { buildColumns } from '../../utils/boardColumns';
+import type { BoardColumn as BoardColumnModel } from '../../utils/boardColumns';
+import type { BoardViewMode } from '../../types/board';
+import type { TaskListCallbacks } from '../TaskList';
 import { useBoardColumnDrag } from '../../hooks/useBoardColumnDrag';
 import { useBoardDrag } from '../../hooks/useBoardDrag';
 import { ConfirmModal } from '../ConfirmModal';
@@ -31,6 +36,8 @@ interface CollectionBoardProps {
   sections: ApiSection[];
   boardOrder: BoardOrder;
   onToggle?: (taskId: string, completed: boolean) => void;
+  presentation?: Exclude<BoardViewMode, 'list'>;
+  taskListProps?: TaskListCallbacks & { editingId?: string; activeDragId?: string | null };
 }
 
 export function CollectionBoard(props: CollectionBoardProps) {
@@ -90,7 +97,7 @@ export function CollectionBoard(props: CollectionBoardProps) {
         : t('board.deleteStatusColumnMessage', { count: String(taskCount) }),
   });
 
-  useBoardDrag({
+  const { activeDragId } = useBoardDrag({
     tasks: boardTasks,
     boardOrder,
     groupBy: props.groupBy,
@@ -131,6 +138,32 @@ export function CollectionBoard(props: CollectionBoardProps) {
       })
       .catch(reportError);
   }, [invalidate, props.collectionId, reportError]);
+
+  const handleCreateTask = useCallback(async (title: string, column: BoardColumnModel) => {
+    setBoardError(null);
+    try {
+      const created = await apiCreateTask({
+        title,
+        collectionId: props.collectionId,
+        priority: props.groupBy === 'priority' ? column.value as number : undefined,
+        sectionId: props.groupBy === 'section' ? column.value as string | null : undefined,
+      });
+      if (props.groupBy === 'status') {
+        const statusId = column.value as string;
+        await apiMoveTask(created.id, {
+          parentTaskId: null,
+          collectionId: props.collectionId,
+          statusId,
+          scope: { kind: 'status', collectionId: props.collectionId, statusId },
+          position: column.tasks.length,
+        });
+      }
+      await invalidate();
+    } catch (error) {
+      reportError(error);
+      throw error;
+    }
+  }, [invalidate, props.collectionId, props.groupBy, reportError]);
 
   const handleRenameColumn = useCallback((columnId: string, name: string) => {
     const column = columns.find((candidate) => candidate.id === columnId);
@@ -217,6 +250,9 @@ export function CollectionBoard(props: CollectionBoardProps) {
         onRecolorColumn={handleRecolorColumn}
         onMarkCompletion={handleMarkCompletion}
         onDeleteColumn={columnDrag.openDeleteColumn}
+        onCreateTask={handleCreateTask}
+        presentation={props.presentation ?? 'kanban'}
+        taskListProps={{ ...props.taskListProps, activeDragId }}
       />
       {columnDrag.deleteModal && <ColumnDeleteModal {...columnDrag.deleteModal} />}
       <ConfirmModal

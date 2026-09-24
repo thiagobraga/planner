@@ -83,7 +83,7 @@ describe('StyleguidePage (smoke)', () => {
   it('renders an interactive Button Group specimen', async () => {
     renderPage();
 
-    const kanban = await screen.findByRole('button', { name: 'Kanban view' });
+    const kanban = await screen.findByRole('button', { name: 'Kanban cards view' });
     const list = screen.getByRole('button', { name: 'List view' });
     expect(list).toHaveAttribute('aria-pressed', 'true');
     expect(kanban).toHaveAttribute('aria-pressed', 'false');

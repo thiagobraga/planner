@@ -1,4 +1,5 @@
 import { Fragment, useState, useRef, useCallback, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { TaskList } from '../components/TaskList';
@@ -83,6 +84,7 @@ function buildSectionGroups(tasks: Task[], sections: Section[]) {
 
 export function InboxPage() {
   const { locale, t } = useI18n();
+  const navigate = useNavigate();
   const qc = useQueryClient();
   const cachedInbox = qc.getQueryData<Awaited<ReturnType<typeof fetchInboxTasks>>>(['inbox']);
   const [tasks, setTasks] = useState<Task[]>(() => cachedInbox?.tasks.map(apiToTask) ?? []);
@@ -552,8 +554,8 @@ export function InboxPage() {
         }
       />
 
-      <div className={boardPreferences.view === 'kanban' ? 'w-full' : boardPreferences.view === 'calendar' ? 'max-w-[832px]' : 'max-w-162'}>
-        {boardPreferences.view === 'kanban' && data && inboxCollectionId ? (
+      <div className={boardPreferences.view !== 'list' ? 'w-full' : 'max-w-162'}>
+        {boardPreferences.view !== 'list' && boardPreferences.view !== 'calendar' && data && inboxCollectionId ? (
           <CollectionBoard
             collectionId={inboxCollectionId}
             queryKey={['inbox']}
@@ -564,6 +566,19 @@ export function InboxPage() {
             sections={data.sections}
             boardOrder={data.boardOrder}
             onToggle={(taskId) => handleToggle(taskId)}
+              presentation={boardPreferences.view}
+            taskListProps={{
+              activeDragId,
+              editingId,
+              onStartEdit: handleStartEdit,
+              onEditCommit: handleEditCommit,
+              onEditCancel: handleEditCancel,
+              onDelete: handleDelete,
+              onAddBelow: handleAddBelow,
+              onIndent: handleIndent,
+              onConvertType: handleConvertType,
+              onRightClick: handleRightClick,
+            }}
           />
         ) : boardPreferences.view === 'calendar' ? (
           <>

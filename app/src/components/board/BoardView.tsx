@@ -1,6 +1,8 @@
 import { SortableContext, horizontalListSortingStrategy } from '@dnd-kit/sortable';
 import type { ApiTask, BoardGroupBy } from '../../api/client';
+import type { BoardViewMode } from '../../types/board';
 import type { BoardColumn as BoardColumnModel } from '../../utils/boardColumns';
+import type { TaskListCallbacks } from '../TaskList';
 import { AddColumnButton } from './AddColumnButton';
 import { BoardColumn } from './BoardColumn';
 import { usePlannerDrag } from '../../contexts/usePlannerDrag';
@@ -18,6 +20,9 @@ interface BoardViewProps {
   onRecolorColumn?: (columnId: string, color: string) => void;
   onMarkCompletion?: (columnId: string) => void;
   onDeleteColumn?: (columnId: string) => void;
+  onCreateTask?: (title: string, column: BoardColumnModel) => Promise<void>;
+  presentation?: Exclude<BoardViewMode, 'list'>;
+  taskListProps?: TaskListCallbacks & { editingId?: string; activeDragId?: string | null };
 }
 
 export function BoardView({
@@ -32,6 +37,9 @@ export function BoardView({
   onRecolorColumn,
   onMarkCompletion,
   onDeleteColumn,
+  onCreateTask,
+  presentation = 'kanban',
+  taskListProps,
 }: BoardViewProps) {
   const { setAutoScrollAxis } = usePlannerDrag();
   useEffect(() => {
@@ -55,6 +63,9 @@ export function BoardView({
               onRecolor={onRecolorColumn}
               onMarkCompletion={onMarkCompletion}
               onDelete={onDeleteColumn}
+              onCreate={onCreateTask}
+              presentation={presentation}
+              taskListProps={taskListProps}
             />
           ))}
           {canAddColumn && <AddColumnButton onAdd={onAddColumn} />}

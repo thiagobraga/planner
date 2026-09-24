@@ -1,6 +1,7 @@
 import { isOnline, enqueueMutation, type QueuedMutationMethod } from '../utils/offlineQueue';
 import { getSocketId } from '../utils/socket';
 import { notifyUnauthorized } from '../utils/authEvents';
+import type { BoardViewMode } from '../types/board';
 
 const BASE = '/api/v1';
 
@@ -285,7 +286,7 @@ export interface ApiStatus {
 }
 
 export type BoardGroupBy = 'status' | 'section' | 'priority';
-export type BoardViewMode = 'list' | 'kanban' | 'calendar';
+export type { BoardViewMode } from '../types/board';
 export type BoardViewModes = Record<string, { view?: BoardViewMode; groupBy?: BoardGroupBy }>;
 
 export interface Preferences {
@@ -350,7 +351,7 @@ export async function apiCreateTask(input: {
   title: string;
   priority?: number;
   collectionId?: string;
-  sectionId?: string;
+  sectionId?: string | null;
   dueDate?: string;
   parentTaskId?: string;
   depth?: number;

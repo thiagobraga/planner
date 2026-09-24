@@ -30,6 +30,7 @@ export interface ViewToolbarProps {
   className?: string;
   viewOnly?: boolean;
   compact?: boolean;
+  showCalendar?: boolean;
   // When set, appends a non-selectable Calendar segment that fires this
   // callback instead of switching local view state (there is no in-page
   // calendar view). Callers own navigation.
@@ -48,6 +49,7 @@ export function ViewToolbar({
   className = '',
   viewOnly = false,
   compact = false,
+  showCalendar = false,
   onCalendarClick,
 }: ViewToolbarProps) {
   const { t } = useI18n();
@@ -110,7 +112,7 @@ export function ViewToolbar({
             showLabel: !compact,
             icon: <Kanban size={compact ? 12 : 15} strokeWidth={1.5} />,
           },
-          ...(onCalendarClick
+          ...(showCalendar || onCalendarClick
             ? [
                 {
                   value: 'calendar' as const,

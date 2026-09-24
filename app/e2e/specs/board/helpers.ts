@@ -17,8 +17,9 @@ export function uniqueName(prefix: string): string {
 
 export async function openBoard(page: Page, collectionId: string): Promise<void> {
   await page.goto(`/collection/${collectionId}`);
-  await expect(page.getByRole('button', { name: 'Kanban' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'More options', exact: true })).toBeVisible();
   await expect(async () => {
+    await page.getByRole('button', { name: 'More options', exact: true }).click();
     const kanban = page.getByRole('button', { name: 'Kanban' });
     if (await kanban.getAttribute('aria-pressed') !== 'true') {
       await kanban.click();
@@ -29,6 +30,9 @@ export async function openBoard(page: Page, collectionId: string): Promise<void>
 
 export async function setGroupBy(page: Page, label: 'Status' | 'Section' | 'Priority'): Promise<void> {
   const select = page.locator('#board-group-by');
+  if (!await select.isVisible()) {
+    await page.getByRole('button', { name: 'More options', exact: true }).click();
+  }
   await select.click();
   await page.getByRole('option', { name: label, exact: true }).click();
   await expect(select).toContainText(label);

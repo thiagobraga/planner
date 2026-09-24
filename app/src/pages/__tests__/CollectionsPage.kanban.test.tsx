@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CollectionsPage } from '../CollectionsPage';
@@ -32,8 +32,8 @@ vi.mock('../../components/TaskList', () => ({
 }));
 
 vi.mock('../../components/board/CollectionBoard', () => ({
-  CollectionBoard: ({ groupBy }: { groupBy: string }) => (
-    <div data-testid="collection-board" data-group-by={groupBy} />
+  CollectionBoard: ({ groupBy, presentation }: { groupBy: string; presentation?: string }) => (
+    <div data-testid="collection-board" data-group-by={groupBy} data-presentation={presentation} />
   ),
 }));
 
@@ -57,6 +57,7 @@ function renderPage() {
 
 describe('CollectionsPage kanban wiring', () => {
   beforeEach(() => {
+    window.localStorage.clear();
     vi.mocked(fetchCollectionView).mockResolvedValue({
       collection: { id: collectionId, name: 'Kanban Lab', color: '#c98079', isInbox: false },
       collectionId,
@@ -81,17 +82,28 @@ describe('CollectionsPage kanban wiring', () => {
       hideCompletedTasks: false,
       hideOldNotes: false,
       collapsedCollectionIds: [],
-      boardViewModes: { [collectionId]: { view: 'kanban', groupBy: 'priority' } },
+      boardViewModes: { [collectionId]: { groupBy: 'priority' } },
     });
   });
 
-  it('mounts the shared board with the saved group and keeps list content hidden', async () => {
+  it('mounts the shared board with the local view and saved group', async () => {
+    window.localStorage.setItem('planner.boardViews.v1', JSON.stringify({ [collectionId]: 'kanban' }));
     const { container } = renderPage();
 
     expect(await screen.findByTestId('collection-board')).toHaveAttribute('data-group-by', 'priority');
     expect(screen.queryByTestId('task-list')).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'More options' }));
     expect(container.querySelector('.board-group-select')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Kanban' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('button', { name: 'Kanban cards' })).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('uses the same grouping controls for a persisted Kanban lists view', async () => {
+    window.localStorage.setItem('planner.boardViews.v1', JSON.stringify({ [collectionId]: 'kanban-list' }));
+    const { container } = renderPage();
+
+    expect(await screen.findByTestId('collection-board')).toHaveAttribute('data-presentation', 'kanban-list');
+    fireEvent.click(screen.getByRole('button', { name: 'More options' }));
+    expect(container.querySelector('.board-group-select')).toBeInTheDocument();
   });
 
   it('ignores the status groupBy preference and lists by section after switching to list', async () => {
