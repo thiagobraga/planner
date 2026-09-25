@@ -37,7 +37,7 @@ describe("preferences routes", () => {
     mockGetPreferences.mockResolvedValue({
       font: "lora",
       hideCompletedTasks: false,
-      hideOldNotes: false,
+      showNotes: false,
       collapsedCollectionIds: [],
     });
     const res = await request(app).get("/api/v1/preferences");
@@ -45,7 +45,7 @@ describe("preferences routes", () => {
     expect(res.body).toEqual({
       font: "lora",
       hideCompletedTasks: false,
-      hideOldNotes: false,
+      showNotes: false,
       collapsedCollectionIds: [],
     });
     expect(mockGetPreferences).toHaveBeenCalledWith("test-user");
@@ -56,7 +56,7 @@ describe("preferences routes", () => {
     mockUpdatePreferences.mockResolvedValue({
       font: "playpen",
       hideCompletedTasks: true,
-      hideOldNotes: true,
+      showNotes: true,
       collapsedCollectionIds: [collectionId],
     });
     const res = await request(app).patch("/api/v1/preferences").send({
