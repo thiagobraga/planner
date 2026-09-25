@@ -220,6 +220,8 @@ button,
 }
 
 .board-column {
+  display: flex;
+  flex-direction: column;
   overflow: visible;
 }
 
@@ -235,7 +237,7 @@ button,
   display: flex;
   align-items: flex-start;
   gap: 8px;
-  min-height: 48px;
+  min-height: 24px;
   padding: 0;
 }
 
