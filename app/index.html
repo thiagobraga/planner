@@ -5,7 +5,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Planner</title>
-  <link rel="manifest" href="/manifest.webmanifest">
+  <script>
+    document.write('<link rel="manifest" href="' + (location.hostname === 'planner.thiagobraga.dev' ? '/manifest.webmanifest' : '/manifest.dev.webmanifest') + '">');
+  </script>
   <meta name="theme-color" content="#f5f0e8">
   <link rel="apple-touch-icon" href="/images/bulletjournal-planner-192x192.png">
   <link rel="preconnect" href="https://fonts.googleapis.com" />
