@@ -4,7 +4,7 @@ import {
   type Preferences,
 } from '../api/client';
 
-type VisibilityPreferenceKey = 'hideCompletedTasks' | 'hideOldNotes';
+type VisibilityPreferenceKey = 'hideCompletedTasks' | 'showNotes';
 
 interface VisibilityPreferenceUpdate {
   key: VisibilityPreferenceKey;
@@ -18,7 +18,7 @@ export function useTaskVisibilityPreferences(preferences: Preferences | undefine
     mutationFn: ({ key, value }: VisibilityPreferenceUpdate) =>
       key === 'hideCompletedTasks'
         ? apiUpdatePreferences({ hideCompletedTasks: value })
-        : apiUpdatePreferences({ hideOldNotes: value }),
+        : apiUpdatePreferences({ showNotes: value }),
     onMutate: async ({ key, value }) => {
       await queryClient.cancelQueries({ queryKey: ['preferences'] });
       const previous = queryClient.getQueryData<Preferences>(['preferences']);
@@ -45,7 +45,7 @@ export function useTaskVisibilityPreferences(preferences: Preferences | undefine
     isPending: mutation.isPending,
     setHideCompletedTasks: (value: boolean) =>
       mutation.mutate({ key: 'hideCompletedTasks', value }),
-    setHideOldNotes: (value: boolean) =>
-      mutation.mutate({ key: 'hideOldNotes', value }),
+    setShowNotes: (value: boolean) =>
+      mutation.mutate({ key: 'showNotes', value }),
   };
 }

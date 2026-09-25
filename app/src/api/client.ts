@@ -301,7 +301,7 @@ export interface Preferences {
   background: 'beige' | 'white';
   smallCaps: boolean;
   hideCompletedTasks: boolean;
-  hideOldNotes: boolean;
+  showNotes: boolean;
   collapsedCollectionIds: string[];
   boardViewModes: BoardViewModes;
   dateFormat?: string;

@@ -3,20 +3,21 @@ import { Checkbox } from './ui/Checkbox';
 
 interface TaskVisibilityControlsProps {
   hideCompletedTasks: boolean;
-  hideOldNotes: boolean;
+  showNotes: boolean;
   disabled?: boolean;
   onHideCompletedTasksChange: (value: boolean) => void;
-  onHideOldNotesChange: (value: boolean) => void;
+  onShowNotesChange: (value: boolean) => void;
 }
 
-// Checkbox reads as "show X" - checked means visible, so it inverts the
-// hide* state it is backed by.
+// Each checkbox reads as "show X" - checked means visible. hideCompletedTasks
+// is stored as a hide* flag so it inverts; showNotes already matches the
+// checkbox polarity directly.
 export function TaskVisibilityControls({
   hideCompletedTasks,
-  hideOldNotes,
+  showNotes,
   disabled = false,
   onHideCompletedTasksChange,
-  onHideOldNotesChange,
+  onShowNotesChange,
 }: TaskVisibilityControlsProps) {
   const { t } = useI18n();
 
@@ -29,10 +30,10 @@ export function TaskVisibilityControls({
         label={t('visibility.completedTasks')}
       />
       <Checkbox
-        checked={!hideOldNotes}
+        checked={showNotes}
         disabled={disabled}
-        onChange={(e) => onHideOldNotesChange(!e.target.checked)}
-        label={t('visibility.oldNotes')}
+        onChange={(e) => onShowNotesChange(e.target.checked)}
+        label={t('visibility.notes')}
       />
     </div>
   );

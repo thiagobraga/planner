@@ -136,7 +136,7 @@ export function CollectionsPage() {
   const {
     isPending: visibilityPreferencesPending,
     setHideCompletedTasks,
-    setHideOldNotes,
+    setShowNotes,
   } = useTaskVisibilityPreferences(preferences);
   const boardPreferences = useBoardPreferences(id, preferences);
 
@@ -695,13 +695,13 @@ export function CollectionsPage() {
               view={boardPreferences.view}
               groupBy={boardPreferences.groupBy}
               hideCompletedTasks={preferences?.hideCompletedTasks ?? false}
-              hideOldNotes={preferences?.hideOldNotes ?? false}
+              showNotes={preferences?.showNotes ?? true}
               preferencesDisabled={!preferences || visibilityPreferencesPending}
               showCalendar
               onViewChange={boardPreferences.setView}
               onGroupByChange={boardPreferences.setGroupBy}
               onHideCompletedTasksChange={setHideCompletedTasks}
-              onHideOldNotesChange={setHideOldNotes}
+              onShowNotesChange={setShowNotes}
             />
           </Toolbar>
         }
