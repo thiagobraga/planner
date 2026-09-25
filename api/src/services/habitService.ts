@@ -308,7 +308,7 @@ export async function deleteHabit(userId: string, habitId: string): Promise<void
 }
 
 export async function archiveHabit(userId: string, habitId: string): Promise<void> {
-  const habit = await getOwnedHabit(userId, habitId);
+  await getOwnedHabit(userId, habitId);
 
   const result = await pool.query(
     `UPDATE habits SET archived_at = NOW() WHERE (id = $1 OR parent_id = $1) AND user_id = $2 AND archived_at IS NULL RETURNING id`,
