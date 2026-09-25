@@ -40,7 +40,7 @@ const basePreferences: Preferences = {
   background: 'beige',
   smallCaps: false,
   hideCompletedTasks: false,
-  hideOldNotes: false,
+  showNotes: true,
 };
 
 vi.mock('../../api/client', async (importOriginal) => ({
@@ -181,7 +181,7 @@ describe('DailyPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'More options' }));
     expect(header).toContainElement(screen.getByRole('button', { name: 'List' }));
     expect(header).toContainElement(screen.getByRole('checkbox', { name: 'Completed tasks' }));
-    expect(header).toContainElement(screen.getByRole('checkbox', { name: 'Old notes' }));
+    expect(header).toContainElement(screen.getByRole('checkbox', { name: 'Notes' }));
     expect(header).toContainElement(screen.getByRole('checkbox', { name: 'Next days' }));
     expect(screen.getByRole('button', { name: 'List' }).closest('.page-header-toolbar')).toBeInTheDocument();
   });

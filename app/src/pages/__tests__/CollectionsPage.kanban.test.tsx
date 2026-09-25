@@ -80,7 +80,7 @@ describe('CollectionsPage kanban wiring', () => {
       background: 'beige',
       smallCaps: false,
       hideCompletedTasks: false,
-      hideOldNotes: false,
+      showNotes: true,
       collapsedCollectionIds: [],
       boardViewModes: { [collectionId]: { groupBy: 'priority' } },
     });
@@ -125,7 +125,7 @@ describe('CollectionsPage kanban wiring', () => {
     vi.mocked(fetchPreferences).mockResolvedValue({
       userId: 'user-1', locale: 'en', timeZone: 'UTC', weekStart: 'monday', theme: 'light',
       notificationsEnabled: false, font: 'lora', showDots: true, background: 'beige',
-      smallCaps: false, hideCompletedTasks: false, hideOldNotes: false,
+      smallCaps: false, hideCompletedTasks: false, showNotes: true,
       collapsedCollectionIds: [],
       boardViewModes: { [collectionId]: { view: 'list', groupBy: 'status' } },
     });

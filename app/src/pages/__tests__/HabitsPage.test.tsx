@@ -114,7 +114,7 @@ beforeEach(() => {
     background: 'beige',
     smallCaps: false,
     hideCompletedTasks: false,
-    hideOldNotes: false,
+    showNotes: true,
   });
 });
 

@@ -109,21 +109,21 @@ describe('InboxPage', () => {
     const header = screen.getByText('Inbox').closest('header');
     openToolbarMenu();
     expect(header).toContainElement(screen.getByRole('checkbox', { name: 'Completed tasks' }));
-    expect(header).toContainElement(screen.getByRole('checkbox', { name: 'Old notes' }));
-    expect(screen.getByRole('checkbox', { name: 'Old notes' }).closest('.page-header-toolbar')).toBeInTheDocument();
+    expect(header).toContainElement(screen.getByRole('checkbox', { name: 'Notes' }));
+    expect(screen.getByRole('checkbox', { name: 'Notes' }).closest('.page-header-toolbar')).toBeInTheDocument();
   });
 
-  it('updates the hide-old-notes preference from the header toolbar', async () => {
-    mockApiUpdatePreferences.mockResolvedValue({ ...basePreferences, hideOldNotes: true });
+  it('updates the show-notes preference from the header toolbar', async () => {
+    mockApiUpdatePreferences.mockResolvedValue({ ...basePreferences, showNotes: false });
     renderPage();
 
     openToolbarMenu();
-    const checkbox = await screen.findByRole('checkbox', { name: 'Old notes' });
+    const checkbox = await screen.findByRole('checkbox', { name: 'Notes' });
     await waitFor(() => expect(checkbox).not.toBeDisabled());
     fireEvent.click(checkbox);
 
     await waitFor(() =>
-      expect(mockApiUpdatePreferences).toHaveBeenCalledWith({ hideOldNotes: true }),
+      expect(mockApiUpdatePreferences).toHaveBeenCalledWith({ showNotes: false }),
     );
     expect(checkbox).not.toBeChecked();
   });

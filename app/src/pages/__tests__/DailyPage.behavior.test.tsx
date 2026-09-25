@@ -98,7 +98,7 @@ beforeEach(() => {
     background: 'beige',
     smallCaps: false,
     hideCompletedTasks: true,
-    hideOldNotes: false,
+    showNotes: true,
   });
   mockFetchTodayTasks.mockResolvedValue({
     overdue: [],
@@ -138,7 +138,7 @@ beforeEach(() => {
     background: 'beige',
     smallCaps: false,
     hideCompletedTasks: patch.hideCompletedTasks ?? true,
-    hideOldNotes: false,
+    showNotes: true,
   }));
 });
 
@@ -167,7 +167,7 @@ describe('DailyPage behavior visibility', () => {
       background: 'beige',
       smallCaps: false,
       hideCompletedTasks: false,
-      hideOldNotes: false,
+      showNotes: true,
     });
     const update = deferred<Awaited<ReturnType<typeof apiUpdatePreferences>>>();
     mockApiUpdatePreferences.mockReturnValueOnce(update.promise);
@@ -189,25 +189,25 @@ describe('DailyPage behavior visibility', () => {
     await waitFor(() => expect(hideCompleted).toBeChecked());
   });
 
-  it('optimistically toggles old-note visibility and rolls back on failure', async () => {
+  it('optimistically toggles note visibility and rolls back on failure', async () => {
     const update = deferred<Awaited<ReturnType<typeof apiUpdatePreferences>>>();
     mockApiUpdatePreferences.mockReturnValueOnce(update.promise);
     renderPage();
 
     await screen.findByRole('button', { name: 'Complete: Visible task' });
     openToolbarMenu();
-    const hideOldNotes = await screen.findByRole('checkbox', { name: 'Old notes' });
-    await waitFor(() => expect(hideOldNotes).not.toBeDisabled());
-    expect(hideOldNotes).toBeChecked();
-    fireEvent.click(hideOldNotes);
+    const showNotes = await screen.findByRole('checkbox', { name: 'Notes' });
+    await waitFor(() => expect(showNotes).not.toBeDisabled());
+    expect(showNotes).toBeChecked();
+    fireEvent.click(showNotes);
 
     await waitFor(() =>
-      expect(mockApiUpdatePreferences).toHaveBeenCalledWith({ hideOldNotes: true }),
+      expect(mockApiUpdatePreferences).toHaveBeenCalledWith({ showNotes: false }),
     );
-    expect(hideOldNotes).not.toBeChecked();
+    expect(showNotes).not.toBeChecked();
 
     update.reject(new Error('nope'));
-    await waitFor(() => expect(hideOldNotes).toBeChecked());
+    await waitFor(() => expect(showNotes).toBeChecked());
   });
 
   it('removes a completed task immediately when hide completed tasks is on', async () => {

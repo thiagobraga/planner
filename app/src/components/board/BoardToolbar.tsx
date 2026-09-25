@@ -10,12 +10,12 @@ interface BoardToolbarProps {
   view: BoardViewMode;
   groupBy: BoardGroupBy;
   hideCompletedTasks: boolean;
-  hideOldNotes: boolean;
+  showNotes: boolean;
   preferencesDisabled: boolean;
   onViewChange: (view: BoardViewMode) => void;
   onGroupByChange: (groupBy: BoardGroupBy) => void;
   onHideCompletedTasksChange: (value: boolean) => void;
-  onHideOldNotesChange: (value: boolean) => void;
+  onShowNotesChange: (value: boolean) => void;
   onCalendarClick?: () => void;
   showCalendar?: boolean;
 }
@@ -44,10 +44,10 @@ export function BoardToolbar(props: BoardToolbarProps) {
         <ToolbarSectionLabel>{t('menu.show')}</ToolbarSectionLabel>
         <TaskVisibilityControls
           hideCompletedTasks={props.hideCompletedTasks}
-          hideOldNotes={props.hideOldNotes}
+          showNotes={props.showNotes}
           disabled={props.preferencesDisabled}
           onHideCompletedTasksChange={props.onHideCompletedTasksChange}
-          onHideOldNotesChange={props.onHideOldNotesChange}
+          onShowNotesChange={props.onShowNotesChange}
         />
       </div>
     </div>

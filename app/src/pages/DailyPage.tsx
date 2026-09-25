@@ -315,7 +315,7 @@ export function DailyPage() {
   const {
     isPending: visibilityPreferencesPending,
     setHideCompletedTasks,
-    setHideOldNotes,
+    setShowNotes,
   } = useTaskVisibilityPreferences(prefs, replaceTodayFromApi);
 
   useEffect(() => {
@@ -371,7 +371,7 @@ export function DailyPage() {
     // Another session moved a subtree. Its date, collection, depth and every
     // sibling's order may have changed at once, so patching the one row named by
     // the event would leave it in the section it just left. Refetch instead.
-    if (isStructuralMove(event) || prefs?.hideCompletedTasks || prefs?.hideOldNotes) {
+    if (isStructuralMove(event) || prefs?.hideCompletedTasks || prefs?.showNotes === false) {
       replaceTodayFromApi();
       return;
     }
@@ -408,7 +408,7 @@ export function DailyPage() {
         }))
       );
     }
-  }, [locale, replaceTodayFromApi, prefs?.hideCompletedTasks, prefs?.hideOldNotes, todayKey]));
+  }, [locale, replaceTodayFromApi, prefs?.hideCompletedTasks, prefs?.showNotes, todayKey]));
 
   const updateSections = useCallback((updater: (prev: DaySection[]) => DaySection[]) => {
     setSections(updater);
@@ -941,10 +941,10 @@ export function DailyPage() {
             <ToolbarSectionLabel>{t('menu.show')}</ToolbarSectionLabel>
             <TaskVisibilityControls
               hideCompletedTasks={prefs?.hideCompletedTasks ?? false}
-              hideOldNotes={prefs?.hideOldNotes ?? false}
+              showNotes={prefs?.showNotes ?? true}
               disabled={!prefs || visibilityPreferencesPending}
               onHideCompletedTasksChange={setHideCompletedTasks}
-              onHideOldNotesChange={setHideOldNotes}
+              onShowNotesChange={setShowNotes}
             />
 
             <Checkbox
@@ -973,8 +973,8 @@ export function DailyPage() {
             },
             {
               type: 'item',
-              label: `${prefs?.hideOldNotes ? '○' : '✓'} ${t('visibility.oldNotes')}`,
-              onClick: () => setHideOldNotes(!(prefs?.hideOldNotes ?? false)),
+              label: `${(prefs?.showNotes ?? true) ? '✓' : '○'} ${t('visibility.notes')}`,
+              onClick: () => setShowNotes(!(prefs?.showNotes ?? true)),
             },
             {
               type: 'item',
