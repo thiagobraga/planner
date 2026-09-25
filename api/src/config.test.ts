@@ -19,6 +19,8 @@ beforeEach(() => {
   delete process.env.NODE_ENV;
   delete process.env.DATABASE_URL;
   delete process.env.DATABASE_URL_FILE;
+  delete process.env.POSTGRES_USER;
+  delete process.env.POSTGRES_PASSWORD;
   delete process.env.REDIS_URL;
   delete process.env.REDIS_URL_FILE;
   delete process.env.CSRF_SECRET;
