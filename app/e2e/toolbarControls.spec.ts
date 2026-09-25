@@ -62,7 +62,7 @@ test.describe('Header toolbar controls', () => {
     await expect(completed).toBeChecked();
     await expect(notes).toBeChecked();
 
-    await completed.click();
+    await controls.getByText('Completed tasks', { exact: true }).click();
 
     await expect(completed).not.toBeChecked();
     await expect(notes).toBeChecked();
