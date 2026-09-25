@@ -26,6 +26,7 @@ export interface InboxMockRefs {
 }
 
 export function applyInboxDefaults(refs: InboxMockRefs): void {
+  window.localStorage.clear();
   refs.mockFetchInboxTasks.mockReset();
   refs.mockApiCreateTask.mockReset();
   refs.mockApiUpdateTask.mockReset();

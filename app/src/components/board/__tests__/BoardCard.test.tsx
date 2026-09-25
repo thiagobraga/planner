@@ -4,7 +4,7 @@ import { BoardCard } from '../BoardCard';
 import { PlannerDragProvider } from '../../../contexts/PlannerDragContext';
 
 describe('BoardCard', () => {
-  it('renders labels, priority, and an interactive subtask checklist', () => {
+  it('renders labels and an interactive subtask checklist', () => {
     const onToggle = vi.fn();
     render(
       <PlannerDragProvider>
@@ -24,9 +24,9 @@ describe('BoardCard', () => {
     );
 
     expect(screen.getByText('feature')).toBeInTheDocument();
-    expect(screen.getByLabelText('Priority 1')).toBeInTheDocument();
-    expect(screen.getByText('1/2')).toBeInTheDocument();
-    fireEvent.click(screen.getByLabelText('Complete task'));
+    expect(screen.getByText('Write tests')).toBeInTheDocument();
+    expect(screen.getByText('Run browser')).toBeInTheDocument();
+    fireEvent.click(screen.getAllByLabelText('Complete task')[0]);
     expect(onToggle).toHaveBeenCalledWith('task-1', true);
   });
 });

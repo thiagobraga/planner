@@ -243,16 +243,21 @@ button,
   flex: 1;
   min-width: 0;
   overflow: hidden;
-  font-size: 13px;
+  font-size: 10px;
   font-weight: 600;
   line-height: 24px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
   text-overflow: ellipsis;
   white-space: nowrap;
+  color: var(--color-ink-light);
 }
 
 .board-column-name-input {
-  font-size: 13px;
+  font-size: 10px;
   font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
 }
 
 .board-column-dot {
@@ -323,10 +328,13 @@ button,
   position: relative;
   display: grid;
   gap: 0;
-  padding: 11px;
-  border: 1px solid color-mix(in srgb, var(--color-ink-lighter) 68%, transparent);
+  min-height: 48px;
+  padding: 12px;
+  border: 0;
   border-radius: 8px;
   background: var(--planner-board-card-bg);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-ink-lighter) 68%, transparent);
+  box-sizing: border-box;
 }
 
 .board-card.is-dragging {
@@ -335,7 +343,7 @@ button,
 
 .board-card-topline {
   display: grid;
-  grid-template-columns: 18px minmax(0, 1fr) 18px;
+  grid-template-columns: 18px minmax(0, 1fr);
   gap: 6px;
   align-items: start;
 }
@@ -363,18 +371,6 @@ button,
   border-color: var(--color-accent);
   background: var(--color-accent);
 }
-
-.board-card-priority {
-  display: flex;
-  height: 24px;
-  align-items: center;
-  justify-content: center;
-  color: var(--color-ink-lighter);
-}
-
-.board-card-priority.priority-1 { color: var(--color-accent); }
-.board-card-priority.priority-2 { color: var(--color-priority-2); }
-.board-card-priority.priority-3 { color: var(--color-priority-3); }
 
 .board-card-labels {
   display: flex;
@@ -405,7 +401,7 @@ button,
   overflow: hidden;
   color: var(--color-ink-light);
   font-size: 11px;
-  line-height: 18px;
+  line-height: 24px;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
 }
@@ -414,11 +410,10 @@ button,
   display: grid;
   gap: 6px;
   padding-top: 6px;
-  border-top: 1px dashed color-mix(in srgb, var(--color-ink-lighter) 65%, transparent);
 }
 
 .board-card-checklist.is-empty {
-  min-height: 12px;
+  min-height: 0;
   padding-top: 0;
   border-top-color: transparent;
 }
@@ -431,7 +426,7 @@ button,
 .board-card-date {
   color: var(--color-ink-light);
   font-size: 10px;
-  line-height: 18px;
+  line-height: 24px;
 }
 
 .board-card-checklist-row {
@@ -440,18 +435,24 @@ button,
   gap: 6px;
   align-items: start;
   font-size: 11px;
-  line-height: 18px;
+  line-height: 24px;
 }
 
 .board-card-checklist-row.is-dragging {
   opacity: 0.4;
 }
 
-.board-card-checklist-row input {
-  width: 13px;
-  height: 13px;
+.board-card-checklist-row .board-card-check {
   margin-top: 2px;
-  accent-color: var(--color-accent);
+}
+
+.board-card-checklist-dash {
+  display: grid;
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+  place-items: center;
+  color: var(--color-ink-lighter);
 }
 
 .board-card-date {
