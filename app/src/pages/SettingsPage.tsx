@@ -711,7 +711,7 @@ export function SettingsPage() {
 
                     <section className="space-y-3 border-t border-[var(--planner-settings-separator)] pt-8">
                       <h3 className="text-[10px] leading-5 tracking-[0.12em] uppercase text-ink-light font-medium">
-                        Daily Date Format
+                        Date display
                       </h3>
                       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                         {DATE_FORMAT_OPTIONS.map(({ value, label, example }) => (
