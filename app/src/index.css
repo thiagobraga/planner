@@ -512,7 +512,7 @@ button,
 .daily-week-board .board-card {
   position: relative;
   gap: 0;
-  padding: 11px;
+  padding: 12px;
 }
 
 .daily-week-board .board-card-date,

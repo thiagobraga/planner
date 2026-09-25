@@ -21,7 +21,8 @@ test('completion column and list checkbox stay synchronized', async ({ api, page
     await dragCard(page, card(page, task.id), statusColumn(page, completed.id).locator('.board-column-cards'));
     await expect(card(page, task.id).getByRole('heading')).toHaveClass(/line-through/);
 
-    await page.getByRole('button', { name: 'List' }).click();
+    await page.getByRole('button', { name: 'More options', exact: true }).click();
+    await page.getByRole('button', { name: 'List', exact: true }).click();
     const row = page.locator(`[data-task-id="${task.id}"]`);
     await expect(row.locator('.task-item-title-text')).toHaveClass(/line-through/);
     await row.getByRole('button', { name: new RegExp(`Reopen.*${task.title}`, 'i') }).click();
