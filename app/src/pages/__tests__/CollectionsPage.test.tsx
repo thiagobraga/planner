@@ -102,7 +102,7 @@ const defaultPreferences = {
   background: 'beige' as const,
   smallCaps: false,
   hideCompletedTasks: false,
-  hideOldNotes: false,
+  showNotes: true,
 };
 
 function openToolbarMenu() {
@@ -182,8 +182,8 @@ describe('CollectionsPage', () => {
 
     expect(header).toBeInTheDocument();
     expect(header).toContainElement(screen.getByRole('checkbox', { name: 'Completed tasks' }));
-    expect(header).toContainElement(screen.getByRole('checkbox', { name: 'Old notes' }));
-    expect(screen.getByRole('checkbox', { name: 'Old notes' }).closest('.page-header-toolbar')).toBeInTheDocument();
+    expect(header).toContainElement(screen.getByRole('checkbox', { name: 'Notes' }));
+    expect(screen.getByRole('checkbox', { name: 'Notes' }).closest('.page-header-toolbar')).toBeInTheDocument();
   });
 
   it('updates completed-task visibility from the header toolbar', async () => {

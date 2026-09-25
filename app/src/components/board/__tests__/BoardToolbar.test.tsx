@@ -5,12 +5,12 @@ import { BoardToolbar } from '../BoardToolbar';
 const baseProps = {
   groupBy: 'status' as const,
   hideCompletedTasks: false,
-  hideOldNotes: false,
+  showNotes: true,
   preferencesDisabled: false,
   onViewChange: vi.fn(),
   onGroupByChange: vi.fn(),
   onHideCompletedTasksChange: vi.fn(),
-  onHideOldNotesChange: vi.fn(),
+  onShowNotesChange: vi.fn(),
 };
 
 describe('BoardToolbar', () => {
@@ -25,7 +25,7 @@ describe('BoardToolbar', () => {
       'Kanban cards',
     ]);
     expect(within(toolbar!).getByRole('checkbox', { name: 'Completed tasks' })).toBeInTheDocument();
-    expect(within(toolbar!).getByRole('checkbox', { name: 'Old notes' })).toBeInTheDocument();
+    expect(within(toolbar!).getByRole('checkbox', { name: 'Notes' })).toBeInTheDocument();
     expect(within(toolbar!).queryByText('Group by')).not.toBeInTheDocument();
   });
 

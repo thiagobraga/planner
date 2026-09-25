@@ -87,7 +87,7 @@ const basePreferences: Preferences = {
   background: 'beige',
   smallCaps: false,
   hideCompletedTasks: false,
-  hideOldNotes: false,
+  showNotes: true,
 };
 
 const overdueTask: ApiTask = {

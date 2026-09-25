@@ -137,8 +137,8 @@ inboxBeforeEach({ mockFetchInboxTasks, mockApiCreateTask, mockApiUpdateTask, moc
       renderPage();
       await screen.findByText('Buy groceries');
       openToolbarMenu();
-      const hideOldNotes = await screen.findByRole('checkbox', { name: 'Old notes' });
-      await waitFor(() => expect(hideOldNotes).not.toBeDisabled());
+      const showNotes = await screen.findByRole('checkbox', { name: 'Notes' });
+      await waitFor(() => expect(showNotes).not.toBeDisabled());
 
       const kanbanButton = screen.getByRole('button', { name: 'Kanban cards' });
       fireEvent.click(kanbanButton);
