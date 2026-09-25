@@ -20,7 +20,7 @@ export async function openBoard(page: Page, collectionId: string): Promise<void>
   await expect(page.getByRole('button', { name: 'More options', exact: true })).toBeVisible();
   await expect(async () => {
     await page.getByRole('button', { name: 'More options', exact: true }).click();
-    const kanban = page.getByRole('button', { name: 'Kanban' });
+    const kanban = page.getByRole('button', { name: 'Kanban cards', exact: true });
     if (await kanban.getAttribute('aria-pressed') !== 'true') {
       await kanban.click();
     }

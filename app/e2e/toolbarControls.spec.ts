@@ -1,11 +1,7 @@
 import { expect, type Page } from '@playwright/test';
 import { test } from './coverage-fixture';
 
-/**
- * Covers the PageHeader/ButtonGroup/Toolbar unification: Today/Upcoming as a
- * joined ButtonGroup (Today first), the list/kanban segmented toggle, and
- * the completed/notes segmented toggle.
- */
+/** Covers the controls surfaced by the header's More options menu. */
 
 async function registerAndLogin(page: Page) {
   const timestamp = Date.now();
@@ -24,45 +20,28 @@ test.describe('Header toolbar controls', () => {
     await registerAndLogin(page);
   });
 
-  test('Today/Upcoming render as a joined ButtonGroup, Today first', async ({ page }) => {
+  test('Daily exposes view and visibility controls through More options', async ({ page }) => {
     await page.goto('/daily');
 
-    const controls = page.locator('.daily-page-header-controls');
-    const today = controls.getByRole('button', { name: 'Today' });
-    const upcoming = controls.getByRole('button', { name: 'Upcoming' });
+    await page.getByRole('button', { name: 'More options', exact: true }).click();
+    const controls = page.getByRole('menu');
 
-    await expect(today).toBeVisible();
-    await expect(upcoming).toBeVisible();
-
-    // Today comes first in the DOM.
-    const order = await controls.getByRole('button').evaluateAll((buttons) =>
-      buttons.map((b) => b.textContent?.trim()).filter((t) => t === 'Today' || t === 'Upcoming'),
-    );
-    expect(order).toEqual(['Today', 'Upcoming']);
-
-    // Today is the active (filled) segment by default; Upcoming is not.
-    await expect(today).toHaveAttribute('aria-pressed', 'true');
-    await expect(today).toHaveClass(/bg-ink/);
-    await expect(upcoming).toHaveAttribute('aria-pressed', 'false');
-    await expect(upcoming).not.toHaveClass(/bg-ink/);
-
-    // Only the touching corners are flattened - Today's right side, Upcoming's left.
-    await expect(today).toHaveClass(/rounded-r-none/);
-    await expect(upcoming).toHaveClass(/rounded-l-none/);
-
-    // Clicking Upcoming flips which segment is active.
-    await upcoming.click();
-    await expect(upcoming).toHaveAttribute('aria-pressed', 'true');
-    await expect(upcoming).toHaveClass(/bg-ink/);
-    await expect(today).toHaveAttribute('aria-pressed', 'false');
-    await expect(today).not.toHaveClass(/bg-ink/);
+    await expect(controls.getByText('View', { exact: true })).toBeVisible();
+    await expect(controls.getByRole('button', { name: 'List', exact: true })).toHaveAttribute('aria-pressed', 'true');
+    await expect(controls.getByRole('button', { name: 'Kanban lists', exact: true })).toHaveAttribute('aria-pressed', 'false');
+    await expect(controls.getByRole('button', { name: 'Kanban cards', exact: true })).toHaveAttribute('aria-pressed', 'false');
+    await expect(controls.getByText('Show', { exact: true })).toBeVisible();
+    await expect(controls.getByRole('checkbox', { name: 'Completed tasks' })).toBeChecked();
+    await expect(controls.getByRole('checkbox', { name: 'Notes' })).toBeChecked();
   });
 
-  test('list/kanban toggle switches the active segment on Inbox', async ({ page }) => {
+  test('view selector switches Inbox to Kanban lists', async ({ page }) => {
     await page.goto('/inbox');
 
-    const list = page.getByRole('button', { name: 'List' });
-    const kanban = page.getByRole('button', { name: 'Kanban' });
+    await page.getByRole('button', { name: 'More options', exact: true }).click();
+    const controls = page.getByRole('menu');
+    const list = controls.getByRole('button', { name: 'List', exact: true });
+    const kanban = controls.getByRole('button', { name: 'Kanban lists', exact: true });
 
     await expect(list).toHaveAttribute('aria-pressed', 'true');
     await expect(kanban).toHaveAttribute('aria-pressed', 'false');
@@ -73,19 +52,19 @@ test.describe('Header toolbar controls', () => {
     await expect(list).toHaveAttribute('aria-pressed', 'false');
   });
 
-  test('completed/notes toggle flips independently and relabels', async ({ page }) => {
+  test('completed and notes visibility switches flip independently', async ({ page }) => {
     await page.goto('/daily');
 
-    const hideCompleted = page.getByRole('button', { name: 'Hide completed tasks' });
-    await expect(hideCompleted).toBeVisible();
-    await expect(hideCompleted).toHaveAttribute('aria-pressed', 'false');
+    await page.getByRole('button', { name: 'More options', exact: true }).click();
+    const controls = page.getByRole('menu');
+    const completed = controls.getByRole('checkbox', { name: 'Completed tasks' });
+    const notes = controls.getByRole('checkbox', { name: 'Notes' });
+    await expect(completed).toBeChecked();
+    await expect(notes).toBeChecked();
 
-    await hideCompleted.click();
+    await completed.click();
 
-    const showCompleted = page.getByRole('button', { name: 'Show completed tasks' });
-    await expect(showCompleted).toHaveAttribute('aria-pressed', 'true');
-
-    // The other toggle (old notes) is untouched by clicking completed.
-    await expect(page.getByRole('button', { name: 'Hide old notes' })).toHaveAttribute('aria-pressed', 'false');
+    await expect(completed).not.toBeChecked();
+    await expect(notes).toBeChecked();
   });
 });
