@@ -9,6 +9,9 @@ concurrency:
 
 env:
   NODE_VERSION: '24'
+  POSTGRES_USER: planner
+  POSTGRES_PASSWORD: planner-test
+  REDIS_PASSWORD: planner
 
 jobs:
   api:
@@ -17,10 +20,6 @@ jobs:
     defaults:
       run:
         working-directory: api
-    env:
-      POSTGRES_USER: planner
-      POSTGRES_PASSWORD: planner-test
-      REDIS_PASSWORD: planner
     services:
       postgres:
         image: postgres:16-alpine
@@ -120,10 +119,6 @@ jobs:
     name: E2E — Playwright
     needs: [api, app]
     runs-on: ubuntu-24.04
-    env:
-      POSTGRES_USER: planner
-      POSTGRES_PASSWORD: planner-test
-      REDIS_PASSWORD: planner
     services:
       postgres:
         image: postgres:16-alpine
@@ -148,9 +143,6 @@ jobs:
         ports:
           - 6379:6379
     env:
-      POSTGRES_USER: planner
-      POSTGRES_PASSWORD: planner-test
-      REDIS_PASSWORD: planner
       DATABASE_URL: postgres://${{ env.POSTGRES_USER }}:${{ env.POSTGRES_PASSWORD }}@localhost:5432/planner_test
       REDIS_URL: redis://:${{ env.REDIS_PASSWORD }}@localhost:6379
       CORS_ORIGIN: http://127.0.0.1:4173
