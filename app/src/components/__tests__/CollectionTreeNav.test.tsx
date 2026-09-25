@@ -114,6 +114,7 @@ function renderWithQuery(ui: React.ReactElement) {
 describe('CollectionTreeNav', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    window.localStorage.clear();
     vi.mocked(fetchCollections).mockResolvedValue([]);
     vi.mocked(fetchSavedColors).mockResolvedValue([]);
     vi.mocked(apiAddSavedColor).mockResolvedValue([]);
@@ -195,7 +196,8 @@ describe('CollectionTreeNav', () => {
     expect(screen.getByText('Work')).toBeInTheDocument();
     expect(screen.getByText('Personal')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Expand Work' })).toHaveAttribute('aria-expanded', 'false');
-    expect(apiUpdatePreferences).toHaveBeenCalledWith({ collapsedCollectionIds: ['root'] });
+    expect(apiUpdatePreferences).not.toHaveBeenCalled();
+    expect(window.localStorage.getItem('planner.collections.collapsed.v1')).toBe(JSON.stringify(['root']));
   });
 
   it('folds nested and independent branches separately', async () => {
@@ -219,16 +221,13 @@ describe('CollectionTreeNav', () => {
     expect(screen.getByText('Planning')).toBeInTheDocument();
   });
 
-  it('reveals the active descendant path without changing the saved preference', async () => {
+  it('reveals the active descendant path without changing local collapse state', async () => {
     vi.mocked(fetchCollections).mockResolvedValue([
       collection('root', 'Work', null, 0),
       collection('child', 'Planning', 'root', 1),
       collection('grandchild', 'Launch', 'child', 2),
     ]);
-    vi.mocked(fetchPreferences).mockResolvedValue({
-      ...basePreferences,
-      collapsedCollectionIds: ['root', 'child'],
-    });
+    window.localStorage.setItem('planner.collections.collapsed.v1', JSON.stringify(['root', 'child']));
     vi.mocked(useLocation).mockReturnValue({ pathname: '/collection/grandchild' } as ReturnType<typeof useLocation>);
 
     renderWithQuery(<CollectionTreeNav />);
@@ -239,21 +238,19 @@ describe('CollectionTreeNav', () => {
     expect(apiUpdatePreferences).not.toHaveBeenCalled();
   });
 
-  it('rolls back the optimistic fold state when persistence fails', async () => {
+  it('keeps collapse state local when preference updates fail', async () => {
     vi.mocked(fetchCollections).mockResolvedValue([
       collection('root', 'Work', null, 0),
       collection('child', 'Planning', 'root', 1),
     ]);
-    vi.mocked(apiUpdatePreferences).mockRejectedValueOnce(new Error('offline'));
-
     renderWithQuery(<CollectionTreeNav />);
     fireEvent.click(await screen.findByRole('button', { name: 'Collapse Work' }));
 
-    await waitFor(() => expect(screen.getByText('Planning')).toBeInTheDocument());
-    expect(screen.getByRole('button', { name: 'Collapse Work' })).toHaveAttribute('aria-expanded', 'true');
+    await waitFor(() => expect(screen.queryByText('Planning')).not.toBeInTheDocument());
+    expect(screen.getByRole('button', { name: 'Expand Work' })).toHaveAttribute('aria-expanded', 'false');
   });
 
-  it('responds immediately to synchronized preference cache updates', async () => {
+  it('ignores synchronized preference cache updates for collapse state', async () => {
     vi.mocked(fetchCollections).mockResolvedValue([
       collection('root', 'Work', null, 0),
       collection('child', 'Planning', 'root', 1),
@@ -269,7 +266,7 @@ describe('CollectionTreeNav', () => {
       });
     });
 
-    await waitFor(() => expect(screen.queryByText('Planning')).not.toBeInTheDocument());
+    expect(screen.getByText('Planning')).toBeInTheDocument();
   });
 
   it('removes inline row actions while retaining context-menu actions', async () => {
