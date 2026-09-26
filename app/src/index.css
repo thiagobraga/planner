@@ -4,6 +4,7 @@
   --color-cream: #f5f0e8;
   --color-ink: #44443d;
   --color-settings-aside: #353631;
+  --color-on-aside: #f5f0e8;
   --color-ink-light: #8b867e;
   --color-ink-lighter: #c5c1ba;
   --color-dot: #d8d3cb;
@@ -14,6 +15,9 @@
   --color-priority-2: #e39133;
   --color-priority-3: #4d8fd6;
   --color-moss: #8ca46a;
+  --color-syntax-operator: #8b7355;
+  --color-syntax-string: #2e7d32;
+  --color-syntax-error: #b71c1c;
   --dot-grid: 24px;
 
   /* Radius scale → rounded-* utilities */
@@ -37,6 +41,109 @@
   --font-weight-semibold: 600;
   --font-weight-bold: 700;
 
+}
+
+/*
+  Theme tokens live on <html> (set by AppShell via data-theme) rather than on the
+  shell element, so portals rendered into <body> - menus, selects, the color
+  picker - pick up the same palette.
+*/
+:root {
+  --planner-page-bg: var(--color-cream);
+  --planner-sidebar-bg: var(--color-sidebar-bg);
+  --planner-card-bg: var(--color-sidebar-bg);
+  --planner-board-column-bg: rgba(235, 230, 222, 0.68);
+  --planner-board-card-bg: rgba(245, 240, 232, 0.82);
+  --planner-sidebar-active-bg: rgba(212, 207, 199, 0.5);
+  --planner-sidebar-hover-bg: rgba(212, 207, 199, 0.4);
+  --planner-task-selection-bg: rgba(212, 207, 199, 0.75);
+  --planner-task-hover-bg: rgba(212, 207, 199, 0.4);
+  --planner-overlay-bg: var(--planner-page-bg);
+  --planner-overlay-hover-bg: rgba(212, 207, 199, 0.4);
+  --planner-control-bg: rgba(245, 240, 232, 0.2);
+  --planner-control-bg-hover: rgba(245, 240, 232, 0.35);
+  --planner-toggle-off-bg: var(--color-dot);
+  --planner-toggle-knob-bg: var(--color-cream);
+  --planner-settings-separator: #d8d3cb;
+  --planner-monthly-ledger-bg: rgba(245, 240, 232, 0.24);
+  --planner-monthly-strip-selected: rgba(245, 240, 232, 0.90);
+  --planner-monthly-strip-idle: rgba(245, 240, 232, 0.55);
+  --planner-monthly-strip-hover: rgba(245, 240, 232, 0.75);
+  --planner-monthly-weekend: rgba(245, 230, 198, 0.38);
+  --planner-backdrop: rgba(44, 44, 44, 0.3);
+  --planner-hover: rgba(44, 44, 44, 0.06);
+  --planner-scrollbar-thumb: rgba(107, 107, 107, 0.28);
+  --planner-scrollbar-thumb-hover: rgba(44, 44, 44, 0.38);
+  --planner-drag-shadow: 0 4px 16px rgba(44, 44, 44, 0.18);
+  --planner-menu-disabled-shadow: 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+:root[data-theme="white"] {
+  --color-dot: #d4d4d4;
+  --color-sidebar-bg: #f1f1f1;
+  --planner-page-bg: #ffffff;
+  --planner-board-column-bg: rgba(241, 241, 241, 0.72);
+  --planner-board-card-bg: rgba(255, 255, 255, 0.82);
+  --planner-sidebar-active-bg: rgba(212, 212, 212, 0.55);
+  --planner-sidebar-hover-bg: rgba(212, 212, 212, 0.35);
+  --planner-task-selection-bg: rgba(212, 212, 212, 0.75);
+  --planner-task-hover-bg: rgba(212, 212, 212, 0.4);
+  --planner-overlay-hover-bg: rgba(212, 212, 212, 0.35);
+  --planner-control-bg: #ffffff;
+  --planner-control-bg-hover: #f5f5f5;
+  --planner-toggle-off-bg: #dedede;
+  --planner-toggle-knob-bg: #ffffff;
+  --planner-settings-separator: #d9d9d9;
+  --planner-monthly-ledger-bg: rgba(255, 255, 255, 0.24);
+  --planner-monthly-strip-selected: rgba(255, 255, 255, 0.92);
+  --planner-monthly-strip-idle: rgba(255, 255, 255, 0.55);
+  --planner-monthly-strip-hover: rgba(255, 255, 255, 0.78);
+}
+
+/* Night journal: warm coffee paper, cream ink, a lighter brick accent for contrast. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --color-cream: #292219;
+  --color-ink: #ede3d3;
+  --color-ink-light: #aea294;
+  --color-ink-lighter: #6f6358;
+  --color-dot: #3b3229;
+  --color-border: #463b31;
+  --color-accent: #d8705f;
+  --color-accent-light: #e88a79;
+  --color-sidebar-bg: #292219;
+  --color-settings-aside: #1f1914;
+  --color-on-aside: #ede3d3;
+  --color-syntax-operator: #c9a97e;
+  --color-syntax-string: #9cc49a;
+  --color-syntax-error: #e88a79;
+  --shadow-subtle: 0 1px 2px rgba(10, 8, 6, 0.3), 0 1px 3px rgba(10, 8, 6, 0.35);
+  --shadow-medium: 0 4px 12px rgba(10, 8, 6, 0.4);
+  --shadow-overlay: 0 8px 32px rgba(10, 8, 6, 0.5);
+  --planner-board-column-bg: rgba(31, 25, 20, 0.6);
+  --planner-board-card-bg: rgba(52, 43, 34, 0.82);
+  --planner-sidebar-active-bg: #3e3228;
+  --planner-sidebar-hover-bg: rgba(62, 50, 40, 0.6);
+  --planner-task-selection-bg: rgba(78, 64, 51, 0.75);
+  --planner-task-hover-bg: rgba(62, 50, 40, 0.5);
+  --planner-overlay-bg: #2f271e;
+  --planner-overlay-hover-bg: rgba(78, 64, 51, 0.6);
+  --planner-control-bg: rgba(237, 227, 211, 0.04);
+  --planner-control-bg-hover: rgba(237, 227, 211, 0.08);
+  --planner-toggle-off-bg: #4a3e33;
+  --planner-toggle-knob-bg: #292219;
+  --planner-settings-separator: #3b3229;
+  --planner-monthly-ledger-bg: rgba(237, 227, 211, 0.03);
+  --planner-monthly-strip-selected: rgba(62, 50, 40, 0.9);
+  --planner-monthly-strip-idle: rgba(52, 43, 34, 0.55);
+  --planner-monthly-strip-hover: rgba(62, 50, 40, 0.75);
+  --planner-monthly-weekend: rgba(94, 74, 48, 0.22);
+  --planner-backdrop: rgba(10, 8, 6, 0.55);
+  --planner-hover: rgba(237, 227, 211, 0.06);
+  --planner-scrollbar-thumb: #695b50;
+  --planner-scrollbar-thumb-hover: #8a7a6c;
+  --planner-drag-shadow: 0 4px 16px rgba(10, 8, 6, 0.45);
+  --planner-menu-disabled-shadow: none;
 }
 
 @utility font-journal {
@@ -115,7 +222,7 @@
 
 @layer base {
   body {
-    background-color: var(--color-cream);
+    background-color: var(--planner-page-bg);
     font-family: "Lora", serif;
     font-size: 14px;
     line-height: var(--dot-grid);
@@ -152,7 +259,7 @@ button,
 /* Thin, quiet scrollbars for app scroll surfaces */
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(107, 107, 107, 0.35) transparent;
+  scrollbar-color: var(--planner-scrollbar-thumb) transparent;
 
   &::-webkit-scrollbar {
     width: 6px;
@@ -162,11 +269,11 @@ button,
     background: transparent;
   }
   &::-webkit-scrollbar-thumb {
-    background-color: rgba(107, 107, 107, 0.28);
+    background-color: var(--planner-scrollbar-thumb);
     border-radius: 999px;
 
     &:hover {
-      background-color: rgba(44, 44, 44, 0.38);
+      background-color: var(--planner-scrollbar-thumb-hover);
     }
   }
   &::-webkit-scrollbar-button {
@@ -1017,7 +1124,7 @@ button,
   outline: 1px solid var(--color-dot);
   background: var(--color-cream);
   padding: 0;
-  box-shadow: 0 4px 16px rgba(44, 44, 44, 0.18);
+  box-shadow: var(--planner-drag-shadow);
   max-width: 420px;
   /* Translucent, so the rows the block is passing over stay readable beneath it. */
   opacity: 0.7;
@@ -1269,7 +1376,7 @@ textarea:focus-visible {
   border: 1px solid var(--color-dot);
   border-radius: 6px;
   padding: 4px 0;
-  box-shadow: 0 8px 32px rgba(44, 44, 44, 0.15);
+  box-shadow: var(--shadow-overlay);
 }
 .collections-index-menu button {
   display: flex;
@@ -1348,7 +1455,7 @@ textarea:focus-visible {
     position: fixed;
     inset: 0;
     z-index: 49;
-    background: rgba(44, 44, 44, 0.3);
+    background: var(--planner-backdrop);
     display: none;
   }
   .sidebar-overlay--visible {
