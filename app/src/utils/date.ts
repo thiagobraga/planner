@@ -119,6 +119,53 @@ export function weekdayColumnIndex(dayOfWeek: number, weekStart: WeekStart): num
   return weekStart === 'monday' ? (dayOfWeek + 6) % 7 : dayOfWeek;
 }
 
+export function startOfWeek(date: Date, weekStart: WeekStart): Date {
+  const d = startOfDay(date);
+  d.setDate(d.getDate() - weekdayColumnIndex(d.getDay(), weekStart));
+  return d;
+}
+
+export function shiftWeek(date: Date, deltaWeeks: number): Date {
+  const d = new Date(date);
+  d.setDate(d.getDate() + deltaWeeks * 7);
+  return d;
+}
+
+export interface WeekDay {
+  iso: string;
+  dayOfMonth: number;
+  /** Native Date.getDay() (0 = Sunday), for weekend shading independent of weekStart. */
+  weekday: number;
+  future: boolean;
+}
+
+export function buildWeekDays(
+  anchor: Date,
+  today: Date,
+  weekStart: WeekStart = 'sunday',
+): WeekDay[] {
+  const start = startOfWeek(anchor, weekStart);
+  return Array.from({ length: 7 }, (_, i) => {
+    const date = new Date(start);
+    date.setDate(start.getDate() + i);
+    return {
+      iso: fmtISO(date),
+      dayOfMonth: date.getDate(),
+      weekday: date.getDay(),
+      future: date.getTime() > today.getTime(),
+    };
+  });
+}
+
+export function formatWeekRangeLabel(start: Date, end: Date, locale: 'en' | 'pt-BR' = 'en'): string {
+  const sameMonth = start.getMonth() === end.getMonth() && start.getFullYear() === end.getFullYear();
+  const dayFmt = new Intl.DateTimeFormat(locale, { day: 'numeric' });
+  const monthDayFmt = new Intl.DateTimeFormat(locale, { month: 'short', day: 'numeric' });
+  const startLabel = monthDayFmt.format(start);
+  const endLabel = sameMonth ? dayFmt.format(end) : monthDayFmt.format(end);
+  return `${startLabel} - ${endLabel}, ${end.getFullYear()}`;
+}
+
 export interface MonthDay {
   iso: string;
   dayOfMonth: number;
@@ -174,6 +221,30 @@ export function parseNaturalDate(input: string, locale: 'en' | 'pt-BR' = 'en'): 
     resolve: (m: RegExpMatchArray) => Date | null;
     recurrence?: object | ((m: RegExpMatchArray) => object);
   }> = [
+    // pt-BR only, and must come before the plain "todo dia" (daily) pattern
+    // below - that regex's word boundary already matches the "todo dia"
+    // prefix of "todo dia 15", so without this earlier, more specific match,
+    // a trailing day number would be misread as daily and left dangling in
+    // the title.
+    ...(locale === 'pt-BR'
+      ? [
+          {
+            re: /\btodo dia (\d{1,2})\b/u,
+            resolve: (m: RegExpMatchArray) => {
+              const day = parseInt(m[1], 10);
+              if (day < 1 || day > 31) return null;
+              const daysInThisMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+              const clampedThisMonth = Math.min(day, daysInThisMonth);
+              if (clampedThisMonth >= today.getDate()) {
+                return new Date(today.getFullYear(), today.getMonth(), clampedThisMonth);
+              }
+              const daysInNextMonth = new Date(today.getFullYear(), today.getMonth() + 2, 0).getDate();
+              return new Date(today.getFullYear(), today.getMonth() + 1, Math.min(day, daysInNextMonth));
+            },
+            recurrence: (m: RegExpMatchArray) => ({ type: 'monthly', interval: 1, dayOfMonth: parseInt(m[1], 10) }),
+          },
+        ]
+      : []),
     {
       re: locale === 'pt-BR' ? /(?:\btodo dia\b|\btodos os dias\b)/u : /\bevery day\b/,
       resolve: () => today,

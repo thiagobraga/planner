@@ -102,8 +102,12 @@ const defaultPreferences = {
   background: 'beige' as const,
   smallCaps: false,
   hideCompletedTasks: false,
-  hideOldNotes: false,
+  showNotes: true,
 };
+
+function openToolbarMenu() {
+  fireEvent.click(screen.getByRole('button', { name: 'More options' }));
+}
 
 function renderPage(initialPath = '/collection/test-collection-id') {
   const client = new QueryClient({
@@ -174,25 +178,28 @@ describe('CollectionsPage', () => {
 
     const title = await screen.findByText('Test Collection');
     const header = title.closest('header');
+    openToolbarMenu();
 
     expect(header).toBeInTheDocument();
-    expect(header).toContainElement(screen.getByRole('button', { name: 'Hide completed tasks' }));
-    expect(header).toContainElement(screen.getByRole('button', { name: 'Hide old notes' }));
-    expect(screen.getByRole('button', { name: 'Hide old notes' }).closest('.page-header-toolbar')).toBeInTheDocument();
+    expect(header).toContainElement(screen.getByRole('checkbox', { name: 'Completed tasks' }));
+    expect(header).toContainElement(screen.getByRole('checkbox', { name: 'Notes' }));
+    expect(screen.getByRole('checkbox', { name: 'Notes' }).closest('.page-header-toolbar')).toBeInTheDocument();
   });
 
   it('updates completed-task visibility from the header toolbar', async () => {
     mockApiUpdatePreferences.mockResolvedValue({ ...defaultPreferences, hideCompletedTasks: true });
     renderPage();
 
-    const button = await screen.findByRole('button', { name: 'Hide completed tasks' });
-    await waitFor(() => expect(button).not.toBeDisabled());
-    fireEvent.click(button);
+    await screen.findByText('Test Collection');
+    openToolbarMenu();
+    const checkbox = await screen.findByRole('checkbox', { name: 'Completed tasks' });
+    await waitFor(() => expect(checkbox).not.toBeDisabled());
+    fireEvent.click(checkbox);
 
     await waitFor(() =>
       expect(mockApiUpdatePreferences).toHaveBeenCalledWith({ hideCompletedTasks: true }),
     );
-    expect(await screen.findByRole('button', { name: 'Show completed tasks' })).toBeInTheDocument();
+    expect(checkbox).not.toBeChecked();
   });
 
   it('does not render Inbox header', async () => {
@@ -326,5 +333,13 @@ describe('CollectionsPage', () => {
         expect(mockApiUpdateCollection).toHaveBeenCalledWith('test-collection-id', { name: 'Renamed' }),
       );
     });
+  });
+
+  it('renders the "+ New section" button with opacity-0 and hover:opacity-100 classes', async () => {
+    renderPage();
+    const button = await screen.findByRole('button', { name: /New section/i });
+    expect(button).toBeInTheDocument();
+    expect(button).toHaveClass('opacity-0');
+    expect(button).toHaveClass('hover:opacity-100');
   });
 });

@@ -5,24 +5,26 @@
 With the addition of the `event` type (Feature 1: `.specs/2026-08-07-event-support`) and Google OAuth (Feature 2: `.specs/2026-08-07-google-login`), we can plan synchronization between Planner events and Google Calendar.
 
 ### Dependencies
+
 - **Feature 1** (Event Support) must be implemented first — events are the primary sync entity
 - **Feature 2** (Google Login) must be implemented first — provides the Google OAuth infrastructure that calendar sync extends with additional scopes
 - **Feature 4** (Privacy & Legal, `.specs/2026-08-07-privacy-legal`) — privacy policy must disclose calendar data processing
 
 ### Complexity Warning
+
 Calendar sync is significantly more complex than the other two features. This plan is designed for **phased delivery** to manage risk.
 
 ---
 
 ## Decisions (Confirmed)
 
-| Decision | Answer |
-|----------|--------|
-| Google consent screen verification | **Testing mode** (100 manually-added test users until app matures) |
-| Incremental authorization | **Yes** — request calendar scope only when user connects in Settings |
-| Key rotation | **Hardened strategy** with versioned keys and lazy + batch rotation |
-| Sync configuration | **Rich UI** — calendar selection, dedicated calendar creation, type toggles |
-| Initial sync | **Yes** — sync existing events when connecting, with user preview |
+| Decision                           | Answer                                                                      |
+| ---------------------------------- | --------------------------------------------------------------------------- |
+| Google consent screen verification | **Testing mode** (100 manually-added test users until app matures)          |
+| Incremental authorization          | **Yes** — request calendar scope only when user connects in Settings        |
+| Key rotation                       | **Hardened strategy** with versioned keys and lazy + batch rotation         |
+| Sync configuration                 | **Rich UI** — calendar selection, dedicated calendar creation, type toggles |
+| Initial sync                       | **Yes** — sync existing events when connecting, with user preview           |
 
 ---
 
@@ -30,19 +32,19 @@ Calendar sync is significantly more complex than the other two features. This pl
 
 ### Events ✅ (Primary — Phase 1)
 
-| Direction | Behavior |
-|-----------|----------|
+| Direction      | Behavior                                         |
+| -------------- | ------------------------------------------------ |
 | Planner → GCal | Events with `due_date` appear on Google Calendar |
-| GCal → Planner | Google Calendar events appear as Planner events |
+| GCal → Planner | Google Calendar events appear as Planner events  |
 
 **Rationale**: Events are the natural semantic mapping. A BuJo event (`○ Dentist appointment`) is equivalent to a Google Calendar event.
 
 ### Tasks with Due Dates ⚠️ (Phase 1 — User opt-in)
 
-| Direction | Behavior |
-|-----------|----------|
+| Direction      | Behavior                                                 |
+| -------------- | -------------------------------------------------------- |
 | Planner → GCal | Tasks with `due_date` appear on selected Google Calendar |
-| GCal → Planner | Not in Phase 1 |
+| GCal → Planner | Not in Phase 1                                           |
 
 **Decision**: Available from Phase 1 but **off by default**. User enables via the sync configuration screen. Tasks sync to the same target calendar as events.
 
@@ -51,6 +53,7 @@ Calendar sync is significantly more complex than the other two features. This pl
 Notes with `due_date` can optionally sync. Most notes won't have dates, so this is a niche use case. Available in the configuration UI but disabled by default.
 
 ### Habits ❌ (Never)
+
 Habits have their own tracking system with streaks and weekly grids. Calendar sync would break the habit model.
 
 ---
@@ -58,6 +61,7 @@ Habits have their own tracking system with streaks and weekly grids. Calendar sy
 ## Phased Delivery
 
 ### Phase 1: Planner → Google Calendar (One-way push) ← **This spec**
+
 - User connects Google Calendar in Settings with rich configuration UI
 - User selects target calendar or creates a dedicated "Planner" calendar
 - User chooses what to sync: events (default on), tasks, notes (off by default)
@@ -65,11 +69,13 @@ Habits have their own tracking system with streaks and weekly grids. Calendar sy
 - Initial sync pushes existing items that match the configuration
 
 ### Phase 2: Google Calendar → Planner (Two-way sync) — Future spec
+
 - Google Calendar push notifications (webhooks) notify Planner of changes
 - New/updated/deleted GCal events are synced back to Planner as events
 - Conflict resolution needed (which version wins if both sides change?)
 
 ### Phase 3: Full bidirectional with Google Tasks — Future spec
+
 - Google Tasks API integration for task ↔ task sync
 - Separate from Calendar API
 
@@ -79,13 +85,14 @@ Habits have their own tracking system with streaks and weekly grids. Calendar sy
 
 ### Extended OAuth Scopes
 
-| Scope | Purpose | Sensitivity |
-|-------|---------|-------------|
-| `openid email profile` | Login (Feature 2) | Non-sensitive |
+| Scope                                      | Purpose                                 | Sensitivity   |
+| ------------------------------------------ | --------------------------------------- | ------------- |
+| `openid email profile`                     | Login (Feature 2)                       | Non-sensitive |
 | `https://www.googleapis.com/auth/calendar` | Read calendars list + read/write events | **Sensitive** |
 
 > [!NOTE]
 > We use `calendar` (full access) instead of `calendar.events` because we need to:
+>
 > 1. List the user's calendars (for the selection UI)
 > 2. Create a new "Planner" calendar (optional)
 > 3. Read/write events on the selected calendar
@@ -101,15 +108,16 @@ Since calendar scopes are **sensitive**, Google requires app verification before
 
 ### Data Flow Analysis
 
-| Direction | What travels | Stored by Planner? |
-|-----------|-------------|-----|
-| Planner → Google | Event/task titles, dates, times | No (stored by Google) |
-| Google → Planner | Calendar list (names, IDs) | Target calendar ID + name only |
-| Google → Planner | Calendar event IDs | ✅ For sync tracking |
-| Google → Planner | Refresh tokens | ✅ **Encrypted at rest** (AES-256-GCM) |
-| Google → Planner | Access tokens | ✅ Short-lived, encrypted |
+| Direction        | What travels                    | Stored by Planner?                     |
+| ---------------- | ------------------------------- | -------------------------------------- |
+| Planner → Google | Event/task titles, dates, times | No (stored by Google)                  |
+| Google → Planner | Calendar list (names, IDs)      | Target calendar ID + name only         |
+| Google → Planner | Calendar event IDs              | ✅ For sync tracking                   |
+| Google → Planner | Refresh tokens                  | ✅ **Encrypted at rest** (AES-256-GCM) |
+| Google → Planner | Access tokens                   | ✅ Short-lived, encrypted              |
 
 ### Privacy Policy Requirements (See `.specs/2026-08-07-privacy-legal/`)
+
 - Disclose that event/task titles and dates are sent to Google
 - Disclose that Google Calendar data (calendar list) is received
 - Explain opt-in nature (user must explicitly connect and configure)
@@ -147,12 +155,10 @@ key_version SMALLINT NOT NULL DEFAULT 1
 
 ```typescript
 function decryptToken(encrypted: string, keyVersion: number): string {
-  const key = keyVersion === currentKeyVersion
-    ? CURRENT_KEY
-    : PREVIOUS_KEY;
+  const key = keyVersion === currentKeyVersion ? CURRENT_KEY : PREVIOUS_KEY;
 
-  if (!key) throw new AppError('ENCRYPTION_KEY_MISSING', 
-    `No key available for version ${keyVersion}`, 500);
+  if (!key)
+    throw new AppError('ENCRYPTION_KEY_MISSING', `No key available for version ${keyVersion}`, 500);
 
   return decrypt(encrypted, key);
 }
@@ -164,8 +170,10 @@ When a token is decrypted with the **previous** key, it is immediately re-encryp
 
 ```typescript
 async function getDecryptedTokens(userId: string): Promise<Tokens> {
-  const row = await db.query('SELECT ... FROM google_calendar_connections WHERE user_id = $1', [userId]);
-  
+  const row = await db.query('SELECT ... FROM google_calendar_connections WHERE user_id = $1', [
+    userId,
+  ]);
+
   const accessToken = decryptToken(row.access_token_enc, row.key_version);
   const refreshToken = decryptToken(row.refresh_token_enc, row.key_version);
 
@@ -184,14 +192,19 @@ async function getDecryptedTokens(userId: string): Promise<Tokens> {
 
 ```typescript
 // Process in batches of 100 to avoid long-running transactions
-const rows = await db.query('SELECT id, access_token_enc, refresh_token_enc, key_version FROM google_calendar_connections WHERE key_version != $1', [currentKeyVersion]);
+const rows = await db.query(
+  'SELECT id, access_token_enc, refresh_token_enc, key_version FROM google_calendar_connections WHERE key_version != $1',
+  [currentKeyVersion],
+);
 for (const batch of chunk(rows, 100)) {
   await db.transaction(async (tx) => {
     for (const row of batch) {
       const access = decryptToken(row.access_token_enc, row.key_version);
       const refresh = decryptToken(row.refresh_token_enc, row.key_version);
-      await tx.query('UPDATE google_calendar_connections SET access_token_enc = $1, refresh_token_enc = $2, key_version = $3 WHERE id = $4',
-        [encrypt(access, CURRENT_KEY), encrypt(refresh, CURRENT_KEY), currentKeyVersion, row.id]);
+      await tx.query(
+        'UPDATE google_calendar_connections SET access_token_enc = $1, refresh_token_enc = $2, key_version = $3 WHERE id = $4',
+        [encrypt(access, CURRENT_KEY), encrypt(refresh, CURRENT_KEY), currentKeyVersion, row.id],
+      );
     }
   });
 }
@@ -298,7 +311,9 @@ export function decrypt(encoded: string, key: Buffer): string {
   const [ivB64, tagB64, dataB64] = parts.slice(-3);
   const decipher = createDecipheriv(ALGORITHM, key, Buffer.from(ivB64, 'base64'));
   decipher.setAuthTag(Buffer.from(tagB64, 'base64'));
-  return decipher.update(Buffer.from(dataB64, 'base64'), undefined, 'utf8') + decipher.final('utf8');
+  return (
+    decipher.update(Buffer.from(dataB64, 'base64'), undefined, 'utf8') + decipher.final('utf8')
+  );
 }
 ```
 
@@ -306,24 +321,28 @@ export function decrypt(encoded: string, key: Buffer): string {
 
 ```typescript
 // Connection management
-export async function getCalendarList(authCode: string): Promise<Calendar[]>
-export async function createDedicatedCalendar(userId: string, name?: string): Promise<Calendar>
-export async function connectCalendar(userId: string, config: CalendarSyncConfig): Promise<void>
-export async function disconnectCalendar(userId: string): Promise<void>
-export async function getConnectionStatus(userId: string): Promise<CalendarConnectionStatus>
-export async function updateSyncPreferences(userId: string, prefs: SyncPreferences): Promise<void>
+export async function getCalendarList(authCode: string): Promise<Calendar[]>;
+export async function createDedicatedCalendar(userId: string, name?: string): Promise<Calendar>;
+export async function connectCalendar(userId: string, config: CalendarSyncConfig): Promise<void>;
+export async function disconnectCalendar(userId: string): Promise<void>;
+export async function getConnectionStatus(userId: string): Promise<CalendarConnectionStatus>;
+export async function updateSyncPreferences(userId: string, prefs: SyncPreferences): Promise<void>;
 
 // Sync preview (for configuration screen)
-export async function getSyncPreview(userId: string): Promise<SyncPreview>
+export async function getSyncPreview(userId: string): Promise<SyncPreview>;
 
 // Sync operations
-export async function syncItemToGoogle(userId: string, task: Task): Promise<void>
-export async function updateItemOnGoogle(userId: string, task: Task): Promise<void>
-export async function deleteItemFromGoogle(userId: string, taskId: string, gcalEventId: string): Promise<void>
-export async function runInitialSync(userId: string): Promise<SyncResult>
+export async function syncItemToGoogle(userId: string, task: Task): Promise<void>;
+export async function updateItemOnGoogle(userId: string, task: Task): Promise<void>;
+export async function deleteItemFromGoogle(
+  userId: string,
+  taskId: string,
+  gcalEventId: string,
+): Promise<void>;
+export async function runInitialSync(userId: string): Promise<SyncResult>;
 
 // Key rotation
-export async function rotateEncryptionKeys(): Promise<{ rotated: number }>
+export async function rotateEncryptionKeys(): Promise<{ rotated: number }>;
 ```
 
 **Key types:**
@@ -332,10 +351,10 @@ export async function rotateEncryptionKeys(): Promise<{ rotated: number }>
 interface CalendarSyncConfig {
   authCode: string;
   targetCalendarId: string | 'CREATE_NEW';
-  newCalendarName?: string;   // Required when targetCalendarId === 'CREATE_NEW'
-  syncEvents: boolean;        // Default: true
-  syncTasks: boolean;         // Default: false
-  syncNotes: boolean;         // Default: false
+  newCalendarName?: string; // Required when targetCalendarId === 'CREATE_NEW'
+  syncEvents: boolean; // Default: true
+  syncTasks: boolean; // Default: false
+  syncNotes: boolean; // Default: false
 }
 
 interface SyncPreview {
@@ -372,7 +391,7 @@ if (task.due_date) {
 
   if (shouldSync) {
     // Fire-and-forget — sync failures must never block the response
-    calendarSyncService.syncItemToGoogle(userId, task).catch(err => {
+    calendarSyncService.syncItemToGoogle(userId, task).catch((err) => {
       logger.error('Calendar sync failed', { taskId: task.id, error: err.message });
     });
   }
@@ -427,26 +446,26 @@ Step 4: POST /calendar/connect → save configuration + trigger initial sync
 ### Configuration Screen (`CalendarSyncDialog`)
 
 ```
-┌─────────────────────────────────────────────────────┐
+┌-----------------------------------------------------┐
 │  Connect Google Calendar                        ✕   │
-│─────────────────────────────────────────────────────│
+│-----------------------------------------------------│
 │                                                     │
 │  Where to sync                                      │
-│  ┌─────────────────────────────────────────────┐    │
+│  ┌---------------------------------------------┐    │
 │  │ ○ Create a dedicated "Planner" calendar     │    │
 │  │   Name: [Planner________________]           │    │
 │  │                                             │    │
 │  │ ○ Use an existing calendar                  │    │
-│  │   ┌──────────────────────────────────┐      │    │
+│  │   ┌----------------------------------┐      │    │
 │  │   │ My Calendar                   ▼  │      │    │
 │  │   │ Work                             │      │    │
 │  │   │ Personal                         │      │    │
 │  │   │ Family                           │      │    │
-│  │   └──────────────────────────────────┘      │    │
-│  └─────────────────────────────────────────────┘    │
+│  │   └----------------------------------┘      │    │
+│  └---------------------------------------------┘    │
 │                                                     │
 │  What to sync                                       │
-│  ┌─────────────────────────────────────────────┐    │
+│  ┌---------------------------------------------┐    │
 │  │ ☑ Events                      12 items      │    │
 │  │   Events with due dates will appear on      │    │
 │  │   your calendar                             │    │
@@ -458,19 +477,20 @@ Step 4: POST /calendar/connect → save configuration + trigger initial sync
 │  │ ☐ Notes with due dates         3 items      │    │
 │  │   Notes with due dates will appear as       │    │
 │  │   calendar events                           │    │
-│  └─────────────────────────────────────────────┘    │
+│  └---------------------------------------------┘    │
 │                                                     │
-│  ┌──────────────────────────────────────────── ┐    │
+│  ┌-------------------------------------------- ┐    │
 │  │  ℹ Items without due dates are not synced.  │    │
 │  │  You can change these settings anytime in   │    │
 │  │  Settings → Integrations.                   │    │
-│  └─────────────────────────────────────────────┘    │
+│  └---------------------------------------------┘    │
 │                                                     │
 │  [ Cancel ]                   [ Connect & Sync ]    │
-└─────────────────────────────────────────────────────┘
+└-----------------------------------------------------┘
 ```
 
 **Key UX decisions:**
+
 - "Create dedicated calendar" is the **default/recommended** option — keeps Planner items separate from the user's personal events
 - Item counts are fetched from `GET /calendar/preview` and shown live
 - Events are checked by default; tasks and notes are unchecked
@@ -482,17 +502,17 @@ Step 4: POST /calendar/connect → save configuration + trigger initial sync
 After connecting, the Settings → Integrations page shows the active configuration:
 
 ```
-┌─────────────────────────────────────────────────────┐
+┌-----------------------------------------------------┐
 │  Google Calendar                                    │
-│  ┌─────────────────────────────────────────────┐    │
+│  ┌---------------------------------------------┐    │
 │  │  ● Connected to "Planner" calendar          │    │
 │  │  Last synced: 2 minutes ago                 │    │
 │  │                                             │    │
 │  │  Syncing: Events ✓  Tasks ✗  Notes ✗       │    │
 │  │                                             │    │
 │  │  [ Edit preferences ]    [ Disconnect ]     │    │
-│  └─────────────────────────────────────────────┘    │
-└─────────────────────────────────────────────────────┘
+│  └---------------------------------------------┘    │
+└-----------------------------------------------------┘
 ```
 
 "Edit preferences" opens the same configuration screen (minus the OAuth step) to change what types are synced.
@@ -506,11 +526,13 @@ Add `/settings/integrations` as a new settings section (alongside `general` and 
 Show a small sync badge on items that have a `google_calendar_event_id`:
 
 ```tsx
-{task.google_calendar_event_id && (
-  <span className="task-item-sync-badge" title="Synced to Google Calendar">
-    <CalendarIcon size={12} />
-  </span>
-)}
+{
+  task.google_calendar_event_id && (
+    <span className='task-item-sync-badge' title='Synced to Google Calendar'>
+      <CalendarIcon size={12} />
+    </span>
+  );
+}
 ```
 
 ### Google OAuth Incremental Authorization
@@ -558,6 +580,7 @@ function handleConnectCalendar() {
 ## Testing
 
 ### Backend
+
 - [ ] Unit test: `encrypt` / `decrypt` round-trip
 - [ ] Unit test: versioned key format parsing
 - [ ] Unit test: lazy rotation re-encrypts with current key
@@ -576,6 +599,7 @@ function handleConnectCalendar() {
 - [ ] Integration test: authorize → configure → connect → sync → disconnect flow (mocked Google API)
 
 ### Frontend
+
 - [ ] Unit test: Calendar sync dialog renders with calendar list
 - [ ] Unit test: "Create dedicated calendar" option works
 - [ ] Unit test: Sync type checkboxes toggle correctly

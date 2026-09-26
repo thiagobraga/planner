@@ -40,6 +40,14 @@ describe('HelpPage (smoke)', () => {
     expect(screen.getAllByText('Views').length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText('Habits').length).toBeGreaterThanOrEqual(1);
     expect(screen.getAllByText('Settings').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('Smart Date Recognition').length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('lists supported smart date recognition phrases', () => {
+    render(<HelpPage />);
+
+    expect(screen.getByText(/every day - recurring daily/)).toBeInTheDocument();
+    expect(screen.getByText(/every monday.*recurring weekly on that weekday/)).toBeInTheDocument();
   });
 
   it('renders Table of Contents sidebar', () => {
@@ -79,6 +87,6 @@ describe('HelpPage (smoke)', () => {
     render(<HelpPage />);
 
     expect(observers.length).toBeGreaterThan(0);
-    expect(observers[0].observe).toHaveBeenCalled();
+    expect(observers[observers.length - 1].observe).toHaveBeenCalled();
   });
 });

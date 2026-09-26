@@ -15,7 +15,7 @@ const BASE_CLASS =
 export function SidebarNavItem({ label, icon, to, onClick, active = false }: SidebarNavItemProps) {
   const content = (
     <>
-      <span className="w-4 flex items-center justify-center shrink-0 opacity-60">{icon}</span>
+      <span className="w-4 flex items-center justify-center shrink-0 opacity-60 overflow-visible">{icon}</span>
       <span className="leading-none">{label}</span>
     </>
   );

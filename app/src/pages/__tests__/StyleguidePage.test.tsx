@@ -23,7 +23,7 @@ const basePreferences: Preferences = {
   background: 'beige',
   smallCaps: false,
   hideCompletedTasks: false,
-  hideOldNotes: false,
+  showNotes: true,
 };
 
 beforeEach(() => {
@@ -46,8 +46,7 @@ describe('StyleguidePage (smoke)', () => {
   it('renders all design system sections', async () => {
     renderPage();
 
-    expect(await screen.findByText('Color Palette')).toBeInTheDocument();
-    expect(screen.getByText('Typography')).toBeInTheDocument();
+    expect(await screen.findByText('Colors')).toBeInTheDocument();
     expect(screen.getByText('Buttons')).toBeInTheDocument();
     expect(screen.getByText('Button Group')).toBeInTheDocument();
     expect(screen.getByText('Forms')).toBeInTheDocument();
@@ -66,19 +65,11 @@ describe('StyleguidePage (smoke)', () => {
   it('renders color swatches', async () => {
     renderPage();
 
-    expect(await screen.findByText('Color Palette')).toBeInTheDocument();
+    expect(await screen.findByText('Colors')).toBeInTheDocument();
     expect(screen.getByText('Primary Palette')).toBeInTheDocument();
     expect(screen.getByText('Secondary Palette')).toBeInTheDocument();
-    expect(screen.getByText('Ink')).toBeInTheDocument();
-    expect(screen.getByText('Cream Paper')).toBeInTheDocument();
-  });
-
-  it('renders typography specimens', async () => {
-    renderPage();
-
-    expect(await screen.findByText('Display')).toBeInTheDocument();
-    expect(screen.getByText('Heading')).toBeInTheDocument();
-    expect(screen.getByText('Body')).toBeInTheDocument();
+    expect(screen.getByText('--color-ink')).toBeInTheDocument();
+    expect(screen.getByText('--color-cream')).toBeInTheDocument();
   });
 
   it('renders interactive form elements', async () => {
@@ -92,7 +83,7 @@ describe('StyleguidePage (smoke)', () => {
   it('renders an interactive Button Group specimen', async () => {
     renderPage();
 
-    const kanban = await screen.findByRole('button', { name: 'Kanban view' });
+    const kanban = await screen.findByRole('button', { name: 'Kanban cards view' });
     const list = screen.getByRole('button', { name: 'List view' });
     expect(list).toHaveAttribute('aria-pressed', 'true');
     expect(kanban).toHaveAttribute('aria-pressed', 'false');

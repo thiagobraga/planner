@@ -26,7 +26,7 @@ const basePreferences: Preferences = {
   background: 'beige',
   smallCaps: false,
   hideCompletedTasks: false,
-  hideOldNotes: false,
+  showNotes: true,
 };
 
 vi.mock('../../api/client', async (importOriginal) => ({
@@ -130,8 +130,8 @@ describe('SettingsPage', () => {
     expect(generalTab).toHaveAttribute('title', 'General');
     expect(screen.getByRole('switch', { name: /Hide completed tasks/ })).toBeInTheDocument();
     expect(screen.getByText('It affects Daily, Inbox, and Collections.')).toBeInTheDocument();
-    expect(screen.getByRole('switch', { name: /Hide old notes/ })).toBeInTheDocument();
-    expect(screen.getByText('Hide notes before today')).toBeInTheDocument();
+    expect(screen.getByRole('switch', { name: /Show notes/ })).toBeInTheDocument();
+    expect(screen.getByText('Show notes in Daily, Inbox, and Collections')).toBeInTheDocument();
     expect(generalHeading.parentElement?.querySelector('p')).not.toBeInTheDocument();
     expect(languageHeading.parentElement?.querySelector('p')).not.toBeInTheDocument();
   });
@@ -251,11 +251,11 @@ describe('SettingsPage', () => {
 
     mockUpdatePreferences.mockRejectedValueOnce(new Error('nope'));
 
-    const hideOldNotes = screen.getByRole('switch', { name: /Hide old notes/ });
-    fireEvent.click(hideOldNotes);
+    const showNotes = screen.getByRole('switch', { name: /Show notes/ });
+    fireEvent.click(showNotes);
 
-    await waitFor(() => expect(mockUpdatePreferences).toHaveBeenCalledWith({ hideOldNotes: true }));
-    await waitFor(() => expect(hideOldNotes).toHaveAttribute('aria-checked', 'false'));
+    await waitFor(() => expect(mockUpdatePreferences).toHaveBeenCalledWith({ showNotes: false }));
+    await waitFor(() => expect(showNotes).toHaveAttribute('aria-checked', 'true'));
     expect(hideCompleted).toHaveAttribute('aria-checked', 'true');
   });
 });

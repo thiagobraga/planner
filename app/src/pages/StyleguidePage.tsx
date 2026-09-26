@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Plus, Calendar, Trash2, Search, ListTodo, Kanban, EyeOff, FileClock } from 'lucide-react';
-import { BjTask, MonthlyIcon, PlannerIcon } from '../components/Sidebar';
+import { CalendarDayIcon, MonthlyIcon, PlannerIcon } from '../components/Sidebar';
 import { SidebarNavItem } from '../components/SidebarNavItem';
 import { ChevronRight, Repeat2 } from 'lucide-react';
 import { MonthlyCalendarSpecimen } from '../components/monthly/MonthlyCalendarSpecimen';
@@ -25,7 +25,7 @@ import { Briefcase, Calendar as CalendarIcon, Tag, ArrowUp, ArrowDown } from 'lu
 import { fetchPreferences } from '../api/client';
 import { BoardCard } from '../components/board/BoardCard';
 
-// ── Card wrapper ──────────────────────────────────────────────────────────────
+// Card wrapper --------------------------------------------------------------
 function Card({
   title,
   span = false,
@@ -75,7 +75,7 @@ const NAV_COLLECTIONS = [
 ] as const;
 
 const NAV = [
-  { label: 'Daily', Icon: BjTask, active: true },
+  { label: 'Daily', Icon: CalendarDayIcon, active: true },
   { label: 'Inbox', Icon: ChevronRight, active: false },
   { label: 'Monthly', Icon: MonthlyIcon, active: false },
   { label: 'Habits', Icon: Repeat2, active: false },
@@ -115,7 +115,7 @@ export function StyleguidePage() {
   const weekStart = preferences?.weekStart ?? 'sunday';
 
   const [radioChoice, setRadioChoice] = useState('a');
-  const [buttonGroupView, setButtonGroupView] = useState<'list' | 'kanban'>('list');
+  const [buttonGroupView, setButtonGroupView] = useState<'list' | 'kanban-list' | 'kanban'>('list');
   const [buttonGroupVisibility, setButtonGroupVisibility] = useState<('completed' | 'notes')[]>(['completed']);
   const [buttonGroupIconOnly, setButtonGroupIconOnly] = useState<'timeline' | 'calendar' | 'board'>('timeline');
   const [toggleOn, setToggleOn] = useState(true);
@@ -161,53 +161,46 @@ export function StyleguidePage() {
       <header className="page-header-copy sticky-page-header max-w-162">
         <div className="page-header-copy-text">
           <h1 className="m-0 h-6 p-0 text-lg leading-6 font-semibold text-ink">Styleguide</h1>
-          <p className="page-header-subtitle m-0 h-6 p-0 text-[13px] leading-6 text-ink-light opacity-70">
-            Fonts, colors, components, and tokens to build Planner ecosystem.
-          </p>
         </div>
       </header>
 
-      <div className="h-12" />
+      <div className="h-6" />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
         {/* Color Palette */}
-        <Card title="Color Palette" span>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <Card title="Colors" span>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="lg:col-span-2">
-              <h3 className="text-[10px] text-ink-light uppercase tracking-widest font-semibold">Primary Palette</h3>
-              <p className="text-[11px] text-ink-light opacity-70 -mt-2 mb-4">Base neutral and structural colors - calm, readable foundations for content.</p>
-              <div className="grid grid-cols-1 gap-4">
-                {PRIMARY_COLORS.map(({ name, var: varName, hex }) => (
+              <h3 className="text-[10px] text-ink-light uppercase tracking-widest font-semibold mt-6">Primary Palette</h3>
+              <div className="grid grid-cols-1 gap-6">
+                {PRIMARY_COLORS.map(({ var: varName, hex }) => (
                   <div key={varName} className="flex items-start gap-3">
                     <span
                       className="w-12 h-12 rounded-sm border border-border shrink-0"
                       style={{ backgroundColor: hex }}
                       title={varName}
                     />
-                    <div className="flex flex-col gap-0.5">
-                      <span className="text-sm text-ink font-medium leading-none mb-1">{name}</span>
-                      <span className="text-[10px] text-ink-light font-mono leading-none mb-1">{varName}</span>
-                      <span className="text-[10px] text-ink-light font-mono leading-none">{hex}</span>
+                    <div className="flex flex-col">
+                      <span className="text-[10px] text-ink-light font-mono tracking-widest">{varName}</span>
+                      <span className="text-[10px] text-ink-light font-mono tracking-widest">{hex}</span>
                     </div>
                   </div>
                 ))}
               </div>
             </div>
             <div>
-              <h3 className="text-[10px] text-ink-light uppercase tracking-widest font-semibold -mb-2">Secondary Palette</h3>
-              <p className="text-[11px] text-ink-light opacity-70 -mt-2 mb-4">Accent and semantic colors - for emphasis, priority, and status signals.</p>
-              <div className="grid grid-cols-1 gap-4">
-                {SECONDARY_COLORS.map(({ name, var: varName, hex }) => (
+              <h3 className="text-[10px] text-ink-light uppercase tracking-widest font-semibold">Secondary Palette</h3>
+              <div className="grid grid-cols-1 gap-6">
+                {SECONDARY_COLORS.map(({ var: varName, hex }) => (
                   <div key={varName} className="flex items-start gap-3">
                     <span
                       className="w-12 h-12 rounded-sm border border-border shrink-0"
                       style={{ backgroundColor: hex }}
                       title={varName}
                     />
-                    <div className="flex flex-col gap-0.5">
-                      <span className="text-sm text-ink font-medium leading-none mb-1">{name}</span>
-                      <span className="text-[10px] text-ink-light font-mono leading-none mb-1">{varName}</span>
-                      <span className="text-[10px] text-ink-light font-mono leading-none">{hex}</span>
+                    <div className="flex flex-col">
+                      <span className="text-[10px] text-ink-light font-mono tracking-widest">{varName}</span>
+                      <span className="text-[10px] text-ink-light font-mono tracking-widest">{hex}</span>
                     </div>
                   </div>
                 ))}
@@ -217,7 +210,7 @@ export function StyleguidePage() {
         </Card>
 
         {/* Interface Typography */}
-        <Card title="Typography" span>
+        {/* <Card title="Typography" span>
           <div className="divide-y divide-border">
             {TYPE_SCALE.map(({ label, spec, className }) => (
               <div key={label} className="py-3 grid grid-cols-[180px_1fr] gap-6 items-center">
@@ -229,60 +222,48 @@ export function StyleguidePage() {
               </div>
             ))}
           </div>
-        </Card>
+        </Card> */}
 
         {/* Buttons */}
         <Card title="Buttons" span>
+          <div className="h-6" />
+
           <div className="flex flex-col gap-6">
             {([
-              { label: 'Primary', variant: 'primary' as const },
-              { label: 'Secondary', variant: 'secondary' as const },
-              { label: 'Tertiary', variant: 'tertiary' as const },
-              { label: 'Destructive', variant: 'destructive' as const },
-            ]).map(({ label, variant }) => (
-              <div key={label} className="flex flex-col gap-2">
+              { label: 'Primary', variant: 'primary' as const, disabled: false },
+              { label: 'Secondary', variant: 'secondary' as const, disabled: false },
+              { label: 'Tertiary', variant: 'tertiary' as const, disabled: false },
+              { label: 'Destructive', variant: 'destructive' as const, disabled: false },
+              { label: 'Disabled', variant: 'primary' as const, disabled: true },
+            ]).map(({ label, variant, disabled }) => (
+              <div key={label} className="flex flex-col">
                 <span className="text-[10px] text-ink-light uppercase tracking-widest font-semibold block">{label}</span>
                 <div className="flex flex-wrap items-start gap-3">
                   <Button
                     variant={variant}
                     size="lg"
                     leftIcon={variant === 'destructive' ? <Trash2 /> : <Plus />}
+                    disabled={disabled}
                   >
-                    {variant === 'destructive' ? 'Delete' : 'Large'}
+                    Large
                   </Button>
                   <Button
                     variant={variant}
                     size="md"
                     leftIcon={variant === 'destructive' ? <Trash2 /> : <Calendar />}
+                    disabled={disabled}
                   >
-                    {variant === 'destructive' ? 'Delete' : 'Medium'}
+                    Medium
                   </Button>
-                  <Button variant={variant} size="sm">
-                    {variant === 'destructive' ? 'Delete' : 'Small'}
+                  <Button variant={variant} size="sm" disabled={disabled}>
+                    Small
                   </Button>
-                  <Button variant={variant} size="xs">
-                    {variant === 'destructive' ? 'Delete' : 'Tiny'}
+                  <Button variant={variant} size="xs" disabled={disabled}>
+                    Tiny
                   </Button>
                 </div>
               </div>
             ))}
-            <div className="flex flex-col gap-2">
-              <span className="text-[10px] text-ink-light uppercase tracking-widest font-semibold block">Disabled</span>
-              <div className="flex flex-wrap items-start gap-3">
-                <Button variant="secondary" size="lg" leftIcon={<Plus />} disabled>
-                  Large
-                </Button>
-                <Button variant="secondary" size="md" leftIcon={<Calendar />} disabled>
-                  Medium
-                </Button>
-                <Button variant="secondary" size="sm" disabled>
-                  Small
-                </Button>
-                <Button variant="secondary" size="xs" disabled>
-                  Tiny
-                </Button>
-              </div>
-            </div>
           </div>
         </Card>
 
@@ -290,15 +271,16 @@ export function StyleguidePage() {
           <div className="flex flex-col gap-6">
             <div className="flex flex-col gap-2">
               <span className="text-[10px] text-ink-light uppercase tracking-widest font-semibold block">
-                Single-select (list / kanban)
+                Single-select (list / kanban lists / kanban cards)
               </span>
-              <ButtonGroup<'list' | 'kanban'>
+              <ButtonGroup<'list' | 'kanban-list' | 'kanban'>
                 mode="single"
                 value={buttonGroupView}
                 onChange={setButtonGroupView}
                 items={[
                   { value: 'list', label: 'List view', showLabel: true, icon: <ListTodo size={12} strokeWidth={1.5} /> },
-                  { value: 'kanban', label: 'Kanban view', showLabel: true, icon: <Kanban size={12} strokeWidth={1.5} /> },
+                  { value: 'kanban-list', label: 'Kanban lists view', showLabel: true, icon: <span aria-hidden="true">▥</span> },
+                  { value: 'kanban', label: 'Kanban cards view', showLabel: true, icon: <Kanban size={12} strokeWidth={1.5} /> },
                 ]}
               />
             </div>
