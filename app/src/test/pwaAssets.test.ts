@@ -98,7 +98,7 @@ describe('iOS launch images', () => {
   it('covers 22 devices in both orientations', () => {
     expect(links).toHaveLength(44);
     expect(new Set(links.map((link) => link.href)).size).toBe(44);
-    expect(indexHtml.match(/apple-touch-startup-image/g)).toHaveLength(44 + 2);
+    expect(indexHtml.match(/apple-touch-startup-image/g)).toHaveLength(44);
   });
 
   it('sizes each image to its device in CSS px times pixel ratio', () => {
