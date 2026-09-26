@@ -5,7 +5,6 @@ import { CSS } from '@dnd-kit/utilities';
 import type { ApiTask } from '../../api/client';
 import type { CardSubtasksDropData, TaskDragData } from '../../types/drag';
 import { NO_DRAG_ATTR } from '../dnd/sensors';
-import { useI18n } from '../../i18n/I18nContext';
 
 interface BoardCardChecklistProps {
   parentTask: ApiTask;
@@ -38,7 +37,6 @@ function SortableChecklistRow({
     data,
   });
 
-  const { t } = useI18n();
   const isNote = task.type === 'note';
 
   return (
