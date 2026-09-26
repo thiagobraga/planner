@@ -1,14 +1,18 @@
-# CLAUDE.md
+# AI Agent Instructions
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to AI coding agents (Claude Code, Gemini CLI, GitHub Copilot CLI, Codex, OpenCode, Antigravity, etc.) when working with code in this repository.
+
+`AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, and `.github/copilot-instructions.md` are symlinks to this single file - there is nothing to synchronize manually. Edit this file only; the other names stay in sync automatically because they resolve to the same inode. Do not replace any of them with a real file.
 
 ## Project
 
 Planner is a task manager with a paper-journal aesthetic (warm cream, Lora serif, dotted grid). Two independent npm packages: `api/` (Express + PostgreSQL + Redis) and `app/` (React + Vite). Real-time sync via Socket.IO backed by Redis Pub/Sub. Auth uses JWT (7-day expiry) with DB-side session revocation.
 
-## Multi-Agent Instruction Synchronization Rule
+## Tool Name Equivalents
 
-Whenever updating AI agent instructions, conventions, or specs workflows, you MUST synchronize and apply the changes across all agent files: `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, and `.github/copilot-instructions.md`.
+Different agents expose the same capability under different tool names. Read-before-edit discipline applies regardless of tool name: always read a file before modifying it, and grep for all callers before changing a function signature.
+
+- Skill invocation: Claude Code `Skill` tool ≈ Gemini CLI `activate_skill` tool.
 
 ## Andrej Karpathy Engineering Principles
 
@@ -286,6 +290,7 @@ When instructed to work on a spec or task:
    - **Open Draft PR**: Push initial branch and open a Pull Request against `main` marked as **Draft** before starting development.
 4. **Live Browser Session**:
    - Launch Chrome browser using Playwright at `https://<agent>.planner.local` right as development starts to inspect UI live throughout development.
+   - For any rendered frontend change, open the affected route in the Playwright MCP browser preview before reporting completion. Verify the page is not blank, exercise the changed control, inspect console errors, and capture desktop plus narrow-screen screenshots in `app/dist/screenshots/`.
 5. **Implementation, Testing & Milestone Commits**:
    - Implement feature following TDD (unit, integration, Playwright E2E) and coding conventions.
    - Save visual test screenshots to `./app/dist/screenshots/*.png` inside worktree and display them as clickable markdown links.

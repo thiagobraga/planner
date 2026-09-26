@@ -5,6 +5,7 @@ import {
   createGroup,
   updateGroup,
   deleteGroup,
+  archiveHabitGroup,
   moveHabitGroup,
 } from "../services/habitService.js";
 
@@ -46,6 +47,15 @@ router.patch("/:id/move", async (req: Request, res: Response, next: NextFunction
 router.delete("/:id", async (req: Request, res: Response, next: NextFunction) => {
   try {
     await deleteGroup(req.userId!, req.params.id as string);
+    res.status(204).end();
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.post("/:id/archive", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    await archiveHabitGroup(req.userId!, req.params.id as string);
     res.status(204).end();
   } catch (err) {
     next(err);

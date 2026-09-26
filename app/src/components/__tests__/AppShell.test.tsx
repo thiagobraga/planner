@@ -32,6 +32,12 @@ vi.mock('../../api/client', () => ({
 
 vi.mock('../Sidebar', () => ({
   Sidebar: vi.fn(() => <div data-testid="sidebar" />),
+  NAV_ITEMS: [
+    { to: '/daily', labelKey: 'nav.daily', Icon: () => null },
+    { to: '/inbox', labelKey: 'nav.inbox', Icon: () => null },
+    { to: '/habits', labelKey: 'nav.habits', Icon: () => null },
+    { to: '/monthly', labelKey: 'nav.monthly', Icon: () => null },
+  ],
 }));
 
 vi.mock('../QuickAdd', () => ({
@@ -71,7 +77,7 @@ const defaultPreferences = {
   background: 'beige',
   smallCaps: false,
   hideCompletedTasks: false,
-  hideOldNotes: false,
+  showNotes: true,
 };
 
 describe('AppShell', () => {

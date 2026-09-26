@@ -1,4 +1,4 @@
-import { CalendarDays, Check, Flag } from 'lucide-react';
+import { CalendarDays, Check } from 'lucide-react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { ApiTask } from '../../api/client';
@@ -52,9 +52,6 @@ export function BoardCard({ task, subtasks, containerId = '', subtreeIds, onTogg
           {task.isCompleted && <Check size={12} strokeWidth={2} />}
         </button>
         <h3 className={task.isCompleted ? 'line-through opacity-60' : ''}>{task.title}</h3>
-        <span className={`board-card-priority priority-${task.priority}`} aria-label={t('board.priority', { priority: task.priority })}>
-          <Flag size={14} strokeWidth={1.7} />
-        </span>
       </div>
 
       {task.labels && task.labels.length > 0 && (

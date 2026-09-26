@@ -356,7 +356,7 @@ export function SettingsPage() {
           | 'timeZone'
           | 'weekStart'
           | 'hideCompletedTasks'
-          | 'hideOldNotes'
+          | 'showNotes'
           | 'dateFormat'
         >
       >,
@@ -390,7 +390,7 @@ export function SettingsPage() {
   const smallCaps = preferences?.smallCaps ?? false;
   const weekStart = preferences?.weekStart ?? 'sunday';
   const hideCompletedTasks = preferences?.hideCompletedTasks ?? false;
-  const hideOldNotes = preferences?.hideOldNotes ?? false;
+  const showNotes = preferences?.showNotes ?? true;
   const dateFormat = preferences?.dateFormat ?? 'MMM DD ddd';
   const savedTimeZone = preferences?.timeZone ?? detectedTimeZone;
   const disabled = updateMutation.isPending;
@@ -515,8 +515,8 @@ export function SettingsPage() {
     updateMutation.mutate({ hideCompletedTasks: nextHideCompletedTasks });
   };
 
-  const handleHideOldNotesChange = (nextHideOldNotes: boolean) => {
-    updateMutation.mutate({ hideOldNotes: nextHideOldNotes });
+  const handleShowNotesChange = (nextShowNotes: boolean) => {
+    updateMutation.mutate({ showNotes: nextShowNotes });
   };
 
   const handleSectionChange = (nextSection: SettingsSection) => {
@@ -711,7 +711,7 @@ export function SettingsPage() {
 
                     <section className="space-y-3 border-t border-[var(--planner-settings-separator)] pt-8">
                       <h3 className="text-[10px] leading-5 tracking-[0.12em] uppercase text-ink-light font-medium">
-                        Daily Date Format
+                        Date display
                       </h3>
                       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                         {DATE_FORMAT_OPTIONS.map(({ value, label, example }) => (
@@ -748,12 +748,12 @@ export function SettingsPage() {
                       />
 
                       <PreferenceToggle
-                        id={`${timeZoneInputId}-hide-old-notes`}
-                        checked={hideOldNotes}
-                        onChange={handleHideOldNotesChange}
+                        id={`${timeZoneInputId}-show-notes`}
+                        checked={showNotes}
+                        onChange={handleShowNotesChange}
                         disabled={disabled}
-                        title={t('settings.hideOldNotes')}
-                        description={t('settings.hideOldNotesDescription')}
+                        title={t('settings.showNotes')}
+                        description={t('settings.showNotesDescription')}
                       />
                     </section>
                   </div>
