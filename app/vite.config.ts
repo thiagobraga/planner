@@ -63,6 +63,9 @@ export default defineConfig({
         // navigation to the network, where nginx's no-cache header on /
         // already guarantees a fresh index.html.
         globPatterns: ['**/*.{js,css,svg,png,ico,woff2}'],
+        // iOS fetches only the launch image matching its own screen, so
+        // precaching all of them would cost every visitor ~4 MB for nothing.
+        globIgnores: ['**/images/splash/**'],
         navigateFallback: null,
         runtimeCaching: [
           {
