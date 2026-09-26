@@ -28,7 +28,6 @@ test('reordering inside a status column does not change list order', async ({ ap
     await dragCard(page, card(page, second.id), card(page, first.id));
     await expect(statusColumn(page, backlog.id).locator('[data-card-id]').first()).toHaveAttribute('data-card-id', second.id);
 
-    await page.getByRole('button', { name: 'More options', exact: true }).click();
     await page.getByRole('button', { name: 'List', exact: true }).click();
     await expect(page.locator('[data-task-id]').first()).toHaveAttribute('data-task-id', first.id);
 

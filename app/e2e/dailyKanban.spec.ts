@@ -15,9 +15,7 @@ test('Daily board retains scheduled cards while keeping Migrate scoped to Daily 
   const undatedTitle = `Sort paperwork ${suffix}`;
   const enterBoard = async () => {
     await page.goto('/daily');
-    await page.getByRole('button', { name: 'More options', exact: true }).click();
     await page.getByRole('button', { name: 'Kanban cards', exact: true }).click();
-    await page.getByRole('button', { name: 'More options', exact: true }).click();
     await expect(page.getByTestId('daily-week-board')).toBeVisible();
   };
 
@@ -112,7 +110,6 @@ test('Daily Kanban lists keeps journal rows and the destination date', async ({ 
 
   try {
     await page.goto('/daily');
-    await page.getByRole('button', { name: 'More options', exact: true }).click();
     await page.getByRole('button', { name: 'Kanban lists', exact: true }).click();
     await expect(page.getByTestId('daily-week-board')).toBeVisible();
     const column = page.locator(`[data-column-id="day:${today}"]`);
