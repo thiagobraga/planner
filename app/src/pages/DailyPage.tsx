@@ -1,6 +1,5 @@
 import { useMemo, useRef, useState, useEffect, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useNavigate } from 'react-router';
 import { useSync } from '../hooks/useSync';
 import { useReorganize, type Section as ReorganizeSection } from '../hooks/useReorganize';
 import { isEchoedMove, isStructuralMove } from '../utils/moveEcho';
@@ -143,7 +142,6 @@ function loadShowUpcoming(): boolean {
 
 export function DailyPage() {
   const { locale, t } = useI18n();
-  const navigate = useNavigate();
   const qc = useQueryClient();
   const [sections, setSections] = useState<DaySection[]>([]);
   const [editingId, setEditingId] = useState<string>();

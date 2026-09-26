@@ -45,15 +45,6 @@ function Card({
   );
 }
 
-const TYPE_SCALE = [
-  { label: 'Display', spec: 'Lora 600 · 48px / 56px', className: 'text-[48px] leading-[56px] font-semibold' },
-  { label: 'Heading', spec: 'Lora 600 · 22px / 28px', className: 'text-[22px] leading-[28px] font-semibold' },
-  { label: 'Body', spec: 'Lora 400 · 16px / 24px', className: 'text-[16px] leading-6' },
-  { label: 'Caption', spec: 'Lora 400 · 12px / 18px', className: 'text-[12px] leading-[18px] text-ink-light' },
-  { label: 'Label', spec: 'Lora 500 · 11px / 16px', className: 'text-[11px] leading-4 font-medium uppercase tracking-widest' },
-  { label: 'Mono', spec: 'Monospace · 12px / 16px', className: 'text-[12px] leading-4 font-mono' },
-];
-
 const COLLECTIONS = [
   { name: 'dev', color: '#7dbfb2' },
   { name: 'planner', color: '#d7db96' },
@@ -208,21 +199,6 @@ export function StyleguidePage() {
             </div>
           </div>
         </Card>
-
-        {/* Interface Typography */}
-        {/* <Card title="Typography" span>
-          <div className="divide-y divide-border">
-            {TYPE_SCALE.map(({ label, spec, className }) => (
-              <div key={label} className="py-3 grid grid-cols-[180px_1fr] gap-6 items-center">
-                <div className="flex flex-col">
-                  <span className="text-[11px] font-semibold text-ink uppercase tracking-widest">{label}</span>
-                  <span className="text-[10px] text-ink-light font-mono mt-0.5 whitespace-nowrap">{spec}</span>
-                </div>
-                <span className={`text-ink overflow-hidden ${className}`}>Aa</span>
-              </div>
-            ))}
-          </div>
-        </Card> */}
 
         {/* Buttons */}
         <Card title="Buttons" span>

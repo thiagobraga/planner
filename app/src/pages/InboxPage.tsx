@@ -1,5 +1,4 @@
 import { Fragment, useState, useRef, useCallback, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { TaskList } from '../components/TaskList';
@@ -85,7 +84,6 @@ function buildSectionGroups(tasks: Task[], sections: Section[]) {
 
 export function InboxPage() {
   const { locale, t } = useI18n();
-  const navigate = useNavigate();
   const qc = useQueryClient();
   const cachedInbox = qc.getQueryData<Awaited<ReturnType<typeof fetchInboxTasks>>>(['inbox']);
   const [tasks, setTasks] = useState<Task[]>(() => cachedInbox?.tasks.map(apiToTask) ?? []);
