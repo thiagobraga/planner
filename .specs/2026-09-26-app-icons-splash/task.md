@@ -14,7 +14,6 @@
   - `images/icons/icon-maskable-{192x192,512x512}.png` - opaque `#f5f0e8`, notebook at 62% height: 0.464 x 0.62 has a half-diagonal of 0.387, inside the 0.40 safe-zone radius
   - `images/logo/logo-{16x16,32x32,28x38,56x76,64x64,128x128}.png` - transparent, fitted and centered. Names follow `PlannerIcon`'s existing `${width}x${height}` template so `srcSet` is `${2w}x${2h}`.
   - `images/splash/ios/apple-splash-{w}x{h}.png` - 22 devices x portrait/landscape = 44, opaque `#f5f0e8`, notebook centered at the per-device height measured from Progressier's output. Progressier's "iPhone Duo (Open/Closed)" entries were dropped: unreleased device, width > height in "portrait".
-  - Rewrites the block between `<!-- apple-touch-startup-image:start ... -->` and `<!-- apple-touch-startup-image:end -->` in `app/index.html`, so tags and files come from the same table.
   - Kept lossless RGB: palette quantization saved ~40% but showed up to 13 levels of banding in the shadow.
 - [x] 1.3 Deleted `app/public/images/bulletjournal-planner-*.png`.
 
