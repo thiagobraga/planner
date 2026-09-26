@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router';
 import { beforeEach, afterEach, vi, type MockInstance } from 'vitest';
@@ -26,6 +26,7 @@ export interface InboxMockRefs {
 }
 
 export function applyInboxDefaults(refs: InboxMockRefs): void {
+  window.localStorage.clear();
   refs.mockFetchInboxTasks.mockReset();
   refs.mockApiCreateTask.mockReset();
   refs.mockApiUpdateTask.mockReset();
@@ -58,10 +59,17 @@ export function applyInboxDefaults(refs: InboxMockRefs): void {
 }
 
 export function inboxBeforeEach(refs: InboxMockRefs): void {
-  beforeEach(() => applyInboxDefaults(refs));
+  beforeEach(() => {
+    window.localStorage.removeItem('planner.boardViews.v1');
+    applyInboxDefaults(refs);
+  });
   afterEach(() => {
     vi.restoreAllMocks();
   });
+}
+
+export function openToolbarMenu(): void {
+  fireEvent.click(screen.getByRole('button', { name: 'More options' }));
 }
 
 export function renderPage(

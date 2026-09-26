@@ -1,11 +1,10 @@
 import { expect } from '@playwright/test';
 import { test } from './coverage-fixture';
-
-const API_URL = process.env.PLAYWRIGHT_API_URL || 'http://api:4000';
+import { API_ORIGIN } from './fixtures/api';
 
 test.describe('Production Hardening E2E Tests', () => {
   test('security headers are present on API responses', async ({ request }) => {
-    const response = await request.get(`${API_URL}/api/v1/auth/me`);
+    const response = await request.get(`${API_ORIGIN}/api/v1/auth/me`);
     expect(response.status()).toBe(401);
 
     const headers = response.headers();
@@ -53,7 +52,7 @@ test.describe('Production Hardening E2E Tests', () => {
   });
 
   test('unauthenticated API access is blocked with 401 Unauthorized', async ({ request }) => {
-    const response = await request.get(`${API_URL}/api/v1/tasks`);
+    const response = await request.get(`${API_ORIGIN}/api/v1/tasks`);
     expect(response.status()).toBe(401);
 
     const body = await response.json();

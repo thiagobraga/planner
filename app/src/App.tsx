@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from './api/queryClient';
@@ -13,13 +14,13 @@ import { CollectionsPage } from './pages/CollectionsPage';
 import { CollectionsIndexPage } from './pages/CollectionsIndexPage';
 import { DailyPage } from './pages/DailyPage';
 import { HabitsPage } from './pages/HabitsPage';
-import { MonthlyPage } from './pages/MonthlyPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { StyleguidePage } from './pages/StyleguidePage';
 import { HelpPage } from './pages/HelpPage';
 import { AdminUsersPage } from './pages/admin/AdminUsersPage';
 import { AdminDashboardPage } from './pages/admin/AdminDashboardPage';
 import { I18nProvider } from './i18n/I18nContext';
+import { getAppTitle } from './utils/environment';
 
 function AppRoutes() {
   const { isAuthenticated, user } = useAuth();
@@ -37,7 +38,6 @@ function AppRoutes() {
           <Route path="/today" element={<Navigate to="/daily" replace />} />
           <Route path="/daily" element={<DailyPage />} />
           <Route path="/inbox" element={<InboxPage />} />
-          <Route path="/monthly" element={<MonthlyPage />} />
           <Route path="/habits" element={<HabitsPage />} />
           <Route path="/settings" element={<Navigate to="/settings/general" replace />} />
           <Route path="/settings/:section" element={<SettingsPage />} />
@@ -61,6 +61,12 @@ function AppRoutes() {
 }
 
 function App() {
+  useEffect(() => {
+    const title = getAppTitle();
+    document.title = title;
+    document.querySelector('meta[property="og:title"]')?.setAttribute('content', title);
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <I18nProvider>

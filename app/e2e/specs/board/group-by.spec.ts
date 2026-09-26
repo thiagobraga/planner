@@ -19,11 +19,13 @@ test('priority mode has four fixed columns and persists card priority', async ({
     await openBoard(page, collection.id);
     await setGroupBy(page, 'Priority');
     await expect(page.locator('[data-column-id^="priority:"]')).toHaveCount(4);
+    await page.getByRole('button', { name: 'More options', exact: true }).click();
 
     await dragCard(page, card(page, task.id), priorityColumn(page, 1).locator('.board-column-cards'));
     await expect(priorityColumn(page, 1).locator(`[data-card-id="${task.id}"]`)).toBeVisible();
 
     await page.reload();
+    await page.getByRole('button', { name: 'More options', exact: true }).click();
     await expect(page.locator('#board-group-by')).toContainText('Priority');
     await expect(priorityColumn(page, 1).locator(`[data-card-id="${task.id}"]`)).toBeVisible();
     await expect.poll(async () =>
