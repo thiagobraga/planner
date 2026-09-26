@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 
-const TEST_FALLBACK_URL = "postgres://planner:planner@localhost:5432/planner_test";
+const TEST_FALLBACK_URL = `postgres://${process.env.POSTGRES_USER ?? "planner"}:${process.env.POSTGRES_PASSWORD ?? "planner"}@localhost:5432/planner_test`;
 
 function readSecret(name: string, fallback?: string): string {
   const filePath = process.env[`${name}_FILE`];

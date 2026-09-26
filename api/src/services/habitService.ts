@@ -128,7 +128,7 @@ async function validateParent(userId: string, parentId: string): Promise<void> {
 
 export async function listHabits(userId: string): Promise<Habit[]> {
   const habitsResult = await pool.query(
-    `SELECT * FROM habits WHERE user_id = $1 ORDER BY order_value, created_at`,
+    `SELECT * FROM habits WHERE user_id = $1 AND archived_at IS NULL ORDER BY order_value, created_at`,
     [userId],
   );
   const rows = habitsResult.rows as HabitRow[];
@@ -307,6 +307,22 @@ export async function deleteHabit(userId: string, habitId: string): Promise<void
   emit(userId, "habit", "deleted", habitId);
 }
 
+export async function archiveHabit(userId: string, habitId: string): Promise<void> {
+  await getOwnedHabit(userId, habitId);
+
+  const result = await pool.query(
+    `UPDATE habits SET archived_at = NOW() WHERE (id = $1 OR parent_id = $1) AND user_id = $2 AND archived_at IS NULL RETURNING id`,
+    [habitId, userId],
+  );
+  if (result.rows.length === 0) {
+    throw new AppError({ code: "NOT_FOUND", message: "Habit not found", statusCode: 404 });
+  }
+
+  for (const row of result.rows as { id: string }[]) {
+    emit(userId, "habit", "deleted", row.id);
+  }
+}
+
 export interface CompletionResult {
   habitId: string;
   date: string;
@@ -365,7 +381,7 @@ export async function toggleCompletion(
 
 export async function listGroups(userId: string): Promise<HabitGroup[]> {
   const result = await pool.query(
-    `SELECT * FROM habit_groups WHERE user_id = $1 ORDER BY order_value, created_at`,
+    `SELECT * FROM habit_groups WHERE user_id = $1 AND archived_at IS NULL ORDER BY order_value, created_at`,
     [userId],
   );
   return (result.rows as HabitGroupRow[]).map(formatGroup);
@@ -441,6 +457,28 @@ export async function deleteGroup(userId: string, groupId: string): Promise<void
     throw new AppError({ code: "NOT_FOUND", message: "Habit group not found", statusCode: 404 });
   }
   emit(userId, "habit_group", "deleted", groupId);
+}
+
+export async function archiveHabitGroup(userId: string, groupId: string): Promise<void> {
+  const result = await pool.query(
+    `UPDATE habit_groups SET archived_at = NOW() WHERE id = $1 AND user_id = $2 AND archived_at IS NULL RETURNING id`,
+    [groupId, userId],
+  );
+  if (result.rows.length === 0) {
+    throw new AppError({ code: "NOT_FOUND", message: "Habit group not found", statusCode: 404 });
+  }
+  emit(userId, "habit_group", "deleted", groupId);
+
+  const habitsResult = await pool.query(
+    `UPDATE habits SET archived_at = NOW()
+     WHERE user_id = $2 AND archived_at IS NULL
+       AND (group_id = $1 OR parent_id IN (SELECT id FROM habits WHERE group_id = $1 AND user_id = $2))
+     RETURNING id`,
+    [groupId, userId],
+  );
+  for (const row of habitsResult.rows as { id: string }[]) {
+    emit(userId, "habit", "deleted", row.id);
+  }
 }
 
 export interface MoveHabitInput {

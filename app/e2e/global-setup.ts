@@ -8,8 +8,9 @@ import { API_ORIGIN, API_PATH, BASE_URL, STORAGE_STATE_PATH } from './fixtures/a
 export default async function globalSetup(): Promise<void> {
   fs.mkdirSync(path.dirname(STORAGE_STATE_PATH), { recursive: true });
 
+  const apiOrigin = process.env.E2E_BASE_URL ? new URL(process.env.E2E_BASE_URL).origin : API_ORIGIN;
   const request = await apiRequest.newContext({
-    baseURL: API_ORIGIN,
+    baseURL: apiOrigin,
     ignoreHTTPSErrors: true,
   });
 

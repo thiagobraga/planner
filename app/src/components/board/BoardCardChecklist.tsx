@@ -1,9 +1,11 @@
+import { Check } from 'lucide-react';
 import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { ApiTask } from '../../api/client';
 import type { CardSubtasksDropData, TaskDragData } from '../../types/drag';
 import { NO_DRAG_ATTR } from '../dnd/sensors';
+import { useI18n } from '../../i18n/I18nContext';
 
 interface BoardCardChecklistProps {
   parentTask: ApiTask;
@@ -36,6 +38,9 @@ function SortableChecklistRow({
     data,
   });
 
+  const { t } = useI18n();
+  const isNote = task.type === 'note';
+
   return (
     <label
       ref={setNodeRef}
@@ -45,12 +50,19 @@ function SortableChecklistRow({
       style={{ transform: CSS.Transform.toString(transform), transition }}
       data-subtask-id={task.id}
     >
-      <input
-        type="checkbox"
-        checked={task.isCompleted}
-        {...{ [NO_DRAG_ATTR]: '' }}
-        onChange={(event) => onToggle?.(task.id, event.target.checked)}
-      />
+      {isNote ? (
+        <span className="board-card-checklist-dash" aria-hidden="true">-</span>
+      ) : (
+        <button
+          type="button"
+          className={`board-card-check ${task.isCompleted ? 'is-complete' : ''}`}
+          {...{ [NO_DRAG_ATTR]: '' }}
+          aria-label={task.isCompleted ? 'Reopen task' : 'Complete task'}
+          onClick={() => onToggle?.(task.id, !task.isCompleted)}
+        >
+          {task.isCompleted && <Check size={10} strokeWidth={2} />}
+        </button>
+      )}
       <span className={task.isCompleted ? 'line-through opacity-55' : ''}>{task.title}</span>
     </label>
   );
@@ -75,7 +87,6 @@ export function BoardCardChecklist({ parentTask, tasks, onToggle }: BoardCardChe
       aria-label={`${completed}/${tasks.length}`}
       data-testid={`card-subtasks-${parentTask.id}`}
     >
-      {tasks.length > 0 && <div className="board-card-checklist-count">{completed}/{tasks.length}</div>}
       <SortableContext items={tasks.map((task) => task.id)} strategy={verticalListSortingStrategy}>
         {tasks.map((task) => (
           <SortableChecklistRow

@@ -36,7 +36,7 @@ const prefsRow = {
   background: "beige",
   small_caps: false,
   hide_completed_tasks: false,
-  hide_old_notes: false,
+  show_notes: true,
   locale: "en",
   date_format: "MMM DD ddd",
   collapsed_collection_ids: [],
@@ -77,7 +77,7 @@ describe("validatePreferences", () => {
 
   it("rejects non-boolean behavior toggles", () => {
     expect(() => validatePreferences({ hideCompletedTasks: "yes" as unknown as boolean })).toThrow(AppError);
-    expect(() => validatePreferences({ hideOldNotes: "yes" as unknown as boolean })).toThrow(AppError);
+    expect(() => validatePreferences({ showNotes: "yes" as unknown as boolean })).toThrow(AppError);
   });
 
   it("rejects unsupported locale", () => {
@@ -148,7 +148,7 @@ describe("getPreferences", () => {
     expect(p.theme).toBe("system");
     expect(p.notificationsEnabled).toBe(true);
     expect(p.hideCompletedTasks).toBe(false);
-    expect(p.hideOldNotes).toBe(false);
+    expect(p.showNotes).toBe(true);
     expect(p.locale).toBe("en");
     expect(p.collapsedCollectionIds).toEqual([]);
     expect(p.boardViewModes).toEqual({});
@@ -202,15 +202,15 @@ describe("updatePreferences", () => {
   });
 
   it("updates behavior toggles and publishes the merged payload", async () => {
-    mockQuery.mockResolvedValueOnce({ rows: [{ ...prefsRow, hide_completed_tasks: true, hide_old_notes: true }] });
+    mockQuery.mockResolvedValueOnce({ rows: [{ ...prefsRow, hide_completed_tasks: true, show_notes: false }] });
 
-    const p = await updatePreferences("u1", { hideCompletedTasks: true, hideOldNotes: true });
+    const p = await updatePreferences("u1", { hideCompletedTasks: true, showNotes: false });
 
     expect(p.hideCompletedTasks).toBe(true);
-    expect(p.hideOldNotes).toBe(true);
+    expect(p.showNotes).toBe(false);
     const sql = mockQuery.mock.calls[0][0] as string;
     expect(sql).toMatch(/hide_completed_tasks = \$1/);
-    expect(sql).toMatch(/hide_old_notes = \$2/);
+    expect(sql).toMatch(/show_notes = \$2/);
     expect(mockBuildEvent).toHaveBeenCalledWith(expect.objectContaining({ payload: p }));
   });
 

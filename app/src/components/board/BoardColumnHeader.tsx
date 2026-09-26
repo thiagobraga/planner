@@ -10,7 +10,6 @@ interface BoardColumnHeaderProps {
   columnId: string;
   groupBy: BoardGroupBy;
   title: string;
-  count: number;
   color?: string;
   isCompletionStatus?: boolean;
   canEdit?: boolean;
@@ -26,7 +25,6 @@ export function BoardColumnHeader({
   columnId,
   groupBy,
   title,
-  count,
   color,
   isCompletionStatus,
   canEdit = true,
@@ -97,7 +95,6 @@ export function BoardColumnHeader({
       ) : (
         <h2 onDoubleClick={() => canEdit && setRenaming(true)}>{title}</h2>
       )}
-      {count > 0 && <span className="board-column-count">{count}</span>}
       {canEdit && (
         <button
           type="button"

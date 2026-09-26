@@ -29,6 +29,7 @@ import {
   buildClearCookieOptions,
   needsTouch,
 } from "../sessionService.js";
+import { SESSION_IDLE_TTL_MINUTES } from "../../config.js";
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -242,7 +243,8 @@ describe("buildCookieOptions", () => {
   // the browser closes, no matter how long the server-side session is good for.
   it("carries an explicit lifetime so it survives a browser restart", () => {
     const opts = buildCookieOptions();
-    expect(opts.maxAge).toBeGreaterThan(24 * 60 * 60 * 1000);
+    // Tied to the configured idle TTL, not a literal: dev compose sets it to 30 min.
+    expect(opts.maxAge).toBe(SESSION_IDLE_TTL_MINUTES * 60 * 1000);
   });
 });
 

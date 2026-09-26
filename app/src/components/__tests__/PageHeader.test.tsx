@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
 import { PageHeader } from '../PageHeader';
 import { Toolbar } from '../ui/Toolbar';
@@ -45,6 +45,7 @@ describe('PageHeader', () => {
         }
       />,
     );
+    fireEvent.click(screen.getByRole('button', { name: 'More options' }));
     expect(screen.getByRole('button', { name: 'Today' })).toBeInTheDocument();
     // Exactly one .page-header-toolbar - PageHeader doesn't add a second wrapper.
     expect(container.querySelectorAll('.page-header-toolbar')).toHaveLength(1);

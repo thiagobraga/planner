@@ -130,6 +130,28 @@ describe("collectionService", () => {
         code: "MAX_DEPTH_EXCEEDED",
       });
     });
+
+    it("allows the same name under a different parent", async () => {
+      mockQuery.mockResolvedValueOnce({ rows: [] }); // duplicate check: none under this parent
+      mockQuery.mockResolvedValueOnce({ rows: [makeRow({ id: "parent-2" })] }); // ownership check
+      mockQuery.mockResolvedValueOnce({ rows: [{ max_depth: 1 }] }); // depth check
+      mockQuery.mockResolvedValueOnce({ rows: [makeRow({ id: "fixed-uuid-for-test", name: "artwork", parent_id: "parent-2" })] });
+
+      const col = await createCollection("user-1", { name: "artwork", color: "#65788a", parentId: "parent-2" });
+
+      expect(col.name).toBe("artwork");
+      const [dupSql, dupValues] = mockQuery.mock.calls[0] as [string, unknown[]];
+      expect(dupSql).toContain("parent_id IS NOT DISTINCT FROM");
+      expect(dupValues).toEqual(["user-1", "parent-2", "artwork"]);
+    });
+
+    it("throws on duplicate name within the same parent", async () => {
+      mockQuery.mockResolvedValueOnce({ rows: [{ id: "existing" }] }); // duplicate check: collides under this parent
+
+      await expect(
+        createCollection("user-1", { name: "artwork", color: "#65788a", parentId: "parent-1" }),
+      ).rejects.toMatchObject({ code: "VALIDATION_ERROR" });
+    });
   });
 
   describe("updateCollection", () => {
@@ -181,6 +203,7 @@ describe("collectionService", () => {
 
     it("throws on reparent cycle", async () => {
       mockQuery.mockResolvedValueOnce({ rows: [makeRow()] }); // ownership check
+      mockQuery.mockResolvedValueOnce({ rows: [] }); // duplicate check: no collision under new parent
       mockQuery.mockResolvedValueOnce({ rows: [makeRow({ id: "parent-1" })] }); // parent exists + owned
       mockQuery.mockResolvedValueOnce({ rows: [{ id: "col-1" }] }); // cycle detection: isSelfOrDescendant returns true
 
@@ -192,6 +215,7 @@ describe("collectionService", () => {
 
     it("throws when reparent exceeds max depth", async () => {
       mockQuery.mockResolvedValueOnce({ rows: [makeRow()] }); // ownership check
+      mockQuery.mockResolvedValueOnce({ rows: [] }); // duplicate check: no collision under new parent
       mockQuery.mockResolvedValueOnce({ rows: [makeRow({ id: "parent-1" })] }); // parent exists + owned
       mockQuery.mockResolvedValueOnce({ rows: [] }); // isSelfOrDescendant returns false
       mockQuery.mockResolvedValueOnce({ rows: [{ max_depth: 4 }] }); // depth check
@@ -208,6 +232,28 @@ describe("collectionService", () => {
         code: "VALIDATION_ERROR",
         statusCode: 400,
       });
+    });
+
+    it("throws when renamed to a sibling's name under the same parent", async () => {
+      mockQuery.mockResolvedValueOnce({ rows: [makeRow({ parent_id: "parent-1" })] }); // ownership check
+      mockQuery.mockResolvedValueOnce({ rows: [{ id: "sibling" }] }); // duplicate check: collides under same parent
+
+      await expect(updateCollection("col-1", "user-1", { name: "artwork" })).rejects.toMatchObject({
+        code: "VALIDATION_ERROR",
+      });
+    });
+
+    it("allows renaming to a name already used under a different parent", async () => {
+      mockQuery.mockResolvedValueOnce({ rows: [makeRow({ parent_id: "parent-1" })] }); // ownership check
+      mockQuery.mockResolvedValueOnce({ rows: [] }); // duplicate check: no collision under this collection's parent
+      mockQuery.mockResolvedValueOnce({ rows: [makeRow({ name: "artwork", parent_id: "parent-1" })] }); // update
+
+      const col = await updateCollection("col-1", "user-1", { name: "artwork" });
+
+      expect(col.name).toBe("artwork");
+      const [dupSql, dupValues] = mockQuery.mock.calls[1] as [string, unknown[]];
+      expect(dupSql).toContain("parent_id IS NOT DISTINCT FROM");
+      expect(dupValues).toEqual(["user-1", "parent-1", "artwork", "col-1"]);
     });
 
     it("returns existing when no updates provided", async () => {

@@ -29,6 +29,7 @@ export type DropKind =
   | 'habit-section'
   | 'collection'
   | 'day'
+  | 'no-date'
   | 'section'
   | 'section-header'
   | 'board-column'
@@ -147,6 +148,12 @@ export interface DayDropData {
   containerId: string;
 }
 
+/** The Daily week-kanban's No-date column. Dropping here clears a task's due date. */
+export interface NoDateDropData {
+  kind: 'no-date';
+  containerId: string;
+}
+
 /** A task section as a drop target: tasks can be dropped here to move into the section. */
 export interface SectionDropData {
   kind: 'section';
@@ -205,6 +212,7 @@ export type DropData =
   | HabitSectionDropData
   | CollectionDropData
   | DayDropData
+  | NoDateDropData
   | SectionDropData
   | SectionHeaderDragData
   | BoardColumnDropData
