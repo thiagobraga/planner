@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, act, fireEvent } from '@testing-library/react';
+import { render, screen, act, fireEvent, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { DailyPage } from '../DailyPage';
@@ -178,8 +178,11 @@ describe('DailyPage', () => {
     const header = title.closest('header');
 
     expect(header).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'More options' }));
     expect(header).toContainElement(screen.getByRole('button', { name: 'List' }));
+    expect(screen.getByRole('button', { name: 'List' })).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(screen.getByRole('button', { name: 'More options' }));
+    expect(screen.getByRole('menu')).not.toContainElement(screen.getByRole('button', { name: 'List' }));
+    expect(within(screen.getByRole('menu')).queryByText('View')).not.toBeInTheDocument();
     expect(header).toContainElement(screen.getByRole('checkbox', { name: 'Completed tasks' }));
     expect(header).toContainElement(screen.getByRole('checkbox', { name: 'Notes' }));
     expect(header).toContainElement(screen.getByRole('checkbox', { name: 'Next days' }));

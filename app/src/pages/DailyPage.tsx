@@ -10,7 +10,7 @@ import { PageHeader } from '../components/PageHeader';
 import { CollectionChip } from '../components/ui/Chip';
 import { Button } from '../components/ui/Button';
 import { Checkbox } from '../components/ui/Checkbox';
-import { ViewToolbar } from '../components/ui/ViewToolbar';
+import { ViewSwitcher } from '../components/ui/ViewSwitcher';
 import { Toolbar, ToolbarSectionLabel } from '../components/ui/Toolbar';
 import { DailyWeekBoard } from '../components/board/DailyWeekBoard';
 import { MonthlyView } from '../components/monthly/MonthlyView';
@@ -901,7 +901,7 @@ export function DailyPage() {
       <PageHeader
         title={t('page.daily')}
         toolbar={
-          <Toolbar className="daily-page-header-controls">
+          <Toolbar className="daily-page-header-controls" viewSwitcher={<ViewSwitcher view={boardPreferences.view} onViewChange={boardPreferences.setView} />}>
             {reorg.state === 'preview' ? (
               <span className="reorganize-confirm inline-flex items-center gap-1 text-[13px]">
                 {t('reorganize.confirm')}
@@ -928,15 +928,6 @@ export function DailyPage() {
                 </Button>
               )
             )}
-
-            <ToolbarSectionLabel>{t('menu.view')}</ToolbarSectionLabel>
-            <ViewToolbar
-              view={boardPreferences.view}
-              onViewChange={boardPreferences.setView}
-              showCalendar
-              viewOnly
-              compact
-            />
 
             <ToolbarSectionLabel>{t('menu.show')}</ToolbarSectionLabel>
             <TaskVisibilityControls

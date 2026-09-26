@@ -10,6 +10,7 @@ import { BoardToolbar } from '../components/board/BoardToolbar';
 import { MonthlyView } from '../components/monthly/MonthlyView';
 import { PageHeader } from '../components/PageHeader';
 import { Toolbar } from '../components/ui/Toolbar';
+import { ViewSwitcher } from '../components/ui/ViewSwitcher';
 import { nextOrderValue } from '../utils/order';
 import { extractNaturalDate } from '../utils/date';
 import type { Task } from '../components/TaskItem';
@@ -690,15 +691,13 @@ export function CollectionsPage() {
           )
         }
         toolbar={
-          <Toolbar className="collection-page-header-controls">
+          <Toolbar className="collection-page-header-controls" viewSwitcher={<ViewSwitcher view={boardPreferences.view} onViewChange={boardPreferences.setView} />}>
             <BoardToolbar
               view={boardPreferences.view}
               groupBy={boardPreferences.groupBy}
               hideCompletedTasks={preferences?.hideCompletedTasks ?? false}
               showNotes={preferences?.showNotes ?? true}
               preferencesDisabled={!preferences || visibilityPreferencesPending}
-              showCalendar
-              onViewChange={boardPreferences.setView}
               onGroupByChange={boardPreferences.setGroupBy}
               onHideCompletedTasksChange={setHideCompletedTasks}
               onShowNotesChange={setShowNotes}
