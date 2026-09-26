@@ -71,7 +71,7 @@ const english: HelpContent = {
       title: 'Settings',
       items: [
         'Choose the app language and how your calendar handles time zones and week starts.',
-        'Choose your font, toggle the dot-grid background, switch between beige and white, or enable small caps.',
+        'Choose your font, toggle the dot-grid background, switch between beige, white, dark or automatic (follows your system), or enable small caps.',
       ],
     },
     {
@@ -166,7 +166,7 @@ const portugueseBrazil: HelpContent = {
       title: 'Configurações',
       items: [
         'Escolha o idioma e como o calendário lida com fuso horário e início da semana.',
-        'Escolha a fonte, alterne os pontos do fundo, use bege ou branco e ative versaletes.',
+        'Escolha a fonte, alterne os pontos do fundo, use bege, branco, escuro ou automático (segue o sistema) e ative versaletes.',
       ],
     },
     {

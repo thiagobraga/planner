@@ -1,6 +1,19 @@
-import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
+import { render as rtlRender, screen, fireEvent } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import type { ReactElement } from 'react';
+import { describe, it, expect, vi } from 'vitest';
 import { Toolbar } from '../Toolbar';
+
+vi.mock('../../../api/client', () => ({
+  fetchPreferences: vi.fn(async () => ({ background: 'beige' })),
+  apiUpdatePreferences: vi.fn(),
+}));
+
+// The dropdown always ends with the theme picker, which reads preferences.
+function render(ui: ReactElement) {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return rtlRender(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
+}
 
 describe('Toolbar', () => {
   it('renders a collapsed hamburger button and hides children until opened', () => {
@@ -90,5 +103,19 @@ describe('Toolbar', () => {
       </Toolbar>,
     );
     expect(screen.getByRole('button', { name: 'More options' })).toHaveClass('w-6', 'h-6');
+  });
+
+  it('ends the dropdown with the theme picker, after the page controls', async () => {
+    render(
+      <Toolbar>
+        <span>Show</span>
+      </Toolbar>,
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'More options' }));
+
+    const menu = screen.getByRole('menu');
+    const group = await screen.findByRole('radiogroup', { name: 'Theme' });
+    expect(menu.lastElementChild).toBe(group);
+    expect(screen.getByText('Show').compareDocumentPosition(group) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 });

@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeAll, beforeEach } from 'vitest';
 import { AppShell } from '../AppShell';
+import { updateDocumentThemeColor } from '../../utils/theme';
 
 const mockUseQuery = vi.hoisted(() => vi.fn());
 
@@ -56,7 +57,8 @@ vi.mock('../../utils/fontLoader', () => ({
   ensureFontLoaded: vi.fn(),
 }));
 
-vi.mock('../../utils/theme', () => ({
+vi.mock('../../utils/theme', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../utils/theme')>()),
   updateDocumentThemeColor: vi.fn(),
 }));
 
@@ -124,5 +126,47 @@ describe('AppShell', () => {
   it('renders Sidebar', () => {
     render(<AppShell />);
     expect(screen.getByTestId('sidebar')).toBeInTheDocument();
+  });
+
+  describe('theme', () => {
+    beforeEach(() => {
+      localStorage.clear();
+    });
+
+    it('puts the chosen theme on <html> and the browser chrome', () => {
+      mockUseQuery.mockReturnValue({ data: { ...defaultPreferences, background: 'dark' } });
+
+      render(<AppShell />);
+
+      expect(document.documentElement).toHaveAttribute('data-theme', 'dark');
+      expect(updateDocumentThemeColor).toHaveBeenLastCalledWith('dark');
+    });
+
+    it('removes the theme on unmount so logged-out screens stay beige', () => {
+      mockUseQuery.mockReturnValue({ data: { ...defaultPreferences, background: 'dark' } });
+
+      const { unmount } = render(<AppShell />);
+      unmount();
+
+      expect(document.documentElement).not.toHaveAttribute('data-theme');
+      expect(updateDocumentThemeColor).toHaveBeenLastCalledWith('beige');
+    });
+
+    it('uses the cached background until preferences load', () => {
+      localStorage.setItem('planner_background', 'dark');
+      mockUseQuery.mockReturnValue({ data: undefined });
+
+      render(<AppShell />);
+
+      expect(document.documentElement).toHaveAttribute('data-theme', 'dark');
+    });
+
+    it('caches the loaded background for the next reload', () => {
+      mockUseQuery.mockReturnValue({ data: { ...defaultPreferences, background: 'white' } });
+
+      render(<AppShell />);
+
+      expect(localStorage.getItem('planner_background')).toBe('white');
+    });
   });
 });

@@ -45,11 +45,11 @@ export function ConfirmModal({
       aria-modal="true"
       aria-labelledby="confirm-modal-title"
       onClick={onCancel}
-      className="fixed inset-0 z-[100] bg-[rgba(44,44,44,0.3)] backdrop-blur-[2px] flex items-center justify-center"
+      className="fixed inset-0 z-[100] bg-(--planner-backdrop) backdrop-blur-[2px] flex items-center justify-center"
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="border border-dot rounded-md py-6 px-8 max-w-[400px] w-full mx-4 shadow-[0_8px_32px_rgba(44,44,44,0.15)]"
+        className="border border-dot rounded-md py-6 px-8 max-w-[400px] w-full mx-4 shadow-overlay"
         style={{ backgroundColor: 'var(--planner-overlay-bg)' }}
       >
         <h2 id="confirm-modal-title" className="text-base font-semibold text-ink mb-2">
