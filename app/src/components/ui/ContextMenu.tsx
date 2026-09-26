@@ -277,7 +277,7 @@ function MenuPanel({
             if (isHighlighted || isSubmenuOpen) itemClass += `bg-accent/10 `;
           } else {
             itemClass += `text-ink-light `;
-            if (isHighlighted || isSubmenuOpen) itemClass += `bg-[var(--planner-overlay-hover-bg,rgba(212,207,199,0.4))] `;
+            if (isHighlighted || isSubmenuOpen) itemClass += `bg-[var(--planner-overlay-hover-bg)] `;
           }
 
           return (
