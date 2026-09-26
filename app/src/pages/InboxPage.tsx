@@ -1,4 +1,5 @@
 import { Fragment, useState, useRef, useCallback, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { TaskList } from '../components/TaskList';
@@ -6,8 +7,10 @@ import { SectionHeader } from '../components/SectionHeader';
 import { InlineNameInput } from '../components/ui/InlineNameInput';
 import { CollectionBoard } from '../components/board/CollectionBoard';
 import { BoardToolbar } from '../components/board/BoardToolbar';
+import { MonthlyView } from '../components/monthly/MonthlyView';
 import { PageHeader } from '../components/PageHeader';
 import { Toolbar } from '../components/ui/Toolbar';
+import { ViewSwitcher } from '../components/ui/ViewSwitcher';
 import type { Task } from '../components/TaskItem';
 import type { Section } from '../stores/taskStore';
 import {
@@ -82,6 +85,7 @@ function buildSectionGroups(tasks: Task[], sections: Section[]) {
 
 export function InboxPage() {
   const { locale, t } = useI18n();
+  const navigate = useNavigate();
   const qc = useQueryClient();
   const cachedInbox = qc.getQueryData<Awaited<ReturnType<typeof fetchInboxTasks>>>(['inbox']);
   const [tasks, setTasks] = useState<Task[]>(() => cachedInbox?.tasks.map(apiToTask) ?? []);
@@ -116,7 +120,7 @@ export function InboxPage() {
   const {
     isPending: visibilityPreferencesPending,
     setHideCompletedTasks,
-    setHideOldNotes,
+    setShowNotes,
   } = useTaskVisibilityPreferences(preferences);
 
   const [syncedData, setSyncedData] = useState(data);
@@ -534,24 +538,23 @@ export function InboxPage() {
       <PageHeader
         title={t('page.inbox')}
         toolbar={
-          <Toolbar className="inbox-page-header-controls">
+          <Toolbar className="inbox-page-header-controls" viewSwitcher={<ViewSwitcher view={boardPreferences.view} onViewChange={boardPreferences.setView} />}>
             <BoardToolbar
               view={boardPreferences.view}
               groupBy={boardPreferences.groupBy}
               hideCompletedTasks={preferences?.hideCompletedTasks ?? false}
-              hideOldNotes={preferences?.hideOldNotes ?? false}
+              showNotes={preferences?.showNotes ?? true}
               preferencesDisabled={!preferences || visibilityPreferencesPending}
-              onViewChange={boardPreferences.setView}
               onGroupByChange={boardPreferences.setGroupBy}
               onHideCompletedTasksChange={setHideCompletedTasks}
-              onHideOldNotesChange={setHideOldNotes}
+              onShowNotesChange={setShowNotes}
             />
           </Toolbar>
         }
       />
 
-      <div className={boardPreferences.view === 'kanban' ? 'w-full' : 'max-w-162'}>
-        {boardPreferences.view === 'kanban' && data && inboxCollectionId ? (
+      <div className={boardPreferences.view !== 'list' ? 'w-full' : 'max-w-162'}>
+        {boardPreferences.view !== 'list' && boardPreferences.view !== 'calendar' && data && inboxCollectionId ? (
           <CollectionBoard
             collectionId={inboxCollectionId}
             queryKey={['inbox']}
@@ -562,7 +565,25 @@ export function InboxPage() {
             sections={data.sections}
             boardOrder={data.boardOrder}
             onToggle={(taskId) => handleToggle(taskId)}
+              presentation={boardPreferences.view === 'kanban-list' ? 'kanban-list' : 'kanban'}
+            taskListProps={{
+              activeDragId,
+              editingId,
+              onStartEdit: handleStartEdit,
+              onEditCommit: handleEditCommit,
+              onEditCancel: handleEditCancel,
+              onDelete: handleDelete,
+              onAddBelow: handleAddBelow,
+              onIndent: handleIndent,
+              onConvertType: handleConvertType,
+              onRightClick: handleRightClick,
+            }}
           />
+        ) : boardPreferences.view === 'calendar' ? (
+          <>
+            <div className="h-6" />
+            <MonthlyView tasks={tasks} onToggle={(taskId) => handleToggle(taskId)} />
+          </>
         ) : (
           <>
             <div className="h-6" />
@@ -675,7 +696,7 @@ export function InboxPage() {
                 <button
                   type="button"
                   onClick={handleAddSection}
-                  className="group flex h-6 w-full min-w-0 items-center pr-2 text-ink-light opacity-35 transition-opacity hover:opacity-100"
+                  className="group flex h-6 w-full min-w-0 items-center pr-2 text-ink-light opacity-0 transition-opacity hover:opacity-100 focus-visible:opacity-100"
                 >
                   <span className="flex h-6 w-6 shrink-0 items-center justify-center">+</span>
                   <span className="min-w-0 flex-1 truncate text-left uppercase tracking-widest text-[10px] font-semibold">

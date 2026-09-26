@@ -1,6 +1,7 @@
 import { isOnline, enqueueMutation, type QueuedMutationMethod } from '../utils/offlineQueue';
 import { getSocketId } from '../utils/socket';
 import { notifyUnauthorized } from '../utils/authEvents';
+import type { BoardViewMode } from '../types/board';
 
 const BASE = '/api/v1';
 
@@ -189,7 +190,7 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
 
 export { request };
 
-// ── Auth ─────────────────────────────────────────────────────────────────────
+// Auth ---------------------------------------------------------------------
 
 export type UserRole = 'user' | 'admin';
 
@@ -247,7 +248,7 @@ export async function apiConfirmPasswordReset(
   });
 }
 
-// ── Tasks ─────────────────────────────────────────────────────────────────────
+// Tasks ---------------------------------------------------------------------
 
 export interface ApiTask {
   id: string;
@@ -285,7 +286,7 @@ export interface ApiStatus {
 }
 
 export type BoardGroupBy = 'status' | 'section' | 'priority';
-export type BoardViewMode = 'list' | 'kanban';
+export type { BoardViewMode } from '../types/board';
 export type BoardViewModes = Record<string, { view?: BoardViewMode; groupBy?: BoardGroupBy }>;
 
 export interface Preferences {
@@ -300,7 +301,7 @@ export interface Preferences {
   background: 'beige' | 'white';
   smallCaps: boolean;
   hideCompletedTasks: boolean;
-  hideOldNotes: boolean;
+  showNotes: boolean;
   collapsedCollectionIds: string[];
   boardViewModes: BoardViewModes;
   dateFormat?: string;
@@ -350,7 +351,7 @@ export async function apiCreateTask(input: {
   title: string;
   priority?: number;
   collectionId?: string;
-  sectionId?: string;
+  sectionId?: string | null;
   dueDate?: string;
   parentTaskId?: string;
   depth?: number;
@@ -386,7 +387,7 @@ export async function apiDeleteTask(id: string): Promise<void> {
   await request<unknown>(`/tasks/${id}`, { method: 'DELETE' });
 }
 
-// ── Structural moves ───────────────────────────────────────────────────────────
+// Structural moves -----------------------------------------------------------
 //
 // A move is deliberately separate from `apiUpdateTask`. Update patches a task's
 // own fields; move rewrites tree position, list membership and the ordering of
@@ -463,7 +464,7 @@ export async function apiReorganizeTasks(moves: ReorganizeMove[]): Promise<{ upd
   });
 }
 
-// ── Collections ────────────────────────────────────────────────────────────────
+// Collections ----------------------------------------------------------------
 
 export interface ApiCollection {
   id: string;
@@ -566,7 +567,7 @@ export async function fetchCollectionView(id: string): Promise<CollectionView> {
   return request<CollectionView>(`/views/collection/${id}`);
 }
 
-// ── Statuses ──────────────────────────────────────────────────────────────────
+// Statuses ------------------------------------------------------------------
 
 export async function fetchStatuses(collectionId: string): Promise<ApiStatus[]> {
   return request<ApiStatus[]>(`/collections/${collectionId}/statuses`);
@@ -611,7 +612,7 @@ export async function apiDeleteStatus(statusId: string, reassignToStatusId?: str
   await request<unknown>(`/statuses/${statusId}${search}`, { method: 'DELETE' });
 }
 
-// ── Labels ────────────────────────────────────────────────────────────────────
+// Labels --------------------------------------------------------------------
 
 export async function fetchLabels(): Promise<LabelSummary[]> {
   return request<LabelSummary[]>('/labels');
@@ -632,7 +633,7 @@ export async function apiDeleteLabel(labelId: string): Promise<void> {
   await request<unknown>(`/labels/${labelId}`, { method: 'DELETE' });
 }
 
-// ── Sections ──────────────────────────────────────────────────────────────────
+// Sections ------------------------------------------------------------------
 
 export interface ApiSection {
   id: string;
@@ -666,7 +667,7 @@ export async function apiDeleteSection(sectionId: string): Promise<void> {
   await request<unknown>(`/sections/${sectionId}`, { method: 'DELETE' });
 }
 
-// ── Habits ───────────────────────────────────────────────────────────────────
+// Habits -------------------------------------------------------------------
 
 export interface ApiHabit {
   id: string;
@@ -720,6 +721,10 @@ export async function apiDeleteHabit(id: string): Promise<void> {
   await request<unknown>(`/habits/${id}`, { method: 'DELETE' });
 }
 
+export async function apiArchiveHabit(id: string): Promise<void> {
+  await request<unknown>(`/habits/${id}/archive`, { method: 'POST' });
+}
+
 // A leaf completion stays a single-item response. A parent completion resolves
 // its sub-habits server-side and returns one result per affected child.
 export async function apiToggleHabitCompletion(
@@ -762,7 +767,11 @@ export async function apiDeleteHabitGroup(id: string): Promise<void> {
   await request<unknown>(`/habit-groups/${id}`, { method: 'DELETE' });
 }
 
-// ── Habit structural moves ─────────────────────────────────────────────────────
+export async function apiArchiveHabitGroup(id: string): Promise<void> {
+  await request<unknown>(`/habit-groups/${id}/archive`, { method: 'POST' });
+}
+
+// Habit structural moves -----------------------------------------------------
 
 export interface HabitMoveInput {
   /**
@@ -813,7 +822,7 @@ export async function apiMoveHabitGroup(
   });
 }
 
-// ── Admin ────────────────────────────────────────────────────────────────────
+// Admin --------------------------------------------------------------------
 
 export interface AdminUser {
   id: string;

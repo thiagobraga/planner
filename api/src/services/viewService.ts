@@ -32,7 +32,7 @@ interface TaskRow {
 interface PreferencesRow {
   time_zone: string;
   hide_completed_tasks: boolean;
-  hide_old_notes: boolean;
+  show_notes: boolean;
 }
 
 interface StatusRow {
@@ -129,7 +129,7 @@ export async function getUserTimezone(userId: string): Promise<string> {
 
 async function getViewPreferences(userId: string, now: Date = new Date()) {
   const result = await pool.query(
-    `SELECT time_zone, hide_completed_tasks, hide_old_notes
+    `SELECT time_zone, hide_completed_tasks, show_notes
      FROM preferences
      WHERE user_id = $1`,
     [userId],
@@ -140,7 +140,7 @@ async function getViewPreferences(userId: string, now: Date = new Date()) {
   return {
     timeZone,
     hideCompletedTasks: row?.hide_completed_tasks ?? false,
-    hideOldNotes: row?.hide_old_notes ?? false,
+    showNotes: row?.show_notes ?? true,
     todayDate: localDateInTimezone(now, timeZone),
   };
 }
@@ -195,9 +195,9 @@ export async function getTodayView(userId: string, now: Date = new Date()): Prom
        AND t.due_date <= $2::date
        AND p.is_archived = false
        AND ($3::boolean = false OR t.is_completed = false)
-       AND ($4::boolean = false OR NOT (t.type = 'note' AND t.due_date < $2::date))
+       AND ($4::boolean = true OR NOT (t.type = 'note'))
      ORDER BY o.position ASC NULLS LAST, t.order_value ASC, t.created_at ASC`,
-    [userId, settings.todayDate, settings.hideCompletedTasks, settings.hideOldNotes],
+    [userId, settings.todayDate, settings.hideCompletedTasks, settings.showNotes],
   );
 
   const overdue: ReturnType<typeof formatTask>[] = [];
@@ -339,13 +339,9 @@ export async function getInboxView(userId: string, now: Date = new Date()) {
        AND p.is_inbox = true
        AND p.is_archived = false
        AND ($2::boolean = false OR t.is_completed = false)
-       AND ($3::boolean = false OR NOT (
-         t.type = 'note'
-         AND t.due_date IS NOT NULL
-         AND t.due_date < $4::date
-       ))
+       AND ($3::boolean = true OR NOT (t.type = 'note'))
      ORDER BY t.order_value ASC, t.created_at ASC`,
-    [userId, settings.hideCompletedTasks, settings.hideOldNotes, settings.todayDate],
+    [userId, settings.hideCompletedTasks, settings.showNotes],
   );
 
   const sections = inboxCollection ? await listSections(inboxCollection.id, userId) : [];
@@ -383,13 +379,9 @@ export async function getCollectionView(userId: string, collectionId: string, no
     `SELECT * FROM tasks
      WHERE collection_id = $1
        AND ($2::boolean = false OR is_completed = false)
-       AND ($3::boolean = false OR NOT (
-         type = 'note'
-         AND due_date IS NOT NULL
-         AND due_date < $4::date
-       ))
+       AND ($3::boolean = true OR NOT (type = 'note'))
      ORDER BY order_value ASC, created_at ASC`,
-    [collectionId, settings.hideCompletedTasks, settings.hideOldNotes, settings.todayDate],
+    [collectionId, settings.hideCompletedTasks, settings.showNotes],
   );
 
   const sections = await listSections(collectionId, userId);

@@ -52,10 +52,10 @@ beforeEach(() => {
 });
 
 describe("Property 20: Today view correctness (Requirements 15.2, 15.5, 15.6)", () => {
-  it("partitions tasks into overdue (< today) and today (=== today), sorted by manual order_value", () => {
+  it("partitions tasks into overdue (< today) and today (=== today), sorted by manual order_value", async () => {
     const today = "2024-06-15";
 
-    fc.assert(
+    await fc.assert(
       fc.asyncProperty(
         fc.array(fc.tuple(arbDayOffset, arbPriority, arbOrder), { minLength: 0, maxLength: 30 }),
         async (tasks) => {
@@ -96,10 +96,10 @@ describe("Property 20: Today view correctness (Requirements 15.2, 15.5, 15.6)", 
 });
 
 describe("Property 21: Upcoming view correctness (Requirements 15.3, 15.4, 15.5)", () => {
-  it("groups tasks by due_date with all days in [start, end] present, in order", () => {
+  it("groups tasks by due_date with all days in [start, end] present, in order", async () => {
     const today = "2024-06-15";
 
-    fc.assert(
+    await fc.assert(
       fc.asyncProperty(
         fc.integer({ min: 7, max: 30 }),
         fc.array(fc.tuple(fc.integer({ min: 0, max: 29 }), arbPriority, arbOrder), { minLength: 0, maxLength: 40 }),

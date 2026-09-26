@@ -88,10 +88,10 @@ Date          (disabled - no action)
 Priority      (disabled - no action)
 Project  →    (submenu: list of projects + "No project")
 Tags          (disabled - no action)
-──────────────
+--------------
 Add above
 Add below
-──────────────
+--------------
 Delete        (destructive style)
 ```
 

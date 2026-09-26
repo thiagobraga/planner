@@ -162,7 +162,7 @@ beforeEach(() => {
     background: 'beige',
     smallCaps: false,
     hideCompletedTasks: false,
-    hideOldNotes: false,
+    showNotes: true,
     // The whole point: a non-default format.
     dateFormat: 'DD/MM ddd',
   } as Awaited<ReturnType<typeof fetchPreferences>>);

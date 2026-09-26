@@ -1,7 +1,6 @@
 import { act, fireEvent, screen, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import {
-  basePreferences,
   baseInboxData,
   sampleTasks,
   createdTask,
@@ -9,7 +8,7 @@ import {
   taskListMock,
   collectionBoardMock,
 } from './helpers/inboxFixtures';
-import { renderPage, createInboxHarness, inboxBeforeEach } from './helpers/inboxHarness';
+import { renderPage, createInboxHarness, inboxBeforeEach, openToolbarMenu } from './helpers/inboxHarness';
 import { trackMove, resetTrackedMoves } from '../../utils/moveEcho';
 import {
   fetchInboxTasks,
@@ -100,16 +99,13 @@ inboxBeforeEach({ mockFetchInboxTasks, mockApiCreateTask, mockApiUpdateTask, moc
     mockUseSync, mockUseTaskDrag, mockUseSectionDrag });
 
   describe('view modes', () => {
-    it('renders the kanban board when the saved preference says so', async () => {
+    it('renders the kanban board when the local view says so', async () => {
       mockFetchInboxTasks.mockResolvedValue({
         ...baseInboxData,
         inboxCollectionId: 'col-1',
         tasks: sampleTasks,
       });
-      mockFetchPreferences.mockResolvedValue({
-        ...basePreferences,
-        boardViewModes: { 'col-1': { view: 'kanban' } },
-      });
+      window.localStorage.setItem('planner.boardViews.v1', JSON.stringify({ 'col-1': 'kanban' }));
       renderPage();
 
       const board = await screen.findByTestId('collection-board');
@@ -118,29 +114,37 @@ inboxBeforeEach({ mockFetchInboxTasks, mockApiCreateTask, mockApiUpdateTask, moc
       expect(screen.queryByTestId('task-list-collection:inbox')).not.toBeInTheDocument();
     });
 
-    it('switches to the kanban view from the toolbar and persists the preference', async () => {
+    it('keeps Kanban lists local while preserving the board grouping controls', async () => {
       mockFetchInboxTasks.mockResolvedValue({
         ...baseInboxData,
         inboxCollectionId: 'col-1',
         tasks: sampleTasks,
       });
-      mockApiUpdatePreferences.mockResolvedValue({
-        ...basePreferences,
-        boardViewModes: { 'col-1': { view: 'kanban' } },
+      window.localStorage.setItem('planner.boardViews.v1', JSON.stringify({ 'col-1': 'kanban-list' }));
+      renderPage();
+
+      expect(await screen.findByTestId('collection-board')).toHaveAttribute('data-presentation', 'kanban-list');
+      openToolbarMenu();
+      expect(screen.getByRole('button', { name: 'Kanban lists' })).toHaveAttribute('aria-pressed', 'true');
+    });
+
+    it('switches to the kanban view from the toolbar and keeps it local', async () => {
+      mockFetchInboxTasks.mockResolvedValue({
+        ...baseInboxData,
+        inboxCollectionId: 'col-1',
+        tasks: sampleTasks,
       });
       renderPage();
       await screen.findByText('Buy groceries');
-      const hideOldNotes = await screen.findByRole('button', { name: 'Hide old notes' });
-      await waitFor(() => expect(hideOldNotes).not.toBeDisabled());
+      openToolbarMenu();
+      const showNotes = await screen.findByRole('checkbox', { name: 'Notes' });
+      await waitFor(() => expect(showNotes).not.toBeDisabled());
 
-      const kanbanButton = screen.getByRole('button', { name: 'Kanban' });
+      const kanbanButton = screen.getByRole('button', { name: 'Kanban cards' });
       fireEvent.click(kanbanButton);
 
-      await waitFor(() =>
-        expect(mockApiUpdatePreferences).toHaveBeenCalledWith({
-          boardViewModes: { 'col-1': { view: 'kanban' } },
-        }),
-      );
+      expect(mockApiUpdatePreferences).not.toHaveBeenCalled();
+      expect(window.localStorage.getItem('planner.boardViews.v1')).toBe(JSON.stringify({ 'col-1': 'kanban' }));
       expect(await screen.findByTestId('collection-board')).toBeInTheDocument();
     });
 
@@ -150,10 +154,7 @@ inboxBeforeEach({ mockFetchInboxTasks, mockApiCreateTask, mockApiUpdateTask, moc
         inboxCollectionId: 'col-1',
         tasks: sampleTasks,
       });
-      mockFetchPreferences.mockResolvedValue({
-        ...basePreferences,
-        boardViewModes: { 'col-1': { view: 'kanban' } },
-      });
+      window.localStorage.setItem('planner.boardViews.v1', JSON.stringify({ 'col-1': 'kanban' }));
       renderPage();
 
       const board = await screen.findByTestId('collection-board');
