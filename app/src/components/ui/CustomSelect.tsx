@@ -258,6 +258,11 @@ export function CustomSelect({
                     aria-selected={isSelected}
                     aria-disabled={option.disabled}
                     className={itemClass}
+                    onPointerDown={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      handleSelect(option);
+                    }}
                     onClick={() => handleSelect(option)}
                     onMouseEnter={() => !option.disabled && setHighlightedIndex(index)}
                   >
@@ -307,6 +312,11 @@ export function CustomSelect({
                     aria-selected={isSelected}
                     aria-disabled={option.disabled}
                     className={itemClass}
+                    onPointerDown={(event) => {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      handleSelect(option);
+                    }}
                     onClick={() => handleSelect(option)}
                     onMouseEnter={() => !option.disabled && setHighlightedIndex(index)}
                   >

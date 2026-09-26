@@ -8,7 +8,7 @@ import { usePlannerDrag, usePlannerDragHandlers } from '../contexts/usePlannerDr
 import { flattenTasks, getSubtreeBlock, projectMove, type FlatRow } from '../utils/taskProjection';
 import { apiMoveTask, type TaskOrderScope } from '../api/client';
 import { trackMove } from '../utils/moveEcho';
-import type { CollectionDropData, DayDropData, SectionDropData, TaskDragData } from '../types/drag';
+import type { CollectionDropData, DayDropData, NoDateDropData, SectionDropData, TaskDragData } from '../types/drag';
 import type { Task } from '../components/TaskItem';
 
 /**
@@ -99,6 +99,7 @@ export function useTaskDrag({ enabled = true, tasks, setTasks, scope, onError, o
       const over = event.over?.data.current as
         | TaskDragData
         | DayDropData
+        | NoDateDropData
         | CollectionDropData
         | SectionDropData
         | undefined;
@@ -139,6 +140,7 @@ export function useTaskDrag({ enabled = true, tasks, setTasks, scope, onError, o
       const over = event.over?.data.current as
         | TaskDragData
         | DayDropData
+        | NoDateDropData
         | CollectionDropData
         | SectionDropData
         | undefined;
@@ -290,10 +292,29 @@ export function resolveMove({
 }: {
   rows: FlatRow<Task>[];
   active: TaskDragData;
-  over: TaskDragData | DayDropData | CollectionDropData | SectionDropData;
+  over: TaskDragData | DayDropData | NoDateDropData | CollectionDropData | SectionDropData;
   offsetX: number;
   scope: TaskOrderScope;
 }): ResolvedMove | null {
+  // Dropped on the week-kanban's No-date column: clear the due date and file
+  // back into the task's own collection ordering, same as the sidebar-collection
+  // branch below but clearing the date instead of preserving it.
+  if (over.kind === 'no-date') {
+    return {
+      input: {
+        parentTaskId: null,
+        dueDate: null,
+        scope: { kind: 'collection', collectionId: active.collectionId },
+        position: Number.MAX_SAFE_INTEGER,
+      },
+      parentTaskId: null,
+      depth: 0,
+      orderValue: Number.MAX_SAFE_INTEGER,
+      announcement: 'Moved to No date.',
+      preview: 'Drop to clear the due date.',
+    };
+  }
+
   // Dropped on a sidebar collection: file it there, promote to top level, and
   // keep the due date so a dated task stays on its day and merely gains a
   // collection. Omitting dueDate entirely is what preserves it server-side.

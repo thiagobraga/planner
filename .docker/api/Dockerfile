@@ -1,4 +1,4 @@
-FROM node:26.8.1-alpine3.24 AS base
+FROM node:26.9.0-alpine3.24 AS base
 WORKDIR /app
 RUN apk upgrade --no-cache && apk add --no-cache tini
 EXPOSE 4000

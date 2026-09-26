@@ -11,21 +11,23 @@ import {
 } from '../utils/taskProjection';
 import { usePlannerDrag } from '../contexts/usePlannerDrag';
 import { TaskBlockPreview } from './TaskBlockPreview';
-import type { DayDropData, SectionDropData } from '../types/drag';
+import type { BoardColumnDropData, DayDropData, NoDateDropData, SectionDropData } from '../types/drag';
 import { useI18n } from '../i18n/I18nContext';
 
-type TaskCallbacks = Pick<
+export type TaskListCallbacks = Pick<
   TaskItemProps,
   'onStartEdit' | 'onEditCommit' | 'onEditCancel' | 'onDelete' | 'onAddBelow' | 'onIndent' | 'onConvertType' | 'onRightClick'
 >;
 
-interface TaskListProps extends TaskCallbacks {
+export interface TaskListProps extends TaskListCallbacks {
   tasks: Task[];
   editingId?: string;
   dimNotes?: boolean;
   hideDueDate?: boolean;
   /** Stable id for this list, used as the drag container and droppable id. */
   containerId: string;
+  /** A board list needs its own drop id because its column is also sortable. */
+  dropId?: string;
   /**
    * Set on Daily, where each rendered date is its own drop target. Omitted for
    * collection lists, which are addressed by container id alone.
@@ -38,6 +40,8 @@ interface TaskListProps extends TaskCallbacks {
   sectionId?: string;
   /** Required when sectionId is set; used to populate SectionDropData. */
   collectionId?: string;
+  /** Supplies a grouped-board destination for an otherwise empty task list. */
+  dropData?: DayDropData | NoDateDropData | SectionDropData | BoardColumnDropData;
   /** The task currently being dragged, so its descendants can be dimmed. */
   activeDragId?: string | null;
   /** Rendered next to a row's title - Daily uses it for the collection chip. */
@@ -60,9 +64,11 @@ export function TaskList({
   dimNotes,
   hideDueDate,
   containerId,
+  dropId,
   dayDate,
   sectionId,
   collectionId,
+  dropData: dropDataProp,
   activeDragId,
   renderBadge,
   onTaskToggle,
@@ -78,15 +84,15 @@ export function TaskList({
   const { t } = useI18n();
   const { indentSteps, overId, hasMoved, setOverlayNode } = usePlannerDrag();
 
-  const dropData: DayDropData | SectionDropData | undefined = dayDate
+  const dropData: DayDropData | NoDateDropData | SectionDropData | BoardColumnDropData | undefined = dropDataProp ?? (dayDate
     ? { kind: 'day', date: dayDate, containerId }
     : sectionId && collectionId
       ? { kind: 'section', sectionId, collectionId, containerId }
-      : undefined;
+      : undefined);
 
   // Registered even when empty: an empty day or collection still has to accept a
   // drop, and a SortableContext with no items cannot receive one.
-  const { setNodeRef, isOver } = useDroppable({ id: containerId, data: dropData });
+  const { setNodeRef, isOver } = useDroppable({ id: dropId ?? containerId, data: dropData });
 
   // Derived from `tasks` alone, so it survives the renders a drag forces: every
   // change of projected depth or hovered row re-renders this list, and

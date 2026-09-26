@@ -4,8 +4,10 @@ import { defineProject } from "vitest/config";
 // against the docker-published postgres/redis. The ??= never overrides the
 // container's own DATABASE_URL/REDIS_URL (which use the `postgres`/`redis`
 // service hostnames), so in-container runs are unchanged.
-process.env.DATABASE_URL ??= "postgres://planner:planner@localhost:5432/planner";
-process.env.REDIS_URL ??= "redis://:planner@localhost:6379";
+const defaultDbUser = process.env.POSTGRES_USER ?? "planner";
+const defaultDbPassword = process.env.POSTGRES_PASSWORD ?? "planner";
+process.env.DATABASE_URL ??= `postgres://${defaultDbUser}:${defaultDbPassword}@localhost:5432/planner_test`;
+process.env.REDIS_URL ??= `redis://:${process.env.REDIS_PASSWORD ?? "planner"}@localhost:6379`;
 
 export default defineProject({
   test: {

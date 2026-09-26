@@ -1,16 +1,23 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { ChevronDown, ChevronRight, MoreHorizontal, Plus, Pencil, Smile, Trash2 } from 'lucide-react';
+import { ChevronDown, ChevronRight, MoreHorizontal, Plus, Pencil, Smile, Trash2, Archive } from 'lucide-react';
 import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { ContextMenu } from '../ui/ContextMenu';
-import { MonthSelector, type MonthSelectorHandle } from '../monthly/MonthSelector';
 import { StripNavigator } from '../ui/StripNavigator';
 import { HabitDot, dotAriaProps } from './HabitDot';
 import { InlineNameInput } from '../ui/InlineNameInput';
 import { NO_DRAG_ATTR } from '../dnd/sensors';
 import { HabitDragHandle } from './HabitDragHandle';
 import { HabitBlockPreview } from './HabitBlockPreview';
-import { fmtISO, weekdayInitials } from '../../utils/date';
+import {
+  buildWeekDays,
+  fmtISO,
+  formatWeekRangeLabel,
+  shiftWeek,
+  startOfWeek,
+  weekdayInitials,
+  type WeekStart,
+} from '../../utils/date';
 import { useI18n } from '../../i18n/I18nContext';
 import { dayState, flattenHabits, type HabitNode, type HabitSections } from '../../utils/habitTree';
 import { usePlannerDrag } from '../../contexts/usePlannerDrag';
@@ -60,9 +67,9 @@ interface TimelineSection {
 export interface HabitTimelineProps {
   sections: HabitSections;
   today: Date;
-  year: number;
-  month: number;
-  onMonthChange: (year: number, month: number) => void;
+  weekStart: WeekStart;
+  weekAnchor: Date;
+  onWeekChange: (date: Date) => void;
   todaySignal?: number;
   editing?: HabitEditTarget;
   collapsed: ReadonlySet<string>;
@@ -77,6 +84,7 @@ export interface HabitTimelineProps {
   onAddGroup: () => void;
   onToggleGroupIcon: (id: string) => void;
   onDelete: (target: HabitEditTarget) => void;
+  onArchive: (target: HabitEditTarget) => void;
 }
 
 interface DayCell {
@@ -108,15 +116,16 @@ function dayLink(node: HabitNode, days: DayCell[], i: number) {
   };
 }
 
-// Horizontal habit tracker for one month: one row per habit, one column per day.
+// Horizontal habit tracker for the current week: one row per habit, one column
+// per day, always exactly 7 columns aligned to the weekStart preference.
 // Sub-habits sit indented under their parent, and the parent shows their combined
 // state - empty, half, or full.
 export function HabitTimeline({
   sections,
   today,
-  year,
-  month,
-  onMonthChange,
+  weekStart,
+  weekAnchor,
+  onWeekChange,
   todaySignal,
   editing,
   collapsed,
@@ -130,13 +139,13 @@ export function HabitTimeline({
   onAddGroup,
   onToggleGroupIcon,
   onDelete,
+  onArchive,
 }: HabitTimelineProps) {
   const { locale, t } = useI18n();
   const [menu, setMenu] = useState<{ target: HabitEditTarget; canAddSub: boolean; x: number; y: number } | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const daysViewportRef = useRef<HTMLDivElement>(null);
   const daysHeaderViewportRef = useRef<HTMLDivElement>(null);
-  const monthSelectorRef = useRef<MonthSelectorHandle>(null);
   const [timelineWidth, setTimelineWidth] = useState<number | null>(null);
   const [canPagePrevious, setCanPagePrevious] = useState(false);
   const [canPageNext, setCanPageNext] = useState(false);
@@ -148,21 +157,25 @@ export function HabitTimeline({
     return LABEL_COL_W;
   }, [timelineWidth]);
 
-  const dayLetters = weekdayInitials('sunday', locale);
-  const days = useMemo<DayCell[]>(() => {
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-    return Array.from({ length: daysInMonth }, (_, i) => {
-      const date = new Date(year, month, i + 1);
-      const dow = date.getDay();
-      return {
-        iso: fmtISO(date),
-        letter: dayLetters[dow]!,
-        dayOfMonth: i + 1,
-        future: date.getTime() > today.getTime(),
-        isWeekend: dow === 0 || dow === 6,
-      };
-    });
-  }, [dayLetters, year, month, today]);
+  const dayLetters = weekdayInitials(weekStart, locale);
+  const days = useMemo<DayCell[]>(
+    () =>
+      buildWeekDays(weekAnchor, today, weekStart).map((d, i) => ({
+        iso: d.iso,
+        letter: dayLetters[i]!,
+        dayOfMonth: d.dayOfMonth,
+        future: d.future,
+        isWeekend: d.weekday === 0 || d.weekday === 6,
+      })),
+    [dayLetters, weekAnchor, today, weekStart],
+  );
+
+  const weekRangeLabel = useMemo(() => {
+    const start = startOfWeek(weekAnchor, weekStart);
+    const end = new Date(start);
+    end.setDate(start.getDate() + 6);
+    return formatWeekRangeLabel(start, end, locale);
+  }, [weekAnchor, weekStart, locale]);
 
   const todayISO = fmtISO(today);
 
@@ -342,18 +355,6 @@ export function HabitTimeline({
     return () => setOverlayNode(null);
   }, [activeDragId, draggedBlock, sections, days, dayColClass, labelColWidth, setOverlayNode]);
 
-  useEffect(() => {
-    if (todaySignal) {
-      if (monthSelectorRef.current) {
-        monthSelectorRef.current.animateTo(today.getFullYear(), today.getMonth());
-      } else {
-        onMonthChange(today.getFullYear(), today.getMonth());
-      }
-    }
-    // onMonthChange is intentionally omitted: this fires on an explicit signal only.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [todaySignal, today]);
-
   const updatePagingState = useCallback(() => {
     const viewport = daysViewportRef.current;
     if (!viewport) return;
@@ -425,12 +426,19 @@ export function HabitTimeline({
   return (
     <div ref={rootRef} className="habit-timeline">
       <div className="habit-timeline-selectors-sticky">
-        <MonthSelector
-          ref={monthSelectorRef}
-          year={year}
-          month={month}
-          onChange={onMonthChange}
-        />
+        <div className="habit-timeline-week-selector flex items-center gap-2">
+          <StripNavigator
+            direction="previous"
+            aria-label={t('page.previousWeek')}
+            onClick={() => onWeekChange(shiftWeek(weekAnchor, -1))}
+          />
+          <span className="habit-timeline-week-label text-sm font-medium text-ink">{weekRangeLabel}</span>
+          <StripNavigator
+            direction="next"
+            aria-label={t('page.nextWeek')}
+            onClick={() => onWeekChange(shiftWeek(weekAnchor, 1))}
+          />
+        </div>
 
         <div className="habit-timeline-day-selector mt-6 flex min-w-0 items-start gap-0">
           <div className="h-12 shrink-0 min-w-0" style={{ width: labelColWidth }} aria-hidden="true" />
@@ -501,7 +509,7 @@ export function HabitTimeline({
                   key={row.key}
                   type="button"
                   onClick={onAddGroup}
-                  className="habit-timeline-add-group group flex h-6 w-full min-w-0 items-center pr-2 text-ink-light opacity-35 transition-opacity hover:opacity-100"
+                  className="habit-timeline-add-group group flex h-6 w-full min-w-0 items-center pr-2 text-ink-light opacity-0 transition-opacity hover:opacity-100 focus-visible:opacity-100"
                 >
                   <span className="flex h-6 w-6 shrink-0 items-center justify-center">+</span>
                   <span className="min-w-0 flex-1 truncate text-left uppercase tracking-widest text-[10px] font-semibold">
@@ -745,6 +753,12 @@ export function HabitTimeline({
             { type: 'separator' },
             {
               type: 'item',
+              label: menu.target.kind === 'group' ? t('habit.archiveGroup') : t('habit.archive'),
+              icon: <Archive size={14} />,
+              onClick: () => onArchive(menu.target),
+            },
+            {
+              type: 'item',
               label: menu.target.kind === 'group' ? t('habit.deleteGroup') : t('common.delete'),
               icon: <Trash2 size={14} />,
               destructive: true,
@@ -827,7 +841,7 @@ interface TimelineBlockPreviewProps {
  * horizontally scrolled days viewport - so the preview rebuilds that geometry
  * itself: label column, the 24px gutter between them, then the track shifted by
  * the viewport's own scroll offset and clipped to its width. Without that shift
- * the marks would sit under the wrong days the moment the month is scrolled.
+ * the marks would sit under the wrong days the moment the week is scrolled.
  */
 function HabitTimelineBlockPreview({
   rows,
