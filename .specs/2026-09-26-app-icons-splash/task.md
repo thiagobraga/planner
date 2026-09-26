@@ -2,45 +2,43 @@
 
 ## 1. Vendor sources and generator
 
-- [ ] 1.1 Copy the source files from the generator zips into `.specs/2026-09-26-app-icons-splash/assets/source/`:
-  - `launchericon-512x512.png` (PWABuilder `android/`) - transparent RGBA master, notebook bbox 96..426 x 34..472
-  - `targetsize-{16,32,48,256}.png` (PWABuilder `windows/Square44x44Logo.targetsize-*`) - tight crops, readable at tiny sizes
-  - `progressier-readme.txt` - device list + media queries (source of truth for the 48 launch images)
-- [ ] 1.2 Write `assets/generate.py` (Pillow, LANCZOS resampling, `optimize=True`), writing into `app/public/`:
-  - `favicon.ico` from `targetsize-{16,32,48}`
-  - `images/icons/icon-32.png` from `targetsize-32`
-  - `images/icons/icon-192.png`, `icon-512.png` - transparent master resized (purpose `any`)
-  - `images/icons/apple-touch-icon-180.png` - master on opaque `#f5f0e8`, notebook height 80%
-  - `images/icons/icon-maskable-{192,512}.png` - master on opaque `#f5f0e8`, notebook height 62% so its corners stay inside the 80% safe-zone circle (0.48 x 0.64 -> diagonal 0.80)
-  - `images/logo/logo-{16,32}.png` from `targetsize-{16,32}`, `logo-{64,128}.png` from `targetsize-256` (transparent)
-  - `images/logo/logo-{28x38,56x76}.png` - master cropped to its alpha bbox, fitted and centered (transparent)
-  - `images/splash/ios/apple-splash-{w}x{h}.png` - for each of the 24 Progressier devices x portrait/landscape: opaque `#f5f0e8` canvas, notebook fitted to the content bbox measured from the matching Progressier image, so size and position match exactly
-- [ ] 1.3 Delete `app/public/images/bulletjournal-planner-*.png`.
+- [x] 1.1 Copy the sources from the generator zips into `.specs/2026-09-26-app-icons-splash/assets/source/`:
+  - `launchericon-512x512.png` (PWABuilder `android/`) - transparent RGBA master, alpha bbox `(99, 35, 426, 472)`
+  - `progressier-readme.txt` - device list + media queries for the launch images
+  - PWABuilder `windows/Square44x44Logo.targetsize-*` were checked and dropped: `targetsize-256` has bbox `(49, 17, 213, 236)`, exactly half the master, so they add nothing.
+- [x] 1.2 `assets/generate.py` (Pillow, LANCZOS on premultiplied `RGBa`, `optimize=True`) crops the master to its alpha bbox and writes into `app/public/`:
+  - `favicon.ico` (16 + 32 + 48, notebook at full height)
+  - `images/icons/icon-32x32.png`
+  - `images/icons/icon-192x192.png`, `icon-512x512.png` - transparent, notebook at 86% height (vendor framing), purpose `any`
+  - `images/icons/apple-touch-icon-180x180.png` - opaque `#f5f0e8`, notebook at 80% height (iOS fills transparency with black)
+  - `images/icons/icon-maskable-{192x192,512x512}.png` - opaque `#f5f0e8`, notebook at 62% height: 0.464 x 0.62 has a half-diagonal of 0.387, inside the 0.40 safe-zone radius
+  - `images/logo/logo-{16x16,32x32,28x38,56x76,64x64,128x128}.png` - transparent, fitted and centered. Names follow `PlannerIcon`'s existing `${width}x${height}` template so `srcSet` is `${2w}x${2h}`.
+  - `images/splash/ios/apple-splash-{w}x{h}.png` - 22 devices x portrait/landscape = 44, opaque `#f5f0e8`, notebook centered at the per-device height measured from Progressier's output (`IOS_DEVICES` table). Progressier's "iPhone Duo (Open/Closed)" entries were dropped: unreleased device, width > height in "portrait".
+  - Rewrites the block between `<!-- apple-touch-startup-image:start ... -->` and `<!-- apple-touch-startup-image:end -->` in `app/index.html`, so tags and files come from the same table.
+  - Kept lossless RGB: palette quantization saved ~40% but showed up to 13 levels of banding in the shadow.
+- [x] 1.3 Deleted `app/public/images/bulletjournal-planner-*.png`.
 
 ## 2. Wire up
 
-- [ ] 2.1 `app/public/manifest.webmanifest` + `manifest.dev.webmanifest`: icons `icon-192` / `icon-512` (`any`), `icon-maskable-192` / `icon-maskable-512` (`maskable`). `background_color` stays `#f5f0e8` (Android splash).
-- [ ] 2.2 `app/index.html`:
-  - `<link rel="icon" href="/favicon.ico" sizes="48x48">`, `<link rel="icon" type="image/png" sizes="32x32" href="/images/icons/icon-32.png">`
-  - `<link rel="apple-touch-icon" sizes="180x180" href="/images/icons/apple-touch-icon-180.png">`
-  - `apple-mobile-web-app-capable`, `mobile-web-app-capable`, `apple-mobile-web-app-title="Planner"`, `apple-mobile-web-app-status-bar-style="default"`
-  - 48 `<link rel="apple-touch-startup-image" media="(device-width) (device-height) (-webkit-device-pixel-ratio) (orientation)">` tags, generated from the same device table as the images
-- [ ] 2.3 `app/vite.config.ts`: `workbox.globIgnores: ['**/images/splash/**']` so the service worker does not precache ~48 launch images per visitor.
-- [ ] 2.4 `app/src/components/Sidebar.tsx` `PlannerIcon`: `src=/images/logo/logo-{w}x{h}.png` (square sizes `logo-{w}.png`) + `srcSet` 2x.
-- [ ] 2.5 `app/src/components/AuthShell.tsx`: `logo-64.png` + `srcSet logo-128.png 2x`.
-- [ ] 2.6 `README.md`: `app/public/images/logo/logo-128.png`.
+- [x] 2.1 `app/public/manifest.webmanifest` + `manifest.dev.webmanifest`: `icon-192x192` / `icon-512x512` (`any`), `icon-maskable-192x192` / `icon-maskable-512x512` (`maskable`). `background_color` stays `#f5f0e8` (Android splash).
+- [x] 2.2 `app/index.html`: `favicon.ico` (`sizes="16x16 32x32 48x48"`), PNG favicon 32, `apple-touch-icon` 180, `apple-mobile-web-app-capable`, `mobile-web-app-capable`, `apple-mobile-web-app-title`, `apple-mobile-web-app-status-bar-style`, 44 generated startup-image links.
+- [x] 2.3 `app/vite.config.ts`: `workbox.globIgnores: ['**/images/splash/**']`. Build precaches 16 entries: icons, logos, favicon, JS, CSS; no launch image.
+- [x] 2.4 `app/src/components/Sidebar.tsx` `PlannerIcon`: `src=/images/logo/logo-${w}x${h}.png`, `srcSet=/images/logo/logo-${2w}x${2h}.png 2x`. Covers Sidebar (16x16 collapsed, 28x38 expanded) and `StyleguidePage.tsx` (28x38) with no change there.
+- [x] 2.5 `app/src/components/AuthShell.tsx`: `logo-64x64.png` + `srcSet logo-128x128.png 2x`.
+- [x] 2.6 `README.md`: `app/public/images/logo/logo-128x128.png`.
 
 ## 3. Tests
 
-- [ ] 3.1 `app/src/test/pwaAssets.test.ts` (reads PNG IHDR bytes, no image dependency):
-  - every manifest icon exists and its pixel size matches `sizes`; both manifests list `any` 192/512 and `maskable` 192/512; maskable files differ from `any` files and are fully opaque
-  - `index.html` has 48 startup-image links; each file exists and its size equals `device-width x dpr` by `device-height x dpr` (swapped in landscape)
-  - every `/images/...` reference in `index.html` and the manifests exists
-  - no file in `app/src`, `app/index.html`, manifests, README references `bulletjournal-planner`
-- [ ] 3.2 Sidebar / AuthShell tests: logo `src` + `srcSet` point at `images/logo/`.
-- [ ] 3.3 `app/e2e/appIcons.spec.ts`: favicon, apple-touch-icon, manifest icons and one startup image return 200 `image/png`; login page logo renders with `naturalWidth > 0`.
+- [x] 3.1 `app/src/test/pwaAssets.test.ts` (reads PNG IHDR / ICO directory bytes, no image dependency):
+  - both manifests list exactly `any` 192/512 + `maskable` 192/512; every file exists with the declared size; maskable files are opaque and differ from `any`; cream background/theme
+  - `favicon.ico` holds 16/32/48; apple-touch-icon is an opaque 180x180; PNG favicon 32
+  - 44 unique startup-image links; each file is `device-width x dpr` by `device-height x dpr` (swapped in landscape) and opaque; no orphan launch image on disk
+  - every in-app logo exists at its size with alpha
+  - no `bulletjournal-planner` file or reference left in `index.html`, manifests, README, `app/src`
+- [x] 3.2 `Sidebar.test.tsx` (expanded 28x38 + collapsed 16x16, with 2x `srcset`), new `AuthShell.test.tsx` (64x64 + 128x128 2x).
+- [ ] 3.3 `app/e2e/appIcons.spec.ts`: favicon, apple-touch-icon, manifest icons, one startup image are served as `image/png` / icon; login page logo loads (`naturalWidth > 0`, 2x source picked on a 2x screen).
 
 ## 4. Verify
 
-- [ ] 4.1 `npm run lint`, `npm test`, `npm run build` in `app/`.
-- [ ] 4.2 Playwright screenshots to `app/dist/screenshots/`: login (desktop + narrow), sidebar logo, contact sheet of icons, sample launch screens. Post them in the PR.
+- [x] 4.1 `npm run lint` (0 errors), `npm test` (all pass), `npm run build` in `app/`.
+- [ ] 4.2 Playwright screenshots to `app/dist/screenshots/`: login (desktop + narrow), sidebar logo, icon contact sheet, sample launch screens. Post them in the PR.
