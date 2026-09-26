@@ -78,6 +78,10 @@ app/coverage-reports/
 # Superpowers
 .superpowers/
 
+.agents/
+.codex/
+.remember/
+
 # Database
 postgres_data/
 redis_data/

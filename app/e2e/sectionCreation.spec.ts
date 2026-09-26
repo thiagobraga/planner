@@ -18,9 +18,11 @@ test.describe('Section Creation & Management E2E Tests', () => {
     await page.goto('/inbox');
     await expect(page.getByRole('heading', { level: 1, name: 'Inbox' })).toBeVisible({ timeout: 10000 });
 
-    // 3. Create a new section
+    // 3. Create a new section (hidden by default, shown on hover)
     const newSectionBtn = page.getByRole('button', { name: /New section/i });
-    await expect(newSectionBtn).toBeVisible();
+    await expect(newSectionBtn).toHaveClass(/opacity-0/);
+    await newSectionBtn.hover();
+    await expect(newSectionBtn).toHaveCSS('opacity', '1');
     await newSectionBtn.click();
 
     const sectionInput = page.getByPlaceholder('New section');
@@ -41,8 +43,12 @@ test.describe('Section Creation & Management E2E Tests', () => {
 
     await expect(page.getByText('Work Task Alpha')).toBeVisible();
 
-    // 5. Create a second section
-    await page.getByRole('button', { name: /New section/i }).click();
+    // 5. Create a second section (revealed on hover)
+    const newSectionBtn2 = page.getByRole('button', { name: /New section/i });
+    await expect(newSectionBtn2).toHaveClass(/opacity-0/);
+    await newSectionBtn2.hover();
+    await expect(newSectionBtn2).toHaveCSS('opacity', '1');
+    await newSectionBtn2.click();
     const sectionInput2 = page.getByPlaceholder('New section');
     await sectionInput2.fill('Personal Section');
     await sectionInput2.press('Enter');

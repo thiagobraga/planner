@@ -33,10 +33,12 @@ import {
   apiCreateHabit,
   apiUpdateHabit,
   apiDeleteHabit,
+  apiArchiveHabit,
   apiToggleHabitCompletion,
   apiCreateHabitGroup,
   apiUpdateHabitGroup,
   apiDeleteHabitGroup,
+  apiArchiveHabitGroup,
   type ApiHabit,
   type ApiHabitGroup,
 } from '../api/client';
@@ -63,6 +65,15 @@ function DotsConnectedIcon(props: LucideProps) {
 }
 
 type HabitsView = 'timeline' | 'calendar';
+const HABITS_VIEW_STORAGE_KEY = 'planner.habits.view.v1';
+
+function loadHabitsView(): HabitsView {
+  try {
+    return window.localStorage.getItem(HABITS_VIEW_STORAGE_KEY) === 'calendar' ? 'calendar' : 'timeline';
+  } catch {
+    return 'timeline';
+  }
+}
 
 // Rows created in the UI carry a temp id until the server assigns a real one.
 // Every handler checks this prefix before calling the API.
@@ -79,7 +90,7 @@ export function HabitsPage() {
   const today = useMemo(() => startOfDay(new Date()), []);
   const queryClient = useQueryClient();
 
-  const [view, setView] = useState<HabitsView>('timeline');
+  const [view, setView] = useState<HabitsView>(loadHabitsView);
   const [editing, setEditing] = useState<HabitEditTarget>();
   const [todaySignal, setTodaySignal] = useState(0);
   const [collapsedHabitIds, setCollapsedHabitIds] = useState<Set<string>>(() => loadCollapsedHabitIds());
@@ -87,6 +98,7 @@ export function HabitsPage() {
     year: today.getFullYear(),
     month: today.getMonth(),
   }));
+  const [weekAnchor, setWeekAnchor] = useState(() => today);
 
   const { data: habitsData, isSuccess: habitsLoaded } = useQuery({
     queryKey: ['habits'],
@@ -356,6 +368,21 @@ export function HabitsPage() {
     [setGroups, setHabits, removeHabitLocally, invalidate],
   );
 
+  const handleArchive = useCallback(
+    (target: HabitEditTarget) => {
+      if (target.kind === 'group') {
+        setGroups((prev) => prev.filter((g) => g.id !== target.id));
+        if (!isTemp(target.id)) apiArchiveHabitGroup(target.id).catch(() => invalidate());
+        return;
+      }
+
+      // Archiving a parent hides its sub-habits as well.
+      removeHabitLocally(target.id);
+      if (!isTemp(target.id)) apiArchiveHabit(target.id).catch(() => invalidate());
+    },
+    [setGroups, removeHabitLocally, invalidate],
+  );
+
   const handleToggleGroupIcon = useCallback(
     (id: string) => {
       const group = groups.find((candidate) => candidate.id === id);
@@ -379,8 +406,22 @@ export function HabitsPage() {
     setSelected({ year, month });
   }, []);
 
+  const handleWeekChange = useCallback((date: Date) => {
+    setWeekAnchor(date);
+  }, []);
+
+  const handleViewChange = useCallback((next: HabitsView) => {
+    setView(next);
+    try {
+      window.localStorage.setItem(HABITS_VIEW_STORAGE_KEY, next);
+    } catch {
+      // Local view state is optional when browser storage is unavailable.
+    }
+  }, []);
+
   const handleToday = useCallback(() => {
     if (view === 'timeline') {
+      setWeekAnchor(today);
       setTodaySignal((signal) => signal + 1);
       return;
     }
@@ -401,7 +442,7 @@ export function HabitsPage() {
             <ButtonGroup
               mode="single"
               value={view}
-              onChange={setView}
+              onChange={handleViewChange}
               size="xs"
               items={[
                 { value: 'timeline', label: t('page.timelineView'), icon: <DotsConnectedIcon size={12} strokeWidth={1.8} /> },
@@ -416,9 +457,9 @@ export function HabitsPage() {
         <HabitTimeline
           sections={sections}
           today={today}
-          year={selected.year}
-          month={selected.month}
-          onMonthChange={handleMonthChange}
+          weekStart={weekStart}
+          weekAnchor={weekAnchor}
+          onWeekChange={handleWeekChange}
           todaySignal={todaySignal}
           editing={editing}
           collapsed={visibleCollapsedHabitIds}
@@ -432,6 +473,7 @@ export function HabitsPage() {
           onAddGroup={handleAddGroup}
           onToggleGroupIcon={handleToggleGroupIcon}
           onDelete={handleDelete}
+          onArchive={handleArchive}
         />
       ) : (
         <HabitCalendar

@@ -262,6 +262,17 @@ inboxBeforeEach({ mockFetchInboxTasks, mockApiCreateTask, mockApiUpdateTask, moc
       ]);
     });
 
+    it('renders the "+ New section" button with opacity-0 and hover:opacity-100 classes', async () => {
+      mockFetchInboxTasks.mockResolvedValue(sectionedData());
+      renderPage();
+      await screen.findByLabelText('Work');
+
+      const button = screen.getByRole('button', { name: /New section/i });
+      expect(button).toBeInTheDocument();
+      expect(button).toHaveClass('opacity-0');
+      expect(button).toHaveClass('hover:opacity-100');
+    });
+
     it('creates a new section from the "+ New section" row', async () => {
       mockFetchInboxTasks.mockResolvedValue(sectionedData());
       mockApiCreateSection.mockResolvedValue(section({ id: 'created-section', name: 'Chores' }));

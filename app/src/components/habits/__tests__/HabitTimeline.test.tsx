@@ -46,7 +46,7 @@ vi.mock('../../../api/client', () => ({
     background: 'beige',
     smallCaps: false,
     hideCompletedTasks: false,
-    hideOldNotes: false,
+    showNotes: true,
   }),
 }));
 
@@ -81,12 +81,10 @@ vi.mock('../../ui/ContextMenu', () => ({
   ),
 }));
 
-vi.mock('../../monthly/MonthSelector', () => ({
-  MonthSelector: React.forwardRef(() => null),
-}));
-
 vi.mock('../../ui/StripNavigator', () => ({
-  StripNavigator: () => null,
+  StripNavigator: ({ direction: _direction, ...props }: { direction: string } & React.ButtonHTMLAttributes<HTMLButtonElement>) => (
+    <button type="button" {...props} />
+  ),
 }));
 
 vi.mock('../../ui/InlineNameInput', () => ({
@@ -112,9 +110,9 @@ function createWrapper() {
 const defaultProps = {
   sections: { ungrouped: [], groups: [] } as HabitSections,
   today: new Date(2026, 6, 18),
-  year: 2026,
-  month: 6,
-  onMonthChange: vi.fn(),
+  weekStart: 'sunday' as const,
+  weekAnchor: new Date(2026, 6, 18),
+  onWeekChange: vi.fn(),
   onToggleDay: vi.fn(),
   onStartEdit: vi.fn(),
   onCommitEdit: vi.fn(),
@@ -123,6 +121,7 @@ const defaultProps = {
   onAddGroup: vi.fn(),
   onToggleGroupIcon: vi.fn(),
   onDelete: vi.fn(),
+  onArchive: vi.fn(),
   onToggleCollapse: vi.fn(),
   collapsed: new Set<string>(),
 };
@@ -134,7 +133,10 @@ describe('HabitTimeline', () => {
 
   it('renders the new section button when there are no groups', () => {
     render(<HabitTimeline {...defaultProps} />, { wrapper: createWrapper() });
-    expect(screen.getByText('New section')).toBeInTheDocument();
+    const button = screen.getByRole('button', { name: /New section/i });
+    expect(button).toBeInTheDocument();
+    expect(button).toHaveClass('opacity-0');
+    expect(button).toHaveClass('hover:opacity-100');
   });
 
   it('shrinks the habit name column to keep five day columns visible on iPhone-sized screens', async () => {
@@ -171,6 +173,48 @@ describe('HabitTimeline', () => {
         value: originalResizeObserver,
       });
     }
+  });
+
+  it('renders exactly 7 day columns for the current week', () => {
+    const { container } = render(<HabitTimeline {...defaultProps} />, { wrapper: createWrapper() });
+    expect(container.querySelectorAll('.habit-timeline-header-day')).toHaveLength(7);
+  });
+
+  it('starts the week on the configured weekStart day', () => {
+    const anchor = new Date(2026, 6, 18); // Saturday, Jul 18 2026
+    const letters = (container: HTMLElement) =>
+      [...container.querySelectorAll('.habit-timeline-header-day-letter')].map((node) => node.textContent);
+    const numbers = (container: HTMLElement) =>
+      [...container.querySelectorAll('.habit-timeline-header-day-number')].map((node) => node.textContent);
+
+    const { container, rerender } = render(
+      <HabitTimeline {...defaultProps} weekAnchor={anchor} weekStart="sunday" />,
+      { wrapper: createWrapper() },
+    );
+    expect(letters(container)).toEqual(['S', 'M', 'T', 'W', 'T', 'F', 'S']);
+    expect(numbers(container)).toEqual(['12', '13', '14', '15', '16', '17', '18']);
+
+    rerender(<HabitTimeline {...defaultProps} weekAnchor={anchor} weekStart="monday" />);
+    expect(letters(container)).toEqual(['M', 'T', 'W', 'T', 'F', 'S', 'S']);
+    expect(numbers(container)).toEqual(['13', '14', '15', '16', '17', '18', '19']);
+  });
+
+  it('steps the week anchor by 7 days via the prev/next week buttons', () => {
+    const onWeekChange = vi.fn();
+    render(
+      <HabitTimeline
+        {...defaultProps}
+        weekAnchor={new Date(2026, 6, 18)}
+        onWeekChange={onWeekChange}
+      />,
+      { wrapper: createWrapper() },
+    );
+
+    fireEvent.click(screen.getByLabelText('Previous week'));
+    expect(onWeekChange).toHaveBeenCalledWith(new Date(2026, 6, 11));
+
+    fireEvent.click(screen.getByLabelText('Next week'));
+    expect(onWeekChange).toHaveBeenCalledWith(new Date(2026, 6, 25));
   });
 
   it('renders a group icon in one grid cell before the group name', () => {
@@ -217,7 +261,7 @@ describe('HabitTimeline', () => {
       Array.from(screen.getByTestId('context-menu').querySelectorAll('button')).map(
         (button) => button.textContent,
       ),
-    ).toEqual(['Rename', 'Remove icon', 'Delete group']);
+    ).toEqual(['Rename', 'Remove icon', 'Archive group', 'Delete group']);
     fireEvent.click(screen.getByRole('button', { name: 'Remove icon' }));
     expect(onToggleGroupIcon).toHaveBeenCalledWith('morning');
   });

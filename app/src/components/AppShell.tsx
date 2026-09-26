@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef, type CSSProperties } from 're
 import { Outlet, useNavigate, useLocation } from 'react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Sidebar } from './Sidebar';
+import { BottomBar } from './BottomBar';
 import { QuickAdd } from './QuickAdd';
 import { SearchOverlay } from './SearchOverlay';
 import { Button } from './ui/Button';
@@ -58,6 +59,7 @@ export function AppShell() {
   const [helpOpen, setHelpOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => window.innerWidth < 640);
+  const [useBottomBar, setUseBottomBar] = useState(() => window.innerWidth < 640);
   const isWhiteBackground = preferences?.background === 'white';
   const pageBackground = isWhiteBackground ? '#ffffff' : 'var(--color-cream)';
   const shellThemeStyle = {
@@ -110,6 +112,13 @@ export function AppShell() {
     mq.addEventListener('change', handler);
     return () => mq.removeEventListener('change', handler);
   }, []);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 479px)');
+    const handler = (e: MediaQueryListEvent) => setUseBottomBar(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
   const matcherStateRef = useRef<MatcherState>(createMatcherState());
 
   const isTextInputFocused = useCallback(() => {
@@ -142,9 +151,6 @@ export function AppShell() {
           break;
         case 'navigate:daily':
           navigate('/daily');
-          break;
-        case 'navigate:monthly':
-          navigate('/monthly');
           break;
         case 'navigate:habits':
           navigate('/habits');
@@ -196,7 +202,7 @@ export function AppShell() {
 
   return (
     <div
-      className={`app-shell flex h-screen overflow-hidden ${FONT_CLASSES[preferences?.font ?? 'lora']}${preferences?.smallCaps ? ' small-caps' : ''}`}
+      className={`app-shell flex h-screen overflow-hidden ${FONT_CLASSES[preferences?.font ?? 'lora']}${preferences?.smallCaps ? ' small-caps' : ''}${useBottomBar ? ' app-shell--bottom-bar' : ''}`}
       style={shellThemeStyle}
     >
       {/* Mobile menu button - only shown below collapsed breakpoint (≥640px uses collapsed sidebar) */}
@@ -221,7 +227,7 @@ export function AppShell() {
           <Sidebar
             isOpen={sidebarOpen}
             onClose={() => setSidebarOpen(false)}
-            collapsed={sidebarCollapsed}
+            collapsed={useBottomBar ? false : sidebarCollapsed}
             updateAvailable={updateAvailable}
           />
 
@@ -237,6 +243,14 @@ export function AppShell() {
           >
             <Outlet />
           </main>
+
+          {useBottomBar && (
+            <BottomBar
+              isMenuOpen={sidebarOpen}
+              onMenuToggle={() => setSidebarOpen((v) => !v)}
+              onNavigate={() => setSidebarOpen(false)}
+            />
+          )}
         </PlannerDragProvider>
       )}
 
@@ -290,7 +304,6 @@ export function AppShell() {
                   ['?', t('shell.togglePanel')],
                   ['g i', t('shell.goInbox')],
                   ['g d', t('shell.goDaily')],
-                  ['g m', t('shell.goMonthly')],
                   ['g h', t('shell.goHabits')],
                   ['g s', t('shell.goSettings')],
                   ['g u', t('shell.goUpcoming')],

@@ -14,15 +14,15 @@ Goal: zero-downtime deploys, robust and simple, on the existing GitHub Actions +
 ## Architecture
 
 ```
-                        ┌────────────── router (stable, port 8080) ──────────────┐
+                        ┌-------------- router (stable, port 8080) --------------┐
                         │  / → app_active    /api, /socket.io → api_active       │
-                        │  upstreams from a bind-mounted .active.conf file        │
-                        └───────────────┬─────────────────────────┬──────────────┘
+                        │  upstreams from a bind-mounted .active.conf file       │
+                        └---------------┬-------------------------┬--------------┘
                      "blue"             │                         │            "green"
-        planner-blue-app (old SPA)      │        planner-green-app (new SPA)  ─┘
+        planner-blue-app (old SPA)      │        planner-green-app (new SPA)  -┘
         planner-blue-api  (old API)     │        planner-green-api  (new API)
         planner-blue-migrate            │        planner-green-migrate
-                                        └────────── postgres · redis (shared) ────
+                                        └---------- postgres · redis (shared) ----
 ```
 
 - **Router**: stock `nginx:1.31-alpine`, publishes `127.0.0.1:8080:80`, on `edge` + `backend` networks. Never rebuilt; its image never changes. The two `upstream` blocks are bind-mounted from a host file (`deploy/upstreams.active.conf` → `/etc/nginx/conf.d/00-upstreams.conf`, sorted before the server block). Switching = atomic `mv` of that file + `nginx -s reload`, which finishes in-flight requests on old workers while new connections take the new active color.

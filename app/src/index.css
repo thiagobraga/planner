@@ -220,11 +220,9 @@ button,
 }
 
 .board-column {
-  overflow: hidden;
-  border: 1px solid color-mix(in srgb, var(--color-ink-lighter) 60%, transparent);
-  border-radius: 12px;
-  background: var(--planner-board-column-bg);
-  backdrop-filter: blur(2px);
+  display: flex;
+  flex-direction: column;
+  overflow: visible;
 }
 
 .board-column.is-dragging {
@@ -237,32 +235,37 @@ button,
 
 .board-column-header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 8px;
-  min-height: 48px;
-  padding: 0 12px;
-  border-bottom: 1px solid color-mix(in srgb, var(--color-ink-lighter) 55%, transparent);
+  min-height: 24px;
+  padding: 0;
 }
 
 .board-column-header h2 {
   flex: 1;
   min-width: 0;
   overflow: hidden;
-  font-size: 13px;
+  font-size: 10px;
   font-weight: 600;
   line-height: 24px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
   text-overflow: ellipsis;
   white-space: nowrap;
+  color: var(--color-ink-light);
 }
 
 .board-column-name-input {
-  font-size: 13px;
+  font-size: 10px;
   font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
 }
 
 .board-column-dot {
   width: 8px;
   height: 8px;
+  margin-top: 8px;
   flex: 0 0 auto;
   border-radius: 50%;
 }
@@ -286,18 +289,54 @@ button,
 
 .board-column-cards {
   display: grid;
-  gap: 12px;
-  min-height: 96px;
-  padding: 12px;
+  gap: 24px;
+  min-height: 24px;
+  padding: 0;
+}
+
+.board-column-lists {
+  gap: 0;
+  align-content: start;
+}
+
+.board-column-lists .task-list--drag-target {
+  padding-bottom: 0;
+  margin-bottom: 0;
+}
+
+.board-list-editor {
+  display: grid;
+  gap: 0;
+  min-height: 24px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.board-list-editor input {
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-bottom: 1px solid var(--color-dot);
+  border-radius: 0;
+  background: transparent;
+}
+
+.board-list-editor .daily-board-editor-actions {
+  min-height: 24px;
 }
 
 .board-card {
+  position: relative;
   display: grid;
-  gap: 12px;
+  gap: 0;
+  min-height: 48px;
   padding: 12px;
-  border: 1px solid color-mix(in srgb, var(--color-ink-lighter) 68%, transparent);
+  border: 0;
   border-radius: 8px;
   background: var(--planner-board-card-bg);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-ink-lighter) 68%, transparent);
+  box-sizing: border-box;
 }
 
 .board-card.is-dragging {
@@ -306,7 +345,7 @@ button,
 
 .board-card-topline {
   display: grid;
-  grid-template-columns: 18px minmax(0, 1fr) 18px;
+  grid-template-columns: 18px minmax(0, 1fr);
   gap: 6px;
   align-items: start;
 }
@@ -325,7 +364,7 @@ button,
   margin-top: 4px;
   place-items: center;
   border: 1px solid var(--color-ink-lighter);
-  border-radius: 50%;
+  border-radius: 2px;
   background: transparent;
   color: var(--color-cream);
 }
@@ -334,18 +373,6 @@ button,
   border-color: var(--color-accent);
   background: var(--color-accent);
 }
-
-.board-card-priority {
-  display: flex;
-  height: 24px;
-  align-items: center;
-  justify-content: center;
-  color: var(--color-ink-lighter);
-}
-
-.board-card-priority.priority-1 { color: var(--color-accent); }
-.board-card-priority.priority-2 { color: var(--color-priority-2); }
-.board-card-priority.priority-3 { color: var(--color-priority-3); }
 
 .board-card-labels {
   display: flex;
@@ -376,7 +403,7 @@ button,
   overflow: hidden;
   color: var(--color-ink-light);
   font-size: 11px;
-  line-height: 18px;
+  line-height: 24px;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
 }
@@ -385,11 +412,10 @@ button,
   display: grid;
   gap: 6px;
   padding-top: 6px;
-  border-top: 1px dashed color-mix(in srgb, var(--color-ink-lighter) 65%, transparent);
 }
 
 .board-card-checklist.is-empty {
-  min-height: 12px;
+  min-height: 0;
   padding-top: 0;
   border-top-color: transparent;
 }
@@ -402,7 +428,7 @@ button,
 .board-card-date {
   color: var(--color-ink-light);
   font-size: 10px;
-  line-height: 18px;
+  line-height: 24px;
 }
 
 .board-card-checklist-row {
@@ -411,18 +437,24 @@ button,
   gap: 6px;
   align-items: start;
   font-size: 11px;
-  line-height: 18px;
+  line-height: 24px;
 }
 
 .board-card-checklist-row.is-dragging {
   opacity: 0.4;
 }
 
-.board-card-checklist-row input {
-  width: 13px;
-  height: 13px;
+.board-card-checklist-row .board-card-check {
   margin-top: 2px;
-  accent-color: var(--color-accent);
+}
+
+.board-card-checklist-dash {
+  display: grid;
+  width: 16px;
+  height: 16px;
+  margin-top: 2px;
+  place-items: center;
+  color: var(--color-ink-lighter);
 }
 
 .board-card-date {
@@ -431,15 +463,158 @@ button,
   align-items: center;
 }
 
-.board-column-empty {
-  display: grid;
-  min-height: 72px;
-  place-items: center;
-  border: 1px dashed color-mix(in srgb, var(--color-ink-lighter) 55%, transparent);
-  border-radius: 8px;
-  color: var(--color-ink-light);
+.daily-week-board .board-column {
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  backdrop-filter: none;
+}
+
+.daily-week-board .board-grid {
+  grid-auto-columns: 220px;
+}
+
+.daily-week-board .board-column-header {
+  align-items: flex-start;
+  min-height: 24px;
+  padding: 0;
+  border-bottom: 0;
+}
+
+.daily-week-board .board-column-header .daily-board-column-title {
   font-size: 11px;
-  opacity: 0.65;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  line-height: 24px;
+  text-transform: uppercase;
+  color: var(--color-ink-light);
+}
+
+.daily-week-board .daily-board-column-title span {
+  color: var(--color-accent-light);
+}
+
+.daily-week-board [data-column-id='migrate'] .board-column-header h2 {
+  color: var(--color-priority-2);
+}
+
+.daily-week-board .board-column-cards {
+  padding: 0;
+  align-content: start;
+  gap: 24px;
+}
+
+.daily-week-board .board-column-lists {
+  gap: 0;
+}
+
+.daily-week-board .board-card {
+  position: relative;
+  gap: 0;
+  padding: 12px;
+}
+
+.daily-week-board .board-card-date,
+.daily-week-board .board-card-description {
+  line-height: 24px;
+}
+
+.daily-week-board .board-card-checklist.is-empty {
+  position: absolute;
+  inset: auto 0 0;
+  height: 24px;
+  border: 0;
+}
+
+.daily-board-add-task {
+  display: flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-ink-light);
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.daily-board-add-task[hidden] {
+  display: none;
+}
+
+.daily-board-add-icon {
+  width: 24px;
+  flex-shrink: 0;
+  text-align: center;
+}
+
+.daily-board-add-task:hover {
+  color: var(--color-ink);
+}
+
+.daily-board-add-task:focus-visible,
+.daily-board-editor input:focus-visible,
+.daily-board-editor button:focus-visible {
+  outline: 1px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.daily-board-editor input {
+  width: 100%;
+  min-width: 0;
+  height: 32px;
+  padding: 0 8px;
+  border: 1px solid color-mix(in srgb, var(--color-ink-lighter) 68%, transparent);
+  border-radius: 4px;
+  background: transparent;
+}
+
+.daily-board-editor.board-list-editor input {
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-bottom: 1px solid var(--color-dot);
+  border-radius: 0;
+}
+
+.daily-board-editor {
+  gap: 8px;
+  font-size: 13px;
+}
+
+.daily-board-editor-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.daily-board-editor-actions button {
+  min-height: 24px;
+  padding: 0 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.daily-board-editor-save {
+  border: 1px solid var(--color-accent);
+  background: var(--color-accent);
+  color: var(--color-cream);
+}
+
+.daily-board-editor-cancel {
+  border: 1px solid color-mix(in srgb, var(--color-ink-lighter) 68%, transparent);
+  background: transparent;
+  color: var(--color-ink-light);
+}
+
+.daily-board-editor button:disabled {
+  opacity: 0.5;
+}
+
+.daily-board-editor [role='alert'] {
+  color: var(--color-accent);
 }
 
 .status-task-groups {
@@ -534,17 +709,26 @@ button,
   font-size: 12px;
 }
 
+/* Lives inside the hamburger dropdown panel now (Toolbar.tsx), which is
+   always a fixed-width column regardless of viewport - so this stacks
+   VIEW/SHOW sections vertically instead of the old full-width inline row. */
 .board-page-toolbar {
   display: flex;
+  flex-direction: column;
+  align-items: stretch;
   min-width: 0;
-  min-height: 24px;
-  align-items: center;
-  gap: 8px;
-  white-space: nowrap;
+  gap: 12px;
 }
 
-.board-toolbar-kanban-controls,
 .board-toolbar-primary-controls {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  min-width: 0;
+  gap: 12px;
+}
+
+.board-toolbar-kanban-controls {
   display: flex;
   min-width: 0;
   align-items: center;
@@ -555,38 +739,6 @@ button,
   color: var(--color-ink-light);
   font-size: 12px;
   line-height: 24px;
-}
-
-@media (max-width: 1023px) {
-  .collection-page-header-controls,
-  .inbox-page-header-controls {
-    align-self: stretch;
-    justify-content: flex-start;
-  }
-
-  .board-page-toolbar {
-    flex-wrap: wrap;
-    justify-content: flex-end;
-  }
-}
-
-@media (max-width: 639px) {
-  .collection-page-header-controls,
-  .inbox-page-header-controls {
-    width: 100%;
-    padding-left: 0;
-    background: transparent;
-  }
-
-  .board-page-toolbar,
-  .board-toolbar-kanban-controls {
-    width: 100%;
-  }
-
-  .board-toolbar-kanban-controls {
-    flex-wrap: wrap;
-    justify-content: flex-end;
-  }
 }
 
 @media (max-width: 639px) {
@@ -629,21 +781,39 @@ button,
   background-color: var(--planner-page-bg);
 }
 
-/* Toolbar row under the title, left-aligned - replaces the old absolutely
-   positioned top-right toolbar on every page sharing .sticky-page-header. */
+/* Hamburger toolbar - absolutely anchored top-right of the sticky header,
+   collapsing every page's controls into one dropdown instead of a row.
+   top matches .sticky-page-header's padding-top so this row lines up with
+   the title's own line box, and the flex centers the 24px buttons on it. */
 .page-header-toolbar {
-  position: static;
+  position: absolute;
+  top: 24px;
+  right: 0;
   height: 24px;
+  display: flex;
+  align-items: center;
 }
 
 /* The title/subtitle column - shrunk to its own content, unlike the header
- * shell around it, so the sticky background only paints behind the text. */
+ * shell around it, so the sticky background only paints behind the text.
+ * padding-right reserves room for the header toolbar so a long title
+ * doesn't render underneath it. */
 .page-header-copy-text {
   display: inline-flex;
   flex-direction: column;
   align-items: flex-start;
   width: fit-content;
   max-width: 100%;
+  padding-right: max(40px, var(--page-header-toolbar-space, 0px));
+
+  /* Without a cap the h1 sizes to its content and a long title spills into
+     the reserved toolbar space instead of truncating. */
+  > h1 {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 }
 
 .monthly-current-day-label {
@@ -1057,6 +1227,13 @@ textarea:focus-visible {
 .collection-row--active:hover {
   background: var(--planner-sidebar-active-bg);
 }
+/* Pages whose header toolbar also carries the ViewSwitcher: 4 view buttons +
+   hamburger at 24px with 4px gaps (136px), plus 8px breathing room. */
+.daily-page,
+.inbox-page,
+.collection-detail-page {
+  --page-header-toolbar-space: 144px;
+}
 /* Collections index page */
 .collections-index-page {
   --page-header-toolbar-space: 48px;
@@ -1137,18 +1314,11 @@ textarea:focus-visible {
     padding: 24px 12px 24px 24px;
   }
 
-  .daily-page {
-    --page-header-toolbar-space: 128px;
-  }
   .monthly-page {
     --page-header-toolbar-space: 64px;
   }
   .habits-page {
     --page-header-toolbar-space: 120px;
-  }
-  .inbox-page,
-  .collection-detail-page {
-    --page-header-toolbar-space: 64px;
   }
   .page-header-copy {
     width: 100%;
@@ -1187,4 +1357,60 @@ textarea:focus-visible {
   .mobile-menu-btn {
     display: block !important;
   }
+}
+
+/* Bottom nav bar replaces the sidebar entirely below 480px */
+.bottom-bar {
+  display: none;
+}
+
+@media (max-width: 479px) {
+  .app-shell--bottom-bar .main-content {
+    padding-bottom: 76px;
+  }
+
+  .bottom-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 55;
+    display: flex;
+    align-items: stretch;
+    justify-content: space-around;
+    height: 60px;
+    background: var(--planner-sidebar-bg);
+    border-top: 1px solid var(--color-dot);
+  }
+
+  .bottom-bar-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    flex: 1;
+    color: var(--color-ink);
+    opacity: 0.6;
+    font: inherit;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+  }
+
+  .bottom-bar-item--active {
+    opacity: 1;
+    color: var(--color-accent);
+  }
+
+.bottom-bar-label {
+    font-size: 10px;
+    line-height: 12px;
+  }
+}
+
+/* Board lists use the journal's actual row rhythm, not the extra list drop seam. */
+.board-column-lists .task-list--drag-target {
+  padding-bottom: 0;
+  margin-bottom: 0;
 }
