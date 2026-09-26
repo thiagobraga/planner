@@ -2,6 +2,7 @@ import { isOnline, enqueueMutation, type QueuedMutationMethod } from '../utils/o
 import { getSocketId } from '../utils/socket';
 import { notifyUnauthorized } from '../utils/authEvents';
 import type { BoardViewMode } from '../types/board';
+import type { BackgroundPreference } from '../types/theme';
 
 const BASE = '/api/v1';
 
@@ -298,7 +299,7 @@ export interface Preferences {
   notificationsEnabled: boolean;
   font: 'lora' | 'playpen' | 'hubballi';
   showDots: boolean;
-  background: 'beige' | 'white';
+  background: BackgroundPreference;
   smallCaps: boolean;
   hideCompletedTasks: boolean;
   showNotes: boolean;

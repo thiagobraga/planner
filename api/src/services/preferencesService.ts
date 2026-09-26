@@ -48,7 +48,7 @@ function formatPreferences(row: PreferencesRow) {
 const VALID_WEEK_STARTS = ["sunday", "monday"] as const;
 const VALID_THEMES = ["light", "dark", "system"] as const;
 const VALID_FONTS = ["lora", "playpen", "hubballi"] as const;
-const VALID_BACKGROUNDS = ["beige", "white"] as const;
+const VALID_BACKGROUNDS = ["beige", "white", "dark", "system"] as const;
 const VALID_LOCALES = ["en", "pt-BR"] as const;
 const VALID_GROUPINGS = ["status", "section", "priority"] as const;
 const VALID_VIEW_MODES = ["list", "kanban"] as const;
@@ -116,7 +116,7 @@ export function validatePreferences(input: UpdatePreferencesInput): UpdatePrefer
   }
 
   if (input.background !== undefined && !VALID_BACKGROUNDS.includes(input.background as (typeof VALID_BACKGROUNDS)[number])) {
-    errors.push({ field: "background", message: "background must be one of: beige, white" });
+    errors.push({ field: "background", message: `background must be one of: ${VALID_BACKGROUNDS.join(", ")}` });
   }
 
   if (input.smallCaps !== undefined && typeof input.smallCaps !== "boolean") {

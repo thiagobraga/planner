@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { Menu } from 'lucide-react';
 import { useI18n } from '../../i18n/I18nContext';
+import { ThemeSwitcher } from './ThemeSwitcher';
 
 export interface ToolbarProps {
   children: ReactNode;
@@ -9,20 +10,11 @@ export interface ToolbarProps {
   viewSwitcher?: ReactNode;
 }
 
-// Small uppercase heading for a group of items inside the dropdown panel
-// (e.g. "VIEW", "SHOW").
-export function ToolbarSectionLabel({ children }: { children: ReactNode }) {
-  return (
-    <span className="toolbar-section-label text-[11px] font-medium uppercase tracking-wide text-ink-light">
-      {children}
-    </span>
-  );
-}
-
 // The header toolbar: owns the `page-header-toolbar` positioning class
 // (top-right of the sticky page header) and collapses its children (Button,
 // ButtonGroup, TaskVisibilityControls, BoardToolbar, ...) behind a single
-// hamburger button, opened as a dropdown panel. Each page passes only its
+// hamburger button, opened as a dropdown panel that always ends with the
+// theme picker. Each page passes only its
 // own hook class (e.g. "daily-page-header-controls") via className.
 export function Toolbar({ children, className = '', viewSwitcher }: ToolbarProps) {
   const { t } = useI18n();
@@ -62,7 +54,7 @@ export function Toolbar({ children, className = '', viewSwitcher }: ToolbarProps
         <div
           role="menu"
           className="absolute right-0 top-full mt-2.5 z-40 min-w-55 flex flex-col items-stretch gap-3 p-3 rounded-md border border-dot"
-          style={{ backgroundColor: 'var(--planner-page-bg, var(--color-cream))', boxShadow: '0 8px 32px rgba(44,44,44,0.15)' }}
+          style={{ backgroundColor: 'var(--planner-page-bg, var(--color-cream))', boxShadow: 'var(--shadow-overlay)' }}
         >
           <div
             aria-hidden="true"
@@ -70,6 +62,7 @@ export function Toolbar({ children, className = '', viewSwitcher }: ToolbarProps
             style={{ backgroundColor: 'var(--planner-page-bg, var(--color-cream))' }}
           />
           {children}
+          <ThemeSwitcher />
         </div>
       )}
     </div>
