@@ -126,10 +126,10 @@ export async function createCollection(userId: string, input: CreateCollectionIn
   validate(errors);
   const color = validateColor(input.color);
 
-  // Check unique name per user
+  // Check unique name per parent (siblings only - the same name is fine under a different parent)
   const duplicateCheck = await pool.query(
-    `SELECT id FROM collections WHERE user_id = $1 AND LOWER(name) = LOWER($2)`,
-    [userId, input.name],
+    `SELECT id FROM collections WHERE user_id = $1 AND parent_id IS NOT DISTINCT FROM $2 AND LOWER(name) = LOWER($3)`,
+    [userId, input.parentId ?? null, input.name],
   );
 
   if (duplicateCheck.rows.length > 0) {
@@ -137,7 +137,7 @@ export async function createCollection(userId: string, input: CreateCollectionIn
       code: 'VALIDATION_ERROR',
       message: 'Validation failed',
       statusCode: 400,
-      details: [{ field: 'name', message: 'A collection with this name already exists' }],
+      details: [{ field: 'name', message: 'A collection with this name already exists at this level' }],
     });
   }
 
@@ -199,11 +199,25 @@ export async function updateCollection(collectionId: string, userId: string, inp
     validateColor(input.color);
   }
 
-  // Check unique name per user (exclude self)
-  if (input.name !== undefined) {
+  // A reparent onto itself is invalid regardless of name - check before the
+  // duplicate-name lookup so it doesn't waste a query scoping to a bogus parent.
+  if (input.parentId !== undefined && input.parentId !== null && input.parentId === collectionId) {
+    throw new AppError({
+      code: 'VALIDATION_ERROR',
+      message: 'A collection cannot be its own parent',
+      statusCode: 400,
+    });
+  }
+
+  // Check unique name per parent (exclude self). Renaming or reparenting can both
+  // create a sibling collision, so either input triggers the check against the
+  // effective (possibly unchanged) parent and name.
+  if (input.name !== undefined || input.parentId !== undefined) {
+    const effectiveParentId = input.parentId !== undefined ? input.parentId : collection.parent_id;
+    const effectiveName = input.name !== undefined ? input.name : collection.name;
     const duplicateCheck = await pool.query(
-      `SELECT id FROM collections WHERE user_id = $1 AND LOWER(name) = LOWER($2) AND id != $3`,
-      [userId, input.name, collectionId],
+      `SELECT id FROM collections WHERE user_id = $1 AND parent_id IS NOT DISTINCT FROM $2 AND LOWER(name) = LOWER($3) AND id != $4`,
+      [userId, effectiveParentId, effectiveName, collectionId],
     );
 
     if (duplicateCheck.rows.length > 0) {
@@ -211,7 +225,7 @@ export async function updateCollection(collectionId: string, userId: string, inp
         code: 'VALIDATION_ERROR',
         message: 'Validation failed',
         statusCode: 400,
-        details: [{ field: 'name', message: 'A collection with this name already exists' }],
+        details: [{ field: 'name', message: 'A collection with this name already exists at this level' }],
       });
     }
   }
@@ -232,13 +246,6 @@ export async function updateCollection(collectionId: string, userId: string, inp
 
   if (input.parentId !== undefined) {
     if (input.parentId !== null) {
-      if (input.parentId === collectionId) {
-        throw new AppError({
-          code: 'VALIDATION_ERROR',
-          message: 'A collection cannot be its own parent',
-          statusCode: 400,
-        });
-      }
       await verifyCollectionOwnership(input.parentId, userId);
       if (await isSelfOrDescendant(input.parentId, collectionId)) {
         throw new AppError({

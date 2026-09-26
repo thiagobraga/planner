@@ -976,7 +976,7 @@ export async function moveTask(taskId: string, userId: string, input: MoveTaskIn
 
     await client.query(`SELECT id FROM tasks WHERE id = ANY($1::uuid[]) FOR UPDATE`, [subtreeIds]);
 
-    // ── Resolve the destination ────────────────────────────────────────────────
+    // Resolve the destination ------------------------------------------------
     let destParent: TaskRow | null = null;
     if (input.parentTaskId) {
       if (input.parentTaskId === taskId) {
@@ -1070,7 +1070,7 @@ export async function moveTask(taskId: string, userId: string, input: MoveTaskIn
       destStatusIsCompletion = statusResult.rows[0].completion_status_id === destStatusId;
     }
 
-    // ── Apply the move to the root ─────────────────────────────────────────────
+    // Apply the move to the root ---------------------------------------------
     await client.query(
       `UPDATE tasks
        SET parent_task_id = $1,
@@ -1115,7 +1115,7 @@ export async function moveTask(taskId: string, userId: string, input: MoveTaskIn
       if (completionResult === 'reopened') rootIsCompleted = false;
     }
 
-    // ── Carry the descendants ──────────────────────────────────────────────────
+    // Carry the descendants --------------------------------------------------
     // Their parent links and relative order are untouched; only the values that
     // are inherited from the root shift. Explicit status and priority changes
     // apply to the root only; crossing collections clears stale descendant
@@ -1158,7 +1158,7 @@ export async function moveTask(taskId: string, userId: string, input: MoveTaskIn
       }
     }
 
-    // ── Update day membership ──────────────────────────────────────────────────
+    // Update day membership --------------------------------------------------
     // Runs before the scope repositioning below, not after: repositioning writes
     // the dragged task's row in the target day, and a later bulk delete would
     // wipe exactly that row and leave the task absent from its own day's order.
@@ -1174,7 +1174,7 @@ export async function moveTask(taskId: string, userId: string, input: MoveTaskIn
       }
     }
 
-    // ── Reposition within the target ordering scope ────────────────────────────
+    // Reposition within the target ordering scope ----------------------------
     // Sibling order values are already gap-spaced 1000 apart, so a single-row
     // drag usually needs one midpoint write, not a renumber of the whole list.
     // Removing the task from its old list needs no separate cleanup: gap
@@ -1242,7 +1242,7 @@ export async function moveTask(taskId: string, userId: string, input: MoveTaskIn
 
     await client.query('COMMIT');
 
-    // ── Report every record the client must patch ──────────────────────────────
+    // Report every record the client must patch ------------------------------
     // Scoped to just the dragged subtree - not bloated, no change needed here.
     //
     // A day-scoped move never touches `tasks.order_value` - only `task_order`.

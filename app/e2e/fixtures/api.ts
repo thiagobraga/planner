@@ -1,4 +1,5 @@
 import { expect, test as base, type APIRequestContext, type APIResponse } from '@playwright/test';
+import fs from 'node:fs';
 import path from 'node:path';
 
 import type {
@@ -12,8 +13,11 @@ import type {
 
 export { expect };
 
+const isInsideDocker = !!process.env.DOCKER_HOST || fs.existsSync('/.dockerenv');
 export const BASE_URL =
-  process.env.E2E_BASE_URL ?? process.env.PLAYWRIGHT_BASE_URL ?? 'https://planner.local';
+  process.env.E2E_BASE_URL ??
+  process.env.PLAYWRIGHT_BASE_URL ??
+  (isInsideDocker ? 'http://localhost:5173' : 'https://planner.local');
 
 export const API_URL =
   process.env.E2E_API_URL ?? process.env.PLAYWRIGHT_API_URL ?? `${new URL(BASE_URL).origin}/api/v1`;

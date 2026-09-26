@@ -1,6 +1,6 @@
-import { Fragment, useMemo, useState, useCallback, useRef } from 'react';
+import { Fragment, useMemo, useState, useCallback, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   type DragStartEvent,
   type DragMoveEvent,
@@ -19,15 +19,13 @@ import {
   apiCreateCollection,
   apiUpdateCollection,
   apiDeleteCollection,
-  apiUpdatePreferences,
   PALETTE_COLORS,
   type ApiCollection,
-  type Preferences,
 } from '../api/client';
 import { runOptimistic, patchById, upsertById } from '../stores/optimistic';
 import { ConfirmModal } from './ConfirmModal';
 import { useI18n } from '../i18n/I18nContext';
-import { usePreferences } from '../hooks/usePreferences';
+import { loadCollapsedCollectionIds, saveCollapsedCollectionIds } from '../utils/collectionCollapseStorage';
 
 const INDENT = 22;
 const MAX_DEPTH = 4; // backend enforces nesting depth of 4
@@ -213,16 +211,19 @@ export function CollectionTreeNav() {
   const location = useLocation();
   const qc = useQueryClient();
   const { data: collections = [] } = useQuery({ queryKey: ['collections'], queryFn: fetchCollections });
-  const { data: preferences } = usePreferences();
 
   const flat = useMemo(() => flattenCollections(collections), [collections]);
   const selectedCollectionId = location.pathname.match(/^\/collection\/([^/]+)$/)?.[1] ?? null;
   const collectionIds = useMemo(() => new Set(flat.map((item) => item.id)), [flat]);
+  const [storedCollapsedIds, setStoredCollapsedIds] = useState<Set<string>>(() => loadCollapsedCollectionIds());
   const normalizedCollapsedIds = useMemo(
-    () => [...new Set(preferences?.collapsedCollectionIds ?? [])].filter((id) => collectionIds.has(id)),
-    [collectionIds, preferences?.collapsedCollectionIds],
+    () => [...storedCollapsedIds].filter((id) => collectionIds.has(id)),
+    [collectionIds, storedCollapsedIds],
   );
   const collapsedIds = useMemo(() => new Set(normalizedCollapsedIds), [normalizedCollapsedIds]);
+  useEffect(() => {
+    saveCollapsedCollectionIds(collapsedIds);
+  }, [collapsedIds]);
   const revealedIds = useMemo(() => ancestorIds(flat, selectedCollectionId), [flat, selectedCollectionId]);
   const visibleFlat = useMemo(
     () => visibleCollections(flat, collapsedIds, revealedIds),
@@ -248,29 +249,13 @@ export function CollectionTreeNav() {
       ? getProjection(visibleFlat, activeId, overIdRef.current ?? activeId, offsetLeft)
       : null;
 
-  const collapsedMutation = useMutation({
-    mutationFn: (collapsedCollectionIds: string[]) => apiUpdatePreferences({ collapsedCollectionIds }),
-    onMutate: async (collapsedCollectionIds) => {
-      await qc.cancelQueries({ queryKey: ['preferences'] });
-      const previous = qc.getQueryData<Preferences>(['preferences']);
-      if (previous) {
-        qc.setQueryData<Preferences>(['preferences'], { ...previous, collapsedCollectionIds });
-      }
-      return { previous };
-    },
-    onError: (_error, _collapsedCollectionIds, context) => {
-      if (context?.previous) qc.setQueryData(['preferences'], context.previous);
-    },
-    onSuccess: (nextPreferences) => {
-      qc.setQueryData(['preferences'], nextPreferences);
-    },
-  });
-
   const handleToggleCollapsed = (id: string) => {
-    const nextIds = collapsedIds.has(id)
-      ? normalizedCollapsedIds.filter((collapsedId) => collapsedId !== id)
-      : [...normalizedCollapsedIds, id];
-    collapsedMutation.mutate(nextIds);
+    setStoredCollapsedIds((previous) => {
+      const next = new Set(previous);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
   };
 
   const setCollectionsCache = useCallback(
@@ -598,7 +583,7 @@ function SortableCollectionRow({
           opacity: isDragging ? 0.5 : 1,
         }}
         data-drop-target={isTaskTarget ? 'true' : undefined}
-        className={`collection-row flex items-center gap-1.75 h-6 pr-2 text-[13px] text-ink ${depthClass} ${isActive ? 'collection-row--active font-medium' : ''} ${isTaskTarget ? 'collection-row--drop-target rounded-xs bg-(--planner-hover,rgba(44,44,44,0.06)) outline outline-dot' : ''}`}
+        className={`collection-row flex items-center gap-1.75 h-6 pr-2 text-[13px] text-ink ${depthClass} ${isActive ? 'collection-row--active font-medium' : ''} ${isTaskTarget ? 'collection-row--drop-target rounded-xs bg-(--planner-hover) outline outline-dot' : ''}`}
         onContextMenu={(e) => {
           e.preventDefault();
           setContextPos({ x: e.clientX, y: e.clientY });

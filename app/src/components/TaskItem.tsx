@@ -370,7 +370,7 @@ export const TaskItem = memo(function TaskItem({
         ) : (
           <>
             <span
-              className={`task-item-title-text flex items-center min-h-6 text-sm wrap-break-word ${task.isCompleted ? 'line-through text-ink-light' : 'text-ink'} ${task.type === 'note' && dimNotes ? 'text-ink-light' : ''}`}
+              className={`task-item-title-text flex items-center min-h-6 leading-6 text-sm wrap-break-word ${task.isCompleted ? 'line-through text-ink-light' : 'text-ink'} ${task.type === 'note' && dimNotes ? 'text-ink-light' : ''}`}
             >
               {task.title}
             </span>

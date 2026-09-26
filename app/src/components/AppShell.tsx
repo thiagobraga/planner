@@ -1,7 +1,8 @@
-import { useState, useEffect, useCallback, useRef, type CSSProperties } from 'react';
+import { useState, useEffect, useLayoutEffect, useCallback, useRef } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Sidebar } from './Sidebar';
+import { BottomBar } from './BottomBar';
 import { QuickAdd } from './QuickAdd';
 import { SearchOverlay } from './SearchOverlay';
 import { Button } from './ui/Button';
@@ -11,10 +12,25 @@ import { useSync } from '../hooks/useSync';
 import { fetchPreferences, type Preferences, apiCreateTask } from '../api/client';
 import { ensureFontLoaded, type FontOption } from '../utils/fontLoader';
 import { updateDocumentThemeColor } from '../utils/theme';
+import { useResolvedTheme } from '../hooks/useResolvedTheme';
+import type { BackgroundPreference } from '../types/theme';
 import { PlannerDragProvider } from '../contexts/PlannerDragContext';
 import { useI18n } from '../i18n/I18nContext';
 import { useVersionCheck } from '../hooks/useVersionCheck';
 import { useTaskSelectionStore } from '../stores/taskSelectionStore';
+
+const BACKGROUND_CACHE_KEY = 'planner_background';
+const BACKGROUND_PREFERENCES: readonly BackgroundPreference[] = ['beige', 'white', 'dark', 'system'];
+
+/** Last saved background, so a reload paints the right palette before preferences load. */
+function cachedBackground(): BackgroundPreference {
+  try {
+    const value = localStorage.getItem(BACKGROUND_CACHE_KEY);
+    return BACKGROUND_PREFERENCES.find((option) => option === value) ?? 'beige';
+  } catch {
+    return 'beige';
+  }
+}
 
 const FONT_CLASSES: Record<FontOption, string> = {
   lora: 'font-journal',
@@ -58,35 +74,8 @@ export function AppShell() {
   const [helpOpen, setHelpOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => window.innerWidth < 640);
-  const isWhiteBackground = preferences?.background === 'white';
-  const pageBackground = isWhiteBackground ? '#ffffff' : 'var(--color-cream)';
-  const shellThemeStyle = {
-    backgroundColor: pageBackground,
-    '--color-dot': isWhiteBackground ? '#d4d4d4' : '#d8d3cb',
-    '--color-sidebar-bg': isWhiteBackground ? '#f1f1f1' : '#ebe6de',
-    '--planner-page-bg': pageBackground,
-    '--planner-sidebar-bg': 'var(--color-sidebar-bg)',
-    '--planner-card-bg': 'var(--color-sidebar-bg)',
-    '--planner-board-column-bg': isWhiteBackground ? 'rgba(241, 241, 241, 0.72)' : 'rgba(235, 230, 222, 0.68)',
-    '--planner-board-card-bg': isWhiteBackground ? 'rgba(255, 255, 255, 0.82)' : 'rgba(245, 240, 232, 0.82)',
-    '--planner-sidebar-active-bg': isWhiteBackground ? 'rgba(212, 212, 212, 0.55)' : 'rgba(212, 207, 199, 0.5)',
-    '--planner-sidebar-hover-bg': isWhiteBackground ? 'rgba(212, 212, 212, 0.35)' : 'rgba(212, 207, 199, 0.4)',
-    '--planner-task-selection-bg': isWhiteBackground ? 'rgba(212, 212, 212, 0.75)' : 'rgba(212, 207, 199, 0.75)',
-    '--planner-task-hover-bg': isWhiteBackground ? 'rgba(212, 212, 212, 0.4)' : 'rgba(212, 207, 199, 0.4)',
-    '--planner-overlay-bg': pageBackground,
-    '--planner-overlay-hover-bg': isWhiteBackground ? 'rgba(212, 212, 212, 0.35)' : 'rgba(212, 207, 199, 0.4)',
-    '--planner-control-bg': isWhiteBackground ? '#ffffff' : 'rgba(245, 240, 232, 0.2)',
-    '--planner-control-bg-hover': isWhiteBackground ? '#f5f5f5' : 'rgba(245, 240, 232, 0.35)',
-    '--planner-toggle-off-bg': isWhiteBackground ? '#dedede' : 'var(--color-dot)',
-    '--planner-toggle-knob-bg': isWhiteBackground ? '#ffffff' : 'var(--color-cream)',
-    '--planner-settings-separator': isWhiteBackground ? '#d9d9d9' : '#d8d3cb',
-    /* Monthly-specific tokens */
-    '--planner-monthly-ledger-bg': isWhiteBackground ? 'rgba(255,255,255,0.24)' : 'rgba(245, 240, 232, 0.24)',
-    '--planner-monthly-strip-selected': isWhiteBackground ? 'rgba(255,255,255,0.92)' : 'rgba(245, 240, 232, 0.90)',
-    '--planner-monthly-strip-idle': isWhiteBackground ? 'rgba(255,255,255,0.55)' : 'rgba(245, 240, 232, 0.55)',
-    '--planner-monthly-strip-hover': isWhiteBackground ? 'rgba(255,255,255,0.78)' : 'rgba(245, 240, 232, 0.75)',
-    '--planner-monthly-weekend': 'rgba(245, 230, 198, 0.38)',
-  } as CSSProperties;
+  const [useBottomBar, setUseBottomBar] = useState(() => window.innerWidth < 640);
+  const theme = useResolvedTheme(preferences?.background ?? cachedBackground());
 
   useEffect(() => {
     if (preferences?.font) {
@@ -100,13 +89,37 @@ export function AppShell() {
     }
   }, [preferences?.locale, setLocale]);
 
+  // Layout effect so the palette is on <html> before the first paint; the
+  // cleanup hands logged-out screens back their default beige.
+  useLayoutEffect(() => {
+    const root = document.documentElement;
+    root.dataset.theme = theme;
+    updateDocumentThemeColor(theme);
+    return () => {
+      delete root.dataset.theme;
+      updateDocumentThemeColor('beige');
+    };
+  }, [theme]);
+
   useEffect(() => {
-    updateDocumentThemeColor(isWhiteBackground ? 'white' : 'beige');
-  }, [isWhiteBackground]);
+    if (!preferences?.background) return;
+    try {
+      localStorage.setItem(BACKGROUND_CACHE_KEY, preferences.background);
+    } catch {
+      // Storage can be unavailable (private mode); the cache only avoids a flash.
+    }
+  }, [preferences?.background]);
 
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 639px)');
     const handler = (e: MediaQueryListEvent) => setSidebarCollapsed(e.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 479px)');
+    const handler = (e: MediaQueryListEvent) => setUseBottomBar(e.matches);
     mq.addEventListener('change', handler);
     return () => mq.removeEventListener('change', handler);
   }, []);
@@ -142,9 +155,6 @@ export function AppShell() {
           break;
         case 'navigate:daily':
           navigate('/daily');
-          break;
-        case 'navigate:monthly':
-          navigate('/monthly');
           break;
         case 'navigate:habits':
           navigate('/habits');
@@ -196,8 +206,7 @@ export function AppShell() {
 
   return (
     <div
-      className={`app-shell flex h-screen overflow-hidden ${FONT_CLASSES[preferences?.font ?? 'lora']}${preferences?.smallCaps ? ' small-caps' : ''}`}
-      style={shellThemeStyle}
+      className={`app-shell flex h-screen bg-(--planner-page-bg) overflow-hidden ${FONT_CLASSES[preferences?.font ?? 'lora']}${preferences?.smallCaps ? ' small-caps' : ''}${useBottomBar ? ' app-shell--bottom-bar' : ''}`}
     >
       {/* Mobile menu button - only shown below collapsed breakpoint (≥640px uses collapsed sidebar) */}
       {!sidebarCollapsed && (
@@ -221,14 +230,14 @@ export function AppShell() {
           <Sidebar
             isOpen={sidebarOpen}
             onClose={() => setSidebarOpen(false)}
-            collapsed={sidebarCollapsed}
+            collapsed={useBottomBar ? false : sidebarCollapsed}
             updateAvailable={updateAvailable}
           />
 
           <main
             className="app-shell-main-content main-content flex-1 overflow-y-auto p-6"
             style={{
-              backgroundColor: pageBackground,
+              backgroundColor: 'var(--planner-page-bg)',
               backgroundImage: preferences?.showDots === false ? 'none' : 'radial-gradient(circle, var(--color-dot) 1px, transparent 1px)',
               backgroundSize: preferences?.showDots === false ? undefined : 'var(--dot-grid) var(--dot-grid)',
               backgroundPosition: preferences?.showDots === false ? undefined : 'calc(var(--dot-grid)/2) calc(var(--dot-grid)/2)',
@@ -237,6 +246,14 @@ export function AppShell() {
           >
             <Outlet />
           </main>
+
+          {useBottomBar && (
+            <BottomBar
+              isMenuOpen={sidebarOpen}
+              onMenuToggle={() => setSidebarOpen((v) => !v)}
+              onNavigate={() => setSidebarOpen(false)}
+            />
+          )}
         </PlannerDragProvider>
       )}
 
@@ -272,11 +289,11 @@ export function AppShell() {
           aria-modal="true"
           aria-label={t('shell.keyboardShortcuts')}
           onClick={() => setHelpOpen(false)}
-          className="app-shell-help-dialog fixed inset-0 z-[100] bg-[rgba(44,44,44,0.3)] backdrop-blur-[2px] flex items-center justify-center"
+          className="app-shell-help-dialog fixed inset-0 z-[100] bg-(--planner-backdrop) backdrop-blur-[2px] flex items-center justify-center"
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="app-shell-help-dialog-content border border-dot rounded-md py-6 px-8 min-w-[320px] shadow-[0_8px_32px_rgba(44,44,44,0.15)]"
+            className="app-shell-help-dialog-content border border-dot rounded-md py-6 px-8 min-w-[320px] shadow-overlay"
             style={{ backgroundColor: 'var(--planner-overlay-bg)' }}
           >
             <h2 className="app-shell-help-title text-base font-semibold text-ink mb-4">
@@ -290,7 +307,6 @@ export function AppShell() {
                   ['?', t('shell.togglePanel')],
                   ['g i', t('shell.goInbox')],
                   ['g d', t('shell.goDaily')],
-                  ['g m', t('shell.goMonthly')],
                   ['g h', t('shell.goHabits')],
                   ['g s', t('shell.goSettings')],
                   ['g u', t('shell.goUpcoming')],

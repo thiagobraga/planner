@@ -52,11 +52,11 @@ export function ColumnDeleteModal({
       aria-modal="true"
       aria-labelledby="column-delete-modal-title"
       onClick={onCancel}
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-[rgba(44,44,44,0.3)] backdrop-blur-[2px]"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-(--planner-backdrop) backdrop-blur-[2px]"
     >
       <div
         onClick={(event) => event.stopPropagation()}
-        className="mx-4 w-full max-w-[400px] rounded-md border border-dot px-8 py-6 shadow-[0_8px_32px_rgba(44,44,44,0.15)]"
+        className="mx-4 w-full max-w-[400px] rounded-md border border-dot px-8 py-6 shadow-overlay"
         style={{ backgroundColor: 'var(--planner-overlay-bg)' }}
       >
         <h2 id="column-delete-modal-title" className="mb-2 text-base font-semibold text-ink">

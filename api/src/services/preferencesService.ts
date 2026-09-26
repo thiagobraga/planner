@@ -14,7 +14,7 @@ interface PreferencesRow {
   background: string;
   small_caps: boolean;
   hide_completed_tasks: boolean;
-  hide_old_notes: boolean;
+  show_notes: boolean;
   locale: string;
   date_format: string;
   collapsed_collection_ids: string[];
@@ -37,7 +37,7 @@ function formatPreferences(row: PreferencesRow) {
     background: row.background,
     smallCaps: row.small_caps,
     hideCompletedTasks: row.hide_completed_tasks,
-    hideOldNotes: row.hide_old_notes,
+    showNotes: row.show_notes,
     locale: row.locale,
     dateFormat: row.date_format ?? 'MMM DD ddd',
     collapsedCollectionIds: row.collapsed_collection_ids,
@@ -48,7 +48,7 @@ function formatPreferences(row: PreferencesRow) {
 const VALID_WEEK_STARTS = ["sunday", "monday"] as const;
 const VALID_THEMES = ["light", "dark", "system"] as const;
 const VALID_FONTS = ["lora", "playpen", "hubballi"] as const;
-const VALID_BACKGROUNDS = ["beige", "white"] as const;
+const VALID_BACKGROUNDS = ["beige", "white", "dark", "system"] as const;
 const VALID_LOCALES = ["en", "pt-BR"] as const;
 const VALID_GROUPINGS = ["status", "section", "priority"] as const;
 const VALID_VIEW_MODES = ["list", "kanban"] as const;
@@ -79,7 +79,7 @@ export interface UpdatePreferencesInput {
   background?: string;
   smallCaps?: boolean;
   hideCompletedTasks?: boolean;
-  hideOldNotes?: boolean;
+  showNotes?: boolean;
   locale?: string;
   dateFormat?: string;
   collapsedCollectionIds?: string[];
@@ -116,7 +116,7 @@ export function validatePreferences(input: UpdatePreferencesInput): UpdatePrefer
   }
 
   if (input.background !== undefined && !VALID_BACKGROUNDS.includes(input.background as (typeof VALID_BACKGROUNDS)[number])) {
-    errors.push({ field: "background", message: "background must be one of: beige, white" });
+    errors.push({ field: "background", message: `background must be one of: ${VALID_BACKGROUNDS.join(", ")}` });
   }
 
   if (input.smallCaps !== undefined && typeof input.smallCaps !== "boolean") {
@@ -127,8 +127,8 @@ export function validatePreferences(input: UpdatePreferencesInput): UpdatePrefer
     errors.push({ field: "hideCompletedTasks", message: "hideCompletedTasks must be a boolean" });
   }
 
-  if (input.hideOldNotes !== undefined && typeof input.hideOldNotes !== "boolean") {
-    errors.push({ field: "hideOldNotes", message: "hideOldNotes must be a boolean" });
+  if (input.showNotes !== undefined && typeof input.showNotes !== "boolean") {
+    errors.push({ field: "showNotes", message: "showNotes must be a boolean" });
   }
 
   if (input.locale !== undefined && !VALID_LOCALES.includes(input.locale as (typeof VALID_LOCALES)[number])) {
@@ -247,9 +247,9 @@ export async function updatePreferences(userId: string, input: UpdatePreferences
     setClauses.push(`hide_completed_tasks = $${paramIndex++}`);
     values.push(input.hideCompletedTasks);
   }
-  if (input.hideOldNotes !== undefined) {
-    setClauses.push(`hide_old_notes = $${paramIndex++}`);
-    values.push(input.hideOldNotes);
+  if (input.showNotes !== undefined) {
+    setClauses.push(`show_notes = $${paramIndex++}`);
+    values.push(input.showNotes);
   }
   if (input.locale !== undefined) {
     setClauses.push(`locale = $${paramIndex++}`);

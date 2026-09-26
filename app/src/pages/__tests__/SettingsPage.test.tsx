@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { MemoryRouter, Navigate, Route, Routes, useLocation } from 'react-router';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { SettingsPage } from '../SettingsPage';
@@ -26,7 +26,7 @@ const basePreferences: Preferences = {
   background: 'beige',
   smallCaps: false,
   hideCompletedTasks: false,
-  hideOldNotes: false,
+  showNotes: true,
 };
 
 vi.mock('../../api/client', async (importOriginal) => ({
@@ -130,8 +130,8 @@ describe('SettingsPage', () => {
     expect(generalTab).toHaveAttribute('title', 'General');
     expect(screen.getByRole('switch', { name: /Hide completed tasks/ })).toBeInTheDocument();
     expect(screen.getByText('It affects Daily, Inbox, and Collections.')).toBeInTheDocument();
-    expect(screen.getByRole('switch', { name: /Hide old notes/ })).toBeInTheDocument();
-    expect(screen.getByText('Hide notes before today')).toBeInTheDocument();
+    expect(screen.getByRole('switch', { name: /Show notes/ })).toBeInTheDocument();
+    expect(screen.getByText('Show notes in Daily, Inbox, and Collections')).toBeInTheDocument();
     expect(generalHeading.parentElement?.querySelector('p')).not.toBeInTheDocument();
     expect(languageHeading.parentElement?.querySelector('p')).not.toBeInTheDocument();
   });
@@ -239,6 +239,23 @@ describe('SettingsPage', () => {
     expect(beigeBackground).toHaveAttribute('aria-checked', 'true');
   });
 
+  it('offers dark and automatic themes and saves the choice', async () => {
+    mockUpdatePreferences.mockImplementation(async (patch) => ({ ...basePreferences, ...patch }));
+    renderPage('/settings/appearance');
+
+    const themeGroup = await screen.findByRole('radiogroup', { name: 'Theme' });
+    const options = within(themeGroup).getAllByRole('radio').map((radio) => radio.textContent);
+    expect(options).toEqual(['Beige', 'White', 'Dark', 'Automatic']);
+
+    const dark = within(themeGroup).getByRole('radio', { name: 'Dark' });
+    fireEvent.click(dark);
+    await waitFor(() => expect(mockUpdatePreferences).toHaveBeenCalledWith({ background: 'dark' }));
+    await waitFor(() => expect(dark).toHaveAttribute('aria-checked', 'true'));
+
+    fireEvent.click(within(themeGroup).getByRole('radio', { name: 'Automatic' }));
+    await waitFor(() => expect(mockUpdatePreferences).toHaveBeenCalledWith({ background: 'system' }));
+  });
+
   it('saves behavior toggles and rolls back failed optimistic updates', async () => {
     mockUpdatePreferences.mockImplementationOnce(async (patch) => ({ ...basePreferences, ...patch }));
     renderPage('/settings/general');
@@ -251,11 +268,11 @@ describe('SettingsPage', () => {
 
     mockUpdatePreferences.mockRejectedValueOnce(new Error('nope'));
 
-    const hideOldNotes = screen.getByRole('switch', { name: /Hide old notes/ });
-    fireEvent.click(hideOldNotes);
+    const showNotes = screen.getByRole('switch', { name: /Show notes/ });
+    fireEvent.click(showNotes);
 
-    await waitFor(() => expect(mockUpdatePreferences).toHaveBeenCalledWith({ hideOldNotes: true }));
-    await waitFor(() => expect(hideOldNotes).toHaveAttribute('aria-checked', 'false'));
+    await waitFor(() => expect(mockUpdatePreferences).toHaveBeenCalledWith({ showNotes: false }));
+    await waitFor(() => expect(showNotes).toHaveAttribute('aria-checked', 'true'));
     expect(hideCompleted).toHaveAttribute('aria-checked', 'true');
   });
 });

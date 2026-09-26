@@ -107,7 +107,7 @@ function MenuPanel({
   isRoot,
 }: MenuPanelProps) {
   const panelRef = useRef<HTMLDivElement>(null);
-  const [coords, setCoords] = useState({ top: position.y, left: position.x });
+  const [coords, setCoords] = useState({ top: position.y, left: position.x, caretLeft: 14, caretDown: false });
 
   const [highlightedIndex, setHighlightedIndex] = useState<number>(0);
 
@@ -124,8 +124,13 @@ function MenuPanel({
     const vw = document.documentElement.clientWidth;
     const vh = document.documentElement.clientHeight;
     const padding = 8;
+    // Root panels open with a small gap below the click/anchor point so a
+    // caret can sit in that gap and point back at it; submenus attach
+    // directly to their parent item (no click origin of their own) and keep
+    // no gap.
+    const gap = isRoot ? 8 : 0;
 
-    let newTop = position.y;
+    let newTop = position.y + gap;
     let newLeft = position.x;
 
     if (newLeft + rect.width > vw - padding) {
@@ -144,7 +149,13 @@ function MenuPanel({
     newLeft = Math.max(padding, newLeft);
     newTop = Math.max(padding, newTop);
 
-    setCoords({ top: newTop, left: newLeft });
+    // Caret: horizontal offset clamped inside the panel, vertical side picked
+    // by whether the origin point ended up above or below the panel's
+    // rendered position (it flips up near the bottom edge of the viewport).
+    const caretLeft = Math.min(Math.max(position.x - newLeft, 14), rect.width - 14);
+    const caretDown = position.y > newTop + rect.height / 2;
+
+    setCoords({ top: newTop, left: newLeft, caretLeft, caretDown });
   }, [position, isRoot]);
 
   // If we are not the active panel (because a submenu is open), we shouldn't steal keyboard events
@@ -231,6 +242,18 @@ function MenuPanel({
         style={{ top: coords.top, left: coords.left, outline: 'none' }}
         role="menu"
       >
+        {isRoot && (
+          <div
+            aria-hidden="true"
+            className={`ui-context-menu-caret absolute w-3 h-3 rotate-45 border-border ${coords.caretDown ? 'border-b border-r' : 'border-t border-l'}`}
+            style={{
+              left: coords.caretLeft - 6,
+              top: coords.caretDown ? undefined : '-6px',
+              bottom: coords.caretDown ? '-6px' : undefined,
+              backgroundColor: 'var(--planner-overlay-bg, var(--color-cream))',
+            }}
+          />
+        )}
         {items.map((item, index) => {
           if (item.type === 'separator') {
             return (
@@ -254,7 +277,7 @@ function MenuPanel({
             if (isHighlighted || isSubmenuOpen) itemClass += `bg-accent/10 `;
           } else {
             itemClass += `text-ink-light `;
-            if (isHighlighted || isSubmenuOpen) itemClass += `bg-[var(--planner-overlay-hover-bg,rgba(212,207,199,0.4))] `;
+            if (isHighlighted || isSubmenuOpen) itemClass += `bg-[var(--planner-overlay-hover-bg)] `;
           }
 
           return (
