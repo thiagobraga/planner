@@ -193,6 +193,22 @@ describe("updatePreferences", () => {
     }));
   });
 
+  it.each(["dark", "system"])("accepts the %s background", async (background) => {
+    mockQuery.mockResolvedValueOnce({ rows: [{ ...prefsRow, background }] });
+
+    const p = await updatePreferences("u1", { background });
+
+    expect(p.background).toBe(background);
+    expect(mockQuery.mock.calls[0][0]).toMatch(/background = \$1/);
+  });
+
+  it("rejects an unknown background", async () => {
+    await expect(updatePreferences("u1", { background: "purple" })).rejects.toMatchObject({
+      code: "VALIDATION_ERROR",
+    });
+    expect(mockQuery).not.toHaveBeenCalled();
+  });
+
   it("returns existing prefs when input is empty", async () => {
     mockQuery.mockResolvedValueOnce({ rows: [prefsRow] });
     const p = await updatePreferences("u1", {});

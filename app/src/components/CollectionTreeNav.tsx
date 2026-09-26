@@ -583,7 +583,7 @@ function SortableCollectionRow({
           opacity: isDragging ? 0.5 : 1,
         }}
         data-drop-target={isTaskTarget ? 'true' : undefined}
-        className={`collection-row flex items-center gap-1.75 h-6 pr-2 text-[13px] text-ink ${depthClass} ${isActive ? 'collection-row--active font-medium' : ''} ${isTaskTarget ? 'collection-row--drop-target rounded-xs bg-(--planner-hover,rgba(44,44,44,0.06)) outline outline-dot' : ''}`}
+        className={`collection-row flex items-center gap-1.75 h-6 pr-2 text-[13px] text-ink ${depthClass} ${isActive ? 'collection-row--active font-medium' : ''} ${isTaskTarget ? 'collection-row--drop-target rounded-xs bg-(--planner-hover) outline outline-dot' : ''}`}
         onContextMenu={(e) => {
           e.preventDefault();
           setContextPos({ x: e.clientX, y: e.clientY });

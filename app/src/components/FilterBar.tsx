@@ -114,14 +114,12 @@ function validateFilter(input: string): TranslationKey | null {
   return null;
 }
 
-// Syntax-highlight colors for query tokens. These are one-off tokenizer colors,
-// not part of the design-system palette, so they are expressed as Tailwind
-// arbitrary-value classes rather than theme tokens.
+// Syntax-highlight colors for query tokens; each theme defines its own so they stay legible.
 const tokenClassNames: Record<TokenType, string> = {
   keyword: 'text-accent',
-  operator: 'text-[#8b7355]',
-  string: 'text-[#2e7d32]',
-  error: 'text-[#b71c1c]',
+  operator: 'text-syntax-operator',
+  string: 'text-syntax-string',
+  error: 'text-syntax-error',
   text: 'text-ink',
 };
 

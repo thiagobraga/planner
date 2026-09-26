@@ -39,7 +39,7 @@ export function MonthlyCalendarSpecimen({ compact = false, weekStart }: MonthlyC
         <div
           key={`blank-${i}`}
           data-calendar-blank
-          className={`${compact ? 'min-h-14' : 'min-h-[72px]'} border-r border-b border-dot bg-white/[0.18]`}
+          className={`${compact ? 'min-h-14' : 'min-h-[72px]'} border-r border-b border-dot bg-(--planner-monthly-ledger-bg)`}
         />
       ))}
 

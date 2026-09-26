@@ -1,7 +1,13 @@
 import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, it, expect } from 'vitest';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { describe, it, expect, vi } from 'vitest';
 import { PageHeader } from '../PageHeader';
 import { Toolbar } from '../ui/Toolbar';
+
+vi.mock('../../api/client', () => ({
+  fetchPreferences: vi.fn(async () => ({ background: 'beige' })),
+  apiUpdatePreferences: vi.fn(),
+}));
 
 describe('PageHeader', () => {
   it('renders a string title as the h1', () => {
@@ -35,15 +41,18 @@ describe('PageHeader', () => {
   });
 
   it('renders the toolbar slot as-is, without wrapping it in its own div', () => {
+    // The toolbar dropdown ends with the theme picker, which reads preferences.
     const { container } = render(
-      <PageHeader
-        title="Daily"
-        toolbar={
-          <Toolbar className="daily-page-header-controls">
-            <button>Today</button>
-          </Toolbar>
-        }
-      />,
+      <QueryClientProvider client={new QueryClient()}>
+        <PageHeader
+          title="Daily"
+          toolbar={
+            <Toolbar className="daily-page-header-controls">
+              <button>Today</button>
+            </Toolbar>
+          }
+        />
+      </QueryClientProvider>,
     );
     fireEvent.click(screen.getByRole('button', { name: 'More options' }));
     expect(screen.getByRole('button', { name: 'Today' })).toBeInTheDocument();
