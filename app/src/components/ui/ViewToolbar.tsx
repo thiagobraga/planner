@@ -10,7 +10,7 @@ import type { BoardViewMode } from '../../types/board';
 export type ViewMode = BoardViewMode;
 type Segment = ViewMode | 'calendar';
 
-function KanbanListIcon({ size }: { size: number }) {
+export function KanbanListIcon({ size }: { size: number }) {
   return (
     <svg aria-hidden="true" width={size} height={size} viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.25">
       <path d="M1.5 2.5h3M1.5 5h3M1.5 7.5h3M6.5 2.5h3M6.5 5h3M6.5 7.5h3M11.5 2.5h3M11.5 5h3M11.5 7.5h3" strokeLinecap="round" />
@@ -128,9 +128,9 @@ export function ViewToolbar({
       {!viewOnly && <button
         type="button"
         aria-label={t('toolbar.moreOptions')}
-        className="inline-flex items-center justify-center w-9 h-9 rounded-md text-ink-light hover:bg-dot/30 transition-colors duration-(--motion-fast) mr-1"
+        className="inline-flex items-center justify-center w-6 h-6 rounded-md text-ink-light hover:bg-dot/30 transition-colors duration-(--motion-fast) mr-1"
       >
-        <MoreHorizontal size={18} strokeWidth={1.5} />
+        <MoreHorizontal size={14} strokeWidth={1.5} />
       </button>}
     </div>
   );
