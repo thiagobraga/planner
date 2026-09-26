@@ -95,7 +95,8 @@ export const PlannerIcon = ({
   const { t } = useI18n();
   return (
     <img
-      src={`/images/bulletjournal-planner-${width}x${height}.png`}
+      src={`/images/logo/logo-${width}x${height}.png`}
+      srcSet={`/images/logo/logo-${width * 2}x${height * 2}.png 2x`}
       width={width}
       height={height}
       className={`block shrink-0 ${className}`}

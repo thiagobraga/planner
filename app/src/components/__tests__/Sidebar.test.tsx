@@ -175,4 +175,18 @@ describe('Sidebar', () => {
     expect(screen.queryByTitle('Dashboard')).not.toBeInTheDocument();
     expect(screen.queryByTitle('Users')).not.toBeInTheDocument();
   });
+
+  it('shows the 28x38 logo with a retina source in expanded mode', () => {
+    const { container } = render(<Sidebar />);
+    const logo = container.querySelector('img[src^="/images/logo/"]');
+    expect(logo).toHaveAttribute('src', '/images/logo/logo-28x38.png');
+    expect(logo).toHaveAttribute('srcset', '/images/logo/logo-56x76.png 2x');
+  });
+
+  it('shows the 16x16 logo with a retina source in collapsed mode', () => {
+    const { container } = render(<Sidebar collapsed />);
+    const logo = container.querySelector('img[src^="/images/logo/"]');
+    expect(logo).toHaveAttribute('src', '/images/logo/logo-16x16.png');
+    expect(logo).toHaveAttribute('srcset', '/images/logo/logo-32x32.png 2x');
+  });
 });
