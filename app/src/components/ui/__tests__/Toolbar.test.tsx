@@ -69,4 +69,26 @@ describe('Toolbar', () => {
     );
     expect(container.firstElementChild).toHaveClass('page-header-toolbar', 'daily-page-header-controls');
   });
+
+  it('renders the viewSwitcher slot always visible, before the hamburger button', () => {
+    const { container } = render(
+      <Toolbar viewSwitcher={<button>Switch view</button>}>
+        <span>content</span>
+      </Toolbar>,
+    );
+    const switcher = screen.getByRole('button', { name: 'Switch view' });
+    const hamburger = screen.getByRole('button', { name: 'More options' });
+    expect(container.firstElementChild).toContainElement(switcher);
+    expect(switcher.compareDocumentPosition(hamburger) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.queryByText('content')).not.toBeInTheDocument();
+  });
+
+  it('sizes the hamburger button to the 24px rhythm', () => {
+    render(
+      <Toolbar>
+        <span>content</span>
+      </Toolbar>,
+    );
+    expect(screen.getByRole('button', { name: 'More options' })).toHaveClass('w-6', 'h-6');
+  });
 });
