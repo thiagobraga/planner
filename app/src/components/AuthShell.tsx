@@ -4,7 +4,8 @@ import { useI18n } from '../i18n/I18nContext';
 
 const PlannerIcon64 = () => (
   <img
-    src="/images/bulletjournal-planner-64x64.png"
+    src="/images/logo/logo-64x64.png"
+    srcSet="/images/logo/logo-128x128.png 2x"
     width={64}
     height={64}
     alt=""
