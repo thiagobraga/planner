@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { MemoryRouter, Navigate, Route, Routes, useLocation } from 'react-router';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { SettingsPage } from '../SettingsPage';
@@ -237,6 +237,23 @@ describe('SettingsPage', () => {
     await waitFor(() => expect(mockUpdatePreferences).toHaveBeenCalledWith({ background: 'white' }));
     await waitFor(() => expect(whiteBackground).toHaveAttribute('aria-checked', 'false'));
     expect(beigeBackground).toHaveAttribute('aria-checked', 'true');
+  });
+
+  it('offers dark and automatic themes and saves the choice', async () => {
+    mockUpdatePreferences.mockImplementation(async (patch) => ({ ...basePreferences, ...patch }));
+    renderPage('/settings/appearance');
+
+    const themeGroup = await screen.findByRole('radiogroup', { name: 'Theme' });
+    const options = within(themeGroup).getAllByRole('radio').map((radio) => radio.textContent);
+    expect(options).toEqual(['Beige', 'White', 'Dark', 'Automatic']);
+
+    const dark = within(themeGroup).getByRole('radio', { name: 'Dark' });
+    fireEvent.click(dark);
+    await waitFor(() => expect(mockUpdatePreferences).toHaveBeenCalledWith({ background: 'dark' }));
+    await waitFor(() => expect(dark).toHaveAttribute('aria-checked', 'true'));
+
+    fireEvent.click(within(themeGroup).getByRole('radio', { name: 'Automatic' }));
+    await waitFor(() => expect(mockUpdatePreferences).toHaveBeenCalledWith({ background: 'system' }));
   });
 
   it('saves behavior toggles and rolls back failed optimistic updates', async () => {

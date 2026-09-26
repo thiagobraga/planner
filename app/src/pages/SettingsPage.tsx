@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useId, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router';
@@ -9,8 +9,10 @@ import { Input } from '../components/ui/Input';
 import { fetchPreferences, apiUpdatePreferences, type Preferences } from '../api/client';
 import { ensureFontLoaded, type FontOption } from '../utils/fontLoader';
 import { getDetectedTimeZone } from '../utils/date';
+import { THEME_SWATCHES } from '../utils/theme';
 import { useFloatingPosition } from '../hooks/useFloatingPosition';
 import { useI18n } from '../i18n/I18nContext';
+import type { TranslationKey } from '../i18n/catalogs';
 
 type SettingsSection = 'general' | 'appearance';
 
@@ -48,22 +50,21 @@ const FONT_OPTIONS: Array<{
   },
 ];
 
-const BACKGROUND_OPTIONS: Array<{
-  value: Preferences['background'];
-  label: string;
-  previewClass: string;
-}> = [
-  {
-    value: 'beige',
-    label: 'Beige',
-    previewClass: 'bg-cream',
-  },
-  {
-    value: 'white',
-    label: 'White',
-    previewClass: 'bg-white',
-  },
+const BACKGROUND_OPTIONS: Array<{ value: Preferences['background']; labelKey: TranslationKey }> = [
+  { value: 'beige', labelKey: 'settings.beige' },
+  { value: 'white', labelKey: 'settings.white' },
+  { value: 'dark', labelKey: 'settings.dark' },
+  { value: 'system', labelKey: 'settings.system' },
 ];
+
+function backgroundPreviewStyle(paper: string, dot: string, showDots: boolean): CSSProperties {
+  if (!showDots) return { backgroundImage: paper };
+  return {
+    backgroundImage: `radial-gradient(circle, ${dot} 1px, transparent 1px), ${paper}`,
+    backgroundSize: 'var(--dot-grid) var(--dot-grid), auto',
+    backgroundPosition: 'calc(var(--dot-grid) / 2) calc(var(--dot-grid) / 2), 0 0',
+  };
+}
 
 const WEEK_START_OPTIONS: Array<{
   value: Preferences['weekStart'];
@@ -265,10 +266,10 @@ function SettingsTabList({
             onKeyDown={(event) => handleKeyDown(event, index)}
             className={
               inverted
-                ? `group flex h-8 w-full items-center justify-start gap-2 rounded-[4px] border-transparent px-2 py-0 text-xs leading-6 transition-colors duration-[var(--motion-fast)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-cream/70 ${
+                ? `group flex h-8 w-full items-center justify-start gap-2 rounded-[4px] border-transparent px-2 py-0 text-xs leading-6 transition-colors duration-[var(--motion-fast)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-on-aside/70 ${
                     selected
-                      ? 'bg-cream/20 font-medium text-cream'
-                      : 'bg-transparent text-cream/90 hover:bg-cream/5 hover:text-cream'
+                      ? 'bg-on-aside/20 font-medium text-on-aside'
+                      : 'bg-transparent text-on-aside/90 hover:bg-on-aside/5 hover:text-on-aside'
                   }`
                 : `group flex min-h-10 items-center gap-2 rounded-[6px] border px-3 py-2 text-sm leading-6 transition-colors duration-[var(--motion-fast)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${
                     compact ? 'flex-1 justify-center' : 'w-full justify-start'
@@ -800,8 +801,8 @@ export function SettingsPage() {
                       <h3 className="text-[10px] leading-5 tracking-[0.12em] uppercase text-ink-light font-medium">
                         {t('settings.theme')}
                       </h3>
-                      <div className="grid max-w-[284px] grid-cols-2 gap-6" role="radiogroup" aria-label={t('settings.theme')}>
-                        {BACKGROUND_OPTIONS.map(({ value, previewClass }) => {
+                      <div className="grid max-w-[584px] grid-cols-2 gap-6 sm:grid-cols-4" role="radiogroup" aria-label={t('settings.theme')}>
+                        {BACKGROUND_OPTIONS.map(({ value, labelKey }) => {
                           const selected = background === value;
                           return (
                             <button
@@ -814,16 +815,13 @@ export function SettingsPage() {
                               className="group flex flex-col items-center gap-2 disabled:cursor-not-allowed disabled:opacity-50"
                             >
                               <span
-                                className={`relative block h-[60px] w-full rounded-[6px] border transition-colors duration-[var(--motion-fast)] ${selectedBorder(selected)} ${previewClass} ${
-                                  showDots
-                                    ? '[background-image:radial-gradient(circle,var(--color-dot)_1px,transparent_1px)] [background-size:var(--dot-grid)_var(--dot-grid)] [background-position:calc(var(--dot-grid)/2)_calc(var(--dot-grid)/2)]'
-                                    : ''
-                                }`}
+                                className={`relative block h-[60px] w-full rounded-[6px] border transition-colors duration-[var(--motion-fast)] ${selectedBorder(selected)}`}
+                                style={backgroundPreviewStyle(THEME_SWATCHES[value].paper, THEME_SWATCHES[value].dot, showDots)}
                               >
                                 <SelectionMark selected={selected} />
                               </span>
                               <span className="text-base leading-6 text-ink opacity-80">
-                                {t(value === 'beige' ? 'settings.beige' : 'settings.white')}
+                                {t(labelKey)}
                               </span>
                             </button>
                           );
@@ -843,7 +841,7 @@ export function SettingsPage() {
             </div>
           </div>
 
-          <aside className="hidden border-l border-black/10 bg-settings-aside p-4 font-journal text-cream md:block">
+          <aside className="hidden border-l border-black/10 bg-settings-aside p-4 font-journal text-on-aside md:block">
             <SettingsTabList
               activeSection={activeSection}
               compact={false}
