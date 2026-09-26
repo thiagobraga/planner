@@ -10,6 +10,7 @@ import { BoardToolbar } from '../components/board/BoardToolbar';
 import { MonthlyView } from '../components/monthly/MonthlyView';
 import { PageHeader } from '../components/PageHeader';
 import { Toolbar } from '../components/ui/Toolbar';
+import { ViewSwitcher } from '../components/ui/ViewSwitcher';
 import type { Task } from '../components/TaskItem';
 import type { Section } from '../stores/taskStore';
 import {
@@ -537,15 +538,13 @@ export function InboxPage() {
       <PageHeader
         title={t('page.inbox')}
         toolbar={
-          <Toolbar className="inbox-page-header-controls">
+          <Toolbar className="inbox-page-header-controls" viewSwitcher={<ViewSwitcher view={boardPreferences.view} onViewChange={boardPreferences.setView} />}>
             <BoardToolbar
               view={boardPreferences.view}
               groupBy={boardPreferences.groupBy}
               hideCompletedTasks={preferences?.hideCompletedTasks ?? false}
               showNotes={preferences?.showNotes ?? true}
               preferencesDisabled={!preferences || visibilityPreferencesPending}
-              showCalendar
-              onViewChange={boardPreferences.setView}
               onGroupByChange={boardPreferences.setGroupBy}
               onHideCompletedTasksChange={setHideCompletedTasks}
               onShowNotesChange={setShowNotes}

@@ -5,6 +5,8 @@ import { useI18n } from '../../i18n/I18nContext';
 export interface ToolbarProps {
   children: ReactNode;
   className?: string;
+  // Always-visible controls rendered left of the hamburger (e.g. ViewSwitcher).
+  viewSwitcher?: ReactNode;
 }
 
 // Small uppercase heading for a group of items inside the dropdown panel
@@ -22,7 +24,7 @@ export function ToolbarSectionLabel({ children }: { children: ReactNode }) {
 // ButtonGroup, TaskVisibilityControls, BoardToolbar, ...) behind a single
 // hamburger button, opened as a dropdown panel. Each page passes only its
 // own hook class (e.g. "daily-page-header-controls") via className.
-export function Toolbar({ children, className = '' }: ToolbarProps) {
+export function Toolbar({ children, className = '', viewSwitcher }: ToolbarProps) {
   const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -44,15 +46,16 @@ export function Toolbar({ children, className = '' }: ToolbarProps) {
   }, [open]);
 
   return (
-    <div ref={rootRef} className={`page-header-toolbar relative ${className}`}>
+    <div ref={rootRef} className={`page-header-toolbar relative flex items-center gap-1 ${className}`}>
+      {viewSwitcher}
       <button
         type="button"
         aria-label={t('toolbar.moreOptions')}
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
-        className="inline-flex items-center justify-center w-9 h-9 rounded-md text-ink-light hover:bg-dot/30 transition-colors duration-(--motion-fast)"
+        className="inline-flex items-center justify-center w-6 h-6 rounded-md text-ink-light hover:bg-dot/30 transition-colors duration-(--motion-fast)"
       >
-        <Menu size={18} strokeWidth={1.5} />
+        <Menu size={14} strokeWidth={1.5} />
       </button>
 
       {open && (
