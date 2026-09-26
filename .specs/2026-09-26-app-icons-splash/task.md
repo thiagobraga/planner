@@ -36,9 +36,13 @@
   - every in-app logo exists at its size with alpha
   - no `bulletjournal-planner` file or reference left in `index.html`, manifests, README, `app/src`
 - [x] 3.2 `Sidebar.test.tsx` (expanded 28x38 + collapsed 16x16, with 2x `srcset`), new `AuthShell.test.tsx` (64x64 + 128x128 2x).
-- [ ] 3.3 `app/e2e/appIcons.spec.ts`: favicon, apple-touch-icon, manifest icons, one startup image are served as `image/png` / icon; login page logo loads (`naturalWidth > 0`, 2x source picked on a 2x screen).
+- [x] 3.3 `app/e2e/appIcons.spec.ts`: every icon / apple-touch-icon / 44 startup-image link in the served `index.html` returns 200 `image/*`; the linked manifest lists 2 `any` + 2 `maskable` icons, all served as `image/png`; on a 2x screen the login logo's `currentSrc` is `logo-128x128.png` (`naturalWidth` is density-corrected, so it reads 64, not 128).
 
 ## 4. Verify
 
 - [x] 4.1 `npm run lint` (0 errors), `npm test` (all pass), `npm run build` in `app/`.
-- [ ] 4.2 Playwright screenshots to `app/dist/screenshots/`: login (desktop + narrow), sidebar logo, icon contact sheet, sample launch screens. Post them in the PR.
+- [x] 4.2 Playwright screenshots to `app/dist/screenshots/` (copies in `screenshots/` here for the PR): `login-desktop`, `login-mobile`, `app-desktop`, `sidebar-logo`, `icons-sheet` (tab, Pixel circle, Samsung squircle, iPhone, desktop install, Android launch, in-app logos), `ios-launch-screens`.
+
+## Follow-ups
+
+- At 16px the notebook reads as a pale rectangle on light tab bars (the artwork is near-white paper). A simplified small-size mark (ink outline or brick-red spine) would read better; needs a design decision.
