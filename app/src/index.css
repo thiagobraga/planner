@@ -784,7 +784,7 @@ button,
 /* Hamburger toolbar - absolutely anchored top-right of the sticky header,
    collapsing every page's controls into one dropdown instead of a row.
    top matches .sticky-page-header's padding-top so this row lines up with
-   the title's own line box, and the flex centers the 36px button on it. */
+   the title's own line box, and the flex centers the 24px buttons on it. */
 .page-header-toolbar {
   position: absolute;
   top: 24px;
@@ -796,7 +796,7 @@ button,
 
 /* The title/subtitle column - shrunk to its own content, unlike the header
  * shell around it, so the sticky background only paints behind the text.
- * padding-right reserves room for the hamburger button so a long title
+ * padding-right reserves room for the header toolbar so a long title
  * doesn't render underneath it. */
 .page-header-copy-text {
   display: inline-flex;
@@ -804,7 +804,16 @@ button,
   align-items: flex-start;
   width: fit-content;
   max-width: 100%;
-  padding-right: 40px;
+  padding-right: max(40px, var(--page-header-toolbar-space, 0px));
+
+  /* Without a cap the h1 sizes to its content and a long title spills into
+     the reserved toolbar space instead of truncating. */
+  > h1 {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 }
 
 .monthly-current-day-label {
@@ -1218,6 +1227,13 @@ textarea:focus-visible {
 .collection-row--active:hover {
   background: var(--planner-sidebar-active-bg);
 }
+/* Pages whose header toolbar also carries the ViewSwitcher: 4 view buttons +
+   hamburger at 24px with 4px gaps (136px), plus 8px breathing room. */
+.daily-page,
+.inbox-page,
+.collection-detail-page {
+  --page-header-toolbar-space: 144px;
+}
 /* Collections index page */
 .collections-index-page {
   --page-header-toolbar-space: 48px;
@@ -1298,18 +1314,11 @@ textarea:focus-visible {
     padding: 24px 12px 24px 24px;
   }
 
-  .daily-page {
-    --page-header-toolbar-space: 128px;
-  }
   .monthly-page {
     --page-header-toolbar-space: 64px;
   }
   .habits-page {
     --page-header-toolbar-space: 120px;
-  }
-  .inbox-page,
-  .collection-detail-page {
-    --page-header-toolbar-space: 64px;
   }
   .page-header-copy {
     width: 100%;
