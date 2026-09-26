@@ -242,7 +242,7 @@ export function CustomSelect({
 
                 let itemClass = `ui-custom-select-option flex items-center h-10 px-2 rounded-[4px] text-sm cursor-pointer select-none `;
                 if (option.disabled) {
-                  itemClass += `opacity-40 cursor-not-allowed text-ink-light [text-shadow:0_1px_0_rgba(255,255,255,0.7)] `;
+                  itemClass += `opacity-40 cursor-not-allowed text-ink-light [text-shadow:var(--planner-menu-disabled-shadow)] `;
                 } else if (isSelected) {
                   itemClass += `bg-dot/60 text-ink `;
                 } else if (isHighlighted) {
@@ -296,7 +296,7 @@ export function CustomSelect({
 
                 let itemClass = `ui-custom-select-option flex items-center h-10 px-2 rounded-[4px] text-sm cursor-pointer select-none `;
                 if (option.disabled) {
-                  itemClass += `opacity-40 cursor-not-allowed text-ink-light [text-shadow:0_1px_0_rgba(255,255,255,0.7)] `;
+                  itemClass += `opacity-40 cursor-not-allowed text-ink-light [text-shadow:var(--planner-menu-disabled-shadow)] `;
                 } else if (isSelected) {
                   itemClass += `bg-dot/60 text-ink `;
                 } else if (isHighlighted) {

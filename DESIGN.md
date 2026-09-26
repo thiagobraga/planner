@@ -171,6 +171,28 @@ A short palette of warm, slightly aged neutrals with one brick-red anchor; every
 
 **The Tertiary Restraint Rule.** Pencil Orange and Annotation Blue exist only on priority bullets inside a task row. They are not free-to-use accent colors. They never appear as backgrounds, borders, or text.
 
+### Dark Theme (Night Journal)
+
+The same journal read by lamplight: warm coffee paper, cream ink, a lighter brick accent. It is selected in Settings > Appearance > Theme (`Dark`, or `Automatic` to follow the OS `prefers-color-scheme`) and applies only inside the logged-in app; login, register and password reset stay on Cream Paper.
+
+Tokens are redefined under `:root[data-theme="dark"]` in `app/src/index.css`; components keep using the same utilities (`bg-cream`, `text-ink`, `border-dot`), so inverted pairs like `bg-ink text-cream` flip on their own.
+
+| Token | Light | Dark | Role |
+| --- | --- | --- | --- |
+| Cream Paper `--color-cream` | `#f5f0e8` | `#292219` | Page and sidebar surface |
+| Sidebar Cream `--color-sidebar-bg` | `#ebe6de` | `#292219` | Sidebar; separated from the page by its 1px border |
+| Ink `--color-ink` | `#44443d` | `#ede3d3` | Primary text |
+| Ink Light `--color-ink-light` | `#8b867e` | `#aea294` | Secondary text |
+| Ink Lighter `--color-ink-lighter` | `#c5c1ba` | `#6f6358` | Muted glyphs |
+| Dot Grid `--color-dot` | `#d8d3cb` | `#3b3229` | Dot grid, dividers, chips |
+| Border `--color-border` | `#e5e1d8` | `#463b31` | Hairlines |
+| Warm Brick Red `--color-accent` | `#c9483b` | `#d8705f` | Accent, lifted for contrast on dark paper |
+| Active nav `--planner-sidebar-active-bg` | tinted dot | `#3e3228` | Selected sidebar item |
+| Overlay `--planner-overlay-bg` | Cream Paper | `#2f271e` | Dialogs and menus, a half-step above the page |
+| Browser chrome `theme-color` | `#f5f0e8` | `#221a14` | PWA title bar |
+
+The No-Pure Rule still holds: dark surfaces are warm browns, never `#000`, and ink is cream, never `#fff`. Collection and label colors are user data and stay unchanged.
+
 ## 3. Typography
 
 **Display Font:** Lora (with Georgia, serif fallback)

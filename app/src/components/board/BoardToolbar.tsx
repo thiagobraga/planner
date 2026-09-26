@@ -3,7 +3,7 @@ import type { BoardViewMode } from '../../types/board';
 import { useI18n } from '../../i18n/I18nContext';
 import { TaskVisibilityControls } from '../TaskVisibilityControls';
 import { GroupBySelect } from '../ui/GroupBySelect';
-import { ToolbarSectionLabel } from '../ui/Toolbar';
+import { ToolbarSectionLabel } from '../ui/ToolbarSectionLabel';
 
 interface BoardToolbarProps {
   view: BoardViewMode;
