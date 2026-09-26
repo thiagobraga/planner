@@ -12,7 +12,7 @@ vi.mock("../../db/pool.js", () => ({
 import { getTodayView, getUpcomingView, getInboxView, getMonthView, getCollectionView, localDateInTimezone, addDaysISO } from "../viewService.js";
 
 const userId = "user-1";
-const visibilityPrefsRow = { rows: [{ time_zone: "UTC", hide_completed_tasks: false, hide_old_notes: false }] };
+const visibilityPrefsRow = { rows: [{ time_zone: "UTC", hide_completed_tasks: false, show_notes: true }] };
 
 function taskRow(overrides: Record<string, unknown> = {}) {
   return {
@@ -88,6 +88,19 @@ describe("getTodayView", () => {
     expect(sql).not.toMatch(/ORDER BY[^`]*priority/);
   });
 
+  it("hides all notes regardless of age when showNotes is false, not just old ones", async () => {
+    mockQuery
+      .mockResolvedValueOnce({ rows: [{ time_zone: "UTC", hide_completed_tasks: false, show_notes: false }] })
+      .mockResolvedValueOnce({ rows: [] });
+
+    await getTodayView(userId, new Date("2024-06-15T12:00:00Z"));
+
+    const sql = mockQuery.mock.calls[1][0] as string;
+    const params = mockQuery.mock.calls[1][1] as unknown[];
+    expect(sql).toMatch(/NOT \(t\.type = 'note'\)/);
+    expect(params).toEqual(["user-1", "2024-06-15", false, false]);
+  });
+
   it("returns the day's hand-sorted order, with completed rows left where they were dropped", async () => {
     mockQuery
       .mockResolvedValueOnce(visibilityPrefsRow)
@@ -108,7 +121,7 @@ describe("getTodayView", () => {
 
   it("uses user's timezone for today determination", async () => {
     mockQuery
-      .mockResolvedValueOnce({ rows: [{ time_zone: "America/New_York", hide_completed_tasks: false, hide_old_notes: false }] })
+      .mockResolvedValueOnce({ rows: [{ time_zone: "America/New_York", hide_completed_tasks: false, show_notes: true }] })
       .mockResolvedValueOnce({ rows: [] });
 
     const view = await getTodayView(userId, new Date("2024-06-15T03:00:00Z"));
@@ -209,7 +222,7 @@ describe("getMonthView", () => {
 describe("getInboxView", () => {
   it("returns inbox tasks in stored manual order, interleaving completed rows", async () => {
     mockQuery.mockResolvedValueOnce({
-      rows: [{ time_zone: "UTC", hide_completed_tasks: false, hide_old_notes: false }],
+      rows: [{ time_zone: "UTC", hide_completed_tasks: false, show_notes: true }],
     })
     // inbox collection result
     .mockResolvedValueOnce({ rows: [{ id: "p-1" }] })
@@ -252,7 +265,6 @@ describe("getInboxView", () => {
     expect(sql).toMatch(/is_archived = false/);
     expect(sql).toMatch(/t\.is_completed = false/);
     expect(sql).toMatch(/t\.type = 'note'/);
-    expect(sql).toMatch(/t\.due_date IS NOT NULL/);
     expect(sql).toMatch(/ORDER BY t\.order_value ASC, t\.created_at ASC/);
     expect(sql).not.toMatch(/ORDER BY[^`]*(is_completed|priority)/);
   });
@@ -301,7 +313,7 @@ describe("getInboxView", () => {
 describe("getCollectionView", () => {
   it("returns completed tasks on collection pages interleaved in stored manual order", async () => {
     mockQuery
-      .mockResolvedValueOnce({ rows: [{ time_zone: "UTC", hide_completed_tasks: false, hide_old_notes: false }] })
+      .mockResolvedValueOnce({ rows: [{ time_zone: "UTC", hide_completed_tasks: false, show_notes: true }] })
       .mockResolvedValueOnce({
         rows: [{ id: "c-1", name: "Work", color: "#7dbfb2", is_inbox: false }],
       })
@@ -332,17 +344,16 @@ describe("getCollectionView", () => {
     expect(view.tasks.map((t) => t.id)).toEqual(["done", "open"]);
 
     const sql = mockQuery.mock.calls[2][0] as string;
-    expect(mockQuery.mock.calls[0][0]).toMatch(/SELECT time_zone, hide_completed_tasks, hide_old_notes/);
+    expect(mockQuery.mock.calls[0][0]).toMatch(/SELECT time_zone, hide_completed_tasks, show_notes/);
     expect(sql).toMatch(/FROM tasks/);
     expect(sql).toMatch(/is_completed = false/);
     expect(sql).toMatch(/type = 'note'/);
-    expect(sql).toMatch(/due_date IS NOT NULL/);
     expect(sql).toMatch(/ORDER BY order_value ASC, created_at ASC/);
   });
 
   it("attaches each task's labels in one query", async () => {
     mockQuery
-      .mockResolvedValueOnce({ rows: [{ time_zone: "UTC", hide_completed_tasks: false, hide_old_notes: false }] })
+      .mockResolvedValueOnce({ rows: [{ time_zone: "UTC", hide_completed_tasks: false, show_notes: true }] })
       .mockResolvedValueOnce({ rows: [{ id: "c-1", name: "Work", color: "#7dbfb2", is_inbox: false }] })
       .mockResolvedValueOnce({
         rows: [

@@ -46,6 +46,10 @@ function deferred<T>() {
   return { promise, resolve, reject };
 }
 
+function openToolbarMenu() {
+  fireEvent.click(screen.getByRole('button', { name: 'More options' }));
+}
+
 function renderPage() {
   const client = new QueryClient({
     defaultOptions: {
@@ -94,7 +98,7 @@ beforeEach(() => {
     background: 'beige',
     smallCaps: false,
     hideCompletedTasks: true,
-    hideOldNotes: false,
+    showNotes: true,
   });
   mockFetchTodayTasks.mockResolvedValue({
     overdue: [],
@@ -134,18 +138,21 @@ beforeEach(() => {
     background: 'beige',
     smallCaps: false,
     hideCompletedTasks: patch.hideCompletedTasks ?? true,
-    hideOldNotes: false,
+    showNotes: true,
   }));
 });
 
 describe('DailyPage behavior visibility', () => {
-  it('scrolls the current-date section into view from the Today toolbar button', async () => {
+  it('scrolls the current-date section into view when returning to today from the next-days toggle', async () => {
     renderPage();
 
     await screen.findByRole('button', { name: 'Complete: Visible task' });
-    fireEvent.click(screen.getByRole('button', { name: 'Today' }));
+    openToolbarMenu();
+    const nextDays = screen.getByRole('checkbox', { name: 'Next days' });
+    fireEvent.click(nextDays);
+    fireEvent.click(nextDays);
 
-    expect(scrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth', block: 'start' });
+    await waitFor(() => expect(scrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth', block: 'start' }));
   });
 
   it('optimistically toggles completed-task visibility and rolls back on failure', async () => {
@@ -160,41 +167,47 @@ describe('DailyPage behavior visibility', () => {
       background: 'beige',
       smallCaps: false,
       hideCompletedTasks: false,
-      hideOldNotes: false,
+      showNotes: true,
     });
     const update = deferred<Awaited<ReturnType<typeof apiUpdatePreferences>>>();
     mockApiUpdatePreferences.mockReturnValueOnce(update.promise);
     renderPage();
 
-    const hideCompleted = await screen.findByRole('button', { name: 'Hide completed tasks' });
+    await screen.findByRole('button', { name: 'Complete: Visible task' });
+    openToolbarMenu();
+    const hideCompleted = await screen.findByRole('checkbox', { name: 'Completed tasks' });
     await waitFor(() => expect(hideCompleted).not.toBeDisabled());
+    expect(hideCompleted).toBeChecked();
     fireEvent.click(hideCompleted);
 
     await waitFor(() =>
       expect(mockApiUpdatePreferences).toHaveBeenCalledWith({ hideCompletedTasks: true }),
     );
-    await screen.findByRole('button', { name: 'Show completed tasks' });
+    expect(hideCompleted).not.toBeChecked();
 
     update.reject(new Error('nope'));
-    await screen.findByRole('button', { name: 'Hide completed tasks' });
+    await waitFor(() => expect(hideCompleted).toBeChecked());
   });
 
-  it('optimistically toggles old-note visibility and rolls back on failure', async () => {
+  it('optimistically toggles note visibility and rolls back on failure', async () => {
     const update = deferred<Awaited<ReturnType<typeof apiUpdatePreferences>>>();
     mockApiUpdatePreferences.mockReturnValueOnce(update.promise);
     renderPage();
 
-    const hideOldNotes = await screen.findByRole('button', { name: 'Hide old notes' });
-    await waitFor(() => expect(hideOldNotes).not.toBeDisabled());
-    fireEvent.click(hideOldNotes);
+    await screen.findByRole('button', { name: 'Complete: Visible task' });
+    openToolbarMenu();
+    const showNotes = await screen.findByRole('checkbox', { name: 'Notes' });
+    await waitFor(() => expect(showNotes).not.toBeDisabled());
+    expect(showNotes).toBeChecked();
+    fireEvent.click(showNotes);
 
     await waitFor(() =>
-      expect(mockApiUpdatePreferences).toHaveBeenCalledWith({ hideOldNotes: true }),
+      expect(mockApiUpdatePreferences).toHaveBeenCalledWith({ showNotes: false }),
     );
-    await screen.findByRole('button', { name: 'Show old notes' });
+    expect(showNotes).not.toBeChecked();
 
     update.reject(new Error('nope'));
-    await screen.findByRole('button', { name: 'Hide old notes' });
+    await waitFor(() => expect(showNotes).toBeChecked());
   });
 
   it('removes a completed task immediately when hide completed tasks is on', async () => {

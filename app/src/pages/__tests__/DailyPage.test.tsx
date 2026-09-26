@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, act } from '@testing-library/react';
+import { render, screen, act, fireEvent, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { DailyPage } from '../DailyPage';
@@ -40,7 +40,7 @@ const basePreferences: Preferences = {
   background: 'beige',
   smallCaps: false,
   hideCompletedTasks: false,
-  hideOldNotes: false,
+  showNotes: true,
 };
 
 vi.mock('../../api/client', async (importOriginal) => ({
@@ -178,10 +178,15 @@ describe('DailyPage', () => {
     const header = title.closest('header');
 
     expect(header).toBeInTheDocument();
-    expect(header).toContainElement(screen.getByRole('button', { name: 'Today' }));
-    expect(header).toContainElement(screen.getByRole('button', { name: 'Hide completed tasks' }));
-    expect(header).toContainElement(screen.getByRole('button', { name: 'Hide old notes' }));
-    expect(screen.getByRole('button', { name: 'Today' }).closest('.page-header-toolbar')).toBeInTheDocument();
+    expect(header).toContainElement(screen.getByRole('button', { name: 'List' }));
+    expect(screen.getByRole('button', { name: 'List' })).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(screen.getByRole('button', { name: 'More options' }));
+    expect(screen.getByRole('menu')).not.toContainElement(screen.getByRole('button', { name: 'List' }));
+    expect(within(screen.getByRole('menu')).queryByText('View')).not.toBeInTheDocument();
+    expect(header).toContainElement(screen.getByRole('checkbox', { name: 'Completed tasks' }));
+    expect(header).toContainElement(screen.getByRole('checkbox', { name: 'Notes' }));
+    expect(header).toContainElement(screen.getByRole('checkbox', { name: 'Next days' }));
+    expect(screen.getByRole('button', { name: 'List' }).closest('.page-header-toolbar')).toBeInTheDocument();
   });
 
   it('renders overdue section label', async () => {
