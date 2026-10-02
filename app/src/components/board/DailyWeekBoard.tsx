@@ -1,3 +1,4 @@
+import { useLayoutEffect, useRef } from 'react';
 import type { ApiTask } from '../../api/client';
 import type { Task } from '../TaskItem';
 import type { DailyWeekBoardProps } from '../../types/dailyBoard';
@@ -46,6 +47,7 @@ function formatColumnDate(iso: string, locale: 'en' | 'pt-BR', format: string): 
 
 export function DailyWeekBoard({ tasks, weekAnchor, today, todayKey, weekStart, dateFormat, onWeekChange, onToggle, onCreate, onOrganize, presentation, taskListProps }: DailyWeekBoardProps) {
   const { locale, t } = useI18n();
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   const apiTasks = tasks.map(toApiTask);
   const rootTasks = apiTasks.filter((task) => !task.parentTaskId);
@@ -64,6 +66,19 @@ export function DailyWeekBoard({ tasks, weekAnchor, today, todayKey, weekStart, 
     end.setDate(start.getDate() + 6);
     return formatWeekRangeLabel(start, end, locale);
   })();
+
+  // Narrow screens show one or two columns at a time, so land on today instead
+  // of the week's first day. Weeks without today keep the default start.
+  const firstColumnId = columns[0]?.id;
+  useLayoutEffect(() => {
+    const scroller = scrollRef.current;
+    const todayColumn = scroller?.querySelector<HTMLElement>('[data-today="true"]');
+    if (!scroller || !todayColumn) return;
+    const scrollerRect = scroller.getBoundingClientRect();
+    const columnRect = todayColumn.getBoundingClientRect();
+    scroller.scrollLeft +=
+      columnRect.left - scrollerRect.left - (scroller.clientWidth - columnRect.width) / 2;
+  }, [firstColumnId, todayKey, presentation]);
 
   const columnTitle = (column: (typeof columns)[number]): string => {
     if (column.id === 'migrate') return t('board.migrate');
@@ -86,7 +101,7 @@ export function DailyWeekBoard({ tasks, weekAnchor, today, todayKey, weekStart, 
         />
       </div>
 
-      <div className="board-scroll" data-testid="daily-week-board">
+      <div className="board-scroll" data-testid="daily-week-board" ref={scrollRef}>
         <div className="board-grid">
           {columns.map((column) => (
             <DailyBoardColumn
