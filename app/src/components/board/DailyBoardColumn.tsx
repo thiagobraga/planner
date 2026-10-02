@@ -85,6 +85,7 @@ export function DailyBoardColumn({ column, title, isToday, tasks, allTasks, onTo
     <section
       className={`board-column ${isOver ? 'is-over' : ''}`}
       data-column-id={column.id}
+      data-today={isToday || undefined}
     >
       <header className="board-column-header">
         <h2 className="daily-board-column-title">
