@@ -26,7 +26,7 @@
     "peggy": "^5.1.0",
     "pg": "^8.13.0",
     "redis": "^6.1.0",
-    "resend": "^6.28.1",
+    "resend": "^6.29.0",
     "sanitize-html": "^2.17.7",
     "socket.io": "^4.8.0",
     "uuid": "^14.0.2",
@@ -50,7 +50,7 @@
     "tsx": "^4.23.13",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.70.1",
-    "vitest": "^5.0.0"
+    "vitest": "^5.0.2"
   },
   "overrides": {
     "tar": "^7.5.20",
