@@ -67,8 +67,9 @@ export function DailyWeekBoard({ tasks, weekAnchor, today, todayKey, weekStart, 
     return formatWeekRangeLabel(start, end, locale);
   })();
 
-  // Narrow screens show one or two columns at a time, so land on today instead
-  // of the week's first day. Weeks without today keep the default start.
+  // Narrow screens show one or two columns at a time, so scroll today's column
+  // to the left edge instead of leaving it off screen. Weeks without today keep
+  // the default start.
   const firstColumnId = columns[0]?.id;
   useLayoutEffect(() => {
     const scroller = scrollRef.current;
@@ -76,8 +77,7 @@ export function DailyWeekBoard({ tasks, weekAnchor, today, todayKey, weekStart, 
     if (!scroller || !todayColumn) return;
     const scrollerRect = scroller.getBoundingClientRect();
     const columnRect = todayColumn.getBoundingClientRect();
-    scroller.scrollLeft +=
-      columnRect.left - scrollerRect.left - (scroller.clientWidth - columnRect.width) / 2;
+    scroller.scrollLeft += columnRect.left - scrollerRect.left;
   }, [firstColumnId, todayKey, presentation]);
 
   const columnTitle = (column: (typeof columns)[number]): string => {

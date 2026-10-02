@@ -9,13 +9,12 @@ const rect = (left: number, width: number) => ({ left, width, right: left + widt
 describe('DailyWeekBoard', () => {
   afterEach(() => vi.restoreAllMocks());
 
-  it('scrolls the board so the today column is centered on load', () => {
+  it('scrolls the board so the today column sits at the left edge on load', () => {
     const spy = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
       if (this.dataset.testid === 'daily-week-board') return rect(0, 400);
       if (this.dataset.today === 'true') return rect(900, 220);
       return rect(0, 0);
     });
-    vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(400);
     const today = new Date(2026, 9, 2);
 
     render(
@@ -37,8 +36,8 @@ describe('DailyWeekBoard', () => {
       </I18nProvider>,
     );
 
-    // 900 (column left) - 0 (board left) - (400 - 220) / 2 = 810
-    expect(screen.getByTestId('daily-week-board').scrollLeft).toBe(810);
+    // 900 (column left) - 0 (board left)
+    expect(screen.getByTestId('daily-week-board').scrollLeft).toBe(900);
     spy.mockRestore();
   });
 });
