@@ -37,7 +37,7 @@ export function ViewSwitcher({ view, onViewChange, className = '' }: ViewSwitche
             aria-pressed={active}
             title={label}
             onClick={() => onViewChange(value)}
-            className={`inline-flex items-center justify-center w-6 h-6 rounded-md border transition-colors duration-(--motion-fast) ${
+            className={`inline-flex items-center justify-center w-6 h-6 rounded-xs border transition-colors duration-(--motion-fast) ${
               active ? 'bg-ink text-cream border-ink' : 'text-ink-light border-transparent hover:bg-dot/30'
             }`}
           >
