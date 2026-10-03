@@ -58,27 +58,88 @@ Open [http://localhost:5173](http://localhost:5173) in your browser.
 
 ## Project Structure
 
-```text
-planner/
-├-- api/
-│   ├-- src/
-│   │   ├-- index.ts
-│   │   ├-- middleware/
-│   │   ├-- routes/
-│   │   ├-- services/
-│   │   └-- db/
-│   └-- package.json
-├-- app/
-│   ├-- src/
-│   │   ├-- pages/
-│   │   ├-- components/
-│   │   ├-- hooks/
-│   │   ├-- stores/
-│   │   ├-- api/
-│   │   └-- utils/
-│   └-- package.json
-├-- docs/
-└-- compose.yml
+```
+📁 planner/
+├── 📁 .claude/
+├── 📁 .docker/
+│   ├── 📁 api/
+│   ├── 📁 app/
+│   ├── 📁 pgadmin/
+│   └── 📁 redis/
+├── 📁 .github/
+│   ├── 📁 workflows/
+│   ├── 📄 copilot-instructions.md
+│   └── 📄 dependabot.yml
+├── 📁 .hooks/
+├── 📁 .specs/
+├── 📁 .vscode/
+├── 📁 api/
+│   ├── 📁 src/
+│   │   ├── 📁 db/
+│   │   │   └── 📁 migrations/
+│   │   ├── 📁 engines/
+│   │   ├── 📁 middleware/
+│   │   ├── 📁 parsers/
+│   │   ├── 📁 routes/
+│   │   ├── 📁 services/
+│   │   ├── 📁 types/
+│   │   ├── 📁 utils/
+│   ├── 🟨 eslint.config.js
+│   ├── 🔢 package-lock.json
+│   └── 🔢 package.json
+├── 📁 app/
+│   ├── 📁 e2e/
+│   │   ├── 📁 fixtures/
+│   │   ├── 📁 specs/
+│   │   │   ├── 📁 api/
+│   │   │   └── 📁 board/
+│   ├── 📁 public/
+│   │   ├── 📁 images/
+│   │   │   ├── 📁 icons/
+│   │   │   ├── 📁 logo/
+│   │   │   └── 📁 splash/
+│   │   │       └── 📁 ios/
+│   │   ├── 📄 favicon.ico
+│   │   ├── 📄 manifest.dev.webmanifest
+│   │   └── 📄 manifest.webmanifest
+│   ├── 📁 src/
+│   │   ├── 📁 api/
+│   │   ├── 📁 components/
+│   │   │   ├── 📁 board/
+│   │   │   ├── 📁 dnd/
+│   │   │   ├── 📁 habits/
+│   │   │   ├── 📁 monthly/
+│   │   │   └── 📁 ui/
+│   │   ├── 📁 contexts/
+│   │   ├── 📁 hooks/
+│   │   ├── 📁 i18n/
+│   │   │   ├── 📁 locales/
+│   │   ├── 📁 pages/
+│   │   │   │   └── 📁 helpers/
+│   │   │   └── 📁 admin/
+│   │   ├── 📁 stores/
+│   │   ├── 📁 test/
+│   │   ├── 📁 types/
+│   │   ├── 📁 utils/
+│   │   └── 🎨 index.css
+│   ├── 🟨 eslint.config.js
+│   ├── 📄 index.html
+│   ├── 🔢 package-lock.json
+│   ├── 🔢 package.json
+│   └── 🟨 tailwind.config.js
+├── 📄 .claudeignore
+├── 📄 .dockerignore
+├── 📄 .env.example
+├── 📄 .gitignore
+├── 📄 AGENTS.md
+├── 📄 CLAUDE.md
+├── 📄 compose.prod.yml
+├── 📄 compose.yml
+├── 📄 DESIGN.md
+├── 📄 GEMINI.md
+├── 🔢 package-lock.json
+├── 🔢 package.json
+└── 📄 README.md
 ```
 
 ## Architecture
@@ -112,7 +173,6 @@ e2e are not counted.)
 ### Prerequisites
 
 - The `coverage.planner.local` entry in `/etc/hosts` (TLS is provided by Traefik and is pre-configured for this host). In isolated worktree stacks the host is `coverage.<agent>.planner.local`, e.g. `coverage.claude.planner.local`.
-- The Vitest HTML reporter is opt-in: it is only generated when `--reporter=html` is passed (see `app/vitest.config.ts`); the Playwright report is generated only by `test:e2e:coverage`.
 - Both reports are served from `app/coverage-reports/` — the nginx bind mount stays valid across regenerations (only file contents change, never the directory itself).
 
 ## Contributing
