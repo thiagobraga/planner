@@ -582,6 +582,13 @@ button,
   grid-auto-columns: 220px;
 }
 
+@media (max-width: 639px) {
+  /* Lets the last column scroll to the left edge (today on Saturday). */
+  .daily-week-board .board-grid {
+    padding-right: max(24px, calc(100% - 220px));
+  }
+}
+
 .daily-week-board .board-column-header {
   align-items: flex-start;
   min-height: 24px;
