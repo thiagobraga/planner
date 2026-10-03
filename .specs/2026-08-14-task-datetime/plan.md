@@ -24,7 +24,7 @@ Allow tasks to hold precise time information, distinguish between planning dates
 
 ## Relevant Files
 
-- `api/src/db/migrations/040_task_datetime_fields.sql` - Database migration adding deadline and duration columns to tasks.
+- `api/src/db/migrations/044_task_datetime_fields.sql` - Database migration adding deadline and duration columns to tasks.
 - `api/src/services/taskService.ts` - Task CRUD logic, time/deadline validation, and derived start/end time formatting.
 - `api/src/services/viewService.ts` - View layer task serialization and formatting.
 - `api/src/types/task.ts` - API types for task creation and updates.
