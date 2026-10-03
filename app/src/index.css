@@ -316,9 +316,10 @@ button,
 }
 
 .board-grid {
+  --board-column-width: calc(220px + 3 * var(--dot-grid));
   display: grid;
   grid-auto-flow: column;
-  grid-auto-columns: 288px;
+  grid-auto-columns: var(--board-column-width);
   align-items: start;
   gap: 24px;
   width: max-content;
@@ -570,14 +571,10 @@ button,
   backdrop-filter: none;
 }
 
-.daily-week-board .board-grid {
-  grid-auto-columns: calc(220px + 3 * var(--dot-grid));
-}
-
 @media (max-width: 639px) {
   /* Lets the last column scroll to the left edge (today on Saturday). */
   .daily-week-board .board-grid {
-    padding-right: max(24px, calc(100% - calc(220px + 3 * var(--dot-grid))));
+    padding-right: max(24px, calc(100% - var(--board-column-width)));
   }
 }
 
@@ -853,7 +850,7 @@ button,
   }
 
   .board-grid {
-    grid-auto-columns: min(288px, calc(100vw - 72px));
+    grid-auto-columns: var(--board-column-width);
   }
 }
 
