@@ -94,4 +94,46 @@ describe('TaskDetail', () => {
 
     expect(onDelete).toHaveBeenCalledWith('task-1');
   });
+
+  describe('time, deadline and duration', () => {
+    const timed: Task = { ...sampleTask, dueTime: '14:30', deadlineDate: '2026-07-25', deadlineTime: '18:00', durationMinutes: 90 };
+
+    it('shows the current values', () => {
+      render(<TaskDetail task={timed} onClose={vi.fn()} />);
+      expect(screen.getByLabelText('Time')).toHaveValue('14:30');
+      expect(screen.getByLabelText('Deadline')).toHaveValue('2026-07-25');
+      expect(screen.getByLabelText('Deadline time')).toHaveValue('18:00');
+      expect(screen.getByLabelText('Duration (min)')).toHaveValue(90);
+    });
+
+    it('updates the due time on blur', () => {
+      const onUpdate = vi.fn();
+      render(<TaskDetail task={sampleTask} onClose={vi.fn()} onUpdate={onUpdate} />);
+      const input = screen.getByLabelText('Time');
+      fireEvent.change(input, { target: { value: '08:45' } });
+      fireEvent.blur(input);
+      expect(onUpdate).toHaveBeenCalledWith('task-1', { dueTime: '08:45' });
+    });
+
+    it('updates the deadline on blur', () => {
+      const onUpdate = vi.fn();
+      render(<TaskDetail task={sampleTask} onClose={vi.fn()} onUpdate={onUpdate} />);
+      const input = screen.getByLabelText('Deadline');
+      fireEvent.change(input, { target: { value: '2026-07-30' } });
+      fireEvent.blur(input);
+      expect(onUpdate).toHaveBeenCalledWith('task-1', { deadlineDate: '2026-07-30' });
+    });
+
+    it('updates the duration on blur and clears it when emptied', () => {
+      const onUpdate = vi.fn();
+      render(<TaskDetail task={timed} onClose={vi.fn()} onUpdate={onUpdate} />);
+      const input = screen.getByLabelText('Duration (min)');
+      fireEvent.change(input, { target: { value: '45' } });
+      fireEvent.blur(input);
+      expect(onUpdate).toHaveBeenCalledWith('task-1', { durationMinutes: 45 });
+      fireEvent.change(input, { target: { value: '' } });
+      fireEvent.blur(input);
+      expect(onUpdate).toHaveBeenLastCalledWith('task-1', { durationMinutes: null });
+    });
+  });
 });
