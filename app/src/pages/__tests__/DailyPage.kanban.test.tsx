@@ -205,6 +205,18 @@ describe('DailyPage week kanban view', () => {
     expect(todayColumn).toHaveTextContent('Today task');
   });
 
+  it('hides the due date on day column cards but keeps it in Migrate', async () => {
+    const { container } = renderPage();
+    await screen.findByText('Today task');
+
+    openToolbarMenu();
+    fireEvent.click(screen.getByRole('button', { name: 'Kanban cards' }));
+    await screen.findByTestId('daily-week-board');
+
+    expect(container.querySelector(`[data-column-id="day:${todayKey}"] .board-card-date`)).toBeNull();
+    expect(container.querySelector('[data-column-id="migrate"] .board-card-date')).toHaveTextContent(yesterdayKey);
+  });
+
   it('restores the saved board view for Daily', async () => {
     window.localStorage.setItem('planner.boardViews.v1', JSON.stringify({ daily: 'kanban' }));
     renderPage();
