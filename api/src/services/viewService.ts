@@ -3,8 +3,10 @@ import { AppError } from "../utils/AppError.js";
 import { listSections } from "./sectionService.js";
 import { attachLabels } from "./labelService.js";
 import type { Status } from "./statusService.js";
+import { formatTimeFields } from "../utils/taskTime.js";
+import type { TaskTimeRow } from "../types/task.js";
 
-interface TaskRow {
+interface TaskRow extends TaskTimeRow {
   id: string;
   user_id: string;
   collection_id: string;
@@ -15,7 +17,6 @@ interface TaskRow {
   description: string | null;
   priority: number;
   due_date: string | Date | null;
-  due_time: string | null;
   due_timezone: string | null;
   recurrence_rule: object | null;
   is_completed: boolean;
@@ -64,7 +65,7 @@ function formatTask(row: TaskRow) {
     description: row.description,
     priority: row.priority,
     dueDate: row.due_date,
-    dueTime: row.due_time,
+    ...formatTimeFields(row),
     dueTimezone: row.due_timezone,
     recurrenceRule: row.recurrence_rule,
     isCompleted: row.is_completed,
@@ -184,7 +185,7 @@ export async function getTodayView(userId: string, now: Date = new Date()): Prom
   // a separate place in its day, and one column cannot express both. Tasks never
   // dragged within Daily hold no day position and fall back to collection order.
   const result = await pool.query(
-    `SELECT t.id, t.user_id, t.collection_id, t.section_id, t.parent_task_id, t.assignee_user_id, t.title, t.description, t.priority, t.due_date, t.due_time, t.due_timezone, t.recurrence_rule, t.is_completed, t.completed_at, t.depth, t.type, t.status_id, t.created_at, t.updated_at, COALESCE(o.position, t.order_value) AS effective_order_value FROM tasks t
+    `SELECT t.id, t.user_id, t.collection_id, t.section_id, t.parent_task_id, t.assignee_user_id, t.title, t.description, t.priority, t.due_date, t.due_time, t.due_timezone, t.deadline_date, t.deadline_time, t.deadline_timezone, t.duration_minutes, t.recurrence_rule, t.is_completed, t.completed_at, t.depth, t.type, t.status_id, t.created_at, t.updated_at, COALESCE(o.position, t.order_value) AS effective_order_value FROM tasks t
      JOIN collections p ON p.id = t.collection_id
      LEFT JOIN task_order o
        ON o.task_id = t.id
@@ -236,7 +237,7 @@ export async function getUpcomingView(userId: string, days: number, now: Date = 
   const end = addDaysISO(start, days - 1);
 
   const result = await pool.query(
-    `SELECT t.id, t.user_id, t.collection_id, t.section_id, t.parent_task_id, t.assignee_user_id, t.title, t.description, t.priority, t.due_date, t.due_time, t.due_timezone, t.recurrence_rule, t.is_completed, t.completed_at, t.depth, t.type, t.status_id, t.created_at, t.updated_at, COALESCE(o.position, t.order_value) AS effective_order_value FROM tasks t
+    `SELECT t.id, t.user_id, t.collection_id, t.section_id, t.parent_task_id, t.assignee_user_id, t.title, t.description, t.priority, t.due_date, t.due_time, t.due_timezone, t.deadline_date, t.deadline_time, t.deadline_timezone, t.duration_minutes, t.recurrence_rule, t.is_completed, t.completed_at, t.depth, t.type, t.status_id, t.created_at, t.updated_at, COALESCE(o.position, t.order_value) AS effective_order_value FROM tasks t
      JOIN collections p ON p.id = t.collection_id
      LEFT JOIN task_order o
        ON o.task_id = t.id

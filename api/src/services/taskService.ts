@@ -7,8 +7,10 @@ import { syncCompletionToStatus, syncStatusToCompletion } from './completionSync
 import { attachLabels, verifyLabelOwnership } from './labelService.js';
 import { computeNextOccurrence } from '../engines/recurrenceEngine.js';
 import type { RecurrenceRule } from '../engines/recurrenceEngine.js';
+import { formatTimeFields } from '../utils/taskTime.js';
+import type { TaskTimeRow } from '../types/task.js';
 
-interface TaskRow {
+interface TaskRow extends TaskTimeRow {
   id: string;
   user_id: string;
   collection_id: string;
@@ -19,7 +21,6 @@ interface TaskRow {
   description: string | null;
   priority: number;
   due_date: string | null;
-  due_time: string | null;
   due_timezone: string | null;
   recurrence_rule: object | null;
   is_completed: boolean;
@@ -44,7 +45,7 @@ function formatTask(row: TaskRow) {
     description: row.description,
     priority: row.priority,
     dueDate: row.due_date,
-    dueTime: row.due_time,
+    ...formatTimeFields(row),
     dueTimezone: row.due_timezone,
     recurrenceRule: row.recurrence_rule,
     isCompleted: row.is_completed,
@@ -111,8 +112,9 @@ export async function completeTask(taskId: string, userId: string) {
       // 2. Clone the task
       const newId = uuidv4();
       const insertResult = await client.query(
-        `INSERT INTO tasks (id, user_id, collection_id, section_id, parent_task_id, title, description, priority, due_date, due_time, due_timezone, recurrence_rule, depth, type, order_value)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+        `INSERT INTO tasks (id, user_id, collection_id, section_id, parent_task_id, title, description, priority, due_date, due_time, due_timezone, recurrence_rule, depth, type, order_value, deadline_date, deadline_time, deadline_timezone, duration_minutes)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15,
+                 (SELECT deadline_date + ($9::date - due_date) FROM tasks WHERE id = $16), $17, $18, $19)
          RETURNING *`,
         [
           newId,
@@ -130,6 +132,10 @@ export async function completeTask(taskId: string, userId: string) {
           task.depth,
           task.type,
           task.order_value,
+          taskId,
+          task.deadline_time,
+          task.deadline_timezone,
+          task.duration_minutes,
         ]
       );
 
@@ -254,9 +260,33 @@ export interface CreateTaskInput {
   parentTaskId?: string | null;
   labelIds?: string[];
   dueDate?: string | null;
+  dueTime?: string | null;
+  dueTimezone?: string | null;
+  deadlineDate?: string | null;
+  deadlineTime?: string | null;
+  deadlineTimezone?: string | null;
+  durationMinutes?: number | null;
   recurrenceRule?: object | null;
   type?: 'task' | 'note' | 'event';
   orderValue?: number;
+}
+
+// A time of day only means something on a date: reject a time whose date is (or would become) empty.
+function validateTimeNeedsDate(
+  fields: { dueTime?: string | null; deadlineTime?: string | null },
+  dueDate: unknown,
+  deadlineDate: unknown,
+): void {
+  const details: Array<{ field: string; message: string }> = [];
+  if (fields.dueTime && !dueDate) {
+    details.push({ field: 'dueTime', message: 'A due time requires a due date' });
+  }
+  if (fields.deadlineTime && !deadlineDate) {
+    details.push({ field: 'deadlineTime', message: 'A deadline time requires a deadline date' });
+  }
+  if (details.length > 0) {
+    throw new AppError({ code: 'VALIDATION_ERROR', message: 'Validation failed', statusCode: 400, details });
+  }
 }
 
 export async function createTask(userId: string, input: CreateTaskInput) {
@@ -291,6 +321,8 @@ export async function createTask(userId: string, input: CreateTaskInput) {
       details: [{ field: 'type', message: "type must be 'task', 'note', or 'event'" }],
     });
   }
+
+  validateTimeNeedsDate(input, input.dueDate, input.deadlineDate);
 
   const labelIds = input.labelIds ?? [];
   await verifyLabelOwnership(labelIds, userId);
@@ -348,8 +380,8 @@ export async function createTask(userId: string, input: CreateTaskInput) {
   const priority = input.priority ?? 4;
   const type = input.type ?? 'task';
 
-  const insertQuery = `INSERT INTO tasks (id, user_id, collection_id, section_id, parent_task_id, title, description, priority, due_date, recurrence_rule, depth, type, order_value)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+  const insertQuery = `INSERT INTO tasks (id, user_id, collection_id, section_id, parent_task_id, title, description, priority, due_date, recurrence_rule, depth, type, order_value, due_time, due_timezone, deadline_date, deadline_time, deadline_timezone, duration_minutes)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
      RETURNING *`;
   const insertValues = [
     id,
@@ -365,6 +397,12 @@ export async function createTask(userId: string, input: CreateTaskInput) {
     depth,
     type,
     input.orderValue ?? 0,
+    input.dueTime ?? null,
+    input.dueTime ? input.dueTimezone ?? null : null,
+    input.deadlineDate ?? null,
+    input.deadlineTime ?? null,
+    input.deadlineTime ? input.deadlineTimezone ?? null : null,
+    input.durationMinutes ?? null,
   ];
 
   let taskRow: TaskRow;
@@ -413,6 +451,12 @@ export interface UpdateTaskInput {
   sectionId?: string | null;
   parentTaskId?: string | null;
   dueDate?: string | null;
+  dueTime?: string | null;
+  dueTimezone?: string | null;
+  deadlineDate?: string | null;
+  deadlineTime?: string | null;
+  deadlineTimezone?: string | null;
+  durationMinutes?: number | null;
   recurrenceRule?: object | null;
   labelIds?: string[];
   type?: 'task' | 'note' | 'event';
@@ -455,6 +499,11 @@ export async function updateTask(taskId: string, userId: string, input: UpdateTa
 
   await verifyLabelOwnership(input.labelIds ?? [], userId);
   const task = await verifyTaskAccess(taskId, userId);
+  validateTimeNeedsDate(
+    input,
+    input.dueDate !== undefined ? input.dueDate : task.due_date,
+    input.deadlineDate !== undefined ? input.deadlineDate : task.deadline_date,
+  );
 
   const setClauses: string[] = [];
   const values: unknown[] = [];
@@ -579,6 +628,30 @@ export async function updateTask(taskId: string, userId: string, input: UpdateTa
   if (input.dueDate !== undefined) {
     setClauses.push(`due_date = $${paramIndex++}`);
     values.push(input.dueDate);
+  }
+
+  if (input.dueTime !== undefined) {
+    setClauses.push(`due_time = $${paramIndex++}`, `due_timezone = $${paramIndex++}`);
+    values.push(input.dueTime, input.dueTime ? input.dueTimezone ?? null : null);
+  } else if (input.dueDate === null) {
+    setClauses.push(`due_time = NULL`, `due_timezone = NULL`);
+  }
+
+  if (input.deadlineDate !== undefined) {
+    setClauses.push(`deadline_date = $${paramIndex++}`);
+    values.push(input.deadlineDate);
+  }
+
+  if (input.deadlineTime !== undefined) {
+    setClauses.push(`deadline_time = $${paramIndex++}`, `deadline_timezone = $${paramIndex++}`);
+    values.push(input.deadlineTime, input.deadlineTime ? input.deadlineTimezone ?? null : null);
+  } else if (input.deadlineDate === null) {
+    setClauses.push(`deadline_time = NULL`, `deadline_timezone = NULL`);
+  }
+
+  if (input.durationMinutes !== undefined) {
+    setClauses.push(`duration_minutes = $${paramIndex++}`);
+    values.push(input.durationMinutes);
   }
 
   if (input.recurrenceRule !== undefined) {
