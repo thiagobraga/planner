@@ -249,6 +249,7 @@ Full spec: `DESIGN.md`.
 - All routes are under `/api/v1/`; add new routes to `routes/index.ts`.
 - Mandatory TDD & Full Coverage: Test-Driven Development (red-green-refactor) is required. Write unit tests, real DB/Redis integration tests (no mock-DB pattern), and Playwright E2E tests for features and bugfixes.
 - Mandatory Conventional Commits: All commits MUST strictly follow Conventional Commits (`feat:`, `fix:`, `docs:`, `style:`, `refactor:`, `test:`, `chore:`, etc.). Create small, focused commits per file or logical feature.
+- Semantic Branch Names: Name every branch `<type>/<short-kebab-slug>` using the Conventional Commits type (`feat/`, `fix/`, `refactor/`, `docs/`, `chore/`, `test/`, `style/`), e.g. `style/view-switcher-radius`. This applies in remote/cloud sessions too: if the harness assigns a generic branch name (e.g. `claude/<random>`), create and push a semantic branch instead and open the PR from it, unless the user explicitly requires the assigned name.
 - User Prompt Commit Aliases:
   - `commit` or `gcm` -> Stage and commit using Conventional Commits format with required `Co-Authored-By` trailer.
   - `commit and push`, `gcp`, or `gcmp` -> Stage, commit (with Conventional Commits + `Co-Authored-By` trailer), and push to remote branch (`git push`).
