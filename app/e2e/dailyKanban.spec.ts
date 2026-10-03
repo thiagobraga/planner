@@ -4,7 +4,7 @@ import type { ApiTask } from '../src/api/client';
 
 test.use({ storageState: STORAGE_STATE_PATH });
 
-test('Daily board retains scheduled cards while keeping Migrate scoped to Daily tasks', async ({ page, api }) => {
+test('Daily board retains scheduled cards while with the Migrate column hidden', async ({ page, api }) => {
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   const createdIds: string[] = [];
@@ -12,7 +12,6 @@ test('Daily board retains scheduled cards while keeping Migrate scoped to Daily 
   const today = new Date().toISOString().slice(0, 10);
   const suffix = Date.now();
   const datedTitle = `Plan the week ${suffix}`;
-  const undatedTitle = `Sort paperwork ${suffix}`;
   const enterBoard = async () => {
     await page.goto('/daily');
     await page.getByRole('button', { name: 'Kanban cards', exact: true }).click();
@@ -38,9 +37,10 @@ test('Daily board retains scheduled cards while keeping Migrate scoped to Daily 
     };
     await checkGridRows();
 
+    await expect(page.locator('[data-column-id="migrate"]')).toHaveCount(0);
+
     for (const [columnId, title, dueDate] of [
       [`day:${today}`, datedTitle, today],
-      ['migrate', undatedTitle, null],
     ] as const) {
       const column = page.locator(`[data-column-id="${columnId}"]`);
       await expect(column).toHaveCSS('border-top-width', '0px');
@@ -63,11 +63,9 @@ test('Daily board retains scheduled cards while keeping Migrate scoped to Daily 
 
     await enterBoard();
     await expect(page.getByRole('heading', { name: datedTitle, exact: true })).toBeVisible();
-    await expect(page.getByRole('heading', { name: undatedTitle, exact: true })).toHaveCount(0);
-    await expect(page.locator('.daily-week-board [data-column-id]').last()).toHaveAttribute('data-column-id', 'migrate');
     await checkGridRows();
     const inbox = await api.get<{ tasks: ApiTask[] }>('/views/inbox');
-    expect(inbox.tasks.filter((task) => createdIds.includes(task.id))).toHaveLength(2);
+    expect(inbox.tasks.filter((task) => createdIds.includes(task.id))).toHaveLength(1);
 
     await page.getByRole('button', { name: 'Next week', exact: true }).click();
     const futureColumn = page.locator('[data-column-id^="day:"]').first();
@@ -89,12 +87,6 @@ test('Daily board retains scheduled cards while keeping Migrate scoped to Daily 
     await page.screenshot({ path: 'dist/screenshots/daily-kanban-refined-desktop.png' });
     await page.setViewportSize({ width: 390, height: 844 });
     await page.screenshot({ path: 'dist/screenshots/daily-kanban-refined-mobile.png' });
-    const migrate = page.locator('[data-column-id="migrate"]');
-    await migrate.getByRole('button', { name: 'Add task', exact: true }).click();
-    await expect(migrate.getByRole('textbox', { name: 'Task title' })).toBeVisible();
-    await migrate.getByRole('textbox', { name: 'Task title' }).press('Escape');
-    await expect(migrate.getByRole('textbox')).toHaveCount(0);
-    await expect(migrate.getByRole('button', { name: 'Add task', exact: true })).toBeFocused();
     expect(errors).toEqual([]);
   } finally {
     for (const id of createdIds) await api.delete(`/tasks/${id}`);
