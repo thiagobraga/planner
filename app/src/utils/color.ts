@@ -36,7 +36,8 @@ export function clamp(value: number, min: number, max: number): number {
 }
 
 function clamp255(value: number): number {
-  return clamp(Math.round(value), 0, 255);
+  // `+ 0` turns the -0 that Math.round yields for tiny negatives into +0
+  return clamp(Math.round(value), 0, 255) + 0;
 }
 
 function normalizeHue(h: number): number {
