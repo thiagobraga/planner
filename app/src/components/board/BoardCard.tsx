@@ -13,9 +13,10 @@ interface BoardCardProps {
   containerId?: string;
   subtreeIds?: string[];
   onToggle?: (taskId: string, completed: boolean) => void;
+  hideDueDate?: boolean;
 }
 
-export function BoardCard({ task, subtasks, containerId = '', subtreeIds, onToggle }: BoardCardProps) {
+export function BoardCard({ task, subtasks, containerId = '', subtreeIds, onToggle, hideDueDate }: BoardCardProps) {
   const { t } = useI18n();
   const dragData: TaskDragData = {
     kind: 'task',
@@ -69,7 +70,7 @@ export function BoardCard({ task, subtasks, containerId = '', subtreeIds, onTogg
 
       <BoardCardChecklist parentTask={task} tasks={subtasks} onToggle={onToggle} />
 
-      {(task.dueDate || task.completedAt) && (
+      {((task.dueDate && !hideDueDate) || task.completedAt) && (
         <footer className="board-card-date">
           {task.completedAt ? <Check size={13} /> : <CalendarDays size={13} />}
           <span>{task.completedAt?.slice(0, 10) ?? task.dueDate}</span>

@@ -80,6 +80,8 @@ export function DailyBoardColumn({ column, title, isToday, tasks, allTasks, onTo
     disabled: !column.droppable,
   });
   const journalTasks = columnTaskTree(tasks, allTasks);
+  // The column header already states the day; Migrate keeps dates since its tasks span days.
+  const hideDueDate = Boolean(column.iso);
 
   return (
     <section
@@ -104,6 +106,7 @@ export function DailyBoardColumn({ column, title, isToday, tasks, allTasks, onTo
         {presentation === 'kanban-list' ? (
           <TaskList
             {...taskListProps}
+            hideDueDate={hideDueDate}
             tasks={journalTasks}
             containerId={column.id}
             dropId={`daily-list-drop:${column.id}`}
@@ -121,6 +124,7 @@ export function DailyBoardColumn({ column, title, isToday, tasks, allTasks, onTo
               subtasks={allTasks.filter((candidate) => candidate.parentTaskId === task.id)}
               containerId={column.id}
               onToggle={onToggle}
+              hideDueDate={hideDueDate}
             />
           ))
         )}
