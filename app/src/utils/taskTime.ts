@@ -26,3 +26,13 @@ export function scheduleFieldsFromApi(t: ApiScheduleFields): Required<ApiSchedul
     durationMinutes: t.durationMinutes ?? null,
   };
 }
+
+/** Times are wall-clock; the browser's zone is sent alongside so the server knows which wall. */
+export function withTimeZones<T extends { dueTime: string | null; deadlineTime: string | null }>(schedule: T) {
+  const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  return {
+    ...schedule,
+    dueTimezone: schedule.dueTime ? zone : null,
+    deadlineTimezone: schedule.deadlineTime ? zone : null,
+  };
+}

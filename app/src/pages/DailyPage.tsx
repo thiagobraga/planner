@@ -39,7 +39,9 @@ import {
 import { ContextMenu, type ContextMenuItem } from '../components/ui/ContextMenu';
 import { flattenCollections } from '../components/CollectionTreeNav';
 import { Folder, ArrowUp, ArrowDown, Trash2, Calendar, Kanban, List } from 'lucide-react';
-import { scheduleFieldsFromApi } from '../utils/taskTime';
+import { scheduleFieldsFromApi, withTimeZones } from '../utils/taskTime';
+import { buildSetDateMenuItem } from '../components/taskDateMenuItem';
+import type { TaskSchedule } from '../types/task';
 
 interface DaySection {
   key: string;
@@ -573,6 +575,12 @@ export function DailyPage() {
       );
     }
   }, [updateSections]);
+
+  const handleSetSchedule = useCallback((id: string, schedule: TaskSchedule) => {
+    apiUpdateTask(id, withTimeZones(schedule))
+      .then((updated) => setAllTasks((prev) => prev.map((task) => (task.id === id ? { ...task, ...apiToTask(updated) } : task))))
+      .catch(() => replaceTodayFromApi());
+  }, [setAllTasks, replaceTodayFromApi]);
 
   const handleDelete = useCallback((id: string) => {
     updateSections((prev) =>
@@ -1144,6 +1152,7 @@ export function DailyPage() {
           items={[
             // { type: 'item', label: 'Date', icon: <Calendar size={14} />, disabled: true },
             // { type: 'item', label: 'Priority', icon: <Tag size={14} />, disabled: true },
+            buildSetDateMenuItem(t, allTasks.find((task) => task.id === contextMenu.taskId), handleSetSchedule),
             { type: 'item', label: t('contextMenu.collection'), icon: <Folder size={14} />, submenu: projectSubmenuItems },
             // { type: 'item', label: 'Tags', icon: <Hash size={14} />, disabled: true },
             { type: 'separator' },
