@@ -196,11 +196,19 @@ export function DailyPage() {
     const currentToday = fmtISOInTimeZone(new Date(), prefsRef.current?.timeZone);
     const loadTasks = async () => {
       if (!dailyBoard) return fetchTodayTasks();
-      const [todayView, collections] = await Promise.all([fetchTodayTasks(), fetchCollections()]);
+      // Cached fetches: the board spans every collection, so an uncached pass
+      // costs 3 + N requests. Mutations already invalidate these keys.
+      const [todayView, collections] = await Promise.all([
+        fetchTodayTasks(),
+        qc.fetchQuery({ queryKey: ['collections'], queryFn: fetchCollections }),
+      ]);
       const views = await Promise.all([
-        fetchInboxTasks(),
+        qc.fetchQuery({ queryKey: ['inbox'], queryFn: fetchInboxTasks }),
         ...collections.filter((collection) => !collection.isInbox && !collection.isArchived)
-          .map((collection) => fetchCollectionView(collection.id)),
+          .map((collection) => qc.fetchQuery({
+            queryKey: ['collection', collection.id],
+            queryFn: () => fetchCollectionView(collection.id),
+          })),
       ]);
       const tasks = [
         ...new Map([
@@ -222,7 +230,7 @@ export function DailyPage() {
       rawTodayRef.current = { overdue: [], today: [] };
       setSections(buildSections([], [], localeRef.current, currentToday, dateFormatRef.current));
     });
-  }, [dailyBoard]);
+  }, [dailyBoard, qc]);
 
   // Preferences (locale/dateFormat/timeZone) often resolve after the initial
   // fetch above already rendered with defaults. Reformat the cached raw tasks

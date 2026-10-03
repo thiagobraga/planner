@@ -157,27 +157,6 @@ describe('DailyPage week kanban view', () => {
     expect(screen.queryByText('Drop work here')).not.toBeInTheDocument();
   });
 
-  it('cancels a draft without creating an empty task and keeps failed drafts for retry', async () => {
-    vi.mocked(apiCreateTask).mockRejectedValue(new Error('Unavailable'));
-    const { container } = renderPage();
-    await screen.findByText('Today task');
-    openToolbarMenu();
-    fireEvent.click(screen.getByRole('button', { name: 'Kanban cards' }));
-    await screen.findByTestId('daily-week-board');
-    const column = within(container.querySelector('[data-column-id="migrate"]')! as HTMLElement);
-    fireEvent.click(column.getByRole('button', { name: 'Add task' }));
-    fireEvent.keyDown(column.getByRole('textbox'), { key: 'Escape' });
-    expect(column.queryByRole('textbox')).not.toBeInTheDocument();
-    expect(apiCreateTask).not.toHaveBeenCalled();
-    fireEvent.click(column.getByRole('button', { name: 'Add task' }));
-    const input = column.getByRole('textbox');
-    fireEvent.change(input, { target: { value: 'Undated task' } });
-    fireEvent.submit(input.closest('form')!);
-    expect(await column.findByRole('alert')).toHaveTextContent('Could not add task');
-    expect(input).toHaveValue('Undated task');
-    expect(apiCreateTask).toHaveBeenCalledWith(expect.objectContaining({ dueDate: undefined }));
-  });
-
   it('switches to the week board when Kanban is picked from the VIEW row, hiding the chronological list', async () => {
     renderPage();
     await screen.findByText('Today task');
@@ -189,7 +168,7 @@ describe('DailyPage week kanban view', () => {
     expect(screen.queryByTestId('task-list')).not.toBeInTheDocument();
   });
 
-  it('keeps Migrate scoped to Daily tasks while still showing scheduled tasks in their day column', async () => {
+  it('hides the Migrate column and still shows scheduled tasks in their day column', async () => {
     const { container } = renderPage();
     await screen.findByText('Today task');
 
@@ -197,12 +176,8 @@ describe('DailyPage week kanban view', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Kanban cards' }));
     await screen.findByTestId('daily-week-board');
 
-    const migrateColumn = container.querySelector('[data-column-id="migrate"]');
-    const todayColumn = container.querySelector(`[data-column-id="day:${todayKey}"]`);
-
-    expect(migrateColumn).toHaveTextContent('Overdue task');
-    expect(migrateColumn).not.toHaveTextContent('No date task');
-    expect(todayColumn).toHaveTextContent('Today task');
+    expect(container.querySelector('[data-column-id="migrate"]')).toBeNull();
+    expect(container.querySelector(`[data-column-id="day:${todayKey}"]`)).toHaveTextContent('Today task');
   });
 
   it('restores the saved board view for Daily', async () => {

@@ -18,9 +18,18 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-async function fetchCurrentUser(): Promise<AuthUser | null> {
+const ME_MAX_ATTEMPTS = 4;
+
+// A 429 is the rate limiter, not a dead session: wait it out instead of
+// dropping the user at the login page.
+async function fetchCurrentUser(attempt = 1): Promise<AuthUser | null> {
   try {
     const res = await fetch('/api/v1/auth/me', { credentials: 'include' });
+    if (res.status === 429 && attempt < ME_MAX_ATTEMPTS) {
+      const retryAfter = Number(res.headers.get('Retry-After')) || 2;
+      await new Promise((resolve) => setTimeout(resolve, Math.min(retryAfter, 10) * 1000));
+      return fetchCurrentUser(attempt + 1);
+    }
     if (!res.ok) return null;
     const data = await res.json();
     return data.user;

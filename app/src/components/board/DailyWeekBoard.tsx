@@ -58,7 +58,8 @@ export function DailyWeekBoard({ tasks, weekAnchor, today, todayKey, weekStart, 
     if (bucket) bucket.push(task);
     else rootTasksByColumn.set(columnId, [task]);
   }
-  const columns = buildDayColumns(weekAnchor, today, weekStart);
+  // Migrate is hidden for now; its tasks are simply not rendered.
+  const columns = buildDayColumns(weekAnchor, today, weekStart).filter((column) => column.id !== 'migrate');
 
   const weekRangeLabel = (() => {
     const start = startOfWeek(weekAnchor, weekStart);
