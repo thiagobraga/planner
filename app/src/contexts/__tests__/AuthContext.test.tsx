@@ -111,6 +111,25 @@ describe('AuthContext', () => {
     expect(screen.getByTestId('auth-state')).toBeInTheDocument();
   });
 
+  it('waits out a 429 on /me instead of treating it as logged out', async () => {
+    fetchMock
+      .mockResolvedValueOnce(new Response('{}', { status: 429, headers: { 'Retry-After': '0' } }))
+      .mockResolvedValue(
+        new Response(mockUserJson, { status: 200, headers: { 'Content-Type': 'application/json' } }),
+      );
+
+    render(
+      <TestWrapper>
+        <TestConsumer />
+      </TestWrapper>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('auth-state')).toHaveTextContent('"isAuthenticated":true');
+    }, { timeout: 4000 });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
   it('sets user and isAuthenticated on successful /me', async () => {
     fetchMock.mockResolvedValue(
       new Response(mockUserJson, {
