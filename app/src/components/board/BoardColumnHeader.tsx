@@ -81,7 +81,6 @@ export function BoardColumnHeader({
       className="board-column-header"
       {...dragHandleProps}
     >
-      <span className="board-column-dot" style={{ backgroundColor: color ?? 'var(--color-ink-lighter)' }} />
       {renaming ? (
         <InlineNameInput
           defaultValue={title}

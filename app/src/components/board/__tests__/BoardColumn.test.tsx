@@ -62,4 +62,27 @@ describe('BoardColumn', () => {
     expect(screen.getByText('Journal row')).toBeInTheDocument();
     expect(container.querySelector('.board-card')).not.toBeInTheDocument();
   });
+
+  it('does not render a color dot before the column title', () => {
+    const column = {
+      id: 'status:todo' as const,
+      value: 'todo',
+      title: 'Todo',
+      color: '#adb9c1',
+      tasks: [],
+    };
+    const { container } = render(
+      <PlannerDragProvider>
+        <BoardColumn
+          collectionId="collection-1"
+          groupBy="status"
+          column={column}
+          allTasks={[]}
+        />
+      </PlannerDragProvider>,
+    );
+
+    expect(screen.getByRole('heading', { name: 'Todo' })).toBeInTheDocument();
+    expect(container.querySelector('.board-column-dot')).not.toBeInTheDocument();
+  });
 });
