@@ -50,6 +50,19 @@ describe('buildColumns', () => {
     expect(tasks.map((task) => task.orderValue)).toEqual([0, 1000, 500]);
   });
 
+  it('places the no-section column after all sections', () => {
+    const section = (id: string, orderValue: number) => ({
+      id, collectionId: 'collection-1', name: id, orderValue, createdAt: '', updatedAt: '',
+    });
+    const columns = buildColumns({
+      groupBy: 'section', tasks: [], statuses: [], completionStatusId: null,
+      sections: [section('b', 2000), section('a', 1000)],
+      boardOrder: { status: {}, priority: {} }, noSectionTitle: 'No section',
+      priorityTitle: (priority) => `P${priority}`,
+    });
+    expect(columns.map((column) => column.id)).toEqual(['section:a', 'section:b', 'section:none']);
+  });
+
   it('always renders four priority columns', () => {
     const columns = buildColumns({
       groupBy: 'priority', tasks: [], statuses: [], sections: [],

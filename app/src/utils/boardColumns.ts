@@ -106,11 +106,12 @@ export function buildColumns(input: BuildColumnsInput): BoardColumn[] {
 
   if (input.groupBy === 'section') {
     const definitions = [
-      { id: null, name: input.noSectionTitle, orderValue: -1 },
-      ...input.sections.map((section) => ({ id: section.id, name: section.name, orderValue: section.orderValue })),
+      ...input.sections
+        .map((section) => ({ id: section.id, name: section.name, orderValue: section.orderValue }))
+        .sort((a, b) => a.orderValue - b.orderValue),
+      { id: null, name: input.noSectionTitle },
     ];
     return definitions
-      .sort((a, b) => a.orderValue - b.orderValue)
       .map((section) => ({
         id: buildColumnId('section', section.id),
         value: section.id,
