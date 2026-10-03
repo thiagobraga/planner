@@ -211,6 +211,7 @@ export const englishCatalog = {
   'task.dueDate': 'Due Date',
   'task.dueDateAria': 'Due date',
   'task.dueDatePlaceholder': 'e.g. today, tomorrow, 2025-12-31',
+  'task.deadline': 'Deadline',
   'task.repeat': 'Repeat',
   'task.daily': 'Daily',
   'task.weekly': 'Weekly',

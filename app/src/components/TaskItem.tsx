@@ -1,7 +1,7 @@
 import { useRef, useEffect, memo, type ReactNode } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Repeat } from 'lucide-react';
+import { AlarmClock, Repeat } from 'lucide-react';
 import { NO_DRAG_ATTR } from './dnd/sensors';
 import { isTaskDrag, type TaskDragData } from '../types/drag';
 import { useI18n } from '../i18n/I18nContext';
@@ -9,6 +9,7 @@ import { useTaskSelectionStore } from '../stores/taskSelectionStore';
 import { usePlannerDrag } from '../contexts/usePlannerDrag';
 import { priorityClasses } from './taskPriorityClasses';
 import type { LabelSummary } from '../api/client';
+import { formatDuration, formatTimeWindow } from '../utils/taskTime';
 
 export interface Task {
   id: string;
@@ -20,6 +21,12 @@ export interface Task {
   statusId?: string | null;
   parentTaskId?: string;
   dueDate?: string;
+  /** HH:MM wall-clock time; `endTime` is derived by the API from the duration. */
+  dueTime?: string | null;
+  endTime?: string | null;
+  deadlineDate?: string | null;
+  deadlineTime?: string | null;
+  durationMinutes?: number | null;
   recurrenceRule?: object | null;
   isCompleted: boolean;
   orderValue: number;
@@ -383,6 +390,29 @@ export const TaskItem = memo(function TaskItem({
               <span className="task-item-due-date h-6 inline-flex items-center gap-1 text-xs text-ink-light ml-1.5 whitespace-nowrap">
                 {task.recurrenceRule && <Repeat className="w-3 h-3" />}
                 {formatDueDate(task.dueDate, locale)}
+              </span>
+            )}
+
+            {task.dueTime && (
+              <span className="task-item-time h-6 inline-flex items-center text-xs text-ink-light ml-1.5 whitespace-nowrap">
+                {formatTimeWindow(task.dueTime, task.endTime)}
+              </span>
+            )}
+
+            {task.durationMinutes && !task.dueTime && (
+              <span className="task-item-duration h-6 inline-flex items-center text-xs text-ink-light ml-1.5 whitespace-nowrap">
+                {formatDuration(task.durationMinutes)}
+              </span>
+            )}
+
+            {task.deadlineDate && (
+              <span
+                className="task-item-deadline h-6 inline-flex items-center gap-1 text-xs text-accent ml-1.5 whitespace-nowrap"
+                title={t('task.deadline')}
+              >
+                <AlarmClock className="w-3 h-3" aria-hidden="true" />
+                {formatDueDate(task.deadlineDate, locale)}
+                {task.deadlineTime && ` ${task.deadlineTime}`}
               </span>
             )}
 

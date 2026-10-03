@@ -213,6 +213,7 @@ export const portugueseBrazilCatalog = {
   'task.dueDate': 'Data de vencimento',
   'task.dueDateAria': 'Data de vencimento',
   'task.dueDatePlaceholder': 'ex.: hoje, amanhã, 2025-12-31',
+  'task.deadline': 'Prazo final',
   'task.repeat': 'Repetir',
   'task.daily': 'Diariamente',
   'task.weekly': 'Semanalmente',

@@ -48,6 +48,7 @@ import { SectionDeleteModal } from '../components/SectionDeleteModal';
 import { flattenCollections, getHierarchicalColor } from '../components/CollectionTreeNav';
 import { Folder, ArrowUp, ArrowDown, Trash2, Pencil, ChevronRight } from 'lucide-react';
 import { useI18n } from '../i18n/I18nContext';
+import { scheduleFieldsFromApi } from '../utils/taskTime';
 
 function apiToTask(t: ApiTask): Task {
   return {
@@ -60,6 +61,7 @@ function apiToTask(t: ApiTask): Task {
     statusId: t.statusId,
     parentTaskId: t.parentTaskId ?? undefined,
     dueDate: t.dueDate ?? undefined,
+    ...scheduleFieldsFromApi(t),
     isCompleted: t.isCompleted,
     orderValue: t.orderValue,
     labels: t.labels,

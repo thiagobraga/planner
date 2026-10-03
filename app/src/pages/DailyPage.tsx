@@ -39,6 +39,7 @@ import {
 import { ContextMenu, type ContextMenuItem } from '../components/ui/ContextMenu';
 import { flattenCollections } from '../components/CollectionTreeNav';
 import { Folder, ArrowUp, ArrowDown, Trash2, Calendar, Kanban, List } from 'lucide-react';
+import { scheduleFieldsFromApi } from '../utils/taskTime';
 
 interface DaySection {
   key: string;
@@ -86,6 +87,7 @@ function apiToTask(t: ApiTask): Task {
     sectionId: t.sectionId,
     parentTaskId: t.parentTaskId ?? undefined,
     dueDate: t.dueDate ? t.dueDate.slice(0, 10) : undefined,
+    ...scheduleFieldsFromApi(t),
     type: t.type,
     createdAt: t.createdAt,
   };

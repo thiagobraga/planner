@@ -40,6 +40,7 @@ import { applyIndent } from '../utils/taskTree';
 import { useSync } from '../hooks/useSync';
 import { isEchoedMove } from '../utils/moveEcho';
 import { useI18n } from '../i18n/I18nContext';
+import { scheduleFieldsFromApi } from '../utils/taskTime';
 
 function apiToTask(t: ApiTask): Task {
   return {
@@ -52,6 +53,7 @@ function apiToTask(t: ApiTask): Task {
     statusId: t.statusId,
     parentTaskId: t.parentTaskId ?? undefined,
     dueDate: t.dueDate ?? undefined,
+    ...scheduleFieldsFromApi(t),
     isCompleted: t.isCompleted,
     orderValue: t.orderValue,
     labels: t.labels,
