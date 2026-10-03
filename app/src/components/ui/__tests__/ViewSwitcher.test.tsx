@@ -42,4 +42,12 @@ describe('ViewSwitcher', () => {
     expect(idle).toHaveClass('w-6', 'h-6', 'text-ink-light');
     expect(idle).not.toHaveClass('bg-ink');
   });
+
+  it('uses the xs corner radius on every button', () => {
+    render(<ViewSwitcher view="list" onViewChange={vi.fn()} />);
+    for (const button of screen.getAllByRole('button')) {
+      expect(button).toHaveClass('rounded-xs');
+      expect(button).not.toHaveClass('rounded-md');
+    }
+  });
 });

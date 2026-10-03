@@ -98,6 +98,29 @@ async function isSelfOrDescendant(candidateId: string, targetId: string): Promis
   return result.rows.length > 0;
 }
 
+// Reparenting guard: the new parent must be owned by the caller, must not be the
+// collection itself or one of its descendants, and must leave room under the depth cap.
+// A null parent moves the collection to the root and needs no check.
+async function assertValidParent(parentId: string | null, collectionId: string, userId: string): Promise<void> {
+  if (parentId === null) return;
+
+  await verifyCollectionOwnership(parentId, userId);
+  if (await isSelfOrDescendant(parentId, collectionId)) {
+    throw new AppError({
+      code: 'VALIDATION_ERROR',
+      message: 'Cannot move a collection under its own descendant',
+      statusCode: 400,
+    });
+  }
+  if ((await getCollectionDepth(parentId)) >= 4) {
+    throw new AppError({
+      code: 'MAX_DEPTH_EXCEEDED',
+      message: 'Maximum collection nesting depth of 4 exceeded',
+      statusCode: 400,
+    });
+  }
+}
+
 export async function listCollections(userId: string) {
   const result = await pool.query(
     `SELECT p.* FROM collections p
@@ -245,24 +268,7 @@ export async function updateCollection(collectionId: string, userId: string, inp
   }
 
   if (input.parentId !== undefined) {
-    if (input.parentId !== null) {
-      await verifyCollectionOwnership(input.parentId, userId);
-      if (await isSelfOrDescendant(input.parentId, collectionId)) {
-        throw new AppError({
-          code: 'VALIDATION_ERROR',
-          message: 'Cannot move a collection under its own descendant',
-          statusCode: 400,
-        });
-      }
-      const parentDepth = await getCollectionDepth(input.parentId);
-      if (parentDepth >= 4) {
-        throw new AppError({
-          code: 'MAX_DEPTH_EXCEEDED',
-          message: 'Maximum collection nesting depth of 4 exceeded',
-          statusCode: 400,
-        });
-      }
-    }
+    await assertValidParent(input.parentId, collectionId, userId);
     setClauses.push(`parent_id = $${paramIndex++}`);
     values.push(input.parentId);
   }
