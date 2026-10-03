@@ -579,13 +579,13 @@ button,
 }
 
 .daily-week-board .board-grid {
-  grid-auto-columns: 292px;
+  grid-auto-columns: calc(220px + 3 * var(--dot-grid));
 }
 
 @media (max-width: 639px) {
   /* Lets the last column scroll to the left edge (today on Saturday). */
   .daily-week-board .board-grid {
-    padding-right: max(24px, calc(100% - 292px));
+    padding-right: max(24px, calc(100% - calc(220px + 3 * var(--dot-grid))));
   }
 }
 
