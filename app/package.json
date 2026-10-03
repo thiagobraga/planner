@@ -31,7 +31,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@playwright/test": "^1.62.0",
+    "@playwright/test": "^1.63.0",
     "@rolldown/binding-linux-x64-gnu": "1.2.4",
     "@rolldown/binding-linux-x64-musl": "1.2.9",
     "@rollup/rollup-linux-x64-gnu": "4.63.4",
