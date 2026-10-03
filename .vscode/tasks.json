@@ -2,7 +2,7 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "Docker: Rebuild & Up",
+      "label": "Docker Run",
       "type": "shell",
       "command": "bash .vscode/tasks.sh",
       "group": {
@@ -19,7 +19,7 @@
       }
     },
     {
-      "label": "Docker: Logs",
+      "label": "Docker Logs",
       "type": "shell",
       "command": "docker compose logs -f",
       "group": {
