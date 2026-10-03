@@ -4,7 +4,7 @@ import type { ApiTask } from '../src/api/client';
 
 test.use({ storageState: STORAGE_STATE_PATH });
 
-test('Daily board retains scheduled cards while with the Migrate column hidden', async ({ page, api }) => {
+test('Daily board retains scheduled cards with the Migrate column hidden', async ({ page, api }) => {
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   const createdIds: string[] = [];
