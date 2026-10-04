@@ -578,6 +578,20 @@ button,
   }
 }
 
+/* Touch: a swipe lands exactly one day column flush left; no free scrolling. */
+@media (pointer: coarse) {
+  .daily-week-board .board-scroll {
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: 0;
+    overscroll-behavior-x: contain;
+  }
+
+  .daily-week-board .board-column {
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+  }
+}
+
 .daily-week-board .board-column-header {
   align-items: flex-start;
   min-height: 24px;
