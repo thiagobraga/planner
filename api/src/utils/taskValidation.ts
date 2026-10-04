@@ -6,7 +6,45 @@ export interface TaskInput {
   type?: string;
   description?: string | null;
   dueDate?: string | null;
+  dueTime?: unknown;
+  deadlineDate?: unknown;
+  deadlineTime?: unknown;
+  durationMinutes?: unknown;
+  dueTimezone?: unknown;
+  deadlineTimezone?: unknown;
   position?: number;
+}
+
+const CLOCK = /^([01]\d|2[0-3]):[0-5]\d$/;
+const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
+
+function validateTimeFields(input: TaskInput, errors: Array<{ field: string; message: string }>): void {
+  for (const field of ["dueTime", "deadlineTime"] as const) {
+    const value = input[field];
+    if (value !== undefined && value !== null && (typeof value !== "string" || !CLOCK.test(value))) {
+      errors.push({ field, message: "Time must be HH:MM (24h)" });
+    }
+  }
+
+  for (const field of ["dueTimezone", "deadlineTimezone"] as const) {
+    const value = input[field];
+    if (value !== undefined && value !== null && (typeof value !== "string" || value.length > 100)) {
+      errors.push({ field, message: "Time zone must be a string of 100 characters or fewer" });
+    }
+  }
+
+  const { deadlineDate, durationMinutes } = input;
+  if (deadlineDate !== undefined && deadlineDate !== null && (typeof deadlineDate !== "string" || !ISO_DATE.test(deadlineDate))) {
+    errors.push({ field: "deadlineDate", message: "Deadline date must be an ISO date (YYYY-MM-DD)" });
+  }
+
+  if (
+    durationMinutes !== undefined &&
+    durationMinutes !== null &&
+    (typeof durationMinutes !== "number" || !Number.isInteger(durationMinutes) || durationMinutes < 1 || durationMinutes > 1440)
+  ) {
+    errors.push({ field: "durationMinutes", message: "Duration must be an integer between 1 and 1440 minutes" });
+  }
 }
 
 export function validateCreateTask(input: TaskInput): void {
@@ -38,6 +76,8 @@ export function validateCreateTask(input: TaskInput): void {
       errors.push({ field: "dueDate", message: "Due date must be an ISO date (YYYY-MM-DD)" });
     }
   }
+
+  validateTimeFields(input, errors);
 
   if (errors.length > 0) {
     throw new AppError({
@@ -80,6 +120,8 @@ export function validateUpdateTask(input: TaskInput): void {
       errors.push({ field: "dueDate", message: "Due date must be an ISO date (YYYY-MM-DD)" });
     }
   }
+
+  validateTimeFields(input, errors);
 
   if (errors.length > 0) {
     throw new AppError({

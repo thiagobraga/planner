@@ -43,6 +43,10 @@ export function TaskDetail({ task, onClose, onUpdate, onDelete }: TaskDetailProp
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [dueDate, setDueDate] = useState('');
+  const [dueTime, setDueTime] = useState('');
+  const [deadlineDate, setDeadlineDate] = useState('');
+  const [deadlineTime, setDeadlineTime] = useState('');
+  const [duration, setDuration] = useState('');
   const [recurrenceRule, setRecurrenceRule] = useState<object | null>(null);
   const [priority, setPriority] = useState(4);
   const [newComment, setNewComment] = useState('');
@@ -57,6 +61,10 @@ export function TaskDetail({ task, onClose, onUpdate, onDelete }: TaskDetailProp
       setTitle(task.title);
       setDescription(task.description ?? '');
       setDueDate(task.dueDate ?? '');
+      setDueTime(task.dueTime ?? '');
+      setDeadlineDate(task.deadlineDate ?? '');
+      setDeadlineTime(task.deadlineTime ?? '');
+      setDuration(task.durationMinutes ? String(task.durationMinutes) : '');
       setRecurrenceRule(task.recurrenceRule ?? null);
       setPriority(task.priority);
       setConfirmDelete(false);
@@ -78,6 +86,21 @@ export function TaskDetail({ task, onClose, onUpdate, onDelete }: TaskDetailProp
   const handleDueDateBlur = () => {
     if (task && dueDate !== task.dueDate) {
       onUpdate?.(task.id, { dueDate: dueDate || undefined });
+    }
+  };
+
+  const commitField = <K extends 'dueTime' | 'deadlineDate' | 'deadlineTime'>(key: K, value: string) => {
+    if (task && value !== (task[key] ?? '')) {
+      onUpdate?.(task.id, { [key]: value || null });
+    }
+  };
+
+  const handleDurationBlur = () => {
+    if (!task) return;
+    const minutes = duration ? Number(duration) : null;
+    if (minutes !== null && (!Number.isInteger(minutes) || minutes < 1 || minutes > 1440)) return;
+    if (minutes !== (task.durationMinutes ?? null)) {
+      onUpdate?.(task.id, { durationMinutes: minutes });
     }
   };
 
@@ -198,6 +221,70 @@ export function TaskDetail({ task, onClose, onUpdate, onDelete }: TaskDetailProp
             aria-label={t('task.dueDateAria')}
             className="w-full text-[13px] leading-6 text-ink bg-transparent border border-dot rounded outline-none py-1 px-2"
           />
+        </div>
+
+        {/* Time and duration */}
+        <div className="mb-5 grid grid-cols-2 gap-3">
+          <div>
+            <label htmlFor="task-due-time" className="block text-[11px] tracking-[0.08em] uppercase text-ink-light mb-1.5">
+              {t('datePicker.time')}
+            </label>
+            <input
+              id="task-due-time"
+              type="time"
+              value={dueTime}
+              disabled={!dueDate}
+              onChange={(e) => setDueTime(e.target.value)}
+              onBlur={() => commitField('dueTime', dueTime)}
+              className="w-full text-[13px] leading-6 text-ink bg-transparent border border-dot rounded outline-none py-1 px-2 disabled:opacity-40"
+            />
+          </div>
+          <div>
+            <label htmlFor="task-duration" className="block text-[11px] tracking-[0.08em] uppercase text-ink-light mb-1.5">
+              {t('datePicker.duration')}
+            </label>
+            <input
+              id="task-duration"
+              type="number"
+              min={1}
+              max={1440}
+              value={duration}
+              onChange={(e) => setDuration(e.target.value)}
+              onBlur={handleDurationBlur}
+              className="w-full text-[13px] leading-6 text-ink bg-transparent border border-dot rounded outline-none py-1 px-2 disabled:opacity-40"
+            />
+          </div>
+        </div>
+
+        {/* Deadline */}
+        <div className="mb-5 grid grid-cols-2 gap-3">
+          <div>
+            <label htmlFor="task-deadline-date" className="block text-[11px] tracking-[0.08em] uppercase text-ink-light mb-1.5">
+              {t('datePicker.deadline')}
+            </label>
+            <input
+              id="task-deadline-date"
+              type="date"
+              value={deadlineDate}
+              onChange={(e) => setDeadlineDate(e.target.value)}
+              onBlur={() => commitField('deadlineDate', deadlineDate)}
+              className="w-full text-[13px] leading-6 text-ink bg-transparent border border-dot rounded outline-none py-1 px-2 disabled:opacity-40"
+            />
+          </div>
+          <div>
+            <label htmlFor="task-deadline-time" className="block text-[11px] tracking-[0.08em] uppercase text-ink-light mb-1.5">
+              {t('datePicker.deadlineTime')}
+            </label>
+            <input
+              id="task-deadline-time"
+              type="time"
+              value={deadlineTime}
+              disabled={!deadlineDate}
+              onChange={(e) => setDeadlineTime(e.target.value)}
+              onBlur={() => commitField('deadlineTime', deadlineTime)}
+              className="w-full text-[13px] leading-6 text-ink bg-transparent border border-dot rounded outline-none py-1 px-2 disabled:opacity-40"
+            />
+          </div>
         </div>
 
         {/* Recurrence */}

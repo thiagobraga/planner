@@ -266,3 +266,45 @@ describe('TaskItem - task/note conversion', () => {
     expect(screen.queryByText('@bug')).not.toBeInTheDocument();
   });
 });
+
+describe('TaskItem - time, deadline and duration', () => {
+  const timed: Task = { ...baseTask, title: 'Write report', dueDate: '2026-08-14' };
+
+  it('shows the due time beside the date', () => {
+    renderTaskItem({ ...timed, dueTime: '14:30' }, { isEditing: false });
+    expect(screen.getByText('14:30')).toBeInTheDocument();
+  });
+
+  it('shows the time window when start and end are known', () => {
+    renderTaskItem({ ...timed, dueTime: '14:30', endTime: '16:00', durationMinutes: 90 }, { isEditing: false });
+    expect(screen.getByText('14:30-16:00')).toBeInTheDocument();
+  });
+
+  it('keeps the time visible when the date chip is hidden', () => {
+    renderTaskItem({ ...timed, dueTime: '09:00' }, { isEditing: false, hideDueDate: true });
+    expect(screen.getByText('09:00')).toBeInTheDocument();
+  });
+
+  it('shows a duration chip when no start time is set', () => {
+    renderTaskItem({ ...timed, durationMinutes: 90 }, { isEditing: false });
+    expect(screen.getByText('1h 30m')).toBeInTheDocument();
+  });
+
+  it('shows a deadline chip with an alarm icon', () => {
+    const { container } = renderTaskItem(
+      { ...timed, deadlineDate: '2026-08-20', deadlineTime: '18:00' },
+      { isEditing: false },
+    );
+    const chip = container.querySelector('.task-item-deadline');
+    expect(chip).toBeInTheDocument();
+    expect(chip?.querySelector('svg')).toBeInTheDocument();
+    expect(chip).toHaveTextContent('18:00');
+  });
+
+  it('renders no time chips for a plain task', () => {
+    const { container } = renderTaskItem(timed, { isEditing: false });
+    expect(container.querySelector('.task-item-time')).toBeNull();
+    expect(container.querySelector('.task-item-deadline')).toBeNull();
+    expect(container.querySelector('.task-item-duration')).toBeNull();
+  });
+});

@@ -105,6 +105,45 @@ describe("validateUpdateTask", () => {
   });
 });
 
+describe("time fields", () => {
+  it("accepts HH:MM times, ISO deadline date and positive duration", () => {
+    const input = {
+      dueDate: "2026-08-14",
+      dueTime: "14:30",
+      deadlineDate: "2026-08-20",
+      deadlineTime: "09:00",
+      durationMinutes: 90,
+    };
+    expect(() => validateCreateTask({ title: "t", ...input })).not.toThrow();
+    expect(() => validateUpdateTask(input)).not.toThrow();
+  });
+
+  it("accepts null to clear each field", () => {
+    expect(() =>
+      validateUpdateTask({ dueTime: null, deadlineDate: null, deadlineTime: null, durationMinutes: null }),
+    ).not.toThrow();
+  });
+
+  it("rejects malformed dueTime", () => {
+    expectValidationError(() => validateUpdateTask({ dueTime: "25:00" }), "dueTime", "HH:MM");
+    expectValidationError(() => validateCreateTask({ title: "t", dueTime: "2pm" }), "dueTime", "HH:MM");
+  });
+
+  it("rejects malformed deadlineTime", () => {
+    expectValidationError(() => validateUpdateTask({ deadlineTime: "9:5" }), "deadlineTime", "HH:MM");
+  });
+
+  it("rejects malformed deadlineDate", () => {
+    expectValidationError(() => validateUpdateTask({ deadlineDate: "tomorrow" }), "deadlineDate", "ISO date");
+  });
+
+  it("rejects non-positive, fractional or over-a-day duration", () => {
+    for (const durationMinutes of [0, -5, 1.5, 1441, "30"]) {
+      expectValidationError(() => validateUpdateTask({ durationMinutes }), "durationMinutes", "between 1 and 1440");
+    }
+  });
+});
+
 describe("validateReorderPosition", () => {
   it("passes for valid position", () => {
     expect(() => validateReorderPosition(0)).not.toThrow();

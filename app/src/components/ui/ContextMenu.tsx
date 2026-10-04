@@ -10,6 +10,12 @@ export interface ContextMenuItem {
   destructive?: boolean;
   onClick?: () => void;
   submenu?: ContextMenuItem[];
+  /** Free-form content shown beside the item, like a submenu; `close` dismisses the whole menu. */
+  panel?: (close: () => void) => React.ReactNode;
+}
+
+function opensChild(item: ContextMenuItem): boolean {
+  return Boolean(item.panel || (item.submenu && item.submenu.length > 0));
 }
 
 export interface ContextMenuProps {
@@ -164,7 +170,7 @@ function MenuPanel({
   // Track the submenu that is currently open (if any)
   const openSubmenuIndex = activePath[level];
   const activeItem = items[openSubmenuIndex];
-  const hasSubmenu = activeItem?.type === 'item' && activeItem.submenu && activeItem.submenu.length > 0;
+  const hasSubmenu = activeItem?.type === 'item' && opensChild(activeItem);
 
   // Keep the highlighted index synced with the open submenu
   useEffect(() => {
@@ -197,7 +203,7 @@ function MenuPanel({
         e.preventDefault();
         if (highlightedIndex >= 0) {
           const item = items[highlightedIndex];
-          if (item.type === 'item' && item.submenu && item.submenu.length > 0 && !item.disabled) {
+          if (item.type === 'item' && opensChild(item) && !item.disabled) {
             setActivePath([...activePath, highlightedIndex]);
           }
         }
@@ -213,7 +219,7 @@ function MenuPanel({
         if (highlightedIndex >= 0) {
           const item = items[highlightedIndex];
           if (item.type === 'item' && !item.disabled) {
-            if (item.submenu) {
+            if (opensChild(item)) {
               setActivePath([...activePath, highlightedIndex]);
             } else {
               item.onClick?.();
@@ -291,7 +297,7 @@ function MenuPanel({
                 e.stopPropagation();
                 if (item.disabled) return;
 
-                if (item.submenu) {
+                if (opensChild(item)) {
                   setActivePath([...activePath.slice(0, level), index]);
                 } else {
                   item.onClick?.();
@@ -302,7 +308,7 @@ function MenuPanel({
                 if (!item.disabled) {
                   setHighlightedIndex(index);
                   // When hovering an item with a submenu, open it automatically (optional UX choice)
-                  if (item.submenu) {
+                  if (opensChild(item)) {
                      setActivePath([...activePath.slice(0, level), index]);
                   } else {
                      // If hovering a normal item, close any open sibling submenus
@@ -315,7 +321,7 @@ function MenuPanel({
                 {item.icon && <span className="ui-context-menu-item-icon shrink-0">{item.icon}</span>}
                 <span className="ui-context-menu-item-label truncate">{item.label}</span>
               </div>
-              {item.submenu && (
+              {opensChild(item) && (
                 <ChevronRight size={14} className="ui-context-menu-item-chevron text-ink-light ml-2" />
               )}
             </div>
@@ -379,6 +385,10 @@ function SubMenuWrapper({
     }
   }, [itemIndex, parentRef]);
 
+  if (parentItem.panel) {
+    return <InlinePanel position={position}>{parentItem.panel(onClose)}</InlinePanel>;
+  }
+
   if (!parentItem.submenu) return null;
 
   return (
@@ -390,5 +400,31 @@ function SubMenuWrapper({
       setActivePath={setActivePath}
       onClose={onClose}
     />
+  );
+}
+
+function InlinePanel({ position, children }: { position: { x: number; y: number }; children: React.ReactNode }) {
+  const panelRef = useRef<HTMLDivElement>(null);
+  const [coords, setCoords] = useState({ top: position.y, left: position.x });
+
+  useLayoutEffect(() => {
+    if (!panelRef.current) return;
+    const rect = panelRef.current.getBoundingClientRect();
+    const vw = document.documentElement.clientWidth;
+    const vh = document.documentElement.clientHeight;
+    const padding = 8;
+    const left = position.x + rect.width > vw - padding ? vw - rect.width - padding : position.x;
+    const top = position.y + rect.height > vh - padding ? vh - rect.height - padding : position.y;
+    setCoords({ top: Math.max(padding, top), left: Math.max(padding, left) });
+  }, [position]);
+
+  return (
+    <div
+      ref={panelRef}
+      className="ui-context-menu-inline-panel fixed z-50 rounded-md border border-border bg-(--planner-overlay-bg,var(--color-cream)) shadow-medium pointer-events-auto"
+      style={{ top: coords.top, left: coords.left }}
+    >
+      {children}
+    </div>
   );
 }

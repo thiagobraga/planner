@@ -3,6 +3,7 @@ import { getSocketId } from '../utils/socket';
 import { notifyUnauthorized } from '../utils/authEvents';
 import type { BoardViewMode } from '../types/board';
 import type { BackgroundPreference } from '../types/theme';
+import type { TaskSchedule } from '../types/task';
 
 const BASE = '/api/v1';
 
@@ -260,6 +261,11 @@ export interface ApiTask {
   sectionId?: string;
   parentTaskId?: string;
   dueDate?: string;
+  dueTime?: string | null;
+  endTime?: string | null;
+  deadlineDate?: string | null;
+  deadlineTime?: string | null;
+  durationMinutes?: number | null;
   isCompleted: boolean;
   orderValue: number;
   depth: number;
@@ -368,9 +374,12 @@ export async function apiCreateTask(input: {
 
 export async function apiUpdateTask(
   id: string,
-  updates: Partial<Pick<ApiTask, 'title' | 'priority' | 'dueDate' | 'depth' | 'type' | 'collectionId' | 'sectionId'>> & {
-    parentTaskId?: string | null;
-  },
+  updates: Partial<Pick<ApiTask, 'title' | 'priority' | 'depth' | 'type' | 'collectionId' | 'sectionId'>> &
+    Partial<TaskSchedule> & {
+      parentTaskId?: string | null;
+      dueTimezone?: string | null;
+      deadlineTimezone?: string | null;
+    },
 ): Promise<ApiTask> {
   return request<ApiTask>(`/tasks/${id}`, {
     method: 'PATCH',

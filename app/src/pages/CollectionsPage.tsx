@@ -48,6 +48,9 @@ import { SectionDeleteModal } from '../components/SectionDeleteModal';
 import { flattenCollections, getHierarchicalColor } from '../components/CollectionTreeNav';
 import { Folder, ArrowUp, ArrowDown, Trash2, Pencil, ChevronRight } from 'lucide-react';
 import { useI18n } from '../i18n/I18nContext';
+import { scheduleFieldsFromApi, withTimeZones } from '../utils/taskTime';
+import { buildSetDateMenuItem } from '../components/taskDateMenuItem';
+import type { TaskSchedule } from '../types/task';
 
 function apiToTask(t: ApiTask): Task {
   return {
@@ -60,6 +63,7 @@ function apiToTask(t: ApiTask): Task {
     statusId: t.statusId,
     parentTaskId: t.parentTaskId ?? undefined,
     dueDate: t.dueDate ?? undefined,
+    ...scheduleFieldsFromApi(t),
     isCompleted: t.isCompleted,
     orderValue: t.orderValue,
     labels: t.labels,
@@ -366,6 +370,12 @@ export function CollectionsPage() {
       setTasks((prev) => prev.filter((t) => t.id !== taskId));
     }
   }, []);
+
+  const handleSetSchedule = useCallback((id: string, schedule: TaskSchedule) => {
+    apiUpdateTask(id, withTimeZones(schedule))
+      .then((updated) => setTasks((prev) => prev.map((task) => (task.id === id ? { ...task, ...apiToTask(updated) } : task))))
+      .catch(() => invalidate());
+  }, [setTasks, invalidate]);
 
   const handleDelete = useCallback((taskId: string) => {
     setTasks((prev) => {
@@ -868,6 +878,7 @@ export function CollectionsPage() {
           items={[
             // { type: 'item', label: 'Date', icon: <Calendar size={14} />, disabled: true },
             // { type: 'item', label: 'Priority', icon: <Tag size={14} />, disabled: true },
+            buildSetDateMenuItem(t, tasks.find((task) => task.id === contextMenu.taskId), handleSetSchedule),
             { type: 'item', label: t('contextMenu.collection'), icon: <Folder size={14} />, submenu: projectSubmenuItems },
             // { type: 'item', label: 'Tags', icon: <Hash size={14} />, disabled: true },
             { type: 'separator' },
