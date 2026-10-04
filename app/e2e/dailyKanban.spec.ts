@@ -134,3 +134,16 @@ test('Daily Kanban lists keeps journal rows and the destination date', async ({ 
     for (const id of createdIds) await api.delete(`/tasks/${id}`);
   }
 });
+
+test.describe('touch swipe', () => {
+  test.use({ hasTouch: true, isMobile: true, viewport: { width: 390, height: 844 } });
+
+  test('Daily board snaps one day column flush left per swipe', async ({ page }) => {
+    await page.goto('/daily');
+    await page.getByRole('button', { name: 'Kanban cards', exact: true }).click();
+    const scroller = page.getByTestId('daily-week-board');
+    await expect(scroller).toBeVisible();
+    await expect(scroller).toHaveCSS('scroll-snap-type', 'x mandatory');
+    await expect(page.locator('.daily-week-board .board-column').first()).toHaveCSS('scroll-snap-stop', 'always');
+  });
+});
