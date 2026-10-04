@@ -22,6 +22,13 @@ export interface DailyBoardColumnProps {
   };
 }
 
+export interface WeekSelectorProps {
+  weekAnchor: Date;
+  today: Date;
+  weekStart: WeekStart;
+  onWeekChange: (date: Date) => void;
+}
+
 export interface DailyWeekBoardProps {
   tasks: Task[];
   weekAnchor: Date;

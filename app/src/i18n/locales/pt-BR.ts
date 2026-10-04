@@ -199,6 +199,7 @@ export const portugueseBrazilCatalog = {
   'page.nextMonth': 'Próximo mês',
   'page.previousWeek': 'Semana anterior',
   'page.nextWeek': 'Próxima semana',
+  'page.selectWeek': 'Selecionar semana',
   'contextMenu.collection': 'Coleção',
   'contextMenu.noCollection': 'Sem coleção',
   'contextMenu.addAbove': 'Adicionar acima',
