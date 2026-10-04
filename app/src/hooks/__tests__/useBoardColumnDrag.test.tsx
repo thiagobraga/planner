@@ -142,13 +142,13 @@ describe('useBoardColumnDrag', () => {
     ]);
   });
 
-  it('reorders section columns while leaving the no-section bucket pinned', async () => {
+  it('reorders section columns while keeping the no-section bucket pinned last', async () => {
     const harness = renderHook(
       [
-        column('section:none', null, 'No section'),
         column('section:s1', 's1', 'Alpha'),
         column('section:s2', 's2', 'Beta'),
         column('section:s3', 's3', 'Gamma'),
+        column('section:none', null, 'No section'),
       ],
       'section',
     );
@@ -157,10 +157,10 @@ describe('useBoardColumnDrag', () => {
 
     expect(mockUpdateSection).toHaveBeenCalledWith('s1', { position: 2 });
     expect(harness.columns.map((entry) => entry.id)).toEqual([
-      'section:none',
       'section:s2',
       'section:s3',
       'section:s1',
+      'section:none',
     ]);
   });
 
