@@ -197,6 +197,7 @@ export const englishCatalog = {
   'page.nextMonth': 'Next month',
   'page.previousWeek': 'Previous week',
   'page.nextWeek': 'Next week',
+  'page.selectWeek': 'Select week',
   'contextMenu.collection': 'Collection',
   'contextMenu.noCollection': 'No collection',
   'contextMenu.addAbove': 'Add above',

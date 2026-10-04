@@ -3,8 +3,7 @@ import type { ApiTask } from '../../api/client';
 import type { Task } from '../TaskItem';
 import type { DailyWeekBoardProps } from '../../types/dailyBoard';
 import { buildDayColumns, slotTaskIntoColumn } from '../../utils/dayColumns';
-import { shiftWeek, startOfWeek, formatWeekRangeLabel } from '../../utils/date';
-import { StripNavigator } from '../ui/StripNavigator';
+import { WeekSelector } from './WeekSelector';
 import { DailyBoardColumn } from './DailyBoardColumn';
 import { useI18n } from '../../i18n/I18nContext';
 
@@ -60,13 +59,6 @@ export function DailyWeekBoard({ tasks, weekAnchor, today, todayKey, weekStart, 
   }
   const columns = buildDayColumns(weekAnchor, today, weekStart);
 
-  const weekRangeLabel = (() => {
-    const start = startOfWeek(weekAnchor, weekStart);
-    const end = new Date(start);
-    end.setDate(start.getDate() + 6);
-    return formatWeekRangeLabel(start, end, locale);
-  })();
-
   // Narrow screens show one or two columns at a time, so scroll today's column
   // to the left edge instead of leaving it off screen. Weeks without today keep
   // the default start.
@@ -87,18 +79,8 @@ export function DailyWeekBoard({ tasks, weekAnchor, today, todayKey, weekStart, 
 
   return (
     <div className="daily-week-board">
-      <div className="daily-week-board-nav flex items-center gap-2">
-        <StripNavigator
-          direction="previous"
-          aria-label={t('page.previousWeek')}
-          onClick={() => onWeekChange(shiftWeek(weekAnchor, -1))}
-        />
-        <span className="daily-week-board-label text-sm font-medium text-ink">{weekRangeLabel}</span>
-        <StripNavigator
-          direction="next"
-          aria-label={t('page.nextWeek')}
-          onClick={() => onWeekChange(shiftWeek(weekAnchor, 1))}
-        />
+      <div className="daily-week-board-nav">
+        <WeekSelector weekAnchor={weekAnchor} today={today} weekStart={weekStart} onWeekChange={onWeekChange} />
       </div>
 
       <div className="board-scroll" data-testid="daily-week-board" ref={scrollRef}>
