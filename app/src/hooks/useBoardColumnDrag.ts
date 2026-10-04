@@ -176,11 +176,7 @@ export function useBoardColumnDrag({
       const reordered = arrayMove(orderedColumns, activeIndex, overIndex);
       setColumns(() => {
         const pinned = columns.filter((column) => !isMoveableColumn(column));
-        if (pinned.length === 0) return reordered;
-        return [
-          ...pinned,
-          ...reordered,
-        ];
+        return [...reordered, ...pinned];
       });
 
       const position = overIndex;
