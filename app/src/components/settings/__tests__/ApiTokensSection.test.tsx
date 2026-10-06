@@ -28,7 +28,7 @@ function entry(id: string, eventType: string, title: string, label: string) {
     eventType,
     createdAt: '2026-10-05T14:30:00.000Z',
     title,
-    actor: { type: 'token' as const, tokenId: 'tok-1', label },
+    actor: { type: 'token' as const, tokenId: 'tok-1', grantId: null, label },
   };
 }
 

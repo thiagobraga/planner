@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router';
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useSearchParams } from 'react-router';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from './api/queryClient';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -21,6 +21,20 @@ import { AdminUsersPage } from './pages/admin/AdminUsersPage';
 import { AdminDashboardPage } from './pages/admin/AdminDashboardPage';
 import { I18nProvider } from './i18n/I18nContext';
 import { getAppTitle } from './utils/environment';
+import { safeNextPath } from './utils/safeNext';
+import { OAuthConsentPage } from './pages/OAuthConsentPage';
+
+/** A signed-in visit to /login goes where the sign-in was meant to lead. */
+function AfterLogin() {
+  const [searchParams] = useSearchParams();
+  return <Navigate to={safeNextPath(searchParams.get('next')) ?? '/daily'} replace />;
+}
+
+/** Sends a signed-out visitor to log in, then straight back here. */
+function LoginFirst() {
+  const location = useLocation();
+  return <Navigate to={`/login?next=${encodeURIComponent(location.pathname + location.search)}`} replace />;
+}
 
 function AppRoutes() {
   const { isAuthenticated, user } = useAuth();
@@ -29,7 +43,8 @@ function AppRoutes() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/login" element={isAuthenticated ? <Navigate to="/daily" replace /> : <LoginPage />} />
+        <Route path="/login" element={isAuthenticated ? <AfterLogin /> : <LoginPage />} />
+        <Route path="/oauth/consent" element={isAuthenticated ? <OAuthConsentPage /> : <LoginFirst />} />
         <Route path="/register" element={isAuthenticated ? <Navigate to="/daily" replace /> : <RegisterPage />} />
         <Route path="/forgot-password" element={isAuthenticated ? <Navigate to="/daily" replace /> : <ForgotPasswordPage />} />
         <Route path="/reset-password" element={isAuthenticated ? <Navigate to="/daily" replace /> : <ResetPasswordPage />} />

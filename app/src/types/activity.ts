@@ -9,7 +9,7 @@ export interface ActivityEntry {
   eventType: string;
   createdAt: string;
   title: string | null;
-  actor: { type: ActorType; tokenId: string | null; label: string | null };
+  actor: { type: ActorType; tokenId: string | null; grantId: string | null; label: string | null };
 }
 
 export interface ActivityPage {
