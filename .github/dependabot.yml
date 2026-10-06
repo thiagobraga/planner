@@ -10,6 +10,9 @@ updates:
     open-pull-requests-limit: 10
     labels:
       - 'api'
+    ignore:
+      - dependency-name: 'typescript'
+        update-types: ['version-update:semver-major']
     groups:
       dependencies:
         patterns:
@@ -25,6 +28,9 @@ updates:
     open-pull-requests-limit: 10
     labels:
       - 'app'
+    ignore:
+      - dependency-name: 'typescript'
+        update-types: ['version-update:semver-major']
     groups:
       dependencies:
         patterns:
@@ -38,8 +44,6 @@ updates:
       time: '06:00'
       timezone: 'America/Sao_Paulo'
     open-pull-requests-limit: 10
-    labels:
-      - 'root'
     groups:
       dependencies:
         patterns:
