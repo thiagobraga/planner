@@ -41,7 +41,10 @@ test.describe('MCP server', () => {
   test('a task created through MCP appears in an open Inbox without a reload', async ({ page }) => {
     const rawToken = await mintWriteToken(page);
 
-    await page.goto('/inbox');
+    // Client-side navigation keeps the socket connected; a reload would race
+    // the agent's write and could pass by fetching instead of syncing.
+    await page.getByRole('link', { name: 'Inbox', exact: true }).first().click();
+    await expect(page).toHaveURL(/\/inbox/);
     await expect(page.getByText('Filed via MCP')).toHaveCount(0);
 
     const agent = await request.newContext({
