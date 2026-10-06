@@ -30,6 +30,21 @@ updates:
         patterns:
           - '*'
 
+  - package-ecosystem: 'npm'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+      time: '06:00'
+      timezone: 'America/Sao_Paulo'
+    open-pull-requests-limit: 10
+    labels:
+      - 'root'
+    groups:
+      dependencies:
+        patterns:
+          - '*'
+
   - package-ecosystem: 'docker'
     directory: '/.docker/api'
     schedule:
