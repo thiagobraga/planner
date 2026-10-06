@@ -15,6 +15,7 @@ interface PreferencesRow {
   small_caps: boolean;
   hide_completed_tasks: boolean;
   show_notes: boolean;
+  agent_change_notices: boolean;
   locale: string;
   date_format: string;
   collapsed_collection_ids: string[];
@@ -38,6 +39,7 @@ function formatPreferences(row: PreferencesRow) {
     smallCaps: row.small_caps,
     hideCompletedTasks: row.hide_completed_tasks,
     showNotes: row.show_notes,
+    agentChangeNotices: row.agent_change_notices,
     locale: row.locale,
     dateFormat: row.date_format ?? 'MMM DD ddd',
     collapsedCollectionIds: row.collapsed_collection_ids,
@@ -80,6 +82,7 @@ export interface UpdatePreferencesInput {
   smallCaps?: boolean;
   hideCompletedTasks?: boolean;
   showNotes?: boolean;
+  agentChangeNotices?: boolean;
   locale?: string;
   dateFormat?: string;
   collapsedCollectionIds?: string[];
@@ -129,6 +132,10 @@ export function validatePreferences(input: UpdatePreferencesInput): UpdatePrefer
 
   if (input.showNotes !== undefined && typeof input.showNotes !== "boolean") {
     errors.push({ field: "showNotes", message: "showNotes must be a boolean" });
+  }
+
+  if (input.agentChangeNotices !== undefined && typeof input.agentChangeNotices !== "boolean") {
+    errors.push({ field: "agentChangeNotices", message: "agentChangeNotices must be a boolean" });
   }
 
   if (input.locale !== undefined && !VALID_LOCALES.includes(input.locale as (typeof VALID_LOCALES)[number])) {
@@ -250,6 +257,10 @@ export async function updatePreferences(userId: string, input: UpdatePreferences
   if (input.showNotes !== undefined) {
     setClauses.push(`show_notes = $${paramIndex++}`);
     values.push(input.showNotes);
+  }
+  if (input.agentChangeNotices !== undefined) {
+    setClauses.push(`agent_change_notices = $${paramIndex++}`);
+    values.push(input.agentChangeNotices);
   }
   if (input.locale !== undefined) {
     setClauses.push(`locale = $${paramIndex++}`);
