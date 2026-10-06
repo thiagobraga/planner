@@ -50,7 +50,7 @@ export function OAuthConsentPage() {
 
   return (
     <AuthShell title={t('oauth.title', { app: pending.clientName })} subtitle={t('oauth.subtitle')}>
-      <section aria-label={t('oauth.permissions')} className="space-y-6">
+      <section aria-label={t('oauth.permissions')} className="flex flex-col gap-6">
         <p className="m-0 text-center text-[13px] leading-6 text-ink-light">
           {t('oauth.returnsTo', { host: pending.redirectHost })}
         </p>
