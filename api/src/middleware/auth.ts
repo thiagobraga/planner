@@ -21,7 +21,7 @@ function unauthorized(res: Response, message: string): void {
   res.status(401).json({ error: { code: "UNAUTHORIZED", message } });
 }
 
-async function authenticateToken(
+async function acceptApiToken(
   rawToken: string,
   req: Request,
   res: Response,
@@ -58,7 +58,7 @@ export async function authMiddleware(
   if (!rawToken) {
     const bearer = parseBearer(req);
     if (bearer) {
-      await authenticateToken(bearer, req, res, next);
+      await acceptApiToken(bearer, req, res, next);
       return;
     }
     unauthorized(res, "Missing or invalid session");

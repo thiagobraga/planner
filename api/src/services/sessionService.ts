@@ -26,6 +26,11 @@ export function generateRawToken(): string {
   return crypto.randomBytes(RAW_TOKEN_BYTES).toString("base64url");
 }
 
+/**
+ * SHA-256, not a password KDF, on purpose: session and API tokens are 256-bit
+ * random secrets, so guessing is already infeasible and a slow hash would only
+ * tax every authenticated request.
+ */
 export function hashToken(raw: string): string {
   return crypto.createHash("sha256").update(raw).digest("hex");
 }
