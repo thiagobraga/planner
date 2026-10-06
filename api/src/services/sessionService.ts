@@ -32,7 +32,6 @@ export function generateRawToken(): string {
  * tax every authenticated request.
  */
 export function hashToken(raw: string): string {
-  // codeql[js/insufficient-password-hash] Input is a random token, never a user password (see above).
   return crypto.createHash("sha256").update(raw).digest("hex");
 }
 

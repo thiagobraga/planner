@@ -6,9 +6,9 @@ const mockBuildCookieName = vi.hoisted(() => vi.fn());
 const mockBuildCookieOptions = vi.hoisted(() => vi.fn());
 const mockNeedsTouch = vi.hoisted(() => vi.fn());
 const mockTouchSession = vi.hoisted(() => vi.fn());
-const mockValidateApiToken = vi.hoisted(() => vi.fn());
+const mockValidatePersonalToken = vi.hoisted(() => vi.fn());
 const mockTokenNeedsTouch = vi.hoisted(() => vi.fn());
-const mockTouchApiToken = vi.hoisted(() => vi.fn());
+const mockTouchPersonalToken = vi.hoisted(() => vi.fn());
 
 vi.mock("../../services/sessionService.js", () => ({
   validateSession: mockValidateSession,
@@ -19,9 +19,9 @@ vi.mock("../../services/sessionService.js", () => ({
 }));
 
 vi.mock("../../services/apiTokenService.js", () => ({
-  validateApiToken: mockValidateApiToken,
+  validatePersonalToken: mockValidatePersonalToken,
   tokenNeedsTouch: mockTokenNeedsTouch,
-  touchApiToken: mockTouchApiToken,
+  touchPersonalToken: mockTouchPersonalToken,
 }));
 
 import { authMiddleware } from "../auth.js";
@@ -59,9 +59,9 @@ describe("authMiddleware", () => {
     mockValidateSession.mockReset();
     mockNeedsTouch.mockReset();
     mockTouchSession.mockReset();
-    mockValidateApiToken.mockReset();
+    mockValidatePersonalToken.mockReset();
     mockTokenNeedsTouch.mockReset().mockReturnValue(false);
-    mockTouchApiToken.mockReset().mockResolvedValue(undefined);
+    mockTouchPersonalToken.mockReset().mockResolvedValue(undefined);
   });
 
   it("sets req.userId and req.sessionId and calls next for valid session", async () => {
@@ -167,11 +167,11 @@ describe("authMiddleware", () => {
 
     it("authenticates a valid bearer token without a session", async () => {
       req.headers = { authorization: "Bearer plnr_valid" };
-      mockValidateApiToken.mockResolvedValue(TOKEN_CTX);
+      mockValidatePersonalToken.mockResolvedValue(TOKEN_CTX);
 
       await authMiddleware(req as Request, res as Response, next);
 
-      expect(mockValidateApiToken).toHaveBeenCalledWith("plnr_valid");
+      expect(mockValidatePersonalToken).toHaveBeenCalledWith("plnr_valid");
       expect(req.userId).toBe("u2");
       expect(req.authMethod).toBe("token");
       expect(req.tokenId).toBe("t1");
@@ -182,7 +182,7 @@ describe("authMiddleware", () => {
 
     it("accepts the scheme case-insensitively", async () => {
       req.headers = { authorization: "bearer plnr_valid" };
-      mockValidateApiToken.mockResolvedValue(TOKEN_CTX);
+      mockValidatePersonalToken.mockResolvedValue(TOKEN_CTX);
 
       await authMiddleware(req as Request, res as Response, next);
 
@@ -191,7 +191,7 @@ describe("authMiddleware", () => {
 
     it("returns 401 with a WWW-Authenticate challenge for an invalid token", async () => {
       req.headers = { authorization: "Bearer plnr_revoked" };
-      mockValidateApiToken.mockResolvedValue(null);
+      mockValidatePersonalToken.mockResolvedValue(null);
 
       await authMiddleware(req as Request, res as Response, next);
 
@@ -205,7 +205,7 @@ describe("authMiddleware", () => {
 
       await authMiddleware(req as Request, res as Response, next);
 
-      expect(mockValidateApiToken).not.toHaveBeenCalled();
+      expect(mockValidatePersonalToken).not.toHaveBeenCalled();
       expect(status).toHaveBeenCalledWith(401);
     });
 
@@ -217,23 +217,23 @@ describe("authMiddleware", () => {
 
       await authMiddleware(req as Request, res as Response, next);
 
-      expect(mockValidateApiToken).not.toHaveBeenCalled();
+      expect(mockValidatePersonalToken).not.toHaveBeenCalled();
       expect(req.userId).toBe("u1");
       expect(req.authMethod).toBe("session");
     });
 
     it("records last use only when the token is due for a touch", async () => {
       req.headers = { authorization: "Bearer plnr_valid" };
-      mockValidateApiToken.mockResolvedValue(TOKEN_CTX);
+      mockValidatePersonalToken.mockResolvedValue(TOKEN_CTX);
       mockTokenNeedsTouch.mockReturnValue(true);
 
       await authMiddleware(req as Request, res as Response, next);
-      expect(mockTouchApiToken).toHaveBeenCalledWith("t1");
+      expect(mockTouchPersonalToken).toHaveBeenCalledWith("t1");
 
-      mockTouchApiToken.mockClear();
+      mockTouchPersonalToken.mockClear();
       mockTokenNeedsTouch.mockReturnValue(false);
       await authMiddleware(req as Request, res as Response, next);
-      expect(mockTouchApiToken).not.toHaveBeenCalled();
+      expect(mockTouchPersonalToken).not.toHaveBeenCalled();
     });
   });
 });
