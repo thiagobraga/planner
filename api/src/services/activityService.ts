@@ -127,7 +127,10 @@ export async function listActivity(userId: string, options: ListActivityOptions 
   const result = await pool.query(
     `SELECT a.*, COALESCE(a.after_data->>'title', a.before_data->>'title', t.title) AS title
      FROM activity_events a
+     -- Live title only for tasks the caller can still reach: a task moved out of
+     -- a shared collection must not leak its later titles through old events.
      LEFT JOIN tasks t ON a.entity_type = 'task' AND t.id = a.entity_id
+       AND (t.user_id = $1 OR t.collection_id IN (SELECT collection_id FROM collaborators WHERE user_id = $1))
      WHERE ${conditions.join(" AND ")}
      ORDER BY a.created_at DESC
      LIMIT $${paramIndex}`,

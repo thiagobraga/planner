@@ -115,6 +115,23 @@ describe("activity attribution through the real app (real PostgreSQL + Redis)", 
     expect(res.body.events[0].title).toBe("Renamed");
   });
 
+  it("does not reveal the live title of a task the caller can no longer see", async () => {
+    const agent = await token("Agent");
+    const taskId = await createTaskWith(agent.auth, "Original");
+    await pool.query("UPDATE activity_events SET after_data = NULL WHERE entity_id = $1", [taskId]);
+    // The task now belongs to someone else (e.g. moved out of a shared collection).
+    const otherInbox = await pool.query("SELECT id FROM collections WHERE user_id = $1", [otherUserId]);
+    await pool.query("UPDATE tasks SET user_id = $1, collection_id = $2, title = 'Secret' WHERE id = $3", [
+      otherUserId,
+      otherInbox.rows[0].id,
+      taskId,
+    ]);
+
+    const res = await request(app).get(`${API}/activity?token_id=${agent.id}`).set("Cookie", sessionCookie);
+
+    expect(res.body.events[0].title).toBeNull();
+  });
+
   it("refuses another user's token id and malformed ids", async () => {
     const foreign = await token("Theirs", otherUserId);
 
