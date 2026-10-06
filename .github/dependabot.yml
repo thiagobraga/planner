@@ -10,6 +10,10 @@ updates:
     open-pull-requests-limit: 10
     labels:
       - 'api'
+    groups:
+      dependencies:
+        patterns:
+          - '*'
 
   - package-ecosystem: 'npm'
     directory: '/app'
@@ -21,6 +25,10 @@ updates:
     open-pull-requests-limit: 10
     labels:
       - 'app'
+    groups:
+      dependencies:
+        patterns:
+          - '*'
 
   - package-ecosystem: 'docker'
     directory: '/.docker/api'
@@ -31,6 +39,10 @@ updates:
       timezone: 'America/Sao_Paulo'
     labels:
       - 'docker'
+    groups:
+      docker:
+        patterns:
+          - '*'
 
   - package-ecosystem: 'docker'
     directory: '/.docker/app'
@@ -41,6 +53,10 @@ updates:
       timezone: 'America/Sao_Paulo'
     labels:
       - 'docker'
+    groups:
+      docker:
+        patterns:
+          - '*'
 
   - package-ecosystem: 'github-actions'
     directory: '/'
@@ -49,3 +65,7 @@ updates:
       day: 'monday'
       time: '06:00'
       timezone: 'America/Sao_Paulo'
+    groups:
+      actions:
+        patterns:
+          - '*'
