@@ -1,12 +1,7 @@
 import { NavLink } from 'react-router';
-import { FolderOpen, MoreVertical } from 'lucide-react';
+import { MoreVertical } from 'lucide-react';
 import { NAV_ITEMS } from './Sidebar';
 import { useI18n } from '../i18n/I18nContext';
-
-const BOTTOM_BAR_ITEMS = [
-  ...NAV_ITEMS.filter((item) => item.to !== '/monthly'),
-  { to: '/collections', labelKey: 'nav.collections' as const, Icon: FolderOpen },
-];
 
 interface BottomBarProps {
   isMenuOpen: boolean;
@@ -19,7 +14,7 @@ export function BottomBar({ isMenuOpen, onMenuToggle, onNavigate }: BottomBarPro
 
   return (
     <nav aria-label={t('nav.main')} className="bottom-bar">
-      {BOTTOM_BAR_ITEMS.map(({ to, labelKey, Icon }) => (
+      {NAV_ITEMS.map(({ to, labelKey, Icon }) => (
         <NavLink
           key={to}
           to={to}
