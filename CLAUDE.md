@@ -6,7 +6,7 @@ This file provides guidance to AI coding agents (Claude Code, Gemini CLI, GitHub
 
 ## Project
 
-Planner is a task manager with a paper-journal aesthetic (warm cream, Lora serif, dotted grid). Two independent npm packages: `api/` (Express + PostgreSQL + Redis) and `app/` (React + Vite). Real-time sync via Socket.IO backed by Redis Pub/Sub. Auth uses JWT (7-day expiry) with DB-side session revocation.
+Planner is a task manager with a paper-journal aesthetic (warm cream, Lora serif, dotted grid). Two independent npm packages: `api/` (Express + PostgreSQL + Redis) and `app/` (React + Vite). Real-time sync via Socket.IO backed by Redis Pub/Sub. Browser auth uses opaque server-side sessions (HttpOnly cookie + CSRF double-submit); scripts and AI agents use personal API tokens (`Authorization: Bearer plnr_...`).
 
 ## Tool Name Equivalents
 
@@ -81,11 +81,15 @@ Add to `/etc/hosts`: `planner.local`, `api.planner.local`, `db.planner.local`, `
 
 ### Backend (`api/src/`)
 
-- `index.ts` - Express + Socket.IO on same HTTP server; Socket.IO validates JWT on connect
-- `middleware/auth.ts` - validates Bearer JWT **and** checks DB session (sessions are revocable)
+- `index.ts` - Express + Socket.IO on same HTTP server; Socket.IO validates the session cookie on connect (tokens cannot open sockets)
+- `middleware/auth.ts` - session cookie first, else `Bearer plnr_...` API token; both are DB-checked and revocable. Sets `req.authMethod`
+- `middleware/csrf.ts` - double-submit CSRF for cookie sessions; skipped for token requests
+- `middleware/requireScope.ts` - `enforceTokenScope` (read-only tokens cannot write), `requireSession` (keeps tokens off `/api-tokens` and `/admin`)
 - `middleware/errorHandler.ts` - `AppError` vs generic; returns `{ error: { code, message, details? } }`
 - `services/syncService.ts` - `publishEvent(event)` is the single broadcast entry point
-- `services/authService.ts` - register/login (Redis rate-limit: 10 attempts/15 min), 7-day JWT
+- `services/authService.ts` - register/login (Redis rate-limit: 10 attempts/15 min)
+- `services/sessionService.ts` - opaque session tokens (SHA-256 hashed), idle + absolute expiry
+- `services/apiTokenService.ts` - personal API tokens: create/list/validate/revoke, max 20 active per user
 - `services/emailService.ts` - Resend wrapper; logs reset links to console when `RESEND_API_KEY` is unset
 - `services/taskService.ts` - CRUD, completion, recurrence
 - `services/viewService.ts` - today/upcoming/inbox aggregations
@@ -105,12 +109,12 @@ Add to `/etc/hosts`: `planner.local`, `api.planner.local`, `db.planner.local`, `
 - `engines/recurrenceEngine.ts` - daily/weekly/monthly/yearly recurrence
 - `routes/index.ts` - Aggregates all routes under `/api/v1/`
 
-All routes under `/api/v1/`. Route files: `auth`, `tasks`, `collections`, `labels`, `sections`, `views`, `filters`, `search`, `reminders`, `comments`, `preferences`, `activity`, `collaboration`, `habits`, `habitGroups`.
+All routes under `/api/v1/`. Route files: `auth`, `apiTokens`, `tasks`, `collections`, `labels`, `sections`, `views`, `filters`, `search`, `reminders`, `comments`, `preferences`, `activity`, `collaboration`, `habits`, `habitGroups`.
 
 ### Frontend (`app/src/`)
 
 - `contexts/AuthContext.tsx` - auth source of truth; manages socket connect/disconnect lifecycle
-- `utils/socket.ts` - Socket.IO singleton; token passed via `socket.auth`; stored as `planner_token` in localStorage
+- `utils/socket.ts` - Socket.IO singleton; authenticates with the session cookie (`withCredentials`)
 - `hooks/useSync.ts` - subscribes to `"sync"` events; handler receives `SyncEvent`
 - `hooks/shortcuts.ts` - pure chord-aware keyboard matcher; `DEFAULT_BINDINGS` for `q /  ? Enter Delete Escape g+i g+t g+u`
 - `hooks/usePreferences.ts` - User preferences hook
@@ -142,12 +146,12 @@ Logged-out routes sit outside `AppShell` and share `components/AuthShell.tsx`: `
 
 ```
 api/src/index.ts                     Express + Socket.IO server entry
-api/src/middleware/auth.ts           JWT + session validation
+api/src/middleware/auth.ts           Session cookie + API token validation
 api/src/services/syncService.ts      publishEvent() - real-time broadcast
 api/src/services/taskService.ts      Task CRUD + recurrence
 api/src/db/pool.ts                   PostgreSQL pool
 api/src/db/redis.ts                  Redis clients (pub/sub)
-api/src/db/migrations/               SQL migration files (001–025)
+api/src/db/migrations/               SQL migration files (001-045)
 api/src/parsers/filterParser.ts      Peggy filter DSL parser
 api/src/engines/recurrenceEngine.ts  Recurrence rule engine
 api/src/utils/AppError.ts             Custom error class
@@ -166,7 +170,7 @@ app/src/components/TaskItem.tsx      Task row component
 ## API Reference
 
 **Base URL:** `/api/v1`  
-**Auth:** `Authorization: Bearer <JWT>` (all endpoints except `/auth/register`, `/auth/login`, `/auth/reset-password*`)  
+**Auth:** session cookie + `X-XSRF-TOKEN` on writes (browser), or `Authorization: Bearer plnr_...` (API token, no CSRF). All endpoints except `/auth/register`, `/auth/login`, `/auth/reset-password*`. Tokens are created in Settings > Integrations and cannot reach `/api-tokens` or `/admin`.  
 **Error shape:** `{ error: { code: string, message: string, details?: unknown } }`
 
 Key route groups:
@@ -185,6 +189,7 @@ GET               /views/today     GET /views/upcoming?days=7     GET /views/inb
 GET/POST/PATCH/DELETE  /projects   /labels   /sections   /filters   /reminders   /comments
 GET               /search?q=
 GET/PATCH         /preferences
+GET/POST/DELETE   /api-tokens           (session only)
 GET               /activity?project_id=&cursor=
 ```
 
@@ -212,7 +217,7 @@ Rooms: `user:{userId}` (all sessions) and `collection:{collectionId}` (collabora
 ## Database
 
 PostgreSQL 16. Pool max 20 connections. Migrations run at startup from `api/src/db/migrations/`.  
-Schema tables: `users`, `sessions`, `preferences`, `password_reset_tokens`, `collections`, `collaborators`, `project_invitations`, `sections`, `tasks`, `labels`, `task_labels`, `filters`, `comments`, `reminders`, `activity_events`, `habits`, `habit_completions`, `habit_groups`.
+Schema tables: `users`, `sessions`, `api_tokens`, `preferences`, `password_reset_tokens`, `collections`, `collaborators`, `project_invitations`, `sections`, `tasks`, `labels`, `task_labels`, `filters`, `comments`, `reminders`, `activity_events`, `habits`, `habit_completions`, `habit_groups`.
 
 Redis: three clients from `db/redis.ts` - `redisClient` (general), `redisPubClient` (publish), `redisSubClient` (subscribe). Auth rate-limiting uses `redisClient`.
 
@@ -243,7 +248,7 @@ Full spec: `DESIGN.md`.
 - TypeScript strict mode; no `any` without justification.
 - Dedicated type files: All interfaces and types must live in dedicated files under `app/src/types/` or `api/src/types/`.
 - Every mutation must call `publishEvent()` in `services/syncService.ts` after DB write.
-- Auth middleware validates JWT **and** queries DB for session validity on every request.
+- Auth middleware validates the session or API token against the DB on every request.
 - React Query manages server state; Zustand manages client-side optimistic state.
 - Optimistic updates go through helpers in `stores/optimistic.ts`.
 - All routes are under `/api/v1/`; add new routes to `routes/index.ts`.

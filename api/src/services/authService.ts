@@ -253,6 +253,10 @@ export async function confirmPasswordReset(
     await client.query('UPDATE password_reset_tokens SET used_at = NOW() WHERE id = $1', [row.id]);
 
     await client.query('DELETE FROM sessions WHERE user_id = $1', [row.user_id]);
+    await client.query(
+      "UPDATE api_tokens SET revoked_at = NOW(), revoke_reason = 'password-reset' WHERE user_id = $1 AND revoked_at IS NULL",
+      [row.user_id],
+    );
     securityLog.sessionRevoked(row.user_id, 'password-reset');
 
     await client.query('COMMIT');

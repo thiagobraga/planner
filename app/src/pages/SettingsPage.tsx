@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useId, useMemo, useRef, useState, type CSSP
 import { createPortal } from 'react-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router';
-import { Check, Palette, Search, Settings2 } from 'lucide-react';
+import { Check, Palette, PlugZap, Search, Settings2 } from 'lucide-react';
 import { Toggle } from '../components/ui/Toggle';
 import { Radio } from '../components/ui/Radio';
 import { Input } from '../components/ui/Input';
@@ -12,12 +12,13 @@ import { getDetectedTimeZone } from '../utils/date';
 import { THEME_SWATCHES } from '../utils/theme';
 import { useFloatingPosition } from '../hooks/useFloatingPosition';
 import { useI18n } from '../i18n/I18nContext';
+import { ApiTokensSection } from '../components/settings/ApiTokensSection';
 import type { TranslationKey } from '../i18n/catalogs';
 
-type SettingsSection = 'general' | 'appearance';
+type SettingsSection = 'general' | 'appearance' | 'integrations';
 
 function isSettingsSection(value: string | undefined): value is SettingsSection {
-  return value === 'general' || value === 'appearance';
+  return value === 'general' || value === 'appearance' || value === 'integrations';
 }
 
 const SETTINGS_SECTIONS: Array<{
@@ -26,6 +27,7 @@ const SETTINGS_SECTIONS: Array<{
 }> = [
   { key: 'general', icon: Settings2 },
   { key: 'appearance', icon: Palette },
+  { key: 'integrations', icon: PlugZap },
 ];
 
 const FONT_OPTIONS: Array<{
@@ -207,6 +209,7 @@ function SettingsTabList({
   const tabRefs = useRef<Record<SettingsSection, HTMLButtonElement | null>>({
     general: null,
     appearance: null,
+    integrations: null,
   });
 
   const handleKeyDown = (event: KeyboardEvent<HTMLButtonElement>, index: number) => {
@@ -240,11 +243,11 @@ function SettingsTabList({
       role="tablist"
       aria-orientation={compact ? 'horizontal' : 'vertical'}
       aria-label={t('settings.sections')}
-      className={compact ? 'grid grid-cols-2 gap-2' : 'flex flex-col gap-1'}
+      className={compact ? 'grid grid-cols-3 gap-2' : 'flex flex-col gap-1'}
     >
       {SETTINGS_SECTIONS.map(({ key, icon: Icon }, index) => {
         const selected = activeSection === key;
-        const label = t(key === 'general' ? 'settings.general' : 'settings.appearance');
+        const label = t(`settings.${key}`);
         const panelId = `settings-panel-${key}`;
         const tabId = `${idPrefix}-settings-tab-${key}`;
 
@@ -758,6 +761,13 @@ export function SettingsPage() {
                       />
                     </section>
                   </div>
+                </SettingsCard>
+              ) : activeSection === 'integrations' ? (
+                <SettingsCard
+                  title={t('settings.integrations')}
+                  headingId={panelHeadingId}
+                >
+                  <ApiTokensSection />
                 </SettingsCard>
               ) : (
                 <SettingsCard

@@ -6,6 +6,44 @@ import {
   needsTouch,
   touchSession,
 } from "../services/sessionService.js";
+import { validatePersonalToken, tokenNeedsTouch, touchPersonalToken } from "../services/apiTokenService.js";
+
+function parseBearer(req: Request): string | undefined {
+  const header = req.headers?.authorization;
+  if (!header) return undefined;
+  const [scheme, value] = header.split(" ");
+  return scheme?.toLowerCase() === "bearer" && value ? value.trim() : undefined;
+}
+
+function unauthorized(res: Response, message: string): void {
+  // Tells non-browser clients (agents, MCP hosts) which scheme to retry with.
+  res.setHeader("WWW-Authenticate", 'Bearer realm="planner"');
+  res.status(401).json({ error: { code: "UNAUTHORIZED", message } });
+}
+
+async function acceptPersonalToken(
+  rawToken: string,
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  const token = await validatePersonalToken(rawToken);
+  if (!token) {
+    unauthorized(res, "API token invalid, expired or revoked");
+    return;
+  }
+
+  req.userId = token.userId;
+  req.authMethod = "token";
+  req.tokenId = token.tokenId;
+  req.tokenScopes = token.scopes;
+
+  if (tokenNeedsTouch(token)) {
+    touchPersonalToken(token.tokenId).catch(() => {});
+  }
+
+  next();
+}
 
 export async function authMiddleware(
   req: Request,
@@ -15,24 +53,28 @@ export async function authMiddleware(
   const cookieName = buildCookieName();
   const rawToken: string | undefined = req.cookies?.[cookieName];
 
+  // A browser session always wins: the web app never sends a bearer header,
+  // so a request carrying both is a browser and should be judged as one.
   if (!rawToken) {
-    res.status(401).json({
-      error: { code: "UNAUTHORIZED", message: "Missing or invalid session" },
-    });
+    const bearer = parseBearer(req);
+    if (bearer) {
+      await acceptPersonalToken(bearer, req, res, next);
+      return;
+    }
+    unauthorized(res, "Missing or invalid session");
     return;
   }
 
   const session = await validateSession(rawToken);
 
   if (!session) {
-    res.status(401).json({
-      error: { code: "UNAUTHORIZED", message: "Session expired or revoked" },
-    });
+    unauthorized(res, "Session expired or revoked");
     return;
   }
 
   req.userId = session.userId;
   req.sessionId = session.sessionId;
+  req.authMethod = "session";
 
   if (needsTouch(session)) {
     touchSession(session.sessionId).catch(() => {});

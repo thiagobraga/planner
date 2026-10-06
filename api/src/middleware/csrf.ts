@@ -64,6 +64,13 @@ export function csrfProtection(req: Request, res: Response, next: NextFunction):
     return;
   }
 
+  // CSRF abuses credentials the browser attaches on its own. A bearer token
+  // is only ever sent by code that already holds it, so there is nothing to forge.
+  if (req.authMethod === "token") {
+    next();
+    return;
+  }
+
   if (SAFE_METHODS.has(req.method)) {
     const existingCookie = req.cookies?.[COOKIE_NAME] as string | undefined;
     const existingToken = existingCookie ? parseCookie(existingCookie) : null;

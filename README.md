@@ -146,6 +146,19 @@ Open [http://localhost:5173](http://localhost:5173) in your browser.
 
 See [DESIGN.md](./DESIGN.md) for detailed design system specification, component library, and visual guidelines. Data flow, service architecture, and real-time sync mechanisms documented in [CLAUDE.md](./CLAUDE.md).
 
+## Using the API from scripts and AI agents
+
+Create a personal API token in **Settings > Integrations**. Choose *Read only* or *Read & write* and an expiry; the token (`plnr_...`) is shown once. Send it as a bearer header - no cookies or CSRF token needed:
+
+```bash
+curl -H "Authorization: Bearer plnr_xxxxxxxx" https://planner.local/api/v1/views/today
+
+curl -X POST -H "Authorization: Bearer plnr_xxxxxxxx" -H "Content-Type: application/json" \
+  -d '{"title":"Call the dentist"}' https://planner.local/api/v1/tasks
+```
+
+Changes made with a token sync live to open tabs. Read-only tokens get `403 INSUFFICIENT_SCOPE` on writes. Tokens cannot manage tokens or reach admin routes, and are revoked when you revoke them in Settings, reset your password, or an admin disables your account.
+
 ## Testing & Coverage
 
 Two coverage reports are browsable on the coverage host — the Vitest report at
