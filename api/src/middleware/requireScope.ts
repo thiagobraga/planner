@@ -2,11 +2,16 @@ import type { Request, Response, NextFunction } from "express";
 
 const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
 
+// Every MCP call is a POST, reads included; the MCP server enforces scope by
+// only registering write tools for write tokens.
+const SCOPE_EXEMPT_PATHS = new Set(["/mcp"]);
+
 /** A read-only API token may look but not touch. Session requests pass untouched. */
 export function enforceTokenScope(req: Request, res: Response, next: NextFunction): void {
   if (
     req.authMethod === "token" &&
     !SAFE_METHODS.has(req.method) &&
+    !SCOPE_EXEMPT_PATHS.has(req.path) &&
     !req.tokenScopes?.includes("write")
   ) {
     res.status(403).json({

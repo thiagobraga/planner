@@ -107,9 +107,10 @@ Add to `/etc/hosts`: `planner.local`, `api.planner.local`, `db.planner.local`, `
 - `db/pool.ts` - PostgreSQL pool (max 20); `db/redis.ts` - three clients (general, pub, sub)
 - `parsers/` - Peggy-based filter DSL and date parsers
 - `engines/recurrenceEngine.ts` - daily/weekly/monthly/yearly recurrence
+- `mcp/` - MCP server for AI agents: `server.ts` builds a per-request `McpServer` (write tools only for write tokens), `tools/*` call services directly, `resolve.ts` maps names/natural dates to ids/ISO in the user's timezone, `format.ts` renders compact task lines ending in `id:<uuid>`
 - `routes/index.ts` - Aggregates all routes under `/api/v1/`
 
-All routes under `/api/v1/`. Route files: `auth`, `apiTokens`, `tasks`, `collections`, `labels`, `sections`, `views`, `filters`, `search`, `reminders`, `comments`, `preferences`, `activity`, `collaboration`, `habits`, `habitGroups`.
+All routes under `/api/v1/`. Route files: `auth`, `apiTokens`, `mcp`, `tasks`, `collections`, `labels`, `sections`, `views`, `filters`, `search`, `reminders`, `comments`, `preferences`, `activity`, `collaboration`, `habits`, `habitGroups`.
 
 ### Frontend (`app/src/`)
 
@@ -154,6 +155,7 @@ api/src/db/redis.ts                  Redis clients (pub/sub)
 api/src/db/migrations/               SQL migration files (001-045)
 api/src/parsers/filterParser.ts      Peggy filter DSL parser
 api/src/engines/recurrenceEngine.ts  Recurrence rule engine
+api/src/mcp/server.ts                MCP server (AI agent tools)
 api/src/utils/AppError.ts             Custom error class
 
 app/src/contexts/AuthContext.tsx     Auth state + socket lifecycle
@@ -190,6 +192,7 @@ GET/POST/PATCH/DELETE  /projects   /labels   /sections   /filters   /reminders  
 GET               /search?q=
 GET/PATCH         /preferences
 GET/POST/DELETE   /api-tokens           (session only)
+POST              /mcp                  (API token only; stateless Streamable HTTP MCP)
 GET               /activity?project_id=&cursor=
 ```
 
@@ -248,6 +251,7 @@ Full spec: `DESIGN.md`.
 - TypeScript strict mode; no `any` without justification.
 - Dedicated type files: All interfaces and types must live in dedicated files under `app/src/types/` or `api/src/types/`.
 - Every mutation must call `publishEvent()` in `services/syncService.ts` after DB write.
+- New user-facing capabilities should consider a matching MCP tool in `api/src/mcp/tools/` so agents can use them too.
 - Auth middleware validates the session or API token against the DB on every request.
 - React Query manages server state; Zustand manages client-side optimistic state.
 - Optimistic updates go through helpers in `stores/optimistic.ts`.

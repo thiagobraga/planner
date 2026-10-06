@@ -159,6 +159,17 @@ curl -X POST -H "Authorization: Bearer plnr_xxxxxxxx" -H "Content-Type: applicat
 
 Changes made with a token sync live to open tabs. Read-only tokens get `403 INSUFFICIENT_SCOPE` on writes. Tokens cannot manage tokens or reach admin routes, and are revoked when you revoke them in Settings, reset your password, or an admin disables your account.
 
+### Connect AI agents (MCP)
+
+Planner exposes a [Model Context Protocol](https://modelcontextprotocol.io) server at `/api/v1/mcp`, so Claude Code, Claude Desktop, Cursor, VS Code and other MCP clients can read and manage your tasks. **Settings > Integrations** shows ready-to-paste setup; for Claude Code:
+
+```bash
+claude mcp add --transport http planner https://planner.local/api/v1/mcp \
+  --header "Authorization: Bearer plnr_xxxxxxxx"
+```
+
+Tools: `get_today`, `get_upcoming`, `get_inbox`, `get_collection`, `list_collections`, `list_labels`, `search`, `filter_tasks`, `list_habits`, and with a Read & write token also `create_task`, `update_task`, `complete_task`, `reopen_task`, `move_task`, `reschedule_tasks`, `delete_task`, `log_habit`. Dates like "next friday 3pm" are resolved by Planner in your timezone.
+
 ## Testing & Coverage
 
 Two coverage reports are browsable on the coverage host — the Vitest report at
