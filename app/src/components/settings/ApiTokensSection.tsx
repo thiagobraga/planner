@@ -6,6 +6,7 @@ import { Input } from '../ui/Input';
 import { Radio } from '../ui/Radio';
 import { Select } from '../ui/Select';
 import { ConfirmModal } from '../ConfirmModal';
+import { ConnectAgentPanel } from './ConnectAgentPanel';
 import { apiCreateApiToken, apiRevokeApiToken, fetchApiTokens } from '../../api/client';
 import { useI18n } from '../../i18n/I18nContext';
 import type { ApiToken, ApiTokenExpiryDays, CreateApiTokenInput, CreatedApiToken } from '../../types/apiToken';
@@ -226,6 +227,8 @@ export function ApiTokensSection() {
           ))}
         </ul>
       )}
+
+      <ConnectAgentPanel token={revealed ?? undefined} />
 
       <ConfirmModal
         isOpen={pendingRevoke !== null}

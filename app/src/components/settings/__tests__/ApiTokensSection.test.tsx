@@ -121,4 +121,22 @@ describe('ApiTokensSection', () => {
     fireEvent.click(within(dialog).getByRole('button', { name: 'Revoke' }));
     await waitFor(() => expect(mockRevoke).toHaveBeenCalledWith('tok-1'));
   });
+
+  it('shows MCP setup with a placeholder, then with the freshly created token', async () => {
+    mockFetch.mockResolvedValue([]);
+    mockCreate.mockResolvedValue({ token, rawToken: 'plnr_fresh' });
+    renderSection();
+
+    const panel = await screen.findByRole('region', { name: 'Connect an AI agent' });
+    expect(panel).toHaveTextContent(`${window.location.origin}/api/v1/mcp`);
+    expect(panel).toHaveTextContent('Bearer plnr_your_token');
+
+    fireEvent.click(screen.getByRole('button', { name: /New token/ }));
+    fireEvent.change(screen.getByPlaceholderText('e.g. Claude Desktop on laptop'), { target: { value: 'Agent' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Create token' }));
+
+    await waitFor(() => expect(panel).toHaveTextContent('Bearer plnr_fresh'));
+    fireEvent.click(screen.getByRole('button', { name: 'Done' }));
+    expect(panel).toHaveTextContent('Bearer plnr_your_token');
+  });
 });
