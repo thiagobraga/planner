@@ -15,9 +15,9 @@ import {
 } from "../types/apiToken.js";
 
 /** Recognizable prefix so secret scanners can flag leaked tokens. */
-export const API_TOKEN_PREFIX = "plnr_";
+export const PERSONAL_TOKEN_PREFIX = "plnr_";
 
-const DISPLAY_PREFIX_LENGTH = API_TOKEN_PREFIX.length + 8;
+const DISPLAY_PREFIX_LENGTH = PERSONAL_TOKEN_PREFIX.length + 8;
 const MAX_ACTIVE_TOKENS = 20;
 const MAX_NAME_LENGTH = 100;
 
@@ -81,7 +81,7 @@ function validateCreateInput(input: unknown): CreateApiTokenInput {
   };
 }
 
-export async function createApiToken(userId: string, input: unknown): Promise<CreatedApiToken> {
+export async function createPersonalToken(userId: string, input: unknown): Promise<CreatedApiToken> {
   const { name, scopes, expiresInDays } = validateCreateInput(input);
 
   const active = await pool.query(
@@ -97,7 +97,7 @@ export async function createApiToken(userId: string, input: unknown): Promise<Cr
     });
   }
 
-  const rawToken = API_TOKEN_PREFIX + generateRawToken();
+  const rawToken = PERSONAL_TOKEN_PREFIX + generateRawToken();
   const expiresAt = expiresInDays === null
     ? null
     : new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000);
@@ -114,7 +114,7 @@ export async function createApiToken(userId: string, input: unknown): Promise<Cr
   return { token, rawToken };
 }
 
-export async function listApiTokens(userId: string): Promise<ApiToken[]> {
+export async function listPersonalTokens(userId: string): Promise<ApiToken[]> {
   const result = await pool.query(
     `SELECT id, name, token_prefix, scopes, created_at, last_used_at, expires_at
      FROM api_tokens
@@ -125,8 +125,8 @@ export async function listApiTokens(userId: string): Promise<ApiToken[]> {
   return (result.rows as ApiTokenRow[]).map(toApiToken);
 }
 
-export async function validateApiToken(rawToken: string): Promise<ApiTokenContext | null> {
-  if (!rawToken.startsWith(API_TOKEN_PREFIX)) return null;
+export async function validatePersonalToken(rawToken: string): Promise<ApiTokenContext | null> {
+  if (!rawToken.startsWith(PERSONAL_TOKEN_PREFIX)) return null;
 
   const result = await pool.query(
     `SELECT t.id, t.user_id, t.name, t.scopes, t.last_used_at
@@ -163,11 +163,11 @@ export function tokenNeedsTouch(ctx: ApiTokenContext, now: Date = new Date()): b
   return now.getTime() - ctx.lastUsedAt.getTime() >= SESSION_TOUCH_INTERVAL_SECONDS * 1000;
 }
 
-export async function touchApiToken(tokenId: string): Promise<void> {
+export async function touchPersonalToken(tokenId: string): Promise<void> {
   await pool.query("UPDATE api_tokens SET last_used_at = NOW() WHERE id = $1", [tokenId]);
 }
 
-export async function revokeApiToken(userId: string, tokenId: string): Promise<void> {
+export async function revokePersonalToken(userId: string, tokenId: string): Promise<void> {
   const result = await pool.query(
     `UPDATE api_tokens SET revoked_at = NOW(), revoke_reason = 'user-revoke'
      WHERE id = $1 AND user_id = $2 AND revoked_at IS NULL
@@ -189,7 +189,7 @@ export async function revokeAllUserTokens(userId: string, reason: string): Promi
 }
 
 /** Dead rows linger 30 days so the security log's token ids can still be traced. */
-export async function deleteExpiredApiTokens(): Promise<number> {
+export async function deleteExpiredPersonalTokens(): Promise<number> {
   const result = await pool.query(
     `DELETE FROM api_tokens
      WHERE (expires_at IS NOT NULL AND expires_at < NOW() - INTERVAL '30 days')
