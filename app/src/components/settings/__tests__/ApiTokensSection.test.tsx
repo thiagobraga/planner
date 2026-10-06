@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ApiTokensSection } from '../ApiTokensSection';
-import { apiCreateApiToken, apiRevokeApiToken, fetchApiTokens } from '../../../api/client';
+import { apiCreateApiToken, apiRevokeApiToken, fetchActivity, fetchApiTokens } from '../../../api/client';
 import type { ApiToken } from '../../../types/apiToken';
 
 vi.mock('../../../api/client', async (importOriginal) => ({
@@ -10,11 +10,27 @@ vi.mock('../../../api/client', async (importOriginal) => ({
   fetchApiTokens: vi.fn(),
   apiCreateApiToken: vi.fn(),
   apiRevokeApiToken: vi.fn(),
+  fetchActivity: vi.fn(),
 }));
 
 const mockFetch = vi.mocked(fetchApiTokens);
 const mockCreate = vi.mocked(apiCreateApiToken);
 const mockRevoke = vi.mocked(apiRevokeApiToken);
+const mockActivity = vi.mocked(fetchActivity);
+
+function entry(id: string, eventType: string, title: string, label: string) {
+  return {
+    id,
+    userId: 'u1',
+    collectionId: null,
+    entityType: 'task',
+    entityId: `task-${id}`,
+    eventType,
+    createdAt: '2026-10-05T14:30:00.000Z',
+    title,
+    actor: { type: 'token' as const, tokenId: 'tok-1', label },
+  };
+}
 
 const token: ApiToken = {
   id: 'tok-1',
@@ -40,6 +56,7 @@ describe('ApiTokensSection', () => {
     mockFetch.mockReset();
     mockCreate.mockReset();
     mockRevoke.mockReset();
+    mockActivity.mockReset().mockResolvedValue({ events: [], nextCursor: null });
   });
 
   it('shows an empty state when there are no tokens', async () => {
@@ -138,5 +155,30 @@ describe('ApiTokensSection', () => {
     await waitFor(() => expect(panel).toHaveTextContent('Bearer plnr_fresh'));
     fireEvent.click(screen.getByRole('button', { name: 'Done' }));
     expect(panel).toHaveTextContent('Bearer plnr_your_token');
+  });
+
+  it('shows recent agent activity across tokens with the agent name', async () => {
+    mockFetch.mockResolvedValue([token]);
+    mockActivity.mockResolvedValue({
+      events: [entry('a1', 'task_created', 'Buy milk', 'Claude Desktop'), entry('a2', 'task_deleted', 'Old draft', 'Cursor')],
+      nextCursor: null,
+    });
+    renderSection();
+
+    const list = await screen.findByRole('list', { name: 'Recent agent activity' });
+    expect(mockActivity).toHaveBeenCalledWith({ source: 'token', cursor: undefined });
+    expect(list).toHaveTextContent('Created "Buy milk"');
+    expect(list).toHaveTextContent('via Claude Desktop');
+    expect(list).toHaveTextContent('Deleted "Old draft"');
+  });
+
+  it("opens one token's own activity from its row", async () => {
+    mockFetch.mockResolvedValue([token]);
+    renderSection();
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Activity for Claude Desktop' }));
+
+    await waitFor(() => expect(mockActivity).toHaveBeenCalledWith({ tokenId: 'tok-1', cursor: undefined }));
+    await waitFor(() => expect(screen.getAllByText('No agent activity yet.')).toHaveLength(2));
   });
 });

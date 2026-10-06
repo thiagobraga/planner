@@ -361,6 +361,7 @@ export function SettingsPage() {
           | 'weekStart'
           | 'hideCompletedTasks'
           | 'showNotes'
+          | 'agentChangeNotices'
           | 'dateFormat'
         >
       >,
@@ -395,6 +396,7 @@ export function SettingsPage() {
   const weekStart = preferences?.weekStart ?? 'sunday';
   const hideCompletedTasks = preferences?.hideCompletedTasks ?? false;
   const showNotes = preferences?.showNotes ?? true;
+  const agentChangeNotices = preferences?.agentChangeNotices ?? false;
   const dateFormat = preferences?.dateFormat ?? 'MMM DD ddd';
   const savedTimeZone = preferences?.timeZone ?? detectedTimeZone;
   const disabled = updateMutation.isPending;
@@ -767,7 +769,17 @@ export function SettingsPage() {
                   title={t('settings.integrations')}
                   headingId={panelHeadingId}
                 >
-                  <ApiTokensSection />
+                  <div className="space-y-6">
+                    <PreferenceToggle
+                      id={`${timeZoneInputId}-agent-notices`}
+                      checked={agentChangeNotices}
+                      onChange={(next) => updateMutation.mutate({ agentChangeNotices: next })}
+                      disabled={disabled}
+                      title={t('settings.agentNotices')}
+                      description={t('settings.agentNoticesDescription')}
+                    />
+                    <ApiTokensSection />
+                  </div>
                 </SettingsCard>
               ) : (
                 <SettingsCard

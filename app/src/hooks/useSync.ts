@@ -12,6 +12,8 @@ export interface SyncEvent {
   emittedAt: string;
   /** The socket whose request caused this event, when it named itself. */
   sourceId?: string;
+  /** Present when an API token (an AI agent) made the change. */
+  actor?: { type: 'token' | 'oauth'; label: string };
 }
 
 const MAX_SEEN = 50;

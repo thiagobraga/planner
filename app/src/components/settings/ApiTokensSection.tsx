@@ -7,6 +7,7 @@ import { Radio } from '../ui/Radio';
 import { Select } from '../ui/Select';
 import { ConfirmModal } from '../ConfirmModal';
 import { ConnectAgentPanel } from './ConnectAgentPanel';
+import { TokenActivityList } from './TokenActivityList';
 import { apiCreateApiToken, apiRevokeApiToken, fetchApiTokens } from '../../api/client';
 import { useI18n } from '../../i18n/I18nContext';
 import type { ApiToken, ApiTokenExpiryDays, CreateApiTokenInput, CreatedApiToken } from '../../types/apiToken';
@@ -142,6 +143,7 @@ function RevealToken({ rawToken, onDone }: { rawToken: string; onDone: () => voi
 
 function TokenRow({ token, onRevoke }: { token: ApiToken; onRevoke: (token: ApiToken) => void }) {
   const { t, formatDate } = useI18n();
+  const [showActivity, setShowActivity] = useState(false);
   const date = (iso: string) => formatDate(new Date(iso), { day: 'numeric', month: 'short', year: 'numeric' });
 
   const meta = [
@@ -157,17 +159,35 @@ function TokenRow({ token, onRevoke }: { token: ApiToken; onRevoke: (token: ApiT
   ];
 
   return (
-    <li className="flex items-start justify-between gap-3 py-3">
-      <div className="min-w-0">
-        <p className="m-0 flex items-center gap-2 text-sm leading-6 font-medium text-ink">
-          <KeyRound size={14} strokeWidth={1.5} className="shrink-0 text-ink-light" />
-          <span className="truncate">{token.name}</span>
-        </p>
-        <p className="m-0 text-[12px] leading-6 text-ink-light">{meta.join(' · ')}</p>
+    <li className="py-3">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="m-0 flex items-center gap-2 text-sm leading-6 font-medium text-ink">
+            <KeyRound size={14} strokeWidth={1.5} className="shrink-0 text-ink-light" />
+            <span className="truncate">{token.name}</span>
+          </p>
+          <p className="m-0 text-[12px] leading-6 text-ink-light">{meta.join(' · ')}</p>
+        </div>
+        <div className="flex shrink-0 gap-2">
+          <Button
+            variant="tertiary"
+            size="sm"
+            aria-expanded={showActivity}
+            aria-label={t('settings.apiTokens.activityFor', { name: token.name })}
+            onClick={() => setShowActivity((open) => !open)}
+          >
+            {t('settings.apiTokens.activity')}
+          </Button>
+          <Button variant="destructive" size="sm" onClick={() => onRevoke(token)}>
+            {t('settings.apiTokens.revoke')}
+          </Button>
+        </div>
       </div>
-      <Button variant="destructive" size="sm" onClick={() => onRevoke(token)}>
-        {t('settings.apiTokens.revoke')}
-      </Button>
+      {showActivity && (
+        <div className="pl-6">
+          <TokenActivityList query={{ tokenId: token.id }} label={t('settings.apiTokens.activityFor', { name: token.name })} />
+        </div>
+      )}
     </li>
   );
 }
@@ -227,6 +247,13 @@ export function ApiTokensSection() {
           ))}
         </ul>
       )}
+
+      <section className="space-y-3 border-t border-[var(--planner-settings-separator)] pt-6" aria-labelledby="agent-activity-heading">
+        <h3 id="agent-activity-heading" className={labelClass}>
+          {t('settings.agentActivity.title')}
+        </h3>
+        <TokenActivityList query={{ source: 'token' }} limit={20} label={t('settings.agentActivity.title')} />
+      </section>
 
       <ConnectAgentPanel token={revealed ?? undefined} />
 

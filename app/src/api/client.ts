@@ -5,6 +5,7 @@ import type { BoardViewMode } from '../types/board';
 import type { BackgroundPreference } from '../types/theme';
 import type { TaskSchedule } from '../types/task';
 import type { ApiToken, CreateApiTokenInput, CreatedApiToken } from '../types/apiToken';
+import type { ActivityPage, ActivityQuery } from '../types/activity';
 
 const BASE = '/api/v1';
 
@@ -312,6 +313,7 @@ export interface Preferences {
   smallCaps: boolean;
   hideCompletedTasks: boolean;
   showNotes: boolean;
+  agentChangeNotices?: boolean;
   collapsedCollectionIds: string[];
   boardViewModes: BoardViewModes;
   dateFormat?: string;
@@ -637,6 +639,17 @@ export async function apiCreateApiToken(input: CreateApiTokenInput): Promise<Cre
 
 export async function apiRevokeApiToken(id: string): Promise<void> {
   await request<unknown>(`/api-tokens/${id}`, { method: 'DELETE' });
+}
+
+// Activity ------------------------------------------------------------------
+
+export async function fetchActivity(query: ActivityQuery = {}): Promise<ActivityPage> {
+  const params = new URLSearchParams();
+  if (query.tokenId) params.set('token_id', query.tokenId);
+  if (query.source) params.set('source', query.source);
+  if (query.cursor) params.set('cursor', query.cursor);
+  const qs = params.toString();
+  return request<ActivityPage>(`/activity${qs ? `?${qs}` : ''}`);
 }
 
 // Labels --------------------------------------------------------------------
