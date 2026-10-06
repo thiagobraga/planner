@@ -75,6 +75,15 @@ const english: HelpContent = {
       ],
     },
     {
+      id: 'ai-agents',
+      title: 'AI Agents & API',
+      items: [
+        'Create an API token in Settings > Integrations. Read only tokens can look; Read & write tokens can also add, edit, complete and delete tasks and log habits.',
+        'Planner speaks MCP: copy the Claude Code command or JSON config from Settings > Integrations into Claude Code, Claude Desktop, Cursor or VS Code, then ask things like "what is on my plate today?".',
+        'Changes made by an agent appear live in every open tab. Revoke a token at any time to cut its agent off.',
+      ],
+    },
+    {
       id: 'smart-dates',
       title: 'Smart Date Recognition',
       paragraphs: [
@@ -167,6 +176,15 @@ const portugueseBrazil: HelpContent = {
       items: [
         'Escolha o idioma e como o calendário lida com fuso horário e início da semana.',
         'Escolha a fonte, alterne os pontos do fundo, use bege, branco, escuro ou automático (segue o sistema) e ative versaletes.',
+      ],
+    },
+    {
+      id: 'ai-agents',
+      title: 'Agentes de IA e API',
+      items: [
+        'Crie um token de API em Configurações > Integrações. Tokens somente leitura podem consultar; tokens de leitura e escrita também criam, editam, concluem e excluem tarefas e registram hábitos.',
+        'O Planner fala MCP: copie o comando do Claude Code ou a configuração JSON de Configurações > Integrações para o Claude Code, Claude Desktop, Cursor ou VS Code e pergunte coisas como "o que tenho para hoje?".',
+        'Mudanças feitas por um agente aparecem ao vivo em todas as abas abertas. Revogue um token a qualquer momento para desconectar o agente.',
       ],
     },
     {
