@@ -6,7 +6,7 @@ import {
   needsTouch,
   touchSession,
 } from "../services/sessionService.js";
-import { validateApiToken, tokenNeedsTouch, touchApiToken } from "../services/apiTokenService.js";
+import { validatePersonalToken, tokenNeedsTouch, touchPersonalToken } from "../services/apiTokenService.js";
 import {
   ACCESS_TOKEN_PREFIX,
   grantNeedsTouch,
@@ -33,13 +33,13 @@ function unauthorized(res: Response, message: string): void {
   res.status(401).json({ error: { code: "UNAUTHORIZED", message } });
 }
 
-async function acceptApiToken(
+async function acceptPersonalToken(
   rawToken: string,
   req: Request,
   res: Response,
   next: NextFunction,
 ): Promise<void> {
-  const token = await validateApiToken(rawToken);
+  const token = await validatePersonalToken(rawToken);
   if (!token) {
     unauthorized(res, "API token invalid, expired or revoked");
     return;
@@ -52,13 +52,13 @@ async function acceptApiToken(
   setActor({ type: "token", credentialId: token.tokenId, label: token.name });
 
   if (tokenNeedsTouch(token)) {
-    touchApiToken(token.tokenId).catch(() => {});
+    touchPersonalToken(token.tokenId).catch(() => {});
   }
 
   next();
 }
 
-async function acceptOAuthToken(
+async function acceptGrantToken(
   rawToken: string,
   req: Request,
   res: Response,
@@ -102,11 +102,11 @@ export async function authMiddleware(
   if (!rawToken) {
     const bearer = parseBearer(req);
     if (bearer?.startsWith(ACCESS_TOKEN_PREFIX)) {
-      await acceptOAuthToken(bearer, req, res, next);
+      await acceptGrantToken(bearer, req, res, next);
       return;
     }
     if (bearer) {
-      await acceptApiToken(bearer, req, res, next);
+      await acceptPersonalToken(bearer, req, res, next);
       return;
     }
     unauthorized(res, "Missing or invalid session");

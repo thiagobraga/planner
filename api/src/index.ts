@@ -17,7 +17,7 @@ import { authMiddleware } from "./middleware/auth.js";
 import { enforceTokenScope } from "./middleware/requireScope.js";
 import { oauthRouter } from "./oauth/router.js";
 import { deleteExpiredSessions } from "./services/sessionService.js";
-import { deleteExpiredApiTokens } from "./services/apiTokenService.js";
+import { deleteExpiredPersonalTokens } from "./services/apiTokenService.js";
 import { deleteExpiredOAuthRows } from "./services/oauthService.js";
 import authRoutes from "./routes/auth.js";
 import { BUILD_VERSION, LATEST_VERSION } from "./utils/buildInfo.js";
@@ -172,7 +172,7 @@ function startSessionCleanup(): void {
     deleteExpiredSessions().catch((err) => {
       console.error("[sessions] cleanup failed:", err);
     });
-    deleteExpiredApiTokens().catch((err) => {
+    deleteExpiredPersonalTokens().catch((err) => {
       console.error("[api-tokens] cleanup failed:", err);
     });
     deleteExpiredOAuthRows().catch((err) => {

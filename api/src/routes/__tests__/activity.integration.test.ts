@@ -4,7 +4,7 @@ import crypto from "node:crypto";
 import pool from "../../db/pool.js";
 import { connectRedis, redisClient, redisPubClient, redisSubClient } from "../../db/redis.js";
 import { createSession, buildCookieName } from "../../services/sessionService.js";
-import { createApiToken, revokeApiToken } from "../../services/apiTokenService.js";
+import { createPersonalToken, revokePersonalToken } from "../../services/apiTokenService.js";
 import app from "../../index.js";
 
 const API = "/api/v1";
@@ -21,7 +21,7 @@ async function createUser(): Promise<string> {
 }
 
 async function token(name: string, forUser = userId): Promise<{ id: string; auth: string }> {
-  const { token: created, rawToken } = await createApiToken(forUser, { name, scopes: ["read", "write"], expiresInDays: 30 });
+  const { token: created, rawToken } = await createPersonalToken(forUser, { name, scopes: ["read", "write"], expiresInDays: 30 });
   return { id: created.id, auth: `Bearer ${rawToken}` };
 }
 
@@ -89,7 +89,7 @@ describe("activity attribution through the real app (real PostgreSQL + Redis)", 
     const cursor = await token("Cursor");
     await createTaskWith(desktop.auth, "From desktop");
     await createTaskWith(cursor.auth, "From cursor");
-    await revokeApiToken(userId, desktop.id);
+    await revokePersonalToken(userId, desktop.id);
 
     const byToken = await request(app).get(`${API}/activity?token_id=${desktop.id}`).set("Cookie", sessionCookie);
     expect(byToken.status).toBe(200);

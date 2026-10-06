@@ -4,7 +4,7 @@ import crypto from "node:crypto";
 import pool from "../../db/pool.js";
 import { connectRedis, redisClient, redisPubClient, redisSubClient } from "../../db/redis.js";
 import { createSession, buildCookieName } from "../../services/sessionService.js";
-import { createApiToken } from "../../services/apiTokenService.js";
+import { createPersonalToken } from "../../services/apiTokenService.js";
 import app from "../../index.js";
 
 // Test config: CORS_ORIGIN=http://localhost:5173, so that is the public base URL.
@@ -231,7 +231,7 @@ describe("OAuth for hosted MCP clients (real PostgreSQL + Redis)", () => {
     expect(rest.status).toBe(403);
     expect(rest.body.error.code).toBe("TOKEN_NOT_ALLOWED");
 
-    const { rawToken } = await createApiToken(userId, { name: "t", scopes: ["read"], expiresInDays: 30 });
+    const { rawToken } = await createPersonalToken(userId, { name: "t", scopes: ["read"], expiresInDays: 30 });
     const viaToken = await request(app).get("/api/v1/oauth/grants").set("Authorization", `Bearer ${rawToken}`);
     expect(viaToken.status).toBe(403);
     expect(viaToken.body.error.code).toBe("SESSION_REQUIRED");

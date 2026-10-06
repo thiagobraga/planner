@@ -4,7 +4,7 @@ import crypto from "node:crypto";
 import pool from "../../db/pool.js";
 import { connectRedis, redisClient, redisPubClient, redisSubClient } from "../../db/redis.js";
 import { createSession, buildCookieName } from "../../services/sessionService.js";
-import { createApiToken } from "../../services/apiTokenService.js";
+import { createPersonalToken } from "../../services/apiTokenService.js";
 import app from "../../index.js";
 
 const MCP = "/api/v1/mcp";
@@ -24,7 +24,7 @@ const INITIALIZE = rpc("initialize", {
 });
 
 async function bearer(scopes: string[]): Promise<string> {
-  const { rawToken } = await createApiToken(userId, { name: "mcp", scopes, expiresInDays: 30 });
+  const { rawToken } = await createPersonalToken(userId, { name: "mcp", scopes, expiresInDays: 30 });
   return `Bearer ${rawToken}`;
 }
 
