@@ -102,7 +102,7 @@ Add to `/etc/hosts`: `planner.local`, `api.planner.local`, `db.planner.local`, `
 - `services/commentService.ts` - comment CRUD
 - `services/reminderService.ts` - reminder CRUD
 - `services/searchService.ts` - full-text search
-- `services/activityService.ts` - activity feed
+- `services/activityService.ts` - activity feed; `recordActivity()` is the only writer to `activity_events` and stamps the acting token (`actor_type`, `api_token_id`, `actor_label`) from the request context
 - `services/collaborationService.ts` - project collaboration
 - `db/pool.ts` - PostgreSQL pool (max 20); `db/redis.ts` - three clients (general, pub, sub)
 - `parsers/` - Peggy-based filter DSL and date parsers
@@ -211,6 +211,8 @@ Event name: `"sync"`. Payload (`SyncEvent`):
   collectionId?: string | null;
   payload?:   unknown;
   emittedAt:  string;   // ISO 8601
+  sourceId?:  string;   // socket that caused it (lets a tab skip its own echo)
+  actor?:     { type: 'token' | 'oauth'; label: string };  // set when an API token made the change
 }
 ```
 
@@ -251,6 +253,7 @@ Full spec: `DESIGN.md`.
 - TypeScript strict mode; no `any` without justification.
 - Dedicated type files: All interfaces and types must live in dedicated files under `app/src/types/` or `api/src/types/`.
 - Every mutation must call `publishEvent()` in `services/syncService.ts` after DB write.
+- Write activity through `recordActivity()` only, never a raw `INSERT INTO activity_events`, so agent changes stay attributed.
 - New user-facing capabilities should consider a matching MCP tool in `api/src/mcp/tools/` so agents can use them too.
 - Auth middleware validates the session or API token against the DB on every request.
 - React Query manages server state; Zustand manages client-side optimistic state.
