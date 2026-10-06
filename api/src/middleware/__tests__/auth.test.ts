@@ -196,7 +196,7 @@ describe("authMiddleware", () => {
       await authMiddleware(req as Request, res as Response, next);
 
       expect(status).toHaveBeenCalledWith(401);
-      expect(setHeader).toHaveBeenCalledWith("WWW-Authenticate", 'Bearer realm="planner"');
+      expect(setHeader).toHaveBeenCalledWith("WWW-Authenticate", expect.stringMatching(/^Bearer realm="planner", resource_metadata="/));
       expect(next).not.toHaveBeenCalled();
     });
 

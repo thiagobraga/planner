@@ -61,6 +61,11 @@ describe("token access middleware", () => {
       expect(next).not.toHaveBeenCalled();
     });
 
+    it("rejects OAuth requests too", () => {
+      requireSession({ method: "GET", authMethod: "oauth" } as Request, res as Response, next);
+      expect(status).toHaveBeenCalledWith(403);
+    });
+
     it("allows session requests", () => {
       requireSession({ method: "GET", authMethod: "session" } as Request, res as Response, next);
       expect(next).toHaveBeenCalled();

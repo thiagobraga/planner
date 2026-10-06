@@ -119,7 +119,7 @@ describe("API token auth through the real app (real PostgreSQL + Redis)", () => 
 
     const res = await request(app).get(`${API}/views/inbox`).set("Authorization", `Bearer ${raw}`);
     expect(res.status).toBe(401);
-    expect(res.headers["www-authenticate"]).toBe('Bearer realm="planner"');
+    expect(res.headers["www-authenticate"]).toMatch(/^Bearer realm="planner", resource_metadata="http:\/\/localhost:5173\/\.well-known\/oauth-protected-resource\/api\/v1\/mcp"$/);
   });
 
   it("lists tokens for the session without exposing the raw value", async () => {
@@ -137,6 +137,6 @@ describe("API token auth through the real app (real PostgreSQL + Redis)", () => 
     const res = await request(app).get(`${API}/views/inbox`);
 
     expect(res.status).toBe(401);
-    expect(res.headers["www-authenticate"]).toBe('Bearer realm="planner"');
+    expect(res.headers["www-authenticate"]).toMatch(/^Bearer realm="planner", resource_metadata="http:\/\/localhost:5173\/\.well-known\/oauth-protected-resource\/api\/v1\/mcp"$/);
   });
 });

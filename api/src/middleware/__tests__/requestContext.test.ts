@@ -68,7 +68,7 @@ describe("requestContext middleware", () => {
   });
 
   describe("actor", () => {
-    const actor = { type: "token" as const, tokenId: "tok-1", label: "Claude Desktop" };
+    const actor = { type: "token" as const, credentialId: "tok-1", label: "Claude Desktop" };
 
     it("is visible to code awaited later in the same request", async () => {
       let seen: unknown;

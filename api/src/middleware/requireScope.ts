@@ -9,7 +9,7 @@ const SCOPE_EXEMPT_PATHS = new Set(["/mcp"]);
 /** A read-only API token may look but not touch. Session requests pass untouched. */
 export function enforceTokenScope(req: Request, res: Response, next: NextFunction): void {
   if (
-    req.authMethod === "token" &&
+    (req.authMethod === "token" || req.authMethod === "oauth") &&
     !SAFE_METHODS.has(req.method) &&
     !SCOPE_EXEMPT_PATHS.has(req.path) &&
     !req.tokenScopes?.includes("write")
@@ -23,11 +23,11 @@ export function enforceTokenScope(req: Request, res: Response, next: NextFunctio
 }
 
 /**
- * For routes a leaked token must never reach: minting or revoking tokens
- * (it could hide itself or spawn more) and admin.
+ * For routes a leaked token must never reach: minting or revoking tokens or
+ * app connections (it could hide itself or spawn more), consent, and admin.
  */
 export function requireSession(req: Request, res: Response, next: NextFunction): void {
-  if (req.authMethod === "token") {
+  if (req.authMethod === "token" || req.authMethod === "oauth") {
     res.status(403).json({
       error: { code: "SESSION_REQUIRED", message: "This action requires signing in to Planner" },
     });
