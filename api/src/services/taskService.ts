@@ -5,6 +5,7 @@ import { AppError } from '../utils/AppError.js';
 import { buildEvent, publishEvent } from './syncService.js';
 import { syncCompletionToStatus, syncStatusToCompletion } from './completionSync.js';
 import { attachLabels, verifyLabelOwnership } from './labelService.js';
+import { recordActivity } from './activityService.js';
 import { computeNextOccurrence } from '../engines/recurrenceEngine.js';
 import type { RecurrenceRule } from '../engines/recurrenceEngine.js';
 import { formatTimeFields } from '../utils/taskTime.js';
@@ -148,11 +149,14 @@ export async function completeTask(taskId: string, userId: string) {
       }
 
       // Record activity event
-      await client.query(
-        `INSERT INTO activity_events (user_id, collection_id, entity_type, entity_id, event_type, after_data)
-         VALUES ($1, $2, 'task', $3, 'task_completed', $4)`,
-        [userId, task.collection_id, taskId, JSON.stringify({ recurring: true, nextTaskId: newId })],
-      );
+      await recordActivity(client, {
+        userId,
+        collectionId: task.collection_id,
+        entityType: 'task',
+        entityId: taskId,
+        eventType: 'task_completed',
+        afterData: { recurring: true, nextTaskId: newId },
+      });
 
       await syncStatusToCompletion(client, {
         taskId,
@@ -214,11 +218,13 @@ export async function completeTask(taskId: string, userId: string) {
     );
 
     // Record activity event
-    await client.query(
-      `INSERT INTO activity_events (user_id, collection_id, entity_type, entity_id, event_type)
-       VALUES ($1, $2, 'task', $3, 'task_completed')`,
-      [userId, task.collection_id, taskId],
-    );
+    await recordActivity(client, {
+      userId,
+      collectionId: task.collection_id,
+      entityType: 'task',
+      entityId: taskId,
+      eventType: 'task_completed',
+    });
 
     await syncStatusToCompletion(client, {
       taskId,
@@ -430,6 +436,14 @@ export async function createTask(userId: string, input: CreateTaskInput) {
   }
 
   const [task] = await attachLabels([formatTask(taskRow)]);
+  await recordActivity(pool, {
+    userId,
+    collectionId: task.collectionId,
+    entityType: 'task',
+    entityId: task.id,
+    eventType: 'task_created',
+    afterData: { title: task.title },
+  });
   publishEvent(
     buildEvent({
       entityType: 'task',
@@ -461,6 +475,14 @@ export interface UpdateTaskInput {
   labelIds?: string[];
   type?: 'task' | 'note' | 'event';
 }
+
+// Recorded on task_updated so the activity feed can say what changed; listed
+// explicitly because the route hands over the raw request body.
+const UPDATE_FIELDS: (keyof UpdateTaskInput)[] = [
+  'title', 'description', 'priority', 'collectionId', 'sectionId', 'parentTaskId',
+  'dueDate', 'dueTime', 'dueTimezone', 'deadlineDate', 'deadlineTime', 'deadlineTimezone',
+  'durationMinutes', 'recurrenceRule', 'labelIds', 'type',
+];
 
 export async function updateTask(taskId: string, userId: string, input: UpdateTaskInput) {
   // Validate title length (1-500 chars) if provided
@@ -717,6 +739,14 @@ export async function updateTask(taskId: string, userId: string, input: UpdateTa
   }
 
   const [formatted] = await attachLabels([formatTask(taskRow)]);
+  await recordActivity(pool, {
+    userId,
+    collectionId: formatted.collectionId,
+    entityType: 'task',
+    entityId: formatted.id,
+    eventType: 'task_updated',
+    afterData: { title: formatted.title, fields: UPDATE_FIELDS.filter((field) => input[field] !== undefined) },
+  });
   publishEvent(
     buildEvent({
       entityType: 'task',
@@ -768,11 +798,13 @@ export async function reopenTask(taskId: string, userId: string) {
     );
 
     // Record activity event
-    await client.query(
-      `INSERT INTO activity_events (user_id, collection_id, entity_type, entity_id, event_type)
-       VALUES ($1, $2, 'task', $3, 'task_reopened')`,
-      [userId, task.collection_id, taskId],
-    );
+    await recordActivity(client, {
+      userId,
+      collectionId: task.collection_id,
+      entityType: 'task',
+      entityId: taskId,
+      eventType: 'task_reopened',
+    });
 
     await syncStatusToCompletion(client, {
       taskId,
@@ -1734,11 +1766,14 @@ export async function deleteTask(taskId: string, userId: string): Promise<{ succ
     await client.query(`DELETE FROM tasks WHERE id = ANY($1)`, [taskIds]);
 
     // Append activity event
-    await client.query(
-      `INSERT INTO activity_events (id, user_id, collection_id, entity_type, entity_id, event_type, before_data)
-       VALUES ($1, $2, $3, 'task', $4, 'task_deleted', $5)`,
-      [uuidv4(), userId, task.collection_id, taskId, JSON.stringify({ title: task.title })],
-    );
+    await recordActivity(client, {
+      userId,
+      collectionId: task.collection_id,
+      entityType: 'task',
+      entityId: taskId,
+      eventType: 'task_deleted',
+      beforeData: { title: task.title },
+    });
 
     await client.query('COMMIT');
     publishEvent(

@@ -1,5 +1,8 @@
+import type { Pool, PoolClient } from "pg";
 import pool from "../db/pool.js";
 import { AppError } from "../utils/AppError.js";
+import { currentActor } from "../middleware/requestContext.js";
+import type { ActivityEntry, ActivityRecord, ActorType, ListActivityOptions } from "../types/activity.js";
 
 interface ActivityRow {
   id: string;
@@ -11,9 +14,13 @@ interface ActivityRow {
   before_data: unknown | null;
   after_data: unknown | null;
   created_at: string;
+  actor_type: ActorType;
+  api_token_id: string | null;
+  actor_label: string | null;
+  title: string | null;
 }
 
-function formatActivity(row: ActivityRow) {
+function formatActivity(row: ActivityRow): ActivityEntry {
   return {
     id: row.id,
     userId: row.user_id,
@@ -24,15 +31,39 @@ function formatActivity(row: ActivityRow) {
     beforeData: row.before_data,
     afterData: row.after_data,
     createdAt: row.created_at,
+    title: row.title,
+    actor: { type: row.actor_type, tokenId: row.api_token_id, label: row.actor_label },
   };
 }
 
-const PAGE_SIZE = 50;
-
-export interface ListActivityOptions {
-  cursor?: string; // ISO timestamp; return events strictly before this
-  collectionId?: string;
+/**
+ * The one writer for activity_events, so every entry records who acted - the
+ * web app, or the API token the current request authenticated with.
+ */
+export async function recordActivity(db: Pool | PoolClient, record: ActivityRecord): Promise<void> {
+  const actor = currentActor();
+  await db.query(
+    `INSERT INTO activity_events
+       (id, user_id, collection_id, entity_type, entity_id, event_type, before_data, after_data,
+        actor_type, api_token_id, actor_label)
+     VALUES (COALESCE($1::uuid, uuid_generate_v4()), $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+    [
+      record.id ?? null,
+      record.userId,
+      record.collectionId,
+      record.entityType,
+      record.entityId,
+      record.eventType,
+      record.beforeData === undefined ? null : JSON.stringify(record.beforeData),
+      record.afterData === undefined ? null : JSON.stringify(record.afterData),
+      actor?.type ?? "session",
+      actor?.tokenId ?? null,
+      actor?.label ?? null,
+    ],
+  );
 }
+
+const PAGE_SIZE = 50;
 
 export async function listActivity(userId: string, options: ListActivityOptions = {}) {
   // If collectionId specified, verify access
@@ -53,6 +84,13 @@ export async function listActivity(userId: string, options: ListActivityOptions 
     }
   }
 
+  if (options.tokenId) {
+    const owned = await pool.query("SELECT id FROM api_tokens WHERE id = $1 AND user_id = $2", [options.tokenId, userId]);
+    if (owned.rows.length === 0) {
+      throw new AppError({ code: "NOT_FOUND", message: "Token not found", statusCode: 404 });
+    }
+  }
+
   const conditions: string[] = [
     `(a.user_id = $1 OR a.collection_id IN (
        SELECT user_id_collections.id FROM collections user_id_collections
@@ -69,6 +107,16 @@ export async function listActivity(userId: string, options: ListActivityOptions 
     values.push(options.collectionId);
   }
 
+  if (options.tokenId) {
+    conditions.push(`a.api_token_id = $${paramIndex++}`);
+    values.push(options.tokenId);
+  }
+
+  // Only the caller's own agents: a collaborator's tokens are their business.
+  if (options.source === "token") {
+    conditions.push(`a.actor_type <> 'session' AND a.user_id = $1`);
+  }
+
   if (options.cursor) {
     conditions.push(`a.created_at < $${paramIndex++}`);
     values.push(options.cursor);
@@ -77,7 +125,9 @@ export async function listActivity(userId: string, options: ListActivityOptions 
   values.push(PAGE_SIZE + 1);
 
   const result = await pool.query(
-    `SELECT a.* FROM activity_events a
+    `SELECT a.*, COALESCE(a.after_data->>'title', a.before_data->>'title', t.title) AS title
+     FROM activity_events a
+     LEFT JOIN tasks t ON a.entity_type = 'task' AND t.id = a.entity_id
      WHERE ${conditions.join(" AND ")}
      ORDER BY a.created_at DESC
      LIMIT $${paramIndex}`,
