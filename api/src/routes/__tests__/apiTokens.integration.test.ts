@@ -115,7 +115,7 @@ describe("API token auth through the real app (real PostgreSQL + Redis)", () => 
     const { id, raw } = await mintToken(["read"]);
 
     const revoke = await sessionWrite("delete", `/api-tokens/${id}`);
-    expect(revoke.status).toBe(204);
+    expect(revoke.status).toBe(200);
 
     const res = await request(app).get(`${API}/views/inbox`).set("Authorization", `Bearer ${raw}`);
     expect(res.status).toBe(401);

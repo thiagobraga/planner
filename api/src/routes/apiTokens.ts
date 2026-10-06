@@ -22,7 +22,7 @@ router.post("/", async (req: Request, res: Response, next: NextFunction) => {
 router.delete("/:id", async (req: Request, res: Response, next: NextFunction) => {
   try {
     await revokeApiToken(req.userId!, req.params.id as string);
-    res.status(204).end();
+    res.json({ success: true });
   } catch (err) {
     next(err);
   }
