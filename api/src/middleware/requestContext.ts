@@ -1,5 +1,6 @@
 import { AsyncLocalStorage } from "async_hooks";
 import type { Request, Response, NextFunction } from "express";
+import type { RequestActor } from "../types/activity.js";
 
 interface RequestContext {
   /**
@@ -9,6 +10,8 @@ interface RequestContext {
    * caused a change can recognise - and ignore - its own echo.
    */
   sourceId?: string;
+  /** Set by authMiddleware once a token is accepted; absent for browser sessions. */
+  actor?: RequestActor;
 }
 
 const storage = new AsyncLocalStorage<RequestContext>();
@@ -29,4 +32,17 @@ export function requestContext(req: Request, _res: Response, next: NextFunction)
 /** The socket behind the request being handled, if it named itself. */
 export function currentSourceId(): string | undefined {
   return storage.getStore()?.sourceId;
+}
+
+/**
+ * Record who is acting for the rest of this request. The store is created
+ * before authentication runs, so the actor is written into it afterwards.
+ */
+export function setActor(actor: RequestActor): void {
+  const store = storage.getStore();
+  if (store) store.actor = actor;
+}
+
+export function currentActor(): RequestActor | undefined {
+  return storage.getStore()?.actor;
 }

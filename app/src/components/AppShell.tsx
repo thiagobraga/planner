@@ -18,6 +18,8 @@ import { PlannerDragProvider } from '../contexts/PlannerDragContext';
 import { useI18n } from '../i18n/I18nContext';
 import { useVersionCheck } from '../hooks/useVersionCheck';
 import { useTaskSelectionStore } from '../stores/taskSelectionStore';
+import { AgentNotice } from './AgentNotice';
+import { describeAgentChange } from '../utils/agentNotice';
 
 const BACKGROUND_CACHE_KEY = 'planner_background';
 const BACKGROUND_PREFERENCES: readonly BackgroundPreference[] = ['beige', 'white', 'dark', 'system'];
@@ -50,7 +52,17 @@ export function AppShell() {
     retry: 2,
   });
 
+  const [agentNotice, setAgentNotice] = useState<string | null>(null);
+  const clearAgentNotice = useCallback(() => setAgentNotice(null), []);
+  const agentNoticesOn = preferences?.agentChangeNotices ?? false;
+
   useSync(useCallback((event) => {
+    if (event.actor) {
+      qc.invalidateQueries({ queryKey: ['activity'] });
+      qc.invalidateQueries({ queryKey: ['api-tokens'] });
+      const message = agentNoticesOn ? describeAgentChange(event, t) : null;
+      if (message) setAgentNotice(message);
+    }
     if (event.entityType === 'collection') {
       qc.invalidateQueries({ queryKey: ['collections'] });
       qc.invalidateQueries({ queryKey: ['collection'] });
@@ -68,7 +80,7 @@ export function AppShell() {
       qc.invalidateQueries({ queryKey: ['inbox'] });
       qc.invalidateQueries({ queryKey: ['collection'] });
     }
-  }, [qc]));
+  }, [qc, agentNoticesOn, t]));
   const [quickAddOpen, setQuickAddOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
@@ -281,6 +293,8 @@ export function AppShell() {
         isOpen={searchOpen}
         onClose={() => setSearchOpen(false)}
       />
+
+      <AgentNotice message={agentNotice} onDone={clearAgentNotice} />
 
       {/* Help panel */}
       {helpOpen && (

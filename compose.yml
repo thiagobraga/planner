@@ -68,7 +68,7 @@ services:
       start_period: 60s
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.${COMPOSE_PROJECT_NAME:-planner}-api-router.rule=Host(`${APP_SUBDOMAIN:-planner}.local`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.${COMPOSE_PROJECT_NAME:-planner}-api-router.rule=Host(`${APP_SUBDOMAIN:-planner}.local`) && (PathPrefix(`/api`) || PathPrefix(`/.well-known/oauth-`))"
       - "traefik.http.routers.${COMPOSE_PROJECT_NAME:-planner}-api-router.entrypoints=websecure"
       - "traefik.http.routers.${COMPOSE_PROJECT_NAME:-planner}-api-router.tls=true"
       - "traefik.http.routers.${COMPOSE_PROJECT_NAME:-planner}-api-router.priority=100"

@@ -168,7 +168,12 @@ export async function evaluateSavedFilter(filterId: string, userId: string, toda
   }
 
   const filterRow = filterResult.rows[0] as FilterRow;
-  const expr = parseFilter(filterRow.query);
+  return evaluateFilterQuery(userId, filterRow.query, today);
+}
+
+/** Evaluate an ad-hoc filter expression; parse errors propagate to the caller. */
+export async function evaluateFilterQuery(userId: string, query: string, today: string): Promise<EvalTask[]> {
+  const expr = parseFilter(query);
 
   // Load all tasks owned or shared with the user, with collection name and labels
   const tasksResult = await pool.query(

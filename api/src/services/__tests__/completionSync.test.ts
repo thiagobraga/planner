@@ -40,8 +40,8 @@ describe("completionSync", () => {
         ["t1"],
       );
       expect(client.query).toHaveBeenCalledWith(
-        expect.stringContaining("'task_completed'"),
-        ["u1", "c1", "t1"],
+        expect.stringContaining("INSERT INTO activity_events"),
+        [null, "u1", "c1", "task", "t1", "task_completed", null, null, "session", null, null, null],
       );
     });
 
@@ -69,8 +69,8 @@ describe("completionSync", () => {
         expect.anything(),
       );
       expect(client.query).toHaveBeenCalledWith(
-        expect.stringContaining("'task_reopened'"),
-        ["u1", "c1", "t1"],
+        expect.stringContaining("INSERT INTO activity_events"),
+        [null, "u1", "c1", "task", "t1", "task_reopened", null, null, "session", null, null, null],
       );
     });
 

@@ -4,6 +4,9 @@ import { notifyUnauthorized } from '../utils/authEvents';
 import type { BoardViewMode } from '../types/board';
 import type { BackgroundPreference } from '../types/theme';
 import type { TaskSchedule } from '../types/task';
+import type { ApiToken, CreateApiTokenInput, CreatedApiToken } from '../types/apiToken';
+import type { ActivityPage, ActivityQuery } from '../types/activity';
+import type { ConnectedApp, ConsentDecision, PendingAuthorization } from '../types/oauth';
 
 const BASE = '/api/v1';
 
@@ -131,7 +134,9 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   // Auth endpoints are never queued: logging in/out/registering requires a
   // real round trip and must fail loudly when offline, not resolve with a
   // synthetic session. Everything else that mutates app data is deferred.
-  if (!path.startsWith('/auth/') && WRITE_METHODS.includes(method) && !isOnline()) {
+  // Token and OAuth endpoints are excluded too: a queued create could never show
+  // the one-time secret, and a queued revoke would leave a live credential believed dead.
+  if (!path.startsWith('/auth/') && !path.startsWith('/api-tokens') && !path.startsWith('/oauth/') && WRITE_METHODS.includes(method) && !isOnline()) {
     // Create calls (POST with no id segment in the path) mint their id here,
     // once, so the same value is both stored on the queued record (as
     // `clientEntityId`, for later remapping - see offlineQueue.remapQueuedId)
@@ -309,6 +314,7 @@ export interface Preferences {
   smallCaps: boolean;
   hideCompletedTasks: boolean;
   showNotes: boolean;
+  agentChangeNotices?: boolean;
   collapsedCollectionIds: string[];
   boardViewModes: BoardViewModes;
   dateFormat?: string;
@@ -620,6 +626,52 @@ export async function apiSetCollectionCompletionStatus(
 export async function apiDeleteStatus(statusId: string, reassignToStatusId?: string): Promise<void> {
   const search = reassignToStatusId ? `?reassignTo=${encodeURIComponent(reassignToStatusId)}` : '';
   await request<unknown>(`/statuses/${statusId}${search}`, { method: 'DELETE' });
+}
+
+// API tokens ----------------------------------------------------------------
+
+export async function fetchApiTokens(): Promise<ApiToken[]> {
+  return request<ApiToken[]>('/api-tokens');
+}
+
+export async function apiCreateApiToken(input: CreateApiTokenInput): Promise<CreatedApiToken> {
+  return request<CreatedApiToken>('/api-tokens', { method: 'POST', body: JSON.stringify(input) });
+}
+
+export async function apiRevokeApiToken(id: string): Promise<void> {
+  await request<unknown>(`/api-tokens/${id}`, { method: 'DELETE' });
+}
+
+// OAuth (connected apps) ----------------------------------------------------
+
+export async function fetchOAuthRequest(id: string): Promise<PendingAuthorization> {
+  return request<PendingAuthorization>(`/oauth/requests/${encodeURIComponent(id)}`);
+}
+
+export async function apiDecideOAuthRequest(id: string, decision: ConsentDecision): Promise<{ redirectUrl: string }> {
+  return request<{ redirectUrl: string }>(`/oauth/requests/${encodeURIComponent(id)}/decision`, {
+    method: 'POST',
+    body: JSON.stringify({ decision }),
+  });
+}
+
+export async function fetchConnectedApps(): Promise<ConnectedApp[]> {
+  return request<ConnectedApp[]>('/oauth/grants');
+}
+
+export async function apiDisconnectApp(id: string): Promise<void> {
+  await request<unknown>(`/oauth/grants/${id}`, { method: 'DELETE' });
+}
+
+// Activity ------------------------------------------------------------------
+
+export async function fetchActivity(query: ActivityQuery = {}): Promise<ActivityPage> {
+  const params = new URLSearchParams();
+  if (query.tokenId) params.set('token_id', query.tokenId);
+  if (query.source) params.set('source', query.source);
+  if (query.cursor) params.set('cursor', query.cursor);
+  const qs = params.toString();
+  return request<ActivityPage>(`/activity${qs ? `?${qs}` : ''}`);
 }
 
 // Labels --------------------------------------------------------------------

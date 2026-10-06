@@ -14,7 +14,11 @@ import { csrfProtection } from "./middleware/csrf.js";
 import { requestContext } from "./middleware/requestContext.js";
 import { originCheck } from "./middleware/origin.js";
 import { authMiddleware } from "./middleware/auth.js";
+import { enforceTokenScope } from "./middleware/requireScope.js";
+import { oauthRouter } from "./oauth/router.js";
 import { deleteExpiredSessions } from "./services/sessionService.js";
+import { deleteExpiredPersonalTokens } from "./services/apiTokenService.js";
+import { deleteExpiredOAuthRows } from "./services/oauthService.js";
 import authRoutes from "./routes/auth.js";
 import { BUILD_VERSION, LATEST_VERSION } from "./utils/buildInfo.js";
 
@@ -65,6 +69,10 @@ if (!DISABLE_RATE_LIMITS_IN_DEV) {
 }
 
 app.use(express.json({ limit: "100kb" }));
+
+// OAuth for hosted MCP clients. Ahead of the app's CORS and /api/v1 chain: these
+// endpoints take form posts from other origins and set their own CORS policy.
+app.use(oauthRouter());
 
 // Reject non-JSON Content-Type on unsafe methods — prevents CSRF form-encoded bypass
 app.use("/api/v1", (req, res, next) => {
@@ -131,6 +139,9 @@ app.use("/api/v1", async (req, res, next) => {
   await authMiddleware(req, res, next);
 });
 
+// Read-only API tokens cannot write, whatever the route
+app.use("/api/v1", enforceTokenScope);
+
 // Global CSRF protection — safe methods set the cookie, unsafe methods validate
 app.use("/api/v1", csrfProtection);
 
@@ -160,6 +171,12 @@ function startSessionCleanup(): void {
   const timer = setInterval(() => {
     deleteExpiredSessions().catch((err) => {
       console.error("[sessions] cleanup failed:", err);
+    });
+    deleteExpiredPersonalTokens().catch((err) => {
+      console.error("[api-tokens] cleanup failed:", err);
+    });
+    deleteExpiredOAuthRows().catch((err) => {
+      console.error("[oauth] cleanup failed:", err);
     });
   }, SESSION_CLEANUP_INTERVAL_MS);
   timer.unref();

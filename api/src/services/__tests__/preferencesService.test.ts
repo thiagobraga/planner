@@ -78,6 +78,7 @@ describe("validatePreferences", () => {
   it("rejects non-boolean behavior toggles", () => {
     expect(() => validatePreferences({ hideCompletedTasks: "yes" as unknown as boolean })).toThrow(AppError);
     expect(() => validatePreferences({ showNotes: "yes" as unknown as boolean })).toThrow(AppError);
+    expect(() => validatePreferences({ agentChangeNotices: "yes" as unknown as boolean })).toThrow(AppError);
   });
 
   it("rejects unsupported locale", () => {
@@ -228,6 +229,15 @@ describe("updatePreferences", () => {
     expect(sql).toMatch(/hide_completed_tasks = \$1/);
     expect(sql).toMatch(/show_notes = \$2/);
     expect(mockBuildEvent).toHaveBeenCalledWith(expect.objectContaining({ payload: p }));
+  });
+
+  it("updates the agent change notices toggle", async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [{ ...prefsRow, agent_change_notices: true }] });
+
+    const p = await updatePreferences("u1", { agentChangeNotices: true });
+
+    expect(p.agentChangeNotices).toBe(true);
+    expect(mockQuery.mock.calls[0][0]).toMatch(/agent_change_notices = \$1/);
   });
 
   it("updates locale and persists the locale field", async () => {

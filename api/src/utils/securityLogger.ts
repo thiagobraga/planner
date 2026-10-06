@@ -12,6 +12,8 @@ export type SecurityEventType =
   | "auth:password:change"
   | "auth:session:revoked"
   | "auth:session:expired"
+  | "auth:api-token:created"
+  | "auth:api-token:revoked"
   | "rate-limit:activated"
   | "rate-limit:exceeded"
   | "provisioning:user:created"
@@ -102,6 +104,24 @@ export const securityLog = {
       type: "auth:session:expired",
       userId,
       metadata: { sessionId },
+    });
+  },
+
+  apiTokenCreated(userId: string, tokenId: string, scopes: string[]): void {
+    log({
+      ...baseEvent(),
+      type: "auth:api-token:created",
+      userId,
+      metadata: { tokenId, scopes },
+    });
+  },
+
+  apiTokenRevoked(userId: string, tokenId: string, reason: string): void {
+    log({
+      ...baseEvent(),
+      type: "auth:api-token:revoked",
+      userId,
+      metadata: { tokenId, reason },
     });
   },
 

@@ -146,6 +146,36 @@ Open [http://localhost:5173](http://localhost:5173) in your browser.
 
 See [DESIGN.md](./DESIGN.md) for detailed design system specification, component library, and visual guidelines. Data flow, service architecture, and real-time sync mechanisms documented in [CLAUDE.md](./CLAUDE.md).
 
+## Using the API from scripts and AI agents
+
+Create a personal API token in **Settings > Integrations**. Choose *Read only* or *Read & write* and an expiry; the token (`plnr_...`) is shown once. Send it as a bearer header - no cookies or CSRF token needed:
+
+```bash
+curl -H "Authorization: Bearer plnr_xxxxxxxx" https://planner.local/api/v1/views/today
+
+curl -X POST -H "Authorization: Bearer plnr_xxxxxxxx" -H "Content-Type: application/json" \
+  -d '{"title":"Call the dentist"}' https://planner.local/api/v1/tasks
+```
+
+Changes made with a token sync live to open tabs and are attributed to the token: Settings > Integrations lists recent agent activity (per token or across all of them), and an opt-in notice names the agent when it changes something while Planner is open. Read-only tokens get `403 INSUFFICIENT_SCOPE` on writes. Tokens cannot manage tokens or reach admin routes, and are revoked when you revoke them in Settings, reset your password, or an admin disables your account.
+
+### Connect AI agents (MCP)
+
+Planner exposes a [Model Context Protocol](https://modelcontextprotocol.io) server at `/api/v1/mcp`, so Claude Code, Claude Desktop, Cursor, VS Code and other MCP clients can read and manage your tasks. **Settings > Integrations** shows ready-to-paste setup; for Claude Code:
+
+```bash
+claude mcp add --transport http planner https://planner.local/api/v1/mcp \
+  --header "Authorization: Bearer plnr_xxxxxxxx"
+```
+
+Tools: `get_today`, `get_upcoming`, `get_inbox`, `get_collection`, `list_collections`, `list_labels`, `search`, `filter_tasks`, `list_habits`, and with a Read & write token also `create_task`, `update_task`, `complete_task`, `reopen_task`, `move_task`, `reschedule_tasks`, `delete_task`, `log_habit`. Dates like "next friday 3pm" are resolved by Planner in your timezone.
+
+### Connect from claude.ai, ChatGPT and other hosted clients (OAuth)
+
+Hosted MCP clients that can't take a pasted header sign in with OAuth instead. Add `https://<your-planner>/api/v1/mcp` as a custom connector. A Planner consent screen opens, and you choose read & write or read only. The app then appears under **Settings > Integrations > Connected apps**, where **Disconnect** cuts it off immediately.
+
+Planner is its own OAuth 2.1 authorization server (PKCE S256, dynamic client registration, rotating refresh tokens). Discovery is served at `/.well-known/oauth-protected-resource/api/v1/mcp` and `/.well-known/oauth-authorization-server`. The issuer is `PUBLIC_BASE_URL`, which defaults to `CORS_ORIGIN`. The connector URL must be reachable over public HTTPS.
+
 ## Testing & Coverage
 
 Two coverage reports are browsable on the coverage host — the Vitest report at

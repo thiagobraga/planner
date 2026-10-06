@@ -17,7 +17,11 @@ import activityRoutes from "./activity.js";
 import collaborationRoutes, { collectionCollabRouter } from "./collaboration.js";
 import adminUserRoutes from "./adminUsers.js";
 import adminStatsRoutes from "./adminStats.js";
+import apiTokenRoutes from "./apiTokens.js";
+import mcpRoutes from "./mcp.js";
+import oauthRoutes from "./oauth.js";
 import { adminAuthMiddleware } from "../middleware/adminAuth.js";
+import { requireSession } from "../middleware/requireScope.js";
 
 const router: RouterType = Router();
 
@@ -25,8 +29,12 @@ const router: RouterType = Router();
 // unreachable behind it.
 
 // authMiddleware already ran globally in index.ts; adminAuth adds the role check.
-router.use("/admin/users", adminAuthMiddleware, adminUserRoutes);
-router.use("/admin/stats", adminAuthMiddleware, adminStatsRoutes);
+router.use("/admin/users", requireSession, adminAuthMiddleware, adminUserRoutes);
+router.use("/admin/stats", requireSession, adminAuthMiddleware, adminStatsRoutes);
+
+router.use("/api-tokens", requireSession, apiTokenRoutes);
+router.use("/mcp", mcpRoutes);
+router.use("/oauth", requireSession, oauthRoutes);
 
 router.use("/tasks", taskRoutes);
 router.use("/labels", labelRoutes);

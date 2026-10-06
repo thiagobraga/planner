@@ -525,6 +525,24 @@ describe("confirmPasswordReset - token lifecycle", () => {
     const result = await confirmPasswordReset("valid-token", STRONG_PASSWORD);
     expect(result.success).toBe(true);
   });
+
+  it("revokes the user's API tokens and connected apps inside the reset transaction", async () => {
+    const futureDate = new Date(Date.now() + 60 * 60 * 1000);
+    mockQuery.mockResolvedValueOnce({
+      rows: [{ id: "token-1", user_id: "user-1", expires_at: futureDate.toISOString(), used_at: null }],
+    });
+
+    await confirmPasswordReset("valid-token", STRONG_PASSWORD);
+
+    const sql = mockClientQuery.mock.calls.map((call) => String(call[0]));
+    const revokeIndex = sql.findIndex((q) => q.includes("UPDATE api_tokens SET revoked_at"));
+    expect(revokeIndex).toBeGreaterThan(sql.indexOf("BEGIN"));
+    expect(revokeIndex).toBeLessThan(sql.indexOf("COMMIT"));
+    expect(mockClientQuery.mock.calls[revokeIndex][1]).toEqual(["user-1"]);
+    const grantIndex = sql.findIndex((q) => q.includes("UPDATE oauth_grants SET revoked_at"));
+    expect(grantIndex).toBeGreaterThan(sql.indexOf("BEGIN"));
+    expect(grantIndex).toBeLessThan(sql.indexOf("COMMIT"));
+  });
 });
 
 describe("requestPasswordReset", () => {

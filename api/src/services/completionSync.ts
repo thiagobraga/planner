@@ -1,4 +1,5 @@
 import type { PoolClient } from "pg";
+import { recordActivity } from "./activityService.js";
 
 // The single place task completion and the collection's completion status
 // reconcile. Its own module to
@@ -53,11 +54,7 @@ export async function syncCompletionToStatus(
       [taskId],
     );
 
-    await client.query(
-      `INSERT INTO activity_events (user_id, collection_id, entity_type, entity_id, event_type)
-       VALUES ($1, $2, 'task', $3, 'task_completed')`,
-      [userId, collectionId, taskId],
-    );
+    await recordActivity(client, { userId, collectionId, entityType: "task", entityId: taskId, eventType: "task_completed" });
 
     return "completed";
   }
@@ -68,11 +65,7 @@ export async function syncCompletionToStatus(
       [taskId],
     );
 
-    await client.query(
-      `INSERT INTO activity_events (user_id, collection_id, entity_type, entity_id, event_type)
-       VALUES ($1, $2, 'task', $3, 'task_reopened')`,
-      [userId, collectionId, taskId],
-    );
+    await recordActivity(client, { userId, collectionId, entityType: "task", entityId: taskId, eventType: "task_reopened" });
 
     return "reopened";
   }
