@@ -51,6 +51,7 @@ describe('Sidebar', () => {
     expect(screen.getByText('Inbox')).toBeInTheDocument();
     expect(screen.queryByText('Monthly')).not.toBeInTheDocument();
     expect(screen.getByText('Habits')).toBeInTheDocument();
+    expect(screen.getByText('Collections')).toBeInTheDocument();
   });
 
   it('shows today\'s day number on the Daily icon and rolls it over at midnight', () => {
@@ -92,6 +93,7 @@ describe('Sidebar', () => {
     expect(screen.getByTitle('Inbox')).toBeInTheDocument();
     expect(screen.queryByTitle('Monthly')).not.toBeInTheDocument();
     expect(screen.getByTitle('Habits')).toBeInTheDocument();
+    expect(screen.getByTitle('Collections')).toBeInTheDocument();
   });
 
   it('calls logout when logout button is clicked in expanded mode', () => {
@@ -138,9 +140,10 @@ describe('Sidebar', () => {
     expect(screen.getByTitle('Styleguide')).toBeInTheDocument();
   });
 
-  it('renders CollectionTreeNav in expanded mode', () => {
+  it('links to Collections in expanded mode without rendering the collection tree', () => {
     render(<Sidebar />);
-    expect(screen.getByTestId('collection-tree-nav')).toBeInTheDocument();
+    expect(screen.getByText('Collections').closest('a')).toHaveAttribute('href', '/collections');
+    expect(screen.queryByTestId('collection-tree-nav')).not.toBeInTheDocument();
   });
 
   it('hides the admin links from a regular user', () => {

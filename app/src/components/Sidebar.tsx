@@ -14,7 +14,6 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { usePlannerDrag } from '../contexts/usePlannerDrag';
-import { CollectionTreeNav } from './CollectionTreeNav';
 import { SidebarNavItem } from './SidebarNavItem';
 import { fetchCollections } from '../api/client';
 import type { CollectionDropData } from '../types/drag';
@@ -117,6 +116,7 @@ export const NAV_ITEMS: NavItem[] = [
   { to: '/daily', labelKey: 'nav.daily', Icon: CalendarDayIcon },
   { to: '/inbox', labelKey: 'nav.inbox', Icon: ChevronRight },
   { to: '/habits', labelKey: 'nav.habits', Icon: Repeat2 },
+  { to: '/collections', labelKey: 'nav.collections', Icon: FolderOpen },
 ];
 
 /**
@@ -199,15 +199,6 @@ export function Sidebar({
               <entry.Icon size={16} strokeWidth={1.5} />
             </NavLink>
           ))}
-          <NavLink
-            to='/collections'
-            title={t('nav.collections')}
-            className={({ isActive }) =>
-              isActive ? 'sidebar-icon-link sidebar-icon-link--active' : 'sidebar-icon-link'
-            }
-          >
-            <FolderOpen size={16} strokeWidth={1.5} />
-          </NavLink>
         </nav>
 
         <div className='mt-auto flex flex-col gap-0.5 w-full items-center pb-6'>
@@ -323,9 +314,6 @@ export function Sidebar({
           ),
         )}
       </nav>
-
-      {/* Collections */}
-      <CollectionTreeNav />
 
       {/* Footer utilities */}
       <div className='mt-auto pt-4'>
