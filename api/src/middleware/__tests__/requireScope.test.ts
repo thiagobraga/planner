@@ -42,6 +42,12 @@ describe("token access middleware", () => {
       expect(next).toHaveBeenCalled();
     });
 
+    it("leaves scope on the MCP endpoint to the MCP server", () => {
+      const req = { method: "POST", path: "/mcp", authMethod: "token", tokenScopes: ["read"] } as unknown as Request;
+      enforceTokenScope(req, res as Response, next);
+      expect(next).toHaveBeenCalled();
+    });
+
     it("never restricts session requests", () => {
       enforceTokenScope({ method: "DELETE", authMethod: "session" } as Request, res as Response, next);
       expect(next).toHaveBeenCalled();
