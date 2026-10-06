@@ -252,4 +252,34 @@ describe("csrfProtection middleware", () => {
       });
     });
   });
+
+  describe("bearer token requests", () => {
+    it("lets an unsafe token request through without a CSRF header or cookie", () => {
+      req.method = "POST";
+      req.authMethod = "token";
+
+      csrfProtection(req as Request, res as Response, nextFn);
+
+      expect(nextFn).toHaveBeenCalled();
+      expect(statusFn).not.toHaveBeenCalled();
+    });
+
+    it("does not mint a CSRF cookie for token requests", () => {
+      req.method = "GET";
+      req.authMethod = "token";
+
+      csrfProtection(req as Request, res as Response, nextFn);
+
+      expect(res.cookie as ReturnType<typeof vi.fn>).not.toHaveBeenCalled();
+    });
+
+    it("still rejects an unsafe session request without a CSRF header", () => {
+      req.method = "POST";
+      req.authMethod = "session";
+
+      csrfProtection(req as Request, res as Response, nextFn);
+
+      expect(statusFn).toHaveBeenCalledWith(403);
+    });
+  });
 });

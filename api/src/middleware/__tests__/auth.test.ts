@@ -6,6 +6,9 @@ const mockBuildCookieName = vi.hoisted(() => vi.fn());
 const mockBuildCookieOptions = vi.hoisted(() => vi.fn());
 const mockNeedsTouch = vi.hoisted(() => vi.fn());
 const mockTouchSession = vi.hoisted(() => vi.fn());
+const mockValidateApiToken = vi.hoisted(() => vi.fn());
+const mockTokenNeedsTouch = vi.hoisted(() => vi.fn());
+const mockTouchApiToken = vi.hoisted(() => vi.fn());
 
 vi.mock("../../services/sessionService.js", () => ({
   validateSession: mockValidateSession,
@@ -13,6 +16,12 @@ vi.mock("../../services/sessionService.js", () => ({
   buildCookieOptions: mockBuildCookieOptions,
   needsTouch: mockNeedsTouch,
   touchSession: mockTouchSession,
+}));
+
+vi.mock("../../services/apiTokenService.js", () => ({
+  validateApiToken: mockValidateApiToken,
+  tokenNeedsTouch: mockTokenNeedsTouch,
+  touchApiToken: mockTouchApiToken,
 }));
 
 import { authMiddleware } from "../auth.js";
@@ -27,6 +36,7 @@ describe("authMiddleware", () => {
   // NextFunction is expected, while keeping the mock assertion helpers.
   let next: NextFunction & Mock<(err?: unknown) => void>;
   let cookie: ReturnType<typeof vi.fn>;
+  let setHeader: ReturnType<typeof vi.fn>;
 
   const COOKIE_OPTS = { httpOnly: true, secure: false, sameSite: "lax", path: "/", maxAge: 1000 };
 
@@ -34,6 +44,7 @@ describe("authMiddleware", () => {
     json = vi.fn();
     status = vi.fn(() => ({ json }));
     cookie = vi.fn();
+    setHeader = vi.fn();
     next = vi.fn() as NextFunction & Mock<(err?: unknown) => void>;
     req = {
       cookies: {},
@@ -41,12 +52,16 @@ describe("authMiddleware", () => {
     res = {
       status: status as unknown as Response["status"],
       cookie: cookie as unknown as Response["cookie"],
+      setHeader: setHeader as unknown as Response["setHeader"],
     };
     mockBuildCookieName.mockReturnValue("planner_session");
     mockBuildCookieOptions.mockReturnValue(COOKIE_OPTS);
     mockValidateSession.mockReset();
     mockNeedsTouch.mockReset();
     mockTouchSession.mockReset();
+    mockValidateApiToken.mockReset();
+    mockTokenNeedsTouch.mockReset().mockReturnValue(false);
+    mockTouchApiToken.mockReset().mockResolvedValue(undefined);
   });
 
   it("sets req.userId and req.sessionId and calls next for valid session", async () => {
@@ -145,5 +160,80 @@ describe("authMiddleware", () => {
 
     expect(next).toHaveBeenCalled();
     expect(status).not.toHaveBeenCalled();
+  });
+
+  describe("bearer API tokens", () => {
+    const TOKEN_CTX = { userId: "u2", tokenId: "t1", name: "agent", scopes: ["read"], lastUsedAt: null };
+
+    it("authenticates a valid bearer token without a session", async () => {
+      req.headers = { authorization: "Bearer plnr_valid" };
+      mockValidateApiToken.mockResolvedValue(TOKEN_CTX);
+
+      await authMiddleware(req as Request, res as Response, next);
+
+      expect(mockValidateApiToken).toHaveBeenCalledWith("plnr_valid");
+      expect(req.userId).toBe("u2");
+      expect(req.authMethod).toBe("token");
+      expect(req.tokenId).toBe("t1");
+      expect(req.tokenScopes).toEqual(["read"]);
+      expect(req.sessionId).toBeUndefined();
+      expect(next).toHaveBeenCalled();
+    });
+
+    it("accepts the scheme case-insensitively", async () => {
+      req.headers = { authorization: "bearer plnr_valid" };
+      mockValidateApiToken.mockResolvedValue(TOKEN_CTX);
+
+      await authMiddleware(req as Request, res as Response, next);
+
+      expect(next).toHaveBeenCalled();
+    });
+
+    it("returns 401 with a WWW-Authenticate challenge for an invalid token", async () => {
+      req.headers = { authorization: "Bearer plnr_revoked" };
+      mockValidateApiToken.mockResolvedValue(null);
+
+      await authMiddleware(req as Request, res as Response, next);
+
+      expect(status).toHaveBeenCalledWith(401);
+      expect(setHeader).toHaveBeenCalledWith("WWW-Authenticate", 'Bearer realm="planner"');
+      expect(next).not.toHaveBeenCalled();
+    });
+
+    it("ignores non-bearer authorization schemes", async () => {
+      req.headers = { authorization: "Basic dXNlcjpwYXNz" };
+
+      await authMiddleware(req as Request, res as Response, next);
+
+      expect(mockValidateApiToken).not.toHaveBeenCalled();
+      expect(status).toHaveBeenCalledWith(401);
+    });
+
+    it("prefers the session cookie when both are present", async () => {
+      req.cookies = { planner_session: "valid-token" };
+      req.headers = { authorization: "Bearer plnr_valid" };
+      mockValidateSession.mockResolvedValue({ userId: "u1", sessionId: 42, lastSeenAt: new Date() });
+      mockNeedsTouch.mockReturnValue(false);
+
+      await authMiddleware(req as Request, res as Response, next);
+
+      expect(mockValidateApiToken).not.toHaveBeenCalled();
+      expect(req.userId).toBe("u1");
+      expect(req.authMethod).toBe("session");
+    });
+
+    it("records last use only when the token is due for a touch", async () => {
+      req.headers = { authorization: "Bearer plnr_valid" };
+      mockValidateApiToken.mockResolvedValue(TOKEN_CTX);
+      mockTokenNeedsTouch.mockReturnValue(true);
+
+      await authMiddleware(req as Request, res as Response, next);
+      expect(mockTouchApiToken).toHaveBeenCalledWith("t1");
+
+      mockTouchApiToken.mockClear();
+      mockTokenNeedsTouch.mockReturnValue(false);
+      await authMiddleware(req as Request, res as Response, next);
+      expect(mockTouchApiToken).not.toHaveBeenCalled();
+    });
   });
 });
