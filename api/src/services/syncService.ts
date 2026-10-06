@@ -4,7 +4,7 @@ import pool from "../db/pool.js";
 import { redisPubClient, redisSubClient } from "../db/redis.js";
 import { CORS_ORIGIN } from "../config.js";
 import { validateSession, buildCookieName, needsTouch, touchSession } from "./sessionService.js";
-import { currentSourceId } from "../middleware/requestContext.js";
+import { currentActor, currentSourceId } from "../middleware/requestContext.js";
 import { LATEST_VERSION } from "../utils/buildInfo.js";
 
 const SYNC_CHANNEL = "sync";
@@ -38,6 +38,8 @@ export interface SyncEvent {
    * correct - it uses this to tell its own work apart from everyone else's.
    */
   sourceId?: string;
+  /** Present when an API token made the change, so open tabs can say which agent did it. */
+  actor?: { type: "token" | "oauth"; label: string };
 }
 
 function userRoom(userId: string): string {
@@ -122,8 +124,15 @@ export function buildEvent(input: Omit<SyncEvent, "id" | "emittedAt"> & { id?: s
     // Read from the request being handled rather than passed in: every service
     // that emits would otherwise have to carry an id it never looks at.
     sourceId: currentSourceId(),
+    actor: publicActor(),
     ...input,
   };
+}
+
+// The token id stays server-side: every collaborator's tab receives this event.
+function publicActor(): SyncEvent["actor"] {
+  const actor = currentActor();
+  return actor ? { type: actor.type, label: actor.label } : undefined;
 }
 
 async function loadUserCollectionIds(userId: string): Promise<string[]> {
