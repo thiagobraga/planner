@@ -198,6 +198,7 @@ export function BoardColumn({
               autoFocus
               aria-label={t('quickAdd.taskTitle')}
               placeholder={t('quickAdd.taskTitle')}
+              autoComplete="off"
               value={draft}
               disabled={saving}
               onChange={(event) => setDraft(event.target.value)}

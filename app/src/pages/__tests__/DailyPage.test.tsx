@@ -212,6 +212,13 @@ describe('DailyPage', () => {
     expect(await screen.findByPlaceholderText('New task…')).toBeInTheDocument();
   });
 
+  it('opts the add-task input out of browser autofill', async () => {
+    renderPage();
+
+    const inputs = await screen.findAllByPlaceholderText('New task…');
+    for (const input of inputs) expect(input).toHaveAttribute('autocomplete', 'off');
+  });
+
   it('preserves structured labels in the daily task mapper', async () => {
     mockFetchTodayTasks.mockResolvedValue({
       overdue: [

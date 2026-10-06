@@ -134,6 +134,7 @@ export function DailyBoardColumn({ column, title, isToday, tasks, allTasks, onTo
               autoFocus
               aria-label={t('quickAdd.taskTitle')}
               placeholder={t('quickAdd.taskTitle')}
+              autoComplete="off"
               value={draft}
               disabled={saving}
               onChange={(event) => setDraft(event.target.value)}

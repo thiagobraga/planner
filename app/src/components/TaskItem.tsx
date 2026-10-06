@@ -368,6 +368,7 @@ export const TaskItem = memo(function TaskItem({
             type="text"
             {...{ [NO_DRAG_ATTR]: '' }}
             defaultValue={task.title}
+            autoComplete="off"
             className="task-item-title-input task-input flex-1 w-full h-6 text-sm text-ink bg-transparent border-0 outline-none p-0"
             spellCheck={false}
             onKeyDown={handleEditKeyDown}

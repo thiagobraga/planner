@@ -100,6 +100,7 @@ export function QuickAdd({ isOpen, onClose, onSubmit }: QuickAddProps) {
             onKeyDown={handleKeyDown}
             placeholder={t('quickAdd.placeholder')}
             aria-label={t('quickAdd.taskTitle')}
+            autoComplete="off"
             className="w-full text-[15px] leading-6 text-ink bg-transparent border-0 outline-none p-0 caret-ink box-border"
           />
 

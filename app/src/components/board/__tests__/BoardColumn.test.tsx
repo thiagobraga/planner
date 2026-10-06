@@ -28,6 +28,18 @@ describe('BoardColumn', () => {
     await waitFor(() => expect(onCreate).toHaveBeenCalledWith('Plan review', column));
   });
 
+  it('opts the inline task editor out of browser autofill', () => {
+    const column = { id: 'status:todo' as const, value: 'todo', title: 'Todo', color: '#adb9c1', tasks: [] };
+    render(
+      <PlannerDragProvider>
+        <BoardColumn collectionId="collection-1" groupBy="status" column={column} allTasks={[]} onCreate={vi.fn()} />
+      </PlannerDragProvider>,
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Add task' }));
+    expect(screen.getByRole('textbox', { name: 'Task title' })).toHaveAttribute('autocomplete', 'off');
+  });
+
   it('renders journal rows without card chrome in Kanban lists', () => {
     const column = {
       id: 'status:todo' as const,

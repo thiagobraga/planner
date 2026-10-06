@@ -97,6 +97,11 @@ describe('TaskItem: drag surfaces', () => {
     expect(screen.getByRole('textbox').closest(`[${NO_DRAG_ATTR}]`)).not.toBeNull();
   });
 
+  it('opts the edit input out of browser autofill', () => {
+    renderRow({ isEditing: true });
+    expect(screen.getByRole('textbox')).toHaveAttribute('autocomplete', 'off');
+  });
+
   it('leaves the row itself draggable', () => {
     renderRow();
     expect(row().closest(`[${NO_DRAG_ATTR}]`)).toBeNull();

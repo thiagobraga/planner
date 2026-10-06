@@ -185,6 +185,13 @@ describe('InboxPage', () => {
     expect(await screen.findByPlaceholderText('New task…')).toBeInTheDocument();
   });
 
+  it('opts the add-task input out of browser autofill', async () => {
+    renderPage();
+
+    const inputs = await screen.findAllByPlaceholderText('New task…');
+    for (const input of inputs) expect(input).toHaveAttribute('autocomplete', 'off');
+  });
+
   describe('task creation', () => {
     it('creates a task optimistically and replaces it with the server row', async () => {
       mockApiCreateTask.mockResolvedValue(createdTask({ title: 'Buy groceries' }));

@@ -216,6 +216,13 @@ describe('CollectionsPage', () => {
     expect(input).toBeInTheDocument();
   });
 
+  it('opts the add-task input out of browser autofill', async () => {
+    renderPage();
+
+    const inputs = await screen.findAllByPlaceholderText('New task…');
+    for (const input of inputs) expect(input).toHaveAttribute('autocomplete', 'off');
+  });
+
   it('asks what to do with tasks when a populated section name is blanked', async () => {
     mockFetchCollectionView.mockResolvedValue({
       ...collectionViewData,
