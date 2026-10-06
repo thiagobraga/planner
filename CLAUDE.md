@@ -82,14 +82,16 @@ Add to `/etc/hosts`: `planner.local`, `api.planner.local`, `db.planner.local`, `
 ### Backend (`api/src/`)
 
 - `index.ts` - Express + Socket.IO on same HTTP server; Socket.IO validates the session cookie on connect (tokens cannot open sockets)
-- `middleware/auth.ts` - session cookie first, else `Bearer plnr_...` API token; both are DB-checked and revocable. Sets `req.authMethod`
-- `middleware/csrf.ts` - double-submit CSRF for cookie sessions; skipped for token requests
-- `middleware/requireScope.ts` - `enforceTokenScope` (read-only tokens cannot write), `requireSession` (keeps tokens off `/api-tokens` and `/admin`)
+- `middleware/auth.ts` - session cookie first, else a bearer: `plnr_oat_...` OAuth access token (MCP endpoint only) or `plnr_...` API token. All are DB-checked and revocable. Sets `req.authMethod` (`session` / `token` / `oauth`)
+- `middleware/csrf.ts` - double-submit CSRF for cookie sessions; skipped for token and OAuth requests
+- `middleware/requireScope.ts` - `enforceTokenScope` (read-only tokens cannot write), `requireSession` (keeps tokens and OAuth off `/api-tokens`, `/oauth` and `/admin`)
 - `middleware/errorHandler.ts` - `AppError` vs generic; returns `{ error: { code, message, details? } }`
 - `services/syncService.ts` - `publishEvent(event)` is the single broadcast entry point
 - `services/authService.ts` - register/login (Redis rate-limit: 10 attempts/15 min)
 - `services/sessionService.ts` - opaque session tokens (SHA-256 hashed), idle + absolute expiry
 - `services/apiTokenService.ts` - personal API tokens: create/list/validate/revoke, max 20 active per user
+- `services/oauthService.ts` - OAuth for hosted MCP clients: DCR clients, consent requests, grants, single-use codes, rotating refresh tokens (reuse revokes the grant)
+- `oauth/router.ts` + `oauth/provider.ts` - SDK OAuth handlers under `/api/oauth/*` plus `/.well-known/oauth-*` discovery; mounted outside `/api/v1`
 - `services/emailService.ts` - Resend wrapper; logs reset links to console when `RESEND_API_KEY` is unset
 - `services/taskService.ts` - CRUD, completion, recurrence
 - `services/viewService.ts` - today/upcoming/inbox aggregations
@@ -102,7 +104,7 @@ Add to `/etc/hosts`: `planner.local`, `api.planner.local`, `db.planner.local`, `
 - `services/commentService.ts` - comment CRUD
 - `services/reminderService.ts` - reminder CRUD
 - `services/searchService.ts` - full-text search
-- `services/activityService.ts` - activity feed; `recordActivity()` is the only writer to `activity_events` and stamps the acting token (`actor_type`, `api_token_id`, `actor_label`) from the request context
+- `services/activityService.ts` - activity feed; `recordActivity()` is the only writer to `activity_events` and stamps the acting token or OAuth grant (`actor_type`, `api_token_id` / `oauth_grant_id`, `actor_label`) from the request context
 - `services/collaborationService.ts` - project collaboration
 - `db/pool.ts` - PostgreSQL pool (max 20); `db/redis.ts` - three clients (general, pub, sub)
 - `parsers/` - Peggy-based filter DSL and date parsers
@@ -110,7 +112,7 @@ Add to `/etc/hosts`: `planner.local`, `api.planner.local`, `db.planner.local`, `
 - `mcp/` - MCP server for AI agents: `server.ts` builds a per-request `McpServer` (write tools only for write tokens), `tools/*` call services directly, `resolve.ts` maps names/natural dates to ids/ISO in the user's timezone, `format.ts` renders compact task lines ending in `id:<uuid>`
 - `routes/index.ts` - Aggregates all routes under `/api/v1/`
 
-All routes under `/api/v1/`. Route files: `auth`, `apiTokens`, `mcp`, `tasks`, `collections`, `labels`, `sections`, `views`, `filters`, `search`, `reminders`, `comments`, `preferences`, `activity`, `collaboration`, `habits`, `habitGroups`.
+All routes under `/api/v1/`. Route files: `auth`, `apiTokens`, `mcp`, `oauth`, `tasks`, `collections`, `labels`, `sections`, `views`, `filters`, `search`, `reminders`, `comments`, `preferences`, `activity`, `collaboration`, `habits`, `habitGroups`.
 
 ### Frontend (`app/src/`)
 
@@ -141,7 +143,7 @@ All routes under `/api/v1/`. Route files: `auth`, `apiTokens`, `mcp`, `tasks`, `
 
 `AppShell` wraps all logged-in routes: sidebar, keyboard dispatch, QuickAdd/Search dialogs.
 
-Logged-out routes sit outside `AppShell` and share `components/AuthShell.tsx`: `/login`, `/register`, `/forgot-password`, `/reset-password?token=`. `/auth/register` creates no session - `AuthContext.register()` chains into `login()`.
+Logged-out routes sit outside `AppShell` and share `components/AuthShell.tsx`: `/login` (honors a same-origin `?next=`), `/register`, `/forgot-password`, `/reset-password?token=`. `/oauth/consent?request=` also uses `AuthShell` but requires login. `/auth/register` creates no session - `AuthContext.register()` chains into `login()`.
 
 ## Key Files
 
@@ -152,7 +154,7 @@ api/src/services/syncService.ts      publishEvent() - real-time broadcast
 api/src/services/taskService.ts      Task CRUD + recurrence
 api/src/db/pool.ts                   PostgreSQL pool
 api/src/db/redis.ts                  Redis clients (pub/sub)
-api/src/db/migrations/               SQL migration files (001-045)
+api/src/db/migrations/               SQL migration files (001-048)
 api/src/parsers/filterParser.ts      Peggy filter DSL parser
 api/src/engines/recurrenceEngine.ts  Recurrence rule engine
 api/src/mcp/server.ts                MCP server (AI agent tools)
@@ -172,7 +174,7 @@ app/src/components/TaskItem.tsx      Task row component
 ## API Reference
 
 **Base URL:** `/api/v1`  
-**Auth:** session cookie + `X-XSRF-TOKEN` on writes (browser), or `Authorization: Bearer plnr_...` (API token, no CSRF). All endpoints except `/auth/register`, `/auth/login`, `/auth/reset-password*`. Tokens are created in Settings > Integrations and cannot reach `/api-tokens` or `/admin`.  
+**Auth:** session cookie + `X-XSRF-TOKEN` on writes (browser), or `Authorization: Bearer plnr_...` (API token, no CSRF). All endpoints except `/auth/register`, `/auth/login`, `/auth/reset-password*`. Tokens are created in Settings > Integrations and cannot reach `/api-tokens`, `/oauth` or `/admin`. OAuth access tokens (hosted MCP clients) work only on `/mcp`.  
 **Error shape:** `{ error: { code: string, message: string, details?: unknown } }`
 
 Key route groups:
@@ -192,7 +194,12 @@ GET/POST/PATCH/DELETE  /projects   /labels   /sections   /filters   /reminders  
 GET               /search?q=
 GET/PATCH         /preferences
 GET/POST/DELETE   /api-tokens           (session only)
-POST              /mcp                  (API token only; stateless Streamable HTTP MCP)
+POST              /mcp                  (API or OAuth token; stateless Streamable HTTP MCP)
+GET/POST          /oauth/requests/:id[/decision]   GET/DELETE /oauth/grants   (session only)
+
+# Outside /api/v1 (OAuth 2.1 for MCP clients; issuer = PUBLIC_BASE_URL, defaults to CORS_ORIGIN)
+GET  /.well-known/oauth-authorization-server   GET /.well-known/oauth-protected-resource/api/v1/mcp
+GET  /api/oauth/authorize   POST /api/oauth/token   POST /api/oauth/register   POST /api/oauth/revoke
 GET               /activity?project_id=&cursor=
 ```
 
@@ -212,7 +219,7 @@ Event name: `"sync"`. Payload (`SyncEvent`):
   payload?:   unknown;
   emittedAt:  string;   // ISO 8601
   sourceId?:  string;   // socket that caused it (lets a tab skip its own echo)
-  actor?:     { type: 'token' | 'oauth'; label: string };  // set when an API token made the change
+  actor?:     { type: 'token' | 'oauth'; label: string };  // set when an API token or OAuth app made the change
 }
 ```
 
@@ -222,7 +229,7 @@ Rooms: `user:{userId}` (all sessions) and `collection:{collectionId}` (collabora
 ## Database
 
 PostgreSQL 16. Pool max 20 connections. Migrations run at startup from `api/src/db/migrations/`.  
-Schema tables: `users`, `sessions`, `api_tokens`, `preferences`, `password_reset_tokens`, `collections`, `collaborators`, `project_invitations`, `sections`, `tasks`, `labels`, `task_labels`, `filters`, `comments`, `reminders`, `activity_events`, `habits`, `habit_completions`, `habit_groups`.
+Schema tables: `users`, `sessions`, `api_tokens`, `oauth_clients`, `oauth_authorization_requests`, `oauth_grants`, `oauth_codes`, `oauth_tokens`, `preferences`, `password_reset_tokens`, `collections`, `collaborators`, `project_invitations`, `sections`, `tasks`, `labels`, `task_labels`, `filters`, `comments`, `reminders`, `activity_events`, `habits`, `habit_completions`, `habit_groups`.
 
 Redis: three clients from `db/redis.ts` - `redisClient` (general), `redisPubClient` (publish), `redisSubClient` (subscribe). Auth rate-limiting uses `redisClient`.
 

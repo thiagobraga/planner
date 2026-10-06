@@ -170,6 +170,12 @@ claude mcp add --transport http planner https://planner.local/api/v1/mcp \
 
 Tools: `get_today`, `get_upcoming`, `get_inbox`, `get_collection`, `list_collections`, `list_labels`, `search`, `filter_tasks`, `list_habits`, and with a Read & write token also `create_task`, `update_task`, `complete_task`, `reopen_task`, `move_task`, `reschedule_tasks`, `delete_task`, `log_habit`. Dates like "next friday 3pm" are resolved by Planner in your timezone.
 
+### Connect from claude.ai, ChatGPT and other hosted clients (OAuth)
+
+Hosted MCP clients that can't take a pasted header sign in with OAuth instead. Add `https://<your-planner>/api/v1/mcp` as a custom connector. A Planner consent screen opens, and you choose read & write or read only. The app then appears under **Settings > Integrations > Connected apps**, where **Disconnect** cuts it off immediately.
+
+Planner is its own OAuth 2.1 authorization server (PKCE S256, dynamic client registration, rotating refresh tokens). Discovery is served at `/.well-known/oauth-protected-resource/api/v1/mcp` and `/.well-known/oauth-authorization-server`. The issuer is `PUBLIC_BASE_URL`, which defaults to `CORS_ORIGIN`. The connector URL must be reachable over public HTTPS.
+
 ## Testing & Coverage
 
 Two coverage reports are browsable on the coverage host — the Vitest report at
