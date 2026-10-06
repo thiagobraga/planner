@@ -13,11 +13,4 @@ echo "[planner] App and API are healthy. Opening app in Google Chrome..."
 sleep 1
 
 # Open the app in Google Chrome with the specified profile and app ID
-google-chrome --profile-directory=Default --app-id=oadcfhophbkhdadhdnomdbnbhhnnbnke
-
-# Also open a mobile version of the app in Google Chrome with a specific window size and user agent
-google-chrome --profile-directory=Default \
-  --app=https://planner.local/daily \
-  --window-size=375,667 \
-  --use-mobile-user-agent \
-  --user-data-dir=/tmp/planner-mobile
+__NV_PRIME_RENDER_OFFLOAD=1 __GLX_VENDOR_LIBRARY_NAME=nvidia __VK_LAYER_NV_optimus=NVIDIA_only google-chrome --profile-directory=Default --app-id=oadcfhophbkhdadhdnomdbnbhhnnbnke
