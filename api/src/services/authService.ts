@@ -257,6 +257,10 @@ export async function confirmPasswordReset(
       "UPDATE api_tokens SET revoked_at = NOW(), revoke_reason = 'password-reset' WHERE user_id = $1 AND revoked_at IS NULL",
       [row.user_id],
     );
+    await client.query(
+      "UPDATE oauth_grants SET revoked_at = NOW(), revoke_reason = 'password-reset' WHERE user_id = $1 AND revoked_at IS NULL",
+      [row.user_id],
+    );
     securityLog.sessionRevoked(row.user_id, 'password-reset');
 
     await client.query('COMMIT');

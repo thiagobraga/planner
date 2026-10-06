@@ -16,6 +16,7 @@ interface ActivityRow {
   created_at: string;
   actor_type: ActorType;
   api_token_id: string | null;
+  oauth_grant_id: string | null;
   actor_label: string | null;
   title: string | null;
 }
@@ -32,7 +33,7 @@ function formatActivity(row: ActivityRow): ActivityEntry {
     afterData: row.after_data,
     createdAt: row.created_at,
     title: row.title,
-    actor: { type: row.actor_type, tokenId: row.api_token_id, label: row.actor_label },
+    actor: { type: row.actor_type, tokenId: row.api_token_id, grantId: row.oauth_grant_id, label: row.actor_label },
   };
 }
 
@@ -45,8 +46,8 @@ export async function recordActivity(db: Pool | PoolClient, record: ActivityReco
   await db.query(
     `INSERT INTO activity_events
        (id, user_id, collection_id, entity_type, entity_id, event_type, before_data, after_data,
-        actor_type, api_token_id, actor_label)
-     VALUES (COALESCE($1::uuid, uuid_generate_v4()), $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+        actor_type, api_token_id, oauth_grant_id, actor_label)
+     VALUES (COALESCE($1::uuid, uuid_generate_v4()), $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
     [
       record.id ?? null,
       record.userId,
@@ -57,7 +58,8 @@ export async function recordActivity(db: Pool | PoolClient, record: ActivityReco
       record.beforeData === undefined ? null : JSON.stringify(record.beforeData),
       record.afterData === undefined ? null : JSON.stringify(record.afterData),
       actor?.type ?? "session",
-      actor?.tokenId ?? null,
+      actor?.type === "token" ? actor.credentialId : null,
+      actor?.type === "oauth" ? actor.credentialId : null,
       actor?.label ?? null,
     ],
   );

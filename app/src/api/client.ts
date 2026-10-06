@@ -6,6 +6,7 @@ import type { BackgroundPreference } from '../types/theme';
 import type { TaskSchedule } from '../types/task';
 import type { ApiToken, CreateApiTokenInput, CreatedApiToken } from '../types/apiToken';
 import type { ActivityPage, ActivityQuery } from '../types/activity';
+import type { ConnectedApp, ConsentDecision, PendingAuthorization } from '../types/oauth';
 
 const BASE = '/api/v1';
 
@@ -133,9 +134,9 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   // Auth endpoints are never queued: logging in/out/registering requires a
   // real round trip and must fail loudly when offline, not resolve with a
   // synthetic session. Everything else that mutates app data is deferred.
-  // Token endpoints are excluded too: a queued create could never show the
-  // one-time secret, and a queued revoke would leave a live token believed dead.
-  if (!path.startsWith('/auth/') && !path.startsWith('/api-tokens') && WRITE_METHODS.includes(method) && !isOnline()) {
+  // Token and OAuth endpoints are excluded too: a queued create could never show
+  // the one-time secret, and a queued revoke would leave a live credential believed dead.
+  if (!path.startsWith('/auth/') && !path.startsWith('/api-tokens') && !path.startsWith('/oauth/') && WRITE_METHODS.includes(method) && !isOnline()) {
     // Create calls (POST with no id segment in the path) mint their id here,
     // once, so the same value is both stored on the queued record (as
     // `clientEntityId`, for later remapping - see offlineQueue.remapQueuedId)
@@ -639,6 +640,27 @@ export async function apiCreateApiToken(input: CreateApiTokenInput): Promise<Cre
 
 export async function apiRevokeApiToken(id: string): Promise<void> {
   await request<unknown>(`/api-tokens/${id}`, { method: 'DELETE' });
+}
+
+// OAuth (connected apps) ----------------------------------------------------
+
+export async function fetchOAuthRequest(id: string): Promise<PendingAuthorization> {
+  return request<PendingAuthorization>(`/oauth/requests/${encodeURIComponent(id)}`);
+}
+
+export async function apiDecideOAuthRequest(id: string, decision: ConsentDecision): Promise<{ redirectUrl: string }> {
+  return request<{ redirectUrl: string }>(`/oauth/requests/${encodeURIComponent(id)}/decision`, {
+    method: 'POST',
+    body: JSON.stringify({ decision }),
+  });
+}
+
+export async function fetchConnectedApps(): Promise<ConnectedApp[]> {
+  return request<ConnectedApp[]>('/oauth/grants');
+}
+
+export async function apiDisconnectApp(id: string): Promise<void> {
+  await request<unknown>(`/oauth/grants/${id}`, { method: 'DELETE' });
 }
 
 // Activity ------------------------------------------------------------------

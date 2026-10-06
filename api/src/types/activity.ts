@@ -3,7 +3,8 @@ export type ActorType = "session" | "token" | "oauth";
 /** The non-browser caller behind a request, when there is one. */
 export interface RequestActor {
   type: Exclude<ActorType, "session">;
-  tokenId: string;
+  /** The API token id, or the OAuth grant id. */
+  credentialId: string;
   label: string;
 }
 
@@ -30,7 +31,7 @@ export interface ActivityEntry {
   createdAt: string;
   /** Best available title: snapshot at the time, else the live task's. */
   title: string | null;
-  actor: { type: ActorType; tokenId: string | null; label: string | null };
+  actor: { type: ActorType; tokenId: string | null; grantId: string | null; label: string | null };
 }
 
 export interface ListActivityOptions {

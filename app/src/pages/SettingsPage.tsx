@@ -13,6 +13,7 @@ import { THEME_SWATCHES } from '../utils/theme';
 import { useFloatingPosition } from '../hooks/useFloatingPosition';
 import { useI18n } from '../i18n/I18nContext';
 import { ApiTokensSection } from '../components/settings/ApiTokensSection';
+import { ConnectedAppsSection } from '../components/settings/ConnectedAppsSection';
 import type { TranslationKey } from '../i18n/catalogs';
 
 type SettingsSection = 'general' | 'appearance' | 'integrations';
@@ -778,6 +779,7 @@ export function SettingsPage() {
                       title={t('settings.agentNotices')}
                       description={t('settings.agentNoticesDescription')}
                     />
+                    <ConnectedAppsSection />
                     <ApiTokensSection />
                   </div>
                 </SettingsCard>

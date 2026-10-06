@@ -4,6 +4,7 @@ import { AppError } from "../../utils/AppError.js";
 const mockQuery = vi.fn();
 const mockRevokeAllUserSessions = vi.fn();
 const mockRevokeAllUserTokens = vi.fn();
+const mockRevokeAllUserGrants = vi.fn();
 const mockSessionRevoked = vi.fn();
 
 vi.mock("../../db/pool.js", () => ({
@@ -18,6 +19,10 @@ vi.mock("../sessionService.js", () => ({
 
 vi.mock("../apiTokenService.js", () => ({
   revokeAllUserTokens: (...args: unknown[]) => mockRevokeAllUserTokens(...args),
+}));
+
+vi.mock("../oauthService.js", () => ({
+  revokeAllUserGrants: (...args: unknown[]) => mockRevokeAllUserGrants(...args),
 }));
 
 vi.mock("../../utils/securityLogger.js", () => ({
@@ -173,6 +178,7 @@ describe("disableUser", () => {
     expect(sqlOf(0)).toContain("SET disabled_at = NOW()");
     expect(mockRevokeAllUserSessions).toHaveBeenCalledWith("u2", "admin-disable");
     expect(mockRevokeAllUserTokens).toHaveBeenCalledWith("u2", "admin-disable");
+    expect(mockRevokeAllUserGrants).toHaveBeenCalledWith("u2", "admin-disable");
     expect(mockSessionRevoked).toHaveBeenCalledWith("u2", "admin-disable", "admin-1");
     expect(result.disabledAt).toBe("2026-03-01T00:00:00.000Z");
   });
@@ -240,6 +246,7 @@ describe("revokeSessions", () => {
 
     expect(mockRevokeAllUserSessions).toHaveBeenCalledWith("u2", "admin-revoke");
     expect(mockRevokeAllUserTokens).toHaveBeenCalledWith("u2", "admin-revoke");
+    expect(mockRevokeAllUserGrants).toHaveBeenCalledWith("u2", "admin-revoke");
     expect(mockSessionRevoked).toHaveBeenCalledWith("u2", "admin-revoke", "admin-1");
     expect(result.disabledAt).toBeNull();
     expect(result.activeSessions).toBe(0);

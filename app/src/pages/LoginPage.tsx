@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router';
+import { useNavigate, useSearchParams } from 'react-router';
 import { useAuth } from '../contexts/AuthContext';
 import { AuthShell, AuthLink, AuthFormError } from '../components/AuthShell';
 import { Input } from '../components/ui/Input';
@@ -7,11 +7,14 @@ import { Button } from '../components/ui/Button';
 import { ApiError } from '../api/client';
 import { useCountdown, formatCountdown } from '../hooks/useCountdown';
 import { useI18n } from '../i18n/I18nContext';
+import { safeNextPath } from '../utils/safeNext';
 
 export function LoginPage() {
   const { t } = useI18n();
   const { login } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const next = safeNextPath(searchParams.get('next'));
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -24,7 +27,7 @@ export function LoginPage() {
     setLoading(true);
     try {
       await login(email, password);
-      navigate('/daily', { replace: true });
+      navigate(next ?? '/daily', { replace: true });
     } catch (err) {
       if (err instanceof ApiError && err.code === 'RATE_LIMITED') {
         start(err.retryAfterSeconds ?? 0);

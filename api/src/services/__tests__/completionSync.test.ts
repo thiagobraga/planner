@@ -41,7 +41,7 @@ describe("completionSync", () => {
       );
       expect(client.query).toHaveBeenCalledWith(
         expect.stringContaining("INSERT INTO activity_events"),
-        [null, "u1", "c1", "task", "t1", "task_completed", null, null, "session", null, null],
+        [null, "u1", "c1", "task", "t1", "task_completed", null, null, "session", null, null, null],
       );
     });
 
@@ -70,7 +70,7 @@ describe("completionSync", () => {
       );
       expect(client.query).toHaveBeenCalledWith(
         expect.stringContaining("INSERT INTO activity_events"),
-        [null, "u1", "c1", "task", "t1", "task_reopened", null, null, "session", null, null],
+        [null, "u1", "c1", "task", "t1", "task_reopened", null, null, "session", null, null, null],
       );
     });
 

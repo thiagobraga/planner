@@ -3,6 +3,7 @@ import { AppError } from "../utils/AppError.js";
 import { securityLog } from "../utils/securityLogger.js";
 import { revokeAllUserSessions } from "./sessionService.js";
 import { revokeAllUserTokens } from "./apiTokenService.js";
+import { revokeAllUserGrants } from "./oauthService.js";
 import type { UserRole } from "./authService.js";
 
 const DEFAULT_LIMIT = 25;
@@ -180,6 +181,7 @@ export async function disableUser(adminId: string, userId: string): Promise<Admi
 
   await revokeAllUserSessions(userId, "admin-disable");
   await revokeAllUserTokens(userId, "admin-disable");
+  await revokeAllUserGrants(userId, "admin-disable");
   securityLog.sessionRevoked(userId, "admin-disable", adminId);
 
   return getUser(userId);
@@ -206,6 +208,7 @@ export async function revokeSessions(adminId: string, userId: string): Promise<A
   const user = await getUser(userId);
   await revokeAllUserSessions(userId, "admin-revoke");
   await revokeAllUserTokens(userId, "admin-revoke");
+  await revokeAllUserGrants(userId, "admin-revoke");
   securityLog.sessionRevoked(userId, "admin-revoke", adminId);
   return { ...user, activeSessions: 0 };
 }

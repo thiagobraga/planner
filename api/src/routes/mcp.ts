@@ -7,9 +7,9 @@ const router: ReturnType<typeof Router> = Router();
 router.post("/", async (req: Request, res: Response, next: NextFunction) => {
   // Agents only. Keeping browsers off this route means it never has to reason
   // about CSRF, which token requests skip.
-  if (req.authMethod !== "token") {
+  if (req.authMethod !== "token" && req.authMethod !== "oauth") {
     res.status(403).json({
-      error: { code: "TOKEN_REQUIRED", message: "The MCP endpoint requires an API token (Authorization: Bearer plnr_...)" },
+      error: { code: "TOKEN_REQUIRED", message: "The MCP endpoint requires an API token or an OAuth access token" },
     });
     return;
   }

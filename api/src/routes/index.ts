@@ -19,6 +19,7 @@ import adminUserRoutes from "./adminUsers.js";
 import adminStatsRoutes from "./adminStats.js";
 import apiTokenRoutes from "./apiTokens.js";
 import mcpRoutes from "./mcp.js";
+import oauthRoutes from "./oauth.js";
 import { adminAuthMiddleware } from "../middleware/adminAuth.js";
 import { requireSession } from "../middleware/requireScope.js";
 
@@ -33,6 +34,7 @@ router.use("/admin/stats", requireSession, adminAuthMiddleware, adminStatsRoutes
 
 router.use("/api-tokens", requireSession, apiTokenRoutes);
 router.use("/mcp", mcpRoutes);
+router.use("/oauth", requireSession, oauthRoutes);
 
 router.use("/tasks", taskRoutes);
 router.use("/labels", labelRoutes);

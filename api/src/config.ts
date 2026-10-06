@@ -101,6 +101,14 @@ export const CORS_ORIGIN = (() => {
   return origin;
 })();
 
+/**
+ * Where users and MCP clients reach Planner: the OAuth issuer and the base of
+ * the MCP resource URL. The app origin already serves /api, so it is the default.
+ */
+export const PUBLIC_BASE_URL = new URL(process.env.PUBLIC_BASE_URL || CORS_ORIGIN).origin;
+
+export const MCP_RESOURCE_URL = `${PUBLIC_BASE_URL}/api/v1/mcp`;
+
 export const PORT = process.env.PORT || "4000";
 
 export const SESSION_IDLE_TTL_MINUTES = (() => {
