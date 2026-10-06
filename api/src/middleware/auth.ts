@@ -7,6 +7,7 @@ import {
   touchSession,
 } from "../services/sessionService.js";
 import { validatePersonalToken, tokenNeedsTouch, touchPersonalToken } from "../services/apiTokenService.js";
+import { setActor } from "./requestContext.js";
 
 function parseBearer(req: Request): string | undefined {
   const header = req.headers?.authorization;
@@ -37,6 +38,7 @@ async function acceptPersonalToken(
   req.authMethod = "token";
   req.tokenId = token.tokenId;
   req.tokenScopes = token.scopes;
+  setActor({ type: "token", tokenId: token.tokenId, label: token.name });
 
   if (tokenNeedsTouch(token)) {
     touchPersonalToken(token.tokenId).catch(() => {});

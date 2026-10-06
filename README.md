@@ -157,7 +157,7 @@ curl -X POST -H "Authorization: Bearer plnr_xxxxxxxx" -H "Content-Type: applicat
   -d '{"title":"Call the dentist"}' https://planner.local/api/v1/tasks
 ```
 
-Changes made with a token sync live to open tabs. Read-only tokens get `403 INSUFFICIENT_SCOPE` on writes. Tokens cannot manage tokens or reach admin routes, and are revoked when you revoke them in Settings, reset your password, or an admin disables your account.
+Changes made with a token sync live to open tabs and are attributed to the token: Settings > Integrations lists recent agent activity (per token or across all of them), and an opt-in notice names the agent when it changes something while Planner is open. Read-only tokens get `403 INSUFFICIENT_SCOPE` on writes. Tokens cannot manage tokens or reach admin routes, and are revoked when you revoke them in Settings, reset your password, or an admin disables your account.
 
 ### Connect AI agents (MCP)
 
