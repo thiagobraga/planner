@@ -1,5 +1,5 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { MemoryRouter } from 'react-router';
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { LoginPage } from '../LoginPage';
 
@@ -105,5 +105,32 @@ describe('LoginPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Sign in' }));
 
     await screen.findByText('Something went wrong');
+  });
+
+  it('returns to a same-origin ?next= path after signing in, ignoring other sites', async () => {
+    function Where() {
+      const location = useLocation();
+      return <output data-testid="where">{location.pathname + location.search}</output>;
+    }
+    const signIn = async (next: string) => {
+      mockLogin.mockResolvedValueOnce(undefined);
+      const view = render(
+        <MemoryRouter initialEntries={[`/login?next=${encodeURIComponent(next)}`]}>
+          <Routes>
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="*" element={<Where />} />
+          </Routes>
+        </MemoryRouter>,
+      );
+      fireEvent.change(screen.getByPlaceholderText('Email'), { target: { value: 'a@example.com' } });
+      fireEvent.change(screen.getByPlaceholderText('Password'), { target: { value: 'strongpassword123' } });
+      fireEvent.click(screen.getByRole('button', { name: 'Sign in' }));
+      const where = (await screen.findByTestId('where')).textContent;
+      view.unmount();
+      return where;
+    };
+
+    expect(await signIn('/oauth/consent?request=abc')).toBe('/oauth/consent?request=abc');
+    expect(await signIn('//evil.example/steal')).toBe('/daily');
   });
 });
