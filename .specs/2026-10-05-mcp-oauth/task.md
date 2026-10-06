@@ -123,7 +123,7 @@
 
 - [x] 11.1 `CLAUDE.md`: OAuth tables in Database, `/oauth/*` and `/.well-known/*` in API reference, auth methods summary (session / token / oauth and where each is accepted).
 - [x] 11.2 README: "Connect from claude.ai or ChatGPT".
-- [ ] 11.3 Security review (`/security-review`) before merge - left for the reviewer.
+- [x] 11.3 Security review (`/security-review`) run on the full stacked branch: no high or medium findings. One low finding (activity feed fell back to the live title of a task the caller can no longer reach) fixed in the attribution branch.
 
 ## Verification
 
