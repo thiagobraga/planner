@@ -48,6 +48,7 @@ export function InlineNameInput({
       type="text"
       defaultValue={defaultValue}
       placeholder={placeholder}
+      autoComplete="off"
       spellCheck={false}
       {...{ [NO_DRAG_ATTR]: '' }}
       className={`task-input min-w-0 flex-1 border-0 bg-transparent p-0 text-sm leading-6 text-ink outline-none ${className}`}

@@ -626,6 +626,7 @@ export function InboxPage() {
                 onChange={(e) => setInput(e.target.value)}
                 placeholder={t('common.addTask')}
                 className="task-input task-add-input flex-1 text-[14px] leading-6 text-ink bg-transparent border-none outline-none p-0"
+                autoComplete="off"
                 spellCheck={false}
                 onKeyDown={handleAddNoteKeyDown}
               />
@@ -680,6 +681,7 @@ export function InboxPage() {
                         }
                         placeholder={t('common.addTask')}
                         className="task-input task-add-input flex-1 text-[14px] leading-6 text-ink bg-transparent border-none outline-none p-0"
+                        autoComplete="off"
                         spellCheck={false}
                       />
                     </form>

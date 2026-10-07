@@ -1076,6 +1076,7 @@ export function DailyPage() {
                     onChange={(e) => setUpcomingInputs((prev) => ({ ...prev, [section.key]: e.target.value }))}
                     placeholder={t('common.addTask')}
                     className="task-input task-add-input flex-1 text-[14px] leading-6 text-ink bg-transparent border-none outline-none p-0"
+                    autoComplete="off"
                     spellCheck={false}
                   />
                 </form>
@@ -1135,6 +1136,7 @@ export function DailyPage() {
                   onKeyDown={handleAddTodayKeyDown}
                   placeholder={t('common.addTask')}
                   className="task-input task-add-input flex-1 text-[14px] leading-6 text-ink bg-transparent border-none outline-none p-0"
+                  autoComplete="off"
                   spellCheck={false}
                 />
               </form>

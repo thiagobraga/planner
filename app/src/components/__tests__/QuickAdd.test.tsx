@@ -31,6 +31,11 @@ describe('QuickAdd', () => {
     expect(screen.getByText('Add Task')).toBeInTheDocument();
   });
 
+  it('opts the title input out of browser autofill', () => {
+    render(<QuickAdd isOpen={true} onClose={onClose} onSubmit={onSubmit} />);
+    expect(screen.getByLabelText('Task title')).toHaveAttribute('autocomplete', 'off');
+  });
+
   it('typing text updates input value', () => {
     render(<QuickAdd isOpen={true} onClose={onClose} onSubmit={onSubmit} />);
     const input = screen.getByLabelText('Task title') as HTMLInputElement;
