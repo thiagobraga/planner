@@ -46,6 +46,7 @@ jobs:
           tags: |
             ${{ env.IMAGE_PREFIX }}-${{ matrix.component }}:latest
             ${{ env.IMAGE_PREFIX }}-${{ matrix.component }}:${{ github.sha }}
+          build-args: APK_REFRESH=${{ github.run_id }}
           cache-from: type=gha,scope=${{ matrix.component }}
           cache-to: type=gha,mode=max,scope=${{ matrix.component }}
 
@@ -82,6 +83,20 @@ jobs:
           exit-code: '1'
           severity: 'HIGH,CRITICAL'
           cache-dir: ~/.cache/trivy
+
+      # SARIF only reaches the Security tab; list the blocking findings in the log too.
+      - uses: aquasecurity/trivy-action@v0.36.0
+        if: failure()
+        env:
+          TRIVY_USERNAME: ${{ github.actor }}
+          TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          scan-type: 'image'
+          scan-ref: '${{ env.IMAGE_PREFIX }}-${{ matrix.component }}:${{ github.sha }}'
+          format: 'table'
+          severity: 'HIGH,CRITICAL'
+          cache-dir: ~/.cache/trivy
+          skip-setup-trivy: true
 
       - uses: github/codeql-action/upload-sarif@v4
         if: always()
