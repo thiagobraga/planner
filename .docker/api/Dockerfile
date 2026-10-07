@@ -23,7 +23,11 @@ RUN npm ci && \
 RUN date -u +%Y%m%dT%H%M%SZ > /app/BUILD_ID
 
 FROM base AS production
-RUN npm uninstall -g npm corepack
+# CI passes a fresh value per run so this layer is never served from the
+# buildx cache - otherwise the image keeps whatever Alpine patches existed
+# when the layer was first cached.
+ARG APK_REFRESH
+RUN apk upgrade --no-cache && npm uninstall -g npm corepack
 COPY --chown=node:node --from=build /app/dist ./dist
 COPY --chown=node:node --from=build /app/node_modules ./node_modules
 COPY --chown=node:node --from=build /app/package.json ./

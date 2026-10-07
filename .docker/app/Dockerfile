@@ -16,6 +16,10 @@ ENTRYPOINT ["/entrypoint.sh"]
 CMD ["npm", "run", "dev"]
 
 FROM nginx:1.31-alpine AS production
+# CI passes a fresh value per run so this layer is never served from the
+# buildx cache - otherwise the image keeps whatever Alpine patches existed
+# when the layer was first cached.
+ARG APK_REFRESH
 RUN apk upgrade --no-cache
 COPY --from=build /app/dist /usr/share/nginx/html
 COPY .docker/app/nginx.conf /etc/nginx/conf.d/default.conf

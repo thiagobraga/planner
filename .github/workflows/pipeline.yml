@@ -77,6 +77,7 @@ jobs:
           push: false
           load: true
           tags: planner-${{ matrix.component }}:pr-scan
+          build-args: APK_REFRESH=${{ github.run_id }}
           # Read-only: reuses the cache quality.yml's docker job warmed for
           # this scope. No cache-to - untrusted PR branches must not write
           # into the cache that deploy.yml's push build later reads from.
