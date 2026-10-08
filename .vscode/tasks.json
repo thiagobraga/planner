@@ -6,8 +6,7 @@
       "type": "shell",
       "command": "bash .vscode/tasks.sh",
       "group": {
-        "kind": "build",
-        "isDefault": true
+        "kind": "build"
       },
       "problemMatcher": [],
       "presentation": {
@@ -34,6 +33,85 @@
         "reveal": "always",
         "showReuseMessage": false
       }
+    },
+    {
+      "label": "Claude",
+      "type": "shell",
+      "command": "zsh -ic cl",
+      "dependsOn": [
+        "Docker Run"
+      ],
+      "problemMatcher": [],
+      "presentation": {
+        "clear": true,
+        "focus": false,
+        "panel": "dedicated",
+        "reveal": "always",
+        "showReuseMessage": false
+      }
+    },
+    {
+      "label": "Codex",
+      "type": "shell",
+      "command": "zsh -ic co",
+      "dependsOn": [
+        "Docker Run"
+      ],
+      "problemMatcher": [],
+      "presentation": {
+        "clear": true,
+        "focus": false,
+        "panel": "dedicated",
+        "reveal": "always",
+        "showReuseMessage": false
+      }
+    },
+    {
+      "label": "Antigravity",
+      "type": "shell",
+      "command": "zsh -ic ag",
+      "dependsOn": [
+        "Docker Run"
+      ],
+      "problemMatcher": [],
+      "presentation": {
+        "clear": true,
+        "focus": false,
+        "panel": "dedicated",
+        "reveal": "always",
+        "showReuseMessage": false
+      }
+    },
+    {
+      "label": "OpenCode",
+      "type": "shell",
+      "command": "zsh -ic oc",
+      "dependsOn": [
+        "Docker Run"
+      ],
+      "problemMatcher": [],
+      "presentation": {
+        "clear": true,
+        "focus": false,
+        "panel": "dedicated",
+        "reveal": "always",
+        "showReuseMessage": false
+      }
+    },
+    {
+      "label": "Dev",
+      "dependsOn": [
+        "Claude",
+        "Codex",
+        "Antigravity",
+        "OpenCode"
+      ],
+      "dependsOrder": "parallel",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": []
     }
   ]
 }
