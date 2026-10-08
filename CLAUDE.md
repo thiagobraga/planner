@@ -1,6 +1,6 @@
 # AI Agent Instructions
 
-This file provides guidance to AI coding agents (Claude Code, Gemini CLI, GitHub Copilot CLI, Codex, OpenCode, Antigravity, etc.) when working with code in this repository.
+This file provides guidance to AI coding agents (Claude Code, Codex, Antigravity, OpenCode, GitHub Copilot, etc.) when working with code in this repository.
 
 `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, and `.github/copilot-instructions.md` are symlinks to this single file - there is nothing to synchronize manually. Edit this file only; the other names stay in sync automatically because they resolve to the same inode. Do not replace any of them with a real file.
 
@@ -17,6 +17,7 @@ Different agents expose the same capability under different tool names. Read-bef
 ## Andrej Karpathy Engineering Principles
 
 When starting development, apply Karpathy core engineering principles:
+
 - **First-Principles Reasoning**: Understand root requirements and underlying systems before writing code.
 - **Extreme Simplicity**: Build the simplest working solution; avoid premature abstractions and unneeded complexity.
 - **Clean & Readable**: Write clear, self-explanatory code with zero fluff.
@@ -56,18 +57,18 @@ Add to `/etc/hosts`: `planner.local`, `api.planner.local`, `db.planner.local`, `
 
 ## Commands
 
-| Command | What it does |
-| --- | --- |
-| `docker compose up -d` | Start api (4000) + app (5173) + Postgres + Redis |
-| `docker compose exec api npm run build` | Build API |
-| `docker compose exec app npm run build` | Build app |
-| `docker compose exec api npm run lint` | Lint API |
-| `docker compose exec app npm run lint` | Lint app |
-| `docker compose exec api npm test && docker compose exec app npm test` | All tests (Vitest) |
-| `docker compose exec api npm test` | API tests only |
-| `docker compose exec app npm test` | App tests only |
-| `docker compose exec api npm exec vitest run src/path/to/file.test.ts` | Single API test file |
-| `docker compose exec app npm run test:e2e` | Playwright E2E tests |
+| Command                                                                | What it does                                     |
+| ---------------------------------------------------------------------- | ------------------------------------------------ |
+| `docker compose up -d`                                                 | Start api (4000) + app (5173) + Postgres + Redis |
+| `docker compose exec api npm run build`                                | Build API                                        |
+| `docker compose exec app npm run build`                                | Build app                                        |
+| `docker compose exec api npm run lint`                                 | Lint API                                         |
+| `docker compose exec app npm run lint`                                 | Lint app                                         |
+| `docker compose exec api npm test && docker compose exec app npm test` | All tests (Vitest)                               |
+| `docker compose exec api npm test`                                     | API tests only                                   |
+| `docker compose exec app npm test`                                     | App tests only                                   |
+| `docker compose exec api npm exec vitest run src/path/to/file.test.ts` | Single API test file                             |
+| `docker compose exec app npm run test:e2e`                             | Playwright E2E tests                             |
 
 ## Architecture
 
@@ -106,13 +107,19 @@ Add to `/etc/hosts`: `planner.local`, `api.planner.local`, `db.planner.local`, `
 - `services/searchService.ts` - full-text search
 - `services/activityService.ts` - activity feed; `recordActivity()` is the only writer to `activity_events` and stamps the acting token or OAuth grant (`actor_type`, `api_token_id` / `oauth_grant_id`, `actor_label`) from the request context
 - `services/collaborationService.ts` - project collaboration
+- `services/statusService.ts` - task status CRUD (`task_statuses`)
+- `services/completionSync.ts` - reconciles task completion with the collection's completion status
+- `services/savedColorService.ts` - recently used color swatches (`user_saved_colors`), trimmed on every write
+- `services/passwordService.ts` - password validation, Argon2id hashing, reset tokens
+- `services/rateLimitService.ts` - Redis-backed rate limiting
+- `services/adminUserService.ts` / `services/adminStatsService.ts` - admin user management and dashboard stats
 - `db/pool.ts` - PostgreSQL pool (max 20); `db/redis.ts` - three clients (general, pub, sub)
 - `parsers/` - Peggy-based filter DSL and date parsers
 - `engines/recurrenceEngine.ts` - daily/weekly/monthly/yearly recurrence
 - `mcp/` - MCP server for AI agents: `server.ts` builds a per-request `McpServer` (write tools only for write tokens), `tools/*` call services directly, `resolve.ts` maps names/natural dates to ids/ISO in the user's timezone, `format.ts` renders compact task lines ending in `id:<uuid>`
 - `routes/index.ts` - Aggregates all routes under `/api/v1/`
 
-All routes under `/api/v1/`. Route files: `auth`, `apiTokens`, `mcp`, `oauth`, `tasks`, `collections`, `labels`, `sections`, `views`, `filters`, `search`, `reminders`, `comments`, `preferences`, `activity`, `collaboration`, `habits`, `habitGroups`.
+All routes under `/api/v1/`. Route files: `auth`, `apiTokens`, `mcp`, `oauth`, `tasks`, `collections`, `labels`, `sections`, `views`, `filters`, `search`, `reminders`, `comments`, `preferences`, `activity`, `collaboration`, `habits`, `habitGroups`, `statuses`, `savedColors`, `adminUsers`, `adminStats`.
 
 ### Frontend (`app/src/`)
 
@@ -121,25 +128,28 @@ All routes under `/api/v1/`. Route files: `auth`, `apiTokens`, `mcp`, `oauth`, `
 - `hooks/useSync.ts` - subscribes to `"sync"` events; handler receives `SyncEvent`
 - `hooks/shortcuts.ts` - pure chord-aware keyboard matcher; `DEFAULT_BINDINGS` for `q /  ? Enter Delete Escape g+i g+t g+u`
 - `hooks/usePreferences.ts` - User preferences hook
+- `hooks/useBoard*.ts`, `useTaskDrag.ts`, `useSectionDrag.ts`, `useHabitDrag.ts` - board preferences and drag-and-drop
 - `api/client.ts` - Fetch wrapper; base `/api/v1`; auto-logout on 401
 - `api/queryClient.ts` - React Query config (staleTime 60s, 1 retry)
 - `stores/taskStore.ts` - Zustand store; `setTasks / addTask / updateTask / removeTask`
 - `stores/collectionStore.ts` - Zustand store for collections
 - `stores/authStore.ts` - Zustand store for auth state
+- `stores/taskSelectionStore.ts` - Zustand store for multi-task selection
 - `stores/optimistic.ts` - optimistic helpers: `runOptimistic`, `applyOptimistic`, `revertOptimistic` (2s auto-revert)
 
 ### Pages & Routes
 
-| Route | Page | Purpose |
-| --- | --- | --- |
-| `/today` (default) | `TodayPage` | Overdue + today sections |
-| `/inbox` | `InboxPage` | Unprocessed tasks; also `/collection/:id` |
-| `/upcoming` | `UpcomingPage` | 7-day preview |
-| `/monthly` | `MonthlyPage` | Monthly calendar |
-| `/habits` | `HabitsPage` | Habit streaks (12-week grid) |
-| `/collections` | `CollectionsPage` | Collection/project management |
-| `/settings` | `SettingsPage` | Font, theme, preferences |
-| `/styleguide` | `StyleguidePage` | Design system reference |
+| Route                              | Page                                   | Purpose                                                      |
+| ---------------------------------- | -------------------------------------- | ------------------------------------------------------------ |
+| `/daily` (default)                 | `DailyPage`                            | Week board with week selector; `/` and `/today` redirect     |
+| `/inbox`                           | `InboxPage`                            | Unprocessed tasks                                            |
+| `/habits`                          | `HabitsPage`                           | Habit streaks (12-week grid)                                 |
+| `/collections`                     | `CollectionsIndexPage`                 | Collection/project list                                      |
+| `/collection/:id`                  | `CollectionsPage`                      | Single collection                                            |
+| `/settings/:section`               | `SettingsPage`                         | Font, theme, preferences; `/settings` -> `/settings/general` |
+| `/help`                            | `HelpPage`                             | Help                                                         |
+| `/styleguide`                      | `StyleguidePage`                       | Design system reference (admin only)                         |
+| `/admin/dashboard`, `/admin/users` | `AdminDashboardPage`, `AdminUsersPage` | Admin only; `/admin` redirects to dashboard                  |
 
 `AppShell` wraps all logged-in routes: sidebar, keyboard dispatch, QuickAdd/Search dialogs.
 
@@ -158,7 +168,7 @@ api/src/db/migrations/               SQL migration files (001-048)
 api/src/parsers/filterParser.ts      Peggy filter DSL parser
 api/src/engines/recurrenceEngine.ts  Recurrence rule engine
 api/src/mcp/server.ts                MCP server (AI agent tools)
-api/src/utils/AppError.ts             Custom error class
+api/src/utils/AppError.ts            Custom error class
 
 app/src/contexts/AuthContext.tsx     Auth state + socket lifecycle
 app/src/api/client.ts                REST Fetch wrapper
@@ -229,7 +239,7 @@ Rooms: `user:{userId}` (all sessions) and `collection:{collectionId}` (collabora
 ## Database
 
 PostgreSQL 16. Pool max 20 connections. Migrations run at startup from `api/src/db/migrations/`.  
-Schema tables: `users`, `sessions`, `api_tokens`, `oauth_clients`, `oauth_authorization_requests`, `oauth_grants`, `oauth_codes`, `oauth_tokens`, `preferences`, `password_reset_tokens`, `collections`, `collaborators`, `project_invitations`, `sections`, `tasks`, `labels`, `task_labels`, `filters`, `comments`, `reminders`, `activity_events`, `habits`, `habit_completions`, `habit_groups`.
+Schema tables: `users`, `sessions`, `api_tokens`, `oauth_clients`, `oauth_authorization_requests`, `oauth_grants`, `oauth_codes`, `oauth_tokens`, `preferences`, `password_reset_tokens`, `collections`, `collaborators`, `project_invitations`, `sections`, `tasks`, `labels`, `task_labels`, `filters`, `comments`, `reminders`, `activity_events`, `habits`, `habit_completions`, `habit_groups`, `task_statuses`, `user_saved_colors`.
 
 Redis: three clients from `db/redis.ts` - `redisClient` (general), `redisPubClient` (publish), `redisSubClient` (subscribe). Auth rate-limiting uses `redisClient`.
 
@@ -237,11 +247,11 @@ Redis: three clients from `db/redis.ts` - `redisClient` (general), `redisPubClie
 
 Three layers, each with a distinct role:
 
-| Layer | Tool | Scope |
-| --- | --- | --- |
-| Server cache | React Query (`queryClient.ts`) | API data, staleTime 60s |
-| Optimistic local | `stores/optimistic.ts` | Mutations before server confirm |
-| Global client | Zustand `taskStore.ts` | Cross-component task list |
+| Layer            | Tool                           | Scope                           |
+| ---------------- | ------------------------------ | ------------------------------- |
+| Server cache     | React Query (`queryClient.ts`) | API data, staleTime 60s         |
+| Optimistic local | `stores/optimistic.ts`         | Mutations before server confirm |
+| Global client    | Zustand `taskStore.ts`         | Cross-component task list       |
 
 Pattern for mutations: `runOptimistic({ apply, revert })` → fire API call → on error, auto-revert after 2s.
 
