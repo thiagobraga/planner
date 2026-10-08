@@ -24,6 +24,8 @@ import { ContextMenu, ContextMenuItem } from '../components/ui/ContextMenu';
 import { Briefcase, Calendar as CalendarIcon, Tag, ArrowUp, ArrowDown } from 'lucide-react';
 import { fetchPreferences } from '../api/client';
 import { BoardCard } from '../components/board/BoardCard';
+import { UpdateToastBanner } from '../components/UpdateToast';
+import { OfflineIndicatorBanner } from '../components/OfflineIndicator';
 
 // Card wrapper --------------------------------------------------------------
 function Card({
@@ -615,6 +617,25 @@ export function StyleguidePage() {
                     <span className="text-xs text-ink-light">{label}</span>
                   </div>
                 ))}
+              </div>
+            </TokenRow>
+          </div>
+        </Card>
+
+        <Card title="Indicators" span>
+          <div className="flex flex-col gap-6">
+            <TokenRow label="Update available">
+              <div className="flex">
+                <UpdateToastBanner
+                  message="New version available"
+                  refreshLabel="Refresh"
+                  onRefresh={() => window.location.reload()}
+                />
+              </div>
+            </TokenRow>
+            <TokenRow label="Offline">
+              <div className="flex">
+                <OfflineIndicatorBanner />
               </div>
             </TokenRow>
           </div>

@@ -19,6 +19,18 @@ import { useAuth } from '../contexts/AuthContext';
 const BROWSER_OFFLINE_DELAY_MS = 500;
 const SOCKET_OFFLINE_DELAY_MS = 3000;
 
+export function OfflineIndicatorBanner() {
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      className="pointer-events-auto flex items-center gap-2 py-2 px-3.5 text-[13px] leading-5 text-accent bg-accent/12 backdrop-blur-sm border border-accent rounded-md"
+    >
+      Offline. Changes sync automatically when you're back online.
+    </div>
+  );
+}
+
 export function OfflineIndicator() {
   const { isAuthenticated } = useAuth();
   const isOnline = useOnlineStatus(isAuthenticated);
@@ -38,13 +50,7 @@ export function OfflineIndicator() {
 
   return (
     <div className="fixed inset-x-0 bottom-0 z-[110] flex justify-center px-4 py-6 sm:inset-x-auto sm:bottom-4 sm:right-4 sm:justify-end sm:px-0 sm:py-0 pointer-events-none">
-      <div
-        role="status"
-        aria-live="polite"
-        className="pointer-events-auto flex items-center gap-2 py-2 px-3.5 text-[13px] leading-5 text-accent bg-accent/12 backdrop-blur-sm border border-accent rounded-md"
-      >
-        Offline. Changes sync automatically when you're back online.
-      </div>
+      <OfflineIndicatorBanner />
     </div>
   );
 }

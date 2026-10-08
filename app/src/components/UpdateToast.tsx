@@ -5,6 +5,37 @@ interface UpdateToastProps {
   updateAvailable: boolean;
 }
 
+export function UpdateToastBanner({
+  message,
+  refreshLabel,
+  onRefresh,
+}: {
+  message: string;
+  refreshLabel: string;
+  onRefresh: () => void;
+}) {
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      className="pointer-events-auto flex items-center gap-3 rounded-md border border-moss px-3.5 py-2 text-[13px] leading-5"
+      style={{
+        backgroundColor: 'color-mix(in srgb, var(--color-moss) 18%, var(--planner-overlay-bg))',
+        color: 'color-mix(in srgb, var(--color-moss) 40%, var(--color-ink))',
+      }}
+    >
+      <span>{message}</span>
+      <button
+        type="button"
+        onClick={onRefresh}
+        className="font-semibold underline underline-offset-2"
+      >
+        {refreshLabel}
+      </button>
+    </div>
+  );
+}
+
 export function UpdateToast({ updateAvailable }: UpdateToastProps) {
   const { t } = useI18n();
   const [tooltipOpen, setTooltipOpen] = useState(false);
@@ -43,21 +74,12 @@ export function UpdateToast({ updateAvailable }: UpdateToastProps) {
         )}
       </div>
 
-      <div className="update-indicator-desktop fixed inset-x-0 top-0 z-[110] justify-center px-4 py-6 pointer-events-none sm:inset-x-auto sm:top-4 sm:right-4 sm:justify-end sm:px-0 sm:py-0">
-        <div
-          role="status"
-          aria-live="polite"
-          className="pointer-events-auto flex items-center gap-3 rounded-md border border-moss bg-moss/12 px-3.5 py-2 text-[13px] leading-5 text-moss backdrop-blur-sm"
-        >
-          <span>{t('update.available')}</span>
-          <button
-            type="button"
-            onClick={refresh}
-            className="font-semibold underline underline-offset-2"
-          >
-            {t('update.refresh')}
-          </button>
-        </div>
+      <div className="update-indicator-desktop fixed inset-x-0 top-0 z-110 justify-center px-4 py-6 pointer-events-none sm:inset-x-auto sm:top-4 sm:right-4 sm:justify-end sm:px-0 sm:py-0">
+        <UpdateToastBanner
+          message={t('update.available')}
+          refreshLabel={t('update.refresh')}
+          onRefresh={refresh}
+        />
       </div>
     </div>
   );

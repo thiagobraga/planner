@@ -59,7 +59,18 @@ describe('StyleguidePage (smoke)', () => {
     expect(screen.getByText('Habit')).toBeInTheDocument();
     expect(screen.getByText('Calendar')).toBeInTheDocument();
     expect(screen.getByText('Essential Tokens')).toBeInTheDocument();
+    expect(screen.getByText('Indicators')).toBeInTheDocument();
     expect(screen.getByText('Context Menu')).toBeInTheDocument();
+  });
+
+  it('shows update and offline indicator specimens', async () => {
+    renderPage();
+
+    const indicators = (await screen.findByText('Indicators')).closest('section');
+    expect(indicators).not.toBeNull();
+    expect(within(indicators!).getByText('New version available')).toBeInTheDocument();
+    expect(within(indicators!).getByRole('button', { name: 'Refresh' })).toBeInTheDocument();
+    expect(within(indicators!).getByText("Offline. Changes sync automatically when you're back online.")).toBeInTheDocument();
   });
 
   it('renders color swatches', async () => {
