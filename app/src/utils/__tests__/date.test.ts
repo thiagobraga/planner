@@ -10,7 +10,21 @@ import {
   fmtISOInTimeZone,
   getTimeZoneOffsetMs,
   getMsUntilMidnight,
+  formatWeekRangeNumeric,
 } from '../date';
+
+describe('formatWeekRangeNumeric', () => {
+  const start = new Date(2026, 9, 4);
+  const end = new Date(2026, 9, 10);
+
+  it('formats day/month with "à" for pt-BR', () => {
+    expect(formatWeekRangeNumeric(start, end, 'pt-BR')).toBe('04/10 à 10/10/2026');
+  });
+
+  it('formats month/day with "to" for en', () => {
+    expect(formatWeekRangeNumeric(start, end, 'en')).toBe('10/04 to 10/10/2026');
+  });
+});
 
 describe('timezone & midnight date helpers', () => {
   it('getDetectedTimeZone returns a valid timezone string', () => {

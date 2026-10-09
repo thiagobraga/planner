@@ -27,7 +27,7 @@ test('Week selector picks a week from the calendar and returns to today', async 
   await expect(dialog).toHaveCount(0);
   await expect(trigger).not.toHaveText(currentRange);
 
-  await nav.getByRole('button', { name: 'Today', exact: true }).click();
+  await page.getByRole('button', { name: 'Today', exact: true }).click();
   await expect(trigger).toHaveText(currentRange);
 
   await trigger.click();

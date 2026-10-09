@@ -4,7 +4,7 @@ import { WeekSelector } from '../WeekSelector';
 import { I18nProvider } from '../../../i18n/I18nContext';
 
 const today = new Date(2026, 9, 3);
-const RANGE = /Sep 27 - Oct 3, 2026/;
+const RANGE = /09\/27 to 10\/03\/2026/;
 
 function setup(overrides: Partial<React.ComponentProps<typeof WeekSelector>> = {}) {
   const onWeekChange = vi.fn();
@@ -25,19 +25,15 @@ function setup(overrides: Partial<React.ComponentProps<typeof WeekSelector>> = {
 describe('WeekSelector', () => {
   it('shows the week range and shifts a week with the arrows', () => {
     const { onWeekChange } = setup();
-    expect(screen.getByRole('button', { name: RANGE })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: RANGE })).toHaveClass('ui-button');
+    expect(screen.getByRole('button', { name: 'Previous week' })).toHaveClass('ui-button');
+    expect(screen.getByRole('button', { name: 'Next week' })).toHaveClass('ui-button');
 
     fireEvent.click(screen.getByRole('button', { name: 'Previous week' }));
     expect(onWeekChange).toHaveBeenLastCalledWith(new Date(2026, 8, 26));
 
     fireEvent.click(screen.getByRole('button', { name: 'Next week' }));
     expect(onWeekChange).toHaveBeenLastCalledWith(new Date(2026, 9, 10));
-  });
-
-  it('jumps back to today from another week', () => {
-    const { onWeekChange } = setup({ weekAnchor: new Date(2026, 10, 20) });
-    fireEvent.click(screen.getByRole('button', { name: 'Today' }));
-    expect(onWeekChange).toHaveBeenCalledWith(today);
   });
 
   it('opens a calendar from the range button and picks the week of a clicked day', () => {
@@ -48,6 +44,8 @@ describe('WeekSelector', () => {
     fireEvent.click(trigger);
     expect(trigger).toHaveAttribute('aria-expanded', 'true');
     const dialog = screen.getByRole('dialog');
+    expect(within(dialog).getByRole('button', { name: 'Previous month' })).toHaveClass('ui-button');
+    expect(within(dialog).getByRole('button', { name: 'Next month' })).toHaveClass('ui-button');
     expect(within(dialog).getByText('October 2026')).toBeInTheDocument();
 
     fireEvent.click(within(dialog).getByRole('button', { name: '15' }));

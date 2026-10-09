@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { WeekSelectorProps } from '../../types/dailyBoard';
-import { fmtISO, formatWeekRangeLabel, shiftWeek, startOfWeek, weekdayInitials } from '../../utils/date';
-import { StripNavigator } from '../ui/StripNavigator';
+import { fmtISO, formatWeekRangeNumeric, shiftWeek, startOfWeek, weekdayInitials } from '../../utils/date';
 import { Button } from '../ui/Button';
 import { useI18n } from '../../i18n/I18nContext';
 
@@ -39,7 +38,7 @@ export function WeekSelector({ weekAnchor, today, weekStart, onWeekChange }: Wee
 
   const weekStartDate = startOfWeek(weekAnchor, weekStart);
   const weekEndDate = addDays(weekStartDate, WEEK_DAYS - 1);
-  const rangeLabel = formatWeekRangeLabel(weekStartDate, weekEndDate, locale);
+  const rangeLabel = formatWeekRangeNumeric(weekStartDate, weekEndDate, locale);
   const weekStartKey = fmtISO(weekStartDate);
   const weekEndKey = fmtISO(weekEndDate);
   const todayKey = fmtISO(today);
@@ -68,12 +67,15 @@ export function WeekSelector({ weekAnchor, today, weekStart, onWeekChange }: Wee
 
   return (
     <div ref={rootRef} className="week-selector relative flex items-center gap-2">
-      <StripNavigator
-        bordered
-        direction="previous"
+      <Button
+        variant="secondary"
+        size="sm"
+        className="w-6 shrink-0 !px-0"
         aria-label={t('page.previousWeek')}
         onClick={() => onWeekChange(shiftWeek(weekAnchor, -1))}
-      />
+      >
+        <ChevronLeft size={16} strokeWidth={1.8} />
+      </Button>
       <Button
         size="sm"
         variant="secondary"
@@ -85,14 +87,14 @@ export function WeekSelector({ weekAnchor, today, weekStart, onWeekChange }: Wee
         {rangeLabel}
         <ChevronDown size={14} strokeWidth={1.8} />
       </Button>
-      <StripNavigator
-        bordered
-        direction="next"
+      <Button
+        variant="secondary"
+        size="sm"
+        className="w-6 shrink-0 !px-0"
         aria-label={t('page.nextWeek')}
         onClick={() => onWeekChange(shiftWeek(weekAnchor, 1))}
-      />
-      <Button size="sm" variant="secondary" onClick={() => onWeekChange(today)}>
-        {t('page.today')}
+      >
+        <ChevronRight size={16} strokeWidth={1.8} />
       </Button>
 
       {open && (
@@ -103,19 +105,25 @@ export function WeekSelector({ weekAnchor, today, weekStart, onWeekChange }: Wee
           style={{ boxShadow: '0 8px 32px rgba(44,44,44,0.15)' }}
         >
           <div className="mb-3 flex items-center justify-between gap-2">
-            <StripNavigator
-              bordered
-              direction="previous"
+            <Button
+              variant="secondary"
+              size="sm"
+              className="w-6 shrink-0 !px-0"
               aria-label={t('page.previousMonth')}
               onClick={() => shiftViewMonth(-1)}
-            />
+            >
+              <ChevronLeft size={16} strokeWidth={1.8} />
+            </Button>
             <span className="text-sm font-medium capitalize text-ink">{monthLabel}</span>
-            <StripNavigator
-              bordered
-              direction="next"
+            <Button
+              variant="secondary"
+              size="sm"
+              className="w-6 shrink-0 !px-0"
               aria-label={t('page.nextMonth')}
               onClick={() => shiftViewMonth(1)}
-            />
+            >
+              <ChevronRight size={16} strokeWidth={1.8} />
+            </Button>
           </div>
           <div className="grid grid-cols-7 text-center">
             {weekdayInitials(weekStart, locale).map((initial, index) => (

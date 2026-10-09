@@ -166,6 +166,12 @@ export function formatWeekRangeLabel(start: Date, end: Date, locale: 'en' | 'pt-
   return `${startLabel} - ${endLabel}, ${end.getFullYear()}`;
 }
 
+export function formatWeekRangeNumeric(start: Date, end: Date, locale: 'en' | 'pt-BR' = 'en'): string {
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const short = (d: Date) => (locale === 'pt-BR' ? `${pad(d.getDate())}/${pad(d.getMonth() + 1)}` : `${pad(d.getMonth() + 1)}/${pad(d.getDate())}`);
+  return `${short(start)} ${locale === 'pt-BR' ? 'à' : 'to'} ${short(end)}/${end.getFullYear()}`;
+}
+
 export interface MonthDay {
   iso: string;
   dayOfMonth: number;

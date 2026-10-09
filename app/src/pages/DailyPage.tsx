@@ -918,7 +918,16 @@ export function DailyPage() {
       <PageHeader
         title={t('page.daily')}
         toolbar={
-          <Toolbar className="daily-page-header-controls" viewSwitcher={<ViewSwitcher view={boardPreferences.view} onViewChange={boardPreferences.setView} />}>
+          <Toolbar className="daily-page-header-controls" viewSwitcher={
+            <>
+              {dailyBoard && (
+                <Button variant="secondary" size="xs" onClick={() => setWeekAnchor(dateFromISO(todayKey))}>
+                  {t('page.today')}
+                </Button>
+              )}
+              <ViewSwitcher view={boardPreferences.view} onViewChange={boardPreferences.setView} />
+            </>
+          }>
             {reorg.state === 'preview' ? (
               <span className="reorganize-confirm inline-flex items-center gap-1 text-[13px]">
                 {t('reorganize.confirm')}

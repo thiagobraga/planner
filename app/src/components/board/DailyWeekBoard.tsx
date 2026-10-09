@@ -79,7 +79,7 @@ export function DailyWeekBoard({ tasks, weekAnchor, today, todayKey, weekStart, 
 
   return (
     <div className="daily-week-board">
-      <div className="daily-week-board-nav">
+      <div className="daily-week-board-nav flex max-w-162 justify-start">
         <WeekSelector weekAnchor={weekAnchor} today={today} weekStart={weekStart} onWeekChange={onWeekChange} />
       </div>
 

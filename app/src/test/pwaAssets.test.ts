@@ -131,11 +131,12 @@ describe('in-app logos', () => {
 describe('old artwork', () => {
   it('is gone from disk and from every reference', () => {
     expect(fs.readdirSync(path.join(PUBLIC, 'images')).filter((f) => f.startsWith('bulletjournal-planner'))).toEqual([]);
+    const readmePath = path.join(APP, '../README.md');
     const sources = [
       path.join(APP, 'index.html'),
       path.join(PUBLIC, 'manifest.webmanifest'),
       path.join(PUBLIC, 'manifest.dev.webmanifest'),
-      path.join(APP, '../README.md'),
+      ...(fs.existsSync(readmePath) ? [readmePath] : []),
       ...fs
         .readdirSync(path.join(APP, 'src'), { recursive: true, encoding: 'utf8' })
         .filter((f) => /\.tsx?$/.test(f) && !f.endsWith('pwaAssets.test.ts'))
