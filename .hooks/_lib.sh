@@ -92,11 +92,16 @@ run_script() {
 
   printf '%s\n' "${C_DIM}[${hook_name}]${C_OFF} ${pkg}: npm run ${script} ${C_DIM}(${runner})${C_OFF}"
 
+  # Throttle so hooks do not starve the machine: lowest CPU priority, capped
+  # test workers and Node heap. Override with HOOK_MAX_WORKERS / HOOK_MAX_HEAP_MB.
+  local workers="${HOOK_MAX_WORKERS:-2}" heap="${HOOK_MAX_HEAP_MB:-1536}"
+  local -a limits=(env "VITEST_MAX_WORKERS=${workers}" "NODE_OPTIONS=--max-old-space-size=${heap}")
+
   if [ "$runner" = "host" ]; then
-    output="$(cd "${REPO_ROOT}/${pkg}" && npm run --silent "$script" 2>&1)"
+    output="$(cd "${REPO_ROOT}/${pkg}" && nice -n 19 "${limits[@]}" npm run --silent "$script" 2>&1)"
     status=$?
   else
-    output="$(docker compose -f "${REPO_ROOT}/compose.yml" exec -T "$pkg" npm run --silent "$script" 2>&1)"
+    output="$(docker compose -f "${REPO_ROOT}/compose.yml" exec -T "$pkg" nice -n 19 "${limits[@]}" npm run --silent "$script" 2>&1)"
     status=$?
   fi
 
