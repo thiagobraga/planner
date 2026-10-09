@@ -37,10 +37,7 @@
     {
       "label": "Claude",
       "type": "shell",
-      "command": "zsh -ic cl",
-      "dependsOn": [
-        "Docker Run"
-      ],
+      "command": "claude --allow-dangerously-skip-permissions --dangerously-skip-permissions --model sonnet",
       "problemMatcher": [],
       "presentation": {
         "clear": true,
@@ -53,10 +50,7 @@
     {
       "label": "Codex",
       "type": "shell",
-      "command": "zsh -ic co",
-      "dependsOn": [
-        "Docker Run"
-      ],
+      "command": "codex --dangerously-bypass-approvals-and-sandbox --no-daemon -m gpt-6-sol",
       "problemMatcher": [],
       "presentation": {
         "clear": true,
@@ -69,10 +63,7 @@
     {
       "label": "Antigravity",
       "type": "shell",
-      "command": "zsh -ic ag",
-      "dependsOn": [
-        "Docker Run"
-      ],
+      "command": "agy --dangerously-skip-permissions",
       "problemMatcher": [],
       "presentation": {
         "clear": true,
@@ -85,10 +76,7 @@
     {
       "label": "OpenCode",
       "type": "shell",
-      "command": "zsh -ic oc",
-      "dependsOn": [
-        "Docker Run"
-      ],
+      "command": "opencode --auto --model opencode/nemotron-3-ultra-free",
       "problemMatcher": [],
       "presentation": {
         "clear": true,
@@ -104,7 +92,8 @@
         "Claude",
         "Codex",
         "Antigravity",
-        "OpenCode"
+        "OpenCode",
+        "Docker Run"
       ],
       "dependsOrder": "parallel",
       "group": {

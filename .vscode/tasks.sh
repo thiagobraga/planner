@@ -14,4 +14,4 @@ sleep 1
 
 # Open the app in Google Chrome with the specified profile and app ID
 # Detached so the task exits and the agent tabs (see tasks.json "Dev") can start
-setsid -f env __NV_PRIME_RENDER_OFFLOAD=1 __GLX_VENDOR_LIBRARY_NAME=nvidia __VK_LAYER_NV_optimus=NVIDIA_only google-chrome --profile-directory=Default --app-id=oadcfhophbkhdadhdnomdbnbhhnnbnke >/dev/null 2>&1
+__NV_PRIME_RENDER_OFFLOAD=1 __GLX_VENDOR_LIBRARY_NAME=nvidia __VK_LAYER_NV_optimus=NVIDIA_only google-chrome --profile-directory=Default --app-id=oadcfhophbkhdadhdnomdbnbhhnnbnke &>/dev/null
