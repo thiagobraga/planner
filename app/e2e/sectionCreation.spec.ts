@@ -35,7 +35,7 @@ test.describe('Section Creation & Management E2E Tests', () => {
     await expect(workSectionHeader).toBeVisible();
 
     // 4. Add task inside Work Section
-    const taskInputs = page.locator('input.task-add-input');
+    const taskInputs = page.locator('.task-add-input');
     const taskCount = await taskInputs.count();
     const sectionTaskInput = taskInputs.nth(taskCount - 1);
     await sectionTaskInput.fill('Work Task Alpha');
@@ -57,7 +57,7 @@ test.describe('Section Creation & Management E2E Tests', () => {
     await expect(personalSectionHeader).toBeVisible();
 
     // Add task in Personal Section
-    const taskInputsAfter = page.locator('input.task-add-input');
+    const taskInputsAfter = page.locator('.task-add-input');
     const lastInput = taskInputsAfter.last();
     await lastInput.fill('Personal Task Beta');
     await lastInput.press('Enter');

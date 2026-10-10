@@ -3,8 +3,10 @@ import { render, screen, act, fireEvent, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { DailyPage } from '../DailyPage';
+import { typeText } from '../../test/editableText';
 import { I18nProvider } from '../../i18n/I18nContext';
 import {
+  apiCreateTask,
   fetchTodayTasks,
   fetchPreferences,
   fetchCollections,
@@ -16,6 +18,7 @@ import {
 const mockFetchTodayTasks = vi.mocked(fetchTodayTasks);
 const mockFetchPreferences = vi.mocked(fetchPreferences);
 const mockFetchCollections = vi.mocked(fetchCollections);
+const mockApiCreateTask = vi.mocked(apiCreateTask);
 const taskListMock = vi.hoisted(() =>
   vi.fn(({ tasks }: { tasks: { id: string; title: string; labels?: unknown[] }[] }) => (
     <div data-testid="task-list">
@@ -209,14 +212,26 @@ describe('DailyPage', () => {
   it('renders "Add task" input', async () => {
     renderPage();
 
-    expect(await screen.findByPlaceholderText('New task…')).toBeInTheDocument();
+    expect(await screen.findByRole('textbox', { name: 'New task…' })).toBeInTheDocument();
   });
 
-  it('opts the add-task input out of browser autofill', async () => {
+  it('creates the typed task for today when the field loses focus', async () => {
+    mockApiCreateTask.mockReturnValue(new Promise(() => {}));
     renderPage();
 
-    const inputs = await screen.findAllByPlaceholderText('New task…');
-    for (const input of inputs) expect(input).toHaveAttribute('autocomplete', 'off');
+    const input = await screen.findByRole('textbox', { name: 'New task…' });
+    typeText(input, 'Water plants');
+    fireEvent.blur(input);
+
+    expect(mockApiCreateTask).toHaveBeenCalledWith(expect.objectContaining({ title: 'Water plants', type: 'task' }));
+    expect(input).toBeEmptyDOMElement();
+  });
+
+  it('renders add-task fields as contenteditable text, not form inputs', async () => {
+    renderPage();
+
+    const inputs = await screen.findAllByRole('textbox', { name: 'New task…' });
+    for (const input of inputs) expect(input).toHaveAttribute('contenteditable', 'plaintext-only');
   });
 
   it('preserves structured labels in the daily task mapper', async () => {
@@ -273,7 +288,7 @@ describe('DailyPage', () => {
     try {
       vi.setSystemTime(today);
       renderPage();
-      expect(await screen.findByPlaceholderText('New task…')).toBeInTheDocument();
+      expect(await screen.findByRole('textbox', { name: 'New task…' })).toBeInTheDocument();
 
       const tomorrow = new Date(today);
       tomorrow.setDate(tomorrow.getDate() + 1);
@@ -281,7 +296,7 @@ describe('DailyPage', () => {
       mockFetchTodayTasks.mockResolvedValue({ overdue: [], today: [] });
       await act(async () => { capturedMidnightCb!(); });
 
-      expect(await screen.findByPlaceholderText('New task…')).toBeInTheDocument();
+      expect(await screen.findByRole('textbox', { name: 'New task…' })).toBeInTheDocument();
     } finally {
       vi.useRealTimers();
     }

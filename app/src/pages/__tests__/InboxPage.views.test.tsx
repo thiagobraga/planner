@@ -1,4 +1,5 @@
 import { act, fireEvent, screen, waitFor } from '@testing-library/react';
+import { typeText } from '../../test/editableText';
 import { describe, it, expect, vi } from 'vitest';
 import {
   baseInboxData,
@@ -189,9 +190,9 @@ inboxBeforeEach({ mockFetchInboxTasks, mockApiCreateTask, mockApiUpdateTask, moc
       const inboxTasks = taskListCalls('collection:inbox').at(-1)![0].tasks.map((t) => t.id);
       expect(inboxTasks).toEqual(expect.arrayContaining(['task-1', 'task-2', 'task-3']));
 
-      const input = screen.getByPlaceholderText('New task…');
-      fireEvent.change(input, { target: { value: 'Ship it' } });
-      fireEvent.submit(input.closest('form')!);
+      const input = screen.getByRole('textbox', { name: 'New task…' });
+      typeText(input, 'Ship it');
+      fireEvent.keyDown(input, { key: 'Enter' });
       await waitFor(() =>
         expect(mockApiCreateTask).toHaveBeenCalledWith(
           expect.objectContaining({ title: 'Ship it' }),

@@ -1,5 +1,6 @@
 import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { QueryClient } from '@tanstack/react-query';
+import { typeText } from '../../test/editableText';
 import { describe, it, expect, vi } from 'vitest';
 import {
   basePreferences,
@@ -99,7 +100,7 @@ describe('InboxPage', () => {
     renderPage();
 
     expect(screen.getByText('Inbox')).toBeInTheDocument();
-    expect(screen.getByPlaceholderText('New task…')).toBeInTheDocument();
+    expect(screen.getByRole('textbox', { name: 'New task…' })).toBeInTheDocument();
     expect(inboxList().querySelectorAll('[role="listitem"]')).toHaveLength(0);
   });
 
@@ -182,24 +183,24 @@ describe('InboxPage', () => {
   it('renders the add-task input', async () => {
     renderPage();
 
-    expect(await screen.findByPlaceholderText('New task…')).toBeInTheDocument();
+    expect(await screen.findByRole('textbox', { name: 'New task…' })).toBeInTheDocument();
   });
 
-  it('opts the add-task input out of browser autofill', async () => {
+  it('renders add-task fields as contenteditable text, not form inputs', async () => {
     renderPage();
 
-    const inputs = await screen.findAllByPlaceholderText('New task…');
-    for (const input of inputs) expect(input).toHaveAttribute('autocomplete', 'off');
+    const inputs = await screen.findAllByRole('textbox', { name: 'New task…' });
+    for (const input of inputs) expect(input).toHaveAttribute('contenteditable', 'plaintext-only');
   });
 
   describe('task creation', () => {
     it('creates a task optimistically and replaces it with the server row', async () => {
       mockApiCreateTask.mockResolvedValue(createdTask({ title: 'Buy groceries' }));
-      const { container } = renderPage();
+      renderPage();
 
-      const input = await screen.findByPlaceholderText('New task…');
-      fireEvent.change(input, { target: { value: 'Buy groceries' } });
-      fireEvent.submit(input.closest('form')!);
+      const input = await screen.findByRole('textbox', { name: 'New task…' });
+      typeText(input, 'Buy groceries');
+      fireEvent.keyDown(input, { key: 'Enter' });
 
       expect(mockApiCreateTask).toHaveBeenCalledWith({
         title: 'Buy groceries',
@@ -208,16 +209,16 @@ describe('InboxPage', () => {
         recurrenceRule: undefined,
       });
       expect(await screen.findByTestId('task-item-created-1')).toBeInTheDocument();
-      expect(container.querySelector('.inbox-page input')?.getAttribute('value')).toBe('');
+      expect(input).toBeEmptyDOMElement();
     });
 
     it('strips a natural date from the title and sends it as the due date', async () => {
       mockApiCreateTask.mockResolvedValue(createdTask({ title: 'Buy milk', dueDate: '2026-08-13' }));
       renderPage();
 
-      const input = await screen.findByPlaceholderText('New task…');
-      fireEvent.change(input, { target: { value: 'Buy milk tomorrow' } });
-      fireEvent.submit(input.closest('form')!);
+      const input = await screen.findByRole('textbox', { name: 'New task…' });
+      typeText(input, 'Buy milk tomorrow');
+      fireEvent.keyDown(input, { key: 'Enter' });
 
       await waitFor(() =>
         expect(mockApiCreateTask).toHaveBeenCalledWith(
@@ -230,9 +231,9 @@ describe('InboxPage', () => {
       mockApiCreateTask.mockResolvedValue(createdTask({ title: 'Walk' }));
       renderPage();
 
-      const input = await screen.findByPlaceholderText('New task…');
-      fireEvent.change(input, { target: { value: 'Walk every day' } });
-      fireEvent.submit(input.closest('form')!);
+      const input = await screen.findByRole('textbox', { name: 'New task…' });
+      typeText(input, 'Walk every day');
+      fireEvent.keyDown(input, { key: 'Enter' });
 
       await waitFor(() =>
         expect(mockApiCreateTask).toHaveBeenCalledWith(
@@ -245,9 +246,9 @@ describe('InboxPage', () => {
       mockApiCreateTask.mockRejectedValueOnce(new Error('boom'));
       renderPage();
 
-      const input = await screen.findByPlaceholderText('New task…');
-      fireEvent.change(input, { target: { value: 'Doomed task' } });
-      fireEvent.submit(input.closest('form')!);
+      const input = await screen.findByRole('textbox', { name: 'New task…' });
+      typeText(input, 'Doomed task');
+      fireEvent.keyDown(input, { key: 'Enter' });
 
       await waitFor(() => expect(screen.queryByText('Doomed task')).not.toBeInTheDocument());
       expect(mockFetchInboxTasks.mock.calls.length).toBeGreaterThanOrEqual(2);
@@ -256,11 +257,63 @@ describe('InboxPage', () => {
     it('does nothing when the input only contains whitespace', async () => {
       renderPage();
 
-      const input = await screen.findByPlaceholderText('New task…');
-      fireEvent.change(input, { target: { value: '   ' } });
-      fireEvent.submit(input.closest('form')!);
+      const input = await screen.findByRole('textbox', { name: 'New task…' });
+      typeText(input, '   ');
+      fireEvent.keyDown(input, { key: 'Enter' });
 
       await waitFor(() => expect(mockApiCreateTask).not.toHaveBeenCalled());
+    });
+
+    it('creates the typed task when the field loses focus', async () => {
+      mockApiCreateTask.mockResolvedValue(createdTask({ title: 'Call mom' }));
+      renderPage();
+
+      const input = await screen.findByRole('textbox', { name: 'New task…' });
+      typeText(input, 'Call mom');
+      fireEvent.blur(input);
+
+      expect(mockApiCreateTask).toHaveBeenCalledWith(expect.objectContaining({ title: 'Call mom' }));
+      expect(await screen.findByTestId('task-item-created-1')).toBeInTheDocument();
+      expect(input).toBeEmptyDOMElement();
+    });
+
+    it('creates nothing when an empty field loses focus', async () => {
+      renderPage();
+
+      fireEvent.blur(await screen.findByRole('textbox', { name: 'New task…' }));
+
+      expect(mockApiCreateTask).not.toHaveBeenCalled();
+    });
+
+    it('creates only one task when Enter is followed by losing focus', async () => {
+      mockApiCreateTask.mockResolvedValue(createdTask({ title: 'Once' }));
+      renderPage();
+
+      const input = await screen.findByRole('textbox', { name: 'New task…' });
+      typeText(input, 'Once');
+      fireEvent.keyDown(input, { key: 'Enter' });
+      fireEvent.blur(input);
+
+      expect(mockApiCreateTask).toHaveBeenCalledTimes(1);
+    });
+
+    it('creates a section task when the section field loses focus', async () => {
+      mockFetchInboxTasks.mockResolvedValue({
+        ...baseInboxData,
+        inboxCollectionId: 'col-1',
+        sections: [section()],
+      });
+      mockApiCreateTask.mockResolvedValue(createdTask({ title: 'Section task', sectionId: 'section-1' }));
+      renderPage();
+      await screen.findByLabelText('Work');
+
+      const sectionInput = screen.getAllByRole('textbox', { name: 'New task…' })[1];
+      typeText(sectionInput, 'Section task');
+      fireEvent.blur(sectionInput);
+
+      expect(mockApiCreateTask).toHaveBeenCalledWith(
+        expect.objectContaining({ title: 'Section task', sectionId: 'section-1' }),
+      );
     });
 
     it('starts a note when the leading key is "-"', async () => {
@@ -268,7 +321,7 @@ describe('InboxPage', () => {
       renderPage();
       await screen.findByText('Buy groceries');
 
-      const input = screen.getByPlaceholderText('New task…');
+      const input = screen.getByRole('textbox', { name: 'New task…' });
       fireEvent.keyDown(input, { key: '-' });
 
       const note = await screen.findByTestId(/^task-item-temp-/);
@@ -281,7 +334,7 @@ describe('InboxPage', () => {
       renderPage();
       await screen.findByText('Buy groceries');
 
-      const input = screen.getByPlaceholderText('New task…');
+      const input = screen.getByRole('textbox', { name: 'New task…' });
       fireEvent.keyDown(input, { key: 'a' });
 
       expect(screen.queryByTestId(/^task-item-temp-/)).not.toBeInTheDocument();
@@ -294,7 +347,7 @@ describe('InboxPage', () => {
       renderPage();
       await screen.findByText('Buy groceries');
 
-      const input = screen.getByPlaceholderText('New task…');
+      const input = screen.getByRole('textbox', { name: 'New task…' });
       fireEvent.keyDown(input, { key: '-' });
       const note = await screen.findByTestId(/^task-item-temp-/);
       const tempId = note.dataset.taskId!;
@@ -321,9 +374,9 @@ describe('InboxPage', () => {
       renderPage();
       await screen.findByLabelText('Work');
 
-      const sectionForm = screen.getAllByPlaceholderText('New task…')[1].closest('form')!;
-      fireEvent.change(sectionForm.querySelector('input')!, { target: { value: 'Section task' } });
-      fireEvent.submit(sectionForm);
+      const sectionInput = screen.getAllByRole('textbox', { name: 'New task…' })[1];
+      typeText(sectionInput, 'Section task');
+      fireEvent.keyDown(sectionInput, { key: 'Enter' });
 
       await waitFor(() =>
         expect(mockApiCreateTask).toHaveBeenCalledWith(
@@ -331,8 +384,8 @@ describe('InboxPage', () => {
         ),
       );
 
-      fireEvent.change(sectionForm.querySelector('input')!, { target: { value: 'Another' } });
-      fireEvent.submit(sectionForm);
+      typeText(sectionInput, 'Another');
+      fireEvent.keyDown(sectionInput, { key: 'Enter' });
       await waitFor(() => expect(screen.queryByText('Another')).not.toBeInTheDocument());
     });
 
@@ -345,8 +398,7 @@ describe('InboxPage', () => {
       renderPage();
       await screen.findByLabelText('Work');
 
-      const sectionForm = screen.getAllByPlaceholderText('New task…')[1].closest('form')!;
-      fireEvent.submit(sectionForm);
+      fireEvent.keyDown(screen.getAllByRole('textbox', { name: 'New task…' })[1], { key: 'Enter' });
 
       expect(mockApiCreateTask).not.toHaveBeenCalled();
       expect(screen.queryByTestId(/^task-item-temp-/)).not.toBeInTheDocument();
@@ -361,9 +413,9 @@ describe('InboxPage', () => {
       renderPage();
       await screen.findByLabelText('Work');
 
-      const sectionForm = screen.getAllByPlaceholderText('New task…')[1].closest('form')!;
-      fireEvent.change(sectionForm.querySelector('input')!, { target: { value: '   ' } });
-      fireEvent.submit(sectionForm);
+      const sectionInput = screen.getAllByRole('textbox', { name: 'New task…' })[1];
+      typeText(sectionInput, '   ');
+      fireEvent.keyDown(sectionInput, { key: 'Enter' });
 
       expect(screen.queryByTestId(/^task-item-temp-/)).not.toBeInTheDocument();
       expect(mockApiCreateTask).not.toHaveBeenCalled();
