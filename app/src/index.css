@@ -1243,9 +1243,17 @@ button,
   }
 }
 
-.task-add-input::placeholder {
+.editable-text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  cursor: text;
+}
+
+.editable-text:empty::before {
+  content: attr(aria-placeholder);
   color: var(--color-ink-light);
   opacity: 0.35;
+  pointer-events: none;
 }
 
 .task-add-input:focus-visible {
