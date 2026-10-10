@@ -4,20 +4,13 @@ import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { ContextMenu } from '../ui/ContextMenu';
 import { StripNavigator } from '../ui/StripNavigator';
+import { WeekSelector } from '../board/WeekSelector';
 import { HabitDot, dotAriaProps } from './HabitDot';
 import { InlineNameInput } from '../ui/InlineNameInput';
 import { NO_DRAG_ATTR } from '../dnd/sensors';
 import { HabitDragHandle } from './HabitDragHandle';
 import { HabitBlockPreview } from './HabitBlockPreview';
-import {
-  buildWeekDays,
-  fmtISO,
-  formatWeekRangeLabel,
-  shiftWeek,
-  startOfWeek,
-  weekdayInitials,
-  type WeekStart,
-} from '../../utils/date';
+import { buildWeekDays, fmtISO, weekdayInitials, type WeekStart } from '../../utils/date';
 import { useI18n } from '../../i18n/I18nContext';
 import { dayState, flattenHabits, type HabitNode, type HabitSections } from '../../utils/habitTree';
 import { usePlannerDrag } from '../../contexts/usePlannerDrag';
@@ -34,7 +27,9 @@ import type { ApiHabitGroup } from '../../api/client';
 const CELL_W = 24;
 // Keep the label column on a 24px multiple so the day grid aligns with the
 // app's dotted paper background.
-const LABEL_COL_W = 216;
+const NARROW_LABEL_COL_W = 216;
+// 15% wider than the narrow cap once the screen is past mobile.
+const LABEL_COL_W = 248;
 const INDENT = 24;
 
 export type HabitEditTarget = { kind: 'habit' | 'group'; id: string };
@@ -152,8 +147,8 @@ export function HabitTimeline({
   const { indentSteps, overId, setOverlayNode } = usePlannerDrag();
   const labelColWidth = useMemo(() => {
     if (timelineWidth == null) return LABEL_COL_W;
-    if (timelineWidth < 390) return Math.max(0, Math.min(LABEL_COL_W, timelineWidth - CELL_W * 5));
-    if (timelineWidth < 480) return Math.max(0, Math.min(LABEL_COL_W, timelineWidth - CELL_W * 7));
+    if (timelineWidth < 390) return Math.max(0, Math.min(NARROW_LABEL_COL_W, timelineWidth - CELL_W * 5));
+    if (timelineWidth < 480) return Math.max(0, Math.min(NARROW_LABEL_COL_W, timelineWidth - CELL_W * 7));
     return LABEL_COL_W;
   }, [timelineWidth]);
 
@@ -169,13 +164,6 @@ export function HabitTimeline({
       })),
     [dayLetters, weekAnchor, today, weekStart],
   );
-
-  const weekRangeLabel = useMemo(() => {
-    const start = startOfWeek(weekAnchor, weekStart);
-    const end = new Date(start);
-    end.setDate(start.getDate() + 6);
-    return formatWeekRangeLabel(start, end, locale);
-  }, [weekAnchor, weekStart, locale]);
 
   const todayISO = fmtISO(today);
 
@@ -425,22 +413,12 @@ export function HabitTimeline({
 
   return (
     <div ref={rootRef} className="habit-timeline">
-      <div className="habit-timeline-selectors-sticky">
-        <div className="habit-timeline-week-selector flex items-center gap-2">
-          <StripNavigator
-            direction="previous"
-            aria-label={t('page.previousWeek')}
-            onClick={() => onWeekChange(shiftWeek(weekAnchor, -1))}
-          />
-          <span className="habit-timeline-week-label text-sm font-medium text-ink">{weekRangeLabel}</span>
-          <StripNavigator
-            direction="next"
-            aria-label={t('page.nextWeek')}
-            onClick={() => onWeekChange(shiftWeek(weekAnchor, 1))}
-          />
-        </div>
+      <div className="habit-timeline-week-selector flex max-w-162 justify-start">
+        <WeekSelector weekAnchor={weekAnchor} today={today} weekStart={weekStart} onWeekChange={onWeekChange} />
+      </div>
 
-        <div className="habit-timeline-day-selector mt-6 flex min-w-0 items-start gap-0">
+      <div className="habit-timeline-selectors-sticky">
+        <div className="habit-timeline-day-selector flex min-w-0 items-start gap-0">
           <div className="h-12 shrink-0 min-w-0" style={{ width: labelColWidth }} aria-hidden="true" />
 
           <StripNavigator
@@ -525,7 +503,7 @@ export function HabitTimeline({
                   key={row.key}
                   type="button"
                   onClick={() => onAddHabit({ groupId: row.groupId })}
-                  className="habit-timeline-add-habit group flex h-6 w-full min-w-0 items-center pr-2 text-ink-light transition-colors hover:text-ink"
+                  className="habit-timeline-add-habit group flex h-6 w-full min-w-0 items-center pr-2 text-ink-lighter transition-colors hover:text-ink"
                 >
                   <span className="flex h-6 w-6 shrink-0 items-center justify-center">
                     <Plus size={14} strokeWidth={2} />
@@ -604,13 +582,7 @@ export function HabitTimeline({
                     {isCollapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
                   </button>
                 ) : (
-                  <span className="flex h-6 w-6 shrink-0 items-center justify-center">
-                    <span
-                      className="habit-timeline-row-color-dot h-1.5 w-1.5 rounded-full"
-                      style={{ background: 'var(--color-ink-lighter)' }}
-                      aria-hidden="true"
-                    />
-                  </span>
+                  <span className="h-6 w-6 shrink-0" />
                 )}
 
                 {isEditing('habit', node.id) ? (
@@ -863,12 +835,7 @@ function HabitTimelineBlockPreview({
             // level 1 draws flush rather than indented into empty space.
             style={{ width: labelColWidth, paddingLeft: Math.max(0, depth - base) * INDENT }}
           >
-            <span className="flex h-6 w-6 shrink-0 items-center justify-center">
-              <span
-                className="habit-timeline-row-color-dot h-1.5 w-1.5 rounded-full"
-                style={{ background: 'var(--color-ink-lighter)' }}
-              />
-            </span>
+            <span className="h-6 w-6 shrink-0" />
             <span className="habit-timeline-row-name min-w-0 flex-1 truncate text-sm leading-6 text-ink">
               {node.name}
             </span>

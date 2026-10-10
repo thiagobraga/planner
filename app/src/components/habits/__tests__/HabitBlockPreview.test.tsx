@@ -9,7 +9,7 @@ describe('HabitBlockPreview', () => {
     );
 
     expect(screen.getByText('Drink water')).toBeInTheDocument();
-    expect(container.querySelector('.habit-timeline-row-color-dot')).toBeInTheDocument();
+    expect(container.querySelector('.habit-timeline-row-color-dot')).not.toBeInTheDocument();
     expect(screen.queryByText(/^\+/)).not.toBeInTheDocument();
   });
 

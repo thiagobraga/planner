@@ -25,12 +25,7 @@ export function HabitBlockPreview({ name, icon, count, kind }: HabitBlockPreview
     <div className="habit-block-preview flex h-6 min-w-0 items-center gap-1 pr-2" aria-hidden>
       {kind === 'habit' ? (
         <>
-          <span className="flex h-6 w-6 shrink-0 items-center justify-center">
-            <span
-              className="habit-timeline-row-color-dot h-1.5 w-1.5 rounded-full"
-              style={{ background: 'var(--color-ink-lighter)' }}
-            />
-          </span>
+          <span className="h-6 w-6 shrink-0" />
           <span className="min-w-0 truncate text-sm leading-6 text-ink">{name}</span>
         </>
       ) : (
