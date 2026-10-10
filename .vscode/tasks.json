@@ -5,10 +5,14 @@
       "label": "Docker Run",
       "type": "shell",
       "command": "bash .vscode/tasks.sh",
+      "problemMatcher": [],
       "group": {
         "kind": "build"
       },
-      "problemMatcher": [],
+      "icon": {
+        "id": "vm-running",
+        "color": "terminal.ansiBlue"
+      },
       "presentation": {
         "clear": true,
         "focus": true,
@@ -21,11 +25,15 @@
       "label": "Docker Logs",
       "type": "shell",
       "command": "docker compose logs -f",
+      "problemMatcher": [],
       "group": {
         "kind": "test",
         "isDefault": true
       },
-      "problemMatcher": [],
+      "icon": {
+        "id": "file-text",
+        "color": "terminal.ansiWhite"
+      },
       "presentation": {
         "clear": true,
         "focus": true,
@@ -39,6 +47,10 @@
       "type": "shell",
       "command": "claude --allow-dangerously-skip-permissions --dangerously-skip-permissions --model sonnet",
       "problemMatcher": [],
+      "icon": {
+        "id": "robot",
+        "color": "terminal.ansiYellow"
+      },
       "presentation": {
         "clear": true,
         "focus": false,
@@ -52,6 +64,9 @@
       "type": "shell",
       "command": "codex --dangerously-bypass-approvals-and-sandbox --no-daemon -m gpt-6-sol",
       "problemMatcher": [],
+      "icon": {
+        "id": "robot"
+      },
       "presentation": {
         "clear": true,
         "focus": false,
@@ -65,6 +80,10 @@
       "type": "shell",
       "command": "agy --dangerously-skip-permissions",
       "problemMatcher": [],
+      "icon": {
+        "id": "robot",
+        "color": "terminal.ansiGreen"
+      },
       "presentation": {
         "clear": true,
         "focus": false,
@@ -78,6 +97,10 @@
       "type": "shell",
       "command": "opencode --auto --model opencode/nemotron-3-ultra-free",
       "problemMatcher": [],
+      "icon": {
+        "id": "robot",
+        "color": "terminal.ansiBlack"
+      },
       "presentation": {
         "clear": true,
         "focus": false,
