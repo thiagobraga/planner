@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router';
+import { typeText } from '../../test/editableText';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { CollectionsPage } from '../CollectionsPage';
 import {
@@ -212,15 +213,27 @@ describe('CollectionsPage', () => {
   it('renders add task input', async () => {
     renderPage();
 
-    const input = await screen.findByPlaceholderText('New task…');
+    const input = await screen.findByRole('textbox', { name: 'New task…' });
     expect(input).toBeInTheDocument();
   });
 
-  it('opts the add-task input out of browser autofill', async () => {
+  it('creates the typed task in the collection when the field loses focus', async () => {
+    mockApiCreateTask.mockResolvedValue({ id: 'created-1', title: 'Draft spec' } as Awaited<ReturnType<typeof apiCreateTask>>);
     renderPage();
 
-    const inputs = await screen.findAllByPlaceholderText('New task…');
-    for (const input of inputs) expect(input).toHaveAttribute('autocomplete', 'off');
+    const input = await screen.findByRole('textbox', { name: 'New task…' });
+    typeText(input, 'Draft spec');
+    fireEvent.blur(input);
+
+    expect(mockApiCreateTask).toHaveBeenCalledWith(expect.objectContaining({ title: 'Draft spec', collectionId: 'test-collection-id' }));
+    expect(input).toBeEmptyDOMElement();
+  });
+
+  it('renders add-task fields as contenteditable text, not form inputs', async () => {
+    renderPage();
+
+    const inputs = await screen.findAllByRole('textbox', { name: 'New task…' });
+    for (const input of inputs) expect(input).toHaveAttribute('contenteditable', 'plaintext-only');
   });
 
   it('asks what to do with tasks when a populated section name is blanked', async () => {
