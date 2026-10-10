@@ -97,9 +97,9 @@ describe('TaskItem: drag surfaces', () => {
     expect(screen.getByRole('textbox').closest(`[${NO_DRAG_ATTR}]`)).not.toBeNull();
   });
 
-  it('opts the edit input out of browser autofill', () => {
+  it('edits the title in a contenteditable field, not a form input', () => {
     renderRow({ isEditing: true });
-    expect(screen.getByRole('textbox')).toHaveAttribute('autocomplete', 'off');
+    expect(screen.getByRole('textbox')).toHaveAttribute('contenteditable', 'plaintext-only');
   });
 
   it('leaves the row itself draggable', () => {

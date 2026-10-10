@@ -5,6 +5,7 @@ import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { TaskList } from '../components/TaskList';
 import { SectionHeader } from '../components/SectionHeader';
 import { InlineNameInput } from '../components/ui/InlineNameInput';
+import { EditableText } from '../components/ui/EditableText';
 import { CollectionBoard } from '../components/board/CollectionBoard';
 import { BoardToolbar } from '../components/board/BoardToolbar';
 import { MonthlyView } from '../components/monthly/MonthlyView';
@@ -122,7 +123,7 @@ export function CollectionsPage() {
   const [subNewName, setSubNewName] = useState('');
   const [deletingCollection, setDeletingCollection] = useState<{ id: string; name: string } | null>(null);
   const [deletingSection, setDeletingSection] = useState<{ id: string; name: string; taskCount: number } | null>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     inputRef.current?.focus();
@@ -177,9 +178,8 @@ export function CollectionsPage() {
 
   useSectionDrag({ sections, setSections, onError: invalidate });
 
-  const handleAddAtEnd = (e: React.FormEvent) => {
-    e.preventDefault();
-    const trimmed = input.trim();
+  const handleAddAtEnd = (text: string) => {
+    const trimmed = text.trim();
     if (!trimmed) return;
     const tid = tempId();
     setInput('');
@@ -205,9 +205,8 @@ export function CollectionsPage() {
       });
   };
 
-  const handleAddSectionTask = (sectionId: string, e: React.FormEvent) => {
-    e.preventDefault();
-    const trimmed = (sectionTaskInput[sectionId] ?? '').trim();
+  const handleAddSectionTask = (sectionId: string, text: string) => {
+    const trimmed = text.trim();
     if (!trimmed) return;
     const tid = tempId();
     setSectionTaskInput((prev) => ({ ...prev, [sectionId]: '' }));
@@ -235,7 +234,7 @@ export function CollectionsPage() {
   };
 
   /** A leading '-' opens a note instead of a task, as it does on Daily. */
-  const handleAddNoteKeyDown = (e: React.KeyboardEvent<HTMLInputElement>): boolean => {
+  const handleAddNoteKeyDown = (e: React.KeyboardEvent<HTMLDivElement>): boolean => {
     if (e.key !== '-' || input !== '') return false;
     e.preventDefault();
 
@@ -623,7 +622,7 @@ export function CollectionsPage() {
     <div
       className="collection-detail-page relative w-full cursor-text"
       onClick={(e) => {
-        if ((e.target as HTMLElement).closest('input, button, [role="button"]')) return;
+        if ((e.target as HTMLElement).closest('input, [contenteditable], button, [role="button"]')) return;
         inputRef.current?.focus();
       }}
     >
@@ -767,25 +766,23 @@ export function CollectionsPage() {
           onRightClick={handleRightClick}
         />
 
-        <form
-        onSubmit={handleAddAtEnd}
-        className="flex items-center h-6"
-      >
+        <div className="flex items-start min-h-6">
         <span className="w-6 text-center text-[10px] leading-6 text-ink opacity-25 select-none shrink-0">
           •
         </span>
-        <input
-          ref={inputRef}
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder={t('common.addTask')}
-          className="task-input task-add-input flex-1 text-sm leading-6 text-ink bg-transparent border-none outline-none p-0"
-          autoComplete="off"
-          spellCheck={false}
-          onKeyDown={handleAddNoteKeyDown}
-        />
-        </form>
+          <EditableText
+            ref={inputRef}
+            value={input}
+            onValueChange={setInput}
+            onEnter={handleAddAtEnd}
+            onBlur={() => handleAddAtEnd(input)}
+            onKeyDown={handleAddNoteKeyDown}
+            placeholder={t('common.addTask')}
+            aria-label={t('common.addTask')}
+            className="task-input task-add-input flex-1 text-sm leading-6 text-ink bg-transparent border-none outline-none p-0"
+            spellCheck={false}
+          />
+        </div>
 
         <SortableContext
           items={sectionGroups.map((group) => group.section!.id)}
@@ -821,25 +818,21 @@ export function CollectionsPage() {
               onConvertType={handleConvertType}
               onRightClick={handleRightClick}
             />
-            <form
-              onSubmit={(e) => handleAddSectionTask(group.section!.id, e)}
-              className="flex items-center h-6"
-            >
+            <div className="flex items-start min-h-6">
               <span className="w-6 text-center text-[10px] leading-6 text-ink opacity-25 select-none shrink-0">
                 •
               </span>
-              <input
-                type="text"
+              <EditableText
                 value={sectionTaskInput[group.section!.id] ?? ''}
-                onChange={(e) =>
-                  setSectionTaskInput((prev) => ({ ...prev, [group.section!.id]: e.target.value }))
-                }
+                onValueChange={(text) => setSectionTaskInput((prev) => ({ ...prev, [group.section!.id]: text }))}
+                onEnter={(text) => handleAddSectionTask(group.section!.id, text)}
+                onBlur={() => handleAddSectionTask(group.section!.id, sectionTaskInput[group.section!.id] ?? '')}
                 placeholder={t('common.addTask')}
+                aria-label={t('common.addTask')}
                 className="task-input task-add-input flex-1 text-sm leading-6 text-ink bg-transparent border-none outline-none p-0"
-                autoComplete="off"
                 spellCheck={false}
               />
-            </form>
+            </div>
           </Fragment>
         ))}
         </SortableContext>

@@ -1,5 +1,7 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { SortableContext } from '@dnd-kit/sortable';
+import { getCaret, setCaret } from '../../utils/editableText';
+import { typeText } from '../../test/editableText';
 import { describe, it, expect, vi } from 'vitest';
 import { TaskItem, type Task } from '../TaskItem';
 import { PlannerDragProvider } from '../../contexts/PlannerDragContext';
@@ -22,6 +24,69 @@ const baseTask: Task = {
   orderValue: 0,
   type: 'task',
 };
+
+describe('TaskItem - inline editing', () => {
+  const titled = { ...baseTask, title: 'Buy milk' };
+
+  it('starts with the title and the caret at its end', () => {
+    renderTaskItem(titled);
+    const input = screen.getByRole('textbox');
+
+    expect(input).toHaveTextContent('Buy milk');
+    expect(input).toHaveFocus();
+    expect(getCaret(input)).toEqual({ start: 8, end: 8 });
+  });
+
+  it('commits the edited title when the field loses focus', () => {
+    const onEditCommit = vi.fn();
+    renderTaskItem(titled, { onEditCommit });
+    const input = screen.getByRole('textbox');
+
+    typeText(input, 'Buy oat milk');
+    fireEvent.blur(input);
+
+    expect(onEditCommit).toHaveBeenCalledWith('t1', 'Buy oat milk');
+  });
+
+  it('commits once and opens a row below on Enter', () => {
+    const onEditCommit = vi.fn();
+    const onAddBelow = vi.fn();
+    renderTaskItem(titled, { onEditCommit, onAddBelow });
+    const input = screen.getByRole('textbox');
+
+    typeText(input, 'Buy oat milk');
+    fireEvent.keyDown(input, { key: 'Enter' });
+    fireEvent.blur(input);
+
+    expect(onEditCommit).toHaveBeenCalledTimes(1);
+    expect(onEditCommit).toHaveBeenCalledWith('t1', 'Buy oat milk');
+    expect(onAddBelow).toHaveBeenCalledWith('t1');
+  });
+
+  it('cancels on Escape without committing on the blur that follows', () => {
+    const onEditCommit = vi.fn();
+    const onEditCancel = vi.fn();
+    renderTaskItem(titled, { onEditCommit, onEditCancel });
+    const input = screen.getByRole('textbox');
+
+    fireEvent.keyDown(input, { key: 'Escape' });
+    fireEvent.blur(input);
+
+    expect(onEditCancel).toHaveBeenCalledWith('t1');
+    expect(onEditCommit).not.toHaveBeenCalled();
+  });
+
+  it('deletes the row on Backspace once the title is empty', () => {
+    const onDelete = vi.fn();
+    renderTaskItem(titled, { onDelete });
+    const input = screen.getByRole('textbox');
+
+    typeText(input, '');
+    fireEvent.keyDown(input, { key: 'Backspace' });
+
+    expect(onDelete).toHaveBeenCalledWith('t1');
+  });
+});
 
 describe('TaskItem - task/note conversion', () => {
   it('pressing "-" on an empty task input converts to note without committing', () => {
@@ -72,12 +137,12 @@ describe('TaskItem - task/note conversion', () => {
     const onConvertType = vi.fn();
     renderTaskItem({ ...baseTask, title: '-Buy milk' }, { onConvertType });
 
-    const input = screen.getByRole('textbox') as HTMLInputElement;
-    input.setSelectionRange(1, 1);
+    const input = screen.getByRole('textbox');
+    setCaret(input, 1, 1);
     fireEvent.keyDown(input, { key: ' ' });
 
     expect(onConvertType).toHaveBeenCalledWith('t1', 'note');
-    expect(input.value).toBe('Buy milk');
+    expect(input).toHaveTextContent('Buy milk');
   });
 
   it.each(['[', ']', '*'])(
@@ -86,12 +151,12 @@ describe('TaskItem - task/note conversion', () => {
       const onConvertType = vi.fn();
       renderTaskItem({ ...baseTask, type: 'note', title: `${marker}Buy milk` }, { onConvertType });
 
-      const input = screen.getByRole('textbox') as HTMLInputElement;
-      input.setSelectionRange(1, 1);
+      const input = screen.getByRole('textbox');
+      setCaret(input, 1, 1);
       fireEvent.keyDown(input, { key: ' ' });
 
       expect(onConvertType).toHaveBeenCalledWith('t1', 'task');
-      expect(input.value).toBe('Buy milk');
+      expect(input).toHaveTextContent('Buy milk');
     },
   );
 
@@ -99,36 +164,36 @@ describe('TaskItem - task/note conversion', () => {
     const onConvertType = vi.fn();
     renderTaskItem({ ...baseTask, title: 'Buy - milk' }, { onConvertType });
 
-    const input = screen.getByRole('textbox') as HTMLInputElement;
-    input.setSelectionRange(5, 5);
+    const input = screen.getByRole('textbox');
+    setCaret(input, 5, 5);
     fireEvent.keyDown(input, { key: ' ' });
 
     expect(onConvertType).not.toHaveBeenCalled();
-    expect(input.value).toBe('Buy - milk');
+    expect(input).toHaveTextContent('Buy - milk');
   });
 
   it('does not strip a leading "-" that would convert a note into itself', () => {
     const onConvertType = vi.fn();
     renderTaskItem({ ...baseTask, type: 'note', title: '-Buy milk' }, { onConvertType });
 
-    const input = screen.getByRole('textbox') as HTMLInputElement;
-    input.setSelectionRange(1, 1);
+    const input = screen.getByRole('textbox');
+    setCaret(input, 1, 1);
     fireEvent.keyDown(input, { key: ' ' });
 
     expect(onConvertType).not.toHaveBeenCalled();
-    expect(input.value).toBe('-Buy milk');
+    expect(input).toHaveTextContent('-Buy milk');
   });
 
   it('ignores the prefix while part of the line is selected', () => {
     const onConvertType = vi.fn();
     renderTaskItem({ ...baseTask, title: '-Buy milk' }, { onConvertType });
 
-    const input = screen.getByRole('textbox') as HTMLInputElement;
-    input.setSelectionRange(1, 4);
+    const input = screen.getByRole('textbox');
+    setCaret(input, 1, 4);
     fireEvent.keyDown(input, { key: ' ' });
 
     expect(onConvertType).not.toHaveBeenCalled();
-    expect(input.value).toBe('-Buy milk');
+    expect(input).toHaveTextContent('-Buy milk');
   });
 
   it('renders a plain non-interactive dash bullet for notes, no checkbox', () => {
@@ -186,12 +251,12 @@ describe('TaskItem - task/note conversion', () => {
     const onConvertType = vi.fn();
     renderTaskItem({ ...baseTask, title: '(Team standup' }, { onConvertType });
 
-    const input = screen.getByRole('textbox') as HTMLInputElement;
-    input.setSelectionRange(1, 1);
+    const input = screen.getByRole('textbox');
+    setCaret(input, 1, 1);
     fireEvent.keyDown(input, { key: ' ' });
 
     expect(onConvertType).toHaveBeenCalledWith('t1', 'event');
-    expect(input.value).toBe('Team standup');
+    expect(input).toHaveTextContent('Team standup');
   });
 
   it('renders a plain non-interactive circle bullet for events, no checkbox', () => {
@@ -206,44 +271,44 @@ describe('TaskItem - task/note conversion', () => {
       const onConvertType = vi.fn();
       renderTaskItem(baseTask, { onConvertType });
 
-      const input = screen.getByRole('textbox') as HTMLInputElement;
-      fireEvent.change(input, { target: { value: '-' } });
+      const input = screen.getByRole('textbox');
+      typeText(input, '-');
 
       expect(onConvertType).toHaveBeenCalledWith('t1', 'note');
-      expect(input.value).toBe('');
+      expect(input).toBeEmptyDOMElement();
     });
 
     it('converts to event and strips a leading "( " typed via a virtual keyboard', () => {
       const onConvertType = vi.fn();
       renderTaskItem(baseTask, { onConvertType });
 
-      const input = screen.getByRole('textbox') as HTMLInputElement;
-      fireEvent.change(input, { target: { value: '( Team standup' } });
+      const input = screen.getByRole('textbox');
+      typeText(input, '( Team standup');
 
       expect(onConvertType).toHaveBeenCalledWith('t1', 'event');
-      expect(input.value).toBe('Team standup');
+      expect(input).toHaveTextContent('Team standup');
     });
 
     it('does not convert when the marker is not at the start of the value', () => {
       const onConvertType = vi.fn();
       renderTaskItem(baseTask, { onConvertType });
 
-      const input = screen.getByRole('textbox') as HTMLInputElement;
-      fireEvent.change(input, { target: { value: 'Buy (milk' } });
+      const input = screen.getByRole('textbox');
+      typeText(input, 'Buy (milk');
 
       expect(onConvertType).not.toHaveBeenCalled();
-      expect(input.value).toBe('Buy (milk');
+      expect(input).toHaveTextContent('Buy (milk');
     });
 
     it('does not re-convert an already-matching type', () => {
       const onConvertType = vi.fn();
       renderTaskItem({ ...baseTask, type: 'event' }, { onConvertType });
 
-      const input = screen.getByRole('textbox') as HTMLInputElement;
-      fireEvent.change(input, { target: { value: '( still an event' } });
+      const input = screen.getByRole('textbox');
+      typeText(input, '( still an event');
 
       expect(onConvertType).not.toHaveBeenCalled();
-      expect(input.value).toBe('( still an event');
+      expect(input).toHaveTextContent('( still an event');
     });
   });
 

@@ -10,6 +10,7 @@ import { CollectionChip } from '../components/ui/Chip';
 import { Button } from '../components/ui/Button';
 import { Checkbox } from '../components/ui/Checkbox';
 import { ViewSwitcher } from '../components/ui/ViewSwitcher';
+import { EditableText } from '../components/ui/EditableText';
 import { Toolbar } from '../components/ui/Toolbar';
 import { ToolbarSectionLabel } from '../components/ui/ToolbarSectionLabel';
 import { DailyWeekBoard } from '../components/board/DailyWeekBoard';
@@ -157,7 +158,7 @@ export function DailyPage() {
   const [weekAnchor, setWeekAnchor] = useState(() => new Date());
   const [upcomingSections, setUpcomingSections] = useState<DaySection[]>([]);
   const [upcomingInputs, setUpcomingInputs] = useState<Record<string, string>>({});
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLDivElement>(null);
   const todaySectionRef = useRef<HTMLDivElement>(null);
   const loadRequestId = useRef(0);
   const rawTodayRef = useRef<{ overdue: Task[]; today: Task[] } | null>(null);
@@ -680,9 +681,8 @@ export function DailyPage() {
     );
   }, [replaceTodayFromApi, updateSections]);
 
-  const handleAddToday = (e: React.FormEvent) => {
-    e.preventDefault();
-    const trimmed = input.trim();
+  const handleAddToday = (text: string) => {
+    const trimmed = text.trim();
     if (!trimmed) return;
     const tid = tempId();
     setInput('');
@@ -743,9 +743,8 @@ export function DailyPage() {
     qc.invalidateQueries({ queryKey: ['collection'] });
   };
 
-  const handleAddUpcoming = (dateKey: string, e: React.FormEvent) => {
-    e.preventDefault();
-    const trimmed = (upcomingInputs[dateKey] ?? '').trim();
+  const handleAddUpcoming = (dateKey: string, text: string) => {
+    const trimmed = text.trim();
     if (!trimmed) return;
     const tid = tempId();
     setUpcomingInputs((prev) => ({ ...prev, [dateKey]: '' }));
@@ -786,7 +785,7 @@ export function DailyPage() {
     });
   };
 
-  const handleAddTodayKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleAddTodayKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (e.key !== '-' || input !== '') {
       return;
     }
@@ -906,11 +905,11 @@ export function DailyPage() {
     <div
       className="daily-page relative w-full cursor-text"
       onClick={(e) => {
-        if ((e.target as HTMLElement).closest('input, button, [role="button"]')) return;
+        if ((e.target as HTMLElement).closest('input, [contenteditable], button, [role="button"]')) return;
         inputRef.current?.focus();
       }}
       onContextMenu={(event) => {
-        if ((event.target as HTMLElement).closest('input, button, [role="button"], [data-task-id], [data-card-id]')) return;
+        if ((event.target as HTMLElement).closest('input, [contenteditable], button, [role="button"], [data-task-id], [data-card-id]')) return;
         event.preventDefault();
         setPageContextMenu({ x: event.clientX, y: event.clientY });
       }}
@@ -1072,23 +1071,21 @@ export function DailyPage() {
               />
 
               {previewFutureSections === null && (
-                <form
-                  onSubmit={(e) => handleAddUpcoming(section.key, e)}
-                  className="flex items-center h-6"
-                >
+                <div className="flex items-start min-h-6">
                   <span className="w-6 text-center text-[10px] leading-6 text-ink opacity-25 select-none shrink-0">
                     •
                   </span>
-                  <input
-                    type="text"
+                  <EditableText
                     value={upcomingInputs[section.key] ?? ''}
-                    onChange={(e) => setUpcomingInputs((prev) => ({ ...prev, [section.key]: e.target.value }))}
+                    onValueChange={(text) => setUpcomingInputs((prev) => ({ ...prev, [section.key]: text }))}
+                    onEnter={(text) => handleAddUpcoming(section.key, text)}
+                    onBlur={() => handleAddUpcoming(section.key, upcomingInputs[section.key] ?? '')}
                     placeholder={t('common.addTask')}
+                    aria-label={t('common.addTask')}
                     className="task-input task-add-input flex-1 text-[14px] leading-6 text-ink bg-transparent border-none outline-none p-0"
-                    autoComplete="off"
                     spellCheck={false}
                   />
-                </form>
+                </div>
               )}
             </div>
           );
@@ -1130,25 +1127,23 @@ export function DailyPage() {
             />
 
             {isToday && (
-              <form
-                onSubmit={handleAddToday}
-                className="flex items-center h-6"
-              >
+              <div className="flex items-start min-h-6">
                 <span className="w-6 text-center text-[10px] leading-6 text-ink opacity-25 select-none shrink-0">
                   •
                 </span>
-                <input
+                <EditableText
                   ref={inputRef}
-                  type="text"
                   value={input}
-                  onChange={(e) => setInput(e.target.value)}
+                  onValueChange={setInput}
+                  onEnter={handleAddToday}
+                  onBlur={() => handleAddToday(input)}
                   onKeyDown={handleAddTodayKeyDown}
                   placeholder={t('common.addTask')}
+                  aria-label={t('common.addTask')}
                   className="task-input task-add-input flex-1 text-[14px] leading-6 text-ink bg-transparent border-none outline-none p-0"
-                  autoComplete="off"
                   spellCheck={false}
                 />
-              </form>
+              </div>
             )}
             </div>
           );
