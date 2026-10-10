@@ -10,6 +10,8 @@ import { usePlannerDrag } from '../contexts/usePlannerDrag';
 import { priorityClasses } from './taskPriorityClasses';
 import type { LabelSummary } from '../api/client';
 import { formatDuration, formatTimeWindow } from '../utils/taskTime';
+import { getCaret, getText, setCaret } from '../utils/editableText';
+import { EditableText } from './ui/EditableText';
 
 export interface Task {
   id: string;
@@ -147,14 +149,13 @@ export const TaskItem = memo(function TaskItem({
     data: dragData,
   });
 
-  const editRef = useRef<HTMLInputElement>(null);
+  const editRef = useRef<HTMLDivElement>(null);
   const committedRef = useRef(false);
 
   useEffect(() => {
     if (isEditing && editRef.current) {
       editRef.current.focus();
-      const len = editRef.current.value.length;
-      editRef.current.setSelectionRange(len, len);
+      setCaret(editRef.current, getText(editRef.current).length);
     }
   }, [isEditing]);
 
@@ -191,29 +192,31 @@ export const TaskItem = memo(function TaskItem({
     }
   };
 
-  const handleEditKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      committedRef.current = true;
-      onEditCommit?.(task.id, e.currentTarget.value);
-      onAddBelow?.(task.id);
-    } else if (e.key === 'Escape') {
+  const handleEditEnter = (title: string) => {
+    committedRef.current = true;
+    onEditCommit?.(task.id, title);
+    onAddBelow?.(task.id);
+  };
+
+  const handleEditKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    const value = getText(e.currentTarget);
+    if (e.key === 'Escape') {
       e.preventDefault();
       committedRef.current = true;
       onEditCancel?.(task.id);
-    } else if (e.key === 'Backspace' && e.currentTarget.value === '') {
+    } else if (e.key === 'Backspace' && value === '') {
       e.preventDefault();
       committedRef.current = true;
       onDelete?.(task.id);
-    } else if (e.key === '-' && e.currentTarget.value === '' && task.type !== 'note') {
+    } else if (e.key === '-' && value === '' && task.type !== 'note') {
       e.preventDefault();
       onConvertType?.(task.id, 'note');
-    } else if (e.key === '(' && e.currentTarget.value === '' && task.type !== 'event') {
+    } else if (e.key === '(' && value === '' && task.type !== 'event') {
       e.preventDefault();
       onConvertType?.(task.id, 'event');
     } else if (
       (e.key === '[' || e.key === ']' || e.key === '*') &&
-      e.currentTarget.value === '' &&
+      value === '' &&
       task.type !== 'task'
     ) {
       e.preventDefault();
@@ -221,39 +224,44 @@ export const TaskItem = memo(function TaskItem({
     } else if (e.key === ' ') {
       // Same conversion, but on a row that already has text: the marker only
       // counts as a prefix when it is the whole of what precedes the caret.
-      const input = e.currentTarget;
-      const target = CONVERSION_MARKERS[input.value[0]];
-      if (input.selectionStart === 1 && input.selectionEnd === 1 && target && task.type !== target) {
+      const el = e.currentTarget;
+      const target = CONVERSION_MARKERS[value[0]];
+      const caret = getCaret(el);
+      if (caret.start === 1 && caret.end === 1 && target && task.type !== target) {
         e.preventDefault();
-        input.value = input.value.slice(1);
-        input.setSelectionRange(0, 0);
+        el.textContent = value.slice(1);
+        setCaret(el, 0);
         onConvertType?.(task.id, target);
       }
     } else if (e.key === 'Tab') {
       e.preventDefault();
+      const caret = getCaret(e.currentTarget);
       onIndent?.(task.id, e.shiftKey ? -1 : 1);
-      requestAnimationFrame(() => editRef.current?.focus());
+      requestAnimationFrame(() => {
+        const el = editRef.current;
+        if (!el) return;
+        el.focus();
+        setCaret(el, caret.start, caret.end);
+      });
     }
   };
 
   // Mobile virtual keyboards often send keydown as key: 'Unidentified' (or skip
   // it) for '-', '*', '(', so the char lands in the input untouched; this
   // catches it after the fact and applies the same marker conversion.
-  const handleEditChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
+  const handleEditChange = (value: string, el: HTMLDivElement) => {
     const match = value.match(/^([-*(]|\[|\])(\s|$)/);
     const target = match ? CONVERSION_MARKERS[match[1]] : undefined;
     if (match && target && task.type !== target) {
-      const input = e.currentTarget;
-      input.value = value.slice(match[0].length);
-      input.setSelectionRange(0, 0);
+      el.textContent = value.slice(match[0].length);
+      setCaret(el, 0);
       onConvertType?.(task.id, target);
     }
   };
 
-  const handleEditBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+  const handleEditBlur = (e: React.FocusEvent<HTMLDivElement>) => {
     if (!committedRef.current) {
-      onEditCommit?.(task.id, e.target.value);
+      onEditCommit?.(task.id, getText(e.currentTarget));
     }
     committedRef.current = false;
   };
@@ -363,16 +371,16 @@ export const TaskItem = memo(function TaskItem({
 
       <span className="task-item-title-area flex-1 flex flex-wrap items-center min-w-0">
         {isEditing ? (
-          <input
+          <EditableText
             ref={editRef}
-            type="text"
             {...{ [NO_DRAG_ATTR]: '' }}
             defaultValue={task.title}
-            autoComplete="off"
-            className="task-item-title-input task-input flex-1 w-full h-6 text-sm text-ink bg-transparent border-0 outline-none p-0"
+            aria-label={t('quickAdd.taskTitle')}
+            className="task-item-title-input task-input flex-1 w-full min-h-6 leading-6 text-sm text-ink bg-transparent border-0 outline-none p-0"
             spellCheck={false}
             onKeyDown={handleEditKeyDown}
-            onChange={handleEditChange}
+            onValueChange={handleEditChange}
+            onEnter={handleEditEnter}
             onBlur={handleEditBlur}
           />
         ) : (
