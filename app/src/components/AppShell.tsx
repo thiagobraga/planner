@@ -85,8 +85,8 @@ export function AppShell() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => window.innerWidth < 640);
-  const [useBottomBar, setUseBottomBar] = useState(() => window.innerWidth < 640);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => window.innerWidth <= 640);
+  const [useBottomBar, setUseBottomBar] = useState(() => window.innerWidth <= 640);
   const theme = useResolvedTheme(preferences?.background ?? cachedBackground());
 
   useEffect(() => {
@@ -123,14 +123,14 @@ export function AppShell() {
   }, [preferences?.background]);
 
   useEffect(() => {
-    const mq = window.matchMedia('(max-width: 639px)');
+    const mq = window.matchMedia('(max-width: 640px)');
     const handler = (e: MediaQueryListEvent) => setSidebarCollapsed(e.matches);
     mq.addEventListener('change', handler);
     return () => mq.removeEventListener('change', handler);
   }, []);
 
   useEffect(() => {
-    const mq = window.matchMedia('(max-width: 479px)');
+    const mq = window.matchMedia('(max-width: 640px)');
     const handler = (e: MediaQueryListEvent) => setUseBottomBar(e.matches);
     mq.addEventListener('change', handler);
     return () => mq.removeEventListener('change', handler);

@@ -30,6 +30,7 @@ const CELL_W = 24;
 const NARROW_LABEL_COL_W = 216;
 // 15% wider than the narrow cap once the screen is past mobile.
 const LABEL_COL_W = 248;
+const MOBILE_MAX_W = 640;
 const INDENT = 24;
 
 export type HabitEditTarget = { kind: 'habit' | 'group'; id: string };
@@ -146,7 +147,7 @@ export function HabitTimeline({
   const [canPageNext, setCanPageNext] = useState(false);
   const { indentSteps, overId, setOverlayNode } = usePlannerDrag();
   const labelColWidth = useMemo(() => {
-    if (timelineWidth == null) return LABEL_COL_W;
+    if (timelineWidth == null || window.innerWidth <= MOBILE_MAX_W) return Math.min(LABEL_COL_W, NARROW_LABEL_COL_W);
     if (timelineWidth < 390) return Math.max(0, Math.min(NARROW_LABEL_COL_W, timelineWidth - CELL_W * 5));
     if (timelineWidth < 480) return Math.max(0, Math.min(NARROW_LABEL_COL_W, timelineWidth - CELL_W * 7));
     return LABEL_COL_W;

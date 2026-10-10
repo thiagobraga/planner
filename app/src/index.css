@@ -571,7 +571,7 @@ button,
   backdrop-filter: none;
 }
 
-@media (max-width: 639px) {
+@media (max-width: 640px) {
   /* Lets the last column scroll to the left edge (today on Saturday). */
   .daily-week-board .board-grid {
     padding-right: max(24px, calc(100% - var(--board-column-width)));
@@ -858,7 +858,7 @@ button,
   line-height: 24px;
 }
 
-@media (max-width: 639px) {
+@media (max-width: 640px) {
   .board-scroll {
     width: 100%;
   }
@@ -1412,7 +1412,7 @@ textarea:focus-visible {
 }
 
 /* Mobile sidebar drawer - below 640px the collapsed sidebar is shown instead, no drawer needed */
-@media (max-width: 639px) {
+@media (max-width: 640px) {
   .sidebar-collapsed {
     overflow: visible;
   }
