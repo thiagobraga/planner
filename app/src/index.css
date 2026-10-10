@@ -1476,12 +1476,12 @@ textarea:focus-visible {
   }
 }
 
-/* Bottom nav bar replaces the sidebar entirely below 480px */
+/* Bottom nav bar replaces the sidebar entirely below 640px */
 .bottom-bar {
   display: none;
 }
 
-@media (max-width: 479px) {
+@media (max-width: 640px) {
   .app-shell--bottom-bar .main-content {
     padding-bottom: 76px;
   }
