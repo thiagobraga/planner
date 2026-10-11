@@ -1,9 +1,13 @@
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeAll, beforeEach } from 'vitest';
+import { useLocation } from 'react-router';
 import { AppShell } from '../AppShell';
+import { QuickAdd } from '../QuickAdd';
+import { apiCreateTask } from '../../api/client';
 import { updateDocumentThemeColor } from '../../utils/theme';
 
 const mockUseQuery = vi.hoisted(() => vi.fn());
+const mockInvalidateQueries = vi.hoisted(() => vi.fn());
 
 vi.mock('react-router', () => ({
   Outlet: vi.fn(() => <div data-testid="outlet-content">Outlet content</div>),
@@ -14,7 +18,7 @@ vi.mock('react-router', () => ({
 vi.mock('@tanstack/react-query', () => ({
   useQuery: mockUseQuery,
   useQueryClient: vi.fn(() => ({
-    invalidateQueries: vi.fn(),
+    invalidateQueries: mockInvalidateQueries,
     setQueryData: vi.fn(),
   })),
   QueryClient: vi.fn(),
@@ -102,6 +106,42 @@ describe('AppShell', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockUseQuery.mockReturnValue({ data: defaultPreferences });
+    vi.mocked(useLocation).mockReturnValue({ pathname: '/daily' } as ReturnType<typeof useLocation>);
+    vi.mocked(apiCreateTask).mockResolvedValue({} as Awaited<ReturnType<typeof apiCreateTask>>);
+  });
+
+  it('adds a quick task to the current collection and refreshes its view', async () => {
+    vi.mocked(useLocation).mockReturnValue({ pathname: '/collection/collection-1' } as ReturnType<typeof useLocation>);
+    render(<AppShell />);
+
+    await act(async () => {
+      vi.mocked(QuickAdd).mock.lastCall?.[0].onSubmit('Buy paper');
+    });
+
+    expect(apiCreateTask).toHaveBeenCalledWith({
+      title: 'Buy paper',
+      dueDate: undefined,
+      recurrenceRule: undefined,
+      type: undefined,
+      collectionId: 'collection-1',
+    });
+    expect(mockInvalidateQueries).toHaveBeenCalledWith({ queryKey: ['collection', 'collection-1'] });
+  });
+
+  it('keeps quick tasks in the inbox outside a collection', async () => {
+    vi.mocked(useLocation).mockReturnValue({ pathname: '/inbox' } as ReturnType<typeof useLocation>);
+    render(<AppShell />);
+
+    await act(async () => {
+      vi.mocked(QuickAdd).mock.lastCall?.[0].onSubmit('Buy paper');
+    });
+
+    expect(apiCreateTask).toHaveBeenCalledWith({
+      title: 'Buy paper',
+      dueDate: undefined,
+      recurrenceRule: undefined,
+      type: undefined,
+    });
   });
 
   it('renders without crashing', () => {

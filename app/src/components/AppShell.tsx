@@ -274,9 +274,11 @@ export function AppShell() {
         isOpen={quickAddOpen}
         onClose={() => setQuickAddOpen(false)}
         onSubmit={(title, dueDate, recurrenceRule, type) => {
+          const collectionId = /^\/collection\/([^/]+)$/.exec(location.pathname)?.[1];
           if (import.meta.env.DEV) console.log('Quick add:', { title, dueDate, recurrenceRule, type });
-          apiCreateTask({ title, dueDate, recurrenceRule, type })
+          apiCreateTask({ title, dueDate, recurrenceRule, type, ...(collectionId ? { collectionId } : {}) })
             .then((created) => {
+              if (collectionId) qc.invalidateQueries({ queryKey: ['collection', collectionId] });
               qc.invalidateQueries({ queryKey: ['today'] });
               qc.invalidateQueries({ queryKey: ['upcoming'] });
               qc.invalidateQueries({ queryKey: ['inbox'] });
