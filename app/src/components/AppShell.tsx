@@ -174,15 +174,9 @@ export function AppShell() {
         case 'navigate:settings':
           navigate('/settings');
           break;
-        case 'toggle:upcoming':
-          if (!location.pathname.startsWith('/daily')) {
-            navigate('/daily');
-          }
-          window.dispatchEvent(new CustomEvent('toggle-upcoming'));
-          break;
       }
     },
-    [navigate, location.pathname],
+    [navigate],
   );
 
   useEffect(() => {
@@ -325,7 +319,6 @@ export function AppShell() {
                   ['g d', t('shell.goDaily')],
                   ['g h', t('shell.goHabits')],
                   ['g s', t('shell.goSettings')],
-                  ['g u', t('shell.goUpcoming')],
                   ['Enter', t('shell.editSelected')],
                   ['Delete', t('shell.deleteSelected')],
                   ['Esc', t('shell.closeDialog')],

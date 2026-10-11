@@ -8,7 +8,6 @@ import { TaskVisibilityControls } from '../components/TaskVisibilityControls';
 import { PageHeader } from '../components/PageHeader';
 import { CollectionChip } from '../components/ui/Chip';
 import { Button } from '../components/ui/Button';
-import { Checkbox } from '../components/ui/Checkbox';
 import { ViewSwitcher } from '../components/ui/ViewSwitcher';
 import { Toolbar } from '../components/ui/Toolbar';
 import { ToolbarSectionLabel } from '../components/ui/ToolbarSectionLabel';
@@ -48,16 +47,6 @@ import type { TaskSchedule } from '../types/task';
 let tempCounter = 0;
 function tempId() { return `temp-daily-${++tempCounter}`; }
 
-const SHOW_UPCOMING_STORAGE_KEY = 'planner.daily.showUpcoming.v1';
-
-function loadShowUpcoming(): boolean {
-  try {
-    return window.localStorage.getItem(SHOW_UPCOMING_STORAGE_KEY) === '1';
-  } catch {
-    return false;
-  }
-}
-
 export function DailyPage({ view }: { view: BoardViewMode }) {
   const { locale, t } = useI18n();
   const qc = useQueryClient();
@@ -68,7 +57,6 @@ export function DailyPage({ view }: { view: BoardViewMode }) {
   const [contextMenu, setContextMenu] = useState<{ taskId: string; position: { x: number; y: number } } | null>(null);
   const [pageContextMenu, setPageContextMenu] = useState<{ x: number; y: number } | null>(null);
   const [input, setInput] = useState('');
-  const [showUpcoming, setShowUpcoming] = useState(loadShowUpcoming);
   const [selectedWeekAnchor, setWeekAnchor] = useState<Date | null>(null);
   const [selectedMonthAnchor, setMonthAnchor] = useState<Date | null>(null);
   const [futureInputs, setFutureInputs] = useState<Record<string, string>>({});
@@ -117,9 +105,8 @@ export function DailyPage({ view }: { view: BoardViewMode }) {
       browsingWeek ? 'kanban-list' : view,
       view === 'calendar' ? monthAnchor : view === 'list' && !browsingWeek ? dateFromISO(todayKey) : weekAnchor,
       weekStart,
-      showUpcoming,
     ),
-    [view, browsingWeek, monthAnchor, weekAnchor, todayKey, weekStart, showUpcoming],
+    [view, browsingWeek, monthAnchor, weekAnchor, todayKey, weekStart],
   );
   const { data: daily, isError: dailyFailed, refresh: refreshDaily } = useDailyTasks(range.from, range.to);
 
@@ -150,9 +137,7 @@ export function DailyPage({ view }: { view: BoardViewMode }) {
   const reorg = useReorganize(
     todayKey,
     reorganizeSections,
-    () => {
-      setShowUpcoming(true);
-    },
+    undefined,
     undefined,
     formatReorganizeLabel,
     refreshDaily,
@@ -191,34 +176,6 @@ export function DailyPage({ view }: { view: BoardViewMode }) {
     window.addEventListener('task-created', refreshDaily);
     return () => window.removeEventListener('task-created', refreshDaily);
   }, [refreshDaily]);
-
-  const toggleUpcoming = useCallback(() => setShowUpcoming((v) => !v), []);
-
-  // Picking "today" scrolls to today; picking "upcoming" enables future sections.
-  const setDailyView = useCallback(
-    (v: 'today' | 'upcoming') => {
-      if (v === 'upcoming') {
-        setShowUpcoming(true);
-      } else {
-        setShowUpcoming(false);
-        handleToday();
-      }
-    },
-    [handleToday],
-  );
-
-  useEffect(() => {
-    window.addEventListener('toggle-upcoming', toggleUpcoming);
-    return () => window.removeEventListener('toggle-upcoming', toggleUpcoming);
-  }, [toggleUpcoming]);
-
-  useEffect(() => {
-    try {
-      window.localStorage.setItem(SHOW_UPCOMING_STORAGE_KEY, showUpcoming ? '1' : '0');
-    } catch {
-      // view preference only - fine if storage is unavailable
-    }
-  }, [showUpcoming]);
 
   useSync(useCallback((event) => {
     if (event.entityType !== 'task') return;
@@ -701,10 +658,7 @@ export function DailyPage({ view }: { view: BoardViewMode }) {
     return items;
   }, [collections, contextMenu?.taskId, setAllTasks, apiUpdateTask, refreshDaily, t]);
 
-  // During a Reorganize preview, future days render in the same slot/order as
-  // the real Upcoming toggle (above today), not interleaved into the today+
-  // overdue list — matching the non-preview layout the user already knows.
-  // Furthest day first, nearest (tomorrow) last, right above Today.
+  // Keep redistributed future dates visible even when they extend past this week.
   const previewFutureSections = useMemo(
     () =>
       reorg.state === 'preview'
@@ -734,6 +688,16 @@ export function DailyPage({ view }: { view: BoardViewMode }) {
       .map((key) => sections.find((s) => s.key === key)
         ?? { key, label: dayLabel(dateFromISO(key), locale, dateFormat), tasks: [] });
   }, [browsingWeek, weekStartKey, sections, locale, dateFormat]);
+
+  const futureDays = useMemo<DaySection[]>(() => {
+    if (view !== 'list' || browsingWeek) return [];
+    const days = [];
+    for (let key = addDaysISO(todayKey, 1); key <= range.to; key = addDaysISO(key, 1)) {
+      days.push(sections.find((s) => s.key === key)
+        ?? { key, label: dayLabel(dateFromISO(key), locale, dateFormat), tasks: [] });
+    }
+    return days.reverse();
+  }, [view, browsingWeek, todayKey, range.to, sections, locale, dateFormat]);
 
   return (
     <div
@@ -794,12 +758,6 @@ export function DailyPage({ view }: { view: BoardViewMode }) {
               onHideCompletedTasksChange={setHideCompletedTasks}
               onShowNotesChange={setShowNotes}
             />
-
-            <Checkbox
-              checked={showUpcoming}
-              onChange={(e) => setDailyView(e.target.checked ? 'upcoming' : 'today')}
-              label={t('page.nextDays')}
-            />
           </Toolbar>
         }
       />
@@ -823,11 +781,6 @@ export function DailyPage({ view }: { view: BoardViewMode }) {
               type: 'item',
               label: `${(prefs?.showNotes ?? true) ? '✓' : '○'} ${t('visibility.notes')}`,
               onClick: () => setShowNotes(!(prefs?.showNotes ?? true)),
-            },
-            {
-              type: 'item',
-              label: `${showUpcoming ? '✓' : '○'} ${t('page.nextDays')}`,
-              onClick: () => setDailyView(showUpcoming ? 'today' : 'upcoming'),
             },
           ]}
         />
@@ -875,7 +828,7 @@ export function DailyPage({ view }: { view: BoardViewMode }) {
           <WeekSelector weekAnchor={weekAnchor} today={dateFromISO(todayKey)} weekStart={weekStart} onWeekChange={setWeekAnchor} />
         </div>
         <DailyList
-          futureSections={previewFutureSections ?? browsedDays ?? (showUpcoming ? sections.filter((section) => section.key > todayKey) : [])}
+          futureSections={previewFutureSections ?? browsedDays ?? futureDays}
           currentSections={previewTodaySections ?? (browsedDays ? [] : sections.filter((section) => section.key <= todayKey))}
           todayKey={todayKey}
           isPreview={previewFutureSections !== null}

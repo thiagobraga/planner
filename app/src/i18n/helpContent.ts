@@ -42,10 +42,9 @@ const english: HelpContent = {
       id: 'views',
       title: 'Views',
       items: [
-        "Daily: Your daily page. Shows today's tasks plus overdue items, grouped by date.",
+        "Daily: Browse scheduled tasks with the week selector in List or Kanban, or use Monthly for a full month. List includes today's tasks, overdue items, and the remaining days of the selected week.",
         'Inbox: The default capture spot for tasks not yet assigned to a collection.',
         'Monthly: A ledger-style month view. Each day is a row showing its date and notes.',
-        'Upcoming: Toggle on the Daily page for a seven-day lookahead of what\'s scheduled next.',
       ],
     },
     {
@@ -112,7 +111,6 @@ const english: HelpContent = {
     { keys: ['G', 'M'], label: 'Go to Monthly' },
     { keys: ['G', 'H'], label: 'Go to Habits' },
     { keys: ['G', 'S'], label: 'Go to Settings' },
-    { keys: ['G', 'U'], label: 'Toggle Upcoming' },
     { keys: ['↑', '↓'], label: 'Navigate tasks' },
     { keys: ['Enter'], label: 'Edit selected task' },
     { keys: ['Space'], label: 'Toggle completion' },
@@ -146,10 +144,9 @@ const portugueseBrazil: HelpContent = {
       id: 'views',
       title: 'Visualizações',
       items: [
-        'Diário: Mostra as tarefas de hoje e itens atrasados, agrupados por data.',
+        'Diário: Use o seletor de semana para ver os dias agendados em Lista ou Kanban, ou a visão Mensal para um mês inteiro. A Lista inclui hoje, tarefas atrasadas e os dias restantes da semana selecionada.',
         'Caixa de entrada: Local padrão para capturar tarefas ainda sem coleção.',
         'Mensal: Visão do mês em formato de registro, com datas e notas.',
-        'Próximas: Alternável na página Diário, mostra os próximos sete dias agendados.',
       ],
     },
     {
@@ -217,7 +214,6 @@ const portugueseBrazil: HelpContent = {
     { keys: ['G', 'M'], label: 'Ir para o Mensal' },
     { keys: ['G', 'H'], label: 'Ir para Hábitos' },
     { keys: ['G', 'S'], label: 'Ir para Configurações' },
-    { keys: ['G', 'U'], label: 'Alternar Próximas' },
     { keys: ['↑', '↓'], label: 'Navegar pelas tarefas' },
     { keys: ['Enter'], label: 'Editar tarefa selecionada' },
     { keys: ['Space'], label: 'Alternar conclusão' },

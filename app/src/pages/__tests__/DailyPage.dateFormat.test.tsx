@@ -111,7 +111,9 @@ const dragData = (taskId: string, dueDate: string) => ({
  * says exactly what changed when one fails, instead of "unable to find text".
  */
 const dayHeaders = (container: HTMLElement) =>
-  Array.from(container.querySelectorAll('[data-day-date]')).map((section) =>
+  Array.from(container.querySelectorAll('[data-day-date]'))
+    .filter((section) => (section.getAttribute('data-day-date') ?? '') <= TODAY)
+    .map((section) =>
     section.firstElementChild?.textContent?.trim(),
   );
 

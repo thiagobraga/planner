@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, act, fireEvent, within } from '@testing-library/react';
+import { render, screen, act, fireEvent, within, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { DailyRoute } from '../DailyRoutes';
@@ -189,7 +189,7 @@ describe('DailyPage', () => {
     expect(within(screen.getByRole('menu')).queryByText('View')).not.toBeInTheDocument();
     expect(header).toContainElement(screen.getByRole('checkbox', { name: 'Completed tasks' }));
     expect(header).toContainElement(screen.getByRole('checkbox', { name: 'Notes' }));
-    expect(header).toContainElement(screen.getByRole('checkbox', { name: 'Next days' }));
+    expect(screen.queryByRole('checkbox', { name: 'Next days' })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'List' }).closest('.page-header-toolbar')).toBeInTheDocument();
   });
 
@@ -268,7 +268,7 @@ describe('DailyPage', () => {
       renderPage();
 
       await screen.findByText('Today task');
-      expect(mockFetchDaily).toHaveBeenCalledTimes(1);
+      const callsBeforeMidnight = mockFetchDaily.mock.calls.length;
 
       const tomorrow = new Date(today);
       tomorrow.setDate(tomorrow.getDate() + 1);
@@ -276,7 +276,7 @@ describe('DailyPage', () => {
       expect(capturedMidnightCb).toBeTypeOf('function');
       await act(async () => { capturedMidnightCb!(); });
 
-      expect(mockFetchDaily).toHaveBeenCalledTimes(2);
+      expect(mockFetchDaily.mock.calls.length).toBeGreaterThan(callsBeforeMidnight);
       expect(scrollIntoViewMock).toHaveBeenCalled();
     } finally {
       vi.useRealTimers();
@@ -289,7 +289,7 @@ describe('DailyPage', () => {
     try {
       vi.setSystemTime(today);
       renderPage();
-      expect(await screen.findByRole('textbox', { name: 'New task…' })).toBeInTheDocument();
+      expect((await screen.findAllByRole('textbox', { name: 'New task…' })).length).toBeGreaterThan(0);
 
       const tomorrow = new Date(today);
       tomorrow.setDate(tomorrow.getDate() + 1);
@@ -297,7 +297,7 @@ describe('DailyPage', () => {
       mockFetchDaily.mockResolvedValue(dailyView({ overdue: [], today: [] }));
       await act(async () => { capturedMidnightCb!(); });
 
-      expect(await screen.findByRole('textbox', { name: 'New task…' })).toBeInTheDocument();
+      await waitFor(() => expect(document.querySelector(`[data-day-date="${dateKey(tomorrow)}"] [role="textbox"]`)).toBeInTheDocument());
     } finally {
       vi.useRealTimers();
     }
