@@ -68,8 +68,8 @@ export function DailyPage({ view }: { view: BoardViewMode }) {
   const [pageContextMenu, setPageContextMenu] = useState<{ x: number; y: number } | null>(null);
   const [input, setInput] = useState('');
   const [showUpcoming, setShowUpcoming] = useState(loadShowUpcoming);
-  const [weekAnchor, setWeekAnchor] = useState(() => new Date());
-  const [monthAnchor, setMonthAnchor] = useState(() => new Date());
+  const [selectedWeekAnchor, setWeekAnchor] = useState<Date | null>(null);
+  const [selectedMonthAnchor, setMonthAnchor] = useState<Date | null>(null);
   const [futureInputs, setFutureInputs] = useState<Record<string, string>>({});
   const inputRef = useRef<HTMLDivElement>(null);
   const todaySectionRef = useRef<HTMLDivElement>(null);
@@ -92,6 +92,9 @@ export function DailyPage({ view }: { view: BoardViewMode }) {
 
   const [now, setNow] = useState(() => new Date());
   const todayKey = useMemo(() => fmtISOInTimeZone(now, prefs?.timeZone), [now, prefs?.timeZone]);
+  // Until the user navigates, the visible week and month follow today in the preferred time zone.
+  const weekAnchor = useMemo(() => selectedWeekAnchor ?? dateFromISO(todayKey), [selectedWeekAnchor, todayKey]);
+  const monthAnchor = useMemo(() => selectedMonthAnchor ?? dateFromISO(todayKey), [selectedMonthAnchor, todayKey]);
 
   const dateFormat = prefs?.dateFormat ?? 'MMM DD ddd';
   const localeRef = useRef(locale);

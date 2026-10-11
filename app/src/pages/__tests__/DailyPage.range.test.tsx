@@ -116,4 +116,15 @@ describe('Daily asks for one range per view', () => {
 
     await waitFor(() => expect(requestedRanges()).toEqual(['2026-10-01..2026-10-31']));
   });
+
+  it('opens the week of the preferred time zone, not the machine zone', async () => {
+    // 01:00 UTC on Sunday is still Saturday in São Paulo, so the week is the previous one.
+    vi.setSystemTime(new Date('2026-10-11T01:00:00Z'));
+    mockFetchPreferences.mockResolvedValue({ ...preferences, timeZone: 'America/Sao_Paulo' });
+
+    renderAt('/daily/cards');
+
+    // The first request can use the machine zone before preferences arrive; the last one is the shown week.
+    await waitFor(() => expect(requestedRanges().at(-1)).toBe('2026-10-04..2026-10-10'));
+  });
 });
