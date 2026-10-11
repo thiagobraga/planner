@@ -71,11 +71,18 @@ describe('App', () => {
     testRoute.current = '/daily';
   });
 
-  it('renders DailyPage when authenticated on /daily', () => {
+  it('renders DailyPage when authenticated on /daily/list', () => {
+    authState.isAuthenticated = true;
+    testRoute.current = '/daily/list';
+    render(<App />);
+    expect(screen.getByText('DailyPage')).toBeInTheDocument();
+  });
+
+  it('sends /daily to the last used view', () => {
     authState.isAuthenticated = true;
     testRoute.current = '/daily';
     render(<App />);
-    expect(screen.getByText('DailyPage')).toBeInTheDocument();
+    expect(screen.getByText('redirect:/daily/list')).toBeInTheDocument();
   });
 
   it('renders CollectionsIndexPage when authenticated on /collections', () => {

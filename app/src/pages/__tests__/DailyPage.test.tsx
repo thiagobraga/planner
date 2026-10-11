@@ -1,13 +1,14 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, act, fireEvent, within } from '@testing-library/react';
-import { MemoryRouter } from 'react-router';
+import { MemoryRouter, Route, Routes } from 'react-router';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { DailyPage } from '../DailyPage';
+import { DailyRoute } from '../DailyRoutes';
+import { dailyView } from '../../test/dailyFixtures';
 import { typeText } from '../../test/editableText';
 import { I18nProvider } from '../../i18n/I18nContext';
 import {
   apiCreateTask,
-  fetchTodayTasks,
+  fetchDaily,
   fetchPreferences,
   fetchCollections,
   type ApiTask,
@@ -15,7 +16,7 @@ import {
   type ApiCollection,
 } from '../../api/client';
 
-const mockFetchTodayTasks = vi.mocked(fetchTodayTasks);
+const mockFetchDaily = vi.mocked(fetchDaily);
 const mockFetchPreferences = vi.mocked(fetchPreferences);
 const mockFetchCollections = vi.mocked(fetchCollections);
 const mockApiCreateTask = vi.mocked(apiCreateTask);
@@ -48,7 +49,7 @@ const basePreferences: Preferences = {
 
 vi.mock('../../api/client', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../../api/client')>()),
-  fetchTodayTasks: vi.fn(),
+  fetchDaily: vi.fn(),
   fetchPreferences: vi.fn(),
   fetchCollections: vi.fn(),
   apiCreateTask: vi.fn(),
@@ -145,7 +146,7 @@ const mockCollections: ApiCollection[] = [
   },
 ];
 
-function renderPage() {
+function renderPage(slug = 'list') {
   const client = new QueryClient({
     defaultOptions: {
       queries: { retry: false },
@@ -156,8 +157,8 @@ function renderPage() {
   return render(
     <QueryClientProvider client={client}>
       <I18nProvider>
-        <MemoryRouter>
-          <DailyPage />
+        <MemoryRouter initialEntries={[`/daily/${slug}`]}>
+          <Routes><Route path="/daily/:view" element={<DailyRoute />} /></Routes>
         </MemoryRouter>
       </I18nProvider>
     </QueryClientProvider>,
@@ -167,7 +168,7 @@ function renderPage() {
 beforeEach(() => {
   vi.clearAllMocks();
   window.localStorage.clear();
-  mockFetchTodayTasks.mockResolvedValue({ overdue: [overdueTask], today: [todayTask] });
+  mockFetchDaily.mockResolvedValue(dailyView({ overdue: [overdueTask], today: [todayTask] }));
   mockFetchPreferences.mockResolvedValue(basePreferences);
   mockFetchCollections.mockResolvedValue(mockCollections);
   taskListMock.mockClear();
@@ -235,7 +236,7 @@ describe('DailyPage', () => {
   });
 
   it('preserves structured labels in the daily task mapper', async () => {
-    mockFetchTodayTasks.mockResolvedValue({
+    mockFetchDaily.mockResolvedValue(dailyView({
       overdue: [
         {
           ...overdueTask,
@@ -243,7 +244,7 @@ describe('DailyPage', () => {
         },
       ],
       today: [todayTask],
-    });
+    }));
 
     renderPage();
 
@@ -266,8 +267,8 @@ describe('DailyPage', () => {
       vi.setSystemTime(today);
       renderPage();
 
-      await screen.findByText('Daily');
-      expect(mockFetchTodayTasks).toHaveBeenCalledTimes(1);
+      await screen.findByText('Today task');
+      expect(mockFetchDaily).toHaveBeenCalledTimes(1);
 
       const tomorrow = new Date(today);
       tomorrow.setDate(tomorrow.getDate() + 1);
@@ -275,7 +276,7 @@ describe('DailyPage', () => {
       expect(capturedMidnightCb).toBeTypeOf('function');
       await act(async () => { capturedMidnightCb!(); });
 
-      expect(mockFetchTodayTasks).toHaveBeenCalledTimes(2);
+      expect(mockFetchDaily).toHaveBeenCalledTimes(2);
       expect(scrollIntoViewMock).toHaveBeenCalled();
     } finally {
       vi.useRealTimers();
@@ -293,7 +294,7 @@ describe('DailyPage', () => {
       const tomorrow = new Date(today);
       tomorrow.setDate(tomorrow.getDate() + 1);
       vi.setSystemTime(tomorrow);
-      mockFetchTodayTasks.mockResolvedValue({ overdue: [], today: [] });
+      mockFetchDaily.mockResolvedValue(dailyView({ overdue: [], today: [] }));
       await act(async () => { capturedMidnightCb!(); });
 
       expect(await screen.findByRole('textbox', { name: 'New task…' })).toBeInTheDocument();

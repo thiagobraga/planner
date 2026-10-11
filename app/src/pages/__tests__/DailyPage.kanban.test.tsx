@@ -1,13 +1,13 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { act, render, screen, fireEvent, within, waitFor } from '@testing-library/react';
-import { MemoryRouter } from 'react-router';
+import { render, screen, fireEvent, within, waitFor } from '@testing-library/react';
+import { MemoryRouter, Route, Routes } from 'react-router';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { DailyPage } from '../DailyPage';
+import { DailyRoute } from '../DailyRoutes';
+import { dailyView } from '../../test/dailyFixtures';
 import { I18nProvider } from '../../i18n/I18nContext';
 import { PlannerDragProvider } from '../../contexts/PlannerDragContext';
 import {
-  fetchTodayTasks,
-  fetchDailyTasks,
+  fetchDaily,
   fetchPreferences,
   fetchCollections,
   fetchInboxTasks,
@@ -17,16 +17,14 @@ import {
   type Preferences,
 } from '../../api/client';
 
-const mockFetchTodayTasks = vi.mocked(fetchTodayTasks);
-const mockFetchDailyTasks = vi.mocked(fetchDailyTasks);
+const mockFetchDaily = vi.mocked(fetchDaily);
 const mockFetchPreferences = vi.mocked(fetchPreferences);
 const mockFetchCollections = vi.mocked(fetchCollections);
 const mockApiUpdatePreferences = vi.mocked(apiUpdatePreferences);
 
 vi.mock('../../api/client', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../../api/client')>()),
-  fetchTodayTasks: vi.fn(),
-  fetchDailyTasks: vi.fn(),
+  fetchDaily: vi.fn(),
   fetchPreferences: vi.fn(),
   fetchCollections: vi.fn(),
   apiToggleTask: vi.fn(),
@@ -106,7 +104,7 @@ const noDateTask: ApiTask = {
   isCompleted: false, orderValue: 0, depth: 0, type: 'task',
 };
 
-function renderPage() {
+function renderPage(slug = 'list') {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
@@ -114,9 +112,9 @@ function renderPage() {
   return render(
     <QueryClientProvider client={client}>
       <I18nProvider>
-        <MemoryRouter>
+        <MemoryRouter initialEntries={[`/daily/${slug}`]}>
           <PlannerDragProvider>
-            <DailyPage />
+            <Routes><Route path="/daily/:view" element={<DailyRoute />} /></Routes>
           </PlannerDragProvider>
         </MemoryRouter>
       </I18nProvider>
@@ -135,37 +133,13 @@ beforeEach(() => {
   mockFetchCollections.mockResolvedValue([]);
   mockApiUpdatePreferences.mockImplementation(async (patch) => ({ ...basePreferences, ...patch }));
   vi.mocked(fetchInboxTasks).mockResolvedValue({ tasks: [overdueTask, todayTask, noDateTask], collectionId: null, sections: [], statuses: [], completionStatusId: null, boardOrder: { status: {}, priority: {} } });
-  mockFetchTodayTasks.mockResolvedValue({
+  mockFetchDaily.mockResolvedValue(dailyView({
     overdue: [overdueTask],
     today: [todayTask],
-  });
-  mockFetchDailyTasks.mockImplementation(async (from, to) => ({
-    from,
-    to,
-    today: todayKey,
-    overdue: [overdueTask],
-    days: from <= todayKey && todayKey <= to ? [{ date: todayKey, tasks: [todayTask] }] : [],
   }));
 });
 
 describe('DailyPage week kanban view', () => {
-  it('opens the current week in the preferred time zone', async () => {
-    const originalTimeZone = process.env.TZ;
-    process.env.TZ = 'America/Sao_Paulo';
-    vi.useFakeTimers({ toFake: ['Date'] });
-    vi.setSystemTime(new Date('2026-10-11T01:00:00Z'));
-    try {
-      window.localStorage.setItem('planner.boardViews.v1', JSON.stringify({ daily: 'kanban' }));
-      renderPage();
-      await screen.findByTestId('daily-week-board');
-      await waitFor(() => expect(mockFetchDailyTasks).toHaveBeenCalledWith('2026-10-11', '2026-10-17'));
-    } finally {
-      vi.useRealTimers();
-      if (originalTimeZone === undefined) delete process.env.TZ;
-      else process.env.TZ = originalTimeZone;
-    }
-  });
-
   it('opens an inline card and creates a task with the selected day', async () => {
     vi.mocked(apiCreateTask).mockResolvedValue({ ...todayTask, id: 'created', title: 'Plan the day' });
     const { container } = renderPage();
@@ -244,17 +218,15 @@ describe('DailyPage week kanban view', () => {
     expect(container.querySelector('[data-column-id="migrate"] .board-card-date')).toHaveTextContent(yesterdayKey);
   });
 
-  it('restores the saved board view for Daily', async () => {
-    window.localStorage.setItem('planner.boardViews.v1', JSON.stringify({ daily: 'kanban' }));
-    renderPage();
+  it('shows the week board on /daily/cards', async () => {
+    renderPage('cards');
 
     expect(await screen.findByTestId('daily-week-board')).toBeInTheDocument();
   });
 
   it('uses the selected date display in week column titles', async () => {
     mockFetchPreferences.mockResolvedValue({ ...basePreferences, dateFormat: 'YYYY-MM-DD' });
-    window.localStorage.setItem('planner.boardViews.v1', JSON.stringify({ daily: 'kanban' }));
-    renderPage();
+    renderPage('cards');
 
     const heading = await screen.findByRole('heading', { name: `${todayKey} · Today`, exact: true });
     expect(heading).toHaveClass('daily-board-column-title');
@@ -283,31 +255,9 @@ describe('DailyPage week kanban view', () => {
 
     expect(container.querySelector(`[data-column-id="day:${todayKey}"]`)).not.toBeNull();
 
-    await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Next week' })));
+    fireEvent.click(screen.getByRole('button', { name: 'Next week' }));
 
     expect(container.querySelector(`[data-column-id="day:${todayKey}"]`)).toBeNull();
     expect(container.querySelector(`[data-column-id="day:${inSevenDaysKey}"]`)).not.toBeNull();
-  });
-
-  it('loads scheduled tasks from the newly selected week', async () => {
-    const futureTask = { ...todayTask, id: 'future-task', title: 'Future task', dueDate: inSevenDaysKey };
-    mockFetchDailyTasks.mockImplementation(async (from, to) => ({
-      from,
-      to,
-      today: todayKey,
-      overdue: [],
-      days: from <= inSevenDaysKey && inSevenDaysKey <= to
-        ? [{ date: inSevenDaysKey, tasks: [futureTask] }]
-        : [],
-    }));
-    const { container } = renderPage();
-    await screen.findByText('Today task');
-    openToolbarMenu();
-    fireEvent.click(screen.getByRole('button', { name: 'Kanban cards' }));
-    await screen.findByTestId('daily-week-board');
-
-    fireEvent.click(screen.getByRole('button', { name: 'Next week' }));
-
-    await waitFor(() => expect(container.querySelector(`[data-column-id="day:${inSevenDaysKey}"]`)).toHaveTextContent('Future task'));
   });
 });

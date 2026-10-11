@@ -1,24 +1,19 @@
-import type { TaskTimeRow } from "./task.js";
+import type { formatTask } from "../services/viewService.js";
 
-export type DailyTaskRow = TaskTimeRow & {
-  id: string;
-  user_id: string;
-  collection_id: string;
-  section_id: string | null;
-  parent_task_id: string | null;
-  assignee_user_id: string | null;
-  title: string;
-  description: string | null;
-  priority: number;
-  due_date: string | Date;
-  due_timezone: string | null;
-  recurrence_rule: object | null;
-  is_completed: boolean;
-  completed_at: string | null;
-  effective_order_value: number;
-  depth: number;
-  type: string;
-  status_id: string | null;
-  created_at: string;
-  updated_at: string;
-};
+export type DailyTask = ReturnType<typeof formatTask>;
+
+export interface DailyDay {
+  date: string;
+  tasks: DailyTask[];
+}
+
+export interface DailyView {
+  from: string;
+  to: string;
+  /** The user's current date, in their own timezone. */
+  today: string;
+  /** Every task due before `today`, whatever the requested range. */
+  overdue: DailyTask[];
+  /** One entry per day of the range, empty days included. */
+  days: DailyDay[];
+}

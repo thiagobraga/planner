@@ -129,6 +129,29 @@ describe("Planner MCP server (real PostgreSQL + Redis)", () => {
     expect((await call(client, "search", { query: "report" })).text).toBe('No results for "report".');
   });
 
+  it("get_today splits overdue from today; get_upcoming spans N days and skips empty and completed ones", async () => {
+    const client = await connect(["read", "write"]);
+    const old = idOf((await call(client, "create_task", { title: "Old", due: "2026-10-01" })).text);
+    const today = idOf((await call(client, "create_task", { title: "Now", due: "today" })).text);
+    const later = idOf((await call(client, "create_task", { title: "Later", due: "2026-10-08" })).text);
+    const done = idOf((await call(client, "create_task", { title: "Finished", due: "2026-10-08" })).text);
+    await call(client, "complete_task", { id: done });
+
+    const todayText = (await call(client, "get_today")).text;
+    expect(todayText).toContain("Today is 2026-10-06.");
+    expect(todayText).toContain(`Overdue (1):\n- [ ] Old · due 2026-10-01 · #Inbox · id:${old}`);
+    expect(todayText).toContain(`Due today (1):\n- [ ] Now · due 2026-10-06 · #Inbox · id:${today}`);
+    expect(todayText).not.toContain("Later");
+
+    expect((await call(client, "get_upcoming", { days: 1 })).text).toBe(
+      `2026-10-06:\n- [ ] Now · due 2026-10-06 · #Inbox · id:${today}`,
+    );
+    const week = (await call(client, "get_upcoming", { days: 7 })).text;
+    expect(week).toContain(`2026-10-08:\n- [ ] Later · due 2026-10-08 · #Inbox · id:${later}`);
+    expect(week).not.toContain("Finished");
+    expect(week).not.toContain("Old");
+  });
+
   it("updates fields, clears the due date and resolves labels by name", async () => {
     const client = await connect(["read", "write"]);
     const labelId = crypto.randomUUID();

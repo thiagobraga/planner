@@ -2,12 +2,12 @@ import { isOnline, enqueueMutation, type QueuedMutationMethod } from '../utils/o
 import { getSocketId } from '../utils/socket';
 import { notifyUnauthorized } from '../utils/authEvents';
 import type { BoardViewMode } from '../types/board';
+import type { ApiDailyView } from '../types/daily';
 import type { BackgroundPreference } from '../types/theme';
 import type { TaskSchedule } from '../types/task';
 import type { ApiToken, CreateApiTokenInput, CreatedApiToken } from '../types/apiToken';
 import type { ActivityPage, ActivityQuery } from '../types/activity';
 import type { ConnectedApp, ConsentDecision, PendingAuthorization } from '../types/oauth';
-import type { DailyRangeView } from '../types/daily';
 
 const BASE = '/api/v1';
 
@@ -333,25 +333,8 @@ export async function fetchInboxTasks(): Promise<{
   return request('/views/inbox');
 }
 
-export async function fetchTodayTasks(): Promise<{ overdue: ApiTask[]; today: ApiTask[] }> {
-  return request('/views/today');
-}
-
-export async function fetchDailyTasks(from: string, to: string): Promise<DailyRangeView> {
+export async function fetchDaily(from: string, to: string): Promise<ApiDailyView> {
   return request(`/daily/${from}/${to}`);
-}
-
-export async function fetchUpcomingTasks(): Promise<Array<{ date: string; tasks: ApiTask[] }>> {
-  const view = await request<{ days: Array<{ date: string; tasks: ApiTask[] }> }>('/views/upcoming');
-  return view.days;
-}
-
-export async function fetchMonthNotes(year: number, month: number): Promise<{
-  notesByDate: Record<string, ApiTask[]>;
-  year: number;
-  month: number;
-}> {
-  return request(`/views/month?year=${year}&month=${month}`);
 }
 
 export async function fetchPreferences(): Promise<Preferences> {

@@ -50,7 +50,7 @@ describe('api client unit tests', () => {
 
     const { request } = await import('../client');
 
-    await request('/views/today');
+    await request('/preferences');
 
     expect(fetchMock).toHaveBeenCalled();
     const init = fetchMock.mock.calls[0][1];

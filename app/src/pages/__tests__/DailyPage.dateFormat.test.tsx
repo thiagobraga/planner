@@ -1,11 +1,12 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, act, waitFor } from '@testing-library/react';
-import { MemoryRouter } from 'react-router';
+import { MemoryRouter, Route, Routes } from 'react-router';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type React from 'react';
-import { DailyPage } from '../DailyPage';
+import { DailyRoute } from '../DailyRoutes';
+import { dailyView } from '../../test/dailyFixtures';
 import { PlannerDragProvider } from '../../contexts/PlannerDragContext';
-import { fetchCollections, fetchPreferences, fetchTodayTasks, apiMoveTask } from '../../api/client';
+import { fetchCollections, fetchPreferences, fetchDaily, apiMoveTask } from '../../api/client';
 
 /**
  * The user's date format has to survive a drag.
@@ -64,13 +65,13 @@ vi.mock('../../utils/socket', () => ({
 
 vi.mock('../../api/client', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../../api/client')>()),
-  fetchTodayTasks: vi.fn(),
+  fetchDaily: vi.fn(),
   fetchCollections: vi.fn(),
   fetchPreferences: vi.fn(),
   apiMoveTask: vi.fn(),
 }));
 
-const mockFetchTodayTasks = vi.mocked(fetchTodayTasks);
+const mockFetchDaily = vi.mocked(fetchDaily);
 const mockFetchCollections = vi.mocked(fetchCollections);
 const mockFetchPreferences = vi.mocked(fetchPreferences);
 const mockApiMoveTask = vi.mocked(apiMoveTask);
@@ -114,16 +115,16 @@ const dayHeaders = (container: HTMLElement) =>
     section.firstElementChild?.textContent?.trim(),
   );
 
-function renderPage() {
+function renderPage(slug = 'list') {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
 
   return render(
     <QueryClientProvider client={client}>
-      <MemoryRouter>
+      <MemoryRouter initialEntries={[`/daily/${slug}`]}>
         <PlannerDragProvider>
-          <DailyPage />
+          <Routes><Route path="/daily/:view" element={<DailyRoute />} /></Routes>
         </PlannerDragProvider>
       </MemoryRouter>
     </QueryClientProvider>,
@@ -136,7 +137,7 @@ beforeEach(() => {
   // the preferences query behind the tasks query.
   vi.setSystemTime(new Date(`${TODAY}T12:00:00Z`));
 
-  mockFetchTodayTasks.mockReset();
+  mockFetchDaily.mockReset();
   mockFetchCollections.mockReset();
   mockFetchPreferences.mockReset();
   mockApiMoveTask.mockReset();
@@ -167,10 +168,10 @@ beforeEach(() => {
     dateFormat: 'DD/MM ddd',
   } as Awaited<ReturnType<typeof fetchPreferences>>);
 
-  mockFetchTodayTasks.mockResolvedValue({
+  mockFetchDaily.mockResolvedValue(dailyView({
     overdue: [apiTask('task-old', 'Yesterday task', YESTERDAY, 1000)],
     today: [apiTask('task-new', 'Today task', TODAY, 2000)],
-  });
+  }));
 
   mockApiMoveTask.mockResolvedValue({ moved: [], reordered: [] } as Awaited<
     ReturnType<typeof apiMoveTask>
@@ -238,6 +239,6 @@ describe('DailyPage: the date format preference survives a drag', () => {
     // ...without a second network round trip. A duplicate `views/today` call
     // here previously delayed everything gated on the fetched task count (e.g.
     // the Organize button) by a full extra round trip.
-    expect(mockFetchTodayTasks).toHaveBeenCalledTimes(1);
+    expect(mockFetchDaily).toHaveBeenCalledTimes(1);
   });
 });

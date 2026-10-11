@@ -95,7 +95,8 @@ Add to `/etc/hosts`: `planner.local`, `api.planner.local`, `db.planner.local`, `
 - `oauth/router.ts` + `oauth/provider.ts` - SDK OAuth handlers under `/api/oauth/*` plus `/.well-known/oauth-*` discovery; mounted outside `/api/v1`
 - `services/emailService.ts` - Resend wrapper; logs reset links to console when `RESEND_API_KEY` is unset
 - `services/taskService.ts` - CRUD, completion, recurrence
-- `services/viewService.ts` - today/upcoming/inbox aggregations
+- `services/viewService.ts` - inbox and collection views
+- `services/dailyService.ts` - `getDailyView(userId, from, to)`: the one range query behind every Daily view and the MCP `get_today` / `get_upcoming` tools
 - `services/filterService.ts` - saved filter CRUD + evaluation via Peggy DSL parser
 - `services/collectionService.ts` - collection (project) CRUD
 - `services/habitService.ts` - habit tracking, completions, streaks
@@ -119,12 +120,14 @@ Add to `/etc/hosts`: `planner.local`, `api.planner.local`, `db.planner.local`, `
 - `mcp/` - MCP server for AI agents: `server.ts` builds a per-request `McpServer` (write tools only for write tokens), `tools/*` call services directly, `resolve.ts` maps names/natural dates to ids/ISO in the user's timezone, `format.ts` renders compact task lines ending in `id:<uuid>`
 - `routes/index.ts` - Aggregates all routes under `/api/v1/`
 
-All routes under `/api/v1/`. Route files: `auth`, `apiTokens`, `mcp`, `oauth`, `tasks`, `collections`, `labels`, `sections`, `views`, `filters`, `search`, `reminders`, `comments`, `preferences`, `activity`, `collaboration`, `habits`, `habitGroups`, `statuses`, `savedColors`, `adminUsers`, `adminStats`.
+All routes under `/api/v1/`. Route files: `auth`, `apiTokens`, `mcp`, `oauth`, `tasks`, `collections`, `labels`, `sections`, `views`, `filters`, `search`, `reminders`, `comments`, `preferences`, `activity`, `collaboration`, `daily`, `habits`, `habitGroups`, `statuses`, `savedColors`, `adminUsers`, `adminStats`.
 
 ### Frontend (`app/src/`)
 
 - `contexts/AuthContext.tsx` - auth source of truth; manages socket connect/disconnect lifecycle
 - `utils/socket.ts` - Socket.IO singleton; authenticates with the session cookie (`withCredentials`)
+- `hooks/useDailyTasks.ts` - React Query hook for one Daily range (`['daily', from, to]`); `refresh()` debounces invalidation
+- `utils/dailyRange.ts` - `dailyRange(view, anchor, weekStart, showNextDays)` and the `/daily/<slug>` mapping
 - `hooks/useSync.ts` - subscribes to `"sync"` events; handler receives `SyncEvent`
 - `hooks/shortcuts.ts` - pure chord-aware keyboard matcher; `DEFAULT_BINDINGS` for `q /  ? Enter Delete Escape g+i g+t g+u`
 - `hooks/usePreferences.ts` - User preferences hook
@@ -141,7 +144,8 @@ All routes under `/api/v1/`. Route files: `auth`, `apiTokens`, `mcp`, `oauth`, `
 
 | Route                              | Page                                   | Purpose                                                      |
 | ---------------------------------- | -------------------------------------- | ------------------------------------------------------------ |
-| `/daily` (default)                 | `DailyPage`                            | Week board with week selector; `/` and `/today` redirect     |
+| `/daily` (default)                 | `DailyIndexRedirect`                   | Redirects to the last used view (default `list`); `/` and `/today` redirect here |
+| `/daily/list\|kanban\|cards\|monthly` | `DailyRoute` -> `DailyPage`            | The URL picks the view; an unknown one falls back to `/daily/list` |
 | `/inbox`                           | `InboxPage`                            | Unprocessed tasks                                            |
 | `/habits`                          | `HabitsPage`                           | Habit streaks (12-week grid)                                 |
 | `/collections`                     | `CollectionsIndexPage`                 | Collection/project list                                      |
@@ -198,7 +202,8 @@ PATCH/DELETE      /tasks/:id
 POST              /tasks/:id/complete   POST /tasks/:id/reopen
 PATCH             /tasks/:id/reorder
 
-GET               /views/today     GET /views/upcoming?days=7     GET /views/inbox
+GET               /daily/:from/:to  (YYYY-MM-DD, max 42 days; overdue + one entry per day)
+GET               /views/inbox     GET /views/collection/:id
 
 GET/POST/PATCH/DELETE  /projects   /labels   /sections   /filters   /reminders   /comments
 GET               /search?q=

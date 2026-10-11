@@ -1,6 +1,7 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { getTodayView, getUpcomingView, getInboxView, getCollectionView } from "../../services/viewService.js";
+import { addDaysISO, getInboxView, getCollectionView } from "../../services/viewService.js";
+import { getDailyView } from "../../services/dailyService.js";
 import { searchEntities } from "../../services/searchService.js";
 import { evaluateFilterQuery } from "../../services/filterService.js";
 import { parseFilter } from "../../parsers/filterParser.js";
@@ -10,9 +11,6 @@ import { resolveCollection, todayFor, ToolInputError } from "../resolve.js";
 import { collectionNameMap, getUserTimezone, runTool } from "../toolkit.js";
 
 const READ_ONLY = { readOnlyHint: true, openWorldHint: false } as const;
-
-/** The upcoming service only serves 7-30 day windows; shorter asks are trimmed here. */
-const MIN_UPCOMING_WINDOW = 7;
 
 export function registerViewTools(server: McpServer, ctx: McpAuthContext): void {
   server.registerTool(
@@ -24,13 +22,15 @@ export function registerViewTools(server: McpServer, ctx: McpAuthContext): void 
     },
     () =>
       runTool(async () => {
-        const [view, names] = await Promise.all([getTodayView(ctx.userId, ctx.now()), collectionNameMap(ctx.userId)]);
+        const today = todayFor(await getUserTimezone(ctx.userId), ctx.now());
+        const [view, names] = await Promise.all([getDailyView(ctx.userId, today, today, ctx.now()), collectionNameMap(ctx.userId)]);
+        const due = view.days[0]!.tasks;
         return [
-          `Today is ${view.date}.`,
+          `Today is ${view.today}.`,
           `Overdue (${view.overdue.length}):`,
           formatTaskList(view.overdue, names, "Nothing overdue."),
-          `Due today (${view.today.length}):`,
-          formatTaskList(view.today, names, "Nothing due today."),
+          `Due today (${due.length}):`,
+          formatTaskList(due, names, "Nothing due today."),
         ].join("\n");
       }),
   );
@@ -45,12 +45,13 @@ export function registerViewTools(server: McpServer, ctx: McpAuthContext): void 
     },
     ({ days }) =>
       runTool(async () => {
+        const today = todayFor(await getUserTimezone(ctx.userId), ctx.now());
         const [view, names] = await Promise.all([
-          getUpcomingView(ctx.userId, Math.max(days, MIN_UPCOMING_WINDOW), ctx.now()),
+          getDailyView(ctx.userId, today, addDaysISO(today, days - 1), ctx.now()),
           collectionNameMap(ctx.userId),
         ]);
         const sections = view.days
-          .slice(0, days)
+          .map((day) => ({ date: day.date, tasks: day.tasks.filter((t) => !t.isCompleted) }))
           .filter((day) => day.tasks.length > 0)
           .map((day) => `${day.date}:\n${formatTaskList(day.tasks, names)}`);
         return sections.length > 0 ? sections.join("\n") : `Nothing due in the next ${days} days.`;
