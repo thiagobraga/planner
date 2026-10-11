@@ -7,6 +7,7 @@ import type { TaskSchedule } from '../types/task';
 import type { ApiToken, CreateApiTokenInput, CreatedApiToken } from '../types/apiToken';
 import type { ActivityPage, ActivityQuery } from '../types/activity';
 import type { ConnectedApp, ConsentDecision, PendingAuthorization } from '../types/oauth';
+import type { DailyRangeView } from '../types/daily';
 
 const BASE = '/api/v1';
 
@@ -334,6 +335,10 @@ export async function fetchInboxTasks(): Promise<{
 
 export async function fetchTodayTasks(): Promise<{ overdue: ApiTask[]; today: ApiTask[] }> {
   return request('/views/today');
+}
+
+export async function fetchDailyTasks(from: string, to: string): Promise<DailyRangeView> {
+  return request(`/daily/${from}/${to}`);
 }
 
 export async function fetchUpcomingTasks(): Promise<Array<{ date: string; tasks: ApiTask[] }>> {
