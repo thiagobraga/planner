@@ -1,6 +1,6 @@
 # Tarefas: Daily unificado
 
-Trabalho direto no `main`, TDD (teste primeiro, DB real), commits pequenos em Conventional Commits.
+Trabalho no worktree `../planner-daily-range` (branch `feat/daily-unified-range`, stack em `https://claude.planner.local`), TDD (teste primeiro, DB real), commits pequenos em Conventional Commits.
 
 1. [x] Spec em `.specs/2026-10-10-daily-unified-range/` (`plan.md` + `task.md`)
 2. [ ] API
