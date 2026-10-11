@@ -10,13 +10,18 @@ function dateKey(year: number, month: number, day: number): string {
 export interface MonthlyViewProps {
   tasks: Task[];
   onToggle: (id: string) => void;
+  /** Month shown (0-based). Pass with `onMonthChange` when the page owns navigation, e.g. to fetch that month. */
+  visibleMonth?: { year: number; month: number };
+  onMonthChange?: (year: number, month: number) => void;
 }
 
-export function MonthlyView({ tasks, onToggle }: MonthlyViewProps) {
+export function MonthlyView({ tasks, onToggle, visibleMonth, onMonthChange }: MonthlyViewProps) {
   const { locale, t } = useI18n();
   const now = new Date();
-  const [selectedYear, setSelectedYear] = useState(now.getFullYear());
-  const [selectedMonth, setSelectedMonth] = useState(now.getMonth());
+  const [ownYear, setOwnYear] = useState(now.getFullYear());
+  const [ownMonth, setOwnMonth] = useState(now.getMonth());
+  const selectedYear = visibleMonth?.year ?? ownYear;
+  const selectedMonth = visibleMonth?.month ?? ownMonth;
 
   const tasksByDate = useMemo(() => {
     const map: Record<string, Task[]> = {};
@@ -34,8 +39,9 @@ export function MonthlyView({ tasks, onToggle }: MonthlyViewProps) {
   }, [tasks]);
 
   const handleMonthChange = (year: number, month: number) => {
-    setSelectedYear(year);
-    setSelectedMonth(month);
+    setOwnYear(year);
+    setOwnMonth(month);
+    onMonthChange?.(year, month);
   };
 
   const daysInMonth = new Date(selectedYear, selectedMonth + 1, 0).getDate();
