@@ -7,6 +7,7 @@ import { apiCreateTask } from '../../api/client';
 import { updateDocumentThemeColor } from '../../utils/theme';
 
 const mockUseQuery = vi.hoisted(() => vi.fn());
+const mockInvalidateQueries = vi.hoisted(() => vi.fn());
 
 vi.mock('react-router', () => ({
   Outlet: vi.fn(() => <div data-testid="outlet-content">Outlet content</div>),
@@ -17,7 +18,7 @@ vi.mock('react-router', () => ({
 vi.mock('@tanstack/react-query', () => ({
   useQuery: mockUseQuery,
   useQueryClient: vi.fn(() => ({
-    invalidateQueries: vi.fn(),
+    invalidateQueries: mockInvalidateQueries,
     setQueryData: vi.fn(),
   })),
   QueryClient: vi.fn(),
@@ -124,9 +125,11 @@ describe('AppShell', () => {
       type: undefined,
       collectionId: 'collection-1',
     });
+    expect(mockInvalidateQueries).toHaveBeenCalledWith({ queryKey: ['collection', 'collection-1'] });
   });
 
   it('keeps quick tasks in the inbox outside a collection', async () => {
+    vi.mocked(useLocation).mockReturnValue({ pathname: '/inbox' } as ReturnType<typeof useLocation>);
     render(<AppShell />);
 
     await act(async () => {

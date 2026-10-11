@@ -72,7 +72,7 @@ export function QuickAdd({ isOpen, onClose, onSubmit }: QuickAddProps) {
       aria-modal="true"
       aria-label={t('shell.quickAddTask')}
       onClick={handleOverlayClick}
-      className="fixed inset-0 z-[100] bg-(--planner-backdrop) backdrop-blur-[2px] flex items-start justify-center pt-[120px]"
+      className="fixed inset-0 z-[100] bg-(--planner-backdrop) flex items-start justify-center pt-[120px]"
     >
       <div className="rounded-md border border-dot w-[560px] max-w-[calc(100vw-48px)] shadow-overlay overflow-hidden" style={{ backgroundColor: 'var(--planner-overlay-bg)' }}>
         {/* Header */}
