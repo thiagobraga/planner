@@ -26,15 +26,12 @@ function addDays(date: Date, days: number): Date {
 }
 
 /** The only difference between Daily views is how many days they ask for. */
-export function dailyRange(view: BoardViewMode, anchor: Date, weekStart: WeekStart, showNextDays: boolean): DailyRange {
+export function dailyRange(view: BoardViewMode, anchor: Date, weekStart: WeekStart): DailyRange {
   if (view === 'calendar') {
     const first = new Date(anchor.getFullYear(), anchor.getMonth(), 1);
     const last = new Date(anchor.getFullYear(), anchor.getMonth() + 1, 0);
     return { from: fmtISO(first), to: fmtISO(last) };
   }
-  if (view === 'list') {
-    return { from: fmtISO(anchor), to: fmtISO(showNextDays ? addDays(anchor, 6) : anchor) };
-  }
   const start = startOfWeek(anchor, weekStart);
-  return { from: fmtISO(start), to: fmtISO(addDays(start, 6)) };
+  return { from: fmtISO(view === 'list' ? anchor : start), to: fmtISO(addDays(start, 6)) };
 }

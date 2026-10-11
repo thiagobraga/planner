@@ -110,5 +110,4 @@ export const DEFAULT_BINDINGS: Binding[] = [
   { keys: ['g', 'd'], context: 'global', action: 'navigate:daily' },
   { keys: ['g', 'h'], context: 'global', action: 'navigate:habits' },
   { keys: ['g', 's'], context: 'global', action: 'navigate:settings' },
-  { keys: ['g', 'u'], context: 'global', action: 'toggle:upcoming' },
 ];

@@ -74,11 +74,11 @@ describe('shortcuts matcher', () => {
     expect(action).toBe('navigate:settings');
   });
 
-  it('g+u toggles upcoming', () => {
+  it('g+u has no action after Upcoming is removed', () => {
     const s0 = createMatcherState();
     const { nextState: s1 } = matchKey(DEFAULT_BINDINGS, s0, ev('g', { timestamp: 0 }));
     const { action } = matchKey(DEFAULT_BINDINGS, s1, ev('u', { timestamp: 999 }));
-    expect(action).toBe('toggle:upcoming');
+    expect(action).toBeNull();
   });
 
   it('chord expires after CHORD_WINDOW_MS', () => {

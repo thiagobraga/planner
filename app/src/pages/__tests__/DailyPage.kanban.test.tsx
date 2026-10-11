@@ -242,7 +242,7 @@ describe('DailyPage week kanban view', () => {
     expect(screen.getByRole('menuitem', { name: 'List' })).toBeInTheDocument();
     expect(screen.getByRole('menuitem', { name: 'Kanban lists' })).toBeInTheDocument();
     expect(screen.getByRole('menuitem', { name: 'Kanban cards' })).toBeInTheDocument();
-    expect(screen.getByRole('menuitem', { name: /Next days/ })).toBeInTheDocument();
+    expect(screen.queryByRole('menuitem', { name: /Next days/ })).not.toBeInTheDocument();
   });
 
   it('moves the visible week forward when the next-week arrow is clicked', async () => {

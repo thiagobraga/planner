@@ -145,14 +145,11 @@ beforeEach(() => {
 });
 
 describe('DailyPage behavior visibility', () => {
-  it('scrolls the current-date section into view when returning to today from the next-days toggle', async () => {
+  it('scrolls the current-date section into view from the Today button', async () => {
     renderPage();
 
     await screen.findByRole('button', { name: 'Complete: Visible task' });
-    openToolbarMenu();
-    const nextDays = screen.getByRole('checkbox', { name: 'Next days' });
-    fireEvent.click(nextDays);
-    fireEvent.click(nextDays);
+    fireEvent.click(screen.getByRole('button', { name: 'Today' }));
 
     await waitFor(() => expect(scrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth', block: 'start' }));
   });
