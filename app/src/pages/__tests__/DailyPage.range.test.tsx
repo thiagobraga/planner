@@ -111,6 +111,35 @@ describe('Daily asks for one range per view', () => {
     await waitFor(() => expect(requestedRanges()).toEqual(['2026-10-04..2026-10-10', '2026-10-11..2026-10-17']));
   });
 
+  it('list asks for the selected week once the week selector moves away from this one', async () => {
+    renderAt('/daily/list');
+    await waitFor(() => expect(mockFetchDaily).toHaveBeenCalledTimes(1));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Next week' }));
+
+    await waitFor(() => expect(requestedRanges().at(-1)).toBe('2026-10-11..2026-10-17'));
+    expect(screen.getAllByLabelText('New task…')).toHaveLength(7);
+  });
+
+  it.each(['list', 'cards'])('Today brings /daily/%s back to the current period', async (slug) => {
+    renderAt(`/daily/${slug}`);
+    await waitFor(() => expect(mockFetchDaily).toHaveBeenCalledTimes(1));
+    const first = requestedRanges()[0];
+
+    fireEvent.click(screen.getByRole('button', { name: 'Next week' }));
+    await waitFor(() => expect(requestedRanges().at(-1)).not.toBe(first));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Today' }));
+
+    await waitFor(() => expect(requestedRanges().at(-1)).toBe(first));
+  });
+
+  it('monthly shows the Today button', async () => {
+    renderAt('/daily/monthly');
+
+    expect(await screen.findByRole('button', { name: 'Today' })).toBeInTheDocument();
+  });
+
   it('monthly asks for the whole visible month', async () => {
     renderAt('/daily/monthly');
 
