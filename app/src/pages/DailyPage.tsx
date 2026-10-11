@@ -28,8 +28,6 @@ import {
   fetchTodayTasks,
   fetchUpcomingTasks,
   fetchCollections,
-  fetchInboxTasks,
-  fetchCollectionView,
   fetchPreferences,
   apiToggleTask,
   apiCreateTask,
@@ -199,32 +197,7 @@ export function DailyPage() {
   const replaceTodayFromApi = useCallback(() => {
     const requestId = ++loadRequestId.current;
     const currentToday = fmtISOInTimeZone(new Date(), prefsRef.current?.timeZone);
-    const loadTasks = async () => {
-      if (!dailyBoard) return fetchTodayTasks();
-      // Cached fetches: the board spans every collection, so an uncached pass
-      // costs 3 + N requests. Mutations already invalidate these keys.
-      const [todayView, collections] = await Promise.all([
-        fetchTodayTasks(),
-        qc.fetchQuery({ queryKey: ['collections'], queryFn: fetchCollections }),
-      ]);
-      const views = await Promise.all([
-        qc.fetchQuery({ queryKey: ['inbox'], queryFn: fetchInboxTasks }),
-        ...collections.filter((collection) => !collection.isInbox && !collection.isArchived)
-          .map((collection) => qc.fetchQuery({
-            queryKey: ['collection', collection.id],
-            queryFn: () => fetchCollectionView(collection.id),
-          })),
-      ]);
-      const tasks = [
-        ...new Map([
-          ...todayView.overdue,
-          ...todayView.today,
-          ...views.flatMap((view) => view.tasks).filter((task) => task.dueDate),
-        ].map((task) => [task.id, task])).values(),
-      ];
-      return { overdue: [], today: tasks };
-    };
-    loadTasks().then((response) => {
+    fetchTodayTasks().then((response) => {
       if (requestId !== loadRequestId.current) return;
       const overdueTasks = (response.overdue || []).map(apiToTask);
       const todayTasks = (response.today || []).map(apiToTask);
@@ -235,7 +208,7 @@ export function DailyPage() {
       rawTodayRef.current = { overdue: [], today: [] };
       setSections(buildSections([], [], localeRef.current, currentToday, dateFormatRef.current));
     });
-  }, [dailyBoard, qc]);
+  }, []);
 
   // Preferences (locale/dateFormat/timeZone) often resolve after the initial
   // fetch above already rendered with defaults. Reformat the cached raw tasks
