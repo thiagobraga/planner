@@ -151,7 +151,7 @@ See [DESIGN.md](./DESIGN.md) for detailed design system specification, component
 Create a personal API token in **Settings > Integrations**. Choose *Read only* or *Read & write* and an expiry; the token (`plnr_...`) is shown once. Send it as a bearer header - no cookies or CSRF token needed:
 
 ```bash
-curl -H "Authorization: Bearer plnr_xxxxxxxx" https://planner.local/api/v1/views/today
+curl -H "Authorization: Bearer plnr_xxxxxxxx" https://planner.local/api/v1/daily/2026-10-05/2026-10-11
 
 curl -X POST -H "Authorization: Bearer plnr_xxxxxxxx" -H "Content-Type: application/json" \
   -d '{"title":"Call the dentist"}' https://planner.local/api/v1/tasks
