@@ -9,20 +9,20 @@ Trabalho no worktree `../planner-daily-range` (branch `feat/daily-unified-range`
    3. [x] Montar em `routes/index.ts` (somente leitura, `publishEvent` não se aplica)
    4. [x] MCP `get_today` e `get_upcoming` (`api/src/mcp/tools/views.ts`) apontam para o novo serviço, com testes MCP
    5. [x] Remover `/views/today|upcoming|month`, `getTodayView|getUpcomingView|getMonthView` e os testes mortos
-3. [ ] App: cliente e hook
-   1. [ ] `fetchDaily(from, to)` em `app/src/api/client.ts`. Remover `fetchTodayTasks|fetchUpcomingTasks|fetchMonthNotes` e atualizar `client.test.ts` e `client.added.test.ts`
-   2. [ ] `useDailyTasks(from, to)` com testes (chave de cache, invalidação por sync com debounce)
-   3. [ ] Helper puro `dailyRange(view, anchor, weekStart, showNextDays)` com testes (list 1 e 7 dias, semana, grade do mês)
-4. [ ] App: rotas e views
-   1. [ ] `App.tsx`: `/daily` redireciona para a última view. Rotas `/daily/list|kanban|cards|monthly`. View inválida cai em `/daily/list`
-   2. [ ] `ViewSwitcher` na Daily navega por rota. Salvar a última view só para o redirect
-   3. [ ] Extrair `DailyList` e ligar `DailyWeekBoard` e `MonthlyView` ao hook. Apagar `replaceTodayFromApi`, `fetchUpcomingFromApi`, `rawTodayRef`, `loadRequestId`, `upcomingSections`
-   4. [ ] Ajustar links e atalhos para `/daily` (`Sidebar.tsx:116`, `AppShell.tsx:168,177`)
-5. [ ] Testes
-   1. [ ] Reescrever os mocks de `DailyPage*.test.tsx` para o novo cliente
-   2. [ ] E2E Playwright: cada rota mostra a view certa, navegar de semana busca o intervalo, o Network mostra um único `GET /daily/..` por carga e nenhum `/views/collection/*`
-6. [ ] Docs: `CLAUDE.md` (rotas, API Reference, Pages & Routes) e `README.md`
-7. [ ] Verificação visual: abrir cada rota no navegador (desktop e estreito), checar o console e salvar screenshots em `app/dist/screenshots/`
+3. [x] App: cliente e hook
+   1. [x] `fetchDaily(from, to)` em `app/src/api/client.ts`. Remover `fetchTodayTasks|fetchUpcomingTasks|fetchMonthNotes` e atualizar `client.test.ts` e `client.added.test.ts`
+   2. [x] `useDailyTasks(from, to)` com testes (chave de cache, invalidação por sync com debounce)
+   3. [x] Helper puro `dailyRange(view, anchor, weekStart, showNextDays)` com testes (list 1 e 7 dias, semana, grade do mês)
+4. [x] App: rotas e views
+   1. [x] `App.tsx`: `/daily` redireciona para a última view. Rotas `/daily/list|kanban|cards|monthly`. View inválida cai em `/daily/list`
+   2. [x] `ViewSwitcher` na Daily navega por rota. Salvar a última view só para o redirect
+   3. [x] Extrair `DailyList` e ligar `DailyWeekBoard` e `MonthlyView` ao hook. Apagar `replaceTodayFromApi`, `fetchUpcomingFromApi`, `rawTodayRef`, `loadRequestId`, `upcomingSections`
+   4. [x] Ajustar links e atalhos para `/daily` (`Sidebar.tsx:116`, `AppShell.tsx:168,177`)
+5. [x] Testes
+   1. [x] Reescrever os mocks de `DailyPage*.test.tsx` para o novo cliente
+   2. [x] E2E Playwright: cada rota mostra a view certa, navegar de semana busca o intervalo, o Network mostra um único `GET /daily/..` por carga e nenhum `/views/collection/*`
+6. [x] Docs: `CLAUDE.md` (rotas, API Reference, Pages & Routes) e `README.md`
+7. [x] Verificação visual: abrir cada rota no navegador (desktop e estreito), checar o console e salvar screenshots em `app/dist/screenshots/`
 
 ## Verificação ponta a ponta
 
