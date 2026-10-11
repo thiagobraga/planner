@@ -16,7 +16,7 @@ import { ToolbarSectionLabel } from '../components/ui/ToolbarSectionLabel';
 import { DailyWeekBoard } from '../components/board/DailyWeekBoard';
 import { MonthlyView } from '../components/monthly/MonthlyView';
 import type { Task } from '../components/TaskItem';
-import { extractNaturalDate, fmtISOInTimeZone } from '../utils/date';
+import { buildWeekDays, extractNaturalDate, fmtISOInTimeZone } from '../utils/date';
 import { nextOrderValue } from '../utils/order';
 import { applyIndent, getParentCandidate } from '../utils/taskTree';
 import { useTaskDrag } from '../hooks/useTaskDrag';
@@ -26,6 +26,7 @@ import { useBoardPreferences } from '../hooks/useBoardPreferences';
 import { useI18n } from '../i18n/I18nContext';
 import {
   fetchTodayTasks,
+  fetchDailyTasks,
   fetchUpcomingTasks,
   fetchCollections,
   fetchPreferences,
@@ -153,7 +154,7 @@ export function DailyPage() {
   const [pageContextMenu, setPageContextMenu] = useState<{ x: number; y: number } | null>(null);
   const [input, setInput] = useState('');
   const [showUpcoming, setShowUpcoming] = useState(loadShowUpcoming);
-  const [weekAnchor, setWeekAnchor] = useState(() => new Date());
+  const [selectedWeekAnchor, setWeekAnchor] = useState<Date | null>(null);
   const [upcomingSections, setUpcomingSections] = useState<DaySection[]>([]);
   const [upcomingInputs, setUpcomingInputs] = useState<Record<string, string>>({});
   const inputRef = useRef<HTMLDivElement>(null);
@@ -171,6 +172,7 @@ export function DailyPage() {
   });
   const boardPreferences = useBoardPreferences('daily', prefs);
   const dailyBoard = boardPreferences.view === 'kanban-list' || boardPreferences.view === 'kanban';
+  const boardTimeZone = dailyBoard ? prefs?.timeZone : undefined;
 
   const prefsRef = useRef(prefs);
   useEffect(() => {
@@ -179,6 +181,9 @@ export function DailyPage() {
 
   const [now, setNow] = useState(() => new Date());
   const todayKey = useMemo(() => fmtISOInTimeZone(now, prefs?.timeZone), [now, prefs?.timeZone]);
+  const weekAnchor = useMemo(() => selectedWeekAnchor ?? dateFromISO(todayKey), [selectedWeekAnchor, todayKey]);
+  const boardWeekAnchor = dailyBoard ? weekAnchor : undefined;
+  const boardWeekStart = dailyBoard ? prefs?.weekStart : undefined;
 
   const dateFormat = prefs?.dateFormat ?? 'MMM DD ddd';
   const localeRef = useRef(locale);
@@ -197,10 +202,12 @@ export function DailyPage() {
   const replaceTodayFromApi = useCallback(() => {
     const requestId = ++loadRequestId.current;
     const currentToday = fmtISOInTimeZone(new Date(), prefsRef.current?.timeZone);
-    fetchTodayTasks().then((response) => {
+    const week = boardWeekAnchor ? buildWeekDays(boardWeekAnchor, dateFromISO(currentToday), boardWeekStart ?? 'sunday') : null;
+    const request = week ? fetchDailyTasks(week[0].iso, week[6].iso) : fetchTodayTasks();
+    request.then((response) => {
       if (requestId !== loadRequestId.current) return;
       const overdueTasks = (response.overdue || []).map(apiToTask);
-      const todayTasks = (response.today || []).map(apiToTask);
+      const todayTasks = ('days' in response ? response.days.flatMap((day) => day.tasks) : response.today).map(apiToTask);
       rawTodayRef.current = { overdue: overdueTasks, today: todayTasks };
       setSections(buildSections(overdueTasks, todayTasks, localeRef.current, currentToday, dateFormatRef.current));
     }).catch(() => {
@@ -208,13 +215,11 @@ export function DailyPage() {
       rawTodayRef.current = { overdue: [], today: [] };
       setSections(buildSections([], [], localeRef.current, currentToday, dateFormatRef.current));
     });
-  }, []);
+  }, [boardWeekAnchor, boardWeekStart, boardTimeZone]);
 
-  // Preferences (locale/dateFormat/timeZone) often resolve after the initial
-  // fetch above already rendered with defaults. Reformat the cached raw tasks
-  // locally rather than refetching - the task data hasn't changed, only its
-  // labels - so the Organize button and task list settle after one network
-  // round trip instead of two.
+  // Preferences often resolve after the initial fetch. Reformat cached tasks
+  // locally when their labels change; the board separately reloads its range
+  // when the preferred time zone changes.
   useEffect(() => {
     if (!rawTodayRef.current) return;
     const currentToday = fmtISOInTimeZone(new Date(), prefs?.timeZone);
