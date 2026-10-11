@@ -6,7 +6,7 @@ import type { Status } from "./statusService.js";
 import { formatTimeFields } from "../utils/taskTime.js";
 import type { TaskTimeRow } from "../types/task.js";
 
-interface TaskRow extends TaskTimeRow {
+export interface TaskRow extends TaskTimeRow {
   id: string;
   user_id: string;
   collection_id: string;
@@ -53,7 +53,7 @@ interface BoardOrderRow {
   position: number;
 }
 
-function formatTask(row: TaskRow) {
+export function formatTask(row: TaskRow) {
   return {
     id: row.id,
     userId: row.user_id,
@@ -128,7 +128,7 @@ export async function getUserTimezone(userId: string): Promise<string> {
   return (result.rows[0]?.time_zone as string) ?? "UTC";
 }
 
-async function getViewPreferences(userId: string, now: Date = new Date()) {
+export async function getViewPreferences(userId: string, now: Date = new Date()) {
   const result = await pool.query(
     `SELECT time_zone, hide_completed_tasks, show_notes
      FROM preferences
