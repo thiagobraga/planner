@@ -333,23 +333,6 @@ export async function fetchInboxTasks(): Promise<{
   return request('/views/inbox');
 }
 
-export async function fetchTodayTasks(): Promise<{ overdue: ApiTask[]; today: ApiTask[] }> {
-  return request('/views/today');
-}
-
-export async function fetchUpcomingTasks(): Promise<Array<{ date: string; tasks: ApiTask[] }>> {
-  const view = await request<{ days: Array<{ date: string; tasks: ApiTask[] }> }>('/views/upcoming');
-  return view.days;
-}
-
-export async function fetchMonthNotes(year: number, month: number): Promise<{
-  notesByDate: Record<string, ApiTask[]>;
-  year: number;
-  month: number;
-}> {
-  return request(`/views/month?year=${year}&month=${month}`);
-}
-
 export async function fetchDaily(from: string, to: string): Promise<ApiDailyView> {
   return request(`/daily/${from}/${to}`);
 }

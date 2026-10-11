@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
 import { fetchDaily } from '../api/client';
 
 const INVALIDATE_DEBOUNCE_MS = 150;
@@ -16,6 +16,10 @@ export function useDailyTasks(from: string, to: string) {
   const query = useQuery({
     queryKey: ['daily', from, to],
     queryFn: () => fetchDaily(from, to),
+    // Moving to another week keeps the old one on screen until the new range lands.
+    placeholderData: keepPreviousData,
+    // Sync events keep it fresh; a focus refetch would overwrite rows mid-edit.
+    refetchOnWindowFocus: false,
   });
 
   const refresh = useCallback(() => {

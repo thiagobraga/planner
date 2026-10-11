@@ -1,19 +1,19 @@
 import { useMemo, useRef, useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSync } from '../hooks/useSync';
 import { useReorganize, type Section as ReorganizeSection } from '../hooks/useReorganize';
 import { isEchoedMove, isStructuralMove } from '../utils/moveEcho';
-import { TaskList } from '../components/TaskList';
 import { TaskVisibilityControls } from '../components/TaskVisibilityControls';
 import { PageHeader } from '../components/PageHeader';
 import { CollectionChip } from '../components/ui/Chip';
 import { Button } from '../components/ui/Button';
 import { Checkbox } from '../components/ui/Checkbox';
 import { ViewSwitcher } from '../components/ui/ViewSwitcher';
-import { EditableText } from '../components/ui/EditableText';
 import { Toolbar } from '../components/ui/Toolbar';
 import { ToolbarSectionLabel } from '../components/ui/ToolbarSectionLabel';
 import { DailyWeekBoard } from '../components/board/DailyWeekBoard';
+import { DailyList } from '../components/daily/DailyList';
 import { MonthlyView } from '../components/monthly/MonthlyView';
 import type { Task } from '../components/TaskItem';
 import { extractNaturalDate, fmtISOInTimeZone } from '../utils/date';
@@ -22,11 +22,9 @@ import { applyIndent, getParentCandidate } from '../utils/taskTree';
 import { useTaskDrag } from '../hooks/useTaskDrag';
 import { useTaskVisibilityPreferences } from '../hooks/useTaskVisibilityPreferences';
 import { useMidnightTimer } from '../hooks/useMidnightTimer';
-import { useBoardPreferences } from '../hooks/useBoardPreferences';
+import { useDailyTasks } from '../hooks/useDailyTasks';
 import { useI18n } from '../i18n/I18nContext';
 import {
-  fetchTodayTasks,
-  fetchUpcomingTasks,
   fetchCollections,
   fetchPreferences,
   apiToggleTask,
@@ -38,97 +36,13 @@ import {
 import { ContextMenu, type ContextMenuItem } from '../components/ui/ContextMenu';
 import { flattenCollections } from '../components/CollectionTreeNav';
 import { Folder, ArrowUp, ArrowDown, Trash2, Calendar, Kanban, List } from 'lucide-react';
-import { scheduleFieldsFromApi, withTimeZones } from '../utils/taskTime';
+import { withTimeZones } from '../utils/taskTime';
+import { apiToTask, buildSections, dateFromISO, dayLabel, flattenDaily } from '../utils/dailySections';
+import { dailyRange, viewToSlug } from '../utils/dailyRange';
+import type { DaySection } from '../types/daily';
+import type { BoardViewMode } from '../types/board';
 import { buildSetDateMenuItem } from '../components/taskDateMenuItem';
 import type { TaskSchedule } from '../types/task';
-
-interface DaySection {
-  key: string;
-  label: string;
-  tasks: Task[];
-}
-
-function dayLabel(d: Date, locale: 'en' | 'pt-BR', format: string = 'MMM DD ddd'): string {
-  const clean = locale === 'pt-BR' ? (val: string) => val.replace(/\./g, '') : (val: string) => val;
-  const month = clean(d.toLocaleDateString(locale, { month: 'short' })).toLocaleUpperCase(locale);
-  const day = String(d.getDate()).padStart(2, '0');
-  const weekday = clean(d.toLocaleDateString(locale, { weekday: 'short' })).toLocaleUpperCase(locale);
-  const year = d.getFullYear();
-
-  switch (format) {
-    case 'DD/MM ddd':
-      return `${day}/${String(d.getMonth() + 1).padStart(2, '0')} ${weekday}`;
-    case 'DD-MM-YYYY ddd':
-      return `${day}-${String(d.getMonth() + 1).padStart(2, '0')}-${year} ${weekday}`;
-    case 'ddd MMM DD':
-      return `${weekday} ${month} ${day}`;
-    case 'YYYY-MM-DD':
-      return `${year}-${String(d.getMonth() + 1).padStart(2, '0')}-${day}`;
-    case 'MMM DD ddd':
-    default:
-      return `${month} ${day} ${weekday}`;
-  }
-}
-
-function dateFromISO(iso: string): Date {
-  const [y, m, d] = iso.split('-').map(Number);
-  return new Date(y, m - 1, d);
-}
-
-function apiToTask(t: ApiTask): Task {
-  return {
-    id: t.id,
-    title: t.title,
-    priority: t.priority,
-    isCompleted: t.isCompleted,
-    orderValue: t.orderValue,
-    labels: t.labels,
-    indent: t.depth,
-    collectionId: t.collectionId,
-    sectionId: t.sectionId,
-    parentTaskId: t.parentTaskId ?? undefined,
-    dueDate: t.dueDate ? t.dueDate.slice(0, 10) : undefined,
-    ...scheduleFieldsFromApi(t),
-    type: t.type,
-    createdAt: t.createdAt,
-  };
-}
-
-function buildSections(
-  overdueTasks: Task[],
-  todayTasks: Task[],
-  locale: 'en' | 'pt-BR',
-  currentTodayKey: string = fmtISOInTimeZone(new Date()),
-  dateFormat: string = 'MMM DD ddd',
-): DaySection[] {
-  const byDate = new Map<string, Task[]>();
-
-  // Tolerate a missing list rather than throwing. This renders the whole page,
-  // so a bad argument here unmounts DailyPage and leaves a blank screen with no
-  // way back - too harsh a failure for one caller's mistake.
-  const all = [...(overdueTasks ?? []), ...(todayTasks ?? [])];
-
-  for (const t of all) {
-    // Trim any timestamp portion before matching. Falling back to todayKey is a
-    // last resort for a genuinely undated task, not something a full ISO
-    // timestamp should ever trigger - that would drag unrelated rows into today.
-    const date = t.dueDate?.slice(0, 10);
-    const key = date && /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : currentTodayKey;
-    const bucket = byDate.get(key) ?? [];
-    bucket.push(t);
-    byDate.set(key, bucket);
-  }
-
-  // Always include today even if empty (for the add-task form)
-  if (!byDate.has(currentTodayKey)) byDate.set(currentTodayKey, []);
-
-  const sortedDates = Array.from(byDate.keys()).sort().reverse();
-  return sortedDates.map((date) => ({
-    key: date,
-    label: dayLabel(dateFromISO(date), locale, dateFormat),
-    tasks: (byDate.get(date) ?? []).sort((a, b) => a.orderValue - b.orderValue || (a.createdAt ?? '').localeCompare(b.createdAt ?? '')),
-  }));
-}
 
 let tempCounter = 0;
 function tempId() { return `temp-daily-${++tempCounter}`; }
@@ -143,9 +57,10 @@ function loadShowUpcoming(): boolean {
   }
 }
 
-export function DailyPage() {
+export function DailyPage({ view }: { view: BoardViewMode }) {
   const { locale, t } = useI18n();
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const [sections, setSections] = useState<DaySection[]>([]);
   const [editingId, setEditingId] = useState<string>();
   const [, setSelectedId] = useState<string>();
@@ -154,12 +69,10 @@ export function DailyPage() {
   const [input, setInput] = useState('');
   const [showUpcoming, setShowUpcoming] = useState(loadShowUpcoming);
   const [weekAnchor, setWeekAnchor] = useState(() => new Date());
-  const [upcomingSections, setUpcomingSections] = useState<DaySection[]>([]);
-  const [upcomingInputs, setUpcomingInputs] = useState<Record<string, string>>({});
+  const [monthAnchor, setMonthAnchor] = useState(() => new Date());
+  const [futureInputs, setFutureInputs] = useState<Record<string, string>>({});
   const inputRef = useRef<HTMLDivElement>(null);
   const todaySectionRef = useRef<HTMLDivElement>(null);
-  const loadRequestId = useRef(0);
-  const rawTodayRef = useRef<{ overdue: Task[]; today: Task[] } | null>(null);
   const sectionsRef = useRef(sections);
   useEffect(() => {
     sectionsRef.current = sections;
@@ -169,8 +82,8 @@ export function DailyPage() {
     queryKey: ['preferences'],
     queryFn: fetchPreferences,
   });
-  const boardPreferences = useBoardPreferences('daily', prefs);
-  const dailyBoard = boardPreferences.view === 'kanban-list' || boardPreferences.view === 'kanban';
+  const dailyBoard = view === 'kanban-list' || view === 'kanban';
+  const setView = useCallback((next: BoardViewMode) => navigate(`/daily/${viewToSlug(next)}`), [navigate]);
 
   const prefsRef = useRef(prefs);
   useEffect(() => {
@@ -190,84 +103,40 @@ export function DailyPage() {
     dateFormatRef.current = dateFormat;
   }, [dateFormat]);
 
-  // No locale/dateFormat deps, so preferences arriving after
-  // the initial fetch reformats the already-fetched sections in place - see the
-  // effect below - instead of re-triggering this whole network round trip.
-  // Reads locale/dateFormat live via refs rather than closing over them.
-  const replaceTodayFromApi = useCallback(() => {
-    const requestId = ++loadRequestId.current;
-    const currentToday = fmtISOInTimeZone(new Date(), prefsRef.current?.timeZone);
-    fetchTodayTasks().then((response) => {
-      if (requestId !== loadRequestId.current) return;
-      const overdueTasks = (response.overdue || []).map(apiToTask);
-      const todayTasks = (response.today || []).map(apiToTask);
-      rawTodayRef.current = { overdue: overdueTasks, today: todayTasks };
-      setSections(buildSections(overdueTasks, todayTasks, localeRef.current, currentToday, dateFormatRef.current));
-    }).catch(() => {
-      if (requestId !== loadRequestId.current) return;
-      rawTodayRef.current = { overdue: [], today: [] };
-      setSections(buildSections([], [], localeRef.current, currentToday, dateFormatRef.current));
-    });
-  }, []);
+  const range = useMemo(
+    () => dailyRange(
+      view,
+      view === 'calendar' ? monthAnchor : view === 'list' ? dateFromISO(todayKey) : weekAnchor,
+      prefs?.weekStart ?? 'sunday',
+      showUpcoming,
+    ),
+    [view, monthAnchor, weekAnchor, todayKey, prefs?.weekStart, showUpcoming],
+  );
+  const { data: daily, isError: dailyFailed, refresh: refreshDaily } = useDailyTasks(range.from, range.to);
 
-  // Preferences (locale/dateFormat/timeZone) often resolve after the initial
-  // fetch above already rendered with defaults. Reformat the cached raw tasks
-  // locally rather than refetching - the task data hasn't changed, only its
-  // labels - so the Organize button and task list settle after one network
-  // round trip instead of two.
+  // Rebuilt when preferences (locale/dateFormat) arrive after the data, so the
+  // labels settle without another round trip. Local edits live in `sections`
+  // until the next response replaces them.
   useEffect(() => {
-    if (!rawTodayRef.current) return;
-    const currentToday = fmtISOInTimeZone(new Date(), prefs?.timeZone);
-    setSections(
-      buildSections(rawTodayRef.current.overdue, rawTodayRef.current.today, locale, currentToday, dateFormat),
-    );
-  }, [locale, dateFormat, prefs?.timeZone]);
-
-  const fetchUpcomingFromApi = useCallback(() => {
-    fetchUpcomingTasks().then((upcoming) => {
-      const upcomingByDate = new Map<string, Task[]>();
-      for (const group of upcoming) {
-        if (group.date <= todayKey) continue; // today+past render in the main section list
-        if (group.tasks.length === 0) continue; // don't render empty days
-        const tasks = group.tasks.map(apiToTask);
-        upcomingByDate.set(group.date, tasks);
-      }
-
-      const result: DaySection[] = [];
-      for (const [date, tasks] of upcomingByDate) {
-        result.push({
-          key: date,
-          label: dayLabel(dateFromISO(date), locale, prefs?.dateFormat),
-          tasks,
-        });
-      }
-
-      setUpcomingSections(result);
-    }).catch(() => {
-      setUpcomingSections([]);
-    });
-  }, [locale, prefs?.dateFormat, todayKey]);
+    if (daily) setSections(buildSections(flattenDaily(daily).map(apiToTask), locale, todayKey, dateFormat));
+    else if (dailyFailed) setSections(buildSections([], locale, todayKey, dateFormat));
+  }, [daily, dailyFailed, locale, todayKey, dateFormat]);
 
   // Convert DaySection[] to ReorganizeSection[] for useReorganize hook
   const reorganizeSections = useMemo<ReorganizeSection[] | null>(
     () =>
-      sections.map((s) => ({
+      sections.filter((s) => s.key <= todayKey).map((s) => ({
         date: s.key,
         label: s.label,
         tasks: s.tasks,
       })),
-    [sections],
+    [sections, todayKey],
   );
 
   const formatReorganizeLabel = useCallback(
     (dateStr: string) => dayLabel(dateFromISO(dateStr), locale, prefs?.dateFormat),
     [locale, prefs?.dateFormat],
   );
-
-  const onReorganizeConfirmed = useCallback(() => {
-    replaceTodayFromApi();
-    if (showUpcoming) fetchUpcomingFromApi();
-  }, [replaceTodayFromApi, showUpcoming, fetchUpcomingFromApi]);
 
   const reorg = useReorganize(
     todayKey,
@@ -277,7 +146,7 @@ export function DailyPage() {
     },
     undefined,
     formatReorganizeLabel,
-    onReorganizeConfirmed,
+    refreshDaily,
   );
 
   const handleToday = useCallback(() => {
@@ -289,11 +158,10 @@ export function DailyPage() {
 
   useMidnightTimer(
     useCallback(() => {
-      qc.invalidateQueries({ queryKey: ['today'] });
       setNow(new Date());
-      replaceTodayFromApi();
+      refreshDaily();
       handleToday();
-    }, [qc, replaceTodayFromApi, handleToday]),
+    }, [refreshDaily, handleToday]),
     prefs?.timeZone,
   );
 
@@ -301,39 +169,26 @@ export function DailyPage() {
     isPending: visibilityPreferencesPending,
     setHideCompletedTasks,
     setShowNotes,
-  } = useTaskVisibilityPreferences(prefs, replaceTodayFromApi);
+  } = useTaskVisibilityPreferences(prefs, refreshDaily);
 
   useEffect(() => {
-    replaceTodayFromApi();
-    const handleTaskCreated = () => {
-      replaceTodayFromApi();
-    };
-    window.addEventListener('task-created', handleTaskCreated);
-    return () => window.removeEventListener('task-created', handleTaskCreated);
-  }, [replaceTodayFromApi]);
+    window.addEventListener('task-created', refreshDaily);
+    return () => window.removeEventListener('task-created', refreshDaily);
+  }, [refreshDaily]);
 
-  const toggleUpcoming = useCallback(() => {
-    setShowUpcoming((v) => {
-      const next = !v;
-      if (next) fetchUpcomingFromApi();
-      return next;
-    });
-  }, [fetchUpcomingFromApi]);
+  const toggleUpcoming = useCallback(() => setShowUpcoming((v) => !v), []);
 
   // Picking "today" scrolls to today; picking "upcoming" enables future sections.
   const setDailyView = useCallback(
     (v: 'today' | 'upcoming') => {
       if (v === 'upcoming') {
-        if (!showUpcoming) {
-          setShowUpcoming(true);
-          fetchUpcomingFromApi();
-        }
+        setShowUpcoming(true);
       } else {
         setShowUpcoming(false);
         handleToday();
       }
     },
-    [showUpcoming, fetchUpcomingFromApi, handleToday],
+    [handleToday],
   );
 
   useEffect(() => {
@@ -357,7 +212,7 @@ export function DailyPage() {
     // sibling's order may have changed at once, so patching the one row named by
     // the event would leave it in the section it just left. Refetch instead.
     if (isStructuralMove(event) || prefs?.hideCompletedTasks || prefs?.showNotes === false) {
-      replaceTodayFromApi();
+      refreshDaily();
       return;
     }
     if (event.eventType === 'deleted') {
@@ -393,7 +248,7 @@ export function DailyPage() {
         }))
       );
     }
-  }, [locale, replaceTodayFromApi, prefs?.hideCompletedTasks, prefs?.showNotes, todayKey]));
+  }, [locale, refreshDaily, prefs?.hideCompletedTasks, prefs?.showNotes, todayKey]));
 
   const updateSections = useCallback((updater: (prev: DaySection[]) => DaySection[]) => {
     setSections(updater);
@@ -408,7 +263,7 @@ export function DailyPage() {
   const setAllTasks = useCallback(
     (updater: (prev: Task[]) => Task[]) => {
       setSections((prev) =>
-        buildSections([], updater(prev.flatMap((s) => s.tasks)), locale, todayKey, dateFormat),
+        buildSections(updater(prev.flatMap((s) => s.tasks)), locale, todayKey, dateFormat),
       );
     },
     [locale, todayKey, dateFormat],
@@ -418,19 +273,7 @@ export function DailyPage() {
     tasks: allTasks,
     setTasks: setAllTasks,
     scope: { kind: 'day', dueDate: todayKey },
-    onError: () => {
-      fetchTodayTasks().then((response) => {
-        setSections(
-          buildSections(
-            (response.overdue || []).map(apiToTask),
-            (response.today || []).map(apiToTask),
-            locale,
-            todayKey,
-            dateFormat,
-          ),
-        );
-      });
-    },
+    onError: refreshDaily,
     // Daily spans every collection, so a move here can reorder a list Inbox or a
     // Collection page is caching.
     onMoved: () => {
@@ -471,10 +314,10 @@ export function DailyPage() {
     if (!id.startsWith('temp-')) {
       apiToggleTask(id, !wasCompleted).catch(() => {
         setSections(prevSections);
-        replaceTodayFromApi();
+        refreshDaily();
       });
     }
-  }, [prefs?.hideCompletedTasks, updateSections, replaceTodayFromApi]);
+  }, [prefs?.hideCompletedTasks, updateSections, refreshDaily]);
 
   const handleStartEdit = useCallback((id: string) => {
     setEditingId(id);
@@ -490,7 +333,7 @@ export function DailyPage() {
       updateSections((prev) =>
         prev.map((s) => ({ ...s, tasks: s.tasks.filter((t) => t.id !== id) }))
       );
-      if (!id.startsWith('temp-')) apiDeleteTask(id).catch(() => replaceTodayFromApi());
+      if (!id.startsWith('temp-')) apiDeleteTask(id).catch(() => refreshDaily());
       return;
     }
 
@@ -537,9 +380,9 @@ export function DailyPage() {
         );
       });
     } else {
-      apiUpdateTask(id, { title: trimmed }).catch(() => replaceTodayFromApi());
+      apiUpdateTask(id, { title: trimmed }).catch(() => refreshDaily());
     }
-  }, [locale, replaceTodayFromApi, updateSections, todayKey]);
+  }, [locale, refreshDaily, updateSections, todayKey]);
 
   const handleEditCancel = useCallback((id: string) => {
     setEditingId(undefined);
@@ -553,16 +396,16 @@ export function DailyPage() {
   const handleSetSchedule = useCallback((id: string, schedule: TaskSchedule) => {
     apiUpdateTask(id, withTimeZones(schedule))
       .then((updated) => setAllTasks((prev) => prev.map((task) => (task.id === id ? { ...task, ...apiToTask(updated) } : task))))
-      .catch(() => replaceTodayFromApi());
-  }, [setAllTasks, replaceTodayFromApi]);
+      .catch(() => refreshDaily());
+  }, [setAllTasks, refreshDaily]);
 
   const handleDelete = useCallback((id: string) => {
     updateSections((prev) =>
       prev.map((s) => ({ ...s, tasks: s.tasks.filter((t) => t.id !== id) }))
     );
     setEditingId(undefined);
-    if (!id.startsWith('temp-')) apiDeleteTask(id).catch(() => replaceTodayFromApi());
-  }, [replaceTodayFromApi, updateSections]);
+    if (!id.startsWith('temp-')) apiDeleteTask(id).catch(() => refreshDaily());
+  }, [refreshDaily, updateSections]);
 
   const calculateMidpointOrder = (tasks: Task[], index: number, type: 'above' | 'below') => {
     const current = tasks[index].orderValue;
@@ -633,9 +476,9 @@ export function DailyPage() {
       }))
     );
     if (!id.startsWith('temp-')) {
-      apiUpdateTask(id, { type }).catch(() => replaceTodayFromApi());
+      apiUpdateTask(id, { type }).catch(() => refreshDaily());
     }
-  }, [replaceTodayFromApi, updateSections]);
+  }, [refreshDaily, updateSections]);
 
   const handleIndent = useCallback((id: string, dir: 1 | -1) => {
     updateSections((prev) =>
@@ -647,12 +490,12 @@ export function DailyPage() {
         });
         if (!changed) return s;
         if (!id.startsWith('temp-')) {
-          apiUpdateTask(id, { parentTaskId }).catch(() => replaceTodayFromApi());
+          apiUpdateTask(id, { parentTaskId }).catch(() => refreshDaily());
         }
         return { ...s, tasks: next };
       })
     );
-  }, [replaceTodayFromApi, updateSections]);
+  }, [refreshDaily, updateSections]);
 
   const handleAddToday = (text: string) => {
     const trimmed = text.trim();
@@ -710,22 +553,22 @@ export function DailyPage() {
   const handleBoardCreate = async (title: string, dueDate?: string) => {
     const created = apiToTask(await apiCreateTask({ title, dueDate, priority: 4, type: 'task' }));
     // An older board response must not replace the card we just saved.
-    ++loadRequestId.current;
+    await qc.cancelQueries({ queryKey: ['daily'] });
     setAllTasks((tasks) => [...tasks.filter((task) => task.id !== created.id), created]);
     qc.invalidateQueries({ queryKey: ['inbox'] });
     qc.invalidateQueries({ queryKey: ['collection'] });
   };
 
-  const handleAddUpcoming = (dateKey: string, text: string) => {
+  const handleAddFuture = (dateKey: string, text: string) => {
     const trimmed = text.trim();
     if (!trimmed) return;
     const tid = tempId();
-    setUpcomingInputs((prev) => ({ ...prev, [dateKey]: '' }));
+    setFutureInputs((prev) => ({ ...prev, [dateKey]: '' }));
 
-    const section = upcomingSections.find((s) => s.key === dateKey);
+    const section = sectionsRef.current.find((s) => s.key === dateKey);
     const newOrderValue = nextOrderValue(section ? section.tasks : []);
 
-    setUpcomingSections((prev) =>
+    updateSections((prev) =>
       prev.map((s) =>
         s.key === dateKey
           ? {
@@ -747,7 +590,7 @@ export function DailyPage() {
       orderValue: newOrderValue,
     }).then((created) => {
       const createdTask = apiToTask(created);
-      setUpcomingSections((prev) =>
+      updateSections((prev) =>
         prev.map((s) => ({
           ...s,
           tasks: s.tasks.map((t) => (t.id === tid ? createdTask : t)),
@@ -821,7 +664,7 @@ export function DailyPage() {
         if (contextMenu?.taskId) {
           const taskId = contextMenu.taskId;
           setAllTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, collectionId: c.id } : t)));
-          apiUpdateTask(taskId, { collectionId: c.id }).catch(() => replaceTodayFromApi());
+          apiUpdateTask(taskId, { collectionId: c.id }).catch(() => refreshDaily());
         }
       },
     }));
@@ -840,14 +683,14 @@ export function DailyPage() {
           if (inbox) {
             const taskId = contextMenu.taskId;
             setAllTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, collectionId: inbox.id } : t)));
-            apiUpdateTask(taskId, { collectionId: inbox.id }).catch(() => replaceTodayFromApi());
+            apiUpdateTask(taskId, { collectionId: inbox.id }).catch(() => refreshDaily());
           }
         }
       },
     });
 
     return items;
-  }, [collections, contextMenu?.taskId, setAllTasks, apiUpdateTask, replaceTodayFromApi, t]);
+  }, [collections, contextMenu?.taskId, setAllTasks, apiUpdateTask, refreshDaily, t]);
 
   // During a Reorganize preview, future days render in the same slot/order as
   // the real Upcoming toggle (above today), not interleaved into the today+
@@ -897,7 +740,7 @@ export function DailyPage() {
                   {t('page.today')}
                 </Button>
               )}
-              <ViewSwitcher view={boardPreferences.view} onViewChange={boardPreferences.setView} />
+              <ViewSwitcher view={view} onViewChange={setView} />
             </>
           }>
             {reorg.state === 'preview' ? (
@@ -950,10 +793,10 @@ export function DailyPage() {
           position={pageContextMenu}
           onClose={() => setPageContextMenu(null)}
           items={[
-            { type: 'item', label: t('toolbar.list'), icon: <List size={14} />, onClick: () => boardPreferences.setView('list') },
-            { type: 'item', label: t('toolbar.kanbanLists'), icon: <Kanban size={14} />, onClick: () => boardPreferences.setView('kanban-list') },
-            { type: 'item', label: t('toolbar.kanbanCards'), icon: <Kanban size={14} />, onClick: () => boardPreferences.setView('kanban') },
-            { type: 'item', label: t('toolbar.calendar'), icon: <Calendar size={14} />, onClick: () => boardPreferences.setView('calendar') },
+            { type: 'item', label: t('toolbar.list'), icon: <List size={14} />, onClick: () => setView('list') },
+            { type: 'item', label: t('toolbar.kanbanLists'), icon: <Kanban size={14} />, onClick: () => setView('kanban-list') },
+            { type: 'item', label: t('toolbar.kanbanCards'), icon: <Kanban size={14} />, onClick: () => setView('kanban') },
+            { type: 'item', label: t('toolbar.calendar'), icon: <Calendar size={14} />, onClick: () => setView('calendar') },
             { type: 'separator' },
             {
               type: 'item',
@@ -974,10 +817,15 @@ export function DailyPage() {
         />
       )}
 
-      {boardPreferences.view === 'calendar' ? (
+      {view === 'calendar' ? (
         <div className="max-w-[832px]">
           <div className="h-6" />
-          <MonthlyView tasks={allTasks} onToggle={handleToggle} />
+          <MonthlyView
+            tasks={allTasks}
+            onToggle={handleToggle}
+            visibleMonth={{ year: monthAnchor.getFullYear(), month: monthAnchor.getMonth() }}
+            onMonthChange={(year, month) => setMonthAnchor(new Date(year, month, 1))}
+          />
         </div>
       ) : dailyBoard ? (
         <DailyWeekBoard
@@ -990,7 +838,7 @@ export function DailyPage() {
           onWeekChange={setWeekAnchor}
           onToggle={handleToggle}
           onCreate={handleBoardCreate}
-          presentation={boardPreferences.view === 'list' ? 'kanban' : boardPreferences.view}
+          presentation={view}
           taskListProps={{
             activeDragId,
             editingId,
@@ -1006,122 +854,35 @@ export function DailyPage() {
           }}
         />
       ) : (
-      <div className="max-w-162">
-        {(previewFutureSections ?? (showUpcoming ? [...upcomingSections].reverse() : [])).map((section) => {
-          const tomorrow = new Date(dateFromISO(todayKey));
-          tomorrow.setDate(tomorrow.getDate() + 1);
-          const tomorrowKey = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')}`;
-          const isTomorrow = section.key === tomorrowKey;
-          return (
-            <div
-              key={`upcoming-${section.key}`}
-              data-day-date={section.key}
-              className="mt-6"
-            >
-              <div style={{ lineHeight: 'var(--task-line-height, 24px)' }} className="text-[11px] tracking-[0.08em] uppercase text-ink-light h-6 m-0 font-semibold">
-                {section.label}
-                {isTomorrow && <> · <span className="text-moss">TOMORROW</span></>}
-              </div>
-
-              <TaskList
-                tasks={section.tasks}
-                containerId={`day:${section.key}`}
-                dayDate={section.key}
-                activeDragId={activeDragId}
-                renderBadge={renderBadge}
-                editingId={editingId}
-                dimNotes={false}
-                hideDueDate
-                onTaskToggle={handleToggle}
-                onStartEdit={handleStartEdit}
-                onEditCommit={handleEditCommit}
-                onEditCancel={handleEditCancel}
-                onDelete={handleDelete}
-                onAddBelow={handleAddBelow}
-                onIndent={handleIndent}
-                onConvertType={handleConvertType}
-                onRightClick={handleRightClick}
-              />
-
-              {previewFutureSections === null && (
-                <div className="flex items-start min-h-6">
-                  <span className="w-6 text-center text-[10px] leading-6 text-ink opacity-25 select-none shrink-0">
-                    •
-                  </span>
-                  <EditableText
-                    value={upcomingInputs[section.key] ?? ''}
-                    onValueChange={(text) => setUpcomingInputs((prev) => ({ ...prev, [section.key]: text }))}
-                    onEnter={(text) => handleAddUpcoming(section.key, text)}
-                    onBlur={() => handleAddUpcoming(section.key, upcomingInputs[section.key] ?? '')}
-                    placeholder={t('common.addTask')}
-                    aria-label={t('common.addTask')}
-                    className="task-input task-add-input flex-1 text-[14px] leading-6 text-ink bg-transparent border-none outline-none p-0"
-                    spellCheck={false}
-                  />
-                </div>
-              )}
-            </div>
-          );
-        })}
-
-        {(previewTodaySections ?? sections)?.map((section) => {
-          const isToday = section.key === todayKey;
-          const dimNotes = section.key < todayKey;
-          return (
-            <div
-              key={section.key}
-              ref={isToday ? todaySectionRef : undefined}
-              data-day-date={section.key}
-              className={`mt-6 ${isToday ? 'scroll-mt-24' : ''}`}
-            >
-            <div style={{ lineHeight: 'var(--task-line-height, 24px)' }} className="text-[11px] tracking-[0.08em] uppercase text-ink-light h-6 m-0 font-semibold">
-              {section.label}
-              {isToday && <> · <span className="text-accent-light">{t('page.today')}</span></>}
-            </div>
-
-            <TaskList
-              tasks={section.tasks}
-              containerId={`day:${section.key}`}
-              dayDate={section.key}
-              activeDragId={activeDragId}
-              renderBadge={renderBadge}
-              editingId={editingId}
-              dimNotes={dimNotes}
-              hideDueDate
-              onTaskToggle={handleToggle}
-              onStartEdit={handleStartEdit}
-              onEditCommit={handleEditCommit}
-              onEditCancel={handleEditCancel}
-              onDelete={handleDelete}
-              onAddBelow={handleAddBelow}
-              onIndent={handleIndent}
-              onConvertType={handleConvertType}
-              onRightClick={handleRightClick}
-            />
-
-            {isToday && (
-              <div className="flex items-start min-h-6">
-                <span className="w-6 text-center text-[10px] leading-6 text-ink opacity-25 select-none shrink-0">
-                  •
-                </span>
-                <EditableText
-                  ref={inputRef}
-                  value={input}
-                  onValueChange={setInput}
-                  onEnter={handleAddToday}
-                  onBlur={() => handleAddToday(input)}
-                  onKeyDown={handleAddTodayKeyDown}
-                  placeholder={t('common.addTask')}
-                  aria-label={t('common.addTask')}
-                  className="task-input task-add-input flex-1 text-[14px] leading-6 text-ink bg-transparent border-none outline-none p-0"
-                  spellCheck={false}
-                />
-              </div>
-            )}
-            </div>
-          );
-        })}
-      </div>
+        <DailyList
+          futureSections={previewFutureSections ?? (showUpcoming ? sections.filter((section) => section.key > todayKey) : [])}
+          currentSections={previewTodaySections ?? sections.filter((section) => section.key <= todayKey)}
+          todayKey={todayKey}
+          isPreview={previewFutureSections !== null}
+          todaySectionRef={todaySectionRef}
+          inputRef={inputRef}
+          input={input}
+          onInputChange={setInput}
+          onAddToday={handleAddToday}
+          onAddTodayKeyDown={handleAddTodayKeyDown}
+          futureInputs={futureInputs}
+          onFutureInputChange={(dateKey, text) => setFutureInputs((prev) => ({ ...prev, [dateKey]: text }))}
+          onAddFuture={handleAddFuture}
+          onTaskToggle={handleToggle}
+          taskListProps={{
+            activeDragId,
+            editingId,
+            renderBadge,
+            onStartEdit: handleStartEdit,
+            onEditCommit: handleEditCommit,
+            onEditCancel: handleEditCancel,
+            onDelete: handleDelete,
+            onAddBelow: handleAddBelow,
+            onIndent: handleIndent,
+            onConvertType: handleConvertType,
+            onRightClick: handleRightClick,
+          }}
+        />
       )}
 
       {contextMenu && (

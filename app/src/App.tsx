@@ -12,7 +12,7 @@ import { ResetPasswordPage } from './pages/ResetPasswordPage';
 import { InboxPage } from './pages/InboxPage';
 import { CollectionsPage } from './pages/CollectionsPage';
 import { CollectionsIndexPage } from './pages/CollectionsIndexPage';
-import { DailyPage } from './pages/DailyPage';
+import { DailyIndexRedirect, DailyRoute } from './pages/DailyRoutes';
 import { HabitsPage } from './pages/HabitsPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { StyleguidePage } from './pages/StyleguidePage';
@@ -51,7 +51,8 @@ function AppRoutes() {
         <Route element={isAuthenticated ? <AppShell /> : <Navigate to="/login" replace />}>
           <Route path="/" element={<Navigate to="/daily" replace />} />
           <Route path="/today" element={<Navigate to="/daily" replace />} />
-          <Route path="/daily" element={<DailyPage />} />
+          <Route path="/daily" element={<DailyIndexRedirect />} />
+          <Route path="/daily/:view" element={<DailyRoute />} />
           <Route path="/inbox" element={<InboxPage />} />
           <Route path="/habits" element={<HabitsPage />} />
           <Route path="/settings" element={<Navigate to="/settings/general" replace />} />

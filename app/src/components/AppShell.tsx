@@ -175,7 +175,7 @@ export function AppShell() {
           navigate('/settings');
           break;
         case 'toggle:upcoming':
-          if (location.pathname !== '/daily') {
+          if (!location.pathname.startsWith('/daily')) {
             navigate('/daily');
           }
           window.dispatchEvent(new CustomEvent('toggle-upcoming'));

@@ -1,10 +1,11 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { MemoryRouter } from 'react-router';
+import { MemoryRouter, Route, Routes } from 'react-router';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { DailyPage } from '../DailyPage';
+import { DailyRoute } from '../DailyRoutes';
+import { dailyView } from '../../test/dailyFixtures';
 import {
-  fetchTodayTasks,
+  fetchDaily,
   fetchPreferences,
   fetchCollections,
   apiCreateTask,
@@ -13,14 +14,14 @@ import {
   type ApiCollection,
 } from '../../api/client';
 
-const mockFetchTodayTasks = vi.mocked(fetchTodayTasks);
+const mockFetchDaily = vi.mocked(fetchDaily);
 const mockFetchPreferences = vi.mocked(fetchPreferences);
 const mockFetchCollections = vi.mocked(fetchCollections);
 const mockCreateTask = vi.mocked(apiCreateTask);
 
 vi.mock('../../api/client', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../../api/client')>()),
-  fetchTodayTasks: vi.fn(),
+  fetchDaily: vi.fn(),
   fetchPreferences: vi.fn(),
   fetchCollections: vi.fn(),
   apiCreateTask: vi.fn(),
@@ -147,14 +148,14 @@ const mockCollections: ApiCollection[] = [
   },
 ];
 
-function renderPage() {
+function renderPage(slug = 'list') {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
   return render(
     <QueryClientProvider client={client}>
-      <MemoryRouter>
-        <DailyPage />
+      <MemoryRouter initialEntries={[`/daily/${slug}`]}>
+        <Routes><Route path="/daily/:view" element={<DailyRoute />} /></Routes>
       </MemoryRouter>
     </QueryClientProvider>,
   );
@@ -162,7 +163,7 @@ function renderPage() {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  mockFetchTodayTasks.mockResolvedValue({ overdue: [overdueTask], today: [todayTask] });
+  mockFetchDaily.mockResolvedValue(dailyView({ overdue: [overdueTask], today: [todayTask] }));
   mockFetchPreferences.mockResolvedValue(basePreferences);
   mockFetchCollections.mockResolvedValue(mockCollections);
   mockCreateTask.mockResolvedValue({ ...todayTask, id: 'created-1' });

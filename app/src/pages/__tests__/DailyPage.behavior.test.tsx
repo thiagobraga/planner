@@ -1,15 +1,17 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { MemoryRouter } from 'react-router';
+import { MemoryRouter, Route, Routes } from 'react-router';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { DailyPage } from '../DailyPage';
+import { DailyRoute } from '../DailyRoutes';
+import { dailyView } from '../../test/dailyFixtures';
+import type { ApiDailyView } from '../../types/daily';
 import { PlannerDragProvider } from '../../contexts/PlannerDragContext';
 import {
   apiToggleTask,
   apiUpdatePreferences,
   fetchCollections,
   fetchPreferences,
-  fetchTodayTasks,
+  fetchDaily,
 } from '../../api/client';
 
 vi.mock('../../utils/socket', () => ({
@@ -22,14 +24,14 @@ vi.mock('../../utils/socket', () => ({
 
 vi.mock('../../api/client', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../../api/client')>()),
-  fetchTodayTasks: vi.fn(),
+  fetchDaily: vi.fn(),
   fetchCollections: vi.fn(),
   fetchPreferences: vi.fn(),
   apiToggleTask: vi.fn(),
   apiUpdatePreferences: vi.fn(),
 }));
 
-const mockFetchTodayTasks = vi.mocked(fetchTodayTasks);
+const mockFetchDaily = vi.mocked(fetchDaily);
 const mockFetchCollections = vi.mocked(fetchCollections);
 const mockFetchPreferences = vi.mocked(fetchPreferences);
 const mockApiToggleTask = vi.mocked(apiToggleTask);
@@ -50,7 +52,7 @@ function openToolbarMenu() {
   fireEvent.click(screen.getByRole('button', { name: 'More options' }));
 }
 
-function renderPage() {
+function renderPage(slug = 'list') {
   const client = new QueryClient({
     defaultOptions: {
       queries: { retry: false },
@@ -60,9 +62,9 @@ function renderPage() {
 
   return render(
     <QueryClientProvider client={client}>
-      <MemoryRouter>
+      <MemoryRouter initialEntries={[`/daily/${slug}`]}>
         <PlannerDragProvider>
-          <DailyPage />
+          <Routes><Route path="/daily/:view" element={<DailyRoute />} /></Routes>
         </PlannerDragProvider>
       </MemoryRouter>
     </QueryClientProvider>,
@@ -70,7 +72,7 @@ function renderPage() {
 }
 
 beforeEach(() => {
-  mockFetchTodayTasks.mockReset();
+  mockFetchDaily.mockReset();
   mockFetchCollections.mockReset();
   mockFetchPreferences.mockReset();
   mockApiToggleTask.mockReset();
@@ -100,7 +102,7 @@ beforeEach(() => {
     hideCompletedTasks: true,
     showNotes: true,
   });
-  mockFetchTodayTasks.mockResolvedValue({
+  mockFetchDaily.mockResolvedValue(dailyView({
     overdue: [],
     today: [
       {
@@ -115,7 +117,7 @@ beforeEach(() => {
         createdAt: '2026-07-20T12:00:00Z',
       },
     ],
-  });
+  }));
   mockApiToggleTask.mockResolvedValue({
     id: 'task-1',
     title: 'Visible task',
@@ -220,17 +222,16 @@ describe('DailyPage behavior visibility', () => {
     await waitFor(() => expect(screen.queryByRole('button', { name: 'Complete: Visible task' })).not.toBeInTheDocument());
   });
 
-  it('does not let an older unfiltered load overwrite the filtered daily view', async () => {
-    const firstLoad = deferred<Awaited<ReturnType<typeof fetchTodayTasks>>>();
+  it('renders a slow first load once it resolves, still honoring hide completed', async () => {
+    const firstLoad = deferred<ApiDailyView>();
 
-    mockFetchTodayTasks.mockReturnValueOnce(firstLoad.promise);
+    mockFetchDaily.mockReturnValueOnce(firstLoad.promise);
 
     renderPage();
 
-    await waitFor(() => expect(mockFetchTodayTasks).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(mockFetchDaily).toHaveBeenCalledTimes(1));
 
-    firstLoad.resolve({
-      overdue: [],
+    firstLoad.resolve(dailyView({
       today: [
         {
           id: 'task-open',
@@ -239,12 +240,13 @@ describe('DailyPage behavior visibility', () => {
           collectionId: 'collection-1',
           isCompleted: false,
           orderValue: 1,
+          depth: 0,
           type: 'task',
           dueDate: '2026-07-20',
           createdAt: '2026-07-20T12:00:00Z',
         },
       ],
-    });
+    }));
 
     // Simulate hideCompletedTasks filtering: only open task shows
     expect(await screen.findByRole('button', { name: 'Complete: Open task' })).toBeInTheDocument();
