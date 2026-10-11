@@ -13,10 +13,11 @@ import { ViewSwitcher } from '../components/ui/ViewSwitcher';
 import { Toolbar } from '../components/ui/Toolbar';
 import { ToolbarSectionLabel } from '../components/ui/ToolbarSectionLabel';
 import { DailyWeekBoard } from '../components/board/DailyWeekBoard';
+import { WeekSelector } from '../components/board/WeekSelector';
 import { DailyList } from '../components/daily/DailyList';
 import { MonthlyView } from '../components/monthly/MonthlyView';
 import type { Task } from '../components/TaskItem';
-import { extractNaturalDate, fmtISOInTimeZone } from '../utils/date';
+import { extractNaturalDate, fmtISO, fmtISOInTimeZone, startOfWeek } from '../utils/date';
 import { nextOrderValue } from '../utils/order';
 import { applyIndent, getParentCandidate } from '../utils/taskTree';
 import { useTaskDrag } from '../hooks/useTaskDrag';
@@ -37,7 +38,7 @@ import { ContextMenu, type ContextMenuItem } from '../components/ui/ContextMenu'
 import { flattenCollections } from '../components/CollectionTreeNav';
 import { Folder, ArrowUp, ArrowDown, Trash2, Calendar, Kanban, List } from 'lucide-react';
 import { withTimeZones } from '../utils/taskTime';
-import { apiToTask, buildSections, dateFromISO, dayLabel, flattenDaily } from '../utils/dailySections';
+import { addDaysISO, apiToTask, buildSections, dateFromISO, dayLabel, flattenDaily } from '../utils/dailySections';
 import { dailyRange, viewToSlug } from '../utils/dailyRange';
 import type { DaySection } from '../types/daily';
 import type { BoardViewMode } from '../types/board';
@@ -106,14 +107,19 @@ export function DailyPage({ view }: { view: BoardViewMode }) {
     dateFormatRef.current = dateFormat;
   }, [dateFormat]);
 
+  const weekStart = prefs?.weekStart ?? 'sunday';
+  const weekStartKey = fmtISO(startOfWeek(weekAnchor, weekStart));
+  // The list follows today until the week selector moves it to another week.
+  const browsingWeek = view === 'list' && weekStartKey !== fmtISO(startOfWeek(dateFromISO(todayKey), weekStart));
+
   const range = useMemo(
     () => dailyRange(
-      view,
-      view === 'calendar' ? monthAnchor : view === 'list' ? dateFromISO(todayKey) : weekAnchor,
-      prefs?.weekStart ?? 'sunday',
+      browsingWeek ? 'kanban-list' : view,
+      view === 'calendar' ? monthAnchor : view === 'list' && !browsingWeek ? dateFromISO(todayKey) : weekAnchor,
+      weekStart,
       showUpcoming,
     ),
-    [view, monthAnchor, weekAnchor, todayKey, prefs?.weekStart, showUpcoming],
+    [view, browsingWeek, monthAnchor, weekAnchor, todayKey, weekStart, showUpcoming],
   );
   const { data: daily, isError: dailyFailed, refresh: refreshDaily } = useDailyTasks(range.from, range.to);
 
@@ -158,6 +164,13 @@ export function DailyPage({ view }: { view: BoardViewMode }) {
       block: 'start',
     });
   }, []);
+
+  // Dropping the anchors makes the week and month follow today again.
+  const goToToday = useCallback(() => {
+    setWeekAnchor(null);
+    setMonthAnchor(null);
+    handleToday();
+  }, [handleToday]);
 
   useMidnightTimer(
     useCallback(() => {
@@ -571,18 +584,11 @@ export function DailyPage({ view }: { view: BoardViewMode }) {
     const section = sectionsRef.current.find((s) => s.key === dateKey);
     const newOrderValue = nextOrderValue(section ? section.tasks : []);
 
+    const row: Task = { id: tid, title: trimmed, priority: 4, isCompleted: false, orderValue: newOrderValue, type: 'task' };
     updateSections((prev) =>
-      prev.map((s) =>
-        s.key === dateKey
-          ? {
-            ...s,
-            tasks: [
-              ...s.tasks,
-              { id: tid, title: trimmed, priority: 4, isCompleted: false, orderValue: newOrderValue, type: 'task' },
-            ],
-          }
-          : s
-      )
+      prev.some((s) => s.key === dateKey)
+        ? prev.map((s) => (s.key === dateKey ? { ...s, tasks: [...s.tasks, row] } : s))
+        : [...prev, { key: dateKey, label: dayLabel(dateFromISO(dateKey), locale, dateFormat), tasks: [row] }]
     );
 
     apiCreateTask({
@@ -720,6 +726,15 @@ export function DailyPage({ view }: { view: BoardViewMode }) {
     [reorg.state, reorg.previewSections, todayKey],
   );
 
+  // A browsed week shows every day, empty ones included, so each can take a task.
+  const browsedDays = useMemo(() => {
+    if (!browsingWeek) return null;
+    return Array.from({ length: 7 }, (_, i) => addDaysISO(weekStartKey, i))
+      .reverse()
+      .map((key) => sections.find((s) => s.key === key)
+        ?? { key, label: dayLabel(dateFromISO(key), locale, dateFormat), tasks: [] });
+  }, [browsingWeek, weekStartKey, sections, locale, dateFormat]);
+
   return (
     <div
       className="daily-page relative w-full cursor-text"
@@ -738,11 +753,9 @@ export function DailyPage({ view }: { view: BoardViewMode }) {
         toolbar={
           <Toolbar className="daily-page-header-controls" viewSwitcher={
             <>
-              {dailyBoard && (
-                <Button variant="secondary" size="xs" onClick={() => setWeekAnchor(dateFromISO(todayKey))}>
-                  {t('page.today')}
-                </Button>
-              )}
+              <Button variant="secondary" size="xs" onClick={goToToday}>
+                {t('page.today')}
+              </Button>
               <ViewSwitcher view={view} onViewChange={setView} />
             </>
           }>
@@ -836,7 +849,7 @@ export function DailyPage({ view }: { view: BoardViewMode }) {
           weekAnchor={weekAnchor}
           today={dateFromISO(todayKey)}
           todayKey={todayKey}
-          weekStart={prefs?.weekStart ?? 'sunday'}
+          weekStart={weekStart}
           dateFormat={dateFormat}
           onWeekChange={setWeekAnchor}
           onToggle={handleToggle}
@@ -857,9 +870,13 @@ export function DailyPage({ view }: { view: BoardViewMode }) {
           }}
         />
       ) : (
+        <>
+        <div className="daily-list-nav flex max-w-162 justify-start">
+          <WeekSelector weekAnchor={weekAnchor} today={dateFromISO(todayKey)} weekStart={weekStart} onWeekChange={setWeekAnchor} />
+        </div>
         <DailyList
-          futureSections={previewFutureSections ?? (showUpcoming ? sections.filter((section) => section.key > todayKey) : [])}
-          currentSections={previewTodaySections ?? sections.filter((section) => section.key <= todayKey)}
+          futureSections={previewFutureSections ?? browsedDays ?? (showUpcoming ? sections.filter((section) => section.key > todayKey) : [])}
+          currentSections={previewTodaySections ?? (browsedDays ? [] : sections.filter((section) => section.key <= todayKey))}
           todayKey={todayKey}
           isPreview={previewFutureSections !== null}
           todaySectionRef={todaySectionRef}
@@ -886,6 +903,7 @@ export function DailyPage({ view }: { view: BoardViewMode }) {
             onRightClick: handleRightClick,
           }}
         />
+        </>
       )}
 
       {contextMenu && (
