@@ -34,12 +34,26 @@ describe('api client unit tests', () => {
 
     const { request } = await import('../client');
 
-    await request('/views/today');
+    await request('/preferences');
 
     expect(fetchMock).toHaveBeenCalled();
     const init = fetchMock.mock.calls[0][1];
     expect(init.headers['X-XSRF-TOKEN']).toBe('tok123');
     expect(init.headers['X-Socket-Id']).toBe('socket-42');
+  });
+
+  it('fetchDaily asks for one range through a single path request', async () => {
+    vi.resetModules();
+    const view = { from: '2026-10-05', to: '2026-10-11', today: '2026-10-07', overdue: [], days: [] };
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => view });
+    vi.stubGlobal('fetch', fetchMock);
+    vi.doMock('../../utils/socket', () => ({ getSocketId: () => undefined }));
+
+    const { fetchDaily } = await import('../client');
+
+    await expect(fetchDaily('2026-10-05', '2026-10-11')).resolves.toEqual(view);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock.mock.calls[0][0]).toBe('/api/v1/daily/2026-10-05/2026-10-11');
   });
 
   it('queues DELETE calls when offline and returns undefined', async () => {

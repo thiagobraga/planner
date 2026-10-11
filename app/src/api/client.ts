@@ -2,6 +2,7 @@ import { isOnline, enqueueMutation, type QueuedMutationMethod } from '../utils/o
 import { getSocketId } from '../utils/socket';
 import { notifyUnauthorized } from '../utils/authEvents';
 import type { BoardViewMode } from '../types/board';
+import type { ApiDailyView } from '../types/daily';
 import type { BackgroundPreference } from '../types/theme';
 import type { TaskSchedule } from '../types/task';
 import type { ApiToken, CreateApiTokenInput, CreatedApiToken } from '../types/apiToken';
@@ -347,6 +348,10 @@ export async function fetchMonthNotes(year: number, month: number): Promise<{
   month: number;
 }> {
   return request(`/views/month?year=${year}&month=${month}`);
+}
+
+export async function fetchDaily(from: string, to: string): Promise<ApiDailyView> {
+  return request(`/daily/${from}/${to}`);
 }
 
 export async function fetchPreferences(): Promise<Preferences> {
