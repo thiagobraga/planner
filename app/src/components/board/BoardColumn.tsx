@@ -14,6 +14,7 @@ import type { BoardColumn as BoardColumnModel } from '../../utils/boardColumns';
 import { buildSubtreeIndex, flattenTasks } from '../../utils/taskProjection';
 import { BoardCard } from './BoardCard';
 import { BoardColumnHeader } from './BoardColumnHeader';
+import { TaskAddInput } from '../TaskAddInput';
 import { useI18n } from '../../i18n/I18nContext';
 
 interface BoardColumnProps {
@@ -192,8 +193,11 @@ export function BoardColumn({
             />
           ))
         )}
-        {editing && (
-          <form className={`${presentation === 'kanban-list' ? 'board-list-editor' : 'board-card'} daily-board-editor`} onSubmit={saveTask}>
+        {presentation === 'kanban-list' && onCreate && (
+          <TaskAddInput onCreate={(title) => onCreate(title, column)} />
+        )}
+        {presentation === 'kanban' && editing && (
+          <form className="board-card daily-board-editor" onSubmit={saveTask}>
             <input
               autoFocus
               aria-label={t('quickAdd.taskTitle')}
@@ -216,7 +220,7 @@ export function BoardColumn({
             </div>
           </form>
         )}
-        <button
+        {presentation === 'kanban' && <button
           ref={addButtonRef}
           type="button"
           className="daily-board-add-task"
@@ -225,7 +229,7 @@ export function BoardColumn({
         >
           <span aria-hidden="true" className="daily-board-add-icon">+</span>
           <span>{t('board.addTask')}</span>
-        </button>
+        </button>}
       </div>
     </section>
   );

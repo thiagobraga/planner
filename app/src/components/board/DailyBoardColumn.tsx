@@ -6,6 +6,7 @@ import { TaskList } from '../TaskList';
 import type { Task } from '../TaskItem';
 import { BoardCard } from './BoardCard';
 import { Button } from '../ui/Button';
+import { TaskAddInput } from '../TaskAddInput';
 import { useI18n } from '../../i18n/I18nContext';
 
 function asJournalTask(task: DailyBoardColumnProps['allTasks'][number]): Task {
@@ -130,8 +131,11 @@ export function DailyBoardColumn({ column, title, isToday, tasks, allTasks, onTo
             />
           ))
         )}
-        {editing && (
-          <form className={`${presentation === 'kanban-list' ? 'board-list-editor' : 'board-card'} daily-board-editor`} onSubmit={saveTask}>
+        {presentation === 'kanban-list' && (
+          <TaskAddInput onCreate={(title) => onCreate(title, column.iso ?? undefined)} />
+        )}
+        {presentation === 'kanban' && editing && (
+          <form className="board-card daily-board-editor" onSubmit={saveTask}>
             <input
               autoFocus
               aria-label={t('quickAdd.taskTitle')}
@@ -154,7 +158,7 @@ export function DailyBoardColumn({ column, title, isToday, tasks, allTasks, onTo
             </div>
           </form>
         )}
-        <button
+        {presentation === 'kanban' && <button
           ref={addButtonRef}
           type="button"
           className="daily-board-add-task"
@@ -163,7 +167,7 @@ export function DailyBoardColumn({ column, title, isToday, tasks, allTasks, onTo
         >
           <span aria-hidden="true" className="daily-board-add-icon">+</span>
           <span>{t('board.addTask')}</span>
-        </button>
+        </button>}
       </div>
     </section>
   );
