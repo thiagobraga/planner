@@ -126,7 +126,7 @@ export function WeekSelector({ weekAnchor, today, weekStart, onWeekChange, onTod
             >
               <ChevronLeft size={14} strokeWidth={1.8} />
             </Button>
-            <span className="text-sm font-medium capitalize text-ink">{monthLabel}</span>
+            <span className="text-sm font-medium capitalize text-ink-light">{monthLabel}</span>
             <Button
               variant="secondary"
               size="xs"
@@ -155,7 +155,7 @@ export function WeekSelector({ weekAnchor, today, weekStart, onWeekChange, onTod
                   onClick={() => pick(date)}
                   className={`h-6 text-[13px] leading-6 transition-colors duration-[var(--motion-fast)] hover:bg-dot/35 ${
                     inWeek ? 'bg-dot/35' : ''
-                  } ${iso === todayKey ? 'font-semibold text-accent' : inMonth ? 'text-ink' : 'text-ink-light'}`}
+                  } ${iso === todayKey ? 'font-semibold text-accent' : 'text-ink-light'}`}
                 >
                   {date.getDate()}
                 </button>
