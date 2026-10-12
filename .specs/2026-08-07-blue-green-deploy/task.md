@@ -1,44 +1,37 @@
-# Blue/Green Deploy — Tasks
+# Blue/Green Deploy - Tasks
 
-## Compose restructure
+## 1. Separate shared and color services
 
-- [ ] Add `router` service to `compose.prod.yml`: `nginx:1.31-alpine`, ports `127.0.0.1:8080:80`, networks `edge`+`backend`, mirror `app`'s hardening (read_only, tmpfs for `/var/cache/nginx` + `/var/run`, cap_drop/cap_add, security_opt, healthcheck on `http://127.0.0.1:80/`).
-- [ ] Rename `app`/`api`/`migrate` container names to `planner-${COLOR}-{app,api,migrate}` (`COLOR` defaults to `blue`); keep `depends_on` ordering (`migrate` before `api`, postgres/redis healthy).
-- [ ] Remove the `127.0.0.1:8080:80` host port publish from `app` (router owns it).
-- [ ] Keep `postgres`/`redis`/secrets/volumes/networks exactly as-is (shared, never recreated).
+- [x] Keep PostgreSQL, Redis, volumes, and named networks in `compose.prod.yml`; add the hardened router on port 8080.
+- [x] Move app, API, and migration into `compose.prod.color.yml` on shared external networks. Use a separate Compose project per color so the inactive `up` cannot recreate active services.
+- [x] Remove the app's host port and gate API startup on its color's migration.
+- [x] Render and inspect both color configurations with `docker compose config`.
 
-## Router config
+## 2. Route and switch traffic
 
-- [ ] Create `deploy/router.conf`: server block with `location /` → `proxy_pass http://app_active`, `location /api/` + `location /socket.io/` → `proxy_pass http://api_active`, with websocket upgrade headers copied from `.docker/app/nginx.conf`.
-- [ ] Create `deploy/upstreams.active.conf` template defining `upstream app_active` + `upstream api_active` (bind-mounted at `/etc/nginx/conf.d/00-upstreams.conf` so it loads before the server block).
-- [ ] Add `deploy/upstreams.active.conf` and `deploy/.active-color` to `.gitignore` (mutated at deploy time).
+- [x] Add `deploy/10-router.conf` for app, API, OAuth discovery, and Socket.IO, preserving forwarded HTTPS and WebSocket upgrade headers.
+- [x] Mount the `deploy/` directory so atomic replacement of `deploy/00-upstreams.conf` is visible inside nginx.
+- [x] Emit an `X-Planner-Color` response header and verify it after each public switch.
+- [x] Ignore runtime color, image, lock, and upstream files in `.gitignore`.
 
-## API graceful shutdown
+## 3. Drain API requests
 
-- [ ] Add SIGTERM/SIGINT handler in `api/src/index.ts`: log drain start, `httpServer.close()`, `closeIdleConnections()`, 10s force-exit fallback (`timer.unref()`), exit 0 on clean drain.
-- [ ] Unit test: shutdown handler closes the server and exits cleanly (mock `close`/`process.exit`).
+- [x] Add idempotent SIGTERM/SIGINT shutdown in `api/src/index.ts` with a 10-second limit.
+- [x] Cover clean drain, duplicate signal, and timeout behavior in `api/src/__tests__/index.test.ts`.
 
-## Deploy script
+## 4. Deploy and roll back
 
-- [ ] Create `scripts/blue-green-deploy.sh` (bash, `set -euo pipefail`), idempotent:
-  - pulls images for `IMAGE_TAG=$sha`
-  - reads `.active-color` (default `blue`), computes `NEXT`
-  - `COLOR=$NEXT compose -f compose.prod.yml up -d migrate api app`
-  - health-gate on `planner-$NEXT-api` via `docker exec ... wget http://localhost:4000/api/v1/health` (retry ~30 × 5s)
-  - atomic `mv` of `upstreams.active.conf` → `docker exec planner-prod-router nginx -s reload` → write `.active-color`
-  - teardown old color: `docker rm -f planner-$OLD-{migrate,api,app}` + `docker image prune -f`
-  - bootstrap mode: if legacy `planner-prod-{app,api,migrate}` containers exist, remove them after the first successful switch.
+- [x] Add `scripts/blue-green-deploy.sh` with `flock`, SHA-tagged pulls, shared service health checks, migration gate, and inactive API/app health gates.
+- [x] Validate/reload nginx, verify public app and API route identity, then atomically record the active color and SHA.
+- [x] On switch failure restore the old upstream; after success allow old requests to drain before stopping the old color.
+- [x] Preserve the prior image SHA for post-deploy rollback by rerunning the script.
+- [x] Handle one-time legacy bootstrap on occupied port 8080, with restart of the legacy app if verification fails.
+- [x] Cover deploy, failed gates, rollback, stale router, and bootstrap in shell tests.
 
-## CI/CD
+## 5. Integrate and validate
 
-- [ ] Update `.github/workflows/deploy.yml` deploy step: `git pull --ff-only` + env setup + `bash scripts/blue-green-deploy.sh ${{ github.sha }}`; keep the public-URL verify step (optionally verify `/api/v1/health` through the router too).
-- [ ] Keep build + scan jobs unchanged.
-
-## Verification
-
-- [ ] `docker compose -f compose.prod.yml config` renders both colors correctly and router upstreams reference the right container names.
-- [ ] `npm run lint` + tests pass in `api/` (graceful shutdown) and `app/` (unchanged).
-- [ ] Simulate locally: run `compose.prod.yml` with `COLOR=blue` then `COLOR=green`, switch router, confirm no failed requests during switch (e.g., a loop of `curl` through the router).
-- [ ] Rollback drill: after a green switch, flip back to blue and confirm traffic follows.
-- [ ] First production rollout (bootstrap): new green up → switch → legacy `planner-prod-*` removed → verify `https://planner.thiagobraga.dev` 200 + no 502s during deploy.
-- [ ] Update README/AGENTS deploy section to document the blue/green flow + rollback runbook.
+- [x] Update `.github/workflows/deploy.yml` to validate the script and Compose configs, then run the script after existing build and scan jobs.
+- [x] Document operation, rollback, backward-compatible migration requirement, and bootstrap port handoff in README and AGENTS.
+- [x] Test stock nginx syntax and a live mock blue-to-green switch and rollback: 600 requests per direction, zero failed or misrouted responses.
+- [x] Complete API/app lint, tests, builds, and diff checks in the isolated worktree. API: 1046 tests; app: 1311 tests on rerun, 38 lint warnings and 0 errors.
+- [ ] First production rollout and public verification. This is outside the PR implementation; run only after review and merge.
