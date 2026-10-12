@@ -89,6 +89,9 @@ assert_contains 'default green;' "$CASE_ROOT/deploy/00-upstreams.conf"
 assert_contains 'docker exec planner-prod-router nginx -s reload' "$MOCK_LOG"
 assert_contains 'docker stop -t 15 planner-blue-api' "$MOCK_LOG"
 assert_contains 'curl --fail --silent --show-error --max-time 5 --dump-header' "$MOCK_LOG"
+api_start=$(grep -n 'up -d --no-deps api$' "$MOCK_LOG" | head -1 | cut -d: -f1)
+app_start=$(grep -n 'up -d --no-deps app$' "$MOCK_LOG" | head -1 | cut -d: -f1)
+[[ $api_start -lt $app_start ]] || fail "App started before its API"
 verify_line=$(grep -n 'curl .*api/v1/health' "$MOCK_LOG" | tail -1 | cut -d: -f1)
 stop_line=$(grep -n 'docker stop -t 15 planner-blue-app' "$MOCK_LOG" | head -1 | cut -d: -f1)
 (( verify_line < stop_line )) || fail "Old color stopped before public verification"

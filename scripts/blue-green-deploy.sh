@@ -167,8 +167,9 @@ if [[ $migration_exit != 0 ]]; then
   exit 1
 fi
 
-color_compose "$next" up -d --no-deps api app
+color_compose "$next" up -d --no-deps api
 wait_for_health "planner-$next-api" http://127.0.0.1:4000/api/v1/health
+color_compose "$next" up -d --no-deps app
 wait_for_health "planner-$next-app" http://127.0.0.1:80/
 
 switch_started=true
