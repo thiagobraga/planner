@@ -19,8 +19,8 @@ jobs:
       - id: release
         uses: googleapis/release-please-action@v4
         with:
-          config-file: release-please-config.json
-          manifest-file: .release-please-manifest.json
+          config-file: release-config.json
+          manifest-file: .release-manifest.json
 
   # Tags made with GITHUB_TOKEN do not trigger other workflows, so the
   # deploy is chained here instead of listening for push: tags.
