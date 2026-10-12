@@ -3,7 +3,7 @@ import helmet from "helmet";
 import cookieParser from "cookie-parser";
 import rateLimit from "express-rate-limit";
 import crypto from "node:crypto";
-import { createServer } from "http";
+import { createServer, type Server as HTTPServer } from "http";
 import routes from "./routes/index.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import { notFound } from "./middleware/notFound.js";
@@ -162,6 +162,29 @@ app.use(errorHandler);
 
 const httpServer = createServer(app);
 
+export function createShutdownHandler(server: HTTPServer): (signal: "SIGTERM" | "SIGINT") => void {
+  let draining = false;
+
+  return (signal) => {
+    if (draining) return;
+    draining = true;
+    console.log(`[shutdown] ${signal}: draining connections`);
+
+    const timeout = setTimeout(() => {
+      console.error("[shutdown] drain timed out after 10 seconds");
+      process.exit(1);
+    }, 10_000);
+    timeout.unref();
+
+    server.close((error) => {
+      clearTimeout(timeout);
+      if (error) console.error("[shutdown] server close failed:", error);
+      process.exit(error ? 1 : 0);
+    });
+    server.closeIdleConnections();
+  };
+}
+
 // Expired and revoked rows are dead weight - validateSession already refuses
 // them, so nothing reads them again. Sweeping hourly keeps the table from
 // growing without bound now that sessions live for months.
@@ -199,6 +222,9 @@ async function start() {
 }
 
 if (process.env.NODE_ENV !== "test") {
+  const shutdown = createShutdownHandler(httpServer);
+  process.once("SIGTERM", () => shutdown("SIGTERM"));
+  process.once("SIGINT", () => shutdown("SIGINT"));
   void start();
 }
 

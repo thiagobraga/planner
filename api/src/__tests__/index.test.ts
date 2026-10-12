@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest";
+import { afterEach, describe, it, expect, vi } from "vitest";
 import request from "supertest";
 import type { Request, Response, NextFunction } from "express";
 
@@ -83,7 +83,7 @@ vi.mock("../routes/collaboration.js", () => ({
   collectionCollabRouter: passthrough(),
 }));
 
-import app from "../index.js";
+import app, { createShutdownHandler, httpServer } from "../index.js";
 
 describe("Express app setup", () => {
   it("GET /api/v1/health returns { status: 'ok' }", async () => {
@@ -144,5 +144,49 @@ describe("Express app setup", () => {
       .get("/api/v1/labels")
       .set("Content-Type", "text/plain");
     expect(res.status).not.toBe(415);
+  });
+});
+
+describe("graceful shutdown", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+  });
+
+  it("closes idle connections and exits after the HTTP server drains", () => {
+    vi.useFakeTimers();
+    let finishClose: (() => void) | undefined;
+    const close = vi.spyOn(httpServer, "close").mockImplementation((callback) => {
+      finishClose = () => callback?.();
+      return httpServer;
+    });
+    const closeIdleConnections = vi.spyOn(httpServer, "closeIdleConnections").mockImplementation(() => {});
+    const exit = vi.spyOn(process, "exit").mockImplementation(() => undefined as never);
+    const shutdown = createShutdownHandler(httpServer);
+
+    shutdown("SIGTERM");
+    shutdown("SIGINT");
+
+    expect(close).toHaveBeenCalledTimes(1);
+    expect(closeIdleConnections).toHaveBeenCalledTimes(1);
+    expect(exit).not.toHaveBeenCalled();
+
+    finishClose?.();
+
+    expect(exit).toHaveBeenCalledWith(0);
+    vi.advanceTimersByTime(10_000);
+    expect(exit).toHaveBeenCalledTimes(1);
+  });
+
+  it("forces exit after ten seconds if the server does not drain", () => {
+    vi.useFakeTimers();
+    vi.spyOn(httpServer, "close").mockImplementation(() => httpServer);
+    vi.spyOn(httpServer, "closeIdleConnections").mockImplementation(() => {});
+    const exit = vi.spyOn(process, "exit").mockImplementation(() => undefined as never);
+
+    createShutdownHandler(httpServer)("SIGTERM");
+    vi.advanceTimersByTime(10_000);
+
+    expect(exit).toHaveBeenCalledWith(1);
   });
 });
