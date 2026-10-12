@@ -1,0 +1,92 @@
+services:
+  app:
+    image: ghcr.io/thiagobraga/planner-app:${IMAGE_TAG:?IMAGE_TAG is required}
+    container_name: planner-${COLOR:?COLOR is required}-app
+    networks: [backend]
+    read_only: true
+    tmpfs:
+      - /var/cache/nginx:uid=101,gid=101
+      - /var/run:uid=101,gid=101
+    cap_drop: [ALL]
+    cap_add: [NET_BIND_SERVICE, CHOWN, SETUID, SETGID]
+    security_opt: [no-new-privileges:true]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:80/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  api:
+    image: ghcr.io/thiagobraga/planner-api:${IMAGE_TAG:?IMAGE_TAG is required}
+    container_name: planner-${COLOR:?COLOR is required}-api
+    networks: [backend, data, egress]
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      CORS_ORIGIN: ${CORS_ORIGIN:?CORS_ORIGIN is required}
+      DATABASE_URL_FILE: /run/secrets/database_url
+      REDIS_URL_FILE: /run/secrets/redis_url
+      CSRF_SECRET_FILE: /run/secrets/csrf_secret
+      RESEND_API_KEY_FILE: /run/secrets/resend_api_key
+      EMAIL_FROM: ${EMAIL_FROM:-noreply@mail.planner.thiagobraga.dev}
+      SESSION_IDLE_TTL_MINUTES: ${SESSION_IDLE_TTL_MINUTES:-43200}
+      SESSION_ABSOLUTE_TTL_HOURS: ${SESSION_ABSOLUTE_TTL_HOURS:-8760}
+    secrets:
+      - database_url
+      - redis_url
+      - csrf_secret
+      - resend_api_key
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    cap_add: [NET_BIND_SERVICE, NET_RAW]
+    security_opt: [no-new-privileges:true]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:4000/api/v1/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  migrate:
+    image: ghcr.io/thiagobraga/planner-api:${IMAGE_TAG:?IMAGE_TAG is required}
+    container_name: planner-${COLOR:?COLOR is required}-migrate
+    networks: [data]
+    environment:
+      NODE_ENV: production
+      DATABASE_URL_FILE: /run/secrets/database_url
+      CSRF_SECRET_FILE: /run/secrets/csrf_secret
+    secrets:
+      - database_url
+      - csrf_secret
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    restart: no
+    command: ["node", "dist/db/migrate.js"]
+
+secrets:
+  database_url:
+    file: ${DATABASE_URL_FILE:-./secrets/database_url}
+  redis_url:
+    file: ${REDIS_URL_FILE:-./secrets/redis_url}
+  csrf_secret:
+    file: ${CSRF_SECRET_FILE:-./secrets/csrf_secret}
+  resend_api_key:
+    file: ${RESEND_API_KEY_FILE:-./secrets/resend_api_key}
+
+networks:
+  backend:
+    external: true
+    name: planner-prod-backend
+  data:
+    external: true
+    name: planner-prod-data
+  egress:
+    external: true
+    name: planner-prod-egress

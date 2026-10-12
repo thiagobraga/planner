@@ -12,6 +12,11 @@ out/
 
 # Secrets
 secrets/
+deploy/00-upstreams.conf
+deploy/.active-color
+deploy/.active-image
+deploy/.previous-image
+deploy/.deploy.lock
 
 # Backups
 backups/

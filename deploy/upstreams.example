@@ -1,0 +1,11 @@
+upstream app_active {
+  server planner-blue-app:80;
+}
+
+upstream api_active {
+  server planner-blue-api:4000;
+}
+
+map $host $planner_active_color {
+  default blue;
+}
