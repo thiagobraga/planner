@@ -42,4 +42,18 @@ describe('DailyList', () => {
     const order = Array.from(container.querySelectorAll('[data-day-date]')).map((el) => el.getAttribute('data-day-date'));
     expect(order).toEqual(['2026-10-11', '2026-10-12', '2026-10-13', 'migrate']);
   });
+
+  it('shows only incomplete tasks in Migrate while keeping completed tasks in other days', () => {
+    const completed = { id: 'completed', title: 'Completed task', priority: 4, isCompleted: true, orderValue: 1, type: 'task' } as DaySection['tasks'][number];
+    const { container } = renderList({
+      currentSections: [
+        { ...section('2026-10-11'), tasks: [completed] },
+        { ...section('2026-10-10'), tasks: [...section('2026-10-10').tasks, completed] },
+      ],
+    });
+
+    expect(container.querySelector('[data-day-date="migrate"]')).toHaveTextContent('2026-10-10');
+    expect(container.querySelector('[data-day-date="migrate"]')).not.toHaveTextContent('Completed task');
+    expect(container.querySelector('[data-day-date="2026-10-11"]')).toHaveTextContent('Completed task');
+  });
 });

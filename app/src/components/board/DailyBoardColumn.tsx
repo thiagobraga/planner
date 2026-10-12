@@ -79,7 +79,9 @@ export function DailyBoardColumn({ column, title, isToday, tasks, allTasks, onTo
     data: dropData,
     disabled: !column.droppable,
   });
-  const journalTasks = columnTaskTree(tasks, allTasks);
+  const visibleTasks = column.id === 'migrate' ? tasks.filter((task) => !task.isCompleted) : tasks;
+  const visibleAllTasks = column.id === 'migrate' ? allTasks.filter((task) => !task.isCompleted) : allTasks;
+  const journalTasks = columnTaskTree(visibleTasks, visibleAllTasks);
   // The column header already states the day; Migrate keeps dates since its tasks span days.
   const hideDueDate = Boolean(column.iso);
 
@@ -117,11 +119,11 @@ export function DailyBoardColumn({ column, title, isToday, tasks, allTasks, onTo
             }}
           />
         ) : (
-          tasks.map((task) => (
+          visibleTasks.map((task) => (
             <BoardCard
               key={task.id}
               task={task}
-              subtasks={allTasks.filter((candidate) => candidate.parentTaskId === task.id)}
+              subtasks={visibleAllTasks.filter((candidate) => candidate.parentTaskId === task.id)}
               containerId={column.id}
               onToggle={onToggle}
               hideDueDate={hideDueDate}

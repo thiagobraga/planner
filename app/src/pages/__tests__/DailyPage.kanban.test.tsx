@@ -206,6 +206,25 @@ describe('DailyPage week kanban view', () => {
     expect(todayColumn).toHaveTextContent('Today task');
   });
 
+  it.each(['cards', 'kanban'])('excludes completed tasks from Migrate in %s', async (view) => {
+    const completedOverdue = { ...overdueTask, id: 'completed-overdue', title: 'Completed overdue', isCompleted: true };
+    const completedToday = { ...todayTask, id: 'completed-today', title: 'Completed today', isCompleted: true };
+    mockFetchDaily.mockResolvedValue(dailyView({
+      overdue: [overdueTask, completedOverdue],
+      today: [todayTask, completedToday],
+    }));
+
+    const { container } = renderPage(view);
+    await screen.findByTestId('daily-week-board');
+    await screen.findByText('Overdue task');
+
+    const migrateColumn = container.querySelector('[data-column-id="migrate"]');
+    const todayColumn = container.querySelector(`[data-column-id="day:${todayKey}"]`);
+    expect(migrateColumn).toHaveTextContent('Overdue task');
+    expect(migrateColumn).not.toHaveTextContent('Completed overdue');
+    expect(todayColumn).toHaveTextContent('Completed today');
+  });
+
   it('hides the due date on day column cards but keeps it in Migrate', async () => {
     const { container } = renderPage();
     await screen.findByText('Today task');

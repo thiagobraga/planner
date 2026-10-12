@@ -37,7 +37,10 @@ export function DailyList({
   const tomorrowKey = addDaysISO(todayKey, 1);
 
   const todaySection = currentSections.filter((section) => section.key === todayKey);
-  const migrateTasks = currentSections.filter((section) => section.key !== todayKey).flatMap((section) => section.tasks);
+  const migrateTasks = currentSections
+    .filter((section) => section.key !== todayKey)
+    .flatMap((section) => section.tasks)
+    .filter((task) => !task.isCompleted);
 
   const renderCurrent = (sections: typeof currentSections) =>
     sections.map((section) => {

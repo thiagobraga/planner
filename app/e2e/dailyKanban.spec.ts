@@ -4,6 +4,41 @@ import type { ApiTask } from '../src/api/client';
 
 test.use({ storageState: STORAGE_STATE_PATH });
 
+test('Migrate omits completed overdue tasks in Daily views', async ({ page, api }) => {
+  const title = `Completed overdue ${Date.now()}`;
+  const activeTitle = `Active overdue ${Date.now()}`;
+  const yesterday = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
+  await api.patch('/preferences', { locale: 'en', timeZone: 'UTC', hideCompletedTasks: false });
+  const task = await api.post<ApiTask>('/tasks', { title, dueDate: yesterday });
+  const activeTask = await api.post<ApiTask>('/tasks', { title: activeTitle, dueDate: yesterday });
+
+  try {
+    await api.post(`/tasks/${task.id}/complete`);
+
+    for (const view of ['list', 'cards', 'kanban']) {
+      await page.goto(`/daily/${view}`);
+      const migrate = view === 'list'
+        ? page.locator('[data-day-date="migrate"]')
+        : page.locator('[data-column-id="migrate"]');
+      await expect(migrate.getByText(activeTitle, { exact: true })).toBeVisible();
+      await expect(migrate.getByText(title, { exact: true })).toHaveCount(0);
+    }
+
+    await page.goto('/daily/cards');
+    const migrateColumn = page.locator('[data-column-id="migrate"]');
+    await expect(migrateColumn.getByText(activeTitle, { exact: true })).toBeVisible();
+    await migrateColumn.scrollIntoViewIfNeeded();
+    await mkdir('dist/screenshots', { recursive: true });
+    await page.screenshot({ path: 'dist/screenshots/migrate-incomplete-desktop.png' });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await migrateColumn.scrollIntoViewIfNeeded();
+    await page.screenshot({ path: 'dist/screenshots/migrate-incomplete-mobile.png' });
+  } finally {
+    await api.delete(`/tasks/${task.id}`);
+    await api.delete(`/tasks/${activeTask.id}`);
+  }
+});
+
 test('Daily board retains scheduled cards while keeping Migrate scoped to Daily tasks', async ({ page, api }) => {
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
