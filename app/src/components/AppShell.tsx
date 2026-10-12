@@ -237,6 +237,8 @@ export function AppShell() {
             isOpen={sidebarOpen}
             onClose={() => setSidebarOpen(false)}
             collapsed={useBottomBar ? false : sidebarCollapsed}
+            onToggleCollapsed={() => setSidebarCollapsed((collapsed) => !collapsed)}
+            canCollapse={!useBottomBar}
             updateAvailable={updateAvailable}
           />
 

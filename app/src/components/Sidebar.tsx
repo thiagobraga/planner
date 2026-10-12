@@ -11,6 +11,8 @@ import {
   ShieldCheck,
   Users,
   Table2,
+  PanelLeftClose,
+  PanelLeftOpen,
   type LucideIcon,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
@@ -30,6 +32,8 @@ interface SidebarProps {
   isOpen?: boolean;
   onClose?: () => void;
   collapsed?: boolean;
+  onToggleCollapsed?: () => void;
+  canCollapse?: boolean;
   updateAvailable?: boolean;
 }
 
@@ -162,6 +166,8 @@ export function Sidebar({
   isOpen,
   onClose,
   collapsed = false,
+  onToggleCollapsed,
+  canCollapse = true,
   updateAvailable = false,
 }: SidebarProps) {
   const { t } = useI18n();
@@ -273,6 +279,20 @@ export function Sidebar({
             role='button'
             onClick={(e) => {
               e.preventDefault();
+              onToggleCollapsed?.();
+            }}
+            title={t(collapsed ? 'nav.expandSidebar' : 'nav.collapseSidebar')}
+            aria-label={t(collapsed ? 'nav.expandSidebar' : 'nav.collapseSidebar')}
+            className='sidebar-icon-link'
+          >
+            {collapsed ? <PanelLeftOpen size={16} strokeWidth={1.5} /> : <PanelLeftClose size={16} strokeWidth={1.5} />}
+          </a>
+
+          <a
+            href='#'
+            role='button'
+            onClick={(e) => {
+              e.preventDefault();
               handleLogout();
             }}
             title={t('nav.logout')}
@@ -367,6 +387,14 @@ export function Sidebar({
           />
 
           <div className='border-t border-dot my-4 mx-0'></div>
+
+          {canCollapse && (
+            <SidebarNavItem
+              label={t('nav.collapseSidebar')}
+              icon={<PanelLeftClose size={15} strokeWidth={1.5} />}
+              onClick={onToggleCollapsed}
+            />
+          )}
 
           <SidebarNavItem
             label={t('nav.logout')}
