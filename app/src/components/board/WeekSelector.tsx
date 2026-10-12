@@ -67,7 +67,7 @@ export function WeekSelector({ weekAnchor, today, weekStart, onWeekChange, onTod
     setViewMonth(new Date(viewMonth.getFullYear(), viewMonth.getMonth() + delta, 1));
 
   return (
-    <div ref={rootRef} className="week-selector relative flex h-6 items-center gap-2">
+    <div ref={rootRef} className="week-selector relative flex h-6 items-center gap-1">
       <Button
         variant="secondary"
         size="xs"
