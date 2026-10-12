@@ -1,24 +1,8 @@
+import { Fragment, type ReactNode } from 'react';
 import { useI18n } from '../../i18n/I18nContext';
+import type { CompareColumn, CompareFeature, CompareStatus } from '../../types/adminCompare';
 
-interface Feature {
-  key: string;
-  category: string;
-  planner: 'yes' | 'no' | 'partial' | 'unknown';
-  todoist: 'yes' | 'no' | 'partial' | 'unknown';
-  habitica: 'yes' | 'no' | 'partial' | 'unknown';
-  microsoftTodo: 'yes' | 'no' | 'partial' | 'unknown';
-  googleTasks: 'yes' | 'no' | 'partial' | 'unknown';
-  rememberTheMilk: 'yes' | 'no' | 'partial' | 'unknown';
-  jira: 'yes' | 'no' | 'partial' | 'unknown';
-}
-
-interface Column {
-  id: string;
-  header: string;
-  key: keyof Feature;
-}
-
-const COLUMNS: Column[] = [
+const COLUMNS: CompareColumn[] = [
   { id: 'planner', header: 'Planner', key: 'planner' },
   { id: 'todoist', header: 'Todoist', key: 'todoist' },
   { id: 'habitica', header: 'Habitica', key: 'habitica' },
@@ -28,7 +12,7 @@ const COLUMNS: Column[] = [
   { id: 'jira', header: 'Jira', key: 'jira' },
 ];
 
-const FEATURES: Feature[] = [
+const FEATURES: CompareFeature[] = [
   { key: 'tasks', category: 'Core Task Management', planner: 'yes', todoist: 'yes', habitica: 'yes', microsoftTodo: 'yes', googleTasks: 'yes', rememberTheMilk: 'yes', jira: 'yes' },
   { key: 'subtasks', category: '', planner: 'yes', todoist: 'yes', habitica: 'yes', microsoftTodo: 'yes', googleTasks: 'partial', rememberTheMilk: 'yes', jira: 'yes' },
   { key: 'dueDates', category: '', planner: 'yes', todoist: 'yes', habitica: 'yes', microsoftTodo: 'yes', googleTasks: 'yes', rememberTheMilk: 'yes', jira: 'yes' },
@@ -90,7 +74,7 @@ const FEATURES: Feature[] = [
   { key: 'openSource', category: '', planner: 'yes', todoist: 'no', habitica: 'yes', microsoftTodo: 'no', googleTasks: 'no', rememberTheMilk: 'no', jira: 'no' },
 ];
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <section className="pb-6">
       <h2 className="text-sm leading-6 font-semibold text-ink h-6">{title}</h2>
@@ -100,7 +84,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-function StatusCell({ value }: { value: 'yes' | 'no' | 'partial' | 'unknown' }) {
+function StatusCell({ value }: { value: CompareStatus }) {
   const styles = {
     yes: 'bg-moss/20 text-moss',
     no: 'bg-accent/12 text-accent',
@@ -162,7 +146,7 @@ function TableHeader() {
 }
 
 function TableBody({ featureLabels, categoryLabels }: { featureLabels: Record<string, string>; categoryLabels: Record<string, string> }) {
-  const rows: React.ReactNode[] = [];
+  const rows: ReactNode[] = [];
   let currentCategory = '';
 
   FEATURES.forEach((feature) => {
@@ -170,7 +154,7 @@ function TableBody({ featureLabels, categoryLabels }: { featureLabels: Record<st
     if (showCategory) currentCategory = feature.category;
 
     rows.push(
-      <React.Fragment key={feature.key}>
+      <Fragment key={feature.key}>
         {showCategory && <CategoryRow title={categoryLabels[feature.category] || feature.category} colSpan={COLUMNS.length + 1} />}
         <tr className="border-b border-dot/50 hover:bg-dot/20">
           <td className="px-3 py-2 text-sm leading-6 text-ink sticky left-0 z-10 bg-cream border-r border-dot w-64 min-w-64">
@@ -180,14 +164,15 @@ function TableBody({ featureLabels, categoryLabels }: { featureLabels: Record<st
             <StatusCell key={col.id} value={feature[col.key]} />
           ))}
         </tr>
-      </React.Fragment>
+      </Fragment>
     );
   });
 
   return <tbody>{rows}</tbody>;
 }
 
-function Legend({ t }: { t: (key: string) => string }) {
+function Legend() {
+  const { t } = useI18n();
   return (
     <div className="flex flex-wrap gap-4 mt-6 pt-4 border-t border-dot text-[12px] leading-6 text-ink-light">
       <span className="inline-flex items-center gap-1.5">
@@ -219,7 +204,7 @@ export function AdminComparePage() {
   });
 
   const categoryLabels: Record<string, string> = {};
-  const categories = [...new Set(FEATURES.map((f) => f.category).filter(Boolean))];
+  const categories = [...new Set(FEATURES.map((f) => f.category).filter((category) => category !== ''))];
   categories.forEach((c) => {
     categoryLabels[c] = t(`compare.categories.${c}`) || c;
   });
@@ -246,7 +231,7 @@ export function AdminComparePage() {
             <TableBody featureLabels={featureLabels} categoryLabels={categoryLabels} />
           </table>
         </div>
-        <Legend t={t} />
+        <Legend />
       </Section>
 
       <Section title={t('admin.compareNotesTitle')}>
