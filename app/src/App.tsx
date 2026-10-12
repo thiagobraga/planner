@@ -19,6 +19,7 @@ import { StyleguidePage } from './pages/StyleguidePage';
 import { HelpPage } from './pages/HelpPage';
 import { AdminUsersPage } from './pages/admin/AdminUsersPage';
 import { AdminDashboardPage } from './pages/admin/AdminDashboardPage';
+import { AdminComparePage } from './pages/admin/AdminComparePage';
 import { I18nProvider } from './i18n/I18nContext';
 import { getAppTitle } from './utils/environment';
 import { safeNextPath } from './utils/safeNext';
@@ -69,6 +70,10 @@ function AppRoutes() {
           <Route
             path="/admin/users"
             element={isAdmin ? <AdminUsersPage /> : <Navigate to="/daily" replace />}
+          />
+          <Route
+            path="/admin/compare"
+            element={isAdmin ? <AdminComparePage /> : <Navigate to="/daily" replace />}
           />
         </Route>
       </Routes>

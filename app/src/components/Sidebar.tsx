@@ -10,6 +10,7 @@ import {
   FolderOpen,
   ShieldCheck,
   Users,
+  Table2,
   type LucideIcon,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
@@ -222,6 +223,15 @@ export function Sidebar({
               >
                 <Users size={16} strokeWidth={1.5} />
               </NavLink>
+              <NavLink
+                to='/admin/compare'
+                title={t('nav.adminCompare')}
+                className={({ isActive }) =>
+                  isActive ? 'sidebar-icon-link sidebar-icon-link--active' : 'sidebar-icon-link'
+                }
+              >
+                <Table2 size={16} strokeWidth={1.5} />
+              </NavLink>
             </>
           )}
 
@@ -329,6 +339,11 @@ export function Sidebar({
                 to='/admin/users'
                 label={t('nav.adminUsers')}
                 icon={<Users size={15} strokeWidth={1.5} />}
+              />
+              <SidebarNavItem
+                to='/admin/compare'
+                label={t('nav.adminCompare')}
+                icon={<Table2 size={15} strokeWidth={1.5} />}
               />
             </>
           )}
