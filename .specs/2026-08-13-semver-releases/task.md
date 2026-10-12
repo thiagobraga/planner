@@ -2,7 +2,7 @@
 
 ## Discovery
 
-- [ ] Inventory the current versioning surface in root, `api/`, and `app/`
+- [~] Inventory the current versioning surface in root, `api/`, and `app/`
 - [ ] Identify the minimum files that must participate in release version bumps
 - [ ] Confirm how release tags and GitHub Releases should be published in this repo
 
