@@ -14,7 +14,7 @@ test('Week selector picks a week from the calendar and returns to today', async 
 
   const nav = page.locator('.daily-week-board-nav');
   const trigger = nav.locator('.week-selector-trigger');
-  const currentRange = (await trigger.innerText()).trim();
+  const currentRange = await trigger.getAttribute('aria-label');
 
   await trigger.click();
   const dialog = page.getByRole('dialog', { name: 'Select week' });
@@ -25,10 +25,10 @@ test('Week selector picks a week from the calendar and returns to today', async 
   await dialog.getByRole('button', { name: 'Next month', exact: true }).click();
   await dialog.getByRole('button', { name: '15', exact: true }).click();
   await expect(dialog).toHaveCount(0);
-  await expect(trigger).not.toHaveText(currentRange);
+  await expect(trigger).not.toHaveAttribute('aria-label', currentRange!);
 
   await page.getByRole('button', { name: 'Today', exact: true }).click();
-  await expect(trigger).toHaveText(currentRange);
+  await expect(trigger).toHaveAttribute('aria-label', currentRange!);
 
   await trigger.click();
   await page.keyboard.press('Escape');
