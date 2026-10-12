@@ -71,7 +71,7 @@ export function WeekSelector({ weekAnchor, today, weekStart, onWeekChange }: Wee
       <Button
         variant="secondary"
         size="sm"
-        className="w-6 shrink-0 !px-0"
+        className="w-6 shrink-0 !px-0 !text-ink-light"
         aria-label={t('page.previousWeek')}
         onClick={() => onWeekChange(shiftWeek(weekAnchor, -1))}
       >
@@ -94,7 +94,7 @@ export function WeekSelector({ weekAnchor, today, weekStart, onWeekChange }: Wee
       <Button
         variant="secondary"
         size="sm"
-        className="w-6 shrink-0 !px-0"
+        className="w-6 shrink-0 !px-0 !text-ink-light"
         aria-label={t('page.nextWeek')}
         onClick={() => onWeekChange(shiftWeek(weekAnchor, 1))}
       >
@@ -112,7 +112,7 @@ export function WeekSelector({ weekAnchor, today, weekStart, onWeekChange }: Wee
             <Button
               variant="secondary"
               size="sm"
-              className="w-6 shrink-0 !px-0"
+              className="w-6 shrink-0 !px-0 !text-ink-light"
               aria-label={t('page.previousMonth')}
               onClick={() => shiftViewMonth(-1)}
             >
@@ -122,7 +122,7 @@ export function WeekSelector({ weekAnchor, today, weekStart, onWeekChange }: Wee
             <Button
               variant="secondary"
               size="sm"
-              className="w-6 shrink-0 !px-0"
+              className="w-6 shrink-0 !px-0 !text-ink-light"
               aria-label={t('page.nextMonth')}
               onClick={() => shiftViewMonth(1)}
             >
