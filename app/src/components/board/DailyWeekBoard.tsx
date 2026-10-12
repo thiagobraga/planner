@@ -44,7 +44,7 @@ function formatColumnDate(iso: string, locale: 'en' | 'pt-BR', format: string): 
   }
 }
 
-export function DailyWeekBoard({ tasks, weekAnchor, today, todayKey, weekStart, dateFormat, onWeekChange, onToggle, onCreate, onOrganize, presentation, taskListProps }: DailyWeekBoardProps) {
+export function DailyWeekBoard({ tasks, weekAnchor, today, todayKey, weekStart, dateFormat, onWeekChange, onToday, onToggle, onCreate, onOrganize, presentation, taskListProps }: DailyWeekBoardProps) {
   const { locale, t } = useI18n();
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -80,7 +80,7 @@ export function DailyWeekBoard({ tasks, weekAnchor, today, todayKey, weekStart, 
   return (
     <div className="daily-week-board">
       <div className="daily-week-board-nav flex max-w-162 justify-start">
-        <WeekSelector weekAnchor={weekAnchor} today={today} weekStart={weekStart} onWeekChange={onWeekChange} />
+        <WeekSelector weekAnchor={weekAnchor} today={today} weekStart={weekStart} onWeekChange={onWeekChange} onToday={onToday} />
       </div>
 
       <div className="board-scroll" data-testid="daily-week-board" ref={scrollRef}>

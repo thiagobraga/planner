@@ -438,9 +438,6 @@ export function HabitsPage() {
             className="habits-page-header-controls"
             viewSwitcher={
               <>
-                <Button variant="secondary" size="sm" className="!text-ink-light" onClick={handleToday}>
-                  {t('page.today')}
-                </Button>
                 <ButtonGroup
                   mode="single"
                   value={view}
@@ -466,6 +463,7 @@ export function HabitsPage() {
           weekStart={weekStart}
           weekAnchor={weekAnchor}
           onWeekChange={handleWeekChange}
+          onToday={handleToday}
           todaySignal={todaySignal}
           editing={editing}
           collapsed={visibleCollapsedHabitIds}

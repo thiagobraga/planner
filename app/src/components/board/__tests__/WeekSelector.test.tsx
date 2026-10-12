@@ -36,6 +36,17 @@ describe('WeekSelector', () => {
     expect(onWeekChange).toHaveBeenLastCalledWith(new Date(2026, 9, 10));
   });
 
+  it('jumps to today with the button beside the previous arrow', () => {
+    const onToday = vi.fn();
+    const { onWeekChange } = setup({ weekAnchor: new Date(2026, 8, 1), onToday });
+    const todayButton = screen.getByRole('button', { name: 'Today' });
+    expect(todayButton.nextElementSibling).toBe(screen.getByRole('button', { name: 'Previous week' }));
+
+    fireEvent.click(todayButton);
+    expect(onToday).toHaveBeenCalledTimes(1);
+    expect(onWeekChange).not.toHaveBeenCalled();
+  });
+
   it('opens a calendar from the range button and picks the week of a clicked day', () => {
     const { onWeekChange } = setup();
     const trigger = screen.getByRole('button', { name: RANGE });

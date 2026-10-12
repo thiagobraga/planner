@@ -27,6 +27,8 @@ export interface WeekSelectorProps {
   today: Date;
   weekStart: WeekStart;
   onWeekChange: (date: Date) => void;
+  /** Overrides the default jump to the week of `today`. */
+  onToday?: () => void;
 }
 
 export interface DailyWeekBoardProps {
@@ -37,6 +39,7 @@ export interface DailyWeekBoardProps {
   weekStart: WeekStart;
   dateFormat: string;
   onWeekChange: (date: Date) => void;
+  onToday?: () => void;
   onToggle?: (taskId: string, completed: boolean) => void;
   onCreate: DailyBoardColumnProps['onCreate'];
   onOrganize?: DailyBoardColumnProps['onOrganize'];

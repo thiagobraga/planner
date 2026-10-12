@@ -715,9 +715,6 @@ export function DailyPage({ view }: { view: BoardViewMode }) {
         toolbar={
           <Toolbar className="daily-page-header-controls" viewSwitcher={
             <>
-              <Button variant="secondary" size="sm" className="!text-ink-light" onClick={goToToday}>
-                {t('page.today')}
-              </Button>
               <ViewSwitcher view={view} onViewChange={setView} />
             </>
           }>
@@ -803,6 +800,7 @@ export function DailyPage({ view }: { view: BoardViewMode }) {
           weekStart={weekStart}
           dateFormat={dateFormat}
           onWeekChange={setWeekAnchor}
+          onToday={goToToday}
           onToggle={handleToggle}
           onCreate={handleBoardCreate}
           presentation={view}
@@ -823,7 +821,7 @@ export function DailyPage({ view }: { view: BoardViewMode }) {
       ) : (
         <>
         <div className="daily-list-nav flex max-w-162 justify-start">
-          <WeekSelector weekAnchor={weekAnchor} today={dateFromISO(todayKey)} weekStart={weekStart} onWeekChange={setWeekAnchor} />
+          <WeekSelector weekAnchor={weekAnchor} today={dateFromISO(todayKey)} weekStart={weekStart} onWeekChange={setWeekAnchor} onToday={goToToday} />
         </div>
         <DailyList
           futureSections={previewFutureSections ?? browsedDays ?? futureDays}

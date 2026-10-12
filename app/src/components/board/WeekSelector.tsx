@@ -14,7 +14,7 @@ function addDays(date: Date, days: number): Date {
   return next;
 }
 
-export function WeekSelector({ weekAnchor, today, weekStart, onWeekChange }: WeekSelectorProps) {
+export function WeekSelector({ weekAnchor, today, weekStart, onWeekChange, onToday }: WeekSelectorProps) {
   const { locale, t } = useI18n();
   const [open, setOpen] = useState(false);
   const [viewMonth, setViewMonth] = useState(() => new Date(weekAnchor.getFullYear(), weekAnchor.getMonth(), 1));
@@ -68,6 +68,14 @@ export function WeekSelector({ weekAnchor, today, weekStart, onWeekChange }: Wee
 
   return (
     <div ref={rootRef} className="week-selector relative flex items-center gap-2">
+      <Button
+        variant="secondary"
+        size="sm"
+        className="!text-ink-light"
+        onClick={onToday ?? (() => onWeekChange(today))}
+      >
+        {t('page.today')}
+      </Button>
       <Button
         variant="secondary"
         size="sm"

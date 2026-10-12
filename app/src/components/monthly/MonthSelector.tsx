@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef, useLayoutEffect, useImperativeHandle, type CSSProperties } from 'react';
+import { Button } from '../ui/Button';
 import { StripNavigator } from '../ui/StripNavigator';
 import { useI18n, type Locale } from '../../i18n/I18nContext';
 
@@ -131,6 +132,17 @@ export const MonthSelector = ({
 
   return (
     <div className={`monthly-strip flex w-full min-w-0 items-center gap-(--dot-grid) ${className}`}>
+      <Button
+        variant="secondary"
+        size="sm"
+        className="shrink-0 !text-ink-light"
+        onClick={() => {
+          const now = new Date();
+          onChange(now.getFullYear(), now.getMonth());
+        }}
+      >
+        {t('page.today')}
+      </Button>
       <StripNavigator
         direction="previous"
         aria-label={t('page.previousMonth')}

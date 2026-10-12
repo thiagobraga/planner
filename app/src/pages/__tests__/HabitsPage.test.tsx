@@ -126,10 +126,8 @@ describe('HabitsPage', () => {
     fireEvent.click(screen.getByRole('button', { name: 'More options' }));
 
     expect(header).toBeInTheDocument();
-    expect(header).toContainElement(screen.getByRole('button', { name: 'Today' }));
     expect(header).toContainElement(screen.getByLabelText('Timeline view'));
     expect(header).toContainElement(screen.getByLabelText('Calendar view'));
-    expect(screen.getByRole('button', { name: 'Today' }).closest('.page-header-toolbar')).toBeInTheDocument();
   });
 
   it('renders view toggle buttons (Timeline/Calendar)', () => {
@@ -147,11 +145,10 @@ describe('HabitsPage', () => {
     expect(screen.queryByTestId('habit-calendar')).not.toBeInTheDocument();
   });
 
-  it('Today button is present', () => {
+  it('keeps Today out of the header, it lives in the week and month selectors', () => {
     renderPage();
-    fireEvent.click(screen.getByRole('button', { name: 'More options' }));
 
-    expect(screen.getByRole('button', { name: 'Today' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Today' })).not.toBeInTheDocument();
   });
 
   it('calls fetchHabits on mount', () => {

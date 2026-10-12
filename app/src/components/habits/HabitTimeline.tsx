@@ -66,6 +66,7 @@ export interface HabitTimelineProps {
   weekStart: WeekStart;
   weekAnchor: Date;
   onWeekChange: (date: Date) => void;
+  onToday?: () => void;
   todaySignal?: number;
   editing?: HabitEditTarget;
   collapsed: ReadonlySet<string>;
@@ -122,6 +123,7 @@ export function HabitTimeline({
   weekStart,
   weekAnchor,
   onWeekChange,
+  onToday,
   todaySignal,
   editing,
   collapsed,
@@ -415,7 +417,7 @@ export function HabitTimeline({
   return (
     <div ref={rootRef} className="habit-timeline">
       <div className="habit-timeline-week-selector flex max-w-162 justify-start">
-        <WeekSelector weekAnchor={weekAnchor} today={today} weekStart={weekStart} onWeekChange={onWeekChange} />
+        <WeekSelector weekAnchor={weekAnchor} today={today} weekStart={weekStart} onWeekChange={onWeekChange} onToday={onToday} />
       </div>
 
       <div className="habit-timeline-selectors-sticky">
