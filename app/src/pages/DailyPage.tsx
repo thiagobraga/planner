@@ -715,7 +715,7 @@ export function DailyPage({ view }: { view: BoardViewMode }) {
         toolbar={
           <Toolbar className="daily-page-header-controls" viewSwitcher={
             <>
-              <Button variant="secondary" size="xs" onClick={goToToday}>
+              <Button variant="secondary" size="sm" onClick={goToToday}>
                 {t('page.today')}
               </Button>
               <ViewSwitcher view={view} onViewChange={setView} />
@@ -742,7 +742,7 @@ export function DailyPage({ view }: { view: BoardViewMode }) {
               </span>
             ) : (
               reorg.showButton && (
-                <Button variant="secondary" size="xs" onClick={reorg.startPreview}>
+                <Button variant="secondary" size="sm" onClick={reorg.startPreview}>
                   {t('reorganize.button')}
                 </Button>
               )
