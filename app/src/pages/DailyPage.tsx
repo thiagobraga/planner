@@ -715,7 +715,7 @@ export function DailyPage({ view }: { view: BoardViewMode }) {
         toolbar={
           <Toolbar className="daily-page-header-controls" viewSwitcher={
             <>
-              <Button variant="secondary" size="sm" onClick={goToToday}>
+              <Button variant="secondary" size="sm" className="!text-ink-light" onClick={goToToday}>
                 {t('page.today')}
               </Button>
               <ViewSwitcher view={view} onViewChange={setView} />

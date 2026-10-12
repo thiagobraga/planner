@@ -434,21 +434,27 @@ export function HabitsPage() {
       <PageHeader
         title={t('page.habits')}
         toolbar={
-          <Toolbar className="habits-page-header-controls">
-            <Button variant="secondary" size="xs" onClick={handleToday}>
-              {t('page.today')}
-            </Button>
-
-            <ButtonGroup
-              mode="single"
-              value={view}
-              onChange={handleViewChange}
-              size="xs"
-              items={[
-                { value: 'timeline', label: t('page.timelineView'), icon: <DotsConnectedIcon size={12} strokeWidth={1.8} /> },
-                { value: 'calendar', label: t('page.calendarView'), icon: <Calendar size={12} strokeWidth={1.8} /> },
-              ]}
-            />
+          <Toolbar
+            className="habits-page-header-controls"
+            viewSwitcher={
+              <>
+                <Button variant="secondary" size="sm" className="!text-ink-light" onClick={handleToday}>
+                  {t('page.today')}
+                </Button>
+                <ButtonGroup
+                  mode="single"
+                  value={view}
+                  onChange={handleViewChange}
+                  size="xs"
+                  items={[
+                    { value: 'timeline', label: t('page.timelineView'), icon: <DotsConnectedIcon size={12} strokeWidth={1.8} /> },
+                    { value: 'calendar', label: t('page.calendarView'), icon: <Calendar size={12} strokeWidth={1.8} /> },
+                  ]}
+                />
+              </>
+            }
+          >
+            {null}
           </Toolbar>
         }
       />
