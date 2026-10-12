@@ -84,7 +84,7 @@ export function WeekSelector({ weekAnchor, today, weekStart, onWeekChange }: Wee
         aria-haspopup="dialog"
         aria-expanded={open}
         onClick={toggle}
-        className="week-selector-trigger !text-ink-light text-[11px] font-semibold uppercase tracking-[0.08em] tabular-nums"
+        className="week-selector-trigger !text-ink-light !text-[11px] font-semibold uppercase tracking-[0.08em]"
       >
         <span className="inline-block w-[3.75em] text-center">{rangeStart}</span>
         <span className="inline-block w-[3em] text-center normal-case">{rangeJoiner}</span>
