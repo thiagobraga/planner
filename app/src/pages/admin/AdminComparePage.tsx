@@ -162,30 +162,29 @@ function TableHeader() {
 }
 
 function TableBody({ featureLabels, categoryLabels }: { featureLabels: Record<string, string>; categoryLabels: Record<string, string> }) {
+  const rows: React.ReactNode[] = [];
   let currentCategory = '';
 
-  return (
-    <tbody>
-      {FEATURES.map((feature) => {
-        const showCategory = feature.category && feature.category !== currentCategory;
-        if (showCategory) currentCategory = feature.category;
+  FEATURES.forEach((feature) => {
+    const showCategory = feature.category && feature.category !== currentCategory;
+    if (showCategory) currentCategory = feature.category;
 
-        return (
-          <React.Fragment key={feature.key}>
-            {showCategory && <CategoryRow title={categoryLabels[feature.category] || feature.category} colSpan={COLUMNS.length + 1} />}
-            <tr className="border-b border-dot/50 hover:bg-dot/20">
-              <td className="px-3 py-2 text-sm leading-6 text-ink sticky left-0 z-10 bg-cream border-r border-dot w-64 min-w-64">
-                {featureLabels[feature.key] || feature.key}
-              </td>
-              {COLUMNS.map((col) => (
-                <StatusCell key={col.id} value={feature[col.key]} />
-              ))}
-            </tr>
-          </React.Fragment>
-        );
-      })}
-    </tbody>
-  );
+    rows.push(
+      <React.Fragment key={feature.key}>
+        {showCategory && <CategoryRow title={categoryLabels[feature.category] || feature.category} colSpan={COLUMNS.length + 1} />}
+        <tr className="border-b border-dot/50 hover:bg-dot/20">
+          <td className="px-3 py-2 text-sm leading-6 text-ink sticky left-0 z-10 bg-cream border-r border-dot w-64 min-w-64">
+            {featureLabels[feature.key] || feature.key}
+          </td>
+          {COLUMNS.map((col) => (
+            <StatusCell key={col.id} value={feature[col.key]} />
+          ))}
+        </tr>
+      </React.Fragment>
+    );
+  });
+
+  return <tbody>{rows}</tbody>;
 }
 
 function Legend({ t }: { t: (key: string) => string }) {
