@@ -115,10 +115,3 @@ jobs:
         with:
           sarif_file: 'trivy-${{ matrix.component }}.sarif'
           category: container-scan-${{ matrix.component }}
-
-  deploy:
-    name: Deploy
-    if: github.event_name == 'push'
-    needs: security
-    uses: ./.github/workflows/deploy.yml
-    secrets: inherit

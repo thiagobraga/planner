@@ -176,6 +176,23 @@ Hosted MCP clients that can't take a pasted header sign in with OAuth instead. A
 
 Planner is its own OAuth 2.1 authorization server (PKCE S256, dynamic client registration, rotating refresh tokens). Discovery is served at `/.well-known/oauth-protected-resource/api/v1/mcp` and `/.well-known/oauth-authorization-server`. The issuer is `PUBLIC_BASE_URL`, which defaults to `CORS_ORIGIN`. The connector URL must be reachable over public HTTPS.
 
+## Releases
+
+Versions follow [SemVer](https://semver.org/) and tags are `vX.Y.Z`. [release-please](https://github.com/googleapis/release-please) reads Conventional Commits on `main` and keeps one release PR open.
+
+| Commit | Bump |
+| ------ | ---- |
+| `fix:` | patch |
+| `feat:` | minor |
+| `feat!:` or `BREAKING CHANGE:` footer | major (minor while below 1.0.0) |
+| `docs`, `style`, `test`, `chore`, `ci`, `build` | none, hidden from the changelog |
+
+To cut a release, merge the release PR. That bumps the version in the root, `api/` and `app/` `package.json` files and lockfiles, updates `CHANGELOG.md`, creates the `vX.Y.Z` tag and the GitHub Release, then calls `deploy.yml`, which pushes images tagged `latest`, the commit SHA and `vX.Y.Z`. Plain pushes to `main` no longer deploy.
+
+The release version is unrelated to `BUILD_ID` / `/api/v1/version`, which only detect a new deploy for the "update available" toast.
+
+PRs opened by `GITHUB_TOKEN` do not trigger CI. If branch protection requires checks on the release PR, push an empty commit to its branch or close and reopen it.
+
 ## Testing & Coverage
 
 Two coverage reports are browsable on the coverage host — the Vitest report at

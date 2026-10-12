@@ -2,7 +2,17 @@ name: Deploy
 
 on:
   workflow_dispatch:
+    inputs:
+      version:
+        description: 'SemVer to add as an image tag (e.g. 1.2.3), optional'
+        type: string
+        required: false
   workflow_call:
+    inputs:
+      version:
+        description: 'SemVer to add as an image tag (e.g. 1.2.3), optional'
+        type: string
+        required: false
 
 concurrency:
   group: ${{ github.workflow }}
@@ -46,6 +56,7 @@ jobs:
           tags: |
             ${{ env.IMAGE_PREFIX }}-${{ matrix.component }}:latest
             ${{ env.IMAGE_PREFIX }}-${{ matrix.component }}:${{ github.sha }}
+            ${{ inputs.version && format('{0}-{1}:v{2}', env.IMAGE_PREFIX, matrix.component, inputs.version) || '' }}
           build-args: APK_REFRESH=${{ github.run_id }}
           cache-from: type=gha,scope=${{ matrix.component }}
           cache-to: type=gha,mode=max,scope=${{ matrix.component }}
