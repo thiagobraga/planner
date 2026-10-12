@@ -665,7 +665,6 @@ export function DailyPage({ view }: { view: BoardViewMode }) {
         ? (reorg.previewSections ?? [])
             .filter((s) => s.date > todayKey)
             .map((s) => ({ key: s.date, label: s.label, tasks: s.tasks as Task[] }))
-            .reverse()
         : null,
     [reorg.state, reorg.previewSections, todayKey],
   );
@@ -684,7 +683,6 @@ export function DailyPage({ view }: { view: BoardViewMode }) {
   const browsedDays = useMemo(() => {
     if (!browsingWeek) return null;
     return Array.from({ length: 7 }, (_, i) => addDaysISO(weekStartKey, i))
-      .reverse()
       .map((key) => sections.find((s) => s.key === key)
         ?? { key, label: dayLabel(dateFromISO(key), locale, dateFormat), tasks: [] });
   }, [browsingWeek, weekStartKey, sections, locale, dateFormat]);
@@ -696,7 +694,7 @@ export function DailyPage({ view }: { view: BoardViewMode }) {
       days.push(sections.find((s) => s.key === key)
         ?? { key, label: dayLabel(dateFromISO(key), locale, dateFormat), tasks: [] });
     }
-    return days.reverse();
+    return days;
   }, [view, browsingWeek, todayKey, range.to, sections, locale, dateFormat]);
 
   return (

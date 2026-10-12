@@ -36,44 +36,11 @@ export function DailyList({
   const { t } = useI18n();
   const tomorrowKey = addDaysISO(todayKey, 1);
 
-  return (
-    <div className="max-w-162">
-      {futureSections.map((section) => (
-        <div key={`upcoming-${section.key}`} data-day-date={section.key} className="mt-6">
-          <div style={HEADING_STYLE} className={HEADING_CLASS}>
-            {section.label}
-            {section.key === tomorrowKey && <> · <span className="text-moss">TOMORROW</span></>}
-          </div>
+  const todaySection = currentSections.filter((section) => section.key === todayKey);
+  const pastSections = currentSections.filter((section) => section.key !== todayKey);
 
-          <TaskList
-            tasks={section.tasks}
-            containerId={`day:${section.key}`}
-            dayDate={section.key}
-            dimNotes={false}
-            hideDueDate
-            onTaskToggle={onTaskToggle}
-            {...taskListProps}
-          />
-
-          {!isPreview && (
-            <div className="flex items-start min-h-6">
-              <Bullet />
-              <EditableText
-                value={futureInputs[section.key] ?? ''}
-                onValueChange={(text) => onFutureInputChange(section.key, text)}
-                onEnter={(text) => onAddFuture(section.key, text)}
-                onBlur={() => onAddFuture(section.key, futureInputs[section.key] ?? '')}
-                placeholder={t('common.addTask')}
-                aria-label={t('common.addTask')}
-                className={ADD_INPUT_CLASS}
-                spellCheck={false}
-              />
-            </div>
-          )}
-        </div>
-      ))}
-
-      {currentSections.map((section) => {
+  const renderCurrent = (sections: typeof currentSections) =>
+    sections.map((section) => {
         const isToday = section.key === todayKey;
         return (
           <div
@@ -116,7 +83,48 @@ export function DailyList({
             )}
           </div>
         );
-      })}
+      });
+
+  return (
+    <div className="max-w-162">
+      {renderCurrent(todaySection)}
+
+      {futureSections.map((section) => (
+        <div key={`upcoming-${section.key}`} data-day-date={section.key} className="mt-6">
+          <div style={HEADING_STYLE} className={HEADING_CLASS}>
+            {section.label}
+            {section.key === tomorrowKey && <> · <span className="text-moss">TOMORROW</span></>}
+          </div>
+
+          <TaskList
+            tasks={section.tasks}
+            containerId={`day:${section.key}`}
+            dayDate={section.key}
+            dimNotes={false}
+            hideDueDate
+            onTaskToggle={onTaskToggle}
+            {...taskListProps}
+          />
+
+          {!isPreview && (
+            <div className="flex items-start min-h-6">
+              <Bullet />
+              <EditableText
+                value={futureInputs[section.key] ?? ''}
+                onValueChange={(text) => onFutureInputChange(section.key, text)}
+                onEnter={(text) => onAddFuture(section.key, text)}
+                onBlur={() => onAddFuture(section.key, futureInputs[section.key] ?? '')}
+                placeholder={t('common.addTask')}
+                aria-label={t('common.addTask')}
+                className={ADD_INPUT_CLASS}
+                spellCheck={false}
+              />
+            </div>
+          )}
+        </div>
+      ))}
+
+      {renderCurrent(pastSections)}
     </div>
   );
 }
