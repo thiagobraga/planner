@@ -82,7 +82,7 @@ export function WeekSelector({ weekAnchor, today, weekStart, onWeekChange }: Wee
         aria-haspopup="dialog"
         aria-expanded={open}
         onClick={toggle}
-        className="week-selector-trigger"
+        className="week-selector-trigger font-mono"
       >
         {rangeLabel}
         <ChevronDown size={14} strokeWidth={1.8} />
