@@ -34,12 +34,12 @@ describe('ViewSwitcher', () => {
     expect(onViewChange).toHaveBeenCalledWith(value);
   });
 
-  it('renders separate 24px buttons, dark only when active', () => {
+  it('renders separate xs buttons, dark only when active', () => {
     render(<ViewSwitcher view="calendar" onViewChange={vi.fn()} />);
     const active = screen.getByRole('button', { name: 'Calendar' });
     const idle = screen.getByRole('button', { name: 'List' });
-    expect(active).toHaveClass('w-6', 'h-6', 'bg-ink', 'text-cream');
-    expect(idle).toHaveClass('w-6', 'h-6', 'text-ink-light');
+    expect(active).toHaveClass('w-5', 'h-5', 'bg-ink', 'text-cream');
+    expect(idle).toHaveClass('w-5', 'h-5', 'text-ink-light');
     expect(idle).not.toHaveClass('bg-ink');
   });
 

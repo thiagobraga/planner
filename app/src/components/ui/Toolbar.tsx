@@ -45,9 +45,9 @@ export function Toolbar({ children, className = '', viewSwitcher }: ToolbarProps
         aria-label={t('toolbar.moreOptions')}
         aria-expanded={open}
         onClick={() => setOpen((v) => !v)}
-        className="inline-flex items-center justify-center w-6 h-6 rounded-md text-ink-light hover:bg-dot/30 transition-colors duration-(--motion-fast)"
+        className="inline-flex items-center justify-center w-5 h-5 rounded-xs border border-border text-ink-light hover:bg-dot/30 transition-colors duration-(--motion-fast)"
       >
-        <Menu size={14} strokeWidth={1.5} />
+        <Menu size={12} strokeWidth={1.5} />
       </button>
 
       {open && (

@@ -131,10 +131,10 @@ export const MonthSelector = ({
   };
 
   return (
-    <div className={`monthly-strip flex w-full min-w-0 items-center gap-(--dot-grid) ${className}`}>
+    <div className={`monthly-strip flex h-6 w-full min-w-0 items-center gap-(--dot-grid) ${className}`}>
       <Button
         variant="secondary"
-        size="sm"
+        size="xs"
         className="shrink-0 !text-ink-light"
         onClick={() => {
           const now = new Date();

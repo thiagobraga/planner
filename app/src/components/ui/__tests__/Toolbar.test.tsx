@@ -96,13 +96,13 @@ describe('Toolbar', () => {
     expect(screen.queryByText('content')).not.toBeInTheDocument();
   });
 
-  it('sizes the hamburger button to the 24px rhythm', () => {
+  it('sizes the hamburger button like an xs button', () => {
     render(
       <Toolbar>
         <span>content</span>
       </Toolbar>,
     );
-    expect(screen.getByRole('button', { name: 'More options' })).toHaveClass('w-6', 'h-6');
+    expect(screen.getByRole('button', { name: 'More options' })).toHaveClass('w-5', 'h-5');
   });
 
   it('ends the dropdown with the theme picker, after the page controls', async () => {

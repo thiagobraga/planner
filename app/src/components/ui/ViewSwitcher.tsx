@@ -10,7 +10,7 @@ export interface ViewSwitcherProps {
   className?: string;
 }
 
-const ICON_SIZE = 14;
+const ICON_SIZE = 12;
 
 // Always-visible List / Kanban lists / Kanban cards / Calendar buttons that sit
 // beside the header hamburger. Separate buttons (not a joined ButtonGroup) so
@@ -37,7 +37,7 @@ export function ViewSwitcher({ view, onViewChange, className = '' }: ViewSwitche
             aria-pressed={active}
             title={label}
             onClick={() => onViewChange(value)}
-            className={`inline-flex items-center justify-center w-6 h-6 rounded-xs border transition-colors duration-(--motion-fast) ${
+            className={`inline-flex items-center justify-center w-5 h-5 rounded-xs border transition-colors duration-(--motion-fast) ${
               active ? 'bg-ink text-cream border-ink' : 'text-ink-light border-border hover:bg-dot/30'
             }`}
           >

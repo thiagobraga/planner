@@ -739,7 +739,7 @@ export function DailyPage({ view }: { view: BoardViewMode }) {
               </span>
             ) : (
               reorg.showButton && (
-                <Button variant="secondary" size="sm" onClick={reorg.startPreview}>
+                <Button variant="secondary" size="xs" onClick={reorg.startPreview}>
                   {t('reorganize.button')}
                 </Button>
               )

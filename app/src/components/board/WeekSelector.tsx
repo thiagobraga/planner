@@ -67,10 +67,10 @@ export function WeekSelector({ weekAnchor, today, weekStart, onWeekChange, onTod
     setViewMonth(new Date(viewMonth.getFullYear(), viewMonth.getMonth() + delta, 1));
 
   return (
-    <div ref={rootRef} className="week-selector relative flex items-center gap-2">
+    <div ref={rootRef} className="week-selector relative flex h-6 items-center gap-2">
       <Button
         variant="secondary"
-        size="sm"
+        size="xs"
         className="!text-ink-light"
         onClick={onToday ?? (() => onWeekChange(today))}
       >
@@ -78,15 +78,15 @@ export function WeekSelector({ weekAnchor, today, weekStart, onWeekChange, onTod
       </Button>
       <Button
         variant="secondary"
-        size="sm"
-        className="w-6 shrink-0 !px-0 !text-ink-light"
+        size="xs"
+        className="w-5 shrink-0 !px-0 !text-ink-light"
         aria-label={t('page.previousWeek')}
         onClick={() => onWeekChange(shiftWeek(weekAnchor, -1))}
       >
-        <ChevronLeft size={16} strokeWidth={1.8} />
+        <ChevronLeft size={14} strokeWidth={1.8} />
       </Button>
       <Button
-        size="sm"
+        size="xs"
         variant="secondary"
         aria-label={rangeLabel}
         aria-haspopup="dialog"
@@ -97,16 +97,16 @@ export function WeekSelector({ weekAnchor, today, weekStart, onWeekChange, onTod
         <span className="inline-block w-[3.25em] text-center">{rangeStart}</span>
         <span className="inline-block w-[2em] text-center normal-case">{rangeJoiner}</span>
         <span className="inline-block w-[6em] text-center">{rangeEnd}</span>
-        <ChevronDown className="ml-1" size={14} strokeWidth={1.8} />
+        <ChevronDown className="ml-1" size={12} strokeWidth={1.8} />
       </Button>
       <Button
         variant="secondary"
-        size="sm"
-        className="w-6 shrink-0 !px-0 !text-ink-light"
+        size="xs"
+        className="w-5 shrink-0 !px-0 !text-ink-light"
         aria-label={t('page.nextWeek')}
         onClick={() => onWeekChange(shiftWeek(weekAnchor, 1))}
       >
-        <ChevronRight size={16} strokeWidth={1.8} />
+        <ChevronRight size={14} strokeWidth={1.8} />
       </Button>
 
       {open && (
@@ -119,22 +119,22 @@ export function WeekSelector({ weekAnchor, today, weekStart, onWeekChange, onTod
           <div className="mb-3 flex items-center justify-between gap-2">
             <Button
               variant="secondary"
-              size="sm"
-              className="w-6 shrink-0 !px-0 !text-ink-light"
+              size="xs"
+              className="w-5 shrink-0 !px-0 !text-ink-light"
               aria-label={t('page.previousMonth')}
               onClick={() => shiftViewMonth(-1)}
             >
-              <ChevronLeft size={16} strokeWidth={1.8} />
+              <ChevronLeft size={14} strokeWidth={1.8} />
             </Button>
             <span className="text-sm font-medium capitalize text-ink">{monthLabel}</span>
             <Button
               variant="secondary"
-              size="sm"
-              className="w-6 shrink-0 !px-0 !text-ink-light"
+              size="xs"
+              className="w-5 shrink-0 !px-0 !text-ink-light"
               aria-label={t('page.nextMonth')}
               onClick={() => shiftViewMonth(1)}
             >
-              <ChevronRight size={16} strokeWidth={1.8} />
+              <ChevronRight size={14} strokeWidth={1.8} />
             </Button>
           </div>
           <div className="grid grid-cols-7 text-center">
