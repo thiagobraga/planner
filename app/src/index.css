@@ -404,28 +404,6 @@ button,
   margin-bottom: 0;
 }
 
-.board-list-editor {
-  display: grid;
-  gap: 0;
-  min-height: 24px;
-  padding: 0;
-  border: 0;
-  background: transparent;
-}
-
-.board-list-editor input {
-  height: 24px;
-  padding: 0;
-  border: 0;
-  border-bottom: 1px solid var(--color-dot);
-  border-radius: 0;
-  background: transparent;
-}
-
-.board-list-editor .daily-board-editor-actions {
-  min-height: 24px;
-}
-
 .board-card {
   position: relative;
   display: grid;
@@ -686,14 +664,6 @@ button,
   border: 1px solid color-mix(in srgb, var(--color-ink-lighter) 68%, transparent);
   border-radius: 4px;
   background: transparent;
-}
-
-.daily-board-editor.board-list-editor input {
-  height: 24px;
-  padding: 0;
-  border: 0;
-  border-bottom: 1px solid var(--color-dot);
-  border-radius: 0;
 }
 
 .daily-board-editor {

@@ -151,10 +151,9 @@ test('Daily Kanban lists keeps journal rows and the destination date', async ({ 
     await expect(column.locator('.board-column-lists')).toBeVisible();
     await expect(column.locator('.board-card')).toHaveCount(0);
 
-    await column.getByRole('button', { name: 'Add task', exact: true }).click();
-    await column.getByRole('textbox', { name: 'Task title' }).fill(title);
+    await column.getByRole('textbox', { name: 'New task…' }).fill(title);
     const responsePromise = page.waitForResponse((response) => response.url().endsWith('/api/v1/tasks') && response.request().method() === 'POST');
-    await column.getByRole('textbox', { name: 'Task title' }).press('Enter');
+    await column.getByRole('textbox', { name: 'New task…' }).press('Enter');
     const task = await (await responsePromise).json() as ApiTask;
     createdIds.push(task.id);
     expect(task.dueDate?.slice(0, 10)).toBe(today);
