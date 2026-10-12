@@ -23,7 +23,7 @@ import authRoutes from "./routes/auth.js";
 import { BUILD_VERSION, LATEST_VERSION } from "./utils/buildInfo.js";
 
 const app: Express = express();
-app.set("trust proxy", IS_PRODUCTION ? 1 : 0);
+app.set("trust proxy", IS_PRODUCTION ? 2 : 0);
 
 // Security headers
 app.use(helmet({
@@ -205,12 +205,13 @@ function startSessionCleanup(): void {
   timer.unref();
 }
 
-async function start() {
+export async function start(): Promise<void> {
   try {
     await connectRedis();
     await attachSyncServer(httpServer);
     await publishVersionAnnouncement(LATEST_VERSION);
   } catch (err) {
+    if (IS_PRODUCTION) throw err;
     console.error("⚠️  SYNC DISABLED: Redis/Socket.IO startup failed. Real-time updates will not work.", err);
   }
 
@@ -225,7 +226,10 @@ if (process.env.NODE_ENV !== "test") {
   const shutdown = createShutdownHandler(httpServer);
   process.once("SIGTERM", () => shutdown("SIGTERM"));
   process.once("SIGINT", () => shutdown("SIGINT"));
-  void start();
+  void start().catch((err) => {
+    console.error("[startup] Redis/Socket.IO initialization failed:", err);
+    process.exit(1);
+  });
 }
 
 export default app;
