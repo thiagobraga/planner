@@ -193,21 +193,11 @@ describe('DailyPage', () => {
     expect(screen.getByRole('button', { name: 'List' }).closest('.page-header-toolbar')).toBeInTheDocument();
   });
 
-  it('renders overdue section label', async () => {
+  it('groups tasks from earlier days under Migrate', async () => {
     renderPage();
 
-    const overdueLabel = dayLabel(yesterday);
-    expect(await screen.findByText(overdueLabel)).toBeInTheDocument();
-  });
-
-  it('removes dots from Portuguese month and weekday labels', async () => {
-    window.localStorage.setItem('planner_locale', 'pt-BR');
-
-    renderPage();
-
-    const overdueLabel = dayLabel(yesterday, 'pt-BR');
-    expect(await screen.findByText(overdueLabel)).toBeInTheDocument();
-    expect(overdueLabel).not.toContain('.');
+    expect(await screen.findByText('Migrate')).toBeInTheDocument();
+    expect(screen.queryByText(dayLabel(yesterday))).not.toBeInTheDocument();
   });
 
   it('renders "Add task" input', async () => {

@@ -37,7 +37,7 @@ export function DailyList({
   const tomorrowKey = addDaysISO(todayKey, 1);
 
   const todaySection = currentSections.filter((section) => section.key === todayKey);
-  const pastSections = currentSections.filter((section) => section.key !== todayKey);
+  const migrateTasks = currentSections.filter((section) => section.key !== todayKey).flatMap((section) => section.tasks);
 
   const renderCurrent = (sections: typeof currentSections) =>
     sections.map((section) => {
@@ -124,7 +124,18 @@ export function DailyList({
         </div>
       ))}
 
-      {renderCurrent(pastSections)}
+      {migrateTasks.length > 0 && (
+        <div data-day-date="migrate" className="mt-6">
+          <div style={HEADING_STYLE} className={HEADING_CLASS}>{t('board.migrate')}</div>
+          <TaskList
+            tasks={migrateTasks}
+            containerId="migrate"
+            dimNotes
+            onTaskToggle={onTaskToggle}
+            {...taskListProps}
+          />
+        </div>
+      )}
     </div>
   );
 }

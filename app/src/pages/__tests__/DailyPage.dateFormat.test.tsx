@@ -112,7 +112,7 @@ const dragData = (taskId: string, dueDate: string) => ({
  */
 const dayHeaders = (container: HTMLElement) =>
   Array.from(container.querySelectorAll('[data-day-date]'))
-    .filter((section) => (section.getAttribute('data-day-date') ?? '') <= TODAY)
+    .filter((section) => (section.getAttribute('data-day-date') ?? '') <= TODAY || section.getAttribute('data-day-date') === 'migrate')
     .map((section) =>
     section.firstElementChild?.textContent?.trim(),
   );
@@ -189,7 +189,7 @@ describe('DailyPage: the date format preference survives a drag', () => {
     // never having been right in the first place. Preferences and tasks are two
     // separate queries, so the sections are first built from whichever lands
     // first and rebuilt once the format is known - hence waitFor.
-    await waitFor(() => expect(dayHeaders(container)).toEqual(['06/08 THU · Today', '05/08 WED']));
+    await waitFor(() => expect(dayHeaders(container)).toEqual(['06/08 THU · Today', 'Migrate']));
 
     // Drag yesterday's task onto today's - the exact gesture from the report.
     await act(async () => {
@@ -212,7 +212,7 @@ describe('DailyPage: the date format preference survives a drag', () => {
     mockApiMoveTask.mockRejectedValue(new Error('nope'));
 
     const { container } = renderPage();
-    await waitFor(() => expect(dayHeaders(container)).toEqual(['06/08 THU · Today', '05/08 WED']));
+    await waitFor(() => expect(dayHeaders(container)).toEqual(['06/08 THU · Today', 'Migrate']));
 
     await act(async () => {
       dndHandlers.onDragStart?.({
@@ -227,7 +227,7 @@ describe('DailyPage: the date format preference survives a drag', () => {
     // The `onError` path rebuilds sections from a fresh fetch - a third call
     // site with the same omission. The snapshot is restored, so both days are
     // back, and both have to keep the user's format.
-    await waitFor(() => expect(dayHeaders(container)).toEqual(['06/08 THU · Today', '05/08 WED']));
+    await waitFor(() => expect(dayHeaders(container)).toEqual(['06/08 THU · Today', 'Migrate']));
   });
 
   it('fetches today tasks once, reformatting locally once preferences resolve', async () => {
@@ -236,7 +236,7 @@ describe('DailyPage: the date format preference survives a drag', () => {
     // Preferences resolve after the tasks fetch in this suite's default mock
     // ordering. The format still has to end up right (proving the reformat
     // happened)...
-    await waitFor(() => expect(dayHeaders(container)).toEqual(['06/08 THU · Today', '05/08 WED']));
+    await waitFor(() => expect(dayHeaders(container)).toEqual(['06/08 THU · Today', 'Migrate']));
 
     // ...without a second network round trip. A duplicate `views/today` call
     // here previously delayed everything gated on the fetched task count (e.g.

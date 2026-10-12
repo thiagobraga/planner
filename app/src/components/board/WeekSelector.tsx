@@ -39,6 +39,7 @@ export function WeekSelector({ weekAnchor, today, weekStart, onWeekChange }: Wee
   const weekStartDate = startOfWeek(weekAnchor, weekStart);
   const weekEndDate = addDays(weekStartDate, WEEK_DAYS - 1);
   const rangeLabel = formatWeekRangeNumeric(weekStartDate, weekEndDate, locale);
+  const [rangeStart, rangeJoiner, rangeEnd] = rangeLabel.split(' ');
   const weekStartKey = fmtISO(weekStartDate);
   const weekEndKey = fmtISO(weekEndDate);
   const todayKey = fmtISO(today);
@@ -79,13 +80,16 @@ export function WeekSelector({ weekAnchor, today, weekStart, onWeekChange }: Wee
       <Button
         size="sm"
         variant="secondary"
+        aria-label={rangeLabel}
         aria-haspopup="dialog"
         aria-expanded={open}
         onClick={toggle}
-        className="week-selector-trigger font-mono"
+        className="week-selector-trigger !text-ink-light text-[11px] font-semibold uppercase tracking-[0.08em] tabular-nums"
       >
-        {rangeLabel}
-        <ChevronDown size={14} strokeWidth={1.8} />
+        <span className="inline-block w-[3.75em] text-center">{rangeStart}</span>
+        <span className="inline-block w-[3em] text-center normal-case">{rangeJoiner}</span>
+        <span className="inline-block w-[6.75em] text-center">{rangeEnd}</span>
+        <ChevronDown className="ml-3" size={14} strokeWidth={1.8} />
       </Button>
       <Button
         variant="secondary"
