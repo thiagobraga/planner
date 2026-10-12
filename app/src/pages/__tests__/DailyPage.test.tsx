@@ -201,20 +201,24 @@ describe('DailyPage', () => {
   });
 
   it('renders "Add task" input', async () => {
-    renderPage();
+    const { container } = renderPage();
+    await screen.findByText('Today task');
 
-    expect(await screen.findByRole('textbox', { name: 'New task…' })).toBeInTheDocument();
+    const todaySection = container.querySelector<HTMLElement>(`[data-day-date="${todayKey}"]`)!;
+    expect(within(todaySection).getByRole('textbox', { name: 'New task…' })).toBeInTheDocument();
   });
 
   it('creates the typed task for today when the field loses focus', async () => {
     mockApiCreateTask.mockReturnValue(new Promise(() => {}));
-    renderPage();
+    const { container } = renderPage();
+    await screen.findByText('Today task');
 
-    const input = await screen.findByRole('textbox', { name: 'New task…' });
+    const todaySection = container.querySelector<HTMLElement>(`[data-day-date="${todayKey}"]`)!;
+    const input = within(todaySection).getByRole('textbox', { name: 'New task…' });
     typeText(input, 'Water plants');
     fireEvent.blur(input);
 
-    expect(mockApiCreateTask).toHaveBeenCalledWith(expect.objectContaining({ title: 'Water plants', type: 'task' }));
+    expect(mockApiCreateTask).toHaveBeenCalledWith(expect.objectContaining({ title: 'Water plants', type: 'task', dueDate: todayKey }));
     expect(input).toBeEmptyDOMElement();
   });
 
