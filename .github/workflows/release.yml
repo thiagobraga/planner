@@ -1,8 +1,12 @@
-name: Release
+name: 2 Release
 
 on:
   push:
     branches: [main]
+
+concurrency:
+  group: release
+  cancel-in-progress: false
 
 permissions:
   contents: write
@@ -21,6 +25,23 @@ jobs:
         with:
           config-file: release-config.json
           manifest-file: .release-manifest.json
+
+      - name: Explain outcome
+        env:
+          RELEASED: ${{ steps.release.outputs.release_created }}
+          PR_OPENED: ${{ steps.release.outputs.prs_created }}
+          VERSION: ${{ steps.release.outputs.tag_name }}
+        run: |
+          if [ "$RELEASED" = "true" ]; then
+            echo "### Released $VERSION" >> "$GITHUB_STEP_SUMMARY"
+            echo "Tag and GitHub Release created. The Deploy job runs next." >> "$GITHUB_STEP_SUMMARY"
+          elif [ "$PR_OPENED" = "true" ]; then
+            echo "### Release PR updated" >> "$GITHUB_STEP_SUMMARY"
+            echo "Merge the release PR to tag and deploy. Nothing is deployed until then." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "### Nothing to release" >> "$GITHUB_STEP_SUMMARY"
+            echo "No feat, fix, perf, refactor or revert commits since the last release. No release PR, no deploy." >> "$GITHUB_STEP_SUMMARY"
+          fi
 
   # Tags made with GITHUB_TOKEN do not trigger other workflows, so the
   # deploy is chained here instead of listening for push: tags.
