@@ -9,7 +9,7 @@ updates:
       time: '06:00'
       timezone: 'America/Sao_Paulo'
     cooldown:
-      default-days: 3
+      default-days: 7
     open-pull-requests-limit: 10
     labels:
       - 'api'
@@ -40,7 +40,7 @@ updates:
       time: '06:00'
       timezone: 'America/Sao_Paulo'
     cooldown:
-      default-days: 3
+      default-days: 7
     open-pull-requests-limit: 10
     labels:
       - 'app'
@@ -71,7 +71,7 @@ updates:
       time: '06:00'
       timezone: 'America/Sao_Paulo'
     cooldown:
-      default-days: 3
+      default-days: 7
     open-pull-requests-limit: 10
     labels:
       - 'dependencies'
@@ -98,7 +98,7 @@ updates:
       time: '06:00'
       timezone: 'America/Sao_Paulo'
     cooldown:
-      default-days: 3
+      default-days: 7
     labels:
       - 'docker'
     commit-message:
@@ -117,7 +117,7 @@ updates:
       time: '06:00'
       timezone: 'America/Sao_Paulo'
     cooldown:
-      default-days: 3
+      default-days: 7
     labels:
       - 'docker'
     commit-message:
@@ -136,7 +136,7 @@ updates:
       time: '06:00'
       timezone: 'America/Sao_Paulo'
     cooldown:
-      default-days: 3
+      default-days: 7
     labels:
       - 'docker'
     commit-message:
@@ -155,7 +155,7 @@ updates:
       time: '06:00'
       timezone: 'America/Sao_Paulo'
     cooldown:
-      default-days: 3
+      default-days: 7
     labels:
       - 'github_actions'
     commit-message:
