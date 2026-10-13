@@ -105,7 +105,7 @@ services:
 
   postgres:
     container_name: ${COMPOSE_PROJECT_NAME:-planner}-postgres
-    image: postgres:16-alpine
+    image: postgres:18-alpine
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-planner}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-planner}
@@ -152,7 +152,7 @@ services:
 
   redis:
     container_name: ${COMPOSE_PROJECT_NAME:-planner}-redis
-    image: redis:7-alpine
+    image: redis:8-alpine
     command: redis-server /etc/redis/redis.conf --requirepass ${REDIS_PASSWORD:-planner}
     volumes:
       - ./.docker/redis/redis.conf:/etc/redis/redis.conf:ro
