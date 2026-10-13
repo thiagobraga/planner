@@ -11,7 +11,6 @@ Workflow files and names are numbered in the order work happens. The Actions sid
 | 1c. | container scan (in `1.ci.yml`) | PRs, after 1a | Builds both images and scans them with Trivy |
 | 2. | `2.release.yml` | Push to `main` | release-please: opens or updates the release PR; on merge, tags and calls 3 |
 | 3. | `3.deploy.yml` | Called by 2, or run by hand | Builds SHA images, scans them, then moves `latest` and `vX.Y.Z`, then deploys to the VPS |
-| - | `claude.yml` | `@claude` mentions | Runs Claude on issues and PRs |
 
 ## Flow
 

@@ -16,7 +16,6 @@ Legend: `[ ]` not started, `[~]` in progress, `[x]` done.
    - [ ] `pipeline.yml`: workflow-level `ci-${{ github.ref }}`, cancel in progress. Remove per-reusable groups, which would collide once jobs run in parallel
    - [ ] `release.yml`: group `release`, cancel false
    - [ ] `dependency-review.yml`: group per ref, cancel true
-   - [ ] `claude.yml`: group per issue/PR number, cancel false
 5. [ ] Deploy safety
    - [ ] `deploy.yml` build pushes `:sha` (and `:vX.Y.Z` input) only
    - [ ] `deploy.yml` new `promote` job after `scan`: retag `:latest` and `:vX.Y.Z` with `imagetools create`

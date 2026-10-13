@@ -34,7 +34,6 @@ Merging a release-please PR (#274 was only chore and docs) also gives no clear s
 - `.github/workflows/release.yml`
 - `.github/workflows/deploy.yml`
 - `.github/workflows/dependency-review.yml`
-- `.github/workflows/claude.yml`
 - `.docker/api/Dockerfile`
 - `.docker/app/Dockerfile`
 - `docs/ci.md` (new)
