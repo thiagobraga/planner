@@ -697,6 +697,17 @@ export function DailyPage({ view }: { view: BoardViewMode }) {
     return days;
   }, [view, browsingWeek, todayKey, range.to, sections, locale, dateFormat]);
 
+  // The week shown by the list keeps its earlier days, empty ones included.
+  const pastDays = useMemo<DaySection[]>(() => {
+    if (view !== 'list' || browsingWeek || reorg.state === 'preview') return [];
+    const days = [];
+    for (let key = weekStartKey; key < todayKey; key = addDaysISO(key, 1)) {
+      days.push(sections.find((s) => s.key === key)
+        ?? { key, label: dayLabel(dateFromISO(key), locale, dateFormat), tasks: [] });
+    }
+    return days;
+  }, [view, browsingWeek, reorg.state, weekStartKey, todayKey, sections, locale, dateFormat]);
+
   return (
     <div
       className="daily-page relative w-full cursor-text"
@@ -824,6 +835,7 @@ export function DailyPage({ view }: { view: BoardViewMode }) {
           <WeekSelector weekAnchor={weekAnchor} today={dateFromISO(todayKey)} weekStart={weekStart} onWeekChange={setWeekAnchor} onToday={goToToday} />
         </div>
         <DailyList
+          pastSections={pastDays}
           futureSections={previewFutureSections ?? browsedDays ?? futureDays}
           currentSections={previewTodaySections ?? (browsedDays ? [] : sections.filter((section) => section.key <= todayKey))}
           todayKey={todayKey}

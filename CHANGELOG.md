@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.3.1](https://github.com/thiagobraga/planner/compare/v0.3.0...v0.3.1) (2026-10-13)
+
+
+### Fixed
+
+* **daily:** keep earlier days of the week visible in the list view ([2652c44](https://github.com/thiagobraga/planner/commit/2652c447cc104fda7ad181870a4588a7188e992b))
+* **daily:** keep earlier days of the week visible in the list view ([3e90dac](https://github.com/thiagobraga/planner/commit/3e90dac2d3029ccf720ed56fb6d231a86e89aa8f))
+
+## [0.3.0](https://github.com/thiagobraga/planner/compare/v0.2.0...v0.3.0) (2026-10-13)
+
+
+### Added
+
+* **ci:** explain release outcome in run summary ([a6bd4ab](https://github.com/thiagobraga/planner/commit/a6bd4ab3bda7f4f670b8f1269a35a182a048891d))
+
+
+### Fixed
+
+* **deploy:** tag latest only after the image passes the scan ([99d24dd](https://github.com/thiagobraga/planner/commit/99d24dd478faa99860a40ea7d070c76105e8b4f1))
+* **docker:** install dependencies before copying source ([800f1d4](https://github.com/thiagobraga/planner/commit/800f1d4c3494829648428b06b052ab2a9a5cdbfa))
+
+
+### Changed
+
+* **ci:** number workflow files and draw real job dependencies ([acc6c46](https://github.com/thiagobraga/planner/commit/acc6c46f5e9664ac32b0a77866b54be838e192cd))
+
 ## [0.2.0](https://github.com/thiagobraga/planner/compare/v0.1.0...v0.2.0) (2026-10-12)
 
 
