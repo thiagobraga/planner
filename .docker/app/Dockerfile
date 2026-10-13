@@ -1,7 +1,10 @@
 FROM node:26.10.0-alpine3.24 AS build
 WORKDIR /app
+# Lockfile first so the npm ci layer survives source-only changes.
+COPY --chown=node:node app/package.json app/package-lock.json app/.npmrc ./
+RUN npm ci
 COPY --chown=node:node app ./
-RUN npm ci && npm run build && npm cache clean --force
+RUN npm run build && npm cache clean --force
 
 FROM node:26.10.0-alpine3.24 AS development
 WORKDIR /app

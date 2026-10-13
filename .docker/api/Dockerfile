@@ -12,9 +12,11 @@ ENTRYPOINT ["/entrypoint.sh"]
 CMD ["npm", "run", "dev"]
 
 FROM base AS build
+# Lockfile first so the npm ci layer survives source-only changes.
+COPY --chown=node:node api/package.json api/package-lock.json api/.npmrc ./
+RUN npm ci
 COPY --chown=node:node api ./
-RUN npm ci && \
-    npm run build && \
+RUN npm run build && \
     rm -rf node_modules && \
     npm ci --omit=dev --production && \
     npm cache clean --force

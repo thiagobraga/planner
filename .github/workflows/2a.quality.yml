@@ -1,22 +1,19 @@
-name: Quality
+name: 2a. Quality (reusable)
 
 on:
   workflow_call:
 
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
 env:
-  NODE_VERSION: '24'
+  NODE_VERSION: '26'
   POSTGRES_USER: planner
   POSTGRES_PASSWORD: planner-test
   REDIS_PASSWORD: planner
 
 jobs:
   api:
-    name: API — lint, test, build
+    name: 'API: lint, test, build'
     runs-on: ubuntu-24.04
+    timeout-minutes: 20
     defaults:
       run:
         working-directory: api
@@ -44,8 +41,10 @@ jobs:
         ports:
           - 6379:6379
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
@@ -70,14 +69,17 @@ jobs:
           NODE_ENV: production
 
   app:
-    name: App — lint, test, build
+    name: 'App: lint, test, build'
     runs-on: ubuntu-24.04
+    timeout-minutes: 20
     defaults:
       run:
         working-directory: app
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
@@ -87,39 +89,11 @@ jobs:
       - run: npm run coverage
       - run: npm run build
 
-  docker:
-    name: Docker — build production images (${{ matrix.component }})
-    needs: [api, app]
-    runs-on: ubuntu-24.04
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - component: api
-            dockerfile: .docker/api/Dockerfile
-          - component: app
-            dockerfile: .docker/app/Dockerfile
-    steps:
-      - uses: actions/checkout@v7
-
-      - uses: docker/setup-buildx-action@v4
-
-      - uses: docker/build-push-action@v7
-        with:
-          context: .
-          file: ${{ matrix.dockerfile }}
-          target: production
-          push: false
-          load: false
-          tags: planner-${{ matrix.component }}:build-check
-          build-args: APK_REFRESH=${{ github.run_id }}
-          cache-from: type=gha,scope=${{ matrix.component }}
-          cache-to: type=gha,mode=max,scope=${{ matrix.component }}
-
   e2e:
-    name: E2E — Playwright
+    name: 'E2E: Playwright'
     needs: [api, app]
     runs-on: ubuntu-24.04
+    timeout-minutes: 30
     services:
       postgres:
         image: postgres:16-alpine
@@ -151,10 +125,16 @@ jobs:
       PLAYWRIGHT_BASE_URL: http://127.0.0.1:4173
       PLAYWRIGHT_API_URL: http://127.0.0.1:4000
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: |
+            api/package-lock.json
+            app/package-lock.json
       - name: Install API dependencies
         working-directory: api
         run: npm ci
@@ -172,7 +152,10 @@ jobs:
         run: |
           npx tsx src/db/migrate.ts
           nohup node dist/index.js > /tmp/api.log 2>&1 &
-          for i in $(seq 1 60); do curl -s -o /dev/null http://127.0.0.1:4000/api/v1/health && break || sleep 1; done
+          for _ in $(seq 1 60); do
+            if curl -s -o /dev/null http://127.0.0.1:4000/api/v1/health; then break; fi
+            sleep 1
+          done
       - name: Install app dependencies
         working-directory: app
         run: npm ci
@@ -182,6 +165,11 @@ jobs:
         env:
           # Instrumented build so e2e runs collect coverage (see test:e2e:coverage)
           VITE_COVERAGE: "true"
+      - name: Cache Playwright browsers
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('app/package-lock.json') }}
       - name: Install Playwright chromium
         working-directory: app
         run: npx playwright install --with-deps chromium
@@ -194,13 +182,13 @@ jobs:
         working-directory: app
         run: node e2e/merge-coverage.ts
       - name: Upload e2e coverage report
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: e2e-coverage-report
           path: app/dist/html/e2e
       - name: Upload Playwright traces
         if: failure()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: playwright-traces
           path: app/e2e/test-results

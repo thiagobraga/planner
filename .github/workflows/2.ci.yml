@@ -1,4 +1,4 @@
-name: Pipeline
+name: 2. CI
 
 on:
   push:
@@ -8,11 +8,7 @@ on:
       - '.specs/**'
       - '.claude/**'
       - '.claudeignore'
-      - '.superpowers/**'
-      - '.omx/**'
       - '.vscode/**'
-      - '.codegraph/**'
-      - 'backups/**'
       - '.gitignore'
   pull_request:
     branches: [main]
@@ -21,38 +17,41 @@ on:
       - '.specs/**'
       - '.claude/**'
       - '.claudeignore'
-      - '.superpowers/**'
-      - '.omx/**'
       - '.vscode/**'
-      - '.codegraph/**'
-      - 'backups/**'
       - '.gitignore'
   schedule:
     - cron: '0 6 * * 1' # every Monday 06:00 UTC
+  workflow_dispatch:
+
+# Pushes to main are never cancelled: a quick second merge must not drop
+# the first merge's CI run.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
-  actions: read
   contents: read
-  security-events: write
-  packages: write
 
 jobs:
   quality:
-    name: Quality
-    uses: ./.github/workflows/quality.yml
-    secrets: inherit
+    name: 2a. Quality
+    uses: ./.github/workflows/2a.quality.yml
 
   security:
-    name: Security
+    name: 2b. Security
     needs: quality
-    uses: ./.github/workflows/security.yml
-    secrets: inherit
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    uses: ./.github/workflows/2b.security.yml
 
   container-scan:
-    name: Container scan (${{ matrix.component }})
+    name: 2c. Container scan (${{ matrix.component }})
     if: github.event_name == 'pull_request'
     needs: quality
     runs-on: ubuntu-24.04
+    timeout-minutes: 20
     permissions:
       contents: read
       security-events: write
@@ -65,11 +64,12 @@ jobs:
           - component: app
             dockerfile: .docker/app/Dockerfile
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
 
-      - uses: docker/setup-buildx-action@v4
-
-      - uses: docker/build-push-action@v7
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4
+      - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7
         with:
           context: .
           file: ${{ matrix.dockerfile }}
@@ -78,18 +78,12 @@ jobs:
           load: true
           tags: planner-${{ matrix.component }}:pr-scan
           build-args: APK_REFRESH=${{ github.run_id }}
-          # Read-only: reuses the cache quality.yml's docker job warmed for
-          # this scope. No cache-to - untrusted PR branches must not write
-          # into the cache that deploy.yml's push build later reads from.
+          # Read-only: reuses the cache 4.deploy.yml's push build warms for this
+          # scope. No cache-to - untrusted PR branches must not write into the
+          # cache that 4.deploy.yml reads from.
           cache-from: type=gha,scope=${{ matrix.component }}
 
-      - uses: actions/cache@v6
-        with:
-          path: ~/.cache/trivy
-          key: trivy-db-${{ github.run_id }}
-          restore-keys: trivy-db-
-
-      - uses: aquasecurity/trivy-action@v0.36.0
+      - uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
           scan-type: 'image'
           scan-ref: 'planner-${{ matrix.component }}:pr-scan'
@@ -97,28 +91,29 @@ jobs:
           output: 'trivy-${{ matrix.component }}.sarif'
           exit-code: '1'
           severity: 'HIGH,CRITICAL'
-          cache-dir: ~/.cache/trivy
 
       # SARIF only reaches the Security tab; list the blocking findings in the log too.
-      - uses: aquasecurity/trivy-action@v0.36.0
+      - uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         if: failure()
         with:
           scan-type: 'image'
           scan-ref: 'planner-${{ matrix.component }}:pr-scan'
           format: 'table'
           severity: 'HIGH,CRITICAL'
-          cache-dir: ~/.cache/trivy
           skip-setup-trivy: true
 
-      - uses: github/codeql-action/upload-sarif@v4
+      # Sets the tool name shown in the PR checks list ("Trivy" otherwise).
+      - name: Name the Trivy tool
         if: always()
+        env:
+          COMPONENT: ${{ matrix.component }}
+        run: |
+          [ -f "trivy-$COMPONENT.sarif" ] || exit 0
+          jq --arg n "2c. Trivy - $COMPONENT image" '.runs[].tool.driver.name = $n' "trivy-$COMPONENT.sarif" > "trivy-$COMPONENT.tmp" && mv "trivy-$COMPONENT.tmp" "trivy-$COMPONENT.sarif"
+
+      # Dependabot PRs get a read-only token, so the upload would fail.
+      - uses: github/codeql-action/upload-sarif@24c54180a607b1449ed407dd24f251e4e9147c8d # v4
+        if: always() && github.actor != 'dependabot[bot]'
         with:
           sarif_file: 'trivy-${{ matrix.component }}.sarif'
           category: container-scan-${{ matrix.component }}
-
-  deploy:
-    name: Deploy
-    if: github.event_name == 'push'
-    needs: security
-    uses: ./.github/workflows/deploy.yml
-    secrets: inherit

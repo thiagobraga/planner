@@ -193,11 +193,17 @@ describe('DailyPage', () => {
     expect(screen.getByRole('button', { name: 'List' }).closest('.page-header-toolbar')).toBeInTheDocument();
   });
 
-  it('groups tasks from earlier days under Migrate', async () => {
+  it('groups tasks from before this week under Migrate', async () => {
+    const lastWeek = new Date(today);
+    lastWeek.setDate(lastWeek.getDate() - 14);
+    mockFetchDaily.mockResolvedValue(dailyView({
+      overdue: [{ ...overdueTask, title: 'Last week task', dueDate: dateKey(lastWeek) }],
+      today: [todayTask],
+    }));
     renderPage();
 
     expect(await screen.findByText('Migrate')).toBeInTheDocument();
-    expect(screen.queryByText(dayLabel(yesterday))).not.toBeInTheDocument();
+    expect(screen.queryByText(dayLabel(lastWeek))).not.toBeInTheDocument();
   });
 
   it('renders "Add task" input', async () => {
