@@ -187,7 +187,7 @@ Versions follow [SemVer](https://semver.org/) and tags are `vX.Y.Z`. [release-pl
 | `feat!:` or `BREAKING CHANGE:` footer | major (minor while below 1.0.0) |
 | `docs`, `style`, `test`, `chore`, `ci`, `build` | none, hidden from the changelog |
 
-To cut a release, merge the release PR. That bumps the version in the root, `api/` and `app/` `package.json` files and lockfiles, updates `CHANGELOG.md`, creates the `vX.Y.Z` tag and the GitHub Release, then calls `deploy.yml`, which pushes images tagged `latest`, the commit SHA and `vX.Y.Z`. Plain pushes to `main` no longer deploy.
+To cut a release, merge the release PR. That bumps the version in the root, `api/` and `app/` `package.json` files and lockfiles, updates `CHANGELOG.md`, creates the `vX.Y.Z` tag and the GitHub Release, then calls `deploy.yml`, which pushes images tagged `latest`, the commit SHA and `vX.Y.Z`. Plain pushes to `main` no longer deploy. The workflow order and what each run does are in [docs/ci.md](docs/ci.md).
 
 The release version is unrelated to `BUILD_ID` / `/api/v1/version`, which only detect a new deploy for the "update available" toast.
 
