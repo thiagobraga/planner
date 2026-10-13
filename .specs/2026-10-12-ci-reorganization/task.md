@@ -24,8 +24,7 @@ Legend: `[ ]` not started, `[~]` in progress, `[x]` done.
    - [ ] `release.yml` step writes `$GITHUB_STEP_SUMMARY` for the three outcomes
    - [ ] `pipeline.yml`: drop unused `packages: write`
 7. [ ] Docs
-   - [ ] `docs/ci.md` with trigger graph and outcome table
-   - [ ] `README.md` link to `docs/ci.md`
+   - [ ] `README.md` "CI workflows" section: workflow table and deploy rules (no separate docs file)
 8. [ ] Verify
    - [ ] actionlint via Docker image on all workflows
    - [ ] Docker builds locally: api and app production targets

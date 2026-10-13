@@ -17,7 +17,7 @@ Merging a release-please PR (#274 was only chore and docs) also gives no clear s
 
 - Sidebar: `1 CI`, `1a Quality (reusable)`, `1b Security (reusable)`, `2 Release`, `3 Deploy (reusable or manual)`, `PR Dependency Review`, `Claude Code`.
 - Release run summary states one of: released vX.Y.Z and deploy runs next; release PR created or updated; no user-facing commits, so nothing to release or deploy.
-- Deploy only follows a release. Pushes to `main` that are not release merges do not reach the VPS. This is unchanged and is now documented in `docs/ci.md`.
+- Deploy only follows a release. Pushes to `main` that are not release merges do not reach the VPS. This is unchanged and is now documented in the README.
 
 ## Non-goals
 
@@ -36,5 +36,4 @@ Merging a release-please PR (#274 was only chore and docs) also gives no clear s
 - `.github/workflows/dependency-review.yml`
 - `.docker/api/Dockerfile`
 - `.docker/app/Dockerfile`
-- `docs/ci.md` (new)
-- `README.md` (link to `docs/ci.md`)
+- `README.md` (new "CI workflows" section)
