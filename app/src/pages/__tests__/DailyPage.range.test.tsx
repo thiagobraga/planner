@@ -86,12 +86,24 @@ describe('Daily asks for one range per view', () => {
     await waitFor(() => expect(requestedRanges()).toEqual(['2026-10-07..2026-10-10']));
   });
 
+  it('keeps the earlier days of this week visible, oldest first, each able to take a task', async () => {
+    renderAt('/daily/list');
+    await waitFor(() => expect(mockFetchDaily).toHaveBeenCalledTimes(1));
+
+    await waitFor(() => {
+      const days = Array.from(document.querySelectorAll('[data-day-date]')).map((el) => el.getAttribute('data-day-date'));
+      expect(days).toEqual(['2026-10-04', '2026-10-05', '2026-10-06', '2026-10-07', '2026-10-08', '2026-10-09', '2026-10-10']);
+    });
+    expect(document.querySelector('[data-day-date="2026-10-04"] [contenteditable]')).toBeInTheDocument();
+    expect(document.querySelector('[data-day-date="migrate"]')).not.toBeInTheDocument();
+  });
+
   it('shows all remaining days without a next-days control or saved toggle', async () => {
     window.localStorage.setItem('planner.daily.showUpcoming.v1', '0');
     renderAt('/daily/list');
     await waitFor(() => expect(mockFetchDaily).toHaveBeenCalledTimes(1));
 
-    await waitFor(() => expect(screen.getAllByLabelText('New task…')).toHaveLength(4));
+    await waitFor(() => expect(screen.getAllByLabelText('New task…')).toHaveLength(7));
     expect(document.querySelector('[data-day-date="2026-10-10"]')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'More options' }));
