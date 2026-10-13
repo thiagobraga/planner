@@ -105,7 +105,7 @@ Open [http://localhost:5173](http://localhost:5173) in your browser. Node 24 or 
 └── 📄 README.md
 ```
 
-## Using the API from scripts and AI agents
+## MCP Server
 
 Create a personal API token in **Settings > Integrations**. Choose _Read only_ or _Read & write_ and an expiry; the token (`plnr_...`) is shown once. Send it as a bearer header - no cookies or CSRF token needed:
 
