@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.3.1](https://github.com/thiagobraga/planner/compare/v0.3.0...v0.3.1) (2026-10-13)
+
+
+### Fixed
+
+* **daily:** keep earlier days of the week visible in the list view ([2652c44](https://github.com/thiagobraga/planner/commit/2652c447cc104fda7ad181870a4588a7188e992b))
+* **daily:** keep earlier days of the week visible in the list view ([3e90dac](https://github.com/thiagobraga/planner/commit/3e90dac2d3029ccf720ed56fb6d231a86e89aa8f))
+
 ## [0.3.0](https://github.com/thiagobraga/planner/compare/v0.2.0...v0.3.0) (2026-10-13)
 
 
