@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from "vitest";
+import { afterEach, describe, it, expect, vi } from "vitest";
 import request from "supertest";
 import type { Request, Response, NextFunction } from "express";
 
@@ -19,14 +19,20 @@ vi.mock("redis", () => ({
   }),
 }));
 
+vi.mock("../config.js", async (importOriginal) => ({
+  ...await importOriginal<typeof import("../config.js")>(),
+  IS_PRODUCTION: true,
+}));
+
 vi.mock("../services/syncService.js", () => ({
   attachSyncServer: vi.fn(),
 }));
 
 vi.mock("../middleware/auth.js", () => ({
-  authMiddleware: vi.fn((req: Request, _res: Response, next: NextFunction) => {
+  authMiddleware: vi.fn((req: Request, res: Response, next: NextFunction) => {
     req.userId = "test-user";
     req.sessionId = 1;
+    res.setHeader("X-Test-Client-Ip", req.ip ?? "");
     next();
   }),
 }));
@@ -83,7 +89,8 @@ vi.mock("../routes/collaboration.js", () => ({
   collectionCollabRouter: passthrough(),
 }));
 
-import app from "../index.js";
+import { redisClient } from "../db/redis.js";
+import app, { createShutdownHandler, httpServer, start } from "../index.js";
 
 describe("Express app setup", () => {
   it("GET /api/v1/health returns { status: 'ok' }", async () => {
@@ -144,5 +151,80 @@ describe("Express app setup", () => {
       .get("/api/v1/labels")
       .set("Content-Type", "text/plain");
     expect(res.status).not.toBe(415);
+  });
+
+  it("uses the client IP after two trusted proxies and ignores earlier spoofed values", async () => {
+    const first = await request(app)
+      .get("/api/v1/labels")
+      .set("X-Forwarded-For", "192.0.2.99, 198.51.100.10, 10.0.0.5");
+    const second = await request(app)
+      .get("/api/v1/labels")
+      .set("X-Forwarded-For", "192.0.2.99, 198.51.100.11, 10.0.0.5");
+    const spoofed = await request(app)
+      .get("/api/v1/labels")
+      .set("X-Forwarded-For", "192.0.2.100, 198.51.100.10, 10.0.0.5");
+
+    expect(app.get("trust proxy")).toBe(2);
+    expect(first.headers["x-test-client-ip"]).toBe("198.51.100.10");
+    expect(second.headers["x-test-client-ip"]).toBe("198.51.100.11");
+    expect(spoofed.headers["x-test-client-ip"]).toBe("198.51.100.10");
+  });
+});
+
+describe("startup", () => {
+  it("does not listen when production sync initialization fails", async () => {
+    vi.mocked(redisClient.connect).mockRejectedValueOnce(new Error("Redis unavailable"));
+    const listen = vi.spyOn(httpServer, "listen");
+    const log = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    await expect(start()).rejects.toThrow("Redis unavailable");
+    expect(listen).not.toHaveBeenCalled();
+
+    log.mockRestore();
+    listen.mockRestore();
+  });
+});
+
+describe("graceful shutdown", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.restoreAllMocks();
+  });
+
+  it("closes idle connections and exits after the HTTP server drains", () => {
+    vi.useFakeTimers();
+    let finishClose: (() => void) | undefined;
+    const close = vi.spyOn(httpServer, "close").mockImplementation((callback) => {
+      finishClose = () => callback?.();
+      return httpServer;
+    });
+    const closeIdleConnections = vi.spyOn(httpServer, "closeIdleConnections").mockImplementation(() => {});
+    const exit = vi.spyOn(process, "exit").mockImplementation(() => undefined as never);
+    const shutdown = createShutdownHandler(httpServer);
+
+    shutdown("SIGTERM");
+    shutdown("SIGINT");
+
+    expect(close).toHaveBeenCalledTimes(1);
+    expect(closeIdleConnections).toHaveBeenCalledTimes(1);
+    expect(exit).not.toHaveBeenCalled();
+
+    finishClose?.();
+
+    expect(exit).toHaveBeenCalledWith(0);
+    vi.advanceTimersByTime(10_000);
+    expect(exit).toHaveBeenCalledTimes(1);
+  });
+
+  it("forces exit after ten seconds if the server does not drain", () => {
+    vi.useFakeTimers();
+    vi.spyOn(httpServer, "close").mockImplementation(() => httpServer);
+    vi.spyOn(httpServer, "closeIdleConnections").mockImplementation(() => {});
+    const exit = vi.spyOn(process, "exit").mockImplementation(() => undefined as never);
+
+    createShutdownHandler(httpServer)("SIGTERM");
+    vi.advanceTimersByTime(10_000);
+
+    expect(exit).toHaveBeenCalledWith(1);
   });
 });
