@@ -24,6 +24,8 @@ export interface DaySection {
 }
 
 export interface DailyListProps {
+  /** Days of the shown week before today, oldest first, empty ones included. */
+  pastSections: DaySection[];
   /** Days after today, soonest first. Empty unless "next days" is on. */
   futureSections: DaySection[];
   /** Today and earlier, newest first. */
