@@ -1,4 +1,4 @@
-name: Deploy
+name: 3 Deploy (reusable or manual)
 
 on:
   workflow_dispatch:
@@ -14,8 +14,10 @@ on:
         type: string
         required: false
 
+# Static group: github.workflow is the caller's name when called from release.yml,
+# so a per-name group would not serialize a release deploy against a manual one.
 concurrency:
-  group: ${{ github.workflow }}
+  group: deploy-production
   cancel-in-progress: false
 
 env:
@@ -53,10 +55,9 @@ jobs:
           file: ${{ matrix.dockerfile }}
           target: production
           push: true
-          tags: |
-            ${{ env.IMAGE_PREFIX }}-${{ matrix.component }}:latest
-            ${{ env.IMAGE_PREFIX }}-${{ matrix.component }}:${{ github.sha }}
-            ${{ inputs.version && format('{0}-{1}:v{2}', env.IMAGE_PREFIX, matrix.component, inputs.version) || '' }}
+          # Only the SHA tag here. latest and vX.Y.Z move in the promote job,
+          # after the scan has passed.
+          tags: ${{ env.IMAGE_PREFIX }}-${{ matrix.component }}:${{ github.sha }}
           build-args: APK_REFRESH=${{ github.run_id }}
           cache-from: type=gha,scope=${{ matrix.component }}
           cache-to: type=gha,mode=max,scope=${{ matrix.component }}
@@ -115,26 +116,63 @@ jobs:
           sarif_file: 'trivy-${{ matrix.component }}.sarif'
           category: container-scan-${{ matrix.component }}
 
+  promote:
+    name: Tag ${{ matrix.component }} as latest
+    needs: scan
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        component: [api, app]
+    env:
+      COMPONENT: ${{ matrix.component }}
+      VERSION: ${{ inputs.version }}
+    steps:
+      - uses: docker/setup-buildx-action@v4
+
+      - uses: docker/login-action@v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Retags the already-scanned SHA image; no rebuild. IMAGE_PREFIX and
+      # REGISTRY come from the workflow-level env block.
+      - name: Move latest and version tags
+        run: |
+          image="$IMAGE_PREFIX-$COMPONENT"
+          args=(--tag "$image:latest")
+          if [ -n "$VERSION" ]; then args+=(--tag "$image:v$VERSION"); fi
+          docker buildx imagetools create "${args[@]}" "$image:$GITHUB_SHA"
+
   deploy:
     name: Deploy to VPS
-    needs: scan
+    needs: promote
     runs-on: ubuntu-24.04
     environment: production
     steps:
       - name: Configure SSH
+        env:
+          SSH_KEY: ${{ secrets.SSH_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_KEY }}" > ~/.ssh/deploy_key
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          echo "${{ secrets.SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
 
       - name: Pull images and restart stack
+        env:
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
         run: |
           ssh -i ~/.ssh/deploy_key \
               -o UserKnownHostsFile=~/.ssh/known_hosts \
               -o StrictHostKeyChecking=yes \
-              "${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }}" \
+              "$SSH_USER@$SSH_HOST" \
               "set -euo pipefail && \
                cd /p/projects/planner && \
                git pull --ff-only && \
