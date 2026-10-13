@@ -13,6 +13,7 @@ const section = (key: string): DaySection => ({
 
 function renderList(overrides: Partial<DailyListProps>) {
   const props: DailyListProps = {
+    pastSections: [],
     futureSections: [],
     currentSections: [],
     todayKey: '2026-10-11',
@@ -55,5 +56,26 @@ describe('DailyList', () => {
     expect(container.querySelector('[data-day-date="migrate"]')).toHaveTextContent('2026-10-10');
     expect(container.querySelector('[data-day-date="migrate"]')).not.toHaveTextContent('Completed task');
     expect(container.querySelector('[data-day-date="2026-10-11"]')).toHaveTextContent('Completed task');
+  });
+
+  it('lists the earlier days of the week before today, empty ones included, oldest first', () => {
+    const { container } = renderList({
+      pastSections: [section('2026-10-09'), section('2026-10-10')],
+      futureSections: [section('2026-10-12')],
+      currentSections: [section('2026-10-11'), section('2026-10-10'), section('2026-10-09'), section('2026-09-26')],
+    });
+    const order = Array.from(container.querySelectorAll('[data-day-date]')).map((el) => el.getAttribute('data-day-date'));
+    expect(order).toEqual(['2026-10-09', '2026-10-10', '2026-10-11', '2026-10-12', 'migrate']);
+  });
+
+  it('keeps tasks of a shown past day out of Migrate and lets each past day take a task', () => {
+    const { container } = renderList({
+      pastSections: [section('2026-10-10')],
+      currentSections: [section('2026-10-11'), section('2026-10-10'), section('2026-09-26')],
+    });
+    expect(container.querySelector('[data-day-date="2026-10-10"]')).toHaveTextContent('2026-10-10');
+    expect(container.querySelector('[data-day-date="migrate"]')).not.toHaveTextContent('2026-10-10');
+    expect(container.querySelector('[data-day-date="migrate"]')).toHaveTextContent('2026-09-26');
+    expect(container.querySelector('[data-day-date="2026-10-10"] [contenteditable]')).not.toBeNull();
   });
 });
