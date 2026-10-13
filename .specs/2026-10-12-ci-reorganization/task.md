@@ -25,11 +25,14 @@ Legend: `[ ]` not started, `[~]` in progress, `[x]` done, `[n]` decided not to d
    - [x] `2.ci.yml`: drop unused `packages: write`
 7. [x] Docs
    - [x] `README.md` "CI workflows" section: workflow table and deploy rules (no separate docs file)
-8. [~] Verify
+8. [x] Verify
    - [x] actionlint via Docker image on all workflows
    - [x] zizmor clean at medium severity and above
-   - [ ] Docker builds locally: api and app production targets
-   - [~] PR CI run (#275): timings vs baseline (6m47s wall clock on #274 merge)
+   - [x] Docker builds locally: api and app production targets, both succeed
+     - Cold (`--no-cache`): api 26.6s, app 43.6s
+     - Source-only change, warm cache: api 20.1s (5 layers cached), app 13.9s (7 layers cached). The `npm ci` layer is reused
+   - [x] PR CI run (#275, commit b3e6c16): 2. CI took 6m33s wall clock, 1. Review took 16s. Baseline was 6m47s on the #274 merge
+     - The PR run also does work the baseline did not: container scans (2c), workflow-scanning CodeQL and the root `npm audit`
 9. [x] Hardening (added during review)
    - [x] Actions pinned to commit SHAs, no persisted checkout credentials, job timeouts
    - [x] Default no permissions, per-job grants
