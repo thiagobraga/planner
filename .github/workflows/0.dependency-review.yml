@@ -1,4 +1,4 @@
-name: PR Dependency Review
+name: 0. Dependency Review
 
 on:
   pull_request:

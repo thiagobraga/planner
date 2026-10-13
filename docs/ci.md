@@ -1,31 +1,34 @@
 # CI and release pipelines
 
-The sidebar in the Actions tab sorts by name, so the numbers show the order of work.
+Workflow files and names are numbered in the order work happens. The Actions sidebar sorts by name, so the numbers are what keep the order.
 
-| # | Workflow | Runs on | Does |
+| Number | File | Runs on | Does |
 | --- | --- | --- | --- |
-| 1 | CI (`pipeline.yml`) | PR to `main`, push to `main`, Monday schedule | Calls 1a and 1b, and scans container images on PRs |
-| 1a | Quality (`quality.yml`) | Called by 1 | Lint, tests, build for API and app; Playwright E2E |
-| 1b | Security (`security.yml`) | Called by 1 | `npm audit`, CodeQL, secret scan, SBOM |
-| 2 | Release (`release.yml`) | Push to `main` | release-please: opens or updates the release PR; on merge, tags and calls 3 |
-| 3 | Deploy (`deploy.yml`) | Called by 2, or run by hand | Builds and pushes images, scans them, moves `latest`, deploys to the VPS |
-| - | PR Dependency Review | PR to `main` | Fails on high-severity dependency changes |
-| - | Claude Code | `@claude` mentions | Runs Claude on issues and PRs |
+| 0. | `0.dependency-review.yml` | PR to `main` | Fails on high-severity dependency changes |
+| 1. | `1.ci.yml` | PR and push to `main`, Monday schedule | Calls 1a and 1b; on PRs also runs 1c |
+| 1a. | `1a.quality.yml` | Called by 1 | Lint, tests and build for API and app; E2E waits for both |
+| 1b. | `1b.security.yml` | Called by 1, after 1a | `npm audit`, CodeQL, secret scan, SBOM |
+| 1c. | container scan (in `1.ci.yml`) | PRs, after 1a | Builds both images and scans them with Trivy |
+| 2. | `2.release.yml` | Push to `main` | release-please: opens or updates the release PR; on merge, tags and calls 3 |
+| 3. | `3.deploy.yml` | Called by 2, or run by hand | Builds SHA images, scans them, then moves `latest` and `vX.Y.Z`, then deploys to the VPS |
+| - | `claude.yml` | `@claude` mentions | Runs Claude on issues and PRs |
 
 ## Flow
 
 ```mermaid
 flowchart LR
-  pr[PR or push] --> ci[1 CI]
-  ci --> q[1a Quality]
-  ci --> s[1b Security]
-  ci --> cs[Container scan, PRs only]
-  main[Push to main] --> rel[2 Release]
+  api[1a. API] --> e2e[1a. E2E]
+  app[1a. App] --> e2e
+  api --> q((1a done))
+  app --> q
+  e2e --> q
+  q --> sec[1b. Security]
+  q --> cs[1c. Container scan]
+  main[Push to main] --> rel[2. Release]
   rel -->|no release PR needed| nothing[Summary: nothing to release]
-  rel -->|release PR updated| pr2[Summary: merge the release PR]
+  rel -->|release PR updated| prn[Summary: merge the release PR]
   rel -->|release PR merged| tag[Tag vX.Y.Z and GitHub Release]
-  tag --> dep[3 Deploy]
-  dep --> build[Build SHA images] --> scan[Scan] --> promote[Move latest and vX.Y.Z] --> vps[Deploy to VPS]
+  tag --> build[3. Build SHA images] --> scan[Scan] --> promote[Move latest and vX.Y.Z] --> vps[Deploy to VPS]
 ```
 
 ## When does something reach the VPS?
@@ -37,7 +40,7 @@ Each Release run writes its outcome to the run summary: released, release PR upd
 ## Waiting for manual action
 
 - Deploy runs in the `production` environment. It has no required reviewers, so it runs without a pause. Adding a reviewer there makes Deploy wait for approval.
-- Release PRs are opened by `GITHUB_TOKEN`. GitHub does not start workflows for those PRs, so CI does not run on them until someone pushes to the branch or closes and reopens the PR.
+- Release PRs are opened by `GITHUB_TOKEN`. GitHub does not start workflows for events that token creates, so CI does not run on those PRs until someone pushes to the branch.
 
 ## Caching
 
@@ -46,3 +49,8 @@ Each Release run writes its outcome to the run summary: released, release PR upd
 - Docker: BuildKit `type=gha` cache per image. Both Dockerfiles install dependencies from the lockfile before copying source, so source-only changes reuse the install layer.
 - Trivy DB: cached per run, falling back to the most recent restore key.
 - PRs read the Docker cache but never write it. Only Deploy, which runs on `main`, writes it.
+
+## Code scanning names
+
+- Trivy results show as `1b. Trivy - secrets`, `1c. Trivy - api image`, `1c. Trivy - app image` on PRs and `3. Trivy - ...` on releases. The names come from rewriting the SARIF tool name before upload.
+- CodeQL is always named `CodeQL` by GitHub. Its category is `1b-codeql`, which shows in the Security tab.

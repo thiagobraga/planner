@@ -1,4 +1,4 @@
-name: 3 Deploy (reusable or manual)
+name: 3. Deploy (reusable or manual)
 
 on:
   workflow_dispatch:
@@ -14,7 +14,7 @@ on:
         type: string
         required: false
 
-# Static group: github.workflow is the caller's name when called from release.yml,
+# Static group: github.workflow is the caller's name when called from 2.release.yml,
 # so a per-name group would not serialize a release deploy against a manual one.
 concurrency:
   group: deploy-production
@@ -109,6 +109,14 @@ jobs:
           severity: 'HIGH,CRITICAL'
           cache-dir: ~/.cache/trivy
           skip-setup-trivy: true
+
+      - name: Name the Trivy tool
+        if: always()
+        env:
+          COMPONENT: ${{ matrix.component }}
+        run: |
+          [ -f "trivy-$COMPONENT.sarif" ] || exit 0
+          jq --arg n "3. Trivy - $COMPONENT image" '.runs[].tool.driver.name = $n' "trivy-$COMPONENT.sarif" > "trivy-$COMPONENT.tmp" && mv "trivy-$COMPONENT.tmp" "trivy-$COMPONENT.sarif"
 
       - uses: github/codeql-action/upload-sarif@v4
         if: always()

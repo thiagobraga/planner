@@ -1,4 +1,4 @@
-name: 1a Quality (reusable)
+name: 1a. Quality (reusable)
 
 on:
   workflow_call:
@@ -85,6 +85,7 @@ jobs:
 
   e2e:
     name: E2E - Playwright
+    needs: [api, app]
     runs-on: ubuntu-24.04
     services:
       postgres:
