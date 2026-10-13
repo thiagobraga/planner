@@ -7,7 +7,8 @@ test.use({ storageState: STORAGE_STATE_PATH });
 test('Migrate omits completed overdue tasks in Daily views', async ({ page, api }) => {
   const title = `Completed overdue ${Date.now()}`;
   const activeTitle = `Active overdue ${Date.now()}`;
-  const yesterday = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
+  // Two weeks back is before the shown week in every view, so it always lands in Migrate.
+  const yesterday = new Date(Date.now() - 14 * 86_400_000).toISOString().slice(0, 10);
   await api.patch('/preferences', { locale: 'en', timeZone: 'UTC', hideCompletedTasks: false });
   const task = await api.post<ApiTask>('/tasks', { title, dueDate: yesterday });
   const activeTask = await api.post<ApiTask>('/tasks', { title: activeTitle, dueDate: yesterday });
