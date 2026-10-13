@@ -87,6 +87,7 @@ compose.override.yml
 .codegraph/
 .codex/
 .impeccable/
+.omx/
 .playwright-mcp/
 .remember/
 .superpowers/
