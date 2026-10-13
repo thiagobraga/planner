@@ -143,6 +143,7 @@ export function HabitCalendar({
               >
                 {editing?.kind === 'group' && editing.id === section.group.id ? (
                   <InlineNameInput
+                    commitOnEscape
                     defaultValue={section.group.name}
                     className="uppercase tracking-[0.1em] text-[10px] font-semibold text-ink-light"
                     onCommit={(name) => onCommitEdit?.({ kind: 'group', id: section.group.id }, name)}
@@ -419,6 +420,7 @@ function HabitCalendarHeading({
       </span>
       {isEditing ? (
         <InlineNameInput
+          commitOnEscape
           defaultValue={node.name}
           placeholder={t('page.habitName')}
           onCommit={onCommitEdit}

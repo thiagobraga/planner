@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { EditableText } from './ui/EditableText';
 import { useI18n } from '../i18n/I18nContext';
+import { blurOnEscape } from '../utils/editableText';
 import type { TaskAddInputProps } from '../types/taskAddInput';
 
 export function TaskAddInput({ onCreate }: TaskAddInputProps) {
@@ -35,13 +36,7 @@ export function TaskAddInput({ onCreate }: TaskAddInputProps) {
           onValueChange={updateDraft}
           onEnter={submit}
           onBlur={() => submit(draftRef.current)}
-          onKeyDown={(event) => {
-            if (event.key === 'Escape') {
-              event.preventDefault();
-              updateDraft('');
-              setFailedTitle('');
-            }
-          }}
+          onKeyDown={blurOnEscape}
           placeholder={t('common.addTask')}
           aria-label={t('common.addTask')}
           className="task-input task-add-input flex-1 text-[14px] leading-6 text-ink bg-transparent border-none outline-none p-0"
