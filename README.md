@@ -126,30 +126,13 @@ claude mcp add --transport http planner https://planner.local/api/v1/mcp \
   --header "Authorization: Bearer plnr_xxxxxxxx"
 ```
 
-Tools: `get_today`, `get_upcoming`, `get_inbox`, `get_collection`, `list_collections`, `list_labels`, `search`, `filter_tasks`, `list_habits`, and with a Read & write token also `create_task`, `update_task`, `complete_task`, `reopen_task`, `move_task`, `reschedule_tasks`, `delete_task`, `log_habit`. Dates like "next friday 3pm" are resolved by Planner in your timezone.
+Reading tools (today, upcoming, inbox, collections, labels, search, filters, habits) are always available. A Read & write token adds tools to create, update, complete, move, reschedule and delete tasks, and to log habits. The full list is in **Settings > Integrations** and `api/src/mcp/tools/`. Dates like "next friday 3pm" are resolved by Planner in your timezone.
 
 ### Connect from claude.ai, ChatGPT and other hosted clients (OAuth)
 
 Hosted MCP clients that can't take a pasted header sign in with OAuth instead. Add `https://<your-planner>/api/v1/mcp` as a custom connector. A Planner consent screen opens, and you choose read & write or read only. The app then appears under **Settings > Integrations > Connected apps**, where **Disconnect** cuts it off immediately.
 
 Planner is its own OAuth 2.1 authorization server (PKCE S256, dynamic client registration, rotating refresh tokens). Discovery is served at `/.well-known/oauth-protected-resource/api/v1/mcp` and `/.well-known/oauth-authorization-server`. The issuer is `PUBLIC_BASE_URL`, which defaults to `CORS_ORIGIN`. The connector URL must be reachable over public HTTPS.
-
-## Releases
-
-Versions follow [SemVer](https://semver.org/) and tags are `vX.Y.Z`. [release-please](https://github.com/googleapis/release-please) reads Conventional Commits on `main` and keeps one release PR open.
-
-| Commit | Bump |
-| ------ | ---- |
-| `fix:` | patch |
-| `feat:` | minor |
-| `feat!:` or `BREAKING CHANGE:` footer | major (minor while below 1.0.0) |
-| `docs`, `style`, `test`, `chore`, `ci`, `build` | none, hidden from the changelog |
-
-To cut a release, merge the release PR. That bumps the version in the root, `api/` and `app/` `package.json` files and lockfiles, updates `CHANGELOG.md`, creates the `vX.Y.Z` tag and the GitHub Release, then calls `4.deploy.yml`, which pushes images tagged `latest`, the commit SHA and `vX.Y.Z`. Plain pushes to `main` no longer deploy. The workflows are listed in [CI workflows](#ci-workflows).
-
-The release version is unrelated to `BUILD_ID` / `/api/v1/version`, which only detect a new deploy for the "update available" toast.
-
-PRs opened by `GITHUB_TOKEN` do not trigger CI. Set the `RELEASE_PLEASE_TOKEN` secret (a PAT or app token) so CI runs on the release PR. Without it, push an empty commit to the release branch or close and reopen the PR.
 
 ## CI workflows
 
@@ -166,6 +149,23 @@ Workflow files and names are numbered in the order work happens. Each job carrie
 - Deploy runs in the `production` environment. Adding a required reviewer there makes it wait for approval.
 - Actions are pinned to commit SHAs (Dependabot keeps them current), workflows default to no permissions, and every job has a timeout.
 - PRs read the Docker cache but never write it. Only deploy writes it.
+
+## Releases
+
+Versions follow [SemVer](https://semver.org/) and tags are `vX.Y.Z`. [release-please](https://github.com/googleapis/release-please) reads Conventional Commits on `main` and keeps one release PR open.
+
+| Commit | Bump |
+| ------ | ---- |
+| `fix:` | patch |
+| `feat:` | minor |
+| `feat!:` or `BREAKING CHANGE:` footer | major (minor while below 1.0.0) |
+| `docs`, `style`, `test`, `chore`, `ci`, `build` | none, hidden from the changelog |
+
+To cut a release, merge the release PR. It bumps the version, updates `CHANGELOG.md`, tags `vX.Y.Z` and deploys (see [CI workflows](#ci-workflows)). Plain pushes to `main` do not deploy.
+
+PRs opened by `GITHUB_TOKEN` do not trigger CI. Set the `RELEASE_PLEASE_TOKEN` secret (a PAT or app token) so CI runs on the release PR.
+
+The release version is unrelated to `BUILD_ID` / `/api/v1/version`, which only detect a new deploy for the "update available" toast.
 
 ## Testing & Coverage
 
