@@ -76,6 +76,9 @@ const mockFetchCollections = vi.mocked(fetchCollections);
 const mockFetchPreferences = vi.mocked(fetchPreferences);
 const mockApiMoveTask = vi.mocked(apiMoveTask);
 
+// Sunday to Thursday: the list keeps the earlier days of the week visible.
+const WEEK_BEFORE_TODAY_AND_TODAY = ['02/08 SUN', '03/08 MON', '04/08 TUE', '05/08 WED', '06/08 THU · Today'];
+
 // Two dates, so there is a real cross-day drag to perform.
 const TODAY = '2026-08-06';
 const YESTERDAY = '2026-08-05';
@@ -189,7 +192,7 @@ describe('DailyPage: the date format preference survives a drag', () => {
     // never having been right in the first place. Preferences and tasks are two
     // separate queries, so the sections are first built from whichever lands
     // first and rebuilt once the format is known - hence waitFor.
-    await waitFor(() => expect(dayHeaders(container)).toEqual(['06/08 THU · Today', 'Migrate']));
+    await waitFor(() => expect(dayHeaders(container)).toEqual(WEEK_BEFORE_TODAY_AND_TODAY));
 
     // Drag yesterday's task onto today's - the exact gesture from the report.
     await act(async () => {
@@ -204,15 +207,15 @@ describe('DailyPage: the date format preference survives a drag', () => {
 
     // `setAllTasks` has now rebuilt every section. Before the fix the today
     // header read "AUG 06 THU": the rebuild fell through to buildSections'
-    // default format. Yesterday's section is gone - its only task moved.
-    expect(dayHeaders(container)).toEqual(['06/08 THU · Today']);
+    // default format. Yesterday's section stays, now empty, like the rest of the week.
+    expect(dayHeaders(container)).toEqual(WEEK_BEFORE_TODAY_AND_TODAY);
   });
 
   it('keeps the user format when a move fails and the page refetches', async () => {
     mockApiMoveTask.mockRejectedValue(new Error('nope'));
 
     const { container } = renderPage();
-    await waitFor(() => expect(dayHeaders(container)).toEqual(['06/08 THU · Today', 'Migrate']));
+    await waitFor(() => expect(dayHeaders(container)).toEqual(WEEK_BEFORE_TODAY_AND_TODAY));
 
     await act(async () => {
       dndHandlers.onDragStart?.({
@@ -227,7 +230,7 @@ describe('DailyPage: the date format preference survives a drag', () => {
     // The `onError` path rebuilds sections from a fresh fetch - a third call
     // site with the same omission. The snapshot is restored, so both days are
     // back, and both have to keep the user's format.
-    await waitFor(() => expect(dayHeaders(container)).toEqual(['06/08 THU · Today', 'Migrate']));
+    await waitFor(() => expect(dayHeaders(container)).toEqual(WEEK_BEFORE_TODAY_AND_TODAY));
   });
 
   it('fetches today tasks once, reformatting locally once preferences resolve', async () => {
@@ -236,7 +239,7 @@ describe('DailyPage: the date format preference survives a drag', () => {
     // Preferences resolve after the tasks fetch in this suite's default mock
     // ordering. The format still has to end up right (proving the reformat
     // happened)...
-    await waitFor(() => expect(dayHeaders(container)).toEqual(['06/08 THU · Today', 'Migrate']));
+    await waitFor(() => expect(dayHeaders(container)).toEqual(WEEK_BEFORE_TODAY_AND_TODAY));
 
     // ...without a second network round trip. A duplicate `views/today` call
     // here previously delayed everything gated on the fetched task count (e.g.
