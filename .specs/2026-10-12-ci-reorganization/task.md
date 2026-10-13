@@ -1,15 +1,15 @@
 # Tasks
 
-Legend: `[ ]` not started, `[~]` in progress, `[x]` done.
+Legend: `[ ]` not started, `[~]` in progress, `[x]` done, `[n]` decided not to do.
 
 1. [x] Spec (`plan.md`, this file)
 2. [x] Names and order
    - [x] Files and names numbered `1.review`, `2.ci`, `2a.quality`, `2b.security`, `3.release`, `4.deploy`; jobs carry the number plus a letter
    - [x] Replace the em dashes in job names in `2a.quality.yml` ("API: lint, test, build", etc.)
 3. [~] Speed
-   - [ ] Security and container-scan no longer `needs: quality`. Kept on purpose: they only start after quality passes, to save runner minutes when tests fail
+   - [n] Security and container-scan no longer `needs: quality`. Kept on purpose: they only start after quality passes, to save runner minutes when tests fail
    - [x] `2a.quality.yml`: `docker` job deleted (PR image build is covered by container-scan)
-   - [ ] `e2e` no longer `needs: [api, app]`. Kept on purpose, same reason
+   - [n] `e2e` no longer `needs: [api, app]`. Kept on purpose, same reason
    - [x] npm cache for both lockfiles; Playwright browser cache
    - [x] Dockerfiles: copy `package*.json`, `npm ci`, then copy source (api build stage, app build stage)
 4. [x] Concurrency
