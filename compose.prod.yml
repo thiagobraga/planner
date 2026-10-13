@@ -1,4 +1,15 @@
 services:
+  # Compose creates these shared networks before a color references them as external.
+  network-init:
+    profiles: [setup]
+    image: nginx:1.31-alpine
+    entrypoint: ["true"]
+    networks: [backend, egress]
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    restart: "no"
+
   router:
     image: nginx:1.31-alpine
     container_name: planner-prod-router

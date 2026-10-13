@@ -45,7 +45,7 @@ jobs:
         run: |
           bash -n scripts/blue-green-deploy.sh scripts/blue-green-deploy.test.sh
           bash scripts/blue-green-deploy.test.sh
-          docker compose -f compose.prod.yml config --quiet
+          docker compose --profile setup -f compose.prod.yml config --quiet
           for color in blue green; do
             COLOR="$color" docker compose -f compose.prod.color.yml config --quiet
           done

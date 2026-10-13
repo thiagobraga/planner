@@ -63,7 +63,7 @@ The design system is in [DESIGN.md](./DESIGN.md). Data flow, services and real-t
 
 Production uses `compose.prod.yml` for the shared PostgreSQL, Redis, and nginx router services. `compose.prod.color.yml` starts the app, API, and one-shot migration in separate blue and green Compose projects. The router stays on `127.0.0.1:8080` while the deploy script prepares the inactive color, checks it, switches nginx, and verifies both public app and API responses before stopping the old color.
 
-GitHub Actions runs `scripts/blue-green-deploy.sh <commit-sha>` after building and scanning the SHA-tagged images. For a manual deployment from the production checkout, set `CORS_ORIGIN=https://planner.thiagobraga.dev` and run the same script with a published 40-character commit SHA. The script serializes runs with `flock`. Runtime state is kept in `deploy/.active-color`, `deploy/.active-image`, `deploy/.previous-image`, and `deploy/00-upstreams.conf`; these files are ignored by Git and must be preserved between deploys.
+GitHub Actions runs `scripts/blue-green-deploy.sh <commit-sha>` after building and scanning the SHA-tagged images. For a manual deployment from the production checkout, set `CORS_ORIGIN=https://planner.thiagobraga.dev` and run the same script with a published 40-character commit SHA. Public verification uses `CORS_ORIGIN` unless `PUBLIC_URL` is set. The script serializes runs with `flock`. Runtime state is kept in `deploy/.active-color`, `deploy/.active-image`, `deploy/.previous-image`, and `deploy/00-upstreams.conf`; these files are ignored by Git and must be preserved between deploys.
 
 To roll back after a completed switch, run the script with the previous image SHA:
 

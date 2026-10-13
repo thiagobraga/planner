@@ -2,7 +2,7 @@
 
 ## 1. Separate shared and color services
 
-- [x] Keep PostgreSQL, Redis, volumes, and named networks in `compose.prod.yml`; add the hardened router on port 8080.
+- [x] Keep PostgreSQL, Redis, volumes, and named networks in `compose.prod.yml`; add the hardened router on port 8080 and initialize backend/egress networks before first color startup.
 - [x] Move app, API, and migration into `compose.prod.color.yml` on shared external networks. Use a separate Compose project per color so the inactive `up` cannot recreate active services.
 - [x] Remove the app's host port and gate API startup on its color's migration.
 - [x] Render and inspect both color configurations with `docker compose config`.

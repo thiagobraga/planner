@@ -14,6 +14,14 @@ cat > "$TEMP_ROOT/bin/docker" <<'MOCK'
 #!/usr/bin/env bash
 printf 'docker %s\n' "$*" >> "$MOCK_LOG"
 case "$1" in
+  compose)
+    if [[ $* == *' run --rm --no-deps -T network-init' ]]; then
+      touch "$CASE_ROOT/network-planner-prod-backend" "$CASE_ROOT/network-planner-prod-egress"
+    fi
+    if [[ ${MOCK_REQUIRE_NETWORKS:-0} == 1 && $* == *' up -d --no-deps api' ]]; then
+      [[ -f "$CASE_ROOT/network-planner-prod-backend" && -f "$CASE_ROOT/network-planner-prod-egress" ]] || exit 1
+    fi
+    ;;
   inspect)
     if [[ $3 == *com.docker.compose.project* ]]; then
       if [[ -n ${MOCK_SHARED_PROJECT:-} ]]; then echo "$MOCK_SHARED_PROJECT"; else exit 1; fi
@@ -66,11 +74,11 @@ setup_case() {
   export MOCK_LOG="$CASE_ROOT/commands.log"
   export CASE_ROOT
   : > "$MOCK_LOG"
-  unset MOCK_LEGACY MOCK_FAIL_HEALTH MOCK_FAIL_PUBLIC MOCK_STALE_COLOR MOCK_FAIL_SHARED MOCK_FAIL_MIGRATION MOCK_SHARED_PROJECT || true
+  unset MOCK_LEGACY MOCK_FAIL_HEALTH MOCK_FAIL_PUBLIC MOCK_STALE_COLOR MOCK_FAIL_SHARED MOCK_FAIL_MIGRATION MOCK_SHARED_PROJECT MOCK_REQUIRE_NETWORKS PUBLIC_URL || true
 }
 
 run_deploy() {
-  PATH="$TEMP_ROOT/bin:$PATH" bash "$CASE_ROOT/scripts/blue-green-deploy.sh" \
+  CORS_ORIGIN=https://planner.example.test PATH="$TEMP_ROOT/bin:$PATH" bash "$CASE_ROOT/scripts/blue-green-deploy.sh" \
     0123456789abcdef0123456789abcdef01234567 > "$CASE_ROOT/output.log" 2>&1
 }
 
@@ -89,6 +97,7 @@ assert_contains 'default green;' "$CASE_ROOT/deploy/00-upstreams.conf"
 assert_contains 'docker exec planner-prod-router nginx -s reload' "$MOCK_LOG"
 assert_contains 'docker stop -t 15 planner-blue-api' "$MOCK_LOG"
 assert_contains 'curl --fail --silent --show-error --max-time 5 --dump-header' "$MOCK_LOG"
+assert_contains 'https://planner.example.test/api/v1/health' "$MOCK_LOG"
 api_start=$(grep -n 'up -d --no-deps api$' "$MOCK_LOG" | head -1 | cut -d: -f1)
 app_start=$(grep -n 'up -d --no-deps app$' "$MOCK_LOG" | head -1 | cut -d: -f1)
 [[ $api_start -lt $app_start ]] || fail "App started before its API"
@@ -164,4 +173,21 @@ run_deploy || fail "Bootstrap failed"
 assert_contains 'docker stop -t 15 planner-prod-app' "$MOCK_LOG"
 assert_contains 'docker rm planner-prod-api' "$MOCK_LOG"
 
-echo 'blue-green-deploy: 9 scenarios passed'
+setup_case fresh_host
+export MOCK_REQUIRE_NETWORKS=1
+run_deploy || fail "Fresh host could not start a color with its required networks"
+assert_contains 'docker compose --project-name planner -f compose.prod.yml run --rm --no-deps -T network-init' "$MOCK_LOG"
+network_init=$(grep -n 'run --rm --no-deps -T network-init' "$MOCK_LOG" | head -1 | cut -d: -f1)
+api_start=$(grep -n 'up -d --no-deps api$' "$MOCK_LOG" | head -1 | cut -d: -f1)
+(( network_init < api_start )) || fail "Networks were initialized after API startup"
+[[ $(<"$CASE_ROOT/deploy/.active-color") == blue ]] || fail "Fresh host did not activate blue"
+
+setup_case missing_origin
+if env -u CORS_ORIGIN -u PUBLIC_URL PATH="$TEMP_ROOT/bin:$PATH" bash "$CASE_ROOT/scripts/blue-green-deploy.sh" \
+  0123456789abcdef0123456789abcdef01234567 > "$CASE_ROOT/output.log" 2>&1; then
+  fail "Deploy without a verification origin was accepted"
+fi
+assert_contains 'Set PUBLIC_URL or CORS_ORIGIN' "$CASE_ROOT/output.log"
+[[ ! -s "$MOCK_LOG" ]] || fail "Deploy without a verification origin touched Docker"
+
+echo 'blue-green-deploy: 11 scenarios passed'

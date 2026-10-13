@@ -12,7 +12,12 @@ UPSTREAM_FILE="$DEPLOY_DIR/00-upstreams.conf"
 STATE_FILE="$DEPLOY_DIR/.active-color"
 IMAGE_FILE="$DEPLOY_DIR/.active-image"
 PREVIOUS_IMAGE_FILE="$DEPLOY_DIR/.previous-image"
-PUBLIC_URL=${PUBLIC_URL:-https://planner.thiagobraga.dev}
+PUBLIC_URL=${PUBLIC_URL:-${CORS_ORIGIN:-}}
+if [[ -z $PUBLIC_URL ]]; then
+  echo "Set PUBLIC_URL or CORS_ORIGIN to verify the deployed host" >&2
+  exit 2
+fi
+PUBLIC_URL=${PUBLIC_URL%/}
 export IMAGE_TAG=$1
 
 mkdir -p "$DEPLOY_DIR"
@@ -156,6 +161,7 @@ rollback() {
 trap rollback EXIT
 
 echo "Deploying $IMAGE_TAG to $next"
+shared_compose run --rm --no-deps -T network-init
 shared_compose up -d --no-recreate postgres redis
 wait_for_container_health planner-prod-postgres
 wait_for_container_health planner-prod-redis
