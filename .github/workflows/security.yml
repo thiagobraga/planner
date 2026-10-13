@@ -1,11 +1,7 @@
-name: Security
+name: 1b Security (reusable)
 
 on:
   workflow_call:
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
 
 permissions:
   actions: read
@@ -69,12 +65,8 @@ jobs:
           sarif_file: trivy-secrets.sarif
           category: secret-scan
 
-  # Docker build check lives in quality.yml (needs: [api, app]), which also
-  # warms the type=gha buildx cache that deploy.yml's push build reuses -
-  # building it again here would just duplicate that work uncached.
-
-  # Container vulnerability scanning lives in deploy.yml, where it scans the
-  # exact image digests pushed to GHCR rather than a locally-tagged rebuild.
+  # Container vulnerability scanning lives in pipeline.yml (PRs) and deploy.yml
+  # (release images pushed to GHCR).
 
   sbom:
     name: SBOM generation

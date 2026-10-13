@@ -1,11 +1,7 @@
-name: Quality
+name: 1a Quality (reusable)
 
 on:
   workflow_call:
-
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
 
 env:
   NODE_VERSION: '24'
@@ -15,7 +11,7 @@ env:
 
 jobs:
   api:
-    name: API — lint, test, build
+    name: API - lint, test, build
     runs-on: ubuntu-24.04
     defaults:
       run:
@@ -70,7 +66,7 @@ jobs:
           NODE_ENV: production
 
   app:
-    name: App — lint, test, build
+    name: App - lint, test, build
     runs-on: ubuntu-24.04
     defaults:
       run:
@@ -87,38 +83,8 @@ jobs:
       - run: npm run coverage
       - run: npm run build
 
-  docker:
-    name: Docker — build production images (${{ matrix.component }})
-    needs: [api, app]
-    runs-on: ubuntu-24.04
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - component: api
-            dockerfile: .docker/api/Dockerfile
-          - component: app
-            dockerfile: .docker/app/Dockerfile
-    steps:
-      - uses: actions/checkout@v7
-
-      - uses: docker/setup-buildx-action@v4
-
-      - uses: docker/build-push-action@v7
-        with:
-          context: .
-          file: ${{ matrix.dockerfile }}
-          target: production
-          push: false
-          load: false
-          tags: planner-${{ matrix.component }}:build-check
-          build-args: APK_REFRESH=${{ github.run_id }}
-          cache-from: type=gha,scope=${{ matrix.component }}
-          cache-to: type=gha,mode=max,scope=${{ matrix.component }}
-
   e2e:
-    name: E2E — Playwright
-    needs: [api, app]
+    name: E2E - Playwright
     runs-on: ubuntu-24.04
     services:
       postgres:
@@ -155,6 +121,10 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: |
+            api/package-lock.json
+            app/package-lock.json
       - name: Install API dependencies
         working-directory: api
         run: npm ci
@@ -182,6 +152,11 @@ jobs:
         env:
           # Instrumented build so e2e runs collect coverage (see test:e2e:coverage)
           VITE_COVERAGE: "true"
+      - name: Cache Playwright browsers
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('app/package-lock.json') }}
       - name: Install Playwright chromium
         working-directory: app
         run: npx playwright install --with-deps chromium
