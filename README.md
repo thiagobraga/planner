@@ -187,11 +187,27 @@ Versions follow [SemVer](https://semver.org/) and tags are `vX.Y.Z`. [release-pl
 | `feat!:` or `BREAKING CHANGE:` footer | major (minor while below 1.0.0) |
 | `docs`, `style`, `test`, `chore`, `ci`, `build` | none, hidden from the changelog |
 
-To cut a release, merge the release PR. That bumps the version in the root, `api/` and `app/` `package.json` files and lockfiles, updates `CHANGELOG.md`, creates the `vX.Y.Z` tag and the GitHub Release, then calls `4.deploy.yml`, which pushes images tagged `latest`, the commit SHA and `vX.Y.Z`. Plain pushes to `main` no longer deploy. The workflow order and what each run does are in [docs/ci.md](docs/ci.md).
+To cut a release, merge the release PR. That bumps the version in the root, `api/` and `app/` `package.json` files and lockfiles, updates `CHANGELOG.md`, creates the `vX.Y.Z` tag and the GitHub Release, then calls `4.deploy.yml`, which pushes images tagged `latest`, the commit SHA and `vX.Y.Z`. Plain pushes to `main` no longer deploy. The workflows are listed in [CI workflows](#ci-workflows).
 
 The release version is unrelated to `BUILD_ID` / `/api/v1/version`, which only detect a new deploy for the "update available" toast.
 
-PRs opened by `GITHUB_TOKEN` do not trigger CI. If branch protection requires checks on the release PR, push an empty commit to its branch or close and reopen it.
+PRs opened by `GITHUB_TOKEN` do not trigger CI. Set the `RELEASE_PLEASE_TOKEN` secret (a PAT or app token) so CI runs on the release PR. Without it, push an empty commit to the release branch or close and reopen the PR.
+
+## CI workflows
+
+Workflow files and names are numbered in the order work happens. Each job carries the workflow number plus a letter (`2b`, `4c`), so the Actions sidebar keeps the order.
+
+| Workflow | Runs on | Does |
+| -------- | ------- | ---- |
+| `1.review.yml` | PR to `main` | 1a fails on high-severity dependency changes; 1b lints workflows with actionlint and zizmor |
+| `2.ci.yml` | PR and push to `main`, Monday schedule, by hand | 2a quality (`2a.quality.yml`: lint, tests, build, E2E), then 2b security (`2b.security.yml`: `npm audit`, CodeQL, secret scan, SBOM); on PRs also 2c container scan (Trivy) |
+| `3.release.yml` | Push to `main` | 3a release-please opens or updates the release PR; on merge it tags, 3b re-runs quality on the tagged commit, 3c calls deploy |
+| `4.deploy.yml` | Called by 3, or run by hand from `main` | 4a builds SHA images, 4b scans them, 4c moves `latest` and `vX.Y.Z`, 4d deploys to the VPS |
+
+- Deploy only follows a release merge and only runs from `main`. A manual run from another branch skips every job.
+- Deploy runs in the `production` environment. Adding a required reviewer there makes it wait for approval.
+- Actions are pinned to commit SHAs (Dependabot keeps them current), workflows default to no permissions, and every job has a timeout.
+- PRs read the Docker cache but never write it. Only deploy writes it.
 
 ## Testing & Coverage
 
