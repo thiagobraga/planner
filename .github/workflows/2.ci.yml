@@ -1,4 +1,4 @@
-name: 1. CI
+name: 2. CI
 
 on:
   push:
@@ -33,18 +33,18 @@ permissions:
 
 jobs:
   quality:
-    name: 1a. Quality
-    uses: ./.github/workflows/1a.quality.yml
+    name: 2a. Quality
+    uses: ./.github/workflows/2a.quality.yml
     secrets: inherit
 
   security:
-    name: 1b. Security
+    name: 2b. Security
     needs: quality
-    uses: ./.github/workflows/1b.security.yml
+    uses: ./.github/workflows/2b.security.yml
     secrets: inherit
 
   container-scan:
-    name: 1c. Container scan (${{ matrix.component }})
+    name: 2c. Container scan (${{ matrix.component }})
     if: github.event_name == 'pull_request'
     needs: quality
     runs-on: ubuntu-24.04
@@ -112,7 +112,7 @@ jobs:
           COMPONENT: ${{ matrix.component }}
         run: |
           [ -f "trivy-$COMPONENT.sarif" ] || exit 0
-          jq --arg n "1c. Trivy - $COMPONENT image" '.runs[].tool.driver.name = $n' "trivy-$COMPONENT.sarif" > "trivy-$COMPONENT.tmp" && mv "trivy-$COMPONENT.tmp" "trivy-$COMPONENT.sarif"
+          jq --arg n "2c. Trivy - $COMPONENT image" '.runs[].tool.driver.name = $n' "trivy-$COMPONENT.sarif" > "trivy-$COMPONENT.tmp" && mv "trivy-$COMPONENT.tmp" "trivy-$COMPONENT.sarif"
 
       - uses: github/codeql-action/upload-sarif@v4
         if: always()

@@ -1,4 +1,4 @@
-name: 1b. Security (reusable)
+name: 2b. Security (reusable)
 
 on:
   workflow_call:
@@ -40,7 +40,7 @@ jobs:
           queries: +security-and-quality
       - uses: github/codeql-action/analyze@v4
         with:
-          category: 1b-codeql
+          category: 2b-codeql
 
   secrets:
     name: Secret scan
@@ -67,14 +67,14 @@ jobs:
         if: always()
         run: |
           [ -f trivy-secrets.sarif ] || exit 0
-          jq '.runs[].tool.driver.name = "1b. Trivy - secrets"' trivy-secrets.sarif > trivy-secrets.tmp && mv trivy-secrets.tmp trivy-secrets.sarif
+          jq '.runs[].tool.driver.name = "2b. Trivy - secrets"' trivy-secrets.sarif > trivy-secrets.tmp && mv trivy-secrets.tmp trivy-secrets.sarif
       - uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: trivy-secrets.sarif
           category: secret-scan
 
-  # Container vulnerability scanning lives in 1.ci.yml (PRs) and 3.deploy.yml
+  # Container vulnerability scanning lives in 2.ci.yml (PRs) and 4.deploy.yml
   # (release images pushed to GHCR).
 
   sbom:

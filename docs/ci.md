@@ -4,30 +4,30 @@ Workflow files and names are numbered in the order work happens. The Actions sid
 
 | Number | File | Runs on | Does |
 | --- | --- | --- | --- |
-| 0. | `0.dependency-review.yml` | PR to `main` | Fails on high-severity dependency changes |
-| 1. | `1.ci.yml` | PR and push to `main`, Monday schedule | Calls 1a and 1b; on PRs also runs 1c |
-| 1a. | `1a.quality.yml` | Called by 1 | Lint, tests and build for API and app; E2E waits for both |
-| 1b. | `1b.security.yml` | Called by 1, after 1a | `npm audit`, CodeQL, secret scan, SBOM |
-| 1c. | container scan (in `1.ci.yml`) | PRs, after 1a | Builds both images and scans them with Trivy |
-| 2. | `2.release.yml` | Push to `main` | release-please: opens or updates the release PR; on merge, tags and calls 3 |
-| 3. | `3.deploy.yml` | Called by 2, or run by hand | Builds SHA images, scans them, then moves `latest` and `vX.Y.Z`, then deploys to the VPS |
+| 1. | `1.dependency-review.yml` | PR to `main` | Fails on high-severity dependency changes |
+| 2. | `2.ci.yml` | PR and push to `main`, Monday schedule | Calls 2a and 2b; on PRs also runs 2c |
+| 2a. | `2a.quality.yml` | Called by 2 | Lint, tests and build for API and app; E2E waits for both |
+| 2b. | `2b.security.yml` | Called by 2, after 2a | `npm audit`, CodeQL, secret scan, SBOM |
+| 2c. | container scan (in `2.ci.yml`) | PRs, after 2a | Builds both images and scans them with Trivy |
+| 3. | `3.release.yml` | Push to `main` | release-please: opens or updates the release PR; on merge, tags and calls 4 |
+| 4. | `4.deploy.yml` | Called by 3, or run by hand | Builds SHA images, scans them, then moves `latest` and `vX.Y.Z`, then deploys to the VPS |
 
 ## Flow
 
 ```mermaid
 flowchart LR
-  api[1a. API] --> e2e[1a. E2E]
-  app[1a. App] --> e2e
-  api --> q((1a done))
+  api[2a. API] --> e2e[2a. E2E]
+  app[2a. App] --> e2e
+  api --> q((2a done))
   app --> q
   e2e --> q
-  q --> sec[1b. Security]
-  q --> cs[1c. Container scan]
-  main[Push to main] --> rel[2. Release]
+  q --> sec[2b. Security]
+  q --> cs[2c. Container scan]
+  main[Push to main] --> rel[3. Release]
   rel -->|no release PR needed| nothing[Summary: nothing to release]
   rel -->|release PR updated| prn[Summary: merge the release PR]
   rel -->|release PR merged| tag[Tag vX.Y.Z and GitHub Release]
-  tag --> build[3. Build SHA images] --> scan[Scan] --> promote[Move latest and vX.Y.Z] --> vps[Deploy to VPS]
+  tag --> build[4. Build SHA images] --> scan[Scan] --> promote[Move latest and vX.Y.Z] --> vps[Deploy to VPS]
 ```
 
 ## When does something reach the VPS?
@@ -51,5 +51,5 @@ Each Release run writes its outcome to the run summary: released, release PR upd
 
 ## Code scanning names
 
-- Trivy results show as `1b. Trivy - secrets`, `1c. Trivy - api image`, `1c. Trivy - app image` on PRs and `3. Trivy - ...` on releases. The names come from rewriting the SARIF tool name before upload.
-- CodeQL is always named `CodeQL` by GitHub. Its category is `1b-codeql`, which shows in the Security tab.
+- Trivy results show as `2b. Trivy - secrets`, `2c. Trivy - api image`, `2c. Trivy - app image` on PRs and `4. Trivy - ...` on releases. The names come from rewriting the SARIF tool name before upload.
+- CodeQL is always named `CodeQL` by GitHub. Its category is `2b-codeql`, which shows in the Security tab.
