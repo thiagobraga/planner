@@ -13,19 +13,23 @@ The Features list in the README is plain text. Readers cannot see what Planner l
 ## User-visible behavior
 
 - README Features section shows a few feature blocks: a screenshot, a title, one or two lines.
-- Planned blocks: Daily (list and Kanban), Monthly, Habits, Collections and filters, Offline and real-time sync, Connect AI agents (API tokens and MCP).
+- Screenshot blocks: Daily list, Daily Kanban, Habits. Text-only blocks: Offline and real-time sync, Connect AI agents (API tokens and MCP).
+- Each screenshot exists for desktop and mobile, light and dark: 3 screens x 2 x 2 = 12 images.
 - Offline bullets merge into one block.
 - The React Router and glassmorphic bullets are dropped.
 
 ## Decisions
 
 - Screenshots are stored in `.github/assets/`, outside the app.
+- Screens: Daily list, Daily Kanban, Habits.
+- Viewports: desktop (1440x900) and mobile.
+- Themes: light and dark, switched with `<picture>` and `prefers-color-scheme`.
+- Data: a clean account with fictional tasks, habits and collections.
 
 ## Open questions
 
-- Which screens exactly, and desktop only or also mobile?
-- Light theme only, or light and dark side by side?
-- Demo data: use seed data from a clean dev stack, or a prepared account?
+- Mobile viewport size (suggest 390x844).
+- Do desktop and mobile show side by side in one block or stacked?
 
 ## Non-goals
 
