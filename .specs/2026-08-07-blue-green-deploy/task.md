@@ -30,7 +30,7 @@
 
 ## 5. Integrate and validate
 
-- [x] Update `.github/workflows/deploy.yml` to validate the script and Compose configs, then run the script after existing build and scan jobs.
+- [x] Update `.github/workflows/4.deploy.yml` to validate the script and Compose configs, then run the script after build, scan, and promotion jobs.
 - [x] Document operation, rollback, backward-compatible migration requirement, and bootstrap port handoff in README and AGENTS.
 - [x] Test stock nginx syntax and a live mock blue-to-green switch and rollback: 600 requests per direction, zero failed or misrouted responses.
 - [x] Complete API/app lint, tests, builds, and diff checks in the isolated worktree. API: 1046 tests; app: 1311 tests on rerun, 38 lint warnings and 0 errors.

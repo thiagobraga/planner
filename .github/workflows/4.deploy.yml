@@ -1,0 +1,235 @@
+name: 4. Deploy (reusable or manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'SemVer to add as an image tag (e.g. 1.2.3), optional'
+        type: string
+        required: false
+  workflow_call:
+    inputs:
+      version:
+        description: 'SemVer to add as an image tag (e.g. 1.2.3), optional'
+        type: string
+        required: false
+
+# Static group: github.workflow is the caller's name when called from 3.release.yml,
+# so a per-name group would not serialize a release deploy against a manual one.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+permissions: {}
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: ghcr.io/${{ github.repository_owner }}/planner
+
+jobs:
+  validate-deploy:
+    name: 4a. Validate blue/green deployment
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Check script and Compose configs
+        env:
+          CORS_ORIGIN: https://planner.example.com
+          IMAGE_TAG: 0123456789abcdef0123456789abcdef01234567
+        run: |
+          bash -n scripts/blue-green-deploy.sh scripts/blue-green-deploy.test.sh
+          bash scripts/blue-green-deploy.test.sh
+          docker compose -f compose.prod.yml config --quiet
+          for color in blue green; do
+            COLOR="$color" docker compose -f compose.prod.color.yml config --quiet
+          done
+
+  build:
+    name: 4b. Build and push ${{ matrix.component }} image
+    # Production only ships from main. Later jobs depend on this one, so a
+    # manual run from another branch skips the whole workflow.
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        include:
+          - component: api
+            dockerfile: .docker/api/Dockerfile
+          - component: app
+            dockerfile: .docker/app/Dockerfile
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          target: production
+          push: true
+          # Only the SHA tag here. latest and vX.Y.Z move in the promote job,
+          # after the scan has passed.
+          tags: ${{ env.IMAGE_PREFIX }}-${{ matrix.component }}:${{ github.sha }}
+          build-args: APK_REFRESH=${{ github.run_id }}
+          cache-from: type=gha,scope=${{ matrix.component }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.component }}
+
+  scan:
+    name: 4c. Scan ${{ matrix.component }} image
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      packages: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        component: [api, app]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        env:
+          TRIVY_USERNAME: ${{ github.actor }}
+          TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          scan-type: 'image'
+          scan-ref: '${{ env.IMAGE_PREFIX }}-${{ matrix.component }}:${{ github.sha }}'
+          format: 'sarif'
+          output: 'trivy-${{ matrix.component }}.sarif'
+          exit-code: '1'
+          severity: 'HIGH,CRITICAL'
+
+      # SARIF only reaches the Security tab; list the blocking findings in the log too.
+      - uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        if: failure()
+        env:
+          TRIVY_USERNAME: ${{ github.actor }}
+          TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          scan-type: 'image'
+          scan-ref: '${{ env.IMAGE_PREFIX }}-${{ matrix.component }}:${{ github.sha }}'
+          format: 'table'
+          severity: 'HIGH,CRITICAL'
+          skip-setup-trivy: true
+
+      - name: Name the Trivy tool
+        if: always()
+        env:
+          COMPONENT: ${{ matrix.component }}
+        run: |
+          [ -f "trivy-$COMPONENT.sarif" ] || exit 0
+          jq --arg n "4c. Trivy - $COMPONENT image" '.runs[].tool.driver.name = $n' "trivy-$COMPONENT.sarif" > "trivy-$COMPONENT.tmp" && mv "trivy-$COMPONENT.tmp" "trivy-$COMPONENT.sarif"
+
+      - uses: github/codeql-action/upload-sarif@24c54180a607b1449ed407dd24f251e4e9147c8d # v4
+        if: always()
+        with:
+          sarif_file: 'trivy-${{ matrix.component }}.sarif'
+          category: container-scan-${{ matrix.component }}
+
+  promote:
+    name: 4d. Tag ${{ matrix.component }} as latest
+    needs: [scan, validate-deploy]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        component: [api, app]
+    env:
+      COMPONENT: ${{ matrix.component }}
+      VERSION: ${{ inputs.version }}
+    steps:
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Retags the already-scanned SHA image; no rebuild. IMAGE_PREFIX and
+      # REGISTRY come from the workflow-level env block.
+      - name: Move latest and version tags
+        run: |
+          image="$IMAGE_PREFIX-$COMPONENT"
+          args=(--tag "$image:latest")
+          if [ -n "$VERSION" ]; then args+=(--tag "$image:v$VERSION"); fi
+          docker buildx imagetools create "${args[@]}" "$image:$GITHUB_SHA"
+
+  deploy:
+    name: 4e. Deploy to VPS
+    needs: [promote, validate-deploy]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    environment: production
+    permissions: {}
+    steps:
+      - name: Configure SSH
+        env:
+          SSH_KEY: ${{ secrets.SSH_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Deploy inactive color and switch router
+        env:
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+        run: |
+          ssh -i ~/.ssh/deploy_key \
+            -o UserKnownHostsFile=~/.ssh/known_hosts \
+            -o StrictHostKeyChecking=yes \
+            "$SSH_USER@$SSH_HOST" \
+            "set -euo pipefail && \
+             cd /p/projects/planner && \
+             git fetch --quiet origin && \
+             git merge --ff-only ${{ github.sha }} && \
+             export CORS_ORIGIN=https://planner.thiagobraga.dev && \
+             bash scripts/blue-green-deploy.sh ${{ github.sha }}"
+
+      - name: Verify app and API through public router
+        run: |
+          for i in $(seq 1 10); do
+            app_code=$(curl -s -o /dev/null -w '%{http_code}' https://planner.thiagobraga.dev/ || true)
+            api_code=$(curl -s -o /dev/null -w '%{http_code}' https://planner.thiagobraga.dev/api/v1/health || true)
+            if [ "$app_code" = "200" ] && [ "$api_code" = "200" ]; then
+              echo "Deploy verified (app and API HTTP 200)"
+              exit 0
+            fi
+            echo "Attempt $i: app HTTP $app_code, API HTTP $api_code; retrying in 10s"
+            sleep 10
+          done
+          echo "Service did not return HTTP 200 after deploy"
+          exit 1
+
+      - name: Clean up SSH key
+        if: always()
+        run: rm -f ~/.ssh/deploy_key

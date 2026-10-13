@@ -1,4 +1,5 @@
 version: 2
+
 updates:
   - package-ecosystem: 'npm'
     directory: '/api'
@@ -7,14 +8,27 @@ updates:
       day: 'monday'
       time: '06:00'
       timezone: 'America/Sao_Paulo'
+    cooldown:
+      default-days: 7
     open-pull-requests-limit: 10
     labels:
       - 'api'
+      - 'dependencies'
+    commit-message:
+      prefix: 'chore'
+      include: 'scope'
     ignore:
       - dependency-name: 'typescript'
         update-types: ['version-update:semver-major']
     groups:
-      dependencies:
+      security:
+        applies-to: security-updates
+        patterns:
+          - '*'
+      minor-and-patch:
+        update-types:
+          - 'minor'
+          - 'patch'
         patterns:
           - '*'
 
@@ -25,14 +39,27 @@ updates:
       day: 'monday'
       time: '06:00'
       timezone: 'America/Sao_Paulo'
+    cooldown:
+      default-days: 7
     open-pull-requests-limit: 10
     labels:
       - 'app'
+      - 'dependencies'
+    commit-message:
+      prefix: 'chore'
+      include: 'scope'
     ignore:
       - dependency-name: 'typescript'
         update-types: ['version-update:semver-major']
     groups:
-      dependencies:
+      security:
+        applies-to: security-updates
+        patterns:
+          - '*'
+      minor-and-patch:
+        update-types:
+          - 'minor'
+          - 'patch'
         patterns:
           - '*'
 
@@ -43,9 +70,23 @@ updates:
       day: 'monday'
       time: '06:00'
       timezone: 'America/Sao_Paulo'
+    cooldown:
+      default-days: 7
     open-pull-requests-limit: 10
+    labels:
+      - 'dependencies'
+    commit-message:
+      prefix: 'chore'
+      include: 'scope'
     groups:
-      dependencies:
+      security:
+        applies-to: security-updates
+        patterns:
+          - '*'
+      minor-and-patch:
+        update-types:
+          - 'minor'
+          - 'patch'
         patterns:
           - '*'
 
@@ -56,8 +97,13 @@ updates:
       day: 'monday'
       time: '06:00'
       timezone: 'America/Sao_Paulo'
+    cooldown:
+      default-days: 7
     labels:
       - 'docker'
+    commit-message:
+      prefix: 'chore'
+      include: 'scope'
     groups:
       docker:
         patterns:
@@ -70,10 +116,34 @@ updates:
       day: 'monday'
       time: '06:00'
       timezone: 'America/Sao_Paulo'
+    cooldown:
+      default-days: 7
     labels:
       - 'docker'
+    commit-message:
+      prefix: 'chore'
+      include: 'scope'
     groups:
       docker:
+        patterns:
+          - '*'
+
+  - package-ecosystem: 'docker-compose'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+      time: '06:00'
+      timezone: 'America/Sao_Paulo'
+    cooldown:
+      default-days: 7
+    labels:
+      - 'docker'
+    commit-message:
+      prefix: 'chore'
+      include: 'scope'
+    groups:
+      compose:
         patterns:
           - '*'
 
@@ -84,6 +154,13 @@ updates:
       day: 'monday'
       time: '06:00'
       timezone: 'America/Sao_Paulo'
+    cooldown:
+      default-days: 7
+    labels:
+      - 'github_actions'
+    commit-message:
+      prefix: 'ci'
+      include: 'scope'
     groups:
       actions:
         patterns:

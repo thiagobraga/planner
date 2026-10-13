@@ -18,15 +18,16 @@
   <img src="https://img.shields.io/badge/%E2%80%8B-PostgreSQL-f5f0e8?style=flat&logoColor=f5f0e8&logo=postgresql" alt="PostgreSQL">
   <img src="https://img.shields.io/badge/license-MIT-f5f0e8?style=flat" alt="MIT License" />
   <br>
-  <img src="https://github.com/thiagobraga/planner/actions/workflows/pipeline.yml/badge.svg" alt="Pipeline badge" />
-  <img alt="GitHub Repo stars" src="https://img.shields.io/github/stars/thiagobraga/planner?style=social" alt="Github repository stars" />
+  <img src="https://github.com/thiagobraga/planner/actions/workflows/2.ci.yml/badge.svg" alt="CI badge" />
+  <img src="https://github.com/thiagobraga/planner/actions/workflows/3.release.yml/badge.svg?branch=main" alt="Release and deploy badge" />
+  <img src="https://img.shields.io/github/stars/thiagobraga/planner?style=social" alt="GitHub repository stars" />
 </p>
 
 ## About
 
-Planner is a minimalist Bullet Journal-inspired task manager designed to help you organize your tasks with focus and clarity.
+Planner is a minimalist task manager inspired by the Bullet Journal. It supports daily planning, monthly organization, habit tracking, collections, tags and filters through a clean, distraction-free interface.
 
-It supports daily planning, monthly organization, habit tracking, collections, tags and filters through a clean and distraction-free interface.
+The design system is in [DESIGN.md](./DESIGN.md). Data flow, services and real-time sync are in [CLAUDE.md](./CLAUDE.md).
 
 ## Features
 
@@ -42,19 +43,21 @@ It supports daily planning, monthly organization, habit tracking, collections, t
 
 ## Installation
 
-### Requirements
+- Requires Docker and Docker Compose. Node 24+ is only needed outside Docker.
+- Copy the env file and fill `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` and `CORS_ORIGIN`:
 
-- Docker
-- Docker Compose
+  ```bash
+  cp .env.example .env
+  ```
 
-### Setup
+- Start the stack (installs deps, runs migrations, serves api on 4000 and app on 5173):
 
-```bash
-cp .env.example .env
-docker compose up -d
-```
+  ```bash
+  docker compose up -d
+  ```
 
-Open [http://localhost:5173](http://localhost:5173) in your browser.
+- Open [http://localhost:5173](http://localhost:5173).
+- Optional, once per clone: `bash .hooks/setup-hooks.sh` (see [Git hooks](#git-hooks)).
 
 ### Production deployment
 
@@ -75,129 +78,123 @@ The first rollout from the legacy single-app stack briefly releases port 8080 be
 
 ```
 📁 planner/
-├── 📁 .claude/
-├── 📁 .docker/
-│   ├── 📁 api/
-│   ├── 📁 app/
-│   ├── 📁 pgadmin/
-│   └── 📁 redis/
+├── 📁 api/                          # Express + PostgreSQL + Redis backend
+│   └── 📁 src/
+│       ├── 📁 db/                   # connection pool, Redis clients, SQL migrations (run at startup)
+│       ├── 📁 engines/              # recurrence rules (daily, weekly, monthly, yearly)
+│       ├── 📁 mcp/                  # MCP server and tools for AI agents
+│       ├── 📁 middleware/           # auth (session or token), CSRF, scopes, error handler
+│       ├── 📁 oauth/                # OAuth 2.1 provider for hosted MCP clients
+│       ├── 📁 parsers/              # Peggy grammars for the filter language and dates
+│       ├── 📁 routes/               # HTTP controllers, one file per resource under /api/v1
+│       ├── 📁 services/             # business logic and SQL; syncService broadcasts real-time events
+│       ├── 📁 types/                # shared TypeScript types
+│       └── 📁 utils/                # small helpers such as AppError
+├── 📁 app/                          # React + Vite frontend (installable PWA)
+│   ├── 📁 e2e/                      # Playwright end-to-end tests
+│   ├── 📁 public/                   # icons, splash screens, web manifest
+│   └── 📁 src/
+│       ├── 📁 api/                  # fetch client and React Query setup
+│       ├── 📁 components/           # UI pieces: board, daily, dnd, habits, monthly, settings, ui
+│       ├── 📁 contexts/             # AuthContext: login state and socket lifecycle
+│       ├── 📁 hooks/                # useSync (real-time), drag and drop, preferences, shortcuts
+│       ├── 📁 i18n/                 # translations
+│       ├── 📁 pages/                # one component per route; admin/ holds admin screens
+│       ├── 📁 stores/               # Zustand stores and optimistic update helpers
+│       ├── 📁 types/                # shared TypeScript types
+│       └── 📁 utils/                # socket singleton, date ranges, small helpers
+├── 📁 .docker/                      # Dockerfiles, entrypoints, nginx, Redis and pgAdmin config
 ├── 📁 .github/
-│   ├── 📁 workflows/
-│   ├── 📄 copilot-instructions.md
-│   └── 📄 dependabot.yml
-├── 📁 .hooks/
-├── 📁 .specs/
-├── 📁 .vscode/
-├── 📁 api/
-│   ├── 📁 src/
-│   │   ├── 📁 db/
-│   │   │   └── 📁 migrations/
-│   │   ├── 📁 engines/
-│   │   ├── 📁 middleware/
-│   │   ├── 📁 parsers/
-│   │   ├── 📁 routes/
-│   │   ├── 📁 services/
-│   │   ├── 📁 types/
-│   │   ├── 📁 utils/
-│   ├── 🟨 eslint.config.js
-│   ├── 🔢 package-lock.json
-│   └── 🔢 package.json
-├── 📁 app/
-│   ├── 📁 e2e/
-│   │   ├── 📁 fixtures/
-│   │   ├── 📁 specs/
-│   │   │   ├── 📁 api/
-│   │   │   └── 📁 board/
-│   ├── 📁 public/
-│   │   ├── 📁 images/
-│   │   │   ├── 📁 icons/
-│   │   │   ├── 📁 logo/
-│   │   │   └── 📁 splash/
-│   │   │       └── 📁 ios/
-│   │   ├── 📄 favicon.ico
-│   │   ├── 📄 manifest.dev.webmanifest
-│   │   └── 📄 manifest.webmanifest
-│   ├── 📁 src/
-│   │   ├── 📁 api/
-│   │   ├── 📁 components/
-│   │   │   ├── 📁 board/
-│   │   │   ├── 📁 dnd/
-│   │   │   ├── 📁 habits/
-│   │   │   ├── 📁 monthly/
-│   │   │   └── 📁 ui/
-│   │   ├── 📁 contexts/
-│   │   ├── 📁 hooks/
-│   │   ├── 📁 i18n/
-│   │   │   ├── 📁 locales/
-│   │   ├── 📁 pages/
-│   │   │   │   └── 📁 helpers/
-│   │   │   └── 📁 admin/
-│   │   ├── 📁 stores/
-│   │   ├── 📁 test/
-│   │   ├── 📁 types/
-│   │   ├── 📁 utils/
-│   │   └── 🎨 index.css
-│   ├── 🟨 eslint.config.js
-│   ├── 📄 index.html
-│   ├── 🔢 package-lock.json
-│   ├── 🔢 package.json
-│   └── 🟨 tailwind.config.js
-├── 📄 .claudeignore
-├── 📄 .dockerignore
-├── 📄 .env.example
-├── 📄 .gitignore
-├── 📄 AGENTS.md
-├── 📄 CLAUDE.md
-├── 📄 compose.prod.yml
-├── 📄 compose.yml
-├── 📄 DESIGN.md
-├── 📄 GEMINI.md
-├── 🔢 package-lock.json
-├── 🔢 package.json
+│   ├── 📁 workflows/                # numbered CI, release and deploy pipelines
+│   └── 📄 dependabot.yml            # weekly dependency updates
+├── 📁 .claude/                      # Claude Code agents, commands and skills for this repo
+├── 📁 .hooks/                       # versioned git hooks (pre-commit, pre-push)
+├── 📁 .specs/                       # feature specs: plan.md (what) and task.md (how) per change
+├── 📄 CLAUDE.md                     # rules for AI agents; AGENTS.md, GEMINI.md and copilot-instructions.md symlink to it
+├── 📄 DESIGN.md                     # design system: palette, typography, spacing
+├── 📄 compose.yml                   # dev stack: api, app, Postgres, Redis, pgAdmin
+├── 📄 compose.prod.yml              # production stack, images from GHCR
+├── 📄 release-config.json           # release-please settings
+├── 📄 .release-manifest.json        # last released version, kept by release-please
+├── 📄 CHANGELOG.md                  # generated by release-please
+├── 📄 .env.example                  # required environment variables
 └── 📄 README.md
 ```
 
-## Architecture
+## MCP Server
 
-See [DESIGN.md](./DESIGN.md) for detailed design system specification, component library, and visual guidelines. Data flow, service architecture, and real-time sync mechanisms documented in [CLAUDE.md](./CLAUDE.md).
+Planner has an [MCP](https://modelcontextprotocol.io) server at `/api/v1/mcp` for Claude Code, Claude Desktop, Cursor, VS Code and other clients. It uses the same personal API tokens as the REST API.
 
-## Using the API from scripts and AI agents
+### API token
 
-Create a personal API token in **Settings > Integrations**. Choose *Read only* or *Read & write* and an expiry; the token (`plnr_...`) is shown once. Send it as a bearer header - no cookies or CSRF token needed:
+- Create one in **Settings > Integrations**: _Read only_ or _Read & write_, plus an expiry. The token (`plnr_...`) is shown once.
+- Send it as `Authorization: Bearer plnr_...`. No cookies or CSRF token needed.
+- Read-only tokens get `403 INSUFFICIENT_SCOPE` on writes. Tokens cannot reach token management or admin routes.
+- Changes made with a token sync live and are attributed to it. Settings > Integrations lists recent agent activity.
+- Tokens stop working when you revoke them, reset your password, or an admin disables your account.
 
 ```bash
 curl -H "Authorization: Bearer plnr_xxxxxxxx" https://planner.local/api/v1/daily/2026-10-05/2026-10-11
-
-curl -X POST -H "Authorization: Bearer plnr_xxxxxxxx" -H "Content-Type: application/json" \
-  -d '{"title":"Call the dentist"}' https://planner.local/api/v1/tasks
 ```
 
-Changes made with a token sync live to open tabs and are attributed to the token: Settings > Integrations lists recent agent activity (per token or across all of them), and an opt-in notice names the agent when it changes something while Planner is open. Read-only tokens get `403 INSUFFICIENT_SCOPE` on writes. Tokens cannot manage tokens or reach admin routes, and are revoked when you revoke them in Settings, reset your password, or an admin disables your account.
-
-### Connect AI agents (MCP)
-
-Planner exposes a [Model Context Protocol](https://modelcontextprotocol.io) server at `/api/v1/mcp`, so Claude Code, Claude Desktop, Cursor, VS Code and other MCP clients can read and manage your tasks. **Settings > Integrations** shows ready-to-paste setup; for Claude Code:
+### Connect an agent
 
 ```bash
 claude mcp add --transport http planner https://planner.local/api/v1/mcp \
   --header "Authorization: Bearer plnr_xxxxxxxx"
 ```
 
-Tools: `get_today`, `get_upcoming`, `get_inbox`, `get_collection`, `list_collections`, `list_labels`, `search`, `filter_tasks`, `list_habits`, and with a Read & write token also `create_task`, `update_task`, `complete_task`, `reopen_task`, `move_task`, `reschedule_tasks`, `delete_task`, `log_habit`. Dates like "next friday 3pm" are resolved by Planner in your timezone.
+- Read tools (today, upcoming, inbox, collections, labels, search, filters, habits) are always on.
+- A Read & write token adds create, update, complete, move, reschedule, delete and habit logging.
+- Full list and ready-to-paste setups: **Settings > Integrations** and `api/src/mcp/tools/`.
+- Dates like "next friday 3pm" are resolved in your timezone.
 
-### Connect from claude.ai, ChatGPT and other hosted clients (OAuth)
+### Hosted clients (claude.ai, ChatGPT)
 
-Hosted MCP clients that can't take a pasted header sign in with OAuth instead. Add `https://<your-planner>/api/v1/mcp` as a custom connector. A Planner consent screen opens, and you choose read & write or read only. The app then appears under **Settings > Integrations > Connected apps**, where **Disconnect** cuts it off immediately.
+- Add `https://<your-planner>/api/v1/mcp` as a custom connector, then approve on the Planner consent screen (read & write or read only).
+- Manage or **Disconnect** the app under **Settings > Integrations > Connected apps**.
+- Planner is its own OAuth 2.1 server (PKCE S256, dynamic client registration, rotating refresh tokens). The issuer is `PUBLIC_BASE_URL`, default `CORS_ORIGIN`, and it must be public HTTPS.
 
-Planner is its own OAuth 2.1 authorization server (PKCE S256, dynamic client registration, rotating refresh tokens). Discovery is served at `/.well-known/oauth-protected-resource/api/v1/mcp` and `/.well-known/oauth-authorization-server`. The issuer is `PUBLIC_BASE_URL`, which defaults to `CORS_ORIGIN`. The connector URL must be reachable over public HTTPS.
+## CI workflows
+
+Workflow files and names are numbered in the order work happens. Each job carries the workflow number plus a letter (`2b`, `4c`), so the Actions sidebar keeps the order.
+
+| Workflow        | Runs on                                         | Does                                                                                                                                                                        |
+| --------------- | ----------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `1.review.yml`  | PR to `main`                                    | 1a fails on high-severity dependency changes; 1b lints workflows with actionlint and zizmor                                                                                 |
+| `2.ci.yml`      | PR and push to `main`, Monday schedule, by hand | 2a quality (`2a.quality.yml`: lint, tests, build, E2E), then 2b security (`2b.security.yml`: `npm audit`, CodeQL, secret scan, SBOM); on PRs also 2c container scan (Trivy) |
+| `3.release.yml` | Push to `main`                                  | 3a release-please opens or updates the release PR; on merge it tags, 3b re-runs quality on the tagged commit, 3c calls deploy                                               |
+| `4.deploy.yml`  | Called by 3, or run by hand from `main`         | 4a validates blue/green scripts and Compose; 4b builds SHA images, 4c scans them, 4d moves `latest` and `vX.Y.Z`, 4e deploys to the VPS                                    |
+
+- Deploy only follows a release merge and only runs from `main`. A manual run from another branch skips every job.
+- Deploy runs in the `production` environment. Adding a required reviewer there makes it wait for approval.
+- Actions are pinned to commit SHAs (Dependabot keeps them current), workflows default to no permissions, and every job has a timeout.
+- PRs read the Docker cache but never write it. Only deploy writes it.
+
+## Releases
+
+Versions follow [SemVer](https://semver.org/) and tags are `vX.Y.Z`. [release-please](https://github.com/googleapis/release-please) reads Conventional Commits on `main` and keeps one release PR open.
+
+| Commit                                          | Bump                            |
+| ----------------------------------------------- | ------------------------------- |
+| `fix:`                                          | patch                           |
+| `feat:`                                         | minor                           |
+| `feat!:` or `BREAKING CHANGE:` footer           | major (minor while below 1.0.0) |
+| `docs`, `style`, `test`, `chore`, `ci`, `build` | none, hidden from the changelog |
+
+To cut a release, merge the release PR. It bumps the version, updates `CHANGELOG.md`, tags `vX.Y.Z` and deploys (see [CI workflows](#ci-workflows)). Plain pushes to `main` do not deploy.
+
+PRs opened by `GITHUB_TOKEN` do not trigger CI. Set the `RELEASE_PLEASE_TOKEN` secret (a PAT or app token) so CI runs on the release PR.
+
+The release version is unrelated to `BUILD_ID` / `/api/v1/version`, which only detect a new deploy for the "update available" toast.
 
 ## Testing & Coverage
 
-Two coverage reports are browsable on the coverage host — the Vitest report at
-`https://coverage.planner.local` (root) and the Playwright e2e report at
-`https://coverage.planner.local/e2e/`. Both are served by a static nginx
-container from `app/coverage-reports/` (kept outside `dist/` so app builds
-never wipe them):
+Two coverage reports are browsable on the coverage host: the Vitest report at `https://coverage.planner.local` and the Playwright E2E report at `https://coverage.planner.local/e2e/`. Both are served by a static nginx container from `app/coverage-reports/`, which sits outside `dist/` so app builds never wipe it.
+
+Prerequisites:
+
+- The `coverage.planner.local` entry in `/etc/hosts`. TLS is provided by Traefik and is pre-configured for this host. In isolated worktree stacks the host is `coverage.<agent>.planner.local`, for example `coverage.claude.planner.local`.
 
 ```bash
 docker compose up -d                                    # includes the coverage container
@@ -205,69 +202,35 @@ docker compose exec app npx vitest run --reporter=html  # Vitest report (coverag
 docker compose exec app npm run test:e2e:coverage       # E2E report (coverage-reports/e2e/)
 ```
 
-### E2E coverage (Playwright)
-
-`test:e2e:coverage` builds the app with istanbul instrumentation
-(`VITE_COVERAGE=true`), runs Playwright against a `vite preview` server
-(auto-started on port 4173), collects a `window.__coverage__` snapshot after
-each test into `coverage-e2e/raw/`, and merges them into `coverage-reports/e2e/`.
-Coverage is opt-in — plain `npm run test:e2e` stays unchanged and
-un-instrumented. (Note: only frontend code is covered; API routes hit during
-e2e are not counted.)
-
-### Prerequisites
-
-- The `coverage.planner.local` entry in `/etc/hosts` (TLS is provided by Traefik and is pre-configured for this host). In isolated worktree stacks the host is `coverage.<agent>.planner.local`, e.g. `coverage.claude.planner.local`.
-- Both reports are served from `app/coverage-reports/` — the nginx bind mount stays valid across regenerations (only file contents change, never the directory itself).
+`test:e2e:coverage` builds the app with istanbul instrumentation (`VITE_COVERAGE=true`), runs Playwright against a `vite preview` server on port 4173, collects a `window.__coverage__` snapshot after each test into `coverage-e2e/raw/`, and merges them into `coverage-reports/e2e/`. Coverage is opt-in: plain `npm run test:e2e` stays un-instrumented. Only frontend code is covered; API routes hit during E2E are not counted.
 
 ## Contributing
 
-Contributions are welcome.
+Contributions are welcome. Use [Conventional Commits](https://www.conventionalcommits.org/) for commits and branch names (`feat/`, `fix/`, `chore/`, `docs/`, ...), because release-please builds the changelog and version bumps from them.
 
 ### Git hooks
 
-Optional but recommended — they run the same checks CI does, so a red
-pipeline shows up locally instead of on GitHub. Enable once per clone:
+Optional but recommended: they run the same checks CI does, so a red pipeline shows up locally instead of on GitHub. Enable once per clone:
 
 ```bash
-./.hooks/setup-hooks.sh     # sets core.hooksPath to .hooks/
+bash .hooks/setup-hooks.sh     # sets core.hooksPath to .hooks/
 ```
 
-| Hook       | Runs                    | Typical time |
-| ---------- | ----------------------- | ------------ |
-| pre-commit | `lint`                  | 2–8s         |
-| pre-push   | `lint`, `test`, `build` | ~30s/package |
+| Hook       | Runs                    |
+| ---------- | ----------------------- |
+| pre-commit | `lint`                  |
+| pre-push   | `lint`, `test`, `build` |
 
-Both only check the packages your change actually touches, so a docs-only
-commit does no work and an `api/` change never waits on the app suite.
-Commands run natively when `node_modules` is present, otherwise through the
-running compose service; with neither available they warn and skip rather
-than blocking you.
+Both only check the packages your change touches, so a docs-only commit does no work and an `api/` change never waits on the app suite. Commands run natively when `node_modules` is present, otherwise through the running compose service. With neither available they warn and skip instead of blocking you.
 
-Bypass a single run with `--no-verify`, or `export SKIP_HOOKS=1` for a
-session. Disable entirely with `git config --unset core.hooksPath`.
+Bypass a single run with `--no-verify`, or `export SKIP_HOOKS=1` for a session. Disable entirely with `git config --unset core.hooksPath`.
 
 ### Workflow
 
 1. Fork the repository.
-2. Create a branch:
-
-```bash
-git checkout -b feature/my-feature
-```
-
-3. Commit your changes:
-
-```bash
-git commit -m "feat: add my feature"
-```
-
-4. Push the branch:
-
-```bash
-git push origin feature/my-feature
-```
-
+2. Create a branch: `git checkout -b feat/my-feature`
+3. Commit your changes: `git commit -m "feat: add my feature"`
+4. Push the branch: `git push origin feat/my-feature`
 5. Open a pull request.
 
 ## License

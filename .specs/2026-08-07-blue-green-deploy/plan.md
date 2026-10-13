@@ -51,7 +51,7 @@ First rollout is a **bootstrap**: bring up the first color, then stop the legacy
 - `compose.prod.yml` - shared `router`/PostgreSQL/Redis; `compose.prod.color.yml` - per-color `app`/`api`/`migrate`.
 - `deploy/10-router.conf` (new) + `deploy/00-upstreams.conf` (new, runtime state).
 - `scripts/blue-green-deploy.sh` (new).
-- `.github/workflows/deploy.yml` — run the script; keep verify step.
+- `.github/workflows/4.deploy.yml` - run the script; keep verify step.
 - `api/src/index.ts` - graceful shutdown, sync startup gate, trusted proxy count (+ unit tests).
 - `.gitignore` — runtime state files.
 - README/AGENTS docs + `.specs` (this folder).
