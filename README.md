@@ -19,14 +19,14 @@
   <img src="https://img.shields.io/badge/license-MIT-f5f0e8?style=flat" alt="MIT License" />
   <br>
   <img src="https://github.com/thiagobraga/planner/actions/workflows/2.ci.yml/badge.svg" alt="CI badge" />
-  <img alt="GitHub Repo stars" src="https://img.shields.io/github/stars/thiagobraga/planner?style=social" alt="Github repository stars" />
+  <img src="https://img.shields.io/github/stars/thiagobraga/planner?style=social" alt="GitHub repository stars" />
 </p>
 
 ## About
 
-Planner is a minimalist Bullet Journal-inspired task manager designed to help you organize your tasks with focus and clarity.
+Planner is a minimalist task manager inspired by the Bullet Journal. It supports daily planning, monthly organization, habit tracking, collections, tags and filters through a clean, distraction-free interface.
 
-It supports daily planning, monthly organization, habit tracking, collections, tags and filters through a clean and distraction-free interface.
+The design system is in [DESIGN.md](./DESIGN.md). Data flow, services and real-time sync are in [CLAUDE.md](./CLAUDE.md).
 
 ## Features
 
@@ -50,101 +50,59 @@ It supports daily planning, monthly organization, habit tracking, collections, t
 ### Setup
 
 ```bash
-cp .env.example .env
-docker compose up -d
+cp .env.example .env          # fill POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB and CORS_ORIGIN
+docker compose up -d          # installs deps, runs migrations, starts api (4000) and app (5173)
+bash .hooks/setup-hooks.sh    # optional, one time: see Git hooks below
 ```
 
-Open [http://localhost:5173](http://localhost:5173) in your browser.
+Open [http://localhost:5173](http://localhost:5173) in your browser. Node 24 or later is only needed to run scripts outside Docker.
 
 ## Project Structure
 
 ```
 📁 planner/
-├── 📁 .claude/
-├── 📁 .docker/
-│   ├── 📁 api/
-│   ├── 📁 app/
-│   ├── 📁 pgadmin/
-│   └── 📁 redis/
+├── 📁 api/                          # Express + PostgreSQL + Redis backend
+│   └── 📁 src/
+│       ├── 📁 db/                   # connection pool, Redis clients, SQL migrations (run at startup)
+│       ├── 📁 engines/              # recurrence rules (daily, weekly, monthly, yearly)
+│       ├── 📁 mcp/                  # MCP server and tools for AI agents
+│       ├── 📁 middleware/           # auth (session or token), CSRF, scopes, error handler
+│       ├── 📁 oauth/                # OAuth 2.1 provider for hosted MCP clients
+│       ├── 📁 parsers/              # Peggy grammars for the filter language and dates
+│       ├── 📁 routes/               # HTTP controllers, one file per resource under /api/v1
+│       ├── 📁 services/             # business logic and SQL; syncService broadcasts real-time events
+│       ├── 📁 types/                # shared TypeScript types
+│       └── 📁 utils/                # small helpers such as AppError
+├── 📁 app/                          # React + Vite frontend (installable PWA)
+│   ├── 📁 e2e/                      # Playwright end-to-end tests
+│   ├── 📁 public/                   # icons, splash screens, web manifest
+│   └── 📁 src/
+│       ├── 📁 api/                  # fetch client and React Query setup
+│       ├── 📁 components/           # UI pieces: board, daily, dnd, habits, monthly, settings, ui
+│       ├── 📁 contexts/             # AuthContext: login state and socket lifecycle
+│       ├── 📁 hooks/                # useSync (real-time), drag and drop, preferences, shortcuts
+│       ├── 📁 i18n/                 # translations
+│       ├── 📁 pages/                # one component per route; admin/ holds admin screens
+│       ├── 📁 stores/               # Zustand stores and optimistic update helpers
+│       ├── 📁 types/                # shared TypeScript types
+│       └── 📁 utils/                # socket singleton, date ranges, small helpers
+├── 📁 .docker/                      # Dockerfiles, entrypoints, nginx, Redis and pgAdmin config
 ├── 📁 .github/
-│   ├── 📁 workflows/
-│   ├── 📄 copilot-instructions.md
-│   └── 📄 dependabot.yml
-├── 📁 .hooks/
-├── 📁 .specs/
-├── 📁 .vscode/
-├── 📁 api/
-│   ├── 📁 src/
-│   │   ├── 📁 db/
-│   │   │   └── 📁 migrations/
-│   │   ├── 📁 engines/
-│   │   ├── 📁 middleware/
-│   │   ├── 📁 parsers/
-│   │   ├── 📁 routes/
-│   │   ├── 📁 services/
-│   │   ├── 📁 types/
-│   │   ├── 📁 utils/
-│   ├── 🟨 eslint.config.js
-│   ├── 🔢 package-lock.json
-│   └── 🔢 package.json
-├── 📁 app/
-│   ├── 📁 e2e/
-│   │   ├── 📁 fixtures/
-│   │   ├── 📁 specs/
-│   │   │   ├── 📁 api/
-│   │   │   └── 📁 board/
-│   ├── 📁 public/
-│   │   ├── 📁 images/
-│   │   │   ├── 📁 icons/
-│   │   │   ├── 📁 logo/
-│   │   │   └── 📁 splash/
-│   │   │       └── 📁 ios/
-│   │   ├── 📄 favicon.ico
-│   │   ├── 📄 manifest.dev.webmanifest
-│   │   └── 📄 manifest.webmanifest
-│   ├── 📁 src/
-│   │   ├── 📁 api/
-│   │   ├── 📁 components/
-│   │   │   ├── 📁 board/
-│   │   │   ├── 📁 dnd/
-│   │   │   ├── 📁 habits/
-│   │   │   ├── 📁 monthly/
-│   │   │   └── 📁 ui/
-│   │   ├── 📁 contexts/
-│   │   ├── 📁 hooks/
-│   │   ├── 📁 i18n/
-│   │   │   ├── 📁 locales/
-│   │   ├── 📁 pages/
-│   │   │   │   └── 📁 helpers/
-│   │   │   └── 📁 admin/
-│   │   ├── 📁 stores/
-│   │   ├── 📁 test/
-│   │   ├── 📁 types/
-│   │   ├── 📁 utils/
-│   │   └── 🎨 index.css
-│   ├── 🟨 eslint.config.js
-│   ├── 📄 index.html
-│   ├── 🔢 package-lock.json
-│   ├── 🔢 package.json
-│   └── 🟨 tailwind.config.js
-├── 📄 .claudeignore
-├── 📄 .dockerignore
-├── 📄 .env.example
-├── 📄 .gitignore
-├── 📄 AGENTS.md
-├── 📄 CLAUDE.md
-├── 📄 compose.prod.yml
-├── 📄 compose.yml
-├── 📄 DESIGN.md
-├── 📄 GEMINI.md
-├── 🔢 package-lock.json
-├── 🔢 package.json
+│   ├── 📁 workflows/                # numbered CI, release and deploy pipelines
+│   └── 📄 dependabot.yml            # weekly dependency updates
+├── 📁 .claude/                      # Claude Code agents, commands and skills for this repo
+├── 📁 .hooks/                       # versioned git hooks (pre-commit, pre-push)
+├── 📁 .specs/                       # feature specs: plan.md (what) and task.md (how) per change
+├── 📄 CLAUDE.md                     # rules for AI agents; AGENTS.md, GEMINI.md and copilot-instructions.md symlink to it
+├── 📄 DESIGN.md                     # design system: palette, typography, spacing
+├── 📄 compose.yml                   # dev stack: api, app, Postgres, Redis, pgAdmin
+├── 📄 compose.prod.yml              # production stack, images from GHCR
+├── 📄 release-config.json           # release-please settings
+├── 📄 .release-manifest.json        # last released version, kept by release-please
+├── 📄 CHANGELOG.md                  # generated by release-please
+├── 📄 .env.example                  # required environment variables
 └── 📄 README.md
 ```
-
-## Architecture
-
-See [DESIGN.md](./DESIGN.md) for detailed design system specification, component library, and visual guidelines. Data flow, service architecture, and real-time sync mechanisms documented in [CLAUDE.md](./CLAUDE.md).
 
 ## Using the API from scripts and AI agents
 
@@ -211,11 +169,11 @@ Workflow files and names are numbered in the order work happens. Each job carrie
 
 ## Testing & Coverage
 
-Two coverage reports are browsable on the coverage host — the Vitest report at
-`https://coverage.planner.local` (root) and the Playwright e2e report at
-`https://coverage.planner.local/e2e/`. Both are served by a static nginx
-container from `app/coverage-reports/` (kept outside `dist/` so app builds
-never wipe them):
+Two coverage reports are browsable on the coverage host: the Vitest report at `https://coverage.planner.local` and the Playwright E2E report at `https://coverage.planner.local/e2e/`. Both are served by a static nginx container from `app/coverage-reports/`, which sits outside `dist/` so app builds never wipe it.
+
+Prerequisites:
+
+- The `coverage.planner.local` entry in `/etc/hosts`. TLS is provided by Traefik and is pre-configured for this host. In isolated worktree stacks the host is `coverage.<agent>.planner.local`, for example `coverage.claude.planner.local`.
 
 ```bash
 docker compose up -d                                    # includes the coverage container
@@ -223,69 +181,35 @@ docker compose exec app npx vitest run --reporter=html  # Vitest report (coverag
 docker compose exec app npm run test:e2e:coverage       # E2E report (coverage-reports/e2e/)
 ```
 
-### E2E coverage (Playwright)
-
-`test:e2e:coverage` builds the app with istanbul instrumentation
-(`VITE_COVERAGE=true`), runs Playwright against a `vite preview` server
-(auto-started on port 4173), collects a `window.__coverage__` snapshot after
-each test into `coverage-e2e/raw/`, and merges them into `coverage-reports/e2e/`.
-Coverage is opt-in — plain `npm run test:e2e` stays unchanged and
-un-instrumented. (Note: only frontend code is covered; API routes hit during
-e2e are not counted.)
-
-### Prerequisites
-
-- The `coverage.planner.local` entry in `/etc/hosts` (TLS is provided by Traefik and is pre-configured for this host). In isolated worktree stacks the host is `coverage.<agent>.planner.local`, e.g. `coverage.claude.planner.local`.
-- Both reports are served from `app/coverage-reports/` — the nginx bind mount stays valid across regenerations (only file contents change, never the directory itself).
+`test:e2e:coverage` builds the app with istanbul instrumentation (`VITE_COVERAGE=true`), runs Playwright against a `vite preview` server on port 4173, collects a `window.__coverage__` snapshot after each test into `coverage-e2e/raw/`, and merges them into `coverage-reports/e2e/`. Coverage is opt-in: plain `npm run test:e2e` stays un-instrumented. Only frontend code is covered; API routes hit during E2E are not counted.
 
 ## Contributing
 
-Contributions are welcome.
+Contributions are welcome. Use [Conventional Commits](https://www.conventionalcommits.org/) for commits and branch names (`feat/`, `fix/`, `chore/`, `docs/`, ...), because release-please builds the changelog and version bumps from them.
 
 ### Git hooks
 
-Optional but recommended — they run the same checks CI does, so a red
-pipeline shows up locally instead of on GitHub. Enable once per clone:
+Optional but recommended: they run the same checks CI does, so a red pipeline shows up locally instead of on GitHub. Enable once per clone:
 
 ```bash
-./.hooks/setup-hooks.sh     # sets core.hooksPath to .hooks/
+bash .hooks/setup-hooks.sh     # sets core.hooksPath to .hooks/
 ```
 
-| Hook       | Runs                    | Typical time |
-| ---------- | ----------------------- | ------------ |
-| pre-commit | `lint`                  | 2–8s         |
-| pre-push   | `lint`, `test`, `build` | ~30s/package |
+| Hook       | Runs                    |
+| ---------- | ----------------------- |
+| pre-commit | `lint`                  |
+| pre-push   | `lint`, `test`, `build` |
 
-Both only check the packages your change actually touches, so a docs-only
-commit does no work and an `api/` change never waits on the app suite.
-Commands run natively when `node_modules` is present, otherwise through the
-running compose service; with neither available they warn and skip rather
-than blocking you.
+Both only check the packages your change touches, so a docs-only commit does no work and an `api/` change never waits on the app suite. Commands run natively when `node_modules` is present, otherwise through the running compose service. With neither available they warn and skip instead of blocking you.
 
-Bypass a single run with `--no-verify`, or `export SKIP_HOOKS=1` for a
-session. Disable entirely with `git config --unset core.hooksPath`.
+Bypass a single run with `--no-verify`, or `export SKIP_HOOKS=1` for a session. Disable entirely with `git config --unset core.hooksPath`.
 
 ### Workflow
 
 1. Fork the repository.
-2. Create a branch:
-
-```bash
-git checkout -b feature/my-feature
-```
-
-3. Commit your changes:
-
-```bash
-git commit -m "feat: add my feature"
-```
-
-4. Push the branch:
-
-```bash
-git push origin feature/my-feature
-```
-
+2. Create a branch: `git checkout -b feat/my-feature`
+3. Commit your changes: `git commit -m "feat: add my feature"`
+4. Push the branch: `git push origin feat/my-feature`
 5. Open a pull request.
 
 ## License
