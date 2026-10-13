@@ -4,15 +4,16 @@ on:
   workflow_call:
 
 env:
-  NODE_VERSION: '24'
+  NODE_VERSION: '26'
   POSTGRES_USER: planner
   POSTGRES_PASSWORD: planner-test
   REDIS_PASSWORD: planner
 
 jobs:
   api:
-    name: API - lint, test, build
+    name: 'API: lint, test, build'
     runs-on: ubuntu-24.04
+    timeout-minutes: 20
     defaults:
       run:
         working-directory: api
@@ -40,8 +41,10 @@ jobs:
         ports:
           - 6379:6379
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
@@ -66,14 +69,17 @@ jobs:
           NODE_ENV: production
 
   app:
-    name: App - lint, test, build
+    name: 'App: lint, test, build'
     runs-on: ubuntu-24.04
+    timeout-minutes: 20
     defaults:
       run:
         working-directory: app
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
@@ -84,9 +90,10 @@ jobs:
       - run: npm run build
 
   e2e:
-    name: E2E - Playwright
+    name: 'E2E: Playwright'
     needs: [api, app]
     runs-on: ubuntu-24.04
+    timeout-minutes: 30
     services:
       postgres:
         image: postgres:16-alpine
@@ -118,8 +125,10 @@ jobs:
       PLAYWRIGHT_BASE_URL: http://127.0.0.1:4173
       PLAYWRIGHT_API_URL: http://127.0.0.1:4000
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: 'npm'
@@ -143,7 +152,10 @@ jobs:
         run: |
           npx tsx src/db/migrate.ts
           nohup node dist/index.js > /tmp/api.log 2>&1 &
-          for i in $(seq 1 60); do curl -s -o /dev/null http://127.0.0.1:4000/api/v1/health && break || sleep 1; done
+          for _ in $(seq 1 60); do
+            if curl -s -o /dev/null http://127.0.0.1:4000/api/v1/health; then break; fi
+            sleep 1
+          done
       - name: Install app dependencies
         working-directory: app
         run: npm ci
@@ -154,7 +166,7 @@ jobs:
           # Instrumented build so e2e runs collect coverage (see test:e2e:coverage)
           VITE_COVERAGE: "true"
       - name: Cache Playwright browsers
-        uses: actions/cache@v6
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ hashFiles('app/package-lock.json') }}
@@ -170,13 +182,13 @@ jobs:
         working-directory: app
         run: node e2e/merge-coverage.ts
       - name: Upload e2e coverage report
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: e2e-coverage-report
           path: app/dist/html/e2e
       - name: Upload Playwright traces
         if: failure()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: playwright-traces
           path: app/e2e/test-results
