@@ -106,7 +106,7 @@ Open [http://localhost:5173](http://localhost:5173) in your browser. Node 24 or 
 
 ## Using the API from scripts and AI agents
 
-Create a personal API token in **Settings > Integrations**. Choose *Read only* or *Read & write* and an expiry; the token (`plnr_...`) is shown once. Send it as a bearer header - no cookies or CSRF token needed:
+Create a personal API token in **Settings > Integrations**. Choose _Read only_ or _Read & write_ and an expiry; the token (`plnr_...`) is shown once. Send it as a bearer header - no cookies or CSRF token needed:
 
 ```bash
 curl -H "Authorization: Bearer plnr_xxxxxxxx" https://planner.local/api/v1/daily/2026-10-05/2026-10-11
@@ -138,12 +138,12 @@ Planner is its own OAuth 2.1 authorization server (PKCE S256, dynamic client reg
 
 Workflow files and names are numbered in the order work happens. Each job carries the workflow number plus a letter (`2b`, `4c`), so the Actions sidebar keeps the order.
 
-| Workflow | Runs on | Does |
-| -------- | ------- | ---- |
-| `1.review.yml` | PR to `main` | 1a fails on high-severity dependency changes; 1b lints workflows with actionlint and zizmor |
-| `2.ci.yml` | PR and push to `main`, Monday schedule, by hand | 2a quality (`2a.quality.yml`: lint, tests, build, E2E), then 2b security (`2b.security.yml`: `npm audit`, CodeQL, secret scan, SBOM); on PRs also 2c container scan (Trivy) |
-| `3.release.yml` | Push to `main` | 3a release-please opens or updates the release PR; on merge it tags, 3b re-runs quality on the tagged commit, 3c calls deploy |
-| `4.deploy.yml` | Called by 3, or run by hand from `main` | 4a builds SHA images, 4b scans them, 4c moves `latest` and `vX.Y.Z`, 4d deploys to the VPS |
+| Workflow        | Runs on                                         | Does                                                                                                                                                                        |
+| --------------- | ----------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `1.review.yml`  | PR to `main`                                    | 1a fails on high-severity dependency changes; 1b lints workflows with actionlint and zizmor                                                                                 |
+| `2.ci.yml`      | PR and push to `main`, Monday schedule, by hand | 2a quality (`2a.quality.yml`: lint, tests, build, E2E), then 2b security (`2b.security.yml`: `npm audit`, CodeQL, secret scan, SBOM); on PRs also 2c container scan (Trivy) |
+| `3.release.yml` | Push to `main`                                  | 3a release-please opens or updates the release PR; on merge it tags, 3b re-runs quality on the tagged commit, 3c calls deploy                                               |
+| `4.deploy.yml`  | Called by 3, or run by hand from `main`         | 4a builds SHA images, 4b scans them, 4c moves `latest` and `vX.Y.Z`, 4d deploys to the VPS                                                                                  |
 
 - Deploy only follows a release merge and only runs from `main`. A manual run from another branch skips every job.
 - Deploy runs in the `production` environment. Adding a required reviewer there makes it wait for approval.
@@ -154,11 +154,11 @@ Workflow files and names are numbered in the order work happens. Each job carrie
 
 Versions follow [SemVer](https://semver.org/) and tags are `vX.Y.Z`. [release-please](https://github.com/googleapis/release-please) reads Conventional Commits on `main` and keeps one release PR open.
 
-| Commit | Bump |
-| ------ | ---- |
-| `fix:` | patch |
-| `feat:` | minor |
-| `feat!:` or `BREAKING CHANGE:` footer | major (minor while below 1.0.0) |
+| Commit                                          | Bump                            |
+| ----------------------------------------------- | ------------------------------- |
+| `fix:`                                          | patch                           |
+| `feat:`                                         | minor                           |
+| `feat!:` or `BREAKING CHANGE:` footer           | major (minor while below 1.0.0) |
 | `docs`, `style`, `test`, `chore`, `ci`, `build` | none, hidden from the changelog |
 
 To cut a release, merge the release PR. It bumps the version, updates `CHANGELOG.md`, tags `vX.Y.Z` and deploys (see [CI workflows](#ci-workflows)). Plain pushes to `main` do not deploy.
