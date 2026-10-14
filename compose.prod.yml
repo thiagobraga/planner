@@ -1,20 +1,24 @@
 services:
-  app:
-    build:
-      context: .
-      dockerfile: .docker/app/Dockerfile
-      target: production
-    image: ghcr.io/thiagobraga/planner-app:${IMAGE_TAG:-latest}
-    container_name: planner-prod-app
-    # `edge` is a non-internal bridge: Docker cannot publish ports for a
-    # container attached only to internal networks. Host nginx reverse-proxies
-    # to the published port below and terminates TLS.
+  # Compose creates these shared networks before a color references them as external.
+  network-init:
+    profiles: [setup]
+    image: nginx:1.31-alpine
+    entrypoint: ["true"]
+    networks: [backend, egress]
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    restart: "no"
+
+  router:
+    image: nginx:1.31-alpine
+    container_name: planner-prod-router
     networks: [edge, backend]
     ports:
       - "127.0.0.1:8080:80"
+    volumes:
+      - ./deploy:/etc/nginx/conf.d:ro
     read_only: true
-    # tmpfs mounts default to root:root, which the unprivileged nginx user
-    # cannot write to; uid/gid 101 is nginx in the base image.
     tmpfs:
       - /var/cache/nginx:uid=101,gid=101
       - /var/run:uid=101,gid=101
@@ -30,89 +34,6 @@ services:
       timeout: 5s
       retries: 3
       start_period: 10s
-
-  api:
-    build:
-      context: .
-      dockerfile: .docker/api/Dockerfile
-      target: production
-    image: ghcr.io/thiagobraga/planner-api:${IMAGE_TAG:-latest}
-    container_name: planner-prod-api
-    # backend reaches app, data reaches postgres/redis, egress is the only
-    # route out to the internet (Resend). backend/data stay internal so
-    # nothing else on the stack gets outbound access.
-    networks: [backend, data, egress]
-    environment:
-      NODE_ENV: production
-      PORT: 4000
-      CORS_ORIGIN: ${CORS_ORIGIN:?CORS_ORIGIN is required}
-      DATABASE_URL_FILE: /run/secrets/database_url
-      REDIS_URL_FILE: /run/secrets/redis_url
-      CSRF_SECRET_FILE: /run/secrets/csrf_secret
-      RESEND_API_KEY_FILE: /run/secrets/resend_api_key
-      # Must be on the Resend-verified sending domain (mail.planner.thiagobraga.dev).
-      EMAIL_FROM: ${EMAIL_FROM:-noreply@mail.planner.thiagobraga.dev}
-      # Planner is a personal journal, not a bank. These previously defaulted to
-      # 30 minutes idle / 12 hours absolute, which logged the user out mid-use
-      # roughly every half hour. 30 days idle keeps a returning user signed in;
-      # a year absolute means the only routine re-login is an explicit one.
-      # Sessions stay individually revocable (logout, password change, the admin
-      # revoke-sessions action), which is the control that actually matters here.
-      SESSION_IDLE_TTL_MINUTES: ${SESSION_IDLE_TTL_MINUTES:-43200}
-      SESSION_ABSOLUTE_TTL_HOURS: ${SESSION_ABSOLUTE_TTL_HOURS:-8760}
-    secrets:
-      - database_url
-      - redis_url
-      - csrf_secret
-      - resend_api_key
-    read_only: true
-    tmpfs:
-      - /tmp
-    cap_drop: [ALL]
-    cap_add: [NET_BIND_SERVICE, NET_RAW]
-    security_opt: [no-new-privileges:true]
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:4000/api/v1/health"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 15s
-    depends_on:
-      migrate:
-        condition: service_completed_successfully
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-
-  migrate:
-    build:
-      context: .
-      dockerfile: .docker/api/Dockerfile
-      target: production
-    image: ghcr.io/thiagobraga/planner-api:${IMAGE_TAG:-latest}
-    container_name: planner-prod-migrate
-    networks: [data]
-    environment:
-      NODE_ENV: production
-      DATABASE_URL_FILE: /run/secrets/database_url
-      # migrate.js imports config.ts, which validates every secret at module
-      # load, so the migration job needs CSRF_SECRET even though it never uses it.
-      CSRF_SECRET_FILE: /run/secrets/csrf_secret
-    secrets:
-      - database_url
-      - csrf_secret
-    cap_drop: [ALL]
-    security_opt: [no-new-privileges:true]
-    restart: no
-    # migrate.js already invokes migrate() on import and exits non-zero on
-    # failure. Importing it *and* calling migrate() ran two concurrent
-    # migrations that raced each other creating schema_migrations.
-    command: ["node", "dist/db/migrate.js"]
-    depends_on:
-      postgres:
-        condition: service_healthy
 
   postgres:
     container_name: planner-prod-postgres
