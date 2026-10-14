@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.4.1](https://github.com/thiagobraga/planner/compare/v0.4.0...v0.4.1) (2026-10-14)
+
+
+### Fixed
+
+* **app:** clear lint warnings and unused Button import ([55e8027](https://github.com/thiagobraga/planner/commit/55e80278413c5846215d71777bc0e098246236f4))
+* **deploy:** run router nginx as uid 101 ([9c28915](https://github.com/thiagobraga/planner/commit/9c2891509c3bed66f32661698bb693bd02cadbe7))
+* **deploy:** run router nginx as uid 101 ([77db002](https://github.com/thiagobraga/planner/commit/77db0027014a45a76fb63f8c95ca21f9cfae0476))
+* **deploy:** show curl errors when public verification fails ([242dd94](https://github.com/thiagobraga/planner/commit/242dd94869ecd304e9c5bbecac128b9beb831e33))
+* **quick-add:** remove dim backdrop behind dialog ([6455b3d](https://github.com/thiagobraga/planner/commit/6455b3d9ee58b092be16cb46679df5738ce85fc1))
+* remove Quick Add backdrop and make Esc unfocus add inputs ([71c2a3c](https://github.com/thiagobraga/planner/commit/71c2a3cafd4484f0436f1f878e559bba624728d5))
+* **tasks:** Esc unfocuses add inputs and saves non-empty draft ([1322d89](https://github.com/thiagobraga/planner/commit/1322d89521a5ae3bb8a6a3fade71382bea9c5153))
+
 ## [0.4.0](https://github.com/thiagobraga/planner/compare/v0.3.1...v0.4.0) (2026-10-13)
 
 
