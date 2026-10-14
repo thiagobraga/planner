@@ -87,19 +87,22 @@ wait_for_container_health() {
 }
 
 verify_public() {
-  local color=$1 attempt headers
+  local color=$1 attempt headers errors
   headers=$(mktemp)
+  errors=$(mktemp)
   for attempt in $(seq 1 10); do
-    if curl --fail --silent --show-error --max-time 5 --dump-header "$headers" --output /dev/null "$PUBLIC_URL/" 2>/dev/null &&
+    if curl --fail --silent --show-error --max-time 5 --dump-header "$headers" --output /dev/null "$PUBLIC_URL/" 2>"$errors" &&
        tr -d '\r' < "$headers" | grep -iqE "^X-Planner-Color:[[:space:]]*$color[[:space:]]*$" &&
-       curl --fail --silent --show-error --max-time 5 --dump-header "$headers" --output /dev/null "$PUBLIC_URL/api/v1/health" 2>/dev/null &&
+       curl --fail --silent --show-error --max-time 5 --dump-header "$headers" --output /dev/null "$PUBLIC_URL/api/v1/health" 2>"$errors" &&
        tr -d '\r' < "$headers" | grep -iqE "^X-Planner-Color:[[:space:]]*$color[[:space:]]*$"; then
-      rm -f "$headers"
+      rm -f "$headers" "$errors"
       return 0
     fi
     sleep 5
   done
-  rm -f "$headers"
+  echo "Last curl error: $(<"$errors")" >&2
+  echo "Last response headers: $(tr -d '\r' < "$headers" | head -5 | tr '\n' ' ')" >&2
+  rm -f "$headers" "$errors"
   echo "Public verification failed: $PUBLIC_URL" >&2
   return 1
 }
