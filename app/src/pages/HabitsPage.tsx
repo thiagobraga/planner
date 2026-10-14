@@ -6,7 +6,6 @@ import { HabitTimeline, type HabitEditTarget } from '../components/habits/HabitT
 import { HabitCalendar } from '../components/habits/HabitCalendar';
 import { useHabitDrag } from '../hooks/useHabitDrag';
 import { isEchoedMove } from '../utils/moveEcho';
-import { Button } from '../components/ui/Button';
 import { ButtonGroup } from '../components/ui/ButtonGroup';
 import { Toolbar } from '../components/ui/Toolbar';
 import { PageHeader } from '../components/PageHeader';
