@@ -295,14 +295,9 @@ export function CollectionsIndexPage() {
     <div className="collections-index-page w-full max-w-2xl">
       <header className="page-header-copy">
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-lg leading-6 font-semibold text-ink h-6">
-              {t('nav.collections')}
-            </h1>
-            <p className="text-[13px] leading-6 text-ink-light opacity-60 mt-0">
-              {t('page.collectionsSubtitle')}
-            </p>
-          </div>
+          <h1 className="text-lg leading-6 font-semibold text-ink h-6">
+            {t('nav.collections')}
+          </h1>
           <button
             type="button"
             onClick={startAddRoot}
