@@ -1,4 +1,4 @@
-name: 2b. Security (reusable)
+name: 2b. Security
 
 on:
   workflow_call:

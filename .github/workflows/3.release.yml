@@ -1,4 +1,4 @@
-name: 3. Release (reusable)
+name: 3. Release
 
 # Called by 0.pipeline.yml on push to main, after 2a and 2b passed for that
 # commit. A red quality or security run means no release PR and no tag.

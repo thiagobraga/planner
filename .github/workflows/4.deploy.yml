@@ -1,4 +1,4 @@
-name: 4. Deploy (reusable or manual)
+name: 4. Deploy
 
 on:
   workflow_dispatch:

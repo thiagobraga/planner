@@ -1,4 +1,4 @@
-name: 1. Review (reusable)
+name: 1. Review
 
 on:
   workflow_call:

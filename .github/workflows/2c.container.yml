@@ -1,4 +1,4 @@
-name: 2c. Container scan (reusable)
+name: 2c. Container scan
 
 on:
   workflow_call:
