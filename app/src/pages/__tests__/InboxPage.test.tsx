@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, screen, waitFor } from '@testing-library/react';
 import { QueryClient } from '@tanstack/react-query';
 import { typeText } from '../../test/editableText';
 import { describe, it, expect, vi } from 'vitest';
@@ -295,6 +295,9 @@ describe('InboxPage', () => {
       fireEvent.blur(input);
 
       expect(mockApiCreateTask).toHaveBeenCalledTimes(1);
+      await act(async () => {
+        await mockApiCreateTask.mock.results[0].value;
+      });
     });
 
     it('creates a section task when the section field loses focus', async () => {
@@ -314,6 +317,9 @@ describe('InboxPage', () => {
       expect(mockApiCreateTask).toHaveBeenCalledWith(
         expect.objectContaining({ title: 'Section task', sectionId: 'section-1' }),
       );
+      await act(async () => {
+        await mockApiCreateTask.mock.results[0].value;
+      });
     });
 
     it('starts a note when the leading key is "-"', async () => {

@@ -27,8 +27,31 @@ env:
   IMAGE_PREFIX: ghcr.io/${{ github.repository_owner }}/planner
 
 jobs:
+  validate-deploy:
+    name: 4a. Validate blue/green deployment
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Check script and Compose configs
+        env:
+          CORS_ORIGIN: https://planner.example.com
+          IMAGE_TAG: 0123456789abcdef0123456789abcdef01234567
+        run: |
+          bash -n scripts/blue-green-deploy.sh scripts/blue-green-deploy.test.sh
+          bash scripts/blue-green-deploy.test.sh
+          docker compose --profile setup -f compose.prod.yml config --quiet
+          for color in blue green; do
+            COLOR="$color" docker compose -f compose.prod.color.yml config --quiet
+          done
+
   build:
-    name: 4a. Build and push ${{ matrix.component }} image
+    name: 4b. Build and push ${{ matrix.component }} image
     # Production only ships from main. Later jobs depend on this one, so a
     # manual run from another branch skips the whole workflow.
     if: github.ref == 'refs/heads/main'
@@ -70,7 +93,7 @@ jobs:
           cache-to: type=gha,mode=max,scope=${{ matrix.component }}
 
   scan:
-    name: 4b. Scan ${{ matrix.component }} image
+    name: 4c. Scan ${{ matrix.component }} image
     needs: build
     runs-on: ubuntu-24.04
     timeout-minutes: 20
@@ -118,7 +141,7 @@ jobs:
           COMPONENT: ${{ matrix.component }}
         run: |
           [ -f "trivy-$COMPONENT.sarif" ] || exit 0
-          jq --arg n "4. Trivy - $COMPONENT image" '.runs[].tool.driver.name = $n' "trivy-$COMPONENT.sarif" > "trivy-$COMPONENT.tmp" && mv "trivy-$COMPONENT.tmp" "trivy-$COMPONENT.sarif"
+          jq --arg n "4c. Trivy - $COMPONENT image" '.runs[].tool.driver.name = $n' "trivy-$COMPONENT.sarif" > "trivy-$COMPONENT.tmp" && mv "trivy-$COMPONENT.tmp" "trivy-$COMPONENT.sarif"
 
       - uses: github/codeql-action/upload-sarif@24c54180a607b1449ed407dd24f251e4e9147c8d # v4
         if: always()
@@ -127,8 +150,8 @@ jobs:
           category: container-scan-${{ matrix.component }}
 
   promote:
-    name: 4c. Tag ${{ matrix.component }} as latest
-    needs: scan
+    name: 4d. Tag ${{ matrix.component }} as latest
+    needs: [scan, validate-deploy]
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     permissions:
@@ -158,8 +181,8 @@ jobs:
           docker buildx imagetools create "${args[@]}" "$image:$GITHUB_SHA"
 
   deploy:
-    name: 4d. Deploy to VPS
-    needs: promote
+    name: 4e. Deploy to VPS
+    needs: [promote, validate-deploy]
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     environment: production
@@ -176,7 +199,7 @@ jobs:
           printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
           chmod 600 ~/.ssh/known_hosts
 
-      - name: Pull images and restart stack
+      - name: Deploy inactive color and switch router
         env:
           SSH_USER: ${{ secrets.SSH_USER }}
           SSH_HOST: ${{ secrets.SSH_HOST }}
@@ -189,23 +212,19 @@ jobs:
              cd /p/projects/planner && \
              git fetch --quiet origin && \
              git merge --ff-only ${{ github.sha }} && \
-             export IMAGE_TAG=${{ github.sha }} && \
              export CORS_ORIGIN=https://planner.thiagobraga.dev && \
-             docker compose -f compose.prod.yml pull && \
-             docker compose -f compose.prod.yml up -d && \
-             docker image prune -f"
+             bash scripts/blue-green-deploy.sh ${{ github.sha }}"
 
-      # The API health route answers only once the new containers are up;
-      # the app root can be served by the old stack during the restart.
-      - name: Verify service is up
+      - name: Verify app and API through public router
         run: |
           for i in $(seq 1 10); do
-            code=$(curl -s -o /dev/null -w '%{http_code}' https://planner.thiagobraga.dev/api/v1/health || true)
-            if [ "$code" = "200" ]; then
-              echo "Deploy verified (HTTP 200)"
+            app_code=$(curl -s -o /dev/null -w '%{http_code}' https://planner.thiagobraga.dev/ || true)
+            api_code=$(curl -s -o /dev/null -w '%{http_code}' https://planner.thiagobraga.dev/api/v1/health || true)
+            if [ "$app_code" = "200" ] && [ "$api_code" = "200" ]; then
+              echo "Deploy verified (app and API HTTP 200)"
               exit 0
             fi
-            echo "Attempt $i: HTTP $code, retrying in 10s"
+            echo "Attempt $i: app HTTP $app_code, API HTTP $api_code; retrying in 10s"
             sleep 10
           done
           echo "Service did not return HTTP 200 after deploy"

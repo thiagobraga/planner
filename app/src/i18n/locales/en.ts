@@ -214,7 +214,6 @@ export const englishCatalog = {
   'page.noTasks': 'No tasks yet.',
   'page.noTasksToday': 'No tasks for today.',
   'page.noCollections': 'No collections yet',
-  'page.collectionsSubtitle': 'Your projects at a glance',
   'page.addCollection': 'Add collection',
   'page.collectionName': 'Collection name…',
   'page.deleteCollection': 'Delete Collection',

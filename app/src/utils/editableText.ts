@@ -52,3 +52,10 @@ function locate(el: HTMLElement, offset: number): { node: Node; offset: number }
   }
   return last ? { node: last, offset: last.length } : { node: el, offset: 0 };
 }
+
+/** Escape on an add-task field leaves it; the field's blur handler saves any draft. */
+export function blurOnEscape(event: { key: string; currentTarget: HTMLElement; preventDefault: () => void }): void {
+  if (event.key !== 'Escape') return;
+  event.preventDefault();
+  event.currentTarget.blur();
+}

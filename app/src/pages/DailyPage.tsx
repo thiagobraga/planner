@@ -43,6 +43,7 @@ import type { DaySection } from '../types/daily';
 import type { BoardViewMode } from '../types/board';
 import { buildSetDateMenuItem } from '../components/taskDateMenuItem';
 import type { TaskSchedule } from '../types/task';
+import { blurOnEscape } from '../utils/editableText';
 
 let tempCounter = 0;
 function tempId() { return `temp-daily-${++tempCounter}`; }
@@ -568,6 +569,7 @@ export function DailyPage({ view }: { view: BoardViewMode }) {
   };
 
   const handleAddTodayKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    blurOnEscape(e);
     if (e.key !== '-' || input !== '') {
       return;
     }
@@ -656,7 +658,7 @@ export function DailyPage({ view }: { view: BoardViewMode }) {
     });
 
     return items;
-  }, [collections, contextMenu?.taskId, setAllTasks, apiUpdateTask, refreshDaily, t]);
+  }, [collections, contextMenu?.taskId, setAllTasks, refreshDaily, t]);
 
   // Keep redistributed future dates visible even when they extend past this week.
   const previewFutureSections = useMemo(
