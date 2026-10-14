@@ -76,6 +76,28 @@ jobs:
           sarif_file: trivy-secrets.sarif
           category: secret-scan
 
+  dockerfile-config:
+    name: Dockerfile configuration
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: 'config'
+          scan-ref: '.docker'
+          format: 'sarif'
+          output: 'trivy-dockerfiles.sarif'
+          exit-code: '1'
+          severity: 'HIGH,CRITICAL'
+      - uses: github/codeql-action/upload-sarif@24c54180a607b1449ed407dd24f251e4e9147c8d # v4
+        if: always()
+        with:
+          sarif_file: trivy-dockerfiles.sarif
+          category: dockerfile-config
+
   # Container vulnerability scanning lives in 2.ci.yml (PRs) and 4.deploy.yml
   # (release images pushed to GHCR).
 
