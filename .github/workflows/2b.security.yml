@@ -2,6 +2,11 @@ name: 2b. Security (reusable)
 
 on:
   workflow_call:
+    inputs:
+      codeql:
+        description: 'Run CodeQL (the change touches source or workflows)'
+        type: boolean
+        default: true
 
 permissions:
   actions: read
@@ -33,6 +38,7 @@ jobs:
 
   codeql:
     name: CodeQL analysis
+    if: inputs.codeql
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
