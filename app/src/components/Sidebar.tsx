@@ -281,11 +281,11 @@ export function Sidebar({
               e.preventDefault();
               onToggleCollapsed?.();
             }}
-            title={t(collapsed ? 'nav.expandSidebar' : 'nav.collapseSidebar')}
-            aria-label={t(collapsed ? 'nav.expandSidebar' : 'nav.collapseSidebar')}
+            title={t('nav.expandSidebar')}
+            aria-label={t('nav.expandSidebar')}
             className='sidebar-icon-link'
           >
-            {collapsed ? <PanelLeftOpen size={16} strokeWidth={1.5} /> : <PanelLeftClose size={16} strokeWidth={1.5} />}
+            <PanelLeftOpen size={16} strokeWidth={1.5} />
           </a>
 
           <a
