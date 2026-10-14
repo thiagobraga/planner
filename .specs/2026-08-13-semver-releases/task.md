@@ -33,9 +33,9 @@
 
 ## Verification
 
-- [ ] Verify release metadata is internally consistent
-- [ ] Verify changelog format matches Keep a Changelog
-- [ ] Verify the repo has a clear baseline for the first tagged release
+- [x] Verify release metadata is internally consistent
+- [x] Verify changelog format matches Keep a Changelog
+- [x] Verify the repo has a clear baseline for the first tagged release
 
 ## Discovery findings
 
