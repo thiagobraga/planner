@@ -59,6 +59,21 @@ The design system is in [DESIGN.md](./DESIGN.md). Data flow, services and real-t
 - Open [http://localhost:5173](http://localhost:5173).
 - Optional, once per clone: `bash .hooks/setup-hooks.sh` (see [Git hooks](#git-hooks)).
 
+### Production deployment
+
+Production uses `compose.prod.yml` for the shared PostgreSQL, Redis, and nginx router services. `compose.prod.color.yml` starts the app, API, and one-shot migration in separate blue and green Compose projects. The router stays on `127.0.0.1:8080` while the deploy script prepares the inactive color, checks it, switches nginx, and verifies both public app and API responses before stopping the old color.
+
+GitHub Actions runs `scripts/blue-green-deploy.sh <commit-sha>` after building and scanning the SHA-tagged images. For a manual deployment from the production checkout, set `CORS_ORIGIN=https://planner.thiagobraga.dev` and run the same script with a published 40-character commit SHA. Public verification uses `CORS_ORIGIN` unless `PUBLIC_URL` is set. The script serializes runs with `flock`. Runtime state is kept in `deploy/.active-color`, `deploy/.active-image`, `deploy/.previous-image`, and `deploy/00-upstreams.conf`; these files are ignored by Git and must be preserved between deploys.
+
+To roll back after a completed switch, run the script with the previous image SHA:
+
+```bash
+export CORS_ORIGIN=https://planner.thiagobraga.dev
+bash scripts/blue-green-deploy.sh "$(cat deploy/.previous-image)"
+```
+
+The first rollout from the legacy single-app stack briefly releases port 8080 before the router can bind it, so a short 502 window is unavoidable on that bootstrap with the host nginx configuration unchanged. Later rollouts keep the router bound. Migrations must remain backward-compatible because the old API serves while the new color migrates and starts. A failed switch restores the old router target before the old color is stopped. Do not use `docker compose down -v` for deployment or rollback.
+
 ## Project Structure
 
 ```
@@ -149,7 +164,7 @@ Workflow files and names are numbered in the order work happens. Each job carrie
 | `1.review.yml`  | PR to `main`                                    | 1a fails on high-severity dependency changes; 1b lints workflows with actionlint and zizmor                                                                                 |
 | `2.ci.yml`      | PR and push to `main`, Monday schedule, by hand | 2a quality (`2a.quality.yml`: lint, tests, build, E2E), then 2b security (`2b.security.yml`: `npm audit`, CodeQL, secret scan, SBOM); on PRs also 2c container scan (Trivy) |
 | `3.release.yml` | Push to `main`                                  | 3a release-please opens or updates the release PR; on merge it tags, 3b re-runs quality on the tagged commit, 3c calls deploy                                               |
-| `4.deploy.yml`  | Called by 3, or run by hand from `main`         | 4a builds SHA images, 4b scans them, 4c moves `latest` and `vX.Y.Z`, 4d deploys to the VPS                                                                                  |
+| `4.deploy.yml`  | Called by 3, or run by hand from `main`         | 4a validates blue/green scripts and Compose; 4b builds SHA images, 4c scans them, 4d moves `latest` and `vX.Y.Z`, 4e deploys to the VPS                                    |
 
 - Deploy only follows a release merge and only runs from `main`. A manual run from another branch skips every job.
 - Deploy runs in the `production` environment. Adding a required reviewer there makes it wait for approval.

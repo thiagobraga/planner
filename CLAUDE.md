@@ -37,6 +37,10 @@ bash .hooks/setup-hooks.sh    # one-time: points git at versioned hooks in .hook
 
 Required `.env` vars: `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `CORS_ORIGIN`.
 
+### Production deploy
+
+`compose.prod.yml` owns shared PostgreSQL, Redis, and the stable router on `127.0.0.1:8080`. `compose.prod.color.yml` owns per-color app, API, and migration projects on the shared external networks. GitHub Actions calls `scripts/blue-green-deploy.sh <sha>`; it verifies the inactive color and public router before stopping the old color. Runtime files in `deploy/` are ignored by Git. Roll back with `CORS_ORIGIN=https://planner.thiagobraga.dev bash scripts/blue-green-deploy.sh "$(cat deploy/.previous-image)"`. The first router bootstrap has a brief port-8080 handoff gap while host nginx remains unchanged. Keep production migrations backward-compatible.
+
 ### Git Hooks
 
 `core.hooksPath` is local git config and does not carry over automatically on fresh clones or new worktrees. Run `bash .hooks/setup-hooks.sh` before your first commit:

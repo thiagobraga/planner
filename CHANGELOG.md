@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.4.0](https://github.com/thiagobraga/planner/compare/v0.3.1...v0.4.0) (2026-10-13)
+
+
+### Added
+
+* add blue green production deployment ([15b4415](https://github.com/thiagobraga/planner/commit/15b4415cff7a2a241ce05e63c5cb6e2df9a3eb42))
+
+
+### Fixed
+
+* initialize production networks before color startup ([ffbfcfc](https://github.com/thiagobraga/planner/commit/ffbfcfc273240bcd5248b54ae3df421531888b4e))
+
 ## [0.3.1](https://github.com/thiagobraga/planner/compare/v0.3.0...v0.3.1) (2026-10-13)
 
 
