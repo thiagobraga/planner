@@ -31,15 +31,58 @@ The design system is in [DESIGN.md](./DESIGN.md). Data flow, services and real-t
 
 ## Features
 
-- **Daily, Monthly, and Habits Views**: Flexible layouts to manage tasks, schedule events, and log habit completions.
-- **Collections, Tags, and Filters**: Rich hierarchical collection trees and flexible classification rules.
-- **PWA (Progressive Web App) Support**: Fully installable on Desktop, iOS, and Android devices. Custom launch configurations and optimized asset precaching.
-- **Offline Mode & Local-First Flow**: Browse the app shell and cached data offline, and seamlessly queue writes (POST, PATCH, PUT, DELETE) inside an IndexedDB-backed mutation store.
-- **Background Sync & ID Remapping**: Automatically replays queued offline operations in strict FIFO order on reconnection. Automatically resolves client-minted temporary IDs with server-assigned IDs to prevent desyncing subsequent modifications.
-- **Debounced Connectivity Indicator**: Small, non-intrusive network status pill with a debounced delay to prevent flashing and a sleek glassmorphic blur style.
-- **Real-Time WebSockets**: Live synchronizations across tabs and devices via Socket.IO.
-- **List and Kanban Visualizations**: Multiple ways to visualize your workspace.
-- **Modern Routing Architecture**: Built on React Router v7 with declarative Splat path configuration.
+### Daily list
+
+Plan the week day by day. Overdue tasks stay visible until you move or finish them, and every task keeps its collection.
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset=".github/assets/daily-list-desktop-dark.png">
+    <img src=".github/assets/daily-list-desktop-light.png" alt="Daily list on desktop" width="640">
+  </picture>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset=".github/assets/daily-list-mobile-dark.png">
+    <img src=".github/assets/daily-list-mobile-light.png" alt="Daily list on mobile" height="400">
+  </picture>
+</p>
+
+### Daily Kanban
+
+The same week as cards, one column per day. Drag tasks between days to reschedule.
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset=".github/assets/daily-kanban-desktop-dark.png">
+    <img src=".github/assets/daily-kanban-desktop-light.png" alt="Daily Kanban on desktop" width="640">
+  </picture>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset=".github/assets/daily-kanban-mobile-dark.png">
+    <img src=".github/assets/daily-kanban-mobile-light.png" alt="Daily Kanban on mobile" height="400">
+  </picture>
+</p>
+
+### Habits
+
+Log habits on a calendar, group them by time of day and watch the streaks build.
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset=".github/assets/habits-desktop-dark.png">
+    <img src=".github/assets/habits-desktop-light.png" alt="Habits on desktop" width="640">
+  </picture>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset=".github/assets/habits-mobile-dark.png">
+    <img src=".github/assets/habits-mobile-light.png" alt="Habits on mobile" height="400">
+  </picture>
+</p>
+
+### Offline and real-time sync
+
+Install Planner as an app on desktop, iOS or Android. It keeps working offline: edits are queued on your device and replayed in order when you reconnect. Changes show up live across your tabs and devices.
+
+### Connect AI agents
+
+Create a personal API token or approve a hosted client, and let Claude, Cursor or any [MCP](https://modelcontextprotocol.io) client read and update your tasks. See [MCP Server](#mcp-server).
 
 ## Installation
 
