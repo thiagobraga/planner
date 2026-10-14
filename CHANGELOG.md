@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.4.1](https://github.com/thiagobraga/planner/compare/v0.4.0...v0.4.1) (2026-10-14)
+
+
+### Fixed
+
+* **deploy:** run router nginx as uid 101 ([9c28915](https://github.com/thiagobraga/planner/commit/9c2891509c3bed66f32661698bb693bd02cadbe7))
+* **deploy:** run router nginx as uid 101 ([77db002](https://github.com/thiagobraga/planner/commit/77db0027014a45a76fb63f8c95ca21f9cfae0476))
+* **deploy:** show curl errors when public verification fails ([242dd94](https://github.com/thiagobraga/planner/commit/242dd94869ecd304e9c5bbecac128b9beb831e33))
+
 ## [0.4.0](https://github.com/thiagobraga/planner/compare/v0.3.1...v0.4.0) (2026-10-13)
 
 
