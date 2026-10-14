@@ -4,19 +4,19 @@ Legend: `[ ]` not started, `[~]` in progress, `[x]` done.
 
 1. [x] Spec (`plan.md`, this file)
 2. [x] Decide screens, viewports, themes, demo data (see `plan.md`)
-3. [ ] Demo data
-   - [ ] Start the dev stack: `docker compose up -d`
-   - [ ] Create a clean account with fictional tasks, habits, collections
-4. [ ] Capture
-   - [ ] One Playwright script: 3 screens x desktop and mobile x light and dark = 12 PNGs
-   - [ ] Save PNGs to `.github/assets/` with names like `daily-list.png`
-   - [ ] Compress images (target under 300 KB each)
-5. [ ] README
-   - [ ] Rewrite Features as blocks: image, title, 1-2 lines
-   - [ ] Merge the four offline bullets into one block
-   - [ ] Drop the glassmorphic and React Router bullets
-   - [ ] Add a "Connect AI agents" block linking to the API section
-   - [ ] Use `<picture>` with `prefers-color-scheme` to switch light and dark
+3. [x] Demo data
+   - [x] Dev stack already running (`docker compose up -d`)
+   - [x] `scripts/readme-screenshots.ts` registers a throwaway account and seeds fictional collections, tasks, habit groups and 12 weeks of completions through the API
+4. [x] Capture
+   - [x] Same script: 3 screens x desktop and mobile x light and dark = 12 PNGs (`node scripts/readme-screenshots.ts`)
+   - [x] Saved to `.github/assets/` as `<screen>-<viewport>-<theme>.png`
+   - [x] Sizes are 44-146 KB, so no extra compression was needed
+5. [x] README
+   - [x] Features rewritten as blocks: title, 1-2 lines, desktop and mobile side by side
+   - [x] Four offline bullets merged into one block
+   - [x] Glassmorphic and React Router bullets dropped
+   - [x] "Connect AI agents" block links to the MCP Server section
+   - [x] `<picture>` with `prefers-color-scheme` switches light and dark
 6. [ ] Verify
+   - [x] Image paths in README all resolve; file sizes checked
    - [ ] Render the README on GitHub (draft PR preview) in light and dark mode
-   - [ ] Check image paths and file sizes
