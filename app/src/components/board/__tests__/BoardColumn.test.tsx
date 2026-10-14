@@ -31,12 +31,12 @@ describe('BoardColumn', () => {
     fireEvent.blur(input);
     await waitFor(() => expect(onCreate).toHaveBeenCalledTimes(2));
     expect(onCreate).toHaveBeenLastCalledWith('Second task', column);
-    input.textContent = 'Discard draft';
+    input.textContent = 'Saved on Escape';
     fireEvent.input(input);
     fireEvent.keyDown(input, { key: 'Escape' });
-    fireEvent.blur(input);
+    await waitFor(() => expect(onCreate).toHaveBeenCalledTimes(3));
+    expect(onCreate).toHaveBeenLastCalledWith('Saved on Escape', column);
     expect(input).toHaveTextContent('');
-    expect(onCreate).toHaveBeenCalledTimes(2);
   });
 
   it('preserves a failed journal task for retry', async () => {
