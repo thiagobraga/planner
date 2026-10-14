@@ -11,12 +11,13 @@ Legend: `[ ]` not started, `[~]` in progress, `[x]` done.
    - [x] Same script: 3 screens x desktop and mobile x light and dark = 12 PNGs (`node scripts/readme-screenshots.ts`)
    - [x] Saved to `.github/assets/` as `<screen>-<viewport>-<theme>.png`
    - [x] Sizes are 44-146 KB, so no extra compression was needed
+   - [x] Habits uses the timeline (list) view, one week back so every column is logged
 5. [x] README
    - [x] Features rewritten as blocks: title, 1-2 lines, desktop and mobile side by side
    - [x] Four offline bullets merged into one block
    - [x] Glassmorphic and React Router bullets dropped
    - [x] "Connect AI agents" block links to the MCP Server section
    - [x] `<picture>` with `prefers-color-scheme` switches light and dark
-6. [ ] Verify
+6. [~] Verify
    - [x] Image paths in README all resolve; file sizes checked
    - [ ] Render the README on GitHub (draft PR preview) in light and dark mode
