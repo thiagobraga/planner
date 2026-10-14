@@ -489,6 +489,7 @@ export function InboxPage() {
     apiDeleteSection(sectionId).catch(() => invalidate());
   }, [deletingSection, invalidate]);
 
+  const contextMenuTaskId = contextMenu?.taskId;
   const projectSubmenuItems = useMemo<ContextMenuItem[]>(() => {
     const items: ContextMenuItem[] = flattenCollections(collections).map((c) => ({
       type: 'item' as const,
@@ -500,7 +501,7 @@ export function InboxPage() {
         />
       ),
       onClick: () => {
-        apiUpdateTask(contextMenu!.taskId, { collectionId: c.id }).catch(() => invalidate());
+        if (contextMenuTaskId) apiUpdateTask(contextMenuTaskId, { collectionId: c.id }).catch(() => invalidate());
       },
     }));
 
@@ -514,14 +515,14 @@ export function InboxPage() {
       ),
       onClick: () => {
         const inbox = collections.find((c) => c.isInbox);
-        if (inbox) {
-          apiUpdateTask(contextMenu!.taskId, { collectionId: inbox.id }).catch(() => invalidate());
+        if (inbox && contextMenuTaskId) {
+          apiUpdateTask(contextMenuTaskId, { collectionId: inbox.id }).catch(() => invalidate());
         }
       },
     });
 
     return items;
-  }, [collections, contextMenu?.taskId, invalidate, t]);
+  }, [collections, contextMenuTaskId, invalidate, t]);
 
   // A section being named for the first time renders as an inline input in the
   // "+ New section" row itself, rather than up in the grouped list, so the
