@@ -1,25 +1,36 @@
 name: 3. Release
 
+# Called by 0.pipeline.yml on push to main, after 2a and 2b passed for that
+# commit. A red quality or security run means no release PR and no tag.
 on:
-  # Runs only after 2. CI finishes on main. A red CI means no release PR,
-  # no tag and no deploy. No PR code is checked out here.
-  workflow_run: # zizmor: ignore[dangerous-triggers]
-    workflows: ['2. CI']
-    types: [completed]
-    branches: [main]
+  workflow_call:
+    secrets:
+      RELEASE_PLEASE_TOKEN:
+        required: false
+    outputs:
+      release_created:
+        description: 'true when merging the release PR just created a tag'
+        value: ${{ jobs.release-please.outputs.release_created }}
+      version:
+        description: 'SemVer without the v prefix'
+        value: ${{ jobs.release-please.outputs.version }}
+      tag:
+        description: 'Tag of the draft release, e.g. v1.2.3'
+        value: ${{ jobs.release-please.outputs.tag }}
 
+permissions: {}
+
+# One release-please run at a time, never cancelled midway.
 concurrency:
   group: release
   cancel-in-progress: false
 
-permissions: {}
-
 jobs:
-  # github.sha is main's tip, not the commit CI validated. If a newer merge
-  # landed meanwhile, skip: that merge's own CI run starts its own release run.
+  # github.sha is the commit the checks validated, but release-please works on
+  # main's tip. If a newer merge landed meanwhile, skip: that merge's own run
+  # releases it after validating it.
   ci-gate:
-    name: 3a. CI passed on main tip
-    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push'
+    name: 3a. Validated commit is main tip
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions:
@@ -31,7 +42,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
-          VALIDATED: ${{ github.event.workflow_run.head_sha }}
+          VALIDATED: ${{ github.sha }}
         run: |
           tip=$(gh api "repos/$REPO/commits/main" --jq .sha)
           if [ "$tip" = "$VALIDATED" ]; then
@@ -39,11 +50,11 @@ jobs:
           else
             echo "is_tip=false" >> "$GITHUB_OUTPUT"
             echo "### Skipped" >> "$GITHUB_STEP_SUMMARY"
-            echo "CI passed for $VALIDATED but main moved to $tip. The newer push gets its own run." >> "$GITHUB_STEP_SUMMARY"
+            echo "Checks passed for $VALIDATED but main moved to $tip. The newer push gets its own run." >> "$GITHUB_STEP_SUMMARY"
           fi
 
   release-please:
-    name: 3b. Release PR and tag
+    name: 3b. Release PR and draft tag
     needs: ci-gate
     if: needs.ci-gate.outputs.is_tip == 'true'
     runs-on: ubuntu-24.04
@@ -54,12 +65,14 @@ jobs:
     outputs:
       release_created: ${{ steps.release.outputs.release_created }}
       version: ${{ steps.release.outputs.major }}.${{ steps.release.outputs.minor }}.${{ steps.release.outputs.patch }}
+      tag: ${{ steps.release.outputs.tag_name }}
     steps:
       - id: release
         uses: googleapis/release-please-action@5c625bfb5d1ff62eadeeb3772007f7f66fdcf071 # v4
         with:
-          # A PAT or app token lets CI run on the release PR; GITHUB_TOKEN
-          # events never start workflows. Set RELEASE_PLEASE_TOKEN to enable.
+          # Optional PAT or app token: it lets CI run on the release PR, since
+          # GITHUB_TOKEN events never start workflows. Publishing the release
+          # after deploy does not need it.
           token: ${{ secrets.RELEASE_PLEASE_TOKEN || secrets.GITHUB_TOKEN }}
           config-file: release-config.json
           manifest-file: .release-manifest.json
@@ -71,8 +84,8 @@ jobs:
           VERSION: ${{ steps.release.outputs.tag_name }}
         run: |
           if [ "$RELEASED" = "true" ]; then
-            echo "### Released $VERSION" >> "$GITHUB_STEP_SUMMARY"
-            echo "Tag and GitHub Release created. The Deploy job runs next." >> "$GITHUB_STEP_SUMMARY"
+            echo "### Draft release $VERSION" >> "$GITHUB_STEP_SUMMARY"
+            echo "Tag created, release kept as draft. Deploy runs next and publishes it only if the VPS is healthy." >> "$GITHUB_STEP_SUMMARY"
           elif [ "$PR_OPENED" = "true" ]; then
             echo "### Release PR updated" >> "$GITHUB_STEP_SUMMARY"
             echo "Merge the release PR to tag and deploy. Nothing is deployed until then." >> "$GITHUB_STEP_SUMMARY"
@@ -80,19 +93,3 @@ jobs:
             echo "### Nothing to release" >> "$GITHUB_STEP_SUMMARY"
             echo "No feat, fix, perf, refactor or revert commits since the last release. No release PR, no deploy." >> "$GITHUB_STEP_SUMMARY"
           fi
-
-  # Tags made with GITHUB_TOKEN do not trigger other workflows, so the
-  # deploy is chained here instead of listening for push: tags.
-  deploy:
-    name: 3c. Deploy release
-    needs: release-please
-    if: needs.release-please.outputs.release_created == 'true'
-    permissions:
-      contents: read
-      packages: write
-      security-events: write
-    uses: ./.github/workflows/4.deploy.yml
-    with:
-      version: ${{ needs.release-please.outputs.version }}
-    # The deploy job reads the SSH_* secrets, so they must be inherited.
-    secrets: inherit # zizmor: ignore[secrets-inherit]

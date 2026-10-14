@@ -1,4 +1,4 @@
-name: 2a. Quality (reusable)
+name: 2a. Quality
 
 on:
   workflow_call:

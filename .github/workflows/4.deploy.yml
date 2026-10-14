@@ -1,4 +1,4 @@
-name: 4. Deploy (reusable or manual)
+name: 4. Deploy
 
 on:
   workflow_dispatch:
@@ -7,10 +7,18 @@ on:
         description: 'SemVer to add as an image tag (e.g. 1.2.3), optional'
         type: string
         required: false
+      tag:
+        description: 'Draft release tag to publish after a healthy deploy (e.g. v1.2.3), optional'
+        type: string
+        required: false
   workflow_call:
     inputs:
       version:
         description: 'SemVer to add as an image tag (e.g. 1.2.3), optional'
+        type: string
+        required: false
+      tag:
+        description: 'Draft release tag to publish after a healthy deploy (e.g. v1.2.3), optional'
         type: string
         required: false
 
@@ -233,3 +241,23 @@ jobs:
       - name: Clean up SSH key
         if: always()
         run: rm -f ~/.ssh/deploy_key
+
+  # Last step on purpose: the release stays a draft (tag already exists) until
+  # the new color serves traffic. A failed deploy or rollback never reaches here.
+  publish:
+    name: 4f. Publish release
+    if: inputs.tag != ''
+    needs: deploy
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - name: Publish draft release as latest
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ inputs.tag }}
+        run: |
+          gh release edit "$TAG" --draft=false --latest
+          echo "### Published $TAG" >> "$GITHUB_STEP_SUMMARY"
