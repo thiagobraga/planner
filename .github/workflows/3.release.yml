@@ -1,7 +1,11 @@
 name: 3. Release
 
 on:
-  push:
+  # Runs only after 2. CI finishes on main. A red CI means no release PR,
+  # no tag and no deploy. No PR code is checked out here.
+  workflow_run: # zizmor: ignore[dangerous-triggers]
+    workflows: ['2. CI']
+    types: [completed]
     branches: [main]
 
 concurrency:
@@ -11,8 +15,37 @@ concurrency:
 permissions: {}
 
 jobs:
+  # github.sha is main's tip, not the commit CI validated. If a newer merge
+  # landed meanwhile, skip: that merge's own CI run starts its own release run.
+  ci-gate:
+    name: 3a. CI passed on main tip
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    outputs:
+      is_tip: ${{ steps.tip.outputs.is_tip }}
+    steps:
+      - id: tip
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          VALIDATED: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          tip=$(gh api "repos/$REPO/commits/main" --jq .sha)
+          if [ "$tip" = "$VALIDATED" ]; then
+            echo "is_tip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "is_tip=false" >> "$GITHUB_OUTPUT"
+            echo "### Skipped" >> "$GITHUB_STEP_SUMMARY"
+            echo "CI passed for $VALIDATED but main moved to $tip. The newer push gets its own run." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
   release-please:
-    name: 3a. Release PR and tag
+    name: 3b. Release PR and tag
+    needs: ci-gate
+    if: needs.ci-gate.outputs.is_tip == 'true'
     runs-on: ubuntu-24.04
     permissions:
       contents: write
@@ -48,21 +81,11 @@ jobs:
             echo "No feat, fix, perf, refactor or revert commits since the last release. No release PR, no deploy." >> "$GITHUB_STEP_SUMMARY"
           fi
 
-  # Re-run the tests on the tagged commit: deploy must not depend on a
-  # separate 2. CI run that may have been cancelled or skipped.
-  quality:
-    name: 3b. Quality
-    needs: release-please
-    if: needs.release-please.outputs.release_created == 'true'
-    permissions:
-      contents: read
-    uses: ./.github/workflows/2a.quality.yml
-
   # Tags made with GITHUB_TOKEN do not trigger other workflows, so the
   # deploy is chained here instead of listening for push: tags.
   deploy:
     name: 3c. Deploy release
-    needs: [release-please, quality]
+    needs: release-please
     if: needs.release-please.outputs.release_created == 'true'
     permissions:
       contents: read
