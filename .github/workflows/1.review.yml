@@ -1,19 +1,12 @@
 name: 1. Review
 
 on:
-  pull_request:
-    branches: [main]
-    paths-ignore:
-      - '**.md'
-      - '.specs/**'
-      - '.claude/**'
-      - '.claudeignore'
-      - '.vscode/**'
-      - '.gitignore'
-
-concurrency:
-  group: review-${{ github.ref }}
-  cancel-in-progress: true
+  workflow_call:
+    inputs:
+      workflows_changed:
+        description: 'Run the workflow lint (the PR touches .github/)'
+        type: boolean
+        default: true
 
 permissions:
   contents: read
@@ -33,6 +26,7 @@ jobs:
 
   workflow-lint:
     name: 1b. Workflow lint
+    if: inputs.workflows_changed
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:

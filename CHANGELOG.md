@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.2](https://github.com/thiagobraga/planner/compare/v0.4.1...v0.4.2) (2026-10-14)
+
+
+### Fixed
+
+* **lint:** make unused variables an error ([a99dd1b](https://github.com/thiagobraga/planner/commit/a99dd1bbe3131a3db9706cb5cff32f51277651d3))
+
 ## [0.4.1](https://github.com/thiagobraga/planner/compare/v0.4.0...v0.4.1) (2026-10-14)
 
 

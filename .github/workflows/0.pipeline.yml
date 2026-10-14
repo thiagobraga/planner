@@ -1,0 +1,129 @@
+name: 0. Pipeline
+
+# Single entry point. The numbered files are reusable workflows this one calls:
+#   PR:           1 review, 2a quality, 2b security, 2c container scan
+#   push to main: 2a, 2b, then 3 release (release PR or draft release + tag),
+#                 then 4 deploy, which publishes the draft only after the VPS is healthy
+#   cron / manual: 2a, 2b
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - '**.md'
+      - '.specs/**'
+      - '.claude/**'
+      - '.claudeignore'
+      - '.vscode/**'
+      - '.gitignore'
+  pull_request:
+    branches: [main]
+    paths-ignore:
+      - '**.md'
+      - '.specs/**'
+      - '.claude/**'
+      - '.claudeignore'
+      - '.vscode/**'
+      - '.gitignore'
+  schedule:
+    - cron: '0 6 * * 1' # every Monday 06:00 UTC
+  workflow_dispatch:
+
+# Pushes to main are never cancelled: a quick second merge must not drop
+# the first merge's run.
+concurrency:
+  group: pipeline-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  # Decides which path-sensitive checks a PR needs. Every other event runs all of them.
+  changes:
+    name: 0a. Changed paths
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      workflows: ${{ steps.filter.outputs.workflows }}
+      code: ${{ steps.filter.outputs.code }}
+    steps:
+      - id: filter
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT: ${{ github.event_name }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+        run: |
+          if [ "$EVENT" != "pull_request" ]; then
+            echo "workflows=true" >> "$GITHUB_OUTPUT"
+            echo "code=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          files=$(gh api "repos/$REPO/pulls/$PR/files" --paginate --jq '.[].filename')
+          flag() { if printf '%s\n' "$files" | grep -Eq "$1"; then echo true; else echo false; fi; }
+          {
+            echo "workflows=$(flag '^\.github/')"
+            echo "code=$(flag '^(api|app|\.docker)/|^package(-lock)?\.json$')"
+          } >> "$GITHUB_OUTPUT"
+          cat "$GITHUB_OUTPUT"
+
+  review:
+    name: 1. Review
+    if: github.event_name == 'pull_request'
+    needs: changes
+    uses: ./.github/workflows/1.review.yml
+    with:
+      workflows_changed: ${{ needs.changes.outputs.workflows == 'true' }}
+
+  quality:
+    name: 2a. Quality
+    uses: ./.github/workflows/2a.quality.yml
+
+  security:
+    name: 2b. Security
+    needs: [changes, quality]
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+    uses: ./.github/workflows/2b.security.yml
+    with:
+      codeql: ${{ needs.changes.outputs.code == 'true' || needs.changes.outputs.workflows == 'true' }}
+
+  container-scan:
+    name: 2c. Container scan
+    if: github.event_name == 'pull_request' && needs.changes.outputs.code == 'true'
+    needs: [changes, quality]
+    permissions:
+      contents: read
+      security-events: write
+    uses: ./.github/workflows/2c.container.yml
+
+  release:
+    name: 3. Release
+    if: github.event_name == 'push'
+    needs: [quality, security]
+    permissions:
+      contents: write
+      pull-requests: write
+    uses: ./.github/workflows/3.release.yml
+    secrets:
+      RELEASE_PLEASE_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+
+  deploy:
+    name: 4. Deploy
+    if: needs.release.outputs.release_created == 'true'
+    needs: release
+    permissions:
+      contents: write
+      packages: write
+      security-events: write
+    uses: ./.github/workflows/4.deploy.yml
+    with:
+      version: ${{ needs.release.outputs.version }}
+      tag: ${{ needs.release.outputs.tag }}
+    # The deploy job reads the SSH_* secrets, so they must be inherited.
+    secrets: inherit # zizmor: ignore[secrets-inherit]
