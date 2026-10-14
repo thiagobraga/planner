@@ -37,7 +37,14 @@ Nothing changes in the app. For developers and agents:
 - **Move out** reference material to `docs/` with a pointer and a trigger: production deploy and rollback, full `SyncEvent` type and rooms, API route reference.
 - **Delete** what the code already shows: per-service one-liners that only restate the file name, route-file list, schema table list, the "Key Files" block, the pages table beyond the non-obvious redirect rules.
 - **Merge** duplicated rules into the single strongest statement.
-- **Co-Authored-By:** keep one rule: use the trailer the harness provides; keep the per-agent formats as a compact table. Resolve the conflict with the Claude Code format by checking what the harness injects.
+- **Co-Authored-By:** one rule, stated once, with a compact per-agent table and a literal example for each. The git history has about 50 variants for 5 agents: parentheses or not (`Claude (Sonnet 5.5)` vs `Claude Sonnet 5.5`), `Co-Authored-By` vs `Co-authored-by`, raw model ids vs readable names, effort written as `high`, `High`, `, high` or `(High)`, trailers with no model, and two different Antigravity emails. The new rule:
+  - Prefix is always `Co-Authored-By:` with that exact casing.
+  - Name is `<Agent> <Model>` without parentheses (matches what the Claude Code harness injects), e.g. `Claude Sonnet 5.5`.
+  - Model is mandatory and readable (`Sonnet 5.5`, `GPT-6`), never a raw id; a bare `Claude`, `Antigravity` or `Copilot` is not allowed.
+  - Effort is optional, lowercase, space-separated, no commas or extra parentheses, e.g. `GPT-6 high`. Claude Code omits it.
+  - One fixed email per agent: `noreply@anthropic.com`, `codex@openai.com`, `copilot@github.com`, `noreply@opencode.ai`, `noreply@antigravity.ai`.
+  - A `commit-msg` hook rejects a trailer that is missing the model or breaks the format, so the rule is enforced and not only written.
+  - Existing commits are not rewritten: that would need a force-push on published history, and the variants do not affect GitHub attribution. GitHub-generated trailers (Copilot Autofix, the Copilot noreply address) are out of scope.
 - **Worktree prompt:** keep asking, but only for work that needs isolation (features, bugfixes touching app or API). Skip it for docs, CI-only and one-line fixes. This is a behavior change, so it needs the owner's approval before it lands.
 - `AGENTS.md`, `GEMINI.md` and `.github/copilot-instructions.md` stay symlinks. Only `CLAUDE.md` is edited.
 - The edit is done in one PR with a rule-by-rule mapping, so reviewers can check nothing was lost.
@@ -48,6 +55,7 @@ Nothing changes in the app. For developers and agents:
 - `docs/deploy.md` (new: production deploy and rollback)
 - `docs/realtime.md` (new: `SyncEvent`, rooms, socket auth)
 - `docs/api.md` (new: route reference)
+- `.hooks/commit-msg` (new: validates the `Co-Authored-By` trailer), `.hooks/setup-hooks.sh`
 - `DESIGN.md` (linked from the Design System section, unchanged)
 - `scripts/blue-green-deploy.sh`, `compose.prod.yml`, `compose.prod.color.yml` (facts in the deploy doc)
 - `api/src/index.ts`, `api/src/services/syncService.ts`, `api/src/routes/` (source of truth for socket auth, rooms, routes)

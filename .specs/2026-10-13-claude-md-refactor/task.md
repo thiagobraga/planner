@@ -29,18 +29,31 @@ Baseline (measured on `main`, commit `7fed18f`): 343 lines, 26594 bytes.
    - [ ] Keep non-obvious service notes only (`syncService`, `activityService.recordActivity`, `dailyService`, `completionSync`, `oauthService`, `mcp/`)
    - [ ] Merge duplicated rules (task 3) into one statement each
    - [ ] Drop the Karpathy section if every bullet is covered by Conventions, otherwise reduce it to the two bullets that are not
-   - [ ] Compact the per-agent `Co-Authored-By` list into a table
+   - [ ] Compact the per-agent `Co-Authored-By` list into a table (see task 7)
    - [ ] Reduce the pages table to the non-obvious rules (redirects, admin-only, `AuthShell` routes)
    - [ ] Worktree prompt: scope it to features and fixes, skip docs-only and CI-only work (needs owner approval, see `plan.md`)
    - [ ] Keep the headings other tooling or humans link to (`Plan Mode - Specs Convention`, worktree lifecycle)
-7. [ ] Check nothing was lost
+7. [ ] Standardize the `Co-Authored-By` rule (rule text in `plan.md` Decisions)
+   - [ ] Count variants: `git log --all --format='%B' | grep -i '^co-authored-by:' | sort -u | wc -l` (about 50 today) to compare after
+   - [ ] Write the single rule in `CLAUDE.md` and delete the other two mentions (commit aliases section, step 5 of the lifecycle)
+   - [ ] Table, one row per agent: agent, format, email, example. Rows: Claude Code, Codex, GitHub Copilot CLI, OpenCode, Antigravity
+   - [ ] Update `~/.claude/CLAUDE.md` example (it shows `Claude <noreply@anthropic.com>` with no model) or note that the project rule wins
+   - [ ] New `.hooks/commit-msg`: read the trailer lines, fail with a clear message and the expected format when
+     - [ ] the prefix is not exactly `Co-Authored-By:`
+     - [ ] the name has no model after the agent name
+     - [ ] the email does not match the agent's fixed email
+     - [ ] skip GitHub-generated trailers (`Copilot Autofix`, `users.noreply.github.com`) and merge commits
+   - [ ] Register it in `.hooks/setup-hooks.sh` and make it executable
+   - [ ] Test the hook with a script of accepted and rejected messages, wired like the other hook tests in the repo
+   - [ ] Confirm the harness-generated trailer (`Claude Sonnet 5.5 <noreply@anthropic.com>`) passes
+8. [ ] Check nothing was lost
    - [ ] Mapping table in the PR description: every rule from task 3 points to its new line, doc, or reason for deletion
    - [ ] Targets: `wc -l CLAUDE.md` is 230 or less, `wc -c CLAUDE.md` is 17000 or less
    - [ ] `ls -l AGENTS.md GEMINI.md .github/copilot-instructions.md` still show symlinks to `CLAUDE.md`
    - [ ] No em dashes: `grep -nP '\x{2014}|\x{2013}' CLAUDE.md docs/*.md` returns nothing
    - [ ] Every link and path in the file exists: `grep -oE '`[a-zA-Z0-9_./-]+\.(ts|tsx|md|sh|yml)`' CLAUDE.md | tr -d '`' | sort -u | xargs ls`
    - [ ] Behavior probe in a fresh Claude Code session on the branch: ask it to (a) add a mutation, (b) commit, (c) start a feature. Confirm it still calls `publishEvent()`, uses Conventional Commits with a trailer, and offers a worktree
-8. [ ] Ship
-   - [ ] Small Conventional Commits: `docs: move deploy notes to docs/deploy.md`, `docs: move realtime reference`, `docs: refactor CLAUDE.md`
+9. [ ] Ship
+   - [ ] Small Conventional Commits: `docs: move deploy notes to docs/deploy.md`, `docs: move realtime reference`, `docs: refactor CLAUDE.md`, `chore: add commit-msg hook for Co-Authored-By`
    - [ ] PR with the mapping table and before/after size
    - [ ] Move this spec to `.specs/completed/`
