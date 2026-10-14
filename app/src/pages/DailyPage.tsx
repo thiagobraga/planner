@@ -656,7 +656,7 @@ export function DailyPage({ view }: { view: BoardViewMode }) {
     });
 
     return items;
-  }, [collections, contextMenu?.taskId, setAllTasks, apiUpdateTask, refreshDaily, t]);
+  }, [collections, contextMenu?.taskId, setAllTasks, refreshDaily, t]);
 
   // Keep redistributed future dates visible even when they extend past this week.
   const previewFutureSections = useMemo(
