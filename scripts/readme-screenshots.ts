@@ -27,7 +27,8 @@ const OUT_DIR = path.resolve(import.meta.dirname, '../.github/assets');
 const SCREENS = [
   { name: 'daily-list', route: '/daily/list' },
   { name: 'daily-kanban', route: '/daily/cards' },
-  { name: 'habits', route: '/habits' },
+  // Today is mid-week, so step back one week to show a fully logged row of columns.
+  { name: 'habits', route: '/habits', previousWeek: true },
 ] as const;
 
 const VIEWPORTS = [
@@ -116,14 +117,13 @@ async function seed(api: Api): Promise<void> {
   }
 
   const morning = await api.post<{ id: string }>('/habit-groups', { name: 'Morning' });
-  const daytime = await api.post<{ id: string }>('/habit-groups', { name: 'Daytime' });
   const evening = await api.post<{ id: string }>('/habit-groups', { name: 'Evening' });
 
   // Pass rate per habit; a fixed pseudo-random sequence keeps the grid stable between runs.
   const habits = [
+    { name: 'Walk 8,000 steps', groupId: null, rate: 0.5 },
     { name: 'Meditate 10 minutes', groupId: morning.id, rate: 0.85 },
     { name: 'Stretch', groupId: morning.id, rate: 0.7 },
-    { name: 'Walk 8,000 steps', groupId: daytime.id, rate: 0.5 },
     { name: 'Read 20 pages', groupId: evening.id, rate: 0.6 },
     { name: 'Journal', groupId: evening.id, rate: 0.9 },
   ];
@@ -164,15 +164,16 @@ async function capture(
       // Habits and Daily must agree on "today" with the account's UTC time zone.
       timezoneId: 'UTC',
     });
-    await context.addInitScript(() => {
-      window.localStorage.setItem('planner.habits.view.v1', 'calendar');
-    });
     const page = await context.newPage();
 
     for (const screen of SCREENS) {
       await page.goto(screen.route);
       await page.waitForLoadState('networkidle');
       await page.evaluate(() => document.fonts.ready);
+      if ('previousWeek' in screen) {
+        await page.getByRole('button', { name: 'Previous week', exact: true }).click();
+        await page.waitForLoadState('networkidle');
+      }
       await page.waitForTimeout(500);
       await page.screenshot({
         path: path.join(OUT_DIR, `${screen.name}-${viewport.name}-${theme}.png`),
