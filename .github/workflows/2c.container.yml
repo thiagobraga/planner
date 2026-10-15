@@ -1,55 +1,14 @@
-name: 2. CI
+name: 2c. Container scan
 
 on:
-  push:
-    branches: [main]
-    paths-ignore:
-      - '**.md'
-      - '.specs/**'
-      - '.claude/**'
-      - '.claudeignore'
-      - '.vscode/**'
-      - '.gitignore'
-  pull_request:
-    branches: [main]
-    paths-ignore:
-      - '**.md'
-      - '.specs/**'
-      - '.claude/**'
-      - '.claudeignore'
-      - '.vscode/**'
-      - '.gitignore'
-  schedule:
-    - cron: '0 6 * * 1' # every Monday 06:00 UTC
-  workflow_dispatch:
-
-# Pushes to main are never cancelled: a quick second merge must not drop
-# the first merge's CI run.
-concurrency:
-  group: ci-${{ github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  workflow_call:
 
 permissions:
   contents: read
 
 jobs:
-  quality:
-    name: 2a. Quality
-    uses: ./.github/workflows/2a.quality.yml
-
-  security:
-    name: 2b. Security
-    needs: quality
-    permissions:
-      actions: read
-      contents: read
-      security-events: write
-    uses: ./.github/workflows/2b.security.yml
-
   container-scan:
     name: 2c. Container scan (${{ matrix.component }})
-    if: github.event_name == 'pull_request'
-    needs: quality
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     permissions:

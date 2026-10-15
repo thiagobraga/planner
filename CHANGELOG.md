@@ -1,5 +1,49 @@
 # Changelog
 
+## [0.5.0](https://github.com/thiagobraga/planner/compare/v0.4.2...v0.5.0) (2026-10-15)
+
+
+### Added
+
+* add sidebar collapse control ([a098b18](https://github.com/thiagobraga/planner/commit/a098b187ed6b53566ca46155a910ad91943715da))
+
+
+### Fixed
+
+* drop always-true collapsed check in collapsed sidebar toggle ([2d94de8](https://github.com/thiagobraga/planner/commit/2d94de80097706a14eafe17bbd887188eed700ee))
+
+## [0.4.2](https://github.com/thiagobraga/planner/compare/v0.4.1...v0.4.2) (2026-10-14)
+
+
+### Fixed
+
+* **lint:** make unused variables an error ([a99dd1b](https://github.com/thiagobraga/planner/commit/a99dd1bbe3131a3db9706cb5cff32f51277651d3))
+
+## [0.4.1](https://github.com/thiagobraga/planner/compare/v0.4.0...v0.4.1) (2026-10-14)
+
+
+### Fixed
+
+* **app:** clear lint warnings and unused Button import ([55e8027](https://github.com/thiagobraga/planner/commit/55e80278413c5846215d71777bc0e098246236f4))
+* **deploy:** run router nginx as uid 101 ([9c28915](https://github.com/thiagobraga/planner/commit/9c2891509c3bed66f32661698bb693bd02cadbe7))
+* **deploy:** run router nginx as uid 101 ([77db002](https://github.com/thiagobraga/planner/commit/77db0027014a45a76fb63f8c95ca21f9cfae0476))
+* **deploy:** show curl errors when public verification fails ([242dd94](https://github.com/thiagobraga/planner/commit/242dd94869ecd304e9c5bbecac128b9beb831e33))
+* **quick-add:** remove dim backdrop behind dialog ([6455b3d](https://github.com/thiagobraga/planner/commit/6455b3d9ee58b092be16cb46679df5738ce85fc1))
+* remove Quick Add backdrop and make Esc unfocus add inputs ([71c2a3c](https://github.com/thiagobraga/planner/commit/71c2a3cafd4484f0436f1f878e559bba624728d5))
+* **tasks:** Esc unfocuses add inputs and saves non-empty draft ([1322d89](https://github.com/thiagobraga/planner/commit/1322d89521a5ae3bb8a6a3fade71382bea9c5153))
+
+## [0.4.0](https://github.com/thiagobraga/planner/compare/v0.3.1...v0.4.0) (2026-10-13)
+
+
+### Added
+
+* add blue green production deployment ([15b4415](https://github.com/thiagobraga/planner/commit/15b4415cff7a2a241ce05e63c5cb6e2df9a3eb42))
+
+
+### Fixed
+
+* initialize production networks before color startup ([ffbfcfc](https://github.com/thiagobraga/planner/commit/ffbfcfc273240bcd5248b54ae3df421531888b4e))
+
 ## [0.3.1](https://github.com/thiagobraga/planner/compare/v0.3.0...v0.3.1) (2026-10-13)
 
 

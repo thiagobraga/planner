@@ -149,15 +149,15 @@ describe('HabitCalendar: inline rename', () => {
     expect(onCommitEdit).toHaveBeenCalledWith({ kind: 'habit', id: 'water' }, 'Hydrate');
   });
 
-  it('cancels on Escape without committing', () => {
+  it('commits the name on Escape instead of cancelling', () => {
     const onCommitEdit = vi.fn();
     const onCancelEdit = vi.fn();
     renderCalendar({ editing: { kind: 'habit', id: 'water' }, onCommitEdit, onCancelEdit });
 
     fireEvent.keyDown(screen.getByPlaceholderText('Habit name'), { key: 'Escape' });
 
-    expect(onCancelEdit).toHaveBeenCalledWith({ kind: 'habit', id: 'water' });
-    expect(onCommitEdit).not.toHaveBeenCalled();
+    expect(onCommitEdit).toHaveBeenCalledWith({ kind: 'habit', id: 'water' }, 'Drink water');
+    expect(onCancelEdit).not.toHaveBeenCalled();
   });
 
   it('exposes a drag handle on cards and group headings', () => {

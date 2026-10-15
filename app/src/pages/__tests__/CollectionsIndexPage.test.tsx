@@ -130,10 +130,11 @@ describe('CollectionsIndexPage', () => {
     expect(title.tagName.toLowerCase()).toBe('h1');
   });
 
-  it('renders the subtitle', async () => {
+  it('does not render a subtitle', async () => {
     renderPage();
 
-    expect(await screen.findByText('Your projects at a glance')).toBeInTheDocument();
+    await screen.findByRole('heading', { level: 1, name: 'Collections' });
+    expect(screen.queryByText('Your projects at a glance')).not.toBeInTheDocument();
   });
 
   it('renders parent and child collections in the hierarchy', async () => {

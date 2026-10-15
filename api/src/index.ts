@@ -3,7 +3,7 @@ import helmet from "helmet";
 import cookieParser from "cookie-parser";
 import rateLimit from "express-rate-limit";
 import crypto from "node:crypto";
-import { createServer } from "http";
+import { createServer, type Server as HTTPServer } from "http";
 import routes from "./routes/index.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 import { notFound } from "./middleware/notFound.js";
@@ -23,7 +23,7 @@ import authRoutes from "./routes/auth.js";
 import { BUILD_VERSION, LATEST_VERSION } from "./utils/buildInfo.js";
 
 const app: Express = express();
-app.set("trust proxy", IS_PRODUCTION ? 1 : 0);
+app.set("trust proxy", IS_PRODUCTION ? 2 : 0);
 
 // Security headers
 app.use(helmet({
@@ -162,6 +162,29 @@ app.use(errorHandler);
 
 const httpServer = createServer(app);
 
+export function createShutdownHandler(server: HTTPServer): (signal: "SIGTERM" | "SIGINT") => void {
+  let draining = false;
+
+  return (signal) => {
+    if (draining) return;
+    draining = true;
+    console.log(`[shutdown] ${signal}: draining connections`);
+
+    const timeout = setTimeout(() => {
+      console.error("[shutdown] drain timed out after 10 seconds");
+      process.exit(1);
+    }, 10_000);
+    timeout.unref();
+
+    server.close((error) => {
+      clearTimeout(timeout);
+      if (error) console.error("[shutdown] server close failed:", error);
+      process.exit(error ? 1 : 0);
+    });
+    server.closeIdleConnections();
+  };
+}
+
 // Expired and revoked rows are dead weight - validateSession already refuses
 // them, so nothing reads them again. Sweeping hourly keeps the table from
 // growing without bound now that sessions live for months.
@@ -182,12 +205,13 @@ function startSessionCleanup(): void {
   timer.unref();
 }
 
-async function start() {
+export async function start(): Promise<void> {
   try {
     await connectRedis();
     await attachSyncServer(httpServer);
     await publishVersionAnnouncement(LATEST_VERSION);
   } catch (err) {
+    if (IS_PRODUCTION) throw err;
     console.error("⚠️  SYNC DISABLED: Redis/Socket.IO startup failed. Real-time updates will not work.", err);
   }
 
@@ -199,7 +223,13 @@ async function start() {
 }
 
 if (process.env.NODE_ENV !== "test") {
-  void start();
+  const shutdown = createShutdownHandler(httpServer);
+  process.once("SIGTERM", () => shutdown("SIGTERM"));
+  process.once("SIGINT", () => shutdown("SIGINT"));
+  void start().catch((err) => {
+    console.error("[startup] Redis/Socket.IO initialization failed:", err);
+    process.exit(1);
+  });
 }
 
 export default app;
