@@ -17,7 +17,7 @@ Legend: `[ ]` not started, `[~]` in progress, `[x]` done.
    - [x] Four offline bullets merged into one block
    - [x] Glassmorphic and React Router bullets dropped
    - [x] "Connect AI agents" block links to the MCP Server section
-   - [x] `<picture>` with `prefers-color-scheme` switches light and dark
+   - [x] Light and dark rows shown for each screen (desktop left, mobile right)
 6. [~] Verify
    - [x] Image paths in README all resolve; file sizes checked
    - [ ] Render the README on GitHub (draft PR preview) in light and dark mode

@@ -36,14 +36,13 @@ The design system is in [DESIGN.md](./DESIGN.md). Data flow, services and real-t
 Plan the week day by day. Overdue tasks stay visible until you move or finish them, and every task keeps its collection.
 
 <p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset=".github/assets/daily-list-desktop-dark.png">
-    <img src=".github/assets/daily-list-desktop-light.png" alt="Daily list on desktop" width="640">
-  </picture>
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset=".github/assets/daily-list-mobile-dark.png">
-    <img src=".github/assets/daily-list-mobile-light.png" alt="Daily list on mobile" height="400">
-  </picture>
+  <img src=".github/assets/daily-list-desktop-light.png" alt="Daily list on desktop, light theme" height="350">
+  <img src=".github/assets/daily-list-mobile-light.png" alt="Daily list on mobile, light theme" height="350">
+</p>
+
+<p align="center">
+  <img src=".github/assets/daily-list-desktop-dark.png" alt="Daily list on desktop, dark theme" height="350">
+  <img src=".github/assets/daily-list-mobile-dark.png" alt="Daily list on mobile, dark theme" height="350">
 </p>
 
 ### Daily Kanban
@@ -51,14 +50,13 @@ Plan the week day by day. Overdue tasks stay visible until you move or finish th
 The same week as cards, one column per day. Drag tasks between days to reschedule.
 
 <p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset=".github/assets/daily-kanban-desktop-dark.png">
-    <img src=".github/assets/daily-kanban-desktop-light.png" alt="Daily Kanban on desktop" width="640">
-  </picture>
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset=".github/assets/daily-kanban-mobile-dark.png">
-    <img src=".github/assets/daily-kanban-mobile-light.png" alt="Daily Kanban on mobile" height="400">
-  </picture>
+  <img src=".github/assets/daily-kanban-desktop-light.png" alt="Daily Kanban on desktop, light theme" height="350">
+  <img src=".github/assets/daily-kanban-mobile-light.png" alt="Daily Kanban on mobile, light theme" height="350">
+</p>
+
+<p align="center">
+  <img src=".github/assets/daily-kanban-desktop-dark.png" alt="Daily Kanban on desktop, dark theme" height="350">
+  <img src=".github/assets/daily-kanban-mobile-dark.png" alt="Daily Kanban on mobile, dark theme" height="350">
 </p>
 
 ### Habits
@@ -66,14 +64,13 @@ The same week as cards, one column per day. Drag tasks between days to reschedul
 Log habits on a calendar, group them by time of day and watch the streaks build.
 
 <p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset=".github/assets/habits-desktop-dark.png">
-    <img src=".github/assets/habits-desktop-light.png" alt="Habits on desktop" width="640">
-  </picture>
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset=".github/assets/habits-mobile-dark.png">
-    <img src=".github/assets/habits-mobile-light.png" alt="Habits on mobile" height="400">
-  </picture>
+  <img src=".github/assets/habits-desktop-light.png" alt="Habits on desktop, light theme" height="350">
+  <img src=".github/assets/habits-mobile-light.png" alt="Habits on mobile, light theme" height="350">
+</p>
+
+<p align="center">
+  <img src=".github/assets/habits-desktop-dark.png" alt="Habits on desktop, dark theme" height="350">
+  <img src=".github/assets/habits-mobile-dark.png" alt="Habits on mobile, dark theme" height="350">
 </p>
 
 ### Offline and real-time sync
