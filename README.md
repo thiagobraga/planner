@@ -19,7 +19,6 @@
   <img src="https://img.shields.io/badge/license-MIT-f5f0e8?style=flat" alt="MIT License" />
   <br>
   <img src="https://github.com/thiagobraga/planner/actions/workflows/2.ci.yml/badge.svg" alt="CI badge" />
-  <img src="https://github.com/thiagobraga/planner/actions/workflows/3.release.yml/badge.svg?branch=main" alt="Release and deploy badge" />
   <img src="https://img.shields.io/github/stars/thiagobraga/planner?style=social" alt="GitHub repository stars" />
 </p>
 
