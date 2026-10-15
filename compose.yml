@@ -105,7 +105,7 @@ services:
 
   postgres:
     container_name: ${COMPOSE_PROJECT_NAME:-planner}-postgres
-    image: postgres:18-alpine
+    image: postgres:16-alpine
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-planner}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-planner}
