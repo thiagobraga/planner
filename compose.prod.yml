@@ -13,6 +13,9 @@ services:
   router:
     image: nginx:1.31-alpine
     container_name: planner-prod-router
+    # The stock image starts as root, which without DAC_OVERRIDE cannot mkdir in
+    # the uid 101 tmpfs below; nginx exited at startup and restart-looped.
+    user: "101:101"
     networks: [edge, backend]
     ports:
       - "127.0.0.1:8080:80"

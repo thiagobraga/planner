@@ -18,8 +18,8 @@
   <img src="https://img.shields.io/badge/%E2%80%8B-PostgreSQL-f5f0e8?style=flat&logoColor=f5f0e8&logo=postgresql" alt="PostgreSQL">
   <img src="https://img.shields.io/badge/license-MIT-f5f0e8?style=flat" alt="MIT License" />
   <br>
-  <img src="https://github.com/thiagobraga/planner/actions/workflows/2.ci.yml/badge.svg" alt="CI badge" />
-  <img src="https://github.com/thiagobraga/planner/actions/workflows/3.release.yml/badge.svg?branch=main" alt="Release and deploy badge" />
+  <img src="https://github.com/thiagobraga/planner/actions/workflows/ci.yml/badge.svg" alt="CI badge" />
+  <img src="https://github.com/thiagobraga/planner/actions/workflows/ci.yml/badge.svg?branch=main" alt="Release and deploy badge" />
   <img src="https://img.shields.io/github/stars/thiagobraga/planner?style=social" alt="GitHub repository stars" />
 </p>
 
@@ -159,13 +159,19 @@ claude mcp add --transport http planner https://planner.local/api/v1/mcp \
 
 Workflow files and names are numbered in the order work happens. Each job carries the workflow number plus a letter (`2b`, `4c`), so the Actions sidebar keeps the order.
 
-| Workflow        | Runs on                                         | Does                                                                                                                                                                        |
-| --------------- | ----------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `1.review.yml`  | PR to `main`                                    | 1a fails on high-severity dependency changes; 1b lints workflows with actionlint and zizmor                                                                                 |
-| `2.ci.yml`      | PR and push to `main`, Monday schedule, by hand | 2a quality (`2a.quality.yml`: lint, tests, build, E2E), then 2b security (`2b.security.yml`: `npm audit`, CodeQL, secret scan, SBOM); on PRs also 2c container scan (Trivy) |
-| `3.release.yml` | Push to `main`                                  | 3a release-please opens or updates the release PR; on merge it tags, 3b re-runs quality on the tagged commit, 3c calls deploy                                               |
-| `4.deploy.yml`  | Called by 3, or run by hand from `main`         | 4a validates blue/green scripts and Compose; 4b builds SHA images, 4c scans them, 4d moves `latest` and `vX.Y.Z`, 4e deploys to the VPS                                    |
+`ci.yml` is the only entry point. It decides what runs and calls the numbered reusable workflows, so one run in the Actions list shows the whole chain.
 
+| Workflow           | Runs when                                       | Does                                                                                                                                      |
+| ------------------ | ----------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `ci.yml`           | PR and push to `main`, Monday schedule, by hand | 0a detects changed paths, then calls the workflows below                                                                                  |
+| `1.review.yml`     | PR                                              | 1a fails on high-severity dependency changes; 1b lints workflows with actionlint and zizmor, only when the PR touches `.github/`         |
+| `2a.quality.yml`   | Always                                          | Lint (unused variables fail), tests, build, E2E                                                                                           |
+| `2b.security.yml`  | After 2a                                        | `npm audit`, secret scan, SBOM, Dockerfile and Compose checks, infra image scans; CodeQL only when source or workflows changed            |
+| `2c.container.yml` | PR touching `api/`, `app/`, `.docker/` or root `package*.json` | Builds the api and app images and scans them with Trivy                                                                    |
+| `3.release.yml`    | Push to `main`, after 2a and 2b passed          | 3a skips if `main` moved on; 3b release-please opens or updates the release PR, or on its merge creates the tag and a **draft** release  |
+| `4.deploy.yml`     | After 3 created a release, or by hand from `main` | 4a validates blue/green scripts; 4b builds SHA images; 4c scans them; 4d moves `latest` and `vX.Y.Z`; 4e deploys to the VPS; 4f publishes the draft release |
+
+- Release is published last: the tag exists and the GitHub Release stays a draft until 4e deployed and the public health check passed. A failed deploy rolls back and leaves the draft unpublished.
 - Deploy only follows a release merge and only runs from `main`. A manual run from another branch skips every job.
 - Deploy runs in the `production` environment. Adding a required reviewer there makes it wait for approval.
 - Actions are pinned to commit SHAs (Dependabot keeps them current), workflows default to no permissions, and every job has a timeout.
@@ -182,9 +188,11 @@ Versions follow [SemVer](https://semver.org/) and tags are `vX.Y.Z`. [release-pl
 | `feat!:` or `BREAKING CHANGE:` footer           | major (minor while below 1.0.0) |
 | `docs`, `style`, `test`, `chore`, `ci`, `build` | none, hidden from the changelog |
 
-To cut a release, merge the release PR. It bumps the version, updates `CHANGELOG.md`, tags `vX.Y.Z` and deploys (see [CI workflows](#ci-workflows)). Plain pushes to `main` do not deploy.
+To cut a release, merge the release PR. It bumps the version, updates `CHANGELOG.md`, tags `vX.Y.Z`, deploys and then publishes the GitHub Release (see [CI workflows](#ci-workflows)). Plain pushes to `main` do not deploy.
 
-PRs opened by `GITHUB_TOKEN` do not trigger CI. Set the `RELEASE_PLEASE_TOKEN` secret (a PAT or app token) so CI runs on the release PR.
+Publishing the release needs no extra secret: it uses the workflow's own `GITHUB_TOKEN`. PRs opened by `GITHUB_TOKEN` do not trigger CI, so the release PR shows no checks. That is harmless because the same checks run on `main` before anything is tagged. Optionally set the `RELEASE_PLEASE_TOKEN` secret (a PAT or app token with `contents` and `pull requests` write) to get checks on the release PR too.
+
+A draft that was never published means its deploy failed. Fix forward and merge the next release PR, or publish it by hand with `gh release edit vX.Y.Z --draft=false`.
 
 The release version is unrelated to `BUILD_ID` / `/api/v1/version`, which only detect a new deploy for the "update available" toast.
 

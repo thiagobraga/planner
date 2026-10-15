@@ -36,6 +36,11 @@ describe('QuickAdd', () => {
     expect(screen.getByRole('dialog').className).not.toContain('backdrop-blur');
   });
 
+  it('does not dim the page behind the dialog', () => {
+    render(<QuickAdd isOpen={true} onClose={onClose} onSubmit={onSubmit} />);
+    expect(screen.getByRole('dialog').className).not.toContain('planner-backdrop');
+  });
+
   it('opts the title input out of browser autofill', () => {
     render(<QuickAdd isOpen={true} onClose={onClose} onSubmit={onSubmit} />);
     expect(screen.getByLabelText('Task title')).toHaveAttribute('autocomplete', 'off');
