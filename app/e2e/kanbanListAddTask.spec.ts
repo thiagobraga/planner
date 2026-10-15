@@ -16,7 +16,7 @@ for (const view of ['list', 'kanban'] as const) {
       uniqueName('Inline first'),
       uniqueName('Inline second'),
       uniqueName('Inline blur'),
-      uniqueName('Inline cancelled'),
+      uniqueName('Inline escape'),
     ];
     page.on('pageerror', (error) => errors.push(error.message));
     page.on('request', (request) => {
@@ -70,22 +70,33 @@ for (const view of ['list', 'kanban'] as const) {
       await expect(editor).toHaveText('');
 
       await editor.fill(titles[3]);
-      if (view === 'kanban') await editor.press('Escape');
-      else await editor.fill('');
+      if (view === 'kanban') {
+        const escapeResponse = page.waitForResponse((response) =>
+          response.url().endsWith('/api/v1/tasks') &&
+          response.request().method() === 'POST' &&
+          response.request().postDataJSON()?.title === titles[3]);
+        await editor.press('Escape');
+        const escapeTask = await (await escapeResponse).json() as ApiTask;
+        createdIds.push(escapeTask.id);
+        await expect(editor).not.toBeFocused();
+      } else {
+        await editor.fill('');
+      }
       await expect(editor).toHaveText('');
       await page.getByRole('heading', { level: 1, name: 'Daily', exact: true }).click();
       await page.reload();
-      for (const title of titles.slice(0, 3)) {
+      const savedTitles = view === 'kanban' ? titles : titles.slice(0, 3);
+      for (const title of savedTitles) {
         await expect(column.getByText(title, { exact: true })).toBeVisible();
       }
-      await expect(column.getByText(titles[3], { exact: true })).toHaveCount(0);
-      expect(postedTitles).toEqual(titles.slice(0, 3));
+      if (view === 'list') await expect(column.getByText(titles[3], { exact: true })).toHaveCount(0);
+      expect(postedTitles).toEqual(savedTitles);
       const daily = await api.get<ApiDailyView>(`/daily/${today}/${today}`);
       const savedTasks = daily.days.find((day) => day.date === today)!.tasks;
-      for (const title of titles.slice(0, 3)) {
+      for (const title of savedTitles) {
         expect(savedTasks.filter((task) => task.title === title)).toHaveLength(1);
       }
-      expect(savedTasks.some((task) => task.title === titles[3])).toBe(false);
+      if (view === 'list') expect(savedTasks.some((task) => task.title === titles[3])).toBe(false);
 
       await mkdir('dist/screenshots', { recursive: true });
       await column.scrollIntoViewIfNeeded();

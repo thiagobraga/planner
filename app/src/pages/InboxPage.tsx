@@ -44,6 +44,7 @@ import { useI18n } from '../i18n/I18nContext';
 import { scheduleFieldsFromApi, withTimeZones } from '../utils/taskTime';
 import { buildSetDateMenuItem } from '../components/taskDateMenuItem';
 import type { TaskSchedule } from '../types/task';
+import { blurOnEscape } from '../utils/editableText';
 
 function apiToTask(t: ApiTask): Task {
   return {
@@ -219,6 +220,7 @@ export function InboxPage() {
 
   /** A leading '-' opens a note instead of a task, as it does on Daily. */
   const handleAddNoteKeyDown = (e: React.KeyboardEvent<HTMLDivElement>): boolean => {
+    blurOnEscape(e);
     if (e.key !== '-' || input !== '') return false;
     e.preventDefault();
 
@@ -489,6 +491,7 @@ export function InboxPage() {
     apiDeleteSection(sectionId).catch(() => invalidate());
   }, [deletingSection, invalidate]);
 
+  const contextMenuTaskId = contextMenu?.taskId;
   const projectSubmenuItems = useMemo<ContextMenuItem[]>(() => {
     const items: ContextMenuItem[] = flattenCollections(collections).map((c) => ({
       type: 'item' as const,
@@ -500,7 +503,7 @@ export function InboxPage() {
         />
       ),
       onClick: () => {
-        apiUpdateTask(contextMenu!.taskId, { collectionId: c.id }).catch(() => invalidate());
+        if (contextMenuTaskId) apiUpdateTask(contextMenuTaskId, { collectionId: c.id }).catch(() => invalidate());
       },
     }));
 
@@ -514,14 +517,14 @@ export function InboxPage() {
       ),
       onClick: () => {
         const inbox = collections.find((c) => c.isInbox);
-        if (inbox) {
-          apiUpdateTask(contextMenu!.taskId, { collectionId: inbox.id }).catch(() => invalidate());
+        if (inbox && contextMenuTaskId) {
+          apiUpdateTask(contextMenuTaskId, { collectionId: inbox.id }).catch(() => invalidate());
         }
       },
     });
 
     return items;
-  }, [collections, contextMenu?.taskId, invalidate, t]);
+  }, [collections, contextMenuTaskId, invalidate, t]);
 
   // A section being named for the first time renders as an inline input in the
   // "+ New section" row itself, rather than up in the grouped list, so the

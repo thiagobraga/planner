@@ -1,0 +1,45 @@
+name: 1. Review
+
+on:
+  workflow_call:
+    inputs:
+      workflows_changed:
+        description: 'Run the workflow lint (the PR touches .github/)'
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+jobs:
+  dependency-review:
+    name: 1a. Dependency review
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5
+        with:
+          fail-on-severity: high
+
+  workflow-lint:
+    name: 1b. Workflow lint
+    if: inputs.workflows_changed
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Skip classifier tests
+        run: bash scripts/ci-changes.test.sh
+      - name: actionlint
+        run: docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:1.7.12 -color
+      - name: zizmor
+        uses: zizmorcore/zizmor-action@cc914d7f3750a2d13d75c7f184a1060aa0e9d482 # v0.6.4
+        with:
+          advanced-security: false
+          # Low findings include the self-repository note about ./ reusable workflow refs.
+          min-severity: medium

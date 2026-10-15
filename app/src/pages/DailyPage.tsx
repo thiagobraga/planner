@@ -43,6 +43,7 @@ import type { DaySection } from '../types/daily';
 import type { BoardViewMode } from '../types/board';
 import { buildSetDateMenuItem } from '../components/taskDateMenuItem';
 import type { TaskSchedule } from '../types/task';
+import { blurOnEscape } from '../utils/editableText';
 
 let tempCounter = 0;
 function tempId() { return `temp-daily-${++tempCounter}`; }
@@ -568,6 +569,7 @@ export function DailyPage({ view }: { view: BoardViewMode }) {
   };
 
   const handleAddTodayKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+    blurOnEscape(e);
     if (e.key !== '-' || input !== '') {
       return;
     }
@@ -656,7 +658,7 @@ export function DailyPage({ view }: { view: BoardViewMode }) {
     });
 
     return items;
-  }, [collections, contextMenu?.taskId, setAllTasks, apiUpdateTask, refreshDaily, t]);
+  }, [collections, contextMenu?.taskId, setAllTasks, refreshDaily, t]);
 
   // Keep redistributed future dates visible even when they extend past this week.
   const previewFutureSections = useMemo(
@@ -696,6 +698,17 @@ export function DailyPage({ view }: { view: BoardViewMode }) {
     }
     return days;
   }, [view, browsingWeek, todayKey, range.to, sections, locale, dateFormat]);
+
+  // The week shown by the list keeps its earlier days, empty ones included.
+  const pastDays = useMemo<DaySection[]>(() => {
+    if (view !== 'list' || browsingWeek || reorg.state === 'preview') return [];
+    const days = [];
+    for (let key = weekStartKey; key < todayKey; key = addDaysISO(key, 1)) {
+      days.push(sections.find((s) => s.key === key)
+        ?? { key, label: dayLabel(dateFromISO(key), locale, dateFormat), tasks: [] });
+    }
+    return days;
+  }, [view, browsingWeek, reorg.state, weekStartKey, todayKey, sections, locale, dateFormat]);
 
   return (
     <div
@@ -824,6 +837,7 @@ export function DailyPage({ view }: { view: BoardViewMode }) {
           <WeekSelector weekAnchor={weekAnchor} today={dateFromISO(todayKey)} weekStart={weekStart} onWeekChange={setWeekAnchor} onToday={goToToday} />
         </div>
         <DailyList
+          pastSections={pastDays}
           futureSections={previewFutureSections ?? browsedDays ?? futureDays}
           currentSections={previewTodaySections ?? (browsedDays ? [] : sections.filter((section) => section.key <= todayKey))}
           todayKey={todayKey}

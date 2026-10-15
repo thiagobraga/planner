@@ -1,0 +1,214 @@
+name: 2b. Security
+
+on:
+  workflow_call:
+    inputs:
+      codeql:
+        description: 'Run CodeQL (the change touches source or workflows)'
+        type: boolean
+        default: true
+
+permissions:
+  actions: read
+  contents: read
+  security-events: write
+
+jobs:
+  audit:
+    name: Dependency audit
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      matrix:
+        package: [., api, app]
+    defaults:
+      run:
+        working-directory: ${{ matrix.package }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: '26'
+          cache: 'npm'
+          cache-dependency-path: ${{ matrix.package }}/package-lock.json
+      - run: npm ci
+      - run: npm audit --omit=dev --audit-level=high
+
+  codeql:
+    name: CodeQL analysis
+    if: inputs.codeql
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: github/codeql-action/init@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
+        with:
+          languages: javascript-typescript, actions
+          queries: +security-and-quality
+      - uses: github/codeql-action/analyze@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
+        with:
+          category: 2b-codeql
+
+  secrets:
+    name: Secret scan
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: 'repo'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-secrets.sarif'
+          scanners: 'secret'
+          exit-code: '1'
+          severity: 'HIGH,CRITICAL'
+      # Sets the tool name shown in the PR checks list ("Trivy" otherwise).
+      - name: Name the Trivy tool
+        if: always()
+        run: |
+          [ -f trivy-secrets.sarif ] || exit 0
+          jq '.runs[].tool.driver.name = "2b. Trivy - secrets"' trivy-secrets.sarif > trivy-secrets.tmp && mv trivy-secrets.tmp trivy-secrets.sarif
+      - uses: github/codeql-action/upload-sarif@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
+        if: always()
+        with:
+          sarif_file: trivy-secrets.sarif
+          category: secret-scan
+
+  dockerfile-config:
+    name: Dockerfile configuration
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: 'config'
+          scan-ref: '.docker'
+          format: 'sarif'
+          output: 'trivy-dockerfiles.sarif'
+          exit-code: '1'
+          severity: 'HIGH,CRITICAL'
+          limit-severities-for-sarif: true
+      - uses: github/codeql-action/upload-sarif@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
+        if: always() && github.actor != 'dependabot[bot]'
+        with:
+          sarif_file: trivy-dockerfiles.sarif
+          category: dockerfile-config
+
+  compose-config:
+    name: Production Compose security
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Check service privilege boundaries
+        env:
+          COLOR: blue
+          IMAGE_TAG: 0123456789abcdef0123456789abcdef01234567
+          CORS_ORIGIN: https://planner.example.com
+        run: |
+          set -euo pipefail
+          for file in compose.prod.yml compose.prod.color.yml; do
+            violations=$(docker compose --profile setup -f "$file" config --format json | jq -r '
+              .services | to_entries[] |
+              select(
+                (.value.privileged // false) or
+                ((.value.cap_drop // []) | index("ALL") | not) or
+                ((.value.security_opt // []) | index("no-new-privileges:true") | not) or
+                ((.value.network_mode // "") == "host")
+              ) | .key
+            ')
+            if [ -n "$violations" ]; then
+              printf '%s has services without required security settings:\n%s\n' "$file" "$violations" >&2
+              exit 1
+            fi
+          done
+
+  discover-infra-images:
+    name: Discover production infrastructure images
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    outputs:
+      images: ${{ steps.images.outputs.images }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - id: images
+        name: Read images from production Compose
+        run: |
+          set -euo pipefail
+          images=$(docker compose --profile setup -f compose.prod.yml config --images | sort -u | jq -R . | jq -sc .)
+          echo "images=$images" >> "$GITHUB_OUTPUT"
+
+  infra-images:
+    name: Production image (${{ matrix.image }})
+    needs: discover-infra-images
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        image: ${{ fromJSON(needs.discover-infra-images.outputs.images) }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: 'image'
+          scan-ref: ${{ matrix.image }}
+          scanners: 'vuln'
+          format: 'sarif'
+          output: 'trivy-infra.sarif'
+          # Current upstream tags have existing findings; publish them without blocking unrelated PRs.
+          exit-code: '0'
+          severity: 'HIGH,CRITICAL'
+          limit-severities-for-sarif: true
+      - name: Summarize findings
+        if: always()
+        env:
+          IMAGE: ${{ matrix.image }}
+        run: |
+          count=$(jq '[.runs[].results[]?] | length' trivy-infra.sarif)
+          printf '### %s\n\nHIGH/CRITICAL findings: %s\n' "$IMAGE" "$count" >> "$GITHUB_STEP_SUMMARY"
+      - uses: github/codeql-action/upload-sarif@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
+        if: always() && github.actor != 'dependabot[bot]'
+        with:
+          sarif_file: trivy-infra.sarif
+          category: infra-${{ matrix.image }}
+
+  # Built app and API image scanning lives in 2.ci.yml (PRs) and 4.deploy.yml
+  # (release images pushed to GHCR).
+
+  sbom:
+    name: SBOM generation
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: 'repo'
+          scan-ref: '.'
+          format: 'spdx-json'
+          output: 'sbom.spdx.json'
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: sbom
+          path: sbom.spdx.json
+          retention-days: 90

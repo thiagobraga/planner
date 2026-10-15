@@ -526,6 +526,7 @@ export function HabitTimeline({
                 >
                   {isEditing('group', row.group.id) ? (
                     <InlineNameInput
+                      commitOnEscape
                       defaultValue={row.group.name}
                       className="uppercase tracking-[0.1em] text-[10px] font-semibold text-ink-light"
                       onCommit={(name) => onCommitEdit(target, name)}
@@ -580,6 +581,7 @@ export function HabitTimeline({
 
                 {isEditing('habit', node.id) ? (
                   <InlineNameInput
+                    commitOnEscape
                     defaultValue={node.name}
                     placeholder={t('page.habitName')}
                     onCommit={(name) => onCommitEdit(target, name)}

@@ -1,8 +1,9 @@
 import { TaskList } from '../TaskList';
 import { EditableText } from '../ui/EditableText';
+import { blurOnEscape } from '../../utils/editableText';
 import { useI18n } from '../../i18n/I18nContext';
 import { addDaysISO } from '../../utils/dailySections';
-import type { DailyListProps } from '../../types/daily';
+import type { DailyListProps, DaySection } from '../../types/daily';
 
 const HEADING_STYLE = { lineHeight: 'var(--task-line-height, 24px)' };
 const HEADING_CLASS = 'text-[11px] tracking-[0.08em] uppercase text-ink-light h-6 m-0 font-semibold';
@@ -17,6 +18,7 @@ function Bullet() {
 }
 
 export function DailyList({
+  pastSections,
   futureSections,
   currentSections,
   todayKey,
@@ -37,8 +39,9 @@ export function DailyList({
   const tomorrowKey = addDaysISO(todayKey, 1);
 
   const todaySection = currentSections.filter((section) => section.key === todayKey);
+  const pastKeys = new Set(pastSections.map((section) => section.key));
   const migrateTasks = currentSections
-    .filter((section) => section.key !== todayKey)
+    .filter((section) => section.key !== todayKey && !pastKeys.has(section.key))
     .flatMap((section) => section.tasks)
     .filter((task) => !task.isCompleted);
 
@@ -88,44 +91,49 @@ export function DailyList({
         );
       });
 
+  const renderDay = (section: DaySection, isPast: boolean) => (
+    <div key={`${isPast ? 'past' : 'upcoming'}-${section.key}`} data-day-date={section.key} className="mt-6">
+      <div style={HEADING_STYLE} className={HEADING_CLASS}>
+        {section.label}
+        {section.key === tomorrowKey && <> · <span className="text-moss">TOMORROW</span></>}
+      </div>
+
+      <TaskList
+        tasks={section.tasks}
+        containerId={`day:${section.key}`}
+        dayDate={section.key}
+        dimNotes={isPast}
+        hideDueDate
+        onTaskToggle={onTaskToggle}
+        {...taskListProps}
+      />
+
+      {!isPreview && (
+        <div className="flex items-start min-h-6">
+          <Bullet />
+          <EditableText
+            value={futureInputs[section.key] ?? ''}
+            onValueChange={(text) => onFutureInputChange(section.key, text)}
+            onEnter={(text) => onAddFuture(section.key, text)}
+            onBlur={() => onAddFuture(section.key, futureInputs[section.key] ?? '')}
+            onKeyDown={blurOnEscape}
+            placeholder={t('common.addTask')}
+            aria-label={t('common.addTask')}
+            className={ADD_INPUT_CLASS}
+            spellCheck={false}
+          />
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <div className="max-w-162">
+      {pastSections.map((section) => renderDay(section, true))}
+
       {renderCurrent(todaySection)}
 
-      {futureSections.map((section) => (
-        <div key={`upcoming-${section.key}`} data-day-date={section.key} className="mt-6">
-          <div style={HEADING_STYLE} className={HEADING_CLASS}>
-            {section.label}
-            {section.key === tomorrowKey && <> · <span className="text-moss">TOMORROW</span></>}
-          </div>
-
-          <TaskList
-            tasks={section.tasks}
-            containerId={`day:${section.key}`}
-            dayDate={section.key}
-            dimNotes={false}
-            hideDueDate
-            onTaskToggle={onTaskToggle}
-            {...taskListProps}
-          />
-
-          {!isPreview && (
-            <div className="flex items-start min-h-6">
-              <Bullet />
-              <EditableText
-                value={futureInputs[section.key] ?? ''}
-                onValueChange={(text) => onFutureInputChange(section.key, text)}
-                onEnter={(text) => onAddFuture(section.key, text)}
-                onBlur={() => onAddFuture(section.key, futureInputs[section.key] ?? '')}
-                placeholder={t('common.addTask')}
-                aria-label={t('common.addTask')}
-                className={ADD_INPUT_CLASS}
-                spellCheck={false}
-              />
-            </div>
-          )}
-        </div>
-      ))}
+      {futureSections.map((section) => renderDay(section, false))}
 
       {migrateTasks.length > 0 && (
         <div data-day-date="migrate" className="mt-6">

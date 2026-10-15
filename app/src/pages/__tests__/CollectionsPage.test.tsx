@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { typeText } from '../../test/editableText';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
@@ -227,6 +227,9 @@ describe('CollectionsPage', () => {
 
     expect(mockApiCreateTask).toHaveBeenCalledWith(expect.objectContaining({ title: 'Draft spec', collectionId: 'test-collection-id' }));
     expect(input).toBeEmptyDOMElement();
+    await act(async () => {
+      await mockApiCreateTask.mock.results[0].value;
+    });
   });
 
   it('renders add-task fields as contenteditable text, not form inputs', async () => {
