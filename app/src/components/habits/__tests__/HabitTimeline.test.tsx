@@ -217,7 +217,7 @@ describe('HabitTimeline', () => {
     expect(onWeekChange).toHaveBeenCalledWith(new Date(2026, 6, 25));
   });
 
-  it('renders a group icon in one grid cell before the group name', () => {
+  it('hides the group icon while keeping its name visible', () => {
     const sections: HabitSections = {
       ungrouped: [],
       groups: [
@@ -230,9 +230,8 @@ describe('HabitTimeline', () => {
 
     render(<HabitTimeline {...defaultProps} sections={sections} />, { wrapper: createWrapper() });
 
-    const icon = screen.getByText('☀️');
-    expect(icon).toHaveClass('h-6', 'w-6', 'justify-center');
-    expect(icon.nextElementSibling).toHaveTextContent('Morning routine');
+    expect(screen.queryByText('☀️')).not.toBeInTheDocument();
+    expect(screen.getByText('Morning routine')).toBeInTheDocument();
   });
 
   it('offers Remove icon immediately after Rename for a group with an icon', () => {
@@ -351,6 +350,32 @@ describe('HabitTimeline', () => {
     expect(container.querySelectorAll('[data-drag-handle]').length).toBeGreaterThanOrEqual(2);
     expect(screen.getByLabelText('Reorder Drink water')).toBeInTheDocument();
     expect(screen.getByLabelText('Reorder Morning')).toBeInTheDocument();
+  });
+
+  it('aligns habit and group names with the new habit label without showing group icons', () => {
+    const sections: HabitSections = {
+      ungrouped: [{
+        id: 'water', name: 'Drink water', parentId: null, groupId: null,
+        orderValue: 0, completions: new Set(), children: [],
+      }],
+      groups: [{
+        group: { id: 'morning', name: 'Morning', icon: '☀️', orderValue: 0 },
+        habits: [],
+      }],
+    };
+
+    const { container } = render(
+      <HabitTimeline {...defaultProps} sections={sections} />,
+      { wrapper: createWrapper() },
+    );
+
+    const habit = container.querySelector('.habit-timeline-row-label');
+    const addHabit = container.querySelector('.habit-timeline-add-habit');
+    const group = container.querySelector('.habit-timeline-group-header');
+    expect(habit?.querySelector('.habit-timeline-row-name')?.previousElementSibling).toHaveAttribute('data-drag-handle');
+    expect(addHabit?.querySelector('span:last-child')?.previousElementSibling).toHaveClass('absolute');
+    expect(group?.querySelector('.habit-timeline-group-name')?.previousElementSibling).toHaveAttribute('data-drag-handle');
+    expect(group?.querySelector('.habit-group-icon')).not.toBeInTheDocument();
   });
 
   it('renders a visible option button affordance for habits', () => {
