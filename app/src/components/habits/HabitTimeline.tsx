@@ -506,9 +506,9 @@ export function HabitTimeline({
                   key={row.key}
                   type="button"
                   onClick={() => onAddHabit({ groupId: row.groupId })}
-                  className="habit-timeline-add-habit group flex h-6 w-full min-w-0 items-center pr-2 text-ink-lighter transition-colors hover:text-ink"
+                  className="habit-timeline-add-habit group relative flex h-6 w-full min-w-0 items-center pr-2 text-ink-lighter transition-colors hover:text-ink"
                 >
-                  <span className="flex h-6 w-6 shrink-0 items-center justify-center">
+                  <span className="absolute left-[-18px] flex h-6 w-4 items-center justify-center">
                     <Plus size={14} strokeWidth={2} />
                   </span>
                   <span className="min-w-0 flex-1 truncate text-left text-sm leading-6">{t('page.newHabit')}</span>
@@ -524,14 +524,6 @@ export function HabitTimeline({
                   group={row.group}
                   dimmed={activeDragId === row.group.id}
                 >
-                  {row.group.icon && (
-                    <span
-                      aria-hidden="true"
-                      className="habit-group-icon flex h-6 w-6 shrink-0 items-center justify-center text-sm leading-6 normal-case tracking-normal"
-                    >
-                      {row.group.icon}
-                    </span>
-                  )}
                   {isEditing('group', row.group.id) ? (
                     <InlineNameInput
                       defaultValue={row.group.name}
@@ -584,9 +576,7 @@ export function HabitTimeline({
                   >
                     {isCollapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
                   </button>
-                ) : (
-                  <span className="h-6 w-6 shrink-0" />
-                )}
+                ) : null}
 
                 {isEditing('habit', node.id) ? (
                   <InlineNameInput
@@ -838,7 +828,6 @@ function HabitTimelineBlockPreview({
             // level 1 draws flush rather than indented into empty space.
             style={{ width: labelColWidth, paddingLeft: Math.max(0, depth - base) * INDENT }}
           >
-            <span className="h-6 w-6 shrink-0" />
             <span className="habit-timeline-row-name min-w-0 flex-1 truncate text-sm leading-6 text-ink">
               {node.name}
             </span>
