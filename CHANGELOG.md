@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.5.0](https://github.com/thiagobraga/planner/compare/v0.4.2...v0.5.0) (2026-10-15)
+
+
+### Added
+
+* add sidebar collapse control ([a098b18](https://github.com/thiagobraga/planner/commit/a098b187ed6b53566ca46155a910ad91943715da))
+
+
+### Fixed
+
+* drop always-true collapsed check in collapsed sidebar toggle ([2d94de8](https://github.com/thiagobraga/planner/commit/2d94de80097706a14eafe17bbd887188eed700ee))
+
 ## [0.4.2](https://github.com/thiagobraga/planner/compare/v0.4.1...v0.4.2) (2026-10-14)
 
 
