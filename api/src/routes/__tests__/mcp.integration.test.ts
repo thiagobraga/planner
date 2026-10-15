@@ -5,6 +5,7 @@ import pool from "../../db/pool.js";
 import { connectRedis, redisClient, redisPubClient, redisSubClient } from "../../db/redis.js";
 import { createSession, buildCookieName } from "../../services/sessionService.js";
 import { createPersonalToken } from "../../services/apiTokenService.js";
+import { PUBLIC_BASE_URL } from "../../config.js";
 import app from "../../index.js";
 
 const MCP = "/api/v1/mcp";
@@ -92,7 +93,7 @@ describe("POST /api/v1/mcp (real PostgreSQL + Redis)", () => {
     const res = await request(app).post(MCP).set("Accept", ACCEPT).send(INITIALIZE);
 
     expect(res.status).toBe(401);
-    expect(res.headers["www-authenticate"]).toMatch(/^Bearer realm="planner", resource_metadata="http:\/\/localhost:5173\/\.well-known\/oauth-protected-resource\/api\/v1\/mcp"$/);
+    expect(res.headers["www-authenticate"]).toBe(`Bearer realm="planner", resource_metadata="${PUBLIC_BASE_URL}/.well-known/oauth-protected-resource/api/v1/mcp"`);
   });
 
   it("refuses browser sessions even with a valid CSRF pair", async () => {
