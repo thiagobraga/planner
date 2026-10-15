@@ -13,7 +13,7 @@ export default tseslint.config(
   },
   {
     rules: {
-      "@typescript-eslint/no-unused-vars": ["warn", { argsIgnorePattern: "^_" }],
+      "@typescript-eslint/no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
       // v7 adds React Compiler-oriented rules (this app doesn't use the
       // Compiler yet) that flag pre-existing, working patterns as errors.
       // Downgraded to warn so lint passes; revisit in a dedicated cleanup pass.

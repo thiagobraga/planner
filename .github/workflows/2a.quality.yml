@@ -1,4 +1,4 @@
-name: 2a. Quality (reusable)
+name: 2a. Quality
 
 on:
   workflow_call:
@@ -91,7 +91,6 @@ jobs:
 
   e2e:
     name: 'E2E: Playwright'
-    needs: [api, app]
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     services:
@@ -165,18 +164,12 @@ jobs:
         env:
           # Instrumented build so e2e runs collect coverage (see test:e2e:coverage)
           VITE_COVERAGE: "true"
-      - name: Cache Playwright browsers
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ hashFiles('app/package-lock.json') }}
-      - name: Install Playwright chromium
-        working-directory: app
-        run: npx playwright install --with-deps chromium
+      # The runner image ships Chrome with its system deps, so no browser download or apt step.
       - name: Run e2e tests
         working-directory: app
         env:
           PLAYWRIGHT_COVERAGE: "1"
+          PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH: /usr/bin/google-chrome
         run: npx playwright test
       - name: Generate e2e coverage report
         working-directory: app
@@ -185,7 +178,7 @@ jobs:
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: e2e-coverage-report
-          path: app/dist/html/e2e
+          path: app/coverage-reports/e2e
       - name: Upload Playwright traces
         if: failure()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7

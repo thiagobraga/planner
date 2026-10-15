@@ -7,6 +7,7 @@ interface InlineNameInputProps {
   className?: string;
   onCommit: (name: string) => void;
   onCancel: () => void;
+  commitOnEscape?: boolean;
 }
 
 /**
@@ -25,6 +26,7 @@ export function InlineNameInput({
   className = '',
   onCommit,
   onCancel,
+  commitOnEscape = false,
 }: InlineNameInputProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const committedRef = useRef(false);
@@ -58,6 +60,10 @@ export function InlineNameInput({
           commit(event.currentTarget.value);
         } else if (event.key === 'Escape') {
           event.preventDefault();
+          if (commitOnEscape) {
+            commit(event.currentTarget.value);
+            return;
+          }
           committedRef.current = true;
           onCancel();
         }

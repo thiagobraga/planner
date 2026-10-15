@@ -1,5 +1,6 @@
 import { TaskList } from '../TaskList';
 import { EditableText } from '../ui/EditableText';
+import { blurOnEscape } from '../../utils/editableText';
 import { useI18n } from '../../i18n/I18nContext';
 import { addDaysISO } from '../../utils/dailySections';
 import type { DailyListProps, DaySection } from '../../types/daily';
@@ -115,6 +116,7 @@ export function DailyList({
             onValueChange={(text) => onFutureInputChange(section.key, text)}
             onEnter={(text) => onAddFuture(section.key, text)}
             onBlur={() => onAddFuture(section.key, futureInputs[section.key] ?? '')}
+            onKeyDown={blurOnEscape}
             placeholder={t('common.addTask')}
             aria-label={t('common.addTask')}
             className={ADD_INPUT_CLASS}
