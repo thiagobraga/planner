@@ -34,4 +34,4 @@
 - [x] Document operation, rollback, backward-compatible migration requirement, and bootstrap port handoff in README and AGENTS.
 - [x] Test stock nginx syntax and a live mock blue-to-green switch and rollback: 600 requests per direction, zero failed or misrouted responses.
 - [x] Complete API/app lint, tests, builds, and diff checks in the isolated worktree. API: 1046 tests; app: 1311 tests on rerun, 38 lint warnings and 0 errors.
-- [ ] First production rollout and public verification. This is outside the PR implementation; run only after review and merge.
+- [x] Production rollout and public verification. The v0.4.2 run switched from blue to green, stopped the old blue app/API, and verified public app and API HTTP 200 ([deploy run](https://github.com/thiagobraga/planner/actions/runs/38622584238)). A live check on 2026-10-15 returned HTTP 200 and `X-Planner-Color: green` for both routes. The earlier first bootstrap is not independently proven by this later switch.
