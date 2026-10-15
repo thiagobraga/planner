@@ -151,7 +151,7 @@ jobs:
           [ -f "trivy-$COMPONENT.sarif" ] || exit 0
           jq --arg n "4c. Trivy - $COMPONENT image" '.runs[].tool.driver.name = $n' "trivy-$COMPONENT.sarif" > "trivy-$COMPONENT.tmp" && mv "trivy-$COMPONENT.tmp" "trivy-$COMPONENT.sarif"
 
-      - uses: github/codeql-action/upload-sarif@24c54180a607b1449ed407dd24f251e4e9147c8d # v4
+      - uses: github/codeql-action/upload-sarif@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
         if: always()
         with:
           sarif_file: 'trivy-${{ matrix.component }}.sarif'
