@@ -84,7 +84,7 @@ jobs:
 
   security:
     name: 2b. Security
-    needs: [changes, quality]
+    needs: changes
     permissions:
       actions: read
       contents: read
@@ -96,7 +96,7 @@ jobs:
   container-scan:
     name: 2c. Container scan
     if: github.event_name == 'pull_request' && needs.changes.outputs.code == 'true'
-    needs: [changes, quality]
+    needs: changes
     permissions:
       contents: read
       security-events: write

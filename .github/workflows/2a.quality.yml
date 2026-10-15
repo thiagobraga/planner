@@ -91,7 +91,6 @@ jobs:
 
   e2e:
     name: 'E2E: Playwright'
-    needs: [api, app]
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     services:
@@ -166,13 +165,21 @@ jobs:
           # Instrumented build so e2e runs collect coverage (see test:e2e:coverage)
           VITE_COVERAGE: "true"
       - name: Cache Playwright browsers
+        id: playwright-cache
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ hashFiles('app/package-lock.json') }}
       - name: Install Playwright chromium
         working-directory: app
-        run: npx playwright install --with-deps chromium
+        env:
+          CACHE_HIT: ${{ steps.playwright-cache.outputs.cache-hit }}
+        run: |
+          if [ "$CACHE_HIT" = "true" ]; then
+            npx playwright install-deps chromium
+          else
+            npx playwright install --with-deps chromium
+          fi
       - name: Run e2e tests
         working-directory: app
         env:
