@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.5.2](https://github.com/thiagobraga/planner/compare/v0.5.1...v0.5.2) (2026-10-15)
+
+
+### Fixed
+
+* pin postgres to 16-alpine ([71b32f9](https://github.com/thiagobraga/planner/commit/71b32f9e5547741fdb28b31fa8ff8cc8cfb4460d))
+* pin postgres to 16-alpine ([ee3299b](https://github.com/thiagobraga/planner/commit/ee3299b58ff918e366abbb618a676dcc38f98d20))
+
 ## [0.5.1](https://github.com/thiagobraga/planner/compare/v0.5.0...v0.5.1) (2026-10-15)
 
 
