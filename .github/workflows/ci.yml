@@ -44,12 +44,49 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     permissions:
+      actions: read
       contents: read
       pull-requests: read
     outputs:
       workflows: ${{ steps.filter.outputs.workflows }}
       code: ${{ steps.filter.outputs.code }}
+      skip: ${{ steps.skip.outputs.skip }}
     steps:
+      # The classifier comes from the trusted base, so a PR cannot edit the script that
+      # decides whether its own checks run. Missing on the base: nothing is skipped.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.event.pull_request.base.sha || github.sha }}
+          sparse-checkout: scripts/ci-changes.sh
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+
+      # skip=true when the change is only a release version bump (release PR, or its merge
+      # into main whose parent already has a green CI run). Anything unproven runs everything.
+      - id: skip
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT: ${{ github.event_name }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+          BEFORE: ${{ github.event.before }}
+          SHA: ${{ github.sha }}
+        run: |
+          skip=false
+          if [ -f scripts/ci-changes.sh ]; then
+            if [ "$EVENT" = "pull_request" ]; then
+              files=$(gh api "repos/$REPO/pulls/$PR/files" --paginate --jq '[.[] | {filename, patch}]')
+              skip=$(printf '%s' "$files" | bash scripts/ci-changes.sh)
+            elif [ "$EVENT" = "push" ] && [ "${BEFORE//0/}" != "" ]; then
+              files=$(gh api "repos/$REPO/compare/$BEFORE...$SHA" --jq '[.files[] | {filename, patch}]')
+              green=$(gh run list --repo "$REPO" --workflow ci.yml --event push --commit "$BEFORE" \
+                --status success --limit 1 --json databaseId --jq length)
+              if [ "$green" = "1" ]; then skip=$(printf '%s' "$files" | bash scripts/ci-changes.sh); fi
+            fi
+          fi
+          echo "skip=$skip" >> "$GITHUB_OUTPUT"
+          echo "### Skip checks: $skip" >> "$GITHUB_STEP_SUMMARY"
+
       - id: filter
         env:
           GH_TOKEN: ${{ github.token }}
@@ -65,14 +102,14 @@ jobs:
           files=$(gh api "repos/$REPO/pulls/$PR/files" --paginate --jq '.[].filename')
           flag() { if printf '%s\n' "$files" | grep -Eq "$1"; then echo true; else echo false; fi; }
           {
-            echo "workflows=$(flag '^\.github/')"
+            echo "workflows=$(flag '^\.github/|^scripts/ci-changes')"
             echo "code=$(flag '^(api|app|\.docker)/|^package(-lock)?\.json$')"
           } >> "$GITHUB_OUTPUT"
           cat "$GITHUB_OUTPUT"
 
   review:
     name: 1. Review
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' && needs.changes.outputs.skip != 'true'
     needs: changes
     uses: ./.github/workflows/1.review.yml
     with:
@@ -80,11 +117,14 @@ jobs:
 
   quality:
     name: 2a. Quality
+    if: needs.changes.outputs.skip != 'true'
+    needs: changes
     uses: ./.github/workflows/2a.quality.yml
 
   security:
     name: 2b. Security
-    needs: [changes, quality]
+    if: needs.changes.outputs.skip != 'true'
+    needs: changes
     permissions:
       actions: read
       contents: read
@@ -95,8 +135,10 @@ jobs:
 
   container-scan:
     name: 2c. Container scan
-    if: github.event_name == 'pull_request' && needs.changes.outputs.code == 'true'
-    needs: [changes, quality]
+    if: >-
+      github.event_name == 'pull_request' && needs.changes.outputs.code == 'true'
+      && needs.changes.outputs.skip != 'true'
+    needs: changes
     permissions:
       contents: read
       security-events: write
@@ -104,8 +146,15 @@ jobs:
 
   release:
     name: 3. Release
-    if: github.event_name == 'push'
-    needs: [quality, security]
+    # Skipped quality/security count as validated only when `changes` proved a release-only bump.
+    # A failed `changes` job must block the release, not look like a skip.
+    if: >-
+      ${{ !cancelled() && github.event_name == 'push'
+      && needs.changes.result == 'success'
+      && !contains(needs.*.result, 'failure')
+      && (needs.changes.outputs.skip == 'true'
+          || (needs.quality.result == 'success' && needs.security.result == 'success')) }}
+    needs: [changes, quality, security]
     permissions:
       contents: write
       pull-requests: write
