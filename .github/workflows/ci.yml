@@ -1,4 +1,4 @@
-name: 0. Pipeline
+name: CI
 
 # Single entry point. The numbered files are reusable workflows this one calls:
 #   PR:           1 review, 2a quality, 2b security, 2c container scan

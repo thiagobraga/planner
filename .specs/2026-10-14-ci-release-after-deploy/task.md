@@ -3,7 +3,7 @@
 1. [x] Lint
    - [x] `no-unused-vars` to `error` in `api/eslint.config.js` and `app/eslint.config.js` (0 existing violations; verified a temp file exits 1)
 2. [x] Orchestrator
-   - [x] `0.pipeline.yml`: triggers moved from `2.ci.yml`, `changes` job (0a) computes `workflows` and `code` from the PR file list, other events output true
+   - [x] `ci.yml`: triggers moved from `2.ci.yml`, `changes` job (0a) computes `workflows` and `code` from the PR file list, other events output true
    - [x] Job names kept (`2a. Quality`, `2b. Security`, `2c. Container scan (...)`) so required check names are unchanged
    - [x] Remove `2.ci.yml`
 3. [x] Reusable workflows

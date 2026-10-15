@@ -18,8 +18,8 @@
   <img src="https://img.shields.io/badge/%E2%80%8B-PostgreSQL-f5f0e8?style=flat&logoColor=f5f0e8&logo=postgresql" alt="PostgreSQL">
   <img src="https://img.shields.io/badge/license-MIT-f5f0e8?style=flat" alt="MIT License" />
   <br>
-  <img src="https://github.com/thiagobraga/planner/actions/workflows/0.pipeline.yml/badge.svg" alt="CI badge" />
-  <img src="https://github.com/thiagobraga/planner/actions/workflows/0.pipeline.yml/badge.svg?branch=main" alt="Release and deploy badge" />
+  <img src="https://github.com/thiagobraga/planner/actions/workflows/ci.yml/badge.svg" alt="CI badge" />
+  <img src="https://github.com/thiagobraga/planner/actions/workflows/ci.yml/badge.svg?branch=main" alt="Release and deploy badge" />
   <img src="https://img.shields.io/github/stars/thiagobraga/planner?style=social" alt="GitHub repository stars" />
 </p>
 
@@ -159,11 +159,11 @@ claude mcp add --transport http planner https://planner.local/api/v1/mcp \
 
 Workflow files and names are numbered in the order work happens. Each job carries the workflow number plus a letter (`2b`, `4c`), so the Actions sidebar keeps the order.
 
-`0.pipeline.yml` is the only entry point. It decides what runs and calls the numbered reusable workflows, so one run in the Actions list shows the whole chain.
+`ci.yml` is the only entry point. It decides what runs and calls the numbered reusable workflows, so one run in the Actions list shows the whole chain.
 
 | Workflow           | Runs when                                       | Does                                                                                                                                      |
 | ------------------ | ----------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| `0.pipeline.yml`   | PR and push to `main`, Monday schedule, by hand | 0a detects changed paths, then calls the workflows below                                                                                  |
+| `ci.yml`           | PR and push to `main`, Monday schedule, by hand | 0a detects changed paths, then calls the workflows below                                                                                  |
 | `1.review.yml`     | PR                                              | 1a fails on high-severity dependency changes; 1b lints workflows with actionlint and zizmor, only when the PR touches `.github/`         |
 | `2a.quality.yml`   | Always                                          | Lint (unused variables fail), tests, build, E2E                                                                                           |
 | `2b.security.yml`  | After 2a                                        | `npm audit`, secret scan, SBOM, Dockerfile and Compose checks, infra image scans; CodeQL only when source or workflows changed            |

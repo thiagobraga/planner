@@ -2,7 +2,7 @@
 
 ## What changes for the user
 
-- One workflow, **0. Pipeline**, is the only thing that starts on a PR, a push to `main`, the Monday schedule or a manual run. The numbered workflows (1 review, 2a quality, 2b security, 2c container scan, 3 release, 4 deploy) appear as steps inside that single run.
+- One workflow, **CI**, is the only thing that starts on a PR, a push to `main`, the Monday schedule or a manual run. The numbered workflows (1 review, 2a quality, 2b security, 2c container scan, 3 release, 4 deploy) appear as steps inside that single run.
 - A GitHub Release is no longer announced before the app is live. Merging the release PR creates the `vX.Y.Z` tag and a **draft** release. The release becomes public (and "latest") only after the blue/green deploy passed the public health check. A failed deploy rolls back and leaves the draft unpublished.
 - An unused variable now fails lint, locally (pre-commit) and in CI.
 - Workflow lint (1b) runs only when a PR touches `.github/`. The container scan (2c) runs only when a PR touches `api/`, `app/`, `.docker/` or root `package*.json`. CodeQL (2b) runs when source or workflows changed. Pushes to `main`, the schedule and manual runs run everything.
@@ -30,7 +30,7 @@ push to main:  2a quality -> 2b security -> 3 release (release PR, or tag + draf
 
 ## Relevant Files
 
-- `.github/workflows/0.pipeline.yml` (new entry point)
+- `.github/workflows/ci.yml` (new entry point)
 - `.github/workflows/1.review.yml`, `2b.security.yml`, `3.release.yml`, `4.deploy.yml` (now reusable, inputs added)
 - `.github/workflows/2c.container.yml` (new, moved out of `2.ci.yml`)
 - `.github/workflows/2.ci.yml` (removed)
