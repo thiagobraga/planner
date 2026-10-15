@@ -18,6 +18,8 @@
    - [x] README badges, workflow table, release section, token note
 6. [ ] Verify
    - [x] actionlint clean
-   - [ ] zizmor
-   - [ ] PR pipeline run on this PR (0a, 1, 2a, 2b, 2c as applicable)
-   - [ ] First real release after merge: draft appears, publishes after 4e, next release PR is computed from the right tag
+   - [x] zizmor ran successfully in [PR #294 workflow lint](https://github.com/thiagobraga/planner/actions/runs/38594192461/job/115956633623); no local zizmor binary is installed
+   - [x] PR pipeline run on [PR #294](https://github.com/thiagobraga/planner/pull/294): applicable review, quality, security, and container checks passed
+   - [x] First real release after merge: [v0.4.2](https://github.com/thiagobraga/planner/releases/tag/v0.4.2) was created as a draft, its [deploy run](https://github.com/thiagobraga/planner/actions/runs/38622584238) passed 4e public health checks, and 4f published the release at 2026-10-14 19:30:10 UTC
+   - [x] The next release PR, [#297](https://github.com/thiagobraga/planner/pull/297), computed v0.5.0 after v0.4.2
+   - [ ] Resolve the later [v0.5.0 release run](https://github.com/thiagobraga/planner/actions/runs/38674186053): release-please could not create the tag (`Resource not accessible by personal access token`), so deploy was skipped and v0.5.0 is unpublished
