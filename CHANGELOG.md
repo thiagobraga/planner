@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.1](https://github.com/thiagobraga/planner/compare/v0.5.0...v0.5.1) (2026-10-15)
+
+
+### Removed
+
+* run playwright with 1 worker in CI ([1a7ff61](https://github.com/thiagobraga/planner/commit/1a7ff611848f7a8850dfaf71a82b82382c48eb2c))
+
 ## [0.5.0](https://github.com/thiagobraga/planner/compare/v0.4.2...v0.5.0) (2026-10-15)
 
 
