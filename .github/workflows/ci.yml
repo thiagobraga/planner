@@ -164,7 +164,9 @@ jobs:
 
   deploy:
     name: 4. Deploy
-    if: needs.release.outputs.release_created == 'true'
+    # The implicit success() also fails on skipped ancestors (quality, security on a
+    # release-only bump), so check the release result explicitly.
+    if: ${{ !cancelled() && needs.release.result == 'success' && needs.release.outputs.release_created == 'true' }}
     needs: release
     permissions:
       contents: write
