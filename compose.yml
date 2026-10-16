@@ -1,4 +1,35 @@
 services:
+  site:
+    build:
+      context: .
+      dockerfile: .docker/site/Dockerfile
+      target: development
+      args:
+        DOCKER_USER: ${DOCKER_USER:-1000:1000}
+    container_name: ${COMPOSE_PROJECT_NAME:-planner}-site
+    networks: [default, proxy]
+    volumes:
+      - ./site:/workspace/site
+      - ./app/src/styles:/workspace/app/src/styles:ro
+      - ./app/dist/screenshots:/workspace/app/dist/screenshots
+      - site_node_modules:/workspace/site/node_modules
+    user: "${DOCKER_USER:-1000:1000}"
+    environment:
+      VITE_APP_URL: ${VITE_APP_URL:-https://planner.thiagobraga.dev}
+      __VITE_ADDITIONAL_SERVER_ALLOWED_HOSTS: ${SITE_SUBDOMAIN:-site.planner}.local
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:5174/"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+      start_period: 60s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.${COMPOSE_PROJECT_NAME:-planner}-site-router.rule=Host(`${SITE_SUBDOMAIN:-site.planner}.local`)"
+      - "traefik.http.routers.${COMPOSE_PROJECT_NAME:-planner}-site-router.entrypoints=websecure"
+      - "traefik.http.routers.${COMPOSE_PROJECT_NAME:-planner}-site-router.tls=true"
+      - "traefik.http.services.${COMPOSE_PROJECT_NAME:-planner}-site-service.loadbalancer.server.port=5174"
+
   app:
     build:
       context: .
@@ -165,6 +196,7 @@ services:
       retries: 5
 
 volumes:
+  site_node_modules:
   pgdata:
   pgadmin:
 
