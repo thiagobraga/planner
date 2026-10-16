@@ -1,6 +1,6 @@
 # Planner landing page implementation checklist
 
-Status: implemented and verified locally (site lint, typecheck, 15 unit, 13 E2E; app 1363 tests; prod image smoke with prod runtime flags). Awaiting fresh CI and PR ready-for-review.
+Status: complete. Verified locally and in CI; PR #321 ready for review.
 
 ## 1. Establish isolated development and reference evidence
 
@@ -82,7 +82,7 @@ Status: implemented and verified locally (site lint, typecheck, 15 unit, 13 E2E;
   - [x] Confirm no horizontal overflow, missing images, console errors, hidden sections, manifest, or service-worker registration.
 - [x] Run app theme unit and relevant browser regressions after shared-style extraction.
 - [x] Build and smoke-test the production nginx image without the API/database/Redis; inspect HTML/assets, cache/security headers, and healthcheck.
-- [~] Run applicable workflow and Docker static checks and inspect fresh CI results. actionlint unavailable locally; CI pending.
+- [x] Run applicable workflow and Docker static checks and inspect fresh CI results. CI run 38975287925: 30 pass, 3 skipped (release, deploy, Trivy).
 - [x] Save desktop and narrow screenshots for every theme under `app/dist/screenshots/` in the worktree and link them in delivery notes.
 - [x] Create scoped Conventional Commits with the required model co-author trailer, push verified milestones, and update this checklist as work progresses.
-- [ ] Mark the PR ready when required checks and visual review pass. Report changed files, visual evidence, and any validation gaps; leave the worktree stack running for review.
+- [x] Mark the PR ready when required checks and visual review pass. Report changed files, visual evidence, and any validation gaps; leave the worktree stack running for review.
