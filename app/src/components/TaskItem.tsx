@@ -403,6 +403,12 @@ export const TaskItem = memo(function TaskItem({
               </span>
             )}
 
+            {task.recurrenceRule && (!task.dueDate || hideDueDate) && (
+              <span className="task-item-repeat h-6 inline-flex items-center text-ink-light ml-1.5" aria-label={t('datePicker.repeat')}>
+                <Repeat className="w-3 h-3" aria-hidden="true" />
+              </span>
+            )}
+
             {task.dueTime && (
               <span className="task-item-time h-6 inline-flex items-center text-xs text-ink-light ml-1.5 whitespace-nowrap">
                 {formatTimeWindow(task.dueTime, task.endTime)}
