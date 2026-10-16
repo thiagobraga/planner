@@ -12,7 +12,14 @@ import {
 import { listSections } from "../../services/sectionService.js";
 import type { McpAuthContext, NamedRef } from "../../types/mcp.js";
 import { formatTaskLine } from "../format.js";
-import { assertUuid, resolveCollection, resolveDue, resolveLabels, ToolInputError } from "../resolve.js";
+import {
+  assertUuid,
+  resolveCollection,
+  resolveDue,
+  resolveLabels,
+  ToolInputError,
+  withRecurrenceOptions,
+} from "../resolve.js";
 import { collectionNameMap, getUserTimezone, runTool } from "../toolkit.js";
 
 const MAX_RESCHEDULE = 100;
@@ -20,6 +27,15 @@ const MAX_RESCHEDULE = 100;
 const DATE_HINT = 'Natural language in the user\'s timezone ("tomorrow", "next friday 3pm", "every monday") or YYYY-MM-DD.';
 
 const taskId = z.string().describe("Task id (the id:... value from a listing)");
+
+const fromCompletion = z
+  .boolean()
+  .optional()
+  .describe("With a repeating due: count the next occurrence from the day the task is completed instead of its scheduled date.");
+const until = z
+  .string()
+  .optional()
+  .describe(`With a repeating due: last day an occurrence may fall on. ${DATE_HINT}`);
 
 async function resolveSection(userId: string, collectionId: string, ref: string): Promise<NamedRef> {
   const sections = (await listSections(collectionId, userId)) as NamedRef[];
@@ -45,6 +61,8 @@ export function registerTaskTools(server: McpServer, ctx: McpAuthContext): void 
         title: z.string().min(1).max(500),
         notes: z.string().max(10_000).optional(),
         due: z.string().optional().describe(DATE_HINT),
+        from_completion: fromCompletion,
+        until,
         deadline: z.string().optional().describe(DATE_HINT),
         priority: z.number().int().min(1).max(4).optional().describe("1 is highest, 4 is none"),
         collection: z.string().optional().describe("Collection name or id"),
@@ -57,8 +75,12 @@ export function registerTaskTools(server: McpServer, ctx: McpAuthContext): void 
       runTool(async () => {
         const timeZone = await getUserTimezone(ctx.userId);
         const input: CreateTaskInput = { title: args.title, description: args.notes, priority: args.priority, type: args.type };
+        if (!args.due && (args.from_completion !== undefined || args.until !== undefined)) {
+          throw new ToolInputError('from_completion and until need a repeating due such as "every saturday".');
+        }
         if (args.due) {
-          const due = resolveDue(args.due, timeZone, ctx.now());
+          const options = { fromCompletion: args.from_completion, until: args.until };
+          const due = withRecurrenceOptions(resolveDue(args.due, timeZone, ctx.now()), options, timeZone, ctx.now());
           Object.assign(input, { dueDate: due.dueDate, dueTime: due.dueTime, recurrenceRule: due.recurrenceRule });
         }
         if (args.deadline) {
@@ -82,6 +104,8 @@ export function registerTaskTools(server: McpServer, ctx: McpAuthContext): void 
         title: z.string().min(1).max(500).optional(),
         notes: z.string().max(10_000).nullable().optional(),
         due: z.string().nullable().optional().describe(`${DATE_HINT} null clears it.`),
+        from_completion: fromCompletion,
+        until,
         deadline: z.string().nullable().optional().describe(`${DATE_HINT} null clears it.`),
         priority: z.number().int().min(1).max(4).optional(),
         labels: z.array(z.string()).max(20).optional(),
@@ -96,10 +120,14 @@ export function registerTaskTools(server: McpServer, ctx: McpAuthContext): void 
         if (args.title !== undefined) input.title = args.title;
         if (args.notes !== undefined) input.description = args.notes;
         if (args.priority !== undefined) input.priority = args.priority;
+        if (typeof args.due !== "string" && (args.from_completion !== undefined || args.until !== undefined)) {
+          throw new ToolInputError('from_completion and until need a repeating due such as "every saturday".');
+        }
         if (args.due === null) {
           Object.assign(input, { dueDate: null, dueTime: null, recurrenceRule: null });
         } else if (args.due !== undefined) {
-          const due = resolveDue(args.due, timeZone, ctx.now());
+          const options = { fromCompletion: args.from_completion, until: args.until };
+          const due = withRecurrenceOptions(resolveDue(args.due, timeZone, ctx.now()), options, timeZone, ctx.now());
           Object.assign(input, { dueDate: due.dueDate, dueTime: due.dueTime, recurrenceRule: due.recurrenceRule });
         }
         if (args.deadline === null) {

@@ -144,6 +144,34 @@ describe("time fields", () => {
   });
 });
 
+describe("recurrenceRule", () => {
+  it("accepts a full custom rule and null", () => {
+    const recurrenceRule = { type: "weekly", interval: 2, weekdays: [0, 6], fromCompletion: true, until: "2026-12-31" };
+    expect(() => validateCreateTask({ title: "t", recurrenceRule })).not.toThrow();
+    expect(() => validateUpdateTask({ recurrenceRule })).not.toThrow();
+    expect(() => validateUpdateTask({ recurrenceRule: null })).not.toThrow();
+  });
+
+  it("rejects malformed rules", () => {
+    const bad: unknown[] = [
+      "weekly",
+      { type: "hourly", interval: 1 },
+      { type: "daily", interval: 0 },
+      { type: "daily", interval: 1000 },
+      { type: "daily", interval: 1.5 },
+      { type: "weekly", interval: 1, weekdays: [7] },
+      { type: "weekly", interval: 1, weekdays: [1, 1] },
+      { type: "daily", interval: 1, until: "soon" },
+      { type: "daily", interval: 1, fromCompletion: "yes" },
+      { type: "monthly", interval: 1, dayOfMonth: 32 },
+      { type: "yearly", interval: 1, month: 13 },
+    ];
+    for (const recurrenceRule of bad) {
+      expectValidationError(() => validateUpdateTask({ recurrenceRule }), "recurrenceRule", "Recurrence");
+    }
+  });
+});
+
 describe("validateReorderPosition", () => {
   it("passes for valid position", () => {
     expect(() => validateReorderPosition(0)).not.toThrow();

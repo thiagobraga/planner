@@ -1509,3 +1509,36 @@ textarea:focus-visible {
   padding-bottom: 0;
   margin-bottom: 0;
 }
+
+/* Date picker: screens slide in from the side they were opened toward. */
+@keyframes date-picker-in-forward {
+  from { opacity: 0; transform: translateX(12px); }
+}
+@keyframes date-picker-in-back {
+  from { opacity: 0; transform: translateX(-12px); }
+}
+@keyframes date-picker-reveal {
+  from { opacity: 0; transform: translateY(-4px); }
+}
+.task-date-picker input::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.45;
+}
+.date-picker-screen-forward {
+  animation: date-picker-in-forward 240ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.date-picker-screen-back {
+  animation: date-picker-in-back 240ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.date-picker-reveal,
+.date-picker-preview {
+  animation: date-picker-reveal 180ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .date-picker-screen-forward,
+  .date-picker-screen-back,
+  .date-picker-reveal,
+  .date-picker-preview {
+    animation: none;
+  }
+}

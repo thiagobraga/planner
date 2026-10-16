@@ -36,7 +36,7 @@ import {
 import { ContextMenu, type ContextMenuItem } from '../components/ui/ContextMenu';
 import { flattenCollections } from '../components/CollectionTreeNav';
 import { Folder, ArrowUp, ArrowDown, Trash2, Calendar, Kanban, List } from 'lucide-react';
-import { withTimeZones } from '../utils/taskTime';
+import { applySchedule, withTimeZones } from '../utils/taskTime';
 import { addDaysISO, apiToTask, buildSections, dateFromISO, dayLabel, flattenDaily } from '../utils/dailySections';
 import { dailyRange, viewToSlug } from '../utils/dailyRange';
 import type { DaySection } from '../types/daily';
@@ -368,6 +368,7 @@ export function DailyPage({ view }: { view: BoardViewMode }) {
   }, [updateSections]);
 
   const handleSetSchedule = useCallback((id: string, schedule: TaskSchedule) => {
+    setAllTasks((prev) => prev.map((task) => (task.id === id ? applySchedule(task, schedule) : task)));
     apiUpdateTask(id, withTimeZones(schedule))
       .then((updated) => setAllTasks((prev) => prev.map((task) => (task.id === id ? { ...task, ...apiToTask(updated) } : task))))
       .catch(() => refreshDaily());

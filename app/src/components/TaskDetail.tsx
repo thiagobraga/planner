@@ -1,5 +1,6 @@
 import { useState, useLayoutEffect, useRef } from 'react';
 import type { Task } from './TaskItem';
+import type { RecurrenceRule } from '../types/task';
 import { useI18n } from '../i18n/I18nContext';
 
 const PRIORITIES = [
@@ -114,7 +115,7 @@ export function TaskDetail({ task, onClose, onUpdate, onDelete }: TaskDetailProp
       setRecurrenceRule(null);
       if (task) onUpdate?.(task.id, { recurrenceRule: null });
     } else {
-      const rule = { type, interval: 1 };
+      const rule = { type: type as RecurrenceRule['type'], interval: 1 };
       setRecurrenceRule(rule);
       if (task) onUpdate?.(task.id, { recurrenceRule: rule });
     }

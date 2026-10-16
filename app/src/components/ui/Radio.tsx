@@ -12,7 +12,7 @@ export function Radio({ label, className = '', checked, ...rest }: RadioProps) {
         <input type="radio" checked={checked} className="ui-radio-input peer sr-only" {...rest} />
         <span
           className={`ui-radio-control w-4 h-4 rounded-full border transition-colors duration-[var(--motion-fast)] ${
-            checked ? 'border-ink' : 'border-border'
+            checked ? 'border-ink' : 'border-ink-lighter'
           }`}
         />
         {checked && (

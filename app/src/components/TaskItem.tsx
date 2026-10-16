@@ -9,6 +9,7 @@ import { useTaskSelectionStore } from '../stores/taskSelectionStore';
 import { usePlannerDrag } from '../contexts/usePlannerDrag';
 import { priorityClasses } from './taskPriorityClasses';
 import type { LabelSummary } from '../api/client';
+import type { RecurrenceRule } from '../types/task';
 import { formatDuration, formatTimeWindow } from '../utils/taskTime';
 import { getCaret, getText, setCaret } from '../utils/editableText';
 import { EditableText } from './ui/EditableText';
@@ -29,7 +30,7 @@ export interface Task {
   deadlineDate?: string | null;
   deadlineTime?: string | null;
   durationMinutes?: number | null;
-  recurrenceRule?: object | null;
+  recurrenceRule?: RecurrenceRule | null;
   isCompleted: boolean;
   orderValue: number;
   labels?: LabelSummary[];
@@ -399,6 +400,12 @@ export const TaskItem = memo(function TaskItem({
               <span className="task-item-due-date h-6 inline-flex items-center gap-1 text-xs text-ink-light ml-1.5 whitespace-nowrap">
                 {task.recurrenceRule && <Repeat className="w-3 h-3" />}
                 {formatDueDate(task.dueDate, locale)}
+              </span>
+            )}
+
+            {task.recurrenceRule && (!task.dueDate || hideDueDate) && (
+              <span className="task-item-repeat h-6 inline-flex items-center text-ink-light ml-1.5" aria-label={t('datePicker.repeat')}>
+                <Repeat className="w-3 h-3" aria-hidden="true" />
               </span>
             )}
 

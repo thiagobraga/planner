@@ -108,6 +108,26 @@ describe("Planner MCP server (real PostgreSQL + Redis)", () => {
     await listener.quit();
   });
 
+  it("creates a repeating task counted from completion with an end date", async () => {
+    const client = await connect(["read", "write"]);
+    const created = await call(client, "create_task", {
+      title: "Long run",
+      due: "every saturday",
+      from_completion: true,
+      until: "2026-12-31",
+    });
+
+    expect(created.text).toContain("recurring from completion until 2026-12-31");
+    const row = await pool.query("SELECT recurrence_rule FROM tasks WHERE id = $1", [idOf(created.text)]);
+    expect(row.rows[0].recurrence_rule).toEqual({
+      type: "weekly",
+      interval: 1,
+      weekdays: [6],
+      fromCompletion: true,
+      until: "2026-12-31",
+    });
+  });
+
   it("drives a task through today, complete, reopen, reschedule, move and delete", async () => {
     const client = await connect(["read", "write"]);
     const id = idOf((await call(client, "create_task", { title: "Write report", due: "today" })).text);
@@ -173,6 +193,10 @@ describe("Planner MCP server (real PostgreSQL + Redis)", () => {
     const badDate = await call(client, "create_task", { title: "x", due: "someday maybe" });
     expect(badDate.isError).toBe(true);
     expect(badDate.text).toContain('Could not understand the date "someday maybe"');
+
+    const notRecurring = await call(client, "create_task", { title: "x", due: "tomorrow", from_completion: true });
+    expect(notRecurring.isError).toBe(true);
+    expect(notRecurring.text).toContain("repeating due");
 
     const badId = await call(client, "complete_task", { id: "Buy milk" });
     expect(badId.text).toContain("is not a valid task id");

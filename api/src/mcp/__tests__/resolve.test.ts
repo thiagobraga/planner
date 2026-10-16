@@ -1,9 +1,35 @@
 import { describe, it, expect } from "vitest";
-import { resolveDue, todayFor, assertUuid, ToolInputError } from "../resolve.js";
+import { resolveDue, todayFor, assertUuid, ToolInputError, withRecurrenceOptions } from "../resolve.js";
 
 // 23:30 UTC on a Tuesday: still Tuesday in London, already Wednesday in Tokyo,
 // still Tuesday afternoon in Sao Paulo.
 const NOW = new Date("2026-10-06T23:30:00Z");
+
+describe("withRecurrenceOptions", () => {
+  const weekly = { dueDate: "2026-10-12", dueTime: null, recurrenceRule: { type: "weekly" as const, interval: 1, weekdays: [1] } };
+
+  it("leaves the due untouched without options", () => {
+    expect(withRecurrenceOptions(weekly, {}, "UTC", NOW)).toEqual(weekly);
+  });
+
+  it("adds from_completion and a resolved until date", () => {
+    expect(withRecurrenceOptions(weekly, { fromCompletion: true, until: "2026-12-31" }, "UTC", NOW).recurrenceRule).toEqual({
+      type: "weekly",
+      interval: 1,
+      weekdays: [1],
+      fromCompletion: true,
+      until: "2026-12-31",
+    });
+    expect(withRecurrenceOptions(weekly, { until: "tomorrow" }, "Asia/Tokyo", NOW).recurrenceRule).toMatchObject({
+      until: "2026-10-08",
+    });
+  });
+
+  it("rejects options on a due that does not repeat", () => {
+    const once = { dueDate: "2026-10-12", dueTime: null, recurrenceRule: null };
+    expect(() => withRecurrenceOptions(once, { fromCompletion: true }, "UTC", NOW)).toThrow(ToolInputError);
+  });
+});
 
 describe("resolveDue", () => {
   it("passes ISO dates through untouched", () => {

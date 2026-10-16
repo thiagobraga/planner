@@ -1,14 +1,14 @@
-import { parseDueDate } from "../parsers/dateParser.js";
+import { parseDuePhrase } from "../services/dateService.js";
 import { listCollections } from "../services/collectionService.js";
 import { listLabels } from "../services/labelService.js";
 import { listHabits } from "../services/habitService.js";
 import { localDateInTimezone } from "../services/viewService.js";
 import type { NamedRef, ResolvedDue } from "../types/mcp.js";
+import type { RecurrenceRule } from "../types/recurrence.js";
 
 /** A failure the agent can fix by changing its arguments; surfaced as a tool error, not a crash. */
 export class ToolInputError extends Error {}
 
-const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /** The user's calendar date, e.g. "2026-10-06", wherever the server runs. */
@@ -16,33 +16,32 @@ export function todayFor(timeZone: string, now: Date): string {
   return localDateInTimezone(now, timeZone);
 }
 
-/**
- * Natural-language or ISO due date, resolved against the user's own "today".
- *
- * The date grammar reads the process-local calendar, so it is handed a Date
- * whose local fields spell the user's date: "tomorrow" then means tomorrow
- * where the user is, not where the server is.
- */
+/** Natural-language or ISO due date in the user's timezone; see parseDuePhrase. */
 export function resolveDue(phrase: string, timeZone: string, now: Date): ResolvedDue {
-  const trimmed = phrase.trim();
-  if (ISO_DATE.test(trimmed)) {
-    return { dueDate: trimmed, dueTime: null, recurrenceRule: null };
-  }
-
-  const [year, month, day] = todayFor(timeZone, now).split("-").map(Number);
-  const localNoon = new Date(year!, month! - 1, day!, 12, 0, 0);
   try {
-    const parsed = parseDueDate(trimmed, { now: localNoon });
-    return {
-      dueDate: parsed.date,
-      dueTime: parsed.time ?? null,
-      recurrenceRule: parsed.recurrence ?? null,
-    };
+    return parseDuePhrase(phrase, timeZone, now);
   } catch {
     throw new ToolInputError(
       `Could not understand the date "${phrase}". Try "today", "tomorrow", "friday", "next friday 3pm", "in 3 days", "dec 24", "every monday" or YYYY-MM-DD.`,
     );
   }
+}
+
+/** Layers the agent's `from_completion` / `until` options onto the rule parsed from `due`. */
+export function withRecurrenceOptions(
+  due: ResolvedDue,
+  options: { fromCompletion?: boolean; until?: string },
+  timeZone: string,
+  now: Date,
+): ResolvedDue {
+  if (options.fromCompletion === undefined && options.until === undefined) return due;
+  if (!due.recurrenceRule) {
+    throw new ToolInputError('from_completion and until need a repeating due such as "every saturday".');
+  }
+  const rule: RecurrenceRule = { ...due.recurrenceRule };
+  if (options.fromCompletion !== undefined) rule.fromCompletion = options.fromCompletion;
+  if (options.until !== undefined) rule.until = resolveDue(options.until, timeZone, now).dueDate;
+  return { ...due, recurrenceRule: rule };
 }
 
 function pickByName<T extends NamedRef>(items: T[], ref: string, kind: string): T {

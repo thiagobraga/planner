@@ -49,7 +49,7 @@ import { SectionDeleteModal } from '../components/SectionDeleteModal';
 import { flattenCollections, getHierarchicalColor } from '../components/CollectionTreeNav';
 import { Folder, ArrowUp, ArrowDown, Trash2, Pencil, ChevronRight } from 'lucide-react';
 import { useI18n } from '../i18n/I18nContext';
-import { scheduleFieldsFromApi, withTimeZones } from '../utils/taskTime';
+import { applySchedule, scheduleFieldsFromApi, withTimeZones } from '../utils/taskTime';
 import { buildSetDateMenuItem } from '../components/taskDateMenuItem';
 import type { TaskSchedule } from '../types/task';
 import { blurOnEscape } from '../utils/editableText';
@@ -373,6 +373,7 @@ export function CollectionsPage() {
   }, []);
 
   const handleSetSchedule = useCallback((id: string, schedule: TaskSchedule) => {
+    setTasks((prev) => prev.map((task) => (task.id === id ? applySchedule(task, schedule) : task)));
     apiUpdateTask(id, withTimeZones(schedule))
       .then((updated) => setTasks((prev) => prev.map((task) => (task.id === id ? { ...task, ...apiToTask(updated) } : task))))
       .catch(() => invalidate());

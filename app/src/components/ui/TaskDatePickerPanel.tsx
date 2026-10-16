@@ -1,13 +1,18 @@
-import { useState } from 'react';
-import { useI18n } from '../../i18n/I18nContext';
-import type { TranslationKey } from '../../i18n/catalogs';
-import type { TaskSchedule } from '../../types/task';
-import { Button } from './Button';
+import { useRef, useState } from 'react';
+import type { RecurrenceRule, TaskSchedule } from '../../types/task';
+import { fmtISO, type WeekStart } from '../../utils/date';
+import { usePreferences } from '../../hooks/usePreferences';
+import { DateScreen } from './datePicker/DateScreen';
+import { TimeScreen } from './datePicker/TimeScreen';
+import { RepeatScreen } from './datePicker/RepeatScreen';
 
 interface TaskDatePickerPanelProps {
   value: TaskSchedule;
   onSave: (value: TaskSchedule) => void;
+  onClose: () => void;
 }
+
+type Screen = 'date' | 'time' | 'repeat';
 
 const EMPTY: TaskSchedule = {
   dueDate: null,
@@ -15,60 +20,105 @@ const EMPTY: TaskSchedule = {
   deadlineDate: null,
   deadlineTime: null,
   durationMinutes: null,
+  recurrenceRule: null,
 };
 
-const inputClass =
-  'w-full h-6 px-1.5 text-[13px] text-ink bg-transparent border border-border rounded-xs outline-none focus:border-ink disabled:opacity-40';
+// A time only means something on a date, and a repeat needs a first occurrence.
+function normalize(draft: TaskSchedule): TaskSchedule {
+  return {
+    ...draft,
+    dueTime: draft.dueDate ? draft.dueTime : null,
+    deadlineTime: draft.deadlineDate ? draft.deadlineTime : null,
+    recurrenceRule: draft.dueDate ? draft.recurrenceRule : null,
+  };
+}
 
-export function TaskDatePickerPanel({ value, onSave }: TaskDatePickerPanelProps) {
-  const { t } = useI18n();
-  const [dueDate, setDueDate] = useState(value.dueDate ?? '');
-  const [dueTime, setDueTime] = useState(value.dueTime ?? '');
-  const [deadlineDate, setDeadlineDate] = useState(value.deadlineDate ?? '');
-  const [deadlineTime, setDeadlineTime] = useState(value.deadlineTime ?? '');
-  const [duration, setDuration] = useState(value.durationMinutes ? String(value.durationMinutes) : '');
+/** Set date, time, duration, deadline and repeat in one draft; nothing is saved until Save. */
+export function TaskDatePickerPanel({ value, onSave, onClose }: TaskDatePickerPanelProps) {
+  const { data: prefs } = usePreferences();
+  const weekStart: WeekStart = prefs?.weekStart ?? 'sunday';
+  const [draft, setDraft] = useState<TaskSchedule>(value);
+  const [stack, setStack] = useState<Screen[]>(['date']);
+  const [direction, setDirection] = useState<'forward' | 'back'>('forward');
+  const timeSnapshot = useRef<TaskSchedule>(value);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const minutes = Number(duration);
-    onSave({
-      dueDate: dueDate || null,
-      dueTime: dueDate && dueTime ? dueTime : null,
-      deadlineDate: deadlineDate || null,
-      deadlineTime: deadlineDate && deadlineTime ? deadlineTime : null,
-      durationMinutes: Number.isInteger(minutes) && minutes > 0 && minutes <= 1440 ? minutes : null,
-    });
+  const screen = stack[stack.length - 1];
+  const patch = (changes: Partial<TaskSchedule>) => setDraft((d) => ({ ...d, ...changes }));
+
+  const open = (next: Screen) => {
+    setDirection('forward');
+    setStack((s) => [...s, next]);
+  };
+  const back = () => {
+    setDirection('back');
+    setStack((s) => (s.length > 1 ? s.slice(0, -1) : s));
   };
 
-  const field = (id: string, labelKey: TranslationKey, input: React.ReactNode) => (
-    <label htmlFor={id} className="flex flex-col gap-1 min-w-0">
-      <span className="text-[11px] tracking-[0.08em] uppercase text-ink-light">{t(labelKey)}</span>
-      {input}
-    </label>
-  );
+  const openTime = (withDeadline: boolean) => {
+    const today = fmtISO(new Date());
+    timeSnapshot.current = draft;
+    patch({
+      dueDate: draft.dueDate ?? today,
+      ...(withDeadline && !draft.deadlineDate ? { deadlineDate: draft.dueDate ?? today } : {}),
+    });
+    open('time');
+  };
+
+  const applyRepeat = (rule: RecurrenceRule | null) => {
+    patch({ recurrenceRule: rule, ...(rule && !draft.dueDate ? { dueDate: fmtISO(new Date()) } : {}) });
+    back();
+  };
+
+  const save = () => onSave(normalize(draft));
 
   return (
-    <form onSubmit={handleSubmit} className="task-date-picker w-72 p-3 flex flex-col gap-3">
-      <div className="grid grid-cols-2 gap-3">
-        {field('task-date-picker-date', 'datePicker.date',
-          <input id="task-date-picker-date" type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className={inputClass} />)}
-        {field('task-date-picker-time', 'datePicker.time',
-          <input id="task-date-picker-time" type="time" value={dueTime} disabled={!dueDate} onChange={(e) => setDueTime(e.target.value)} className={inputClass} />)}
-        {field('task-date-picker-deadline', 'datePicker.deadline',
-          <input id="task-date-picker-deadline" type="date" value={deadlineDate} onChange={(e) => setDeadlineDate(e.target.value)} className={inputClass} />)}
-        {field('task-date-picker-deadline-time', 'datePicker.deadlineTime',
-          <input id="task-date-picker-deadline-time" type="time" value={deadlineTime} disabled={!deadlineDate} onChange={(e) => setDeadlineTime(e.target.value)} className={inputClass} />)}
-        {field('task-date-picker-duration', 'datePicker.duration',
-          <input id="task-date-picker-duration" type="number" min={1} max={1440} value={duration} onChange={(e) => setDuration(e.target.value)} className={inputClass} />)}
+    <div
+      className="task-date-picker w-[320px] max-w-[calc(100vw-32px)] overflow-hidden font-journal text-ink"
+      onKeyDown={(e) => {
+        if (e.key === 'Escape' && screen !== 'date') {
+          e.stopPropagation();
+          back();
+        }
+      }}
+    >
+      <div key={stack.length + screen} className={`date-picker-screen date-picker-screen-${direction}`} data-screen={screen}>
+        {screen === 'date' && (
+          <DateScreen
+            draft={draft}
+            onChange={patch}
+            weekStart={weekStart}
+            onOpenTime={openTime}
+            onOpenRepeat={() => open('repeat')}
+            onSave={save}
+            onRemove={() => onSave(EMPTY)}
+            onClose={onClose}
+          />
+        )}
+        {screen === 'time' && (
+          <TimeScreen
+            draft={draft}
+            onChange={patch}
+            onBack={back}
+            onCancel={() => {
+              setDraft(timeSnapshot.current);
+              back();
+            }}
+            onSave={save}
+            onOpenRepeat={() => open('repeat')}
+            onClose={onClose}
+          />
+        )}
+        {screen === 'repeat' && (
+          <RepeatScreen
+            rule={draft.recurrenceRule}
+            anchorDate={draft.dueDate}
+            weekStart={weekStart}
+            onApply={applyRepeat}
+            onBack={back}
+            onClose={onClose}
+          />
+        )}
       </div>
-      <div className="flex justify-end gap-2">
-        <Button size="sm" variant="tertiary" onClick={() => onSave(EMPTY)}>
-          {t('datePicker.clear')}
-        </Button>
-        <Button size="sm" variant="primary" type="submit">
-          {t('common.save')}
-        </Button>
-      </div>
-    </form>
+    </div>
   );
 }

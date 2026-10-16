@@ -1,4 +1,5 @@
 import type { ApiTokenScope } from "./apiToken.js";
+import type { RecurrenceRule } from "./recurrence.js";
 
 export interface McpAuthContext {
   userId: string;
@@ -27,7 +28,7 @@ export interface McpTaskLike {
 export interface ResolvedDue {
   dueDate: string;
   dueTime: string | null;
-  recurrenceRule: object | null;
+  recurrenceRule: RecurrenceRule | null;
 }
 
 export interface NamedRef {

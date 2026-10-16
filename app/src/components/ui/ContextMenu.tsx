@@ -407,21 +407,34 @@ function InlinePanel({ position, children }: { position: { x: number; y: number 
   const panelRef = useRef<HTMLDivElement>(null);
   const [coords, setCoords] = useState({ top: position.y, left: position.x });
 
+  // Re-fit whenever the content changes size (a multi-screen panel grows and shrinks).
   useLayoutEffect(() => {
-    if (!panelRef.current) return;
-    const rect = panelRef.current.getBoundingClientRect();
-    const vw = document.documentElement.clientWidth;
-    const vh = document.documentElement.clientHeight;
-    const padding = 8;
-    const left = position.x + rect.width > vw - padding ? vw - rect.width - padding : position.x;
-    const top = position.y + rect.height > vh - padding ? vh - rect.height - padding : position.y;
-    setCoords({ top: Math.max(padding, top), left: Math.max(padding, left) });
+    const panel = panelRef.current;
+    if (!panel) return;
+    const fit = () => {
+      const rect = panel.getBoundingClientRect();
+      const vw = document.documentElement.clientWidth;
+      const vh = document.documentElement.clientHeight;
+      const padding = 8;
+      // No room to sit beside the menu on phones: center it in the viewport instead.
+      const left =
+        vw < 640
+          ? (vw - rect.width) / 2
+          : position.x + rect.width > vw - padding ? vw - rect.width - padding : position.x;
+      const top = position.y + rect.height > vh - padding ? vh - rect.height - padding : position.y;
+      setCoords({ top: Math.max(padding, top), left: Math.max(padding, left) });
+    };
+    fit();
+    if (typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(fit);
+    observer.observe(panel);
+    return () => observer.disconnect();
   }, [position]);
 
   return (
     <div
       ref={panelRef}
-      className="ui-context-menu-inline-panel fixed z-50 rounded-md border border-border bg-(--planner-overlay-bg,var(--color-cream)) shadow-medium pointer-events-auto"
+      className="ui-context-menu-inline-panel fixed z-50 max-h-[calc(100dvh-16px)] overflow-y-auto rounded-md border border-border bg-(--planner-overlay-bg,var(--color-cream)) shadow-medium pointer-events-auto"
       style={{ top: coords.top, left: coords.left }}
     >
       {children}

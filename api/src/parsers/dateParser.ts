@@ -2,24 +2,19 @@ import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import peggy from 'peggy';
+import type { DueDate } from '../types/recurrence.js';
 
-export interface RecurrenceRule {
-  type: 'daily' | 'weekly' | 'monthly' | 'yearly';
-  interval: number;
-  weekdays?: number[];
-  dayOfMonth?: number;
-  month?: number;
-}
-
-export interface DueDate {
-  date: string;
-  time?: string;
-  timezone?: string;
-  recurrence?: RecurrenceRule;
-}
+export type { DueDate, RecurrenceRule } from '../types/recurrence.js';
 
 interface ParserOptions {
   now?: Date;
+  /** 'pt-BR' reads slashed dates day-first (17/10); anything else month-first. */
+  locale?: string;
+}
+
+// Accents are optional in Portuguese input ("amanhã" or "amanha"), so the grammar only knows the bare letters.
+function stripAccents(input: string): string {
+  return input.normalize('NFD').replace(/[̀-ͯ]/g, '');
 }
 
 type PeggyParser = { parse: (input: string, options?: Record<string, unknown>) => unknown };
@@ -41,14 +36,14 @@ function getParser(): PeggyParser {
 
 export function parseDueDate(input: string, options?: ParserOptions): DueDate {
   const parser = getParser();
-  const trimmed = input.trim();
+  const trimmed = stripAccents(input.trim());
 
   if (!trimmed) {
     throw new Error(`Unrecognized date expression: "${input}"`);
   }
 
   try {
-    const result = parser.parse(trimmed, { now: options?.now }) as DueDate;
+    const result = parser.parse(trimmed, { now: options?.now, locale: options?.locale }) as DueDate;
     return result;
   } catch (e: unknown) {
     const pegError = e as { location?: { start?: { offset?: number } }; message?: string };

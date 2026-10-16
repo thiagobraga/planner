@@ -1,16 +1,9 @@
-export interface RecurrenceRule {
-  type: 'daily' | 'weekly' | 'monthly' | 'yearly';
-  interval: number; // 1-999
-  weekdays?: number[]; // 0=Sun, 1=Mon, ..., 6=Sat (for weekly)
-  dayOfMonth?: number; // 1-31 (for monthly)
-  month?: number; // 1-12 (for yearly)
-}
+import type { DueDate as ParsedDueDate, RecurrenceRule } from '../types/recurrence.js';
 
-export interface DueDate {
+export type { RecurrenceRule };
+
+export interface DueDate extends Omit<ParsedDueDate, 'date'> {
   date: string | Date; // YYYY-MM-DD or Date object
-  time?: string; // HH:MM (24h)
-  timezone?: string; // IANA timezone
-  recurrence?: RecurrenceRule;
 }
 
 function parseDate(dateStr: string | Date): { year: number; month: number; day: number } {
@@ -137,4 +130,30 @@ export function computeNextOccurrence(currentDueDate: DueDate, rule: RecurrenceR
     ...(currentDueDate.timezone !== undefined && { timezone: currentDueDate.timezone }),
     recurrence: rule,
   };
+}
+
+/**
+ * The occurrence that follows a completion, or null when the rule has ended.
+ * `completedOn` is the user's calendar date (YYYY-MM-DD) at completion time.
+ */
+export function planNextOccurrence(currentDueDate: DueDate, rule: RecurrenceRule, completedOn: string): DueDate | null {
+  let base: DueDate = currentDueDate;
+  if (rule.fromCompletion) {
+    base = { ...currentDueDate, date: completedOn };
+    // Weekly with weekdays snaps to the next listed day, so shift the start by the
+    // extra weeks first: "every 2 weeks on Saturday" lands ~2 weeks after completion.
+    if (rule.type === 'weekly' && rule.weekdays?.length && rule.interval > 1) {
+      const c = parseDate(completedOn);
+      const shifted = addDays(c.year, c.month, c.day, 7 * (rule.interval - 1));
+      base = { ...base, date: formatDate(shifted.year, shifted.month, shifted.day) };
+      const next = computeNextOccurrence(base, { ...rule, interval: 1 });
+      return withinUntil(next, rule);
+    }
+  }
+  return withinUntil(computeNextOccurrence(base, rule), rule);
+}
+
+function withinUntil(next: DueDate, rule: RecurrenceRule): DueDate | null {
+  if (rule.until && String(next.date) > rule.until) return null;
+  return { ...next, recurrence: rule };
 }

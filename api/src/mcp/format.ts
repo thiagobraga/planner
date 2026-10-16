@@ -1,6 +1,14 @@
 import type { McpTaskLike } from "../types/mcp.js";
+import type { RecurrenceRule } from "../types/recurrence.js";
 
 export const MAX_LISTED = 100;
+
+function recurrenceLabel(rule: Partial<RecurrenceRule>): string {
+  let label = "recurring";
+  if (rule.fromCompletion) label += " from completion";
+  if (rule.until) label += ` until ${rule.until}`;
+  return label;
+}
 
 /** node-postgres hands DATE columns back as local-midnight Dates; read them back the same way. */
 export function dateKey(value: string | Date): string {
@@ -18,7 +26,7 @@ export function formatTaskLine(task: McpTaskLike, collectionNames: Map<string, s
 
   if (task.dueDate) parts.push(`due ${dateKey(task.dueDate)}${task.dueTime ? ` ${task.dueTime}` : ""}`);
   if (task.deadlineDate) parts.push(`deadline ${dateKey(task.deadlineDate)}`);
-  if (task.recurrenceRule) parts.push("recurring");
+  if (task.recurrenceRule) parts.push(recurrenceLabel(task.recurrenceRule as Partial<RecurrenceRule>));
   if (task.priority && task.priority < 4) parts.push(`p${task.priority}`);
   if (task.type && task.type !== "task") parts.push(task.type);
 
