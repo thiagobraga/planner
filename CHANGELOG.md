@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.5.6](https://github.com/thiagobraga/planner/compare/v0.5.5...v0.5.6) (2026-10-16)
+
+
+### Fixed
+
+* release style commits ([7c74cd2](https://github.com/thiagobraga/planner/commit/7c74cd263ce8a92cdca7a9d0796c9114f91f6772))
+* release style commits ([eced9e4](https://github.com/thiagobraga/planner/commit/eced9e43dbf776444838eb36e405956f4568d531))
+
+
+### Style
+
+* align habit and group names with new habit label ([adb90b2](https://github.com/thiagobraga/planner/commit/adb90b2db0579f8ad6c9b0ab5f90ade32fa3b8a5))
+
 ## [0.5.5](https://github.com/thiagobraga/planner/compare/v0.5.4...v0.5.5) (2026-10-16)
 
 
