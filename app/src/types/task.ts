@@ -12,6 +12,13 @@ export interface RecurrenceRule {
   until?: string;
 }
 
+/** GET /dates/parse response. */
+export interface ParsedDateInput {
+  date: string;
+  time: string | null;
+  recurrence: RecurrenceRule | null;
+}
+
 /** The date/time facets a user edits together: planned day and time, hard deadline, expected length, repeat. */
 export interface TaskSchedule {
   dueDate: string | null;

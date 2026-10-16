@@ -4,7 +4,7 @@ import { notifyUnauthorized } from '../utils/authEvents';
 import type { BoardViewMode } from '../types/board';
 import type { ApiDailyView } from '../types/daily';
 import type { BackgroundPreference } from '../types/theme';
-import type { RecurrenceRule, TaskSchedule } from '../types/task';
+import type { ParsedDateInput, RecurrenceRule, TaskSchedule } from '../types/task';
 import type { ApiToken, CreateApiTokenInput, CreatedApiToken } from '../types/apiToken';
 import type { ActivityPage, ActivityQuery } from '../types/activity';
 import type { ConnectedApp, ConsentDecision, PendingAuthorization } from '../types/oauth';
@@ -347,6 +347,17 @@ export async function apiUpdatePreferences(patch: Partial<Omit<Preferences, 'use
     method: 'PATCH',
     body: JSON.stringify(patch),
   });
+}
+
+/** Reads typed text like "amanhã às 15h" in the user's time zone; null when it holds no date. */
+export async function apiParseDate(q: string, locale: 'en' | 'pt-BR', signal?: AbortSignal): Promise<ParsedDateInput | null> {
+  const params = new URLSearchParams({ q, locale });
+  try {
+    return await request<ParsedDateInput>(`/dates/parse?${params}`, { signal });
+  } catch (err) {
+    if (err instanceof ApiError && err.status === 404) return null;
+    throw err;
+  }
 }
 
 export async function apiCreateTask(input: {
