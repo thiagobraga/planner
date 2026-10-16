@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildColumnId, buildColumns, buildStatusListGroups, parseColumnId } from '../boardColumns';
-import type {ApiTask} from '../../types/api';
+import type { ApiTask } from '../../types/api';
 
 const baseTask: ApiTask = {
   id: 'task-1',

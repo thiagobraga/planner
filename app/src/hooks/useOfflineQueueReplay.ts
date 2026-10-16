@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { getSocket } from '../utils/socket';
 import { getQueuedMutationsForUser, removeMutation, remapQueuedId } from '../utils/offlineQueue';
-import {request} from '../api/client';
+import { request } from '../api/client';
 
 export function useOfflineQueueReplay(userId: string | null): void {
   useEffect(() => {

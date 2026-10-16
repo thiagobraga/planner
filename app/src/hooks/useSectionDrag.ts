@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import type { DragEndEvent } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
 import { usePlannerDragHandlers } from '../contexts/usePlannerDrag';
-import {apiUpdateSection} from '../api/client';
+import { apiUpdateSection } from '../api/client';
 import type { Section } from '../stores/taskStore';
 import type { SectionHeaderDragData } from '../types/drag';
 

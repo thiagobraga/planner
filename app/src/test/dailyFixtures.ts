@@ -1,4 +1,4 @@
-import type {ApiTask} from '../types/api';
+import type { ApiTask } from '../types/api';
 import type { ApiDailyView } from '../types/daily';
 
 function localKey(d: Date): string {

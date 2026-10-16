@@ -9,8 +9,8 @@ import {
   ApiError,
 } from '../api/client';
 import { usePlannerDragHandlers } from '../contexts/usePlannerDrag';
-import type {ApiSection, ApiStatus} from '../types/api';
-import type {BoardGroupBy} from '../types/drag';
+import type { ApiSection, ApiStatus } from '../types/api';
+import type { BoardGroupBy } from '../types/drag';
 import type { BoardColumn as BoardColumnModel } from '../utils/boardColumns';
 import type { BoardColumnDragData, BoardColumnHeaderDropData } from '../types/drag';
 

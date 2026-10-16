@@ -3,7 +3,7 @@ import type { DragEndEvent, DragOverEvent, DragStartEvent } from '@dnd-kit/core'
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { useBoardDrag } from '../useBoardDrag';
 import { apiMoveTask } from '../../api/client';
-import type {ApiSection, ApiStatus, ApiTask, BoardOrder} from '../../types/api';
+import type { ApiSection, ApiStatus, ApiTask, BoardOrder } from '../../types/api';
 import type { TaskDragData } from '../../types/drag';
 
 vi.mock('../../api/client', async (importOriginal) => ({

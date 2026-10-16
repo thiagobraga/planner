@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type {ApiCollection} from '../types/api';
+import type { ApiCollection } from '../types/api';
 
 export interface CollectionTreeNode {
   id: string;

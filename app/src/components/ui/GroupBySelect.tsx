@@ -1,4 +1,4 @@
-import type {BoardGroupBy} from '../../types/drag';
+import type { BoardGroupBy } from '../../types/drag';
 import { useI18n } from '../../i18n/I18nContext';
 import { CustomSelect } from './CustomSelect';
 

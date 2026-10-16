@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { buildColumnId } from '../../utils/boardColumns';
 import { applyBoardMoveLocally, resolveBoardMove } from '../useBoardDrag';
-import type {ApiSection, ApiStatus, ApiTask, BoardOrder} from '../../types/api';
+import type { ApiSection, ApiStatus, ApiTask, BoardOrder } from '../../types/api';
 import type { TaskDragData } from '../../types/drag';
 
 const collectionId = 'collection-1';
