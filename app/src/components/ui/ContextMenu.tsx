@@ -426,7 +426,7 @@ function InlinePanel({ position, children }: { position: { x: number; y: number 
     };
     fit();
     if (typeof ResizeObserver === 'undefined') return;
-    const observer = new ResizeObserver(fit);
+    const observer = new ResizeObserver(() => fit());
     observer.observe(panel);
     return () => observer.disconnect();
   }, [position]);
