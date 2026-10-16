@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.6.0](https://github.com/thiagobraga/planner/compare/v0.5.6...v0.6.0) (2026-10-16)
+
+
+### Added
+
+* redesign date picker with calendar, time, deadline and repeat ([5aa119e](https://github.com/thiagobraga/planner/commit/5aa119ed5a5ae74b3cd9cce7d32afd3585b35850))
+
+
+### Fixed
+
+* for pull request finding 'CodeQL / Superfluous trailing arguments' ([95591fc](https://github.com/thiagobraga/planner/commit/95591fcb1d51ff804ada3d7588c4b625e0a80f4d))
+
 ## [0.5.6](https://github.com/thiagobraga/planner/compare/v0.5.5...v0.5.6) (2026-10-16)
 
 
