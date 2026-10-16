@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.5.5](https://github.com/thiagobraga/planner/compare/v0.5.4...v0.5.5) (2026-10-16)
+
+
+### Fixed
+
+* **ci:** parse the release-please PR number in the shell ([1bb6dba](https://github.com/thiagobraga/planner/commit/1bb6dbacf84939244190ac04576a9dfe97828135))
+* **ci:** parse the release-please PR number in the shell ([e8a499c](https://github.com/thiagobraga/planner/commit/e8a499cb438fa4b5db318e4712731892c983c1ad))
+
 ## [0.5.4](https://github.com/thiagobraga/planner/compare/v0.5.3...v0.5.4) (2026-10-16)
 
 
