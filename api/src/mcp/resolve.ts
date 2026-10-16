@@ -4,6 +4,7 @@ import { listLabels } from "../services/labelService.js";
 import { listHabits } from "../services/habitService.js";
 import { localDateInTimezone } from "../services/viewService.js";
 import type { NamedRef, ResolvedDue } from "../types/mcp.js";
+import type { RecurrenceRule } from "../types/recurrence.js";
 
 /** A failure the agent can fix by changing its arguments; surfaced as a tool error, not a crash. */
 export class ToolInputError extends Error {}
@@ -43,6 +44,23 @@ export function resolveDue(phrase: string, timeZone: string, now: Date): Resolve
       `Could not understand the date "${phrase}". Try "today", "tomorrow", "friday", "next friday 3pm", "in 3 days", "dec 24", "every monday" or YYYY-MM-DD.`,
     );
   }
+}
+
+/** Layers the agent's `from_completion` / `until` options onto the rule parsed from `due`. */
+export function withRecurrenceOptions(
+  due: ResolvedDue,
+  options: { fromCompletion?: boolean; until?: string },
+  timeZone: string,
+  now: Date,
+): ResolvedDue {
+  if (options.fromCompletion === undefined && options.until === undefined) return due;
+  if (!due.recurrenceRule) {
+    throw new ToolInputError('from_completion and until need a repeating due such as "every saturday".');
+  }
+  const rule: RecurrenceRule = { ...due.recurrenceRule };
+  if (options.fromCompletion !== undefined) rule.fromCompletion = options.fromCompletion;
+  if (options.until !== undefined) rule.until = resolveDue(options.until, timeZone, now).dueDate;
+  return { ...due, recurrenceRule: rule };
 }
 
 function pickByName<T extends NamedRef>(items: T[], ref: string, kind: string): T {

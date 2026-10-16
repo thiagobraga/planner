@@ -4,6 +4,20 @@ import { dateKey, formatTaskLine, formatTaskList, MAX_LISTED } from "../format.j
 const names = new Map([["c1", "Personal"]]);
 
 describe("MCP task formatting", () => {
+  it("prints from-completion and until on a recurring task", () => {
+    const line = formatTaskLine(
+      {
+        id: "t2",
+        title: "Long run",
+        dueDate: "2026-10-17",
+        isCompleted: false,
+        recurrenceRule: { type: "weekly", interval: 2, weekdays: [6], fromCompletion: true, until: "2026-12-31" },
+      },
+      names,
+    );
+    expect(line).toBe("- [ ] Long run · due 2026-10-17 · recurring from completion until 2026-12-31 · id:t2");
+  });
+
   it("renders one compact line ending with the id", () => {
     const line = formatTaskLine(
       {
