@@ -70,6 +70,7 @@ export const portugueseBrazilCatalog = {
   'nav.adminUsers': 'Usuários',
   'nav.adminDashboard': 'Painel',
   'nav.styleguide': 'Styleguide',
+  'nav.version': 'Versão {{version}}',
   'shell.keyboardShortcuts': 'Atalhos do teclado',
   'shell.quickAddTask': 'Adicionar tarefa rapidamente',
   'shell.togglePanel': 'Alternar este painel',

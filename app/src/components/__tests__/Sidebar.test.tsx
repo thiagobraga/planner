@@ -1,6 +1,7 @@
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Sidebar } from '../Sidebar';
+import { APP_VERSION } from '../../utils/version';
 
 const mockLogout = vi.hoisted(() => vi.fn());
 // Mutable so a test can hand the sidebar an admin, a plain user, or nobody.
@@ -191,5 +192,23 @@ describe('Sidebar', () => {
     const logo = container.querySelector('img[src^="/images/logo/"]');
     expect(logo).toHaveAttribute('src', '/images/logo/logo-16x16.png');
     expect(logo).toHaveAttribute('srcset', '/images/logo/logo-32x32.png 2x');
+  });
+
+  it('renders current app version in expanded mode', () => {
+    render(<Sidebar />);
+    expect(screen.getByText(`v${APP_VERSION}`)).toBeInTheDocument();
+  });
+
+  it('renders current app version in collapsed mode', () => {
+    render(<Sidebar collapsed />);
+    expect(screen.getByText(`v${APP_VERSION}`)).toBeInTheDocument();
+  });
+
+  it('includes localized tooltip title on version element', () => {
+    render(<Sidebar />);
+    expect(screen.getByText(`v${APP_VERSION}`)).toHaveAttribute(
+      'title',
+      `Version ${APP_VERSION}`,
+    );
   });
 });
