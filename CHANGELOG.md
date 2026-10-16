@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.5.5](https://github.com/thiagobraga/planner/compare/v0.5.4...v0.5.5) (2026-10-16)
+
+
+### Fixed
+
+* **ci:** parse the release-please PR number in the shell ([1bb6dba](https://github.com/thiagobraga/planner/commit/1bb6dbacf84939244190ac04576a9dfe97828135))
+* **ci:** parse the release-please PR number in the shell ([e8a499c](https://github.com/thiagobraga/planner/commit/e8a499cb438fa4b5db318e4712731892c983c1ad))
+
+## [0.5.4](https://github.com/thiagobraga/planner/compare/v0.5.3...v0.5.4) (2026-10-16)
+
+
+### Fixed
+
+* **ci:** deploy after release when quality and security were skipped ([078ee01](https://github.com/thiagobraga/planner/commit/078ee01d8787fb6d90aea84239fa3113eb0ac296))
+* **ci:** deploy after release when quality and security were skipped ([a2b3c79](https://github.com/thiagobraga/planner/commit/a2b3c79e7a3c756f41d6be4b474f8e948c51c364))
+
 ## [0.5.3](https://github.com/thiagobraga/planner/compare/v0.5.2...v0.5.3) (2026-10-16)
 
 

@@ -162,9 +162,30 @@ jobs:
     secrets:
       RELEASE_PLEASE_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
 
+  # The one check the main ruleset requires. Skipped reusable-workflow jobs report a single
+  # "2a. Quality" check instead of their nested ones, so nested names cannot be required.
+  # Skipped is fine (proven release-only bump or no relevant change); failed or cancelled is not.
+  gate:
+    name: CI gate
+    if: ${{ always() && github.event_name == 'pull_request' }}
+    needs: [changes, review, quality, security, container-scan]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions: {}
+    steps:
+      - env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+          CHANGES: ${{ needs.changes.result }}
+        run: |
+          echo "Results: $RESULTS"
+          [ "$CHANGES" = "success" ] || { echo "changes did not succeed"; exit 1; }
+          case " $RESULTS " in *" failure "*|*" cancelled "*) exit 1 ;; esac
+
   deploy:
     name: 4. Deploy
-    if: needs.release.outputs.release_created == 'true'
+    # The implicit success() also fails on skipped ancestors (quality, security on a
+    # release-only bump), so check the release result explicitly.
+    if: ${{ !cancelled() && needs.release.result == 'success' && needs.release.outputs.release_created == 'true' }}
     needs: release
     permissions:
       contents: write
