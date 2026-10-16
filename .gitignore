@@ -96,6 +96,7 @@ compose.override.yml
 .playwright-mcp/
 .remember/
 .superpowers/
+.vibeyardignore
 app/e2e/playwright-report/
 app/e2e/storageState.json
 app/playwright-report/

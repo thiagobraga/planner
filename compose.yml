@@ -152,7 +152,7 @@ services:
 
   redis:
     container_name: ${COMPOSE_PROJECT_NAME:-planner}-redis
-    image: redis:7-alpine
+    image: redis:8-alpine
     command: redis-server /etc/redis/redis.conf --requirepass ${REDIS_PASSWORD:-planner}
     volumes:
       - ./.docker/redis/redis.conf:/etc/redis/redis.conf:ro

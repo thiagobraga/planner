@@ -1,19 +1,12 @@
 name: 1. Review
 
 on:
-  pull_request:
-    branches: [main]
-    paths-ignore:
-      - '**.md'
-      - '.specs/**'
-      - '.claude/**'
-      - '.claudeignore'
-      - '.vscode/**'
-      - '.gitignore'
-
-concurrency:
-  group: review-${{ github.ref }}
-  cancel-in-progress: true
+  workflow_call:
+    inputs:
+      workflows_changed:
+        description: 'Run the workflow lint (the PR touches .github/)'
+        type: boolean
+        default: true
 
 permissions:
   contents: read
@@ -33,12 +26,15 @@ jobs:
 
   workflow-lint:
     name: 1b. Workflow lint
+    if: inputs.workflows_changed
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
+      - name: Skip classifier tests
+        run: bash scripts/ci-changes.test.sh
       - name: actionlint
         run: docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:1.7.12 -color
       - name: zizmor

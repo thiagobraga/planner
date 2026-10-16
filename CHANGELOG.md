@@ -1,5 +1,76 @@
 # Changelog
 
+## [0.5.5](https://github.com/thiagobraga/planner/compare/v0.5.4...v0.5.5) (2026-10-16)
+
+
+### Fixed
+
+* **ci:** parse the release-please PR number in the shell ([1bb6dba](https://github.com/thiagobraga/planner/commit/1bb6dbacf84939244190ac04576a9dfe97828135))
+* **ci:** parse the release-please PR number in the shell ([e8a499c](https://github.com/thiagobraga/planner/commit/e8a499cb438fa4b5db318e4712731892c983c1ad))
+
+## [0.5.4](https://github.com/thiagobraga/planner/compare/v0.5.3...v0.5.4) (2026-10-16)
+
+
+### Fixed
+
+* **ci:** deploy after release when quality and security were skipped ([078ee01](https://github.com/thiagobraga/planner/commit/078ee01d8787fb6d90aea84239fa3113eb0ac296))
+* **ci:** deploy after release when quality and security were skipped ([a2b3c79](https://github.com/thiagobraga/planner/commit/a2b3c79e7a3c756f41d6be4b474f8e948c51c364))
+
+## [0.5.3](https://github.com/thiagobraga/planner/compare/v0.5.2...v0.5.3) (2026-10-16)
+
+
+### Fixed
+
+* **app:** make esbuild override follow direct dependency ([aa9cc2e](https://github.com/thiagobraga/planner/commit/aa9cc2ee867ed158d93799be9a03d2232380e5f0))
+* **app:** make esbuild override follow direct dependency ([7410dbf](https://github.com/thiagobraga/planner/commit/7410dbf7e4cd3ef63bfd49c1568abbc33ddcaf9b))
+
+## [0.5.2](https://github.com/thiagobraga/planner/compare/v0.5.1...v0.5.2) (2026-10-15)
+
+
+### Fixed
+
+* pin postgres to 16-alpine ([71b32f9](https://github.com/thiagobraga/planner/commit/71b32f9e5547741fdb28b31fa8ff8cc8cfb4460d))
+* pin postgres to 16-alpine ([ee3299b](https://github.com/thiagobraga/planner/commit/ee3299b58ff918e366abbb618a676dcc38f98d20))
+
+## [0.5.1](https://github.com/thiagobraga/planner/compare/v0.5.0...v0.5.1) (2026-10-15)
+
+
+### Removed
+
+* run playwright with 1 worker in CI ([1a7ff61](https://github.com/thiagobraga/planner/commit/1a7ff611848f7a8850dfaf71a82b82382c48eb2c))
+
+## [0.5.0](https://github.com/thiagobraga/planner/compare/v0.4.2...v0.5.0) (2026-10-15)
+
+
+### Added
+
+* add sidebar collapse control ([a098b18](https://github.com/thiagobraga/planner/commit/a098b187ed6b53566ca46155a910ad91943715da))
+
+
+### Fixed
+
+* drop always-true collapsed check in collapsed sidebar toggle ([2d94de8](https://github.com/thiagobraga/planner/commit/2d94de80097706a14eafe17bbd887188eed700ee))
+
+## [0.4.2](https://github.com/thiagobraga/planner/compare/v0.4.1...v0.4.2) (2026-10-14)
+
+
+### Fixed
+
+* **lint:** make unused variables an error ([a99dd1b](https://github.com/thiagobraga/planner/commit/a99dd1bbe3131a3db9706cb5cff32f51277651d3))
+
+## [0.4.1](https://github.com/thiagobraga/planner/compare/v0.4.0...v0.4.1) (2026-10-14)
+
+
+### Fixed
+
+* **app:** clear lint warnings and unused Button import ([55e8027](https://github.com/thiagobraga/planner/commit/55e80278413c5846215d71777bc0e098246236f4))
+* **deploy:** run router nginx as uid 101 ([9c28915](https://github.com/thiagobraga/planner/commit/9c2891509c3bed66f32661698bb693bd02cadbe7))
+* **deploy:** run router nginx as uid 101 ([77db002](https://github.com/thiagobraga/planner/commit/77db0027014a45a76fb63f8c95ca21f9cfae0476))
+* **deploy:** show curl errors when public verification fails ([242dd94](https://github.com/thiagobraga/planner/commit/242dd94869ecd304e9c5bbecac128b9beb831e33))
+* **quick-add:** remove dim backdrop behind dialog ([6455b3d](https://github.com/thiagobraga/planner/commit/6455b3d9ee58b092be16cb46679df5738ce85fc1))
+* remove Quick Add backdrop and make Esc unfocus add inputs ([71c2a3c](https://github.com/thiagobraga/planner/commit/71c2a3cafd4484f0436f1f878e559bba624728d5))
+* **tasks:** Esc unfocuses add inputs and saves non-empty draft ([1322d89](https://github.com/thiagobraga/planner/commit/1322d89521a5ae3bb8a6a3fade71382bea9c5153))
+
 ## [0.4.0](https://github.com/thiagobraga/planner/compare/v0.3.1...v0.4.0) (2026-10-13)
 
 

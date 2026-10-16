@@ -286,6 +286,7 @@ Full spec: `DESIGN.md`.
 - Optimistic updates go through helpers in `stores/optimistic.ts`.
 - All routes are under `/api/v1/`; add new routes to `routes/index.ts`.
 - Mandatory TDD & Full Coverage: Test-Driven Development (red-green-refactor) is required. Write unit tests, real DB/Redis integration tests (no mock-DB pattern), and Playwright E2E tests for features and bugfixes.
+- Tests: await async work (mock promises, timers) inside `act()`, `waitFor` or `findBy*` before the test ends. Do not leave "not wrapped in act(...)" warnings in test output.
 - Mandatory Conventional Commits: All commits MUST strictly follow Conventional Commits (`feat:`, `fix:`, `docs:`, `style:`, `refactor:`, `test:`, `chore:`, etc.). Create small, focused commits per file or logical feature.
 - Semantic Branch Names: Name every branch `<type>/<short-kebab-slug>` using the Conventional Commits type (`feat/`, `fix/`, `refactor/`, `docs/`, `chore/`, `test/`, `style/`), e.g. `style/view-switcher-radius`. This applies in remote/cloud sessions too: if the harness assigns a generic branch name (e.g. `claude/<random>`), create and push a semantic branch instead and open the PR from it, unless the user explicitly requires the assigned name.
 - User Prompt Commit Aliases:
@@ -326,6 +327,7 @@ When instructed to work on a spec or task:
    - Set `COMPOSE_PROJECT_NAME=planner-<agent>` and `APP_SUBDOMAIN=<agent>.planner`.
    - Run `bash .hooks/setup-hooks.sh`.
    - Start stack: `docker compose up -d`.
+   - Never symlink or share `node_modules` between worktrees. Verify with the worktree's own stack (`docker compose exec ...`) or `npm ci` in that worktree. A push where `.hooks/pre-push` reports "skipped entirely - nothing was verified" is not verified: fix the environment, then push.
    - **Open Draft PR**: Push initial branch and open a Pull Request against `main` marked as **Draft** before starting development.
 4. **Live Browser Session**:
    - Launch Chrome browser using Playwright at `https://<agent>.planner.local` right as development starts to inspect UI live throughout development.

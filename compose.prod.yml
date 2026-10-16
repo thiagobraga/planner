@@ -65,7 +65,7 @@ services:
 
   redis:
     container_name: planner-prod-redis
-    image: redis:7-alpine
+    image: redis:8-alpine
     networks: [data]
     # Shell form is required: the exec form does not invoke a shell, so
     # $(cat ...) would be passed to redis-server as a literal password string.

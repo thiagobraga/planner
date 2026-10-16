@@ -52,6 +52,7 @@ import { useI18n } from '../i18n/I18nContext';
 import { scheduleFieldsFromApi, withTimeZones } from '../utils/taskTime';
 import { buildSetDateMenuItem } from '../components/taskDateMenuItem';
 import type { TaskSchedule } from '../types/task';
+import { blurOnEscape } from '../utils/editableText';
 
 function apiToTask(t: ApiTask): Task {
   return {
@@ -235,6 +236,7 @@ export function CollectionsPage() {
 
   /** A leading '-' opens a note instead of a task, as it does on Daily. */
   const handleAddNoteKeyDown = (e: React.KeyboardEvent<HTMLDivElement>): boolean => {
+    blurOnEscape(e);
     if (e.key !== '-' || input !== '') return false;
     e.preventDefault();
 
