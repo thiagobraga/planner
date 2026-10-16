@@ -5,10 +5,12 @@ import pool from "../../db/pool.js";
 import { connectRedis, redisClient, redisPubClient, redisSubClient } from "../../db/redis.js";
 import { createSession, buildCookieName } from "../../services/sessionService.js";
 import { createPersonalToken } from "../../services/apiTokenService.js";
+import { PUBLIC_BASE_URL } from "../../config.js";
 import app from "../../index.js";
 
-// Test config: CORS_ORIGIN=http://localhost:5173, so that is the public base URL.
-const BASE = "http://localhost:5173";
+// CI sets CORS_ORIGIN=http://localhost:5173 while local compose uses https://<host>.local,
+// so read the base URL the server actually advertises instead of hardcoding one.
+const BASE = PUBLIC_BASE_URL;
 const MCP_URL = `${BASE}/api/v1/mcp`;
 const REDIRECT = "https://claude.ai/api/mcp/auth_callback";
 const ACCEPT = "application/json, text/event-stream";

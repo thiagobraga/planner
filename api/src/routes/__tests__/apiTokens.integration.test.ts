@@ -4,6 +4,7 @@ import crypto from "node:crypto";
 import pool from "../../db/pool.js";
 import { connectRedis, redisClient, redisPubClient, redisSubClient } from "../../db/redis.js";
 import { createSession, buildCookieName } from "../../services/sessionService.js";
+import { PUBLIC_BASE_URL } from "../../config.js";
 import app from "../../index.js";
 
 const API = "/api/v1";
@@ -119,7 +120,7 @@ describe("API token auth through the real app (real PostgreSQL + Redis)", () => 
 
     const res = await request(app).get(`${API}/views/inbox`).set("Authorization", `Bearer ${raw}`);
     expect(res.status).toBe(401);
-    expect(res.headers["www-authenticate"]).toMatch(/^Bearer realm="planner", resource_metadata="http:\/\/localhost:5173\/\.well-known\/oauth-protected-resource\/api\/v1\/mcp"$/);
+    expect(res.headers["www-authenticate"]).toBe(`Bearer realm="planner", resource_metadata="${PUBLIC_BASE_URL}/.well-known/oauth-protected-resource/api/v1/mcp"`);
   });
 
   it("lists tokens for the session without exposing the raw value", async () => {
@@ -137,6 +138,6 @@ describe("API token auth through the real app (real PostgreSQL + Redis)", () => 
     const res = await request(app).get(`${API}/views/inbox`);
 
     expect(res.status).toBe(401);
-    expect(res.headers["www-authenticate"]).toMatch(/^Bearer realm="planner", resource_metadata="http:\/\/localhost:5173\/\.well-known\/oauth-protected-resource\/api\/v1\/mcp"$/);
+    expect(res.headers["www-authenticate"]).toBe(`Bearer realm="planner", resource_metadata="${PUBLIC_BASE_URL}/.well-known/oauth-protected-resource/api/v1/mcp"`);
   });
 });
