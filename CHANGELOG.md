@@ -1,5 +1,44 @@
 # Changelog
 
+## [0.5.5](https://github.com/thiagobraga/planner/compare/v0.5.4...v0.5.5) (2026-10-16)
+
+
+### Fixed
+
+* **ci:** parse the release-please PR number in the shell ([1bb6dba](https://github.com/thiagobraga/planner/commit/1bb6dbacf84939244190ac04576a9dfe97828135))
+* **ci:** parse the release-please PR number in the shell ([e8a499c](https://github.com/thiagobraga/planner/commit/e8a499cb438fa4b5db318e4712731892c983c1ad))
+
+## [0.5.4](https://github.com/thiagobraga/planner/compare/v0.5.3...v0.5.4) (2026-10-16)
+
+
+### Fixed
+
+* **ci:** deploy after release when quality and security were skipped ([078ee01](https://github.com/thiagobraga/planner/commit/078ee01d8787fb6d90aea84239fa3113eb0ac296))
+* **ci:** deploy after release when quality and security were skipped ([a2b3c79](https://github.com/thiagobraga/planner/commit/a2b3c79e7a3c756f41d6be4b474f8e948c51c364))
+
+## [0.5.3](https://github.com/thiagobraga/planner/compare/v0.5.2...v0.5.3) (2026-10-16)
+
+
+### Fixed
+
+* **app:** make esbuild override follow direct dependency ([aa9cc2e](https://github.com/thiagobraga/planner/commit/aa9cc2ee867ed158d93799be9a03d2232380e5f0))
+* **app:** make esbuild override follow direct dependency ([7410dbf](https://github.com/thiagobraga/planner/commit/7410dbf7e4cd3ef63bfd49c1568abbc33ddcaf9b))
+
+## [0.5.2](https://github.com/thiagobraga/planner/compare/v0.5.1...v0.5.2) (2026-10-15)
+
+
+### Fixed
+
+* pin postgres to 16-alpine ([71b32f9](https://github.com/thiagobraga/planner/commit/71b32f9e5547741fdb28b31fa8ff8cc8cfb4460d))
+* pin postgres to 16-alpine ([ee3299b](https://github.com/thiagobraga/planner/commit/ee3299b58ff918e366abbb618a676dcc38f98d20))
+
+## [0.5.1](https://github.com/thiagobraga/planner/compare/v0.5.0...v0.5.1) (2026-10-15)
+
+
+### Removed
+
+* run playwright with 1 worker in CI ([1a7ff61](https://github.com/thiagobraga/planner/commit/1a7ff611848f7a8850dfaf71a82b82382c48eb2c))
+
 ## [0.5.0](https://github.com/thiagobraga/planner/compare/v0.4.2...v0.5.0) (2026-10-15)
 
 

@@ -40,7 +40,7 @@ services:
 
   postgres:
     container_name: planner-prod-postgres
-    image: postgres:18-alpine
+    image: postgres:16-alpine
     networks: [data]
     environment:
       POSTGRES_USER_FILE: /run/secrets/postgres_user
