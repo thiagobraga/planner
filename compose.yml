@@ -11,7 +11,9 @@ services:
     volumes:
       - ./site:/workspace/site
       - ./app/src/styles:/workspace/app/src/styles:ro
-      - ./app/dist/screenshots:/workspace/app/dist/screenshots
+      # Mount dist itself: the app build recreates dist/screenshots, which would
+      # leave a mount of that subdirectory pointing at a deleted inode.
+      - ./app/dist:/workspace/app/dist
       - site_node_modules:/workspace/site/node_modules
     user: "${DOCKER_USER:-1000:1000}"
     environment:
