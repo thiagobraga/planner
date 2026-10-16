@@ -16,7 +16,7 @@
         { "type": "refactor", "section": "Changed" },
         { "type": "revert", "section": "Removed" },
         { "type": "docs", "section": "Documentation", "hidden": true },
-        { "type": "style", "section": "Style", "hidden": true },
+        { "type": "style", "section": "Style" },
         { "type": "test", "section": "Tests", "hidden": true },
         { "type": "chore", "section": "Chores", "hidden": true },
         { "type": "ci", "section": "CI", "hidden": true },
