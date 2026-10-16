@@ -5,13 +5,17 @@ import type { Task } from './TaskItem';
 import type { TaskSchedule } from '../types/task';
 import type { TranslationKey } from '../i18n/catalogs';
 
-function scheduleOf(task: Task): TaskSchedule {
+// Some views keep the API's full timestamp ("2026-10-15T00:00:00.000Z"); the picker works in date keys.
+const dateKey = (value: string | null | undefined) => (value ? value.slice(0, 10) : null);
+
+export function scheduleOf(task: Task): TaskSchedule {
   return {
-    dueDate: task.dueDate ?? null,
+    dueDate: dateKey(task.dueDate),
     dueTime: task.dueTime ?? null,
-    deadlineDate: task.deadlineDate ?? null,
+    deadlineDate: dateKey(task.deadlineDate),
     deadlineTime: task.deadlineTime ?? null,
     durationMinutes: task.durationMinutes ?? null,
+    recurrenceRule: task.recurrenceRule ?? null,
   };
 }
 
@@ -34,6 +38,7 @@ export function buildSetDateMenuItem(
             onSave(task.id, schedule);
             close();
           }}
+          onClose={close}
         />
       ),
   };
