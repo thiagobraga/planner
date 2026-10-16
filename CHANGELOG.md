@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.5.4](https://github.com/thiagobraga/planner/compare/v0.5.3...v0.5.4) (2026-10-16)
+
+
+### Fixed
+
+* **ci:** deploy after release when quality and security were skipped ([078ee01](https://github.com/thiagobraga/planner/commit/078ee01d8787fb6d90aea84239fa3113eb0ac296))
+* **ci:** deploy after release when quality and security were skipped ([a2b3c79](https://github.com/thiagobraga/planner/commit/a2b3c79e7a3c756f41d6be4b474f8e948c51c364))
+
 ## [0.5.3](https://github.com/thiagobraga/planner/compare/v0.5.2...v0.5.3) (2026-10-16)
 
 
