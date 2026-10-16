@@ -26,13 +26,13 @@
 ## 4. Sidebar Component Implementation (TDD)
 
 - [x] 4.1 Update `app/src/components/__tests__/Sidebar.test.tsx`:
-  - Add test: `renders current app version in expanded mode`
-  - Add test: `renders current app version in collapsed mode`
+  - Add test: `renders current app version above Settings in expanded mode`
+  - Add test: `renders current app version above Settings in collapsed mode`
   - Add test: `includes localized tooltip title on version element`
 - [x] 4.2 In `app/src/components/Sidebar.tsx`:
   - Import `APP_VERSION` from `../utils/version`
-  - In expanded mode: Add version container below Logout in the footer utilities with `h-6 px-3 flex items-center text-[11px] text-ink-light opacity-50 select-none`
-  - In collapsed mode: Add version span below Logout button with `mt-2 text-[10px] leading-none text-ink-light opacity-50 select-none text-center`
+  - In expanded mode: Add version container above Settings in the footer utilities with `h-6 px-3 flex items-center text-[11px] text-ink-light opacity-50 select-none`
+  - In collapsed mode: Add version span above Settings button with `mb-1 text-[10px] leading-none text-ink-light opacity-50 select-none text-center`
   - Attach localized `title={t('nav.version', { version: APP_VERSION })}`
 
 ## 5. End-to-End Verification (Playwright)

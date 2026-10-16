@@ -194,14 +194,24 @@ describe('Sidebar', () => {
     expect(logo).toHaveAttribute('srcset', '/images/logo/logo-32x32.png 2x');
   });
 
-  it('renders current app version in expanded mode', () => {
+  it('renders current app version above Settings in expanded mode', () => {
     render(<Sidebar />);
-    expect(screen.getByText(`v${APP_VERSION}`)).toBeInTheDocument();
+    const versionEl = screen.getByText(`v${APP_VERSION}`);
+    const settingsLink = screen.getByText('Settings').closest('a')!;
+    expect(versionEl).toBeInTheDocument();
+    expect(
+      versionEl.compareDocumentPosition(settingsLink) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
   });
 
-  it('renders current app version in collapsed mode', () => {
+  it('renders current app version above Settings in collapsed mode', () => {
     render(<Sidebar collapsed />);
-    expect(screen.getByText(`v${APP_VERSION}`)).toBeInTheDocument();
+    const versionEl = screen.getByText(`v${APP_VERSION}`);
+    const settingsLink = screen.getByTitle('Settings');
+    expect(versionEl).toBeInTheDocument();
+    expect(
+      versionEl.compareDocumentPosition(settingsLink) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
   });
 
   it('includes localized tooltip title on version element', () => {

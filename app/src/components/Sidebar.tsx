@@ -243,6 +243,12 @@ export function Sidebar({
           )}
 
           <UpdateToast updateAvailable={updateAvailable} />
+          <span
+            title={t('nav.version', { version: APP_VERSION })}
+            className='mb-1 text-[10px] leading-none text-ink-light opacity-50 select-none text-center'
+          >
+            v{APP_VERSION}
+          </span>
           <NavLink
             to='/settings'
             title={t('common.settings')}
@@ -301,13 +307,6 @@ export function Sidebar({
           >
             <LogOut size={16} strokeWidth={1.5} />
           </a>
-
-          <span
-            title={t('nav.version', { version: APP_VERSION })}
-            className='mt-2 text-[10px] leading-none text-ink-light opacity-50 select-none text-center'
-          >
-            v{APP_VERSION}
-          </span>
         </div>
       </aside>
     );
@@ -383,6 +382,12 @@ export function Sidebar({
               icon={<StyleguideIcon size={15} />}
             />
           )}
+          <div
+            title={t('nav.version', { version: APP_VERSION })}
+            className='h-6 px-3 flex items-center text-[11px] text-ink-light opacity-50 select-none'
+          >
+            v{APP_VERSION}
+          </div>
           <SidebarNavItem
             to='/settings'
             label={t('common.settings')}
@@ -410,13 +415,6 @@ export function Sidebar({
             onClick={handleLogout}
           />
         </nav>
-
-        <div
-          title={t('nav.version', { version: APP_VERSION })}
-          className='h-6 px-3 flex items-center text-[11px] text-ink-light opacity-50 select-none'
-        >
-          v{APP_VERSION}
-        </div>
       </div>
     </aside>
   );
