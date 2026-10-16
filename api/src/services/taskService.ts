@@ -94,18 +94,17 @@ export async function completeTask(taskId: string, userId: string, now: Date = n
   const task = await verifyTaskAccess(taskId, userId);
 
   // A rule past its `until` date yields no next occurrence: complete it like a one-off task.
-  const nextDueDateObj =
-    task.recurrence_rule && task.due_date
-      ? planNextOccurrence(
-          {
-            date: task.due_date,
-            time: task.due_time ?? undefined,
-            timezone: task.due_timezone ?? undefined,
-          },
-          task.recurrence_rule as RecurrenceRule,
-          await userToday(userId, now),
-        )
-      : null;
+  let nextDueDateObj = null;
+  if (task.recurrence_rule && task.due_date) {
+    const rule = task.recurrence_rule as RecurrenceRule;
+    // Only a from-completion rule reads the completion day, so skip the preferences lookup otherwise.
+    const completedOn = rule.fromCompletion ? await userToday(userId, now) : localDateInTimezone(now, 'UTC');
+    nextDueDateObj = planNextOccurrence(
+      { date: task.due_date, time: task.due_time ?? undefined, timezone: task.due_timezone ?? undefined },
+      rule,
+      completedOn,
+    );
+  }
 
   const client = await pool.connect();
   try {
