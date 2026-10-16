@@ -1,7 +1,8 @@
 name: CI
 
 # Single entry point. The numbered files are reusable workflows this one calls:
-#   PR:           1 review, 2a quality, 2b security, 2c container scan
+#   PR:           1 review, 2a quality, 2b security, 2c container scan;
+#                 a release-please PR is then merged by 3c once proven
 #   push to main: 2a, 2b, then 3 release (release PR or draft release + tag),
 #                 then 4 deploy, which publishes the draft only after the VPS is healthy
 #   cron / manual: 2a, 2b
@@ -161,6 +162,36 @@ jobs:
     uses: ./.github/workflows/3.release.yml
     secrets:
       RELEASE_PLEASE_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+
+  # Merges the release-please PR once its checks are proven. Merging with the PAT (not
+  # GITHUB_TOKEN) is what starts the push run that tags and deploys.
+  merge-release:
+    name: 3c. Merge release PR
+    if: >-
+      ${{ !cancelled() && github.event_name == 'pull_request'
+      && startsWith(github.head_ref, 'release-please--')
+      && github.event.pull_request.head.repo.full_name == github.repository
+      && needs.changes.result == 'success'
+      && !contains(needs.*.result, 'failure')
+      && (needs.changes.outputs.skip == 'true'
+          || (needs.quality.result == 'success' && needs.security.result == 'success')) }}
+    needs: [changes, quality, security]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - env:
+          GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          if [ -z "$GH_TOKEN" ]; then
+            echo "RELEASE_PLEASE_TOKEN is not set: merge the release PR by hand." >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+          gh pr merge "$PR" --repo "$REPO" --merge --match-head-commit "$HEAD_SHA"
 
   deploy:
     name: 4. Deploy
