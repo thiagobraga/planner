@@ -6,8 +6,9 @@ import { buildEvent, publishEvent } from './syncService.js';
 import { syncCompletionToStatus, syncStatusToCompletion } from './completionSync.js';
 import { attachLabels, verifyLabelOwnership } from './labelService.js';
 import { recordActivity } from './activityService.js';
-import { computeNextOccurrence } from '../engines/recurrenceEngine.js';
-import type { RecurrenceRule } from '../engines/recurrenceEngine.js';
+import { planNextOccurrence } from '../engines/recurrenceEngine.js';
+import type { RecurrenceRule } from '../types/recurrence.js';
+import { localDateInTimezone } from './viewService.js';
 import { formatTimeFields } from '../utils/taskTime.js';
 import type { TaskTimeRow } from '../types/task.js';
 
@@ -84,23 +85,34 @@ async function verifyTaskAccess(taskId: string, userId: string): Promise<TaskRow
   return result.rows[0] as TaskRow;
 }
 
-export async function completeTask(taskId: string, userId: string) {
+async function userToday(userId: string, now: Date): Promise<string> {
+  const result = await pool.query('SELECT time_zone FROM preferences WHERE user_id = $1', [userId]);
+  return localDateInTimezone(now, (result.rows[0]?.time_zone as string | undefined) ?? 'UTC');
+}
+
+export async function completeTask(taskId: string, userId: string, now: Date = new Date()) {
   const task = await verifyTaskAccess(taskId, userId);
+
+  // A rule past its `until` date yields no next occurrence: complete it like a one-off task.
+  const nextDueDateObj =
+    task.recurrence_rule && task.due_date
+      ? planNextOccurrence(
+          {
+            date: task.due_date,
+            time: task.due_time ?? undefined,
+            timezone: task.due_timezone ?? undefined,
+          },
+          task.recurrence_rule as RecurrenceRule,
+          await userToday(userId, now),
+        )
+      : null;
 
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
 
-    // Recurring task: compute next due date and clone instead of mutating in-place
-    if (task.recurrence_rule && task.due_date) {
-      const nextDueDateObj = computeNextOccurrence(
-        {
-          date: task.due_date,
-          time: task.due_time ?? undefined,
-          timezone: task.due_timezone ?? undefined,
-        },
-        task.recurrence_rule as RecurrenceRule
-      );
+    // Recurring task: clone with the next due date instead of mutating in-place
+    if (nextDueDateObj) {
 
       // 1. Mark current task completed, clear its recurrence_rule so it acts as history
       await client.query(

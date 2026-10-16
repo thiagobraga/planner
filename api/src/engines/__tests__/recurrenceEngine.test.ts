@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeNextOccurrence, DueDate, RecurrenceRule } from '../recurrenceEngine.js';
+import { computeNextOccurrence, planNextOccurrence, DueDate, RecurrenceRule } from '../recurrenceEngine.js';
 
 describe('recurrenceEngine', () => {
   describe('daily', () => {
@@ -172,6 +172,45 @@ describe('recurrenceEngine', () => {
       const rule: RecurrenceRule = { type: 'monthly', interval: 1 };
       const result = computeNextOccurrence(due, rule);
       expect(result.date > due.date).toBe(true);
+    });
+  });
+
+  describe('planNextOccurrence', () => {
+    it('counts from the scheduled date by default', () => {
+      const rule: RecurrenceRule = { type: 'daily', interval: 2 };
+      expect(planNextOccurrence({ date: '2026-10-10' }, rule, '2026-10-15')?.date).toBe('2026-10-12');
+    });
+
+    it('counts from the completion day when fromCompletion is set', () => {
+      const rule: RecurrenceRule = { type: 'daily', interval: 2, fromCompletion: true };
+      expect(planNextOccurrence({ date: '2026-10-10' }, rule, '2026-10-15')?.date).toBe('2026-10-17');
+    });
+
+    it('lands on the listed weekday N weeks after completion', () => {
+      // Every 2 weeks on Saturday, completed Wednesday 2026-10-21
+      const rule: RecurrenceRule = { type: 'weekly', interval: 2, weekdays: [6], fromCompletion: true };
+      expect(planNextOccurrence({ date: '2026-10-17' }, rule, '2026-10-21')?.date).toBe('2026-10-31');
+    });
+
+    it('waits a full interval when completed on the listed weekday', () => {
+      const rule: RecurrenceRule = { type: 'weekly', interval: 2, weekdays: [6], fromCompletion: true };
+      expect(planNextOccurrence({ date: '2026-10-17' }, rule, '2026-10-17')?.date).toBe('2026-10-31');
+    });
+
+    it('keeps the time and timezone', () => {
+      const rule: RecurrenceRule = { type: 'weekly', interval: 1, fromCompletion: true };
+      const next = planNextOccurrence({ date: '2026-10-10', time: '09:00', timezone: 'America/Sao_Paulo' }, rule, '2026-10-15');
+      expect(next).toMatchObject({ date: '2026-10-22', time: '09:00', timezone: 'America/Sao_Paulo' });
+    });
+
+    it('returns null once the next date passes until', () => {
+      const rule: RecurrenceRule = { type: 'weekly', interval: 1, until: '2026-10-20' };
+      expect(planNextOccurrence({ date: '2026-10-17' }, rule, '2026-10-17')).toBeNull();
+    });
+
+    it('allows an occurrence on the until day itself', () => {
+      const rule: RecurrenceRule = { type: 'weekly', interval: 1, until: '2026-10-24' };
+      expect(planNextOccurrence({ date: '2026-10-17' }, rule, '2026-10-17')?.date).toBe('2026-10-24');
     });
   });
 });

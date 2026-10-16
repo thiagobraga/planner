@@ -121,4 +121,58 @@ describe("taskService datetime fields (real PostgreSQL)", () => {
     expect(next.rows[0].deadline_time.slice(0, 5)).toBe("12:00");
     expect(next.rows[0].duration_minutes).toBe(60);
   });
+
+  async function openDueDates(): Promise<string[]> {
+    const result = await pool.query(
+      `SELECT to_char(due_date, 'YYYY-MM-DD') AS due FROM tasks WHERE user_id = $1 AND NOT is_completed`,
+      [userId],
+    );
+    return result.rows.map((r) => r.due as string);
+  }
+
+  it("counts the next occurrence from the completion day in the user's time zone", async () => {
+    await pool.query(
+      `INSERT INTO preferences (user_id, time_zone) VALUES ($1, 'America/Sao_Paulo')
+       ON CONFLICT (user_id) DO UPDATE SET time_zone = EXCLUDED.time_zone`,
+      [userId],
+    );
+    const task = await createTask(userId, {
+      title: "Water plants",
+      collectionId,
+      dueDate: "2026-10-01",
+      recurrenceRule: { type: "daily", interval: 3, fromCompletion: true },
+    });
+
+    // 01:30 UTC on the 16th is still the 15th in Sao Paulo
+    await completeTask(task.id, userId, new Date("2026-10-16T01:30:00Z"));
+
+    expect(await openDueDates()).toEqual(["2026-10-18"]);
+  });
+
+  it("schedules every 2 weeks on Saturday counted from completion", async () => {
+    const task = await createTask(userId, {
+      title: "Long run",
+      collectionId,
+      dueDate: "2026-10-17",
+      recurrenceRule: { type: "weekly", interval: 2, weekdays: [6], fromCompletion: true },
+    });
+
+    await completeTask(task.id, userId, new Date("2026-10-21T12:00:00Z"));
+
+    expect(await openDueDates()).toEqual(["2026-10-31"]);
+  });
+
+  it("stops repeating after the until date", async () => {
+    const task = await createTask(userId, {
+      title: "Course",
+      collectionId,
+      dueDate: "2026-10-17",
+      recurrenceRule: { type: "weekly", interval: 1, until: "2026-10-20" },
+    });
+
+    const completed = await completeTask(task.id, userId, new Date("2026-10-17T12:00:00Z"));
+
+    expect(completed.isCompleted).toBe(true);
+    expect(await openDueDates()).toEqual([]);
+  });
 });

@@ -2,21 +2,9 @@ import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import peggy from 'peggy';
+import type { DueDate } from '../types/recurrence.js';
 
-export interface RecurrenceRule {
-  type: 'daily' | 'weekly' | 'monthly' | 'yearly';
-  interval: number;
-  weekdays?: number[];
-  dayOfMonth?: number;
-  month?: number;
-}
-
-export interface DueDate {
-  date: string;
-  time?: string;
-  timezone?: string;
-  recurrence?: RecurrenceRule;
-}
+export type { DueDate, RecurrenceRule } from '../types/recurrence.js';
 
 interface ParserOptions {
   now?: Date;
