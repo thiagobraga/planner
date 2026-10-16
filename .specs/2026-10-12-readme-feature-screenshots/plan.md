@@ -23,7 +23,7 @@ The Features list in the README is plain text. Readers cannot see what Planner l
 - Screenshots are stored in `.github/assets/`, outside the app.
 - Screens: Daily list, Daily Kanban, Habits.
 - Viewports: desktop (1440x900) and mobile (390x844), shown side by side in each block.
-- Themes: light and dark, switched with `<picture>` and `prefers-color-scheme`.
+- Themes: light and dark, both shown for each screen, light row then dark row.
 - Data: a clean account with fictional tasks, habits and collections.
 
 ## Open questions
