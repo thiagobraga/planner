@@ -80,14 +80,19 @@ jobs:
       # GitHub merges the release PR itself once the ruleset's required checks pass. Enabled
       # with the PAT so the merge starts the push run that tags and deploys.
       - name: Enable auto-merge on the release PR
-        if: steps.release.outputs.pr != ''
+        if: steps.release.outputs.prs_created == 'true'
         env:
           GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
           REPO: ${{ github.repository }}
-          PR_NUMBER: ${{ fromJSON(steps.release.outputs.pr).number }}
+          PR_JSON: ${{ steps.release.outputs.pr }}
         run: |
           if [ -z "$GH_TOKEN" ]; then
             echo "RELEASE_PLEASE_TOKEN is not set: merge the release PR by hand." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          PR_NUMBER=$(jq -r '.number // empty' <<<"$PR_JSON")
+          if [ -z "$PR_NUMBER" ]; then
+            echo "release-please returned no PR number: merge the release PR by hand." >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
           gh pr merge "$PR_NUMBER" --repo "$REPO" --auto --merge
