@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.5.3](https://github.com/thiagobraga/planner/compare/v0.5.2...v0.5.3) (2026-10-16)
+
+
+### Fixed
+
+* **app:** make esbuild override follow direct dependency ([aa9cc2e](https://github.com/thiagobraga/planner/commit/aa9cc2ee867ed158d93799be9a03d2232380e5f0))
+* **app:** make esbuild override follow direct dependency ([7410dbf](https://github.com/thiagobraga/planner/commit/7410dbf7e4cd3ef63bfd49c1568abbc33ddcaf9b))
+
 ## [0.5.2](https://github.com/thiagobraga/planner/compare/v0.5.1...v0.5.2) (2026-10-15)
 
 
