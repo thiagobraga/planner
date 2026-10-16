@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.5.3](https://github.com/thiagobraga/planner/compare/v0.5.2...v0.5.3) (2026-10-16)
+
+
+### Fixed
+
+* **app:** make esbuild override follow direct dependency ([aa9cc2e](https://github.com/thiagobraga/planner/commit/aa9cc2ee867ed158d93799be9a03d2232380e5f0))
+* **app:** make esbuild override follow direct dependency ([7410dbf](https://github.com/thiagobraga/planner/commit/7410dbf7e4cd3ef63bfd49c1568abbc33ddcaf9b))
+
+## [0.5.2](https://github.com/thiagobraga/planner/compare/v0.5.1...v0.5.2) (2026-10-15)
+
+
+### Fixed
+
+* pin postgres to 16-alpine ([71b32f9](https://github.com/thiagobraga/planner/commit/71b32f9e5547741fdb28b31fa8ff8cc8cfb4460d))
+* pin postgres to 16-alpine ([ee3299b](https://github.com/thiagobraga/planner/commit/ee3299b58ff918e366abbb618a676dcc38f98d20))
+
 ## [0.5.1](https://github.com/thiagobraga/planner/compare/v0.5.0...v0.5.1) (2026-10-15)
 
 
