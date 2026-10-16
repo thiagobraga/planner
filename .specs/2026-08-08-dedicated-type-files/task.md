@@ -16,7 +16,7 @@ Naming rule: rename narrower shape with domain prefix (`ViewTaskRow`,
 
 ## Milestone 1 — app API contracts (`app/src/types/api.ts`)
 
-- [ ] Create `app/src/types/api.ts` with all 31 contract types from
+- [x] Create `app/src/types/api.ts` with all 31 contract types from
       `app/src/api/client.ts`: `ValidationDetail`, `UserRole`, `AuthUser`,
       `ApiTask`, `LabelSummary`, `ApiStatus`, `BoardViewModes`,
       `Preferences`, `TaskMoveInput`, `MovedTaskSummary`,
@@ -27,10 +27,10 @@ Naming rule: rename narrower shape with domain prefix (`ViewTaskRow`,
       `AdminUser`, `AdminUserList`, `AdminCounts`, `AdminHealth`,
       `AdminAuthStats`. Import `BoardGroupBy`, `TaskOrderScope` from
       `types/drag.ts`; import `BoardViewMode` from `types/board.ts`
-- [ ] Strip all type declarations from `api/client.ts`; keep functions only
-- [ ] Rewrite every `import type { X } from '../api/client'` to
+- [x] Strip all type declarations from `api/client.ts`; keep functions only
+- [x] Rewrite every `import type { X } from '../api/client'` to
       `../types/api` (grep `api/client` in `app/src`, incl. tests)
-- [ ] Verify: `docker compose exec app npm run build && npm run lint`
+- [x] Verify: `docker compose exec app npm run build && npm run lint`
 - [ ] Commit: `refactor(app): move API contract types to src/types/api.ts`
 
 ## Milestone 2 — task domain (extend `app/src/types/task.ts`, new `types/stores.ts`)

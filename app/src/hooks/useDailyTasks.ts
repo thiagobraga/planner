@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
-import { fetchDaily } from '../api/client';
+import {fetchDaily} from '../api/client';
 
 const INVALIDATE_DEBOUNCE_MS = 150;
 

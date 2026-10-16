@@ -1,4 +1,4 @@
-import type { ApiHabit, ApiHabitGroup } from '../api/client';
+import type {ApiHabit, ApiHabitGroup} from '../types/api';
 
 // A parent habit is never "half done" in the database - it has no completion rows
 // at all. This is the derived state the UI renders in its place.

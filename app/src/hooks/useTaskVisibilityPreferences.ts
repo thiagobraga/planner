@@ -1,8 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import {
-  apiUpdatePreferences,
-  type Preferences,
-} from '../api/client';
+import { apiUpdatePreferences } from '../api/client';
+import type { Preferences } from '../types/api';
 
 type VisibilityPreferenceKey = 'hideCompletedTasks' | 'showNotes';
 

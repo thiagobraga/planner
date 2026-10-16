@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Check } from 'lucide-react';
-import { apiUpdatePreferences, fetchPreferences, type Preferences } from '../../api/client';
+import { apiUpdatePreferences, fetchPreferences } from '../../api/client';
+import type { Preferences } from '../../types/api';
 import { useI18n } from '../../i18n/I18nContext';
 import type { TranslationKey } from '../../i18n/catalogs';
 import type { BackgroundPreference } from '../../types/theme';

@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef } from 'react';
-import type { ApiTask } from '../api/client';
-import { apiReorganizeTasks, type ReorganizeMove } from '../api/client';
+import type {ApiTask} from '../types/api';
+import {apiReorganizeTasks} from '../api/client';
+import type {ReorganizeMove} from '../types/api';
 
 type ReorganizeState = 'idle' | 'preview' | 'persisting';
 

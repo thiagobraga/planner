@@ -22,7 +22,7 @@ import {
   UNGROUPED_CONTAINER,
 } from '../../utils/habitProjection';
 import type { HabitDragData, HabitGroupDragData, HabitSectionDropData } from '../../types/drag';
-import type { ApiHabitGroup } from '../../api/client';
+import type { ApiHabitGroup } from '../../types/api';
 
 const CELL_W = 24;
 // Keep the label column on a 24px multiple so the day grid aligns with the

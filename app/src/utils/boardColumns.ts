@@ -1,4 +1,5 @@
-import type { ApiSection, ApiStatus, ApiTask, BoardGroupBy, BoardOrder } from '../api/client';
+import type {ApiSection, ApiStatus, ApiTask, BoardOrder} from '../types/api';
+import type {BoardGroupBy} from '../types/drag';
 
 export type BoardColumnId = `status:${string}` | `section:${string}` | `priority:${number}`;
 

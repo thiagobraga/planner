@@ -1,4 +1,4 @@
-import type { BoardGroupBy } from '../../api/client';
+import type {BoardGroupBy} from '../../types/drag';
 import type { BoardViewMode } from '../../types/board';
 import { useI18n } from '../../i18n/I18nContext';
 import { TaskVisibilityControls } from '../TaskVisibilityControls';

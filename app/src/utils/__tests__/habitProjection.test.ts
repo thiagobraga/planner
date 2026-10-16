@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
-import type { ApiHabit, ApiHabitGroup } from '../../api/client';
+import type {ApiHabit, ApiHabitGroup} from '../../types/api';
 import { buildHabitSections } from '../habitTree';
 import {
   flattenHabitRows,

@@ -3,7 +3,8 @@ import { render, screen, fireEvent, waitFor, within } from '@testing-library/rea
 import { MemoryRouter, Navigate, Route, Routes, useLocation } from 'react-router';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { SettingsPage } from '../SettingsPage';
-import { apiUpdatePreferences, fetchPreferences, type Preferences } from '../../api/client';
+import { apiUpdatePreferences, fetchPreferences } from '../../api/client';
+import type { Preferences } from '../../types/api';
 import { ensureFontLoaded } from '../../utils/fontLoader';
 
 const mockFetchPreferences = vi.mocked(fetchPreferences);
