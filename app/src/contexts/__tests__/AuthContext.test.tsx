@@ -2,7 +2,7 @@ import { render, screen, waitFor, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { AuthProvider, useAuth } from '../AuthContext';
 import { apiLogin, apiRegister, apiLogout, setCurrentUserId } from '../../api/client';
-import type { AuthUser } from '../../api/client';
+import type {AuthUser} from '../../types/api';
 import { connectSocket, disconnectSocket } from '../../utils/socket';
 import { clearUserMutations } from '../../utils/offlineQueue';
 import { queryClient } from '../../api/queryClient';
