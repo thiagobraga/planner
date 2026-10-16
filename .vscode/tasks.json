@@ -95,7 +95,7 @@
     {
       "label": "OpenCode",
       "type": "shell",
-      "command": "opencode --auto --model opencode/nemotron-3-ultra-free",
+      "command": "opencode --auto",
       "problemMatcher": [],
       "icon": {
         "id": "robot",
