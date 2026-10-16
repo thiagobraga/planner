@@ -4,7 +4,7 @@ import { notifyUnauthorized } from '../utils/authEvents';
 import type { BoardViewMode } from '../types/board';
 import type { ApiDailyView } from '../types/daily';
 import type { BackgroundPreference } from '../types/theme';
-import type { TaskSchedule } from '../types/task';
+import type { RecurrenceRule, TaskSchedule } from '../types/task';
 import type { ApiToken, CreateApiTokenInput, CreatedApiToken } from '../types/apiToken';
 import type { ActivityPage, ActivityQuery } from '../types/activity';
 import type { ConnectedApp, ConsentDecision, PendingAuthorization } from '../types/oauth';
@@ -272,6 +272,7 @@ export interface ApiTask {
   deadlineDate?: string | null;
   deadlineTime?: string | null;
   durationMinutes?: number | null;
+  recurrenceRule?: RecurrenceRule | null;
   isCompleted: boolean;
   orderValue: number;
   depth: number;

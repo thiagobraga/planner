@@ -9,6 +9,7 @@ import { useTaskSelectionStore } from '../stores/taskSelectionStore';
 import { usePlannerDrag } from '../contexts/usePlannerDrag';
 import { priorityClasses } from './taskPriorityClasses';
 import type { LabelSummary } from '../api/client';
+import type { RecurrenceRule } from '../types/task';
 import { formatDuration, formatTimeWindow } from '../utils/taskTime';
 import { getCaret, getText, setCaret } from '../utils/editableText';
 import { EditableText } from './ui/EditableText';
@@ -29,7 +30,7 @@ export interface Task {
   deadlineDate?: string | null;
   deadlineTime?: string | null;
   durationMinutes?: number | null;
-  recurrenceRule?: object | null;
+  recurrenceRule?: RecurrenceRule | null;
   isCompleted: boolean;
   orderValue: number;
   labels?: LabelSummary[];
