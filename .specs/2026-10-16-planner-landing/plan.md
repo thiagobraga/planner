@@ -7,9 +7,9 @@ Create Planner's public landing page in `site/`. It should feel like the Opus Ar
 ## References and agreed decisions
 
 - Primary reference: https://01a13d59-0319-73b1-86d5-379af9ed17a7.arena.site/
-- Primary source export: `/t/Downloads/premium-planner-app-landing-page (1).zip`.
+- Primary source export: `/home/thiago/Downloads/premium-planner-app-landing-page (1).zip`.
 - Secondary reference: https://01a13d59-0319-726e-8b48-59517363b378.arena.site/
-- Secondary source export: `/t/Downloads/premium-planner-app-landing-page.zip`.
+- Secondary source export: `/home/thiago/Downloads/premium-planner-app-landing-page.zip`.
 - Opus is the visual authority. Gemini may inform the theme selector, without changing the Opus layout.
 - Preserve Opus geometry, shadows, blur, and other effects where they conflict with `DESIGN.md`. Use Planner's Lora typography and actual theme palettes.
 - Replace invented pricing, statistics, testimonials, and signup success messages with verified Planner information and working destinations.
