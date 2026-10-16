@@ -98,6 +98,25 @@ Create a personal API token or approve a hosted client, and let Claude, Cursor o
 - Open [http://localhost:5173](http://localhost:5173).
 - Optional, once per clone: `bash .hooks/setup-hooks.sh` (see [Git hooks](#git-hooks)).
 
+### Public landing page
+
+The standalone React site lives in `site/` and shares the app's White, Beige, and Dark palettes. It needs no API or database. With the local Traefik proxy and a trusted host configured, set `SITE_SUBDOMAIN` in `.env` (default `site.planner`) and open `https://site.planner.local`:
+
+```bash
+docker compose up -d --build site
+docker compose exec site npm run lint
+docker compose exec site npm run typecheck
+docker compose exec site npm run coverage
+docker compose exec site npm run build
+docker compose exec site npm run test:e2e
+```
+
+The site listens on port 5174 inside Docker and has its own dependency volume. Without Docker, run `npm ci` then `npm run dev` from `site/`. Set `VITE_APP_URL` to change the registration destination; the default is `https://planner.thiagobraga.dev`. Playwright starts a preview of the built site automatically, or uses `PLAYWRIGHT_BASE_URL` when supplied.
+
+Set `DOCKER_USER` before the first site build to match your host UID/GID. A fresh dependency volume inherits that owner; existing volumes keep their original ownership when this setting changes.
+
+Build the standalone nginx image with `docker build -f .docker/site/Dockerfile --target production -t planner-site .`. Override its destination with `--build-arg VITE_APP_URL=https://your-planner.example.com`. The site image is prepared for independent hosting; the existing production deployment continues to deploy the app and API.
+
 ### Production deployment
 
 Production uses `compose.prod.yml` for the shared PostgreSQL, Redis, and nginx router services. `compose.prod.color.yml` starts the app, API, and one-shot migration in separate blue and green Compose projects. The router stays on `127.0.0.1:8080` while the deploy script prepares the inactive color, checks it, switches nginx, and verifies both public app and API responses before stopping the old color.
@@ -142,6 +161,7 @@ The first rollout from the legacy single-app stack briefly releases port 8080 be
 │       ├── 📁 stores/               # Zustand stores and optimistic update helpers
 │       ├── 📁 types/                # shared TypeScript types
 │       └── 📁 utils/                # socket singleton, date ranges, small helpers
+├── 📁 site/                         # Standalone public landing page and Playwright tests
 ├── 📁 .docker/                      # Dockerfiles, entrypoints, nginx, Redis and pgAdmin config
 ├── 📁 .github/
 │   ├── 📁 workflows/                # numbered CI, release and deploy pipelines
@@ -151,7 +171,7 @@ The first rollout from the legacy single-app stack briefly releases port 8080 be
 ├── 📁 .specs/                       # feature specs: plan.md (what) and task.md (how) per change
 ├── 📄 CLAUDE.md                     # rules for AI agents; AGENTS.md, GEMINI.md and copilot-instructions.md symlink to it
 ├── 📄 DESIGN.md                     # design system: palette, typography, spacing
-├── 📄 compose.yml                   # dev stack: api, app, Postgres, Redis, pgAdmin
+├── 📄 compose.yml                   # dev stack: api, app, site, Postgres, Redis, pgAdmin
 ├── 📄 compose.prod.yml              # production stack, images from GHCR
 ├── 📄 release-config.json           # release-please settings
 ├── 📄 .release-manifest.json        # last released version, kept by release-please
@@ -204,9 +224,9 @@ Workflow files and names are numbered in the order work happens. Each job carrie
 | ------------------ | ----------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
 | `ci.yml`           | PR and push to `main`, Monday schedule, by hand | 0a detects changed paths, then calls the workflows below                                                                                  |
 | `1.review.yml`     | PR                                              | 1a fails on high-severity dependency changes; 1b lints workflows with actionlint and zizmor, only when the PR touches `.github/`         |
-| `2a.quality.yml`   | Always                                          | Lint (unused variables fail), tests, build, E2E                                                                                           |
-| `2b.security.yml`  | After 2a                                        | `npm audit`, secret scan, SBOM, Dockerfile and Compose checks, infra image scans; CodeQL only when source or workflows changed            |
-| `2c.container.yml` | PR touching `api/`, `app/`, `.docker/` or root `package*.json` | Builds the api and app images and scans them with Trivy                                                                    |
+| `2a.quality.yml`   | After changed-path detection                    | App/API lint, tests, build, E2E; site lint, typecheck, coverage, build and standalone E2E for site/shared theme changes or non-PR runs       |
+| `2b.security.yml`  | In parallel with 2a                             | `npm audit` for root/API/app/site, secret scan, SBOM, Dockerfile and Compose checks, infra image scans; CodeQL for source/workflow changes    |
+| `2c.container.yml` | PR touching `api/`, `app/`, `site/`, `.docker/`, Compose or root `package*.json` | Builds the api, app and site images and scans them with Trivy                                                      |
 | `3.release.yml`    | Push to `main`, after 2a and 2b passed          | 3a skips if `main` moved on; 3b release-please opens or updates the release PR, or on its merge creates the tag and a **draft** release  |
 | `4.deploy.yml`     | After 3 created a release, or by hand from `main` | 4a validates blue/green scripts; 4b builds SHA images; 4c scans them; 4d moves `latest` and `vX.Y.Z`; 4e deploys to the VPS; 4f publishes the draft release |
 
