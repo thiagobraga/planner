@@ -1,13 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useInfiniteQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Search, ShieldCheck } from 'lucide-react';
-import {
-  apiListUsers,
-  apiDisableUser,
-  apiEnableUser,
-  apiRevokeSessions,
-  type AdminUser,
-} from '../../api/client';
+import { apiListUsers, apiDisableUser, apiEnableUser, apiRevokeSessions } from '../../api/client';
+import type { AdminUser } from '../../types/api';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { ConfirmModal } from '../../components/ConfirmModal';

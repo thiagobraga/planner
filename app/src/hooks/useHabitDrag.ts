@@ -15,12 +15,8 @@ import {
 } from '../utils/habitProjection';
 import { buildHabitSections } from '../utils/habitTree';
 import { createIndentTracker } from '../utils/dragIndent';
-import {
-  apiMoveHabit,
-  apiMoveHabitGroup,
-  type ApiHabit,
-  type ApiHabitGroup,
-} from '../api/client';
+import { apiMoveHabit, apiMoveHabitGroup } from '../api/client';
+import type { ApiHabit, ApiHabitGroup } from '../types/api';
 import { trackMove } from '../utils/moveEcho';
 import type {
   HabitDragData,

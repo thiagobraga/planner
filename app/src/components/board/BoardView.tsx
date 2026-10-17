@@ -1,5 +1,6 @@
 import { SortableContext, horizontalListSortingStrategy } from '@dnd-kit/sortable';
-import type { ApiTask, BoardGroupBy } from '../../api/client';
+import type { ApiTask } from '../../types/api';
+import type { BoardGroupBy } from '../../types/drag';
 import type { BoardViewMode } from '../../types/board';
 import type { BoardColumn as BoardColumnModel } from '../../utils/boardColumns';
 import type { TaskListCallbacks } from '../TaskList';

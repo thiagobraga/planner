@@ -13,19 +13,8 @@ import { Toolbar } from '../components/ui/Toolbar';
 import { ViewSwitcher } from '../components/ui/ViewSwitcher';
 import type { Task } from '../components/TaskItem';
 import type { Section } from '../stores/taskStore';
-import {
-  fetchInboxTasks,
-  fetchPreferences,
-  apiCreateTask,
-  apiUpdateTask,
-  apiToggleTask,
-  apiDeleteTask,
-  fetchCollections,
-  apiCreateSection,
-  apiUpdateSection,
-  apiDeleteSection,
-  type ApiTask,
-} from '../api/client';
+import { fetchInboxTasks, fetchPreferences, apiCreateTask, apiUpdateTask, apiToggleTask, apiDeleteTask, fetchCollections, apiCreateSection, apiUpdateSection, apiDeleteSection } from '../api/client';
+import type { ApiTask } from '../types/api';
 import { ContextMenu, type ContextMenuItem } from '../components/ui/ContextMenu';
 import { SectionDeleteModal } from '../components/SectionDeleteModal';
 import { flattenCollections } from '../components/CollectionTreeNav';

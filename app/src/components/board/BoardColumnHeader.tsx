@@ -1,5 +1,5 @@
 import { useMemo, useState, type HTMLAttributes } from 'react';
-import type { BoardGroupBy } from '../../api/client';
+import type { BoardGroupBy } from '../../types/drag';
 import { useI18n } from '../../i18n/I18nContext';
 import { NO_DRAG_ATTR } from '../dnd/sensors';
 import { ColorPickerPopover } from '../ui/ColorPickerPopover';

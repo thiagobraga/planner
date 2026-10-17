@@ -2,7 +2,8 @@ import { useCallback, useMemo, useRef, useState } from 'react';
 import { useDroppable } from '@dnd-kit/core';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import type { ApiTask, BoardGroupBy } from '../../api/client';
+import type { ApiTask } from '../../types/api';
+import type { BoardGroupBy } from '../../types/drag';
 import { TaskList, type TaskListCallbacks } from '../TaskList';
 import type { Task } from '../TaskItem';
 import type {

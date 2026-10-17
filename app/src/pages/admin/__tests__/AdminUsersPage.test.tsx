@@ -2,13 +2,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { AdminUsersPage } from '../AdminUsersPage';
-import {
-  apiListUsers,
-  apiDisableUser,
-  apiEnableUser,
-  apiRevokeSessions,
-  type AdminUser,
-} from '../../../api/client';
+import { apiListUsers, apiDisableUser, apiEnableUser, apiRevokeSessions } from '../../../api/client';
+import type { AdminUser } from '../../../types/api';
 
 const mockApiListUsers = vi.mocked(apiListUsers);
 const mockApiDisableUser = vi.mocked(apiDisableUser);

@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useCallback, useEffect, useRef, type ReactNode } from 'react';
-import { apiLogin, apiRegister, apiLogout, setCurrentUserId, type AuthUser } from '../api/client';
+import { apiLogin, apiRegister, apiLogout, setCurrentUserId } from '../api/client';
+import type { AuthUser } from '../types/api';
 import { getDetectedTimeZone } from '../utils/date';
 import { queryClient } from '../api/queryClient';
 import { connectSocket, disconnectSocket } from '../utils/socket';

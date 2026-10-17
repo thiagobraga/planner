@@ -1,10 +1,8 @@
 import { useCallback, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import {
-  apiUpdatePreferences,
-  type BoardGroupBy,
-  type Preferences,
-} from '../api/client';
+import { apiUpdatePreferences } from '../api/client';
+import type { Preferences } from '../types/api';
+import type { BoardGroupBy } from '../types/drag';
 import type { BoardViewMode } from '../types/board';
 
 const BOARD_VIEW_STORAGE_KEY = 'planner.boardViews.v1';
