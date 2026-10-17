@@ -20,6 +20,7 @@ import collaborationRoutes, { collectionCollabRouter } from "./collaboration.js"
 import adminUserRoutes from "./adminUsers.js";
 import adminStatsRoutes from "./adminStats.js";
 import apiTokenRoutes from "./apiTokens.js";
+import accountRoutes from "./account.js";
 import mcpRoutes from "./mcp.js";
 import oauthRoutes from "./oauth.js";
 import { adminAuthMiddleware } from "../middleware/adminAuth.js";
@@ -35,6 +36,7 @@ router.use("/admin/users", requireSession, adminAuthMiddleware, adminUserRoutes)
 router.use("/admin/stats", requireSession, adminAuthMiddleware, adminStatsRoutes);
 
 router.use("/api-tokens", requireSession, apiTokenRoutes);
+router.use("/account", requireSession, accountRoutes);
 router.use("/mcp", mcpRoutes);
 router.use("/oauth", requireSession, oauthRoutes);
 

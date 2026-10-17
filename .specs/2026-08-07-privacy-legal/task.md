@@ -7,15 +7,15 @@
 
 ## 2. Backend - Account Data Export & Deletion (TDD)
 
-- [ ] 2.1 Create `api/src/types/account.ts` with dedicated types (`AccountExportData`, `ExportedUser`, `ExportedCollection`, `ExportedTask`, `ExportedLabel`, `ExportedSection`, `ExportedHabit`, `ExportedHabitCompletion`, `ExportedFilter`, `ExportedComment`, `ExportedReminder`)
-- [ ] 2.2 Write unit tests in `api/src/services/__tests__/accountService.test.ts` covering:
+- [x] 2.1 Create `api/src/types/account.ts` with dedicated types (`AccountExportData`, `ExportedUser`, `ExportedCollection`, `ExportedTask`, `ExportedLabel`, `ExportedSection`, `ExportedHabit`, `ExportedHabitCompletion`, `ExportedFilter`, `ExportedComment`, `ExportedReminder`)
+- [x] 2.2 Write unit tests in `api/src/services/__tests__/accountService.test.ts` covering:
   - `exportUserData` returns all user data categories (`user`, `preferences`, `collections`, `tasks`, `labels`, `sections`, `habits`, `habitCompletions`, `filters`, `comments`, `reminders`)
   - `exportUserData` excludes sensitive fields (`password_hash`, `passwordHash`, session tokens, API token hashes)
   - `exportUserData` throws `NOT_FOUND` (404) if user does not exist
   - `deleteUserAccount` revokes sessions, API tokens, OAuth grants, and deletes the user row
-- [ ] 2.3 Implement `api/src/services/accountService.ts` (`exportUserData` and `deleteUserAccount`)
-- [ ] 2.4 Implement `api/src/routes/account.ts` (`GET /api/v1/account/export` and `DELETE /api/v1/account` clearing session and CSRF cookies) and register in `api/src/routes/index.ts` with `requireSession`
-- [ ] 2.5 Write real PostgreSQL + Redis integration tests in `api/src/routes/__tests__/account.integration.test.ts` verifying:
+- [x] 2.3 Implement `api/src/services/accountService.ts` (`exportUserData` and `deleteUserAccount`)
+- [x] 2.4 Implement `api/src/routes/account.ts` (`GET /api/v1/account/export` and `DELETE /api/v1/account` clearing session and CSRF cookies) and register in `api/src/routes/index.ts` with `requireSession`
+- [x] 2.5 Write real PostgreSQL + Redis integration tests in `api/src/routes/__tests__/account.integration.test.ts` verifying:
   - `GET /api/v1/account/export` returns complete user dataset across all tables and omits `password_hash` and token hashes
   - `DELETE /api/v1/account` cascades deletion across all related tables, clears cookies, invalidates the session, and causes subsequent login to fail
 
