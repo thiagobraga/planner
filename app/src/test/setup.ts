@@ -1,4 +1,5 @@
 import '@testing-library/jest-dom';
+import { afterEach } from 'vitest';
 
 declare global {
   interface Window {
@@ -9,6 +10,28 @@ declare global {
     top?: number;
   }
 }
+
+// Under vmThreads every test file in a worker shares happy-dom's element
+// classes, so a scrollIntoView stub written on Element/HTMLElement.prototype
+// leaks into every file that runs after it: a plain assignment in the next
+// file throws when the stub is non-writable, and a mock set on
+// Element.prototype is shadowed when the previous file wrote an own property
+// on HTMLElement.prototype. Re-pin both prototypes to a pristine no-op before
+// each file and after each test. happy-dom's own implementation is a no-op
+// too (Element.js), so nothing is lost.
+const noopScrollIntoView = () => {};
+
+export function resetScrollIntoViewPrototypes(): void {
+  Object.defineProperty(Element.prototype, 'scrollIntoView', {
+    configurable: true,
+    writable: true,
+    value: noopScrollIntoView,
+  });
+  delete (HTMLElement.prototype as unknown as { scrollIntoView?: unknown }).scrollIntoView;
+}
+
+resetScrollIntoViewPrototypes();
+afterEach(resetScrollIntoViewPrototypes);
 
 if (!window.localStorage) {
   const store: Record<string, string> = {};
