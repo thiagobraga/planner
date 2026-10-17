@@ -8,6 +8,8 @@ import { SearchOverlay } from './SearchOverlay';
 import { Button } from './ui/Button';
 import { matchKey, createMatcherState, DEFAULT_BINDINGS } from '../hooks/shortcuts';
 import type { MatcherState } from '../hooks/shortcuts';
+import { matchSequence, createSequenceState } from '../hooks/keySequence';
+import type { SequenceState } from '../types/keySequence';
 import { useSync } from '../hooks/useSync';
 import { fetchPreferences, apiCreateTask } from '../api/client';
 import type { Preferences } from '../types/api';
@@ -19,9 +21,11 @@ import { PlannerDragProvider } from '../contexts/PlannerDragContext';
 import { useI18n } from '../i18n/I18nContext';
 import { useVersionCheck } from '../hooks/useVersionCheck';
 import { useTaskSelectionStore } from '../stores/taskSelectionStore';
+import { useDebugStore } from '../stores/debugStore';
 import { AgentNotice } from './AgentNotice';
 import { describeAgentChange } from '../utils/agentNotice';
 
+const DEBUG_SEQUENCE = 'wasd';
 const BACKGROUND_CACHE_KEY = 'planner_background';
 const BACKGROUND_PREFERENCES: readonly BackgroundPreference[] = ['beige', 'white', 'dark', 'system'];
 
@@ -137,6 +141,7 @@ export function AppShell() {
     return () => mq.removeEventListener('change', handler);
   }, []);
   const matcherStateRef = useRef<MatcherState>(createMatcherState());
+  const sequenceStateRef = useRef<SequenceState>(createSequenceState());
 
   const isTextInputFocused = useCallback(() => {
     const el = document.activeElement;
@@ -197,6 +202,18 @@ export function AppShell() {
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, [isTextInputFocused, handleAction]);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.repeat) return;
+      const event = { key: e.key, isTextInputFocused: isTextInputFocused(), timestamp: Date.now() };
+      const { matched, nextState } = matchSequence(DEBUG_SEQUENCE, sequenceStateRef.current, event);
+      sequenceStateRef.current = nextState;
+      if (matched) useDebugStore.getState().toggle();
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [isTextInputFocused]);
 
   useEffect(() => {
     // pointerdown, not click: a press held past the drag sensor's activation

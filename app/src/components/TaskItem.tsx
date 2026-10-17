@@ -13,6 +13,8 @@ import type { RecurrenceRule } from '../types/task';
 import { formatDuration, formatTimeWindow } from '../utils/taskTime';
 import { getCaret, getText, setCaret } from '../utils/editableText';
 import { EditableText } from './ui/EditableText';
+import { DebugCard } from './DebugCard';
+import { useDebugStore } from '../stores/debugStore';
 
 export interface Task {
   id: string;
@@ -131,6 +133,7 @@ export const TaskItem = memo(function TaskItem({
   const { locale, t } = useI18n();
   const isSelected = useTaskSelectionStore((s) => s.selectedTaskIds.has(task.id));
   const selectTask = useTaskSelectionStore((s) => s.selectTask);
+  const debug = useDebugStore((s) => s.enabled);
   const { activeDrag, hasMoved, overId } = usePlannerDrag();
   const touchTimerRef = useRef<NodeJS.Timeout | null>(null);
   const dragData: TaskDragData = {
@@ -371,6 +374,7 @@ export const TaskItem = memo(function TaskItem({
       )}
 
       <span className="task-item-title-area flex-1 flex flex-wrap items-center min-w-0">
+        {debug && <DebugCard id={task.id} orderValue={task.orderValue} createdAt={task.createdAt} />}
         {isEditing ? (
           <EditableText
             ref={editRef}
