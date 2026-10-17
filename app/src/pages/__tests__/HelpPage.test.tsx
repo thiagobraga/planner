@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest';
 import { HelpPage } from '../HelpPage';
 
@@ -70,7 +70,7 @@ describe('HelpPage (smoke)', () => {
     expect(screen.getByText('Toggle help dialog')).toBeInTheDocument();
   });
 
-  it('scrolls to section when TOC link is clicked', () => {
+  it('scrolls to section when TOC link is clicked', async () => {
     render(<HelpPage />);
 
     const scrollIntoView = vi.fn();
@@ -80,7 +80,7 @@ describe('HelpPage (smoke)', () => {
     const tocLink = settingsLinks[0];
     fireEvent.click(tocLink);
 
-    expect(scrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth' });
+    await waitFor(() => expect(scrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth' }));
   });
 
   it('observes sections with IntersectionObserver', () => {

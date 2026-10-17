@@ -260,6 +260,11 @@ describe('DailyPage behavior visibility', () => {
     fireEvent.click(completeButton);
 
     await waitFor(() => expect(mockApiToggleTask).toHaveBeenCalledWith('task-1', true));
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Complete: Visible task' })).toBeInTheDocument());
+    // The restore is a catch -> setState round trip through RTL's act queue; a
+    // loaded machine can stretch that past the default 1s poll window.
+    await waitFor(
+      () => expect(screen.getByRole('button', { name: 'Complete: Visible task' })).toBeInTheDocument(),
+      { timeout: 4000 },
+    );
   });
 });
