@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.7.1](https://github.com/thiagobraga/planner/compare/v0.7.0...v0.7.1) (2026-10-17)
+
+
+### Fixed
+
+* **app:** move habits today marker at midnight ([07ea349](https://github.com/thiagobraga/planner/commit/07ea3492a976fa94ea94a6a2641431592fe50590))
+* **app:** move habits today marker at midnight ([3ef93dc](https://github.com/thiagobraga/planner/commit/3ef93dc3618246224b62811dd0fc7e9d3bd7d99e))
+
 ## [0.7.0](https://github.com/thiagobraga/planner/compare/v0.6.1...v0.7.0) (2026-10-17)
 
 
