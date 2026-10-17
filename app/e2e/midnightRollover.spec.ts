@@ -1,5 +1,6 @@
 import { mkdir } from 'node:fs/promises';
 import { test, expect, STORAGE_STATE_PATH } from './fixtures/api';
+import type { Preferences } from '../src/types/api';
 
 const TZ = 'America/Sao_Paulo';
 // REAL_MIDNIGHT=1 keeps the real clock and waits for the actual midnight instead of faking it.
@@ -9,8 +10,17 @@ test.use({ storageState: STORAGE_STATE_PATH, timezoneId: TZ, locale: 'pt-BR' });
 
 const dayKey = (d: Date) => new Intl.DateTimeFormat('en-CA', { timeZone: TZ }).format(d);
 
+// The Playwright user is shared by every spec, so the preferences this one changes must not leak.
+let originalPreferences: Pick<Preferences, 'locale' | 'timeZone' | 'weekStart' | 'hideCompletedTasks'>;
+
+test.afterEach(async ({ api }) => {
+  await api.patch('/preferences', originalPreferences);
+});
+
 test('Today marker moves to the next day at midnight in every view', async ({ context, api }) => {
   test.setTimeout(REAL ? 30 * 60_000 : 90_000);
+  const { locale, timeZone, weekStart, hideCompletedTasks } = await api.get<Preferences>('/preferences');
+  originalPreferences = { locale, timeZone, weekStart, hideCompletedTasks };
   await api.patch('/preferences', { locale: 'pt-BR', timeZone: TZ, weekStart: 'sunday', hideCompletedTasks: false });
 
   // The fake clock only affects the pages, so the node side derives its days from the same start.
