@@ -21,9 +21,9 @@
 
 ## 3. Frontend - Types, i18n & Legal Content
 
-- [ ] 3.1 Create `app/src/types/account.ts` and `app/src/types/legal.ts` for dedicated frontend types
-- [ ] 3.2 Add English and Brazilian Portuguese UI keys in `app/src/i18n/locales/en.ts` and `app/src/i18n/locales/pt-BR.ts` (footer links, register consent copy, Settings Data & Privacy section)
-- [ ] 3.3 Create `app/src/i18n/legalContent.ts` with complete English (`en`) and Brazilian Portuguese (`pt-BR`) structured content for:
+- [x] 3.1 Create `app/src/types/account.ts` and `app/src/types/legal.ts` for dedicated frontend types
+- [x] 3.2 Add English and Brazilian Portuguese UI keys in `app/src/i18n/locales/en.ts` and `app/src/i18n/locales/pt-BR.ts` (footer links, register consent copy, Settings Data & Privacy section)
+- [x] 3.3 Create `app/src/i18n/legalContent.ts` with complete English (`en`) and Brazilian Portuguese (`pt-BR`) structured content for:
   - Privacy Policy (Data We Collect table with GDPR & LGPD bases, Data Not Collected, Third-Party Processors, Cookie Policy table, User Rights table, Data Retention, Data Security, Contact / DPO)
   - Terms of Service (Service Description, User Responsibilities, Account Termination, Intellectual Property, Limitation of Liability, Governing Law, Changes to Terms)
 
