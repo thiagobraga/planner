@@ -29,10 +29,10 @@
 
 ## 4. Frontend - Legal Pages & Auth Links (TDD)
 
-- [ ] 4.1 Write unit tests in `app/src/pages/__tests__/LegalPages.test.tsx` for `PrivacyPage` (`/privacy`) and `TermsPage` (`/terms`) (heading hierarchy, data collection table, cookie policy section, user rights, terms sections, TOC links, and `pt-BR` translation)
-- [ ] 4.2 Create `app/src/components/LegalLayout.tsx`, `app/src/pages/PrivacyPage.tsx`, `app/src/pages/TermsPage.tsx`, add print styles in `app/src/index.css`, and register public routes `/privacy` and `/terms` in `app/src/App.tsx`
-- [ ] 4.3 Update `app/src/pages/__tests__/LoginPage.test.tsx` and `app/src/pages/__tests__/RegisterPage.test.tsx` to assert Privacy and Terms links and registration consent notice
-- [ ] 4.4 Update `app/src/pages/LoginPage.tsx` and `app/src/pages/RegisterPage.tsx` with footer links to `/privacy` and `/terms` and the registration consent line
+- [x] 4.1 Write unit tests in `app/src/pages/__tests__/LegalPages.test.tsx` for `PrivacyPage` (`/privacy`) and `TermsPage` (`/terms`) (heading hierarchy, data collection table, cookie policy section, user rights, terms sections, TOC links, and `pt-BR` translation)
+- [x] 4.2 Create `app/src/components/LegalLayout.tsx`, `app/src/pages/PrivacyPage.tsx`, `app/src/pages/TermsPage.tsx`, add print styles in `app/src/index.css`, and register public routes `/privacy` and `/terms` in `app/src/App.tsx`
+- [x] 4.3 Update `app/src/pages/__tests__/LoginPage.test.tsx` and `app/src/pages/__tests__/RegisterPage.test.tsx` to assert Privacy and Terms links and registration consent notice
+- [x] 4.4 Update `app/src/pages/LoginPage.tsx` and `app/src/pages/RegisterPage.tsx` with footer links to `/privacy` and `/terms` and the registration consent line
 
 ## 5. Frontend - Account Management in Settings (TDD)
 

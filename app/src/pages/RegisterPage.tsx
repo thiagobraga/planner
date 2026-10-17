@@ -100,6 +100,13 @@ export function RegisterPage() {
         <Button type="submit" variant="primary" className="mt-3" disabled={loading || throttled}>
           {loading ? '…' : t('auth.createAccountButton')}
         </Button>
+
+        <p className="text-center text-[12px] leading-6 text-ink-light">
+          {t('auth.registerConsentPrefix')}{' '}
+          <AuthLink to="/terms">{t('auth.termsOfService')}</AuthLink>{' '}
+          {t('auth.registerConsentConjunction')}{' '}
+          <AuthLink to="/privacy">{t('auth.privacyPolicy')}</AuthLink>.
+        </p>
       </form>
 
       <p className="mt-2 text-center">
