@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.0](https://github.com/thiagobraga/planner/compare/v0.6.1...v0.7.0) (2026-10-17)
+
+
+### Added
+
+* **app:** show current app version on sidebar ([18b3fa4](https://github.com/thiagobraga/planner/commit/18b3fa472b7330b2a1012cff4aef67be658260bc))
+
 ## [0.6.1](https://github.com/thiagobraga/planner/compare/v0.6.0...v0.6.1) (2026-10-17)
 
 
