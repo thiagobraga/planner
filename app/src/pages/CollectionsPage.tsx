@@ -14,7 +14,7 @@ import { Toolbar } from '../components/ui/Toolbar';
 import { ViewSwitcher } from '../components/ui/ViewSwitcher';
 import { nextOrderValue } from '../utils/order';
 import { extractNaturalDate } from '../utils/date';
-import type { Task } from '../components/TaskItem';
+import type { Task } from '../types/tasks';
 import type { Section } from '../stores/taskStore';
 import {
   fetchCollectionView,

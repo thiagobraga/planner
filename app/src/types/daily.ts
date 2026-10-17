@@ -1,6 +1,6 @@
 import type { KeyboardEvent, ReactNode, RefObject } from 'react';
-import type { TaskListCallbacks } from '../components/TaskList';
-import type { Task } from '../components/TaskItem';
+import type { TaskListCallbacks } from '../types/tasks';
+import type { Task } from '../types/tasks';
 import type { ApiTask } from '../api/client';
 
 /** The view segment of /daily/<view>. */

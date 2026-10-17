@@ -9,7 +9,7 @@ import { flattenTasks, getSubtreeBlock, projectMove, type FlatRow } from '../uti
 import { apiMoveTask, type TaskOrderScope } from '../api/client';
 import { trackMove } from '../utils/moveEcho';
 import type { CollectionDropData, DayDropData, NoDateDropData, SectionDropData, TaskDragData } from '../types/drag';
-import type { Task } from '../components/TaskItem';
+import type { Task } from '../types/tasks';
 
 /**
  * Normalise an API date to the bare `YYYY-MM-DD` the page models use.

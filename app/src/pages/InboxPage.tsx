@@ -11,7 +11,7 @@ import { MonthlyView } from '../components/monthly/MonthlyView';
 import { PageHeader } from '../components/PageHeader';
 import { Toolbar } from '../components/ui/Toolbar';
 import { ViewSwitcher } from '../components/ui/ViewSwitcher';
-import type { Task } from '../components/TaskItem';
+import type { Task } from '../types/tasks';
 import type { Section } from '../stores/taskStore';
 import {
   fetchInboxTasks,

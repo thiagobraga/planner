@@ -15,7 +15,7 @@ import { DailyWeekBoard } from '../components/board/DailyWeekBoard';
 import { WeekSelector } from '../components/board/WeekSelector';
 import { DailyList } from '../components/daily/DailyList';
 import { MonthlyView } from '../components/monthly/MonthlyView';
-import type { Task } from '../components/TaskItem';
+import type { Task } from '../types/tasks';
 import { extractNaturalDate, fmtISO, fmtISOInTimeZone, startOfWeek } from '../utils/date';
 import { nextOrderValue } from '../utils/order';
 import { applyIndent, getParentCandidate } from '../utils/taskTree';
