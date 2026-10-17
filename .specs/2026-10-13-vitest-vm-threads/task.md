@@ -3,9 +3,9 @@
 Legend: `[ ]` not started, `[~]` in progress, `[x]` done.
 
 1. [x] Spec (`plan.md`, this file)
-2. [ ] Prerequisite
-   - [ ] PR #289 merged (happy-dom + `app/src/test/globalSetup.ts` pinning `TZ=UTC`)
-   - [ ] Branch `test/vitest-vm-threads` from updated `main`, worktree `../planner-vm-threads`
+2. [x] Prerequisite
+   - [x] PR #289 merged (happy-dom + `app/src/test/globalSetup.ts` pinning `TZ=UTC`)
+   - [x] Branch `test/vitest-vm-threads` from updated `main`, worktree `../planner-vm-threads`
 3. [ ] Reproduce and fix errors under `--pool=vmThreads`
    - [ ] Run `cd app && npx vitest run --pool=vmThreads` 10 times, collect every failing test and unhandled error
    - [ ] `HelpPage.test.tsx`: stabilize the `scrollIntoView` assertion (mock on `Element.prototype` in the test, await the scroll with `waitFor`)
