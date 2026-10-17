@@ -1,4 +1,4 @@
-import type { ApiTask } from '../api/client';
+import type { ApiTask } from './api';
 import type { Task } from '../components/TaskItem';
 import type { TaskListCallbacks } from '../components/TaskList';
 import type { BoardViewMode } from './board';

@@ -2,7 +2,8 @@ import { render, act, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { PlannerDragProvider } from '../../contexts/PlannerDragContext';
 import { useHabitDrag } from '../useHabitDrag';
-import { apiMoveHabit, apiMoveHabitGroup, type ApiHabit, type ApiHabitGroup } from '../../api/client';
+import { apiMoveHabit, apiMoveHabitGroup } from '../../api/client';
+import type { ApiHabit, ApiHabitGroup } from '../../types/api';
 import type { DragEndEvent, DragMoveEvent, DragOverEvent, DragStartEvent } from '@dnd-kit/core';
 import type { HabitDragData, HabitGroupDragData, HabitSectionDropData } from '../../types/drag';
 

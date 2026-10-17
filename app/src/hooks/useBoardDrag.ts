@@ -1,14 +1,9 @@
 import { useCallback, useRef, useState } from 'react';
 import type { DragEndEvent, DragOverEvent, DragStartEvent } from '@dnd-kit/core';
 import { usePlannerDrag, usePlannerDragHandlers } from '../contexts/usePlannerDrag';
-import {
-  apiMoveTask,
-  type ApiSection,
-  type ApiStatus,
-  type ApiTask,
-  type BoardGroupBy,
-  type BoardOrder,
-} from '../api/client';
+import { apiMoveTask } from '../api/client';
+import type { ApiSection, ApiStatus, ApiTask, BoardOrder } from '../types/api';
+import type { BoardGroupBy } from '../types/drag';
 import { trackMove } from '../utils/moveEcho';
 import { flattenTasks, getSubtreeBlock } from '../utils/taskProjection';
 import { parseColumnId } from '../utils/boardColumns';

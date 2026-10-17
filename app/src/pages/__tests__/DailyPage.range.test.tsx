@@ -6,7 +6,8 @@ import { DailyRoute } from '../DailyRoutes';
 import { dailyView } from '../../test/dailyFixtures';
 import { I18nProvider } from '../../i18n/I18nContext';
 import { PlannerDragProvider } from '../../contexts/PlannerDragContext';
-import { apiReorganizeTasks, fetchDaily, fetchPreferences, fetchCollections, type Preferences } from '../../api/client';
+import { apiReorganizeTasks, fetchDaily, fetchPreferences, fetchCollections } from '../../api/client';
+import type { Preferences } from '../../types/api';
 
 vi.mock('../../api/client', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../../api/client')>()),

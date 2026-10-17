@@ -26,21 +26,8 @@ import {
 import type { LucideProps } from 'lucide-react';
 import { useI18n } from '../i18n/I18nContext';
 
-import {
-  fetchHabits,
-  fetchPreferences,
-  apiCreateHabit,
-  apiUpdateHabit,
-  apiDeleteHabit,
-  apiArchiveHabit,
-  apiToggleHabitCompletion,
-  apiCreateHabitGroup,
-  apiUpdateHabitGroup,
-  apiDeleteHabitGroup,
-  apiArchiveHabitGroup,
-  type ApiHabit,
-  type ApiHabitGroup,
-} from '../api/client';
+import { fetchHabits, fetchPreferences, apiCreateHabit, apiUpdateHabit, apiDeleteHabit, apiArchiveHabit, apiToggleHabitCompletion, apiCreateHabitGroup, apiUpdateHabitGroup, apiDeleteHabitGroup, apiArchiveHabitGroup } from '../api/client';
+import type { ApiHabit, ApiHabitGroup } from '../types/api';
 
 function DotsConnectedIcon(props: LucideProps) {
   return (

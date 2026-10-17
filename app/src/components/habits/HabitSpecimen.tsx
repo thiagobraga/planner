@@ -3,7 +3,7 @@ import { HabitDot } from './HabitDot';
 import { HabitMonthGrid } from './HabitMonthGrid';
 import { fmtISO, startOfDay, type WeekStart } from '../../utils/date';
 import { buildHabitTree, dayState, habitsToToggle, parentToggleTarget } from '../../utils/habitTree';
-import type { ApiHabit } from '../../api/client';
+import type { ApiHabit } from '../../types/api';
 
 // Styleguide specimen for the habit system. It drives the real HabitDot and
 // HabitMonthGrid components rather than reimplementing them, so this card cannot

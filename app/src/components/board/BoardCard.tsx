@@ -1,7 +1,7 @@
 import { CalendarDays, Check } from 'lucide-react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import type { ApiTask } from '../../api/client';
+import type { ApiTask } from '../../types/api';
 import type { TaskDragData } from '../../types/drag';
 import { NO_DRAG_ATTR } from '../dnd/sensors';
 import { BoardCardChecklist } from './BoardCardChecklist';

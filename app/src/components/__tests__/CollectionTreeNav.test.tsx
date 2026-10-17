@@ -2,16 +2,8 @@ import { act, render, screen, waitFor, fireEvent, within } from '@testing-librar
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { CollectionTreeNav } from '../CollectionTreeNav';
-import {
-  fetchCollections,
-  apiUpdateCollection,
-  apiUpdatePreferences,
-  fetchSavedColors,
-  apiAddSavedColor,
-  fetchPreferences,
-  type ApiCollection,
-  type Preferences,
-} from '../../api/client';
+import { fetchCollections, apiUpdateCollection, apiUpdatePreferences, fetchSavedColors, apiAddSavedColor, fetchPreferences } from '../../api/client';
+import type { ApiCollection, Preferences } from '../../types/api';
 import { useLocation } from 'react-router';
 
 vi.mock('react-router', () => ({

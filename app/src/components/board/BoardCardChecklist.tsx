@@ -2,7 +2,7 @@ import { Check } from 'lucide-react';
 import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import type { ApiTask } from '../../api/client';
+import type { ApiTask } from '../../types/api';
 import type { CardSubtasksDropData, TaskDragData } from '../../types/drag';
 import { NO_DRAG_ATTR } from '../dnd/sensors';
 

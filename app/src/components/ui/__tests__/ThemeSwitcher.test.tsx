@@ -1,7 +1,7 @@
 import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type { Preferences } from '../../../api/client';
+import type { Preferences } from '../../../types/api';
 
 const mockUpdatePreferences = vi.hoisted(() => vi.fn());
 

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import type { ApiTask } from '../../api/client';
+import type { ApiTask } from '../../types/api';
 import type { ApiDailyView } from '../../types/daily';
 import { apiToTask, buildSections, dateFromISO, dayLabel, flattenDaily } from '../dailySections';
 

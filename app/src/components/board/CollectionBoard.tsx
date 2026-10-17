@@ -1,20 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import {
-  ApiError,
-  apiCreateTask,
-  apiCreateStatus,
-  apiMoveTask,
-  apiSetCollectionCompletionStatus,
-  apiSeedStatuses,
-  apiUpdateSection,
-  apiUpdateStatus,
-  type ApiSection,
-  type ApiStatus,
-  type ApiTask,
-  type BoardGroupBy,
-  type BoardOrder,
-} from '../../api/client';
+import { ApiError, apiCreateTask, apiCreateStatus, apiMoveTask, apiSetCollectionCompletionStatus, apiSeedStatuses, apiUpdateSection, apiUpdateStatus } from '../../api/client';
+import type { ApiSection, ApiStatus, ApiTask, BoardOrder } from '../../types/api';
+import type { BoardGroupBy } from '../../types/drag';
 import { useI18n } from '../../i18n/I18nContext';
 import { buildColumns } from '../../utils/boardColumns';
 import type { BoardColumn as BoardColumnModel } from '../../utils/boardColumns';
