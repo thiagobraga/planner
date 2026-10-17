@@ -36,9 +36,9 @@
 
 ## 5. Frontend - Account Management in Settings (TDD)
 
-- [ ] 5.1 Add `apiExportAccountData()` and `apiDeleteAccount()` to `app/src/api/client.ts` (excluding `/account` from offline queue)
-- [ ] 5.2 Write unit tests in `app/src/components/settings/__tests__/AccountDataSection.test.tsx` for data export JSON download, delete account confirmation modal, API call, and redirect on deletion
-- [ ] 5.3 Implement `app/src/components/settings/AccountDataSection.tsx` and integrate into `app/src/pages/SettingsPage.tsx`
+- [x] 5.1 Add `apiExportAccountData()` and `apiDeleteAccount()` to `app/src/api/client.ts` (excluding `/account` from offline queue)
+- [x] 5.2 Write unit tests in `app/src/components/settings/__tests__/AccountDataSection.test.tsx` for data export JSON download, delete account confirmation modal, API call, and redirect on deletion
+- [x] 5.3 Implement `app/src/components/settings/AccountDataSection.tsx` and integrate into `app/src/pages/SettingsPage.tsx`
 
 ## 6. End-to-End Verification & Visual Check
 
