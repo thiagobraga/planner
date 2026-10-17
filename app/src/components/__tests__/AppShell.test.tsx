@@ -57,6 +57,13 @@ vi.mock('../../hooks/useSync', () => ({
   useSync: vi.fn(),
 }));
 
+// The real hook starts a REST version check at module scope, which fetches
+// /api/v1/version against happy-dom's localhost:3000 and logs ECONNREFUSED
+// noise. The page shell has no use for the update banner here.
+vi.mock('../../hooks/useVersionCheck', () => ({
+  useVersionCheck: () => false,
+}));
+
 vi.mock('../../utils/fontLoader', () => ({
   ensureFontLoaded: vi.fn(),
 }));
