@@ -25,6 +25,11 @@ export default defineProject({
         },
       },
     },
+    // VM-based per-file isolation on worker threads. Files stop paying for a
+    // full worker bootstrap each, cutting the suite from ~38s to ~20s (default
+    // forks pool). Per-file isolation stays on (isolate defaults to true):
+    // dropping it leaks state and fails hundreds of tests.
+    pool: "vmThreads",
     globals: true,
     globalSetup: ["./src/test/globalSetup.ts"],
     setupFiles: ["./src/test/setup.ts"],
