@@ -16,6 +16,7 @@ jq -rs '
       (.filename | IN(".release-manifest.json", "CHANGELOG.md"))
       or ((.filename | IN("package.json", "package-lock.json",
                           "api/package.json", "api/package-lock.json",
-                          "app/package.json", "app/package-lock.json"))
+                          "app/package.json", "app/package-lock.json",
+                          "site/package.json", "site/package-lock.json"))
           and version_only))
 '

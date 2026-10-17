@@ -35,6 +35,8 @@ jobs:
           persist-credentials: false
       - name: Skip classifier tests
         run: bash scripts/ci-changes.test.sh
+      - name: Hook package routing tests
+        run: bash scripts/hooks.test.sh
       - name: actionlint
         run: docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:1.7.12 -color
       - name: zizmor
