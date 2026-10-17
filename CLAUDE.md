@@ -134,6 +134,7 @@ All routes under `/api/v1/`. Route files: `auth`, `apiTokens`, `mcp`, `oauth`, `
 - `utils/dailyRange.ts` - `dailyRange(view, anchor, weekStart, showNextDays)` and the `/daily/<slug>` mapping
 - `hooks/useSync.ts` - subscribes to `"sync"` events; handler receives `SyncEvent`
 - `hooks/shortcuts.ts` - pure chord-aware keyboard matcher; `DEFAULT_BINDINGS` for `q /  ? Enter Delete Escape g+i g+t g+u`
+- `hooks/keySequence.ts` - pure multi-key sequence matcher; typing `wasd` outside text fields toggles debug mode
 - `hooks/usePreferences.ts` - User preferences hook
 - `hooks/useBoard*.ts`, `useTaskDrag.ts`, `useSectionDrag.ts`, `useHabitDrag.ts` - board preferences and drag-and-drop
 - `api/client.ts` - Fetch wrapper; base `/api/v1`; auto-logout on 401
@@ -142,6 +143,7 @@ All routes under `/api/v1/`. Route files: `auth`, `apiTokens`, `mcp`, `oauth`, `
 - `stores/collectionStore.ts` - Zustand store for collections
 - `stores/authStore.ts` - Zustand store for auth state
 - `stores/taskSelectionStore.ts` - Zustand store for multi-task selection
+- `stores/debugStore.ts` - debug mode flag (persisted in localStorage); when on, `DebugCard` shows id, order and created date on task and habit rows
 - `stores/optimistic.ts` - optimistic helpers: `runOptimistic`, `applyOptimistic`, `revertOptimistic` (2s auto-revert)
 
 ### Pages & Routes
