@@ -9,7 +9,7 @@ Display the current application version (e.g., `v0.6.0`) on the navigation sideb
 Currently, Planner does not display its release version anywhere in the UI sidebar. While version checking exists for detecting server deployments and updates (`useVersionCheck` and `UpdateToast`), users and administrators cannot see what release version of Planner is running.
 
 This feature adds:
-1. A quiet, legible version indicator at the bottom of the sidebar navigation footer (below Logout).
+1. A quiet, legible version indicator in the sidebar navigation footer (above Settings).
 2. Proper support for both expanded sidebar drawer (`w-55`) and collapsed sidebar icon bar (`w-12`).
 3. Alignment with the 24px baseline grid (`h-6`) using Lora serif typography and subdued ink color (`text-ink-light opacity-50`).
 4. Accessibility and localization support with localized tooltip titles (`Version 0.6.0` / `Versão 0.6.0`).
@@ -19,13 +19,13 @@ This feature adds:
 
 ### 1. Viewing Version in Expanded Sidebar
 - The user opens the app or views the expanded sidebar navigation.
-- At the bottom of the sidebar, under the settings, help, and session controls (Logout), the version is displayed quietly as `v0.6.0`.
+- At the bottom of the sidebar, right above the Settings link in the footer utilities, the version is displayed quietly as `v0.6.0`.
 - Hovering over the version indicator reveals a localized tooltip: `Version 0.6.0` (in English) or `Versão 0.6.0` (in Brazilian Portuguese).
 - The text is non-interactive, unselectable (`select-none`), and sits cleanly within the 24px vertical baseline without causing unexpected scrollbars or visual clutter.
 
 ### 2. Viewing Version in Collapsed Sidebar
 - The user collapses the sidebar into the compact icon-only column (`w-12`).
-- The bottom utility section shows the version centered horizontally below the Logout icon button as `v0.6.0` in a compact 10px serif font.
+- The bottom utility section shows the version centered horizontally above the Settings icon button as `v0.6.0` in a compact 10px serif font.
 - Hovering over the collapsed version readout reveals the localized tooltip `Version 0.6.0` / `Versão 0.6.0`.
 
 ## Design Rules & Token Mapping

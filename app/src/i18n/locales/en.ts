@@ -68,6 +68,7 @@ export const englishCatalog = {
   'nav.adminUsers': 'Users',
   'nav.adminDashboard': 'Dashboard',
   'nav.styleguide': 'Styleguide',
+  'nav.version': 'Version {{version}}',
   'shell.keyboardShortcuts': 'Keyboard Shortcuts',
   'shell.quickAddTask': 'Quick add task',
   'shell.togglePanel': 'Toggle this panel',
