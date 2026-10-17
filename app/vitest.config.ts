@@ -12,6 +12,19 @@ export default defineProject({
   test: {
     name: "app",
     environment: "happy-dom",
+    environmentOptions: {
+      happyDOM: {
+        settings: {
+          // Tests never read stylesheet bytes. Left on, happy-dom fetches every
+          // <link rel="stylesheet"> href for real (fontLoader.test.ts hits
+          // fonts.googleapis.com) and logs the aborted requests at teardown.
+          // "As success" makes the link report load instead of logging a
+          // NotSupportedError for each skipped fetch.
+          disableCSSFileLoading: true,
+          handleDisabledFileLoadingAsSuccess: true,
+        },
+      },
+    },
     globals: true,
     globalSetup: ["./src/test/globalSetup.ts"],
     setupFiles: ["./src/test/setup.ts"],
