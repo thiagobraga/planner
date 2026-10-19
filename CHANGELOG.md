@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.8.0](https://github.com/thiagobraga/planner/compare/v0.7.1...v0.8.0) (2026-10-19)
+
+
+### Added
+
+* add Planner public landing page ([6916d6a](https://github.com/thiagobraga/planner/commit/6916d6a0c3e5f4f647b4ea9b945c971539925400))
+* **site:** update desk mockup image ([f715dbd](https://github.com/thiagobraga/planner/commit/f715dbdd1a19f39d7a254631e2752b14a89bb3b9))
+* **site:** use real app screenshots on device mockups ([c8814a9](https://github.com/thiagobraga/planner/commit/c8814a97f0a4abe272ac503aa592d79b3460715a))
+* **site:** use the real Planner icon as favicon and logo ([661bc31](https://github.com/thiagobraga/planner/commit/661bc31dd4a63d495a1411850ec5386486b8edfc))
+
+
+### Changed
+
+* **site:** split App.tsx into section components ([fa78f11](https://github.com/thiagobraga/planner/commit/fa78f11e086e6c2637c1a564c0f58e96be9e4c2d))
+
 ## [0.7.1](https://github.com/thiagobraga/planner/compare/v0.7.0...v0.7.1) (2026-10-17)
 
 
