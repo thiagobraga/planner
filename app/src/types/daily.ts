@@ -1,7 +1,7 @@
 import type { KeyboardEvent, ReactNode, RefObject } from 'react';
 import type { TaskListCallbacks } from '../components/TaskList';
 import type { Task } from '../components/TaskItem';
-import type { ApiTask } from '../api/client';
+import type { ApiTask } from './api';
 
 /** The view segment of /daily/<view>. */
 export type DailySlug = 'list' | 'kanban' | 'cards' | 'monthly';

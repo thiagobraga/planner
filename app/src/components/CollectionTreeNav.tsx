@@ -14,14 +14,8 @@ import { ChevronRight, Plus } from 'lucide-react';
 import { ContextMenu } from './ui/ContextMenu';
 import { ColorPickerPopover } from './ui/ColorPickerPopover';
 import { buildCollectionMenuItems } from './collectionMenuItems';
-import {
-  fetchCollections,
-  apiCreateCollection,
-  apiUpdateCollection,
-  apiDeleteCollection,
-  PALETTE_COLORS,
-  type ApiCollection,
-} from '../api/client';
+import { fetchCollections, apiCreateCollection, apiUpdateCollection, apiDeleteCollection, PALETTE_COLORS } from '../api/client';
+import type { ApiCollection } from '../types/api';
 import { runOptimistic, patchById, upsertById } from '../stores/optimistic';
 import { ConfirmModal } from './ConfirmModal';
 import { useI18n } from '../i18n/I18nContext';

@@ -16,23 +16,8 @@ import { nextOrderValue } from '../utils/order';
 import { extractNaturalDate } from '../utils/date';
 import type { Task } from '../components/TaskItem';
 import type { Section } from '../stores/taskStore';
-import {
-  fetchCollectionView,
-  fetchPreferences,
-  apiCreateTask,
-  apiUpdateTask,
-  apiToggleTask,
-  apiDeleteTask,
-  apiCreateCollection,
-  apiUpdateCollection,
-  apiDeleteCollection,
-  apiCreateSection,
-  apiUpdateSection,
-  apiDeleteSection,
-  PALETTE_COLORS,
-  type ApiTask,
-  type ApiCollection,
-} from '../api/client';
+import { fetchCollectionView, fetchPreferences, apiCreateTask, apiUpdateTask, apiToggleTask, apiDeleteTask, apiCreateCollection, apiUpdateCollection, apiDeleteCollection, apiCreateSection, apiUpdateSection, apiDeleteSection, PALETTE_COLORS } from '../api/client';
+import type { ApiTask, ApiCollection } from '../types/api';
 import { runOptimistic, patchById, upsertById } from '../stores/optimistic';
 import { useTaskDrag } from '../hooks/useTaskDrag';
 import { useSectionDrag } from '../hooks/useSectionDrag';

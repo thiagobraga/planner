@@ -1,5 +1,47 @@
 # Changelog
 
+## [0.7.1](https://github.com/thiagobraga/planner/compare/v0.7.0...v0.7.1) (2026-10-17)
+
+
+### Fixed
+
+* **app:** move habits today marker at midnight ([07ea349](https://github.com/thiagobraga/planner/commit/07ea3492a976fa94ea94a6a2641431592fe50590))
+* **app:** move habits today marker at midnight ([3ef93dc](https://github.com/thiagobraga/planner/commit/3ef93dc3618246224b62811dd0fc7e9d3bd7d99e))
+
+## [0.7.0](https://github.com/thiagobraga/planner/compare/v0.6.1...v0.7.0) (2026-10-17)
+
+
+### Added
+
+* **app:** show current app version on sidebar ([18b3fa4](https://github.com/thiagobraga/planner/commit/18b3fa472b7330b2a1012cff4aef67be658260bc))
+
+## [0.6.1](https://github.com/thiagobraga/planner/compare/v0.6.0...v0.6.1) (2026-10-17)
+
+
+### Changed
+
+* **app:** move API contract types to src/types/api.ts ([45eb078](https://github.com/thiagobraga/planner/commit/45eb07825663c3a78fffcb3a7537fbb7a7c0d6c9))
+* **app:** move AuthContext types to src/types/api.ts ([e5f3310](https://github.com/thiagobraga/planner/commit/e5f3310521c43eefa76476df74b1bafa012ae0ee))
+* dedicated type files (M1 api contracts) ([31cc6cc](https://github.com/thiagobraga/planner/commit/31cc6cc7e948ea2b9e204d1775613c0d33fa7ff5))
+
+
+### Style
+
+* **app,api:** enforce spaces inside braces via object-curly-spacing ([c5bc079](https://github.com/thiagobraga/planner/commit/c5bc079388550fcde502bda783cf18215994e2a4))
+* **app:** fix import spacing in M1 files ([ef852d4](https://github.com/thiagobraga/planner/commit/ef852d466e381e629d316601f1138b6e01c4b4be))
+
+## [0.6.0](https://github.com/thiagobraga/planner/compare/v0.5.6...v0.6.0) (2026-10-16)
+
+
+### Added
+
+* redesign date picker with calendar, time, deadline and repeat ([5aa119e](https://github.com/thiagobraga/planner/commit/5aa119ed5a5ae74b3cd9cce7d32afd3585b35850))
+
+
+### Fixed
+
+* for pull request finding 'CodeQL / Superfluous trailing arguments' ([95591fc](https://github.com/thiagobraga/planner/commit/95591fcb1d51ff804ada3d7588c4b625e0a80f4d))
+
 ## [0.5.6](https://github.com/thiagobraga/planner/compare/v0.5.5...v0.5.6) (2026-10-16)
 
 

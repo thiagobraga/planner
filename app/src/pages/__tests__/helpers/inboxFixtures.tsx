@@ -1,11 +1,5 @@
 import { vi } from 'vitest';
-import type {
-  Preferences,
-  ApiTask,
-  ApiCollection,
-  ApiSection,
-  ApiStatus,
-} from '../../api/client';
+import type { Preferences, ApiTask, ApiCollection, ApiSection, ApiStatus } from '../../types/api';
 
 export const basePreferences: Preferences = {
   userId: 'user-1',

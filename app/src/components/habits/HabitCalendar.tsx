@@ -11,7 +11,7 @@ import { dayState, type HabitNode, type HabitSections } from '../../utils/habitT
 import { containerForGroup } from '../../utils/habitProjection';
 import type { HabitDragData, HabitGroupDragData, HabitSectionDropData } from '../../types/drag';
 import type { HabitEditTarget } from './HabitTimeline';
-import type { ApiHabitGroup } from '../../api/client';
+import type { ApiHabitGroup } from '../../types/api';
 import type { WeekStart } from '../../utils/date';
 import { useI18n } from '../../i18n/I18nContext';
 

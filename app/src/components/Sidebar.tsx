@@ -27,6 +27,7 @@ import { useCallback, useState } from 'react';
 import { usePreferences } from '../hooks/usePreferences';
 import { useMidnightTimer } from '../hooks/useMidnightTimer';
 import { fmtISOInTimeZone } from '../utils/date';
+import { APP_VERSION } from '../utils/version';
 
 interface SidebarProps {
   isOpen?: boolean;
@@ -242,6 +243,12 @@ export function Sidebar({
           )}
 
           <UpdateToast updateAvailable={updateAvailable} />
+          <span
+            title={t('nav.version', { version: APP_VERSION })}
+            className='mb-1 text-[10px] leading-none text-ink-light opacity-50 select-none text-center'
+          >
+            v{APP_VERSION}
+          </span>
           <NavLink
             to='/settings'
             title={t('common.settings')}
@@ -375,6 +382,12 @@ export function Sidebar({
               icon={<StyleguideIcon size={15} />}
             />
           )}
+          <div
+            title={t('nav.version', { version: APP_VERSION })}
+            className='h-6 px-3 flex items-center text-[11px] text-ink-light opacity-50 select-none'
+          >
+            v{APP_VERSION}
+          </div>
           <SidebarNavItem
             to='/settings'
             label={t('common.settings')}

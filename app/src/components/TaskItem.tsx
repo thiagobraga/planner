@@ -8,7 +8,7 @@ import { useI18n } from '../i18n/I18nContext';
 import { useTaskSelectionStore } from '../stores/taskSelectionStore';
 import { usePlannerDrag } from '../contexts/usePlannerDrag';
 import { priorityClasses } from './taskPriorityClasses';
-import type { LabelSummary } from '../api/client';
+import type { LabelSummary } from '../types/api';
 import type { RecurrenceRule } from '../types/task';
 import { formatDuration, formatTimeWindow } from '../utils/taskTime';
 import { getCaret, getText, setCaret } from '../utils/editableText';

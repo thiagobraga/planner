@@ -2,14 +2,8 @@ import { act, render, waitFor } from '@testing-library/react';
 import { useState } from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { DragEndEvent } from '@dnd-kit/core';
-import {
-  ApiError,
-  type BoardGroupBy,
-  apiDeleteSection,
-  apiDeleteStatus,
-  apiUpdateSection,
-  apiUpdateStatus,
-} from '../../api/client';
+import { ApiError, apiDeleteSection, apiDeleteStatus, apiUpdateSection, apiUpdateStatus } from '../../api/client';
+import type { BoardGroupBy } from '../../types/drag';
 import { useBoardColumnDrag, type UseBoardColumnDragResult } from '../useBoardColumnDrag';
 import type { BoardColumn as BoardColumnModel } from '../../utils/boardColumns';
 

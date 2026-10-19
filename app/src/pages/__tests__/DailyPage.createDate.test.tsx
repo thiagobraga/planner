@@ -4,15 +4,8 @@ import { MemoryRouter, Route, Routes } from 'react-router';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { DailyRoute } from '../DailyRoutes';
 import { dailyView } from '../../test/dailyFixtures';
-import {
-  fetchDaily,
-  fetchPreferences,
-  fetchCollections,
-  apiCreateTask,
-  type ApiTask,
-  type Preferences,
-  type ApiCollection,
-} from '../../api/client';
+import { fetchDaily, fetchPreferences, fetchCollections, apiCreateTask } from '../../api/client';
+import type { ApiTask, Preferences, ApiCollection } from '../../types/api';
 
 const mockFetchDaily = vi.mocked(fetchDaily);
 const mockFetchPreferences = vi.mocked(fetchPreferences);

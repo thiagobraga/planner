@@ -6,14 +6,8 @@ import { ContextMenu } from '../components/ui/ContextMenu';
 import { ColorPickerPopover } from '../components/ui/ColorPickerPopover';
 import { buildCollectionMenuItems } from '../components/collectionMenuItems';
 import { runOptimistic, patchById, upsertById } from '../stores/optimistic';
-import {
-  fetchCollections,
-  apiCreateCollection,
-  apiDeleteCollection,
-  apiUpdateCollection,
-  PALETTE_COLORS,
-  type ApiCollection,
-} from '../api/client';
+import { fetchCollections, apiCreateCollection, apiDeleteCollection, apiUpdateCollection, PALETTE_COLORS } from '../api/client';
+import type { ApiCollection } from '../types/api';
 import { buildCollectionTree, type CollectionTreeNode } from '../stores/collectionStore';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { useI18n } from '../i18n/I18nContext';

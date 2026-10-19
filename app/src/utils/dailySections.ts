@@ -1,4 +1,4 @@
-import type { ApiTask } from '../api/client';
+import type { ApiTask } from '../types/api';
 import type { Task } from '../components/TaskItem';
 import type { ApiDailyView, DaySection } from '../types/daily';
 import { fmtISO, fmtISOInTimeZone } from './date';

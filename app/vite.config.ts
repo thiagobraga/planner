@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import istanbul from "vite-plugin-istanbul";
@@ -5,6 +6,10 @@ import istanbul from "vite-plugin-istanbul";
 // `lightningcss` inside the pre-push docker environment doesn't abort config
 // parsing. If the import fails, fall back to null and omit the plugin.
 import { VitePWA } from "vite-plugin-pwa";
+
+const pkg = JSON.parse(
+  readFileSync(new URL("./package.json", import.meta.url), "utf-8"),
+) as { version: string };
 
 // E2E coverage is opt-in: `vite-plugin-istanbul` only instruments when
 // VITE_COVERAGE=true (see test:e2e:coverage), keeping normal dev/build runs
@@ -25,6 +30,9 @@ try {
   tailwindcss = null;
 }
 export default defineConfig({
+  define: {
+    __APP_VERSION__: JSON.stringify(pkg.version),
+  },
   plugins: [
     react(),
     tailwindcss && tailwindcss(),
