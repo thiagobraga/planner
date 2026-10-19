@@ -50,6 +50,7 @@ jobs:
     outputs:
       workflows: ${{ steps.filter.outputs.workflows }}
       code: ${{ steps.filter.outputs.code }}
+      site: ${{ steps.filter.outputs.site }}
       skip: ${{ steps.skip.outputs.skip }}
     steps:
       # The classifier comes from the trusted base, so a PR cannot edit the script that
@@ -95,15 +96,19 @@ jobs:
           PR: ${{ github.event.pull_request.number }}
         run: |
           if [ "$EVENT" != "pull_request" ]; then
-            echo "workflows=true" >> "$GITHUB_OUTPUT"
-            echo "code=true" >> "$GITHUB_OUTPUT"
+            {
+              echo "workflows=true"
+              echo "code=true"
+              echo "site=true"
+            } >> "$GITHUB_OUTPUT"
             exit 0
           fi
           files=$(gh api "repos/$REPO/pulls/$PR/files" --paginate --jq '.[].filename')
           flag() { if printf '%s\n' "$files" | grep -Eq "$1"; then echo true; else echo false; fi; }
           {
-            echo "workflows=$(flag '^\.github/|^scripts/ci-changes')"
-            echo "code=$(flag '^(api|app|\.docker)/|^package(-lock)?\.json$')"
+            echo "workflows=$(flag '^\.github/|^\.hooks/|^scripts/(ci-changes|hooks)')"
+            echo "code=$(flag '^(api|app|site|\.docker)/|^compose.*\.yml$|^package(-lock)?\.json$')"
+            echo "site=$(flag '^site/|^app/src/styles/theme\.css$|^\.docker/site/|^\.github/workflows/|^\.hooks/|^compose\.yml$|^vitest\.config\.ts$')"
           } >> "$GITHUB_OUTPUT"
           cat "$GITHUB_OUTPUT"
 
@@ -120,6 +125,8 @@ jobs:
     if: needs.changes.outputs.skip != 'true'
     needs: changes
     uses: ./.github/workflows/2a.quality.yml
+    with:
+      site_changed: ${{ needs.changes.outputs.site == 'true' }}
 
   security:
     name: 2b. Security

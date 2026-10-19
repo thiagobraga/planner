@@ -37,4 +37,13 @@ echo '[]' | expect false "empty change list"
 echo '[{"filename":".release-manifest.json","patch":"@@ -1,3 +1,3 @@\n {\n-  \".\": \"0.5.0\"\n+  \".\": \"0.5.1\"\n }"}]' \
   | expect true "manifest only"
 
+echo '[{"filename":"site/package.json","patch":"@@ -1 +1 @@\n-  \"version\": \"0.5.0\",\n+  \"version\": \"0.5.1\","}]' \
+  | expect true "site version only"
+
+echo '[{"filename":"site/package-lock.json","patch":"@@ -1 +1 @@\n-  \"react\": \"19.0.0\",\n+  \"react\": \"19.1.0\","}]' \
+  | expect false "site dependency change"
+
+echo '[{"filename":"app/src/styles/theme.css","patch":"@@ -1 +1 @@\n-a\n+b"}]' \
+  | expect false "shared theme change"
+
 echo "all passed"

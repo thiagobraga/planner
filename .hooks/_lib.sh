@@ -9,7 +9,7 @@
 
 set -uo pipefail
 
-readonly PACKAGES=(api app)
+readonly PACKAGES=(api app site)
 
 REPO_ROOT="$(git rev-parse --show-toplevel)"
 readonly REPO_ROOT
@@ -30,12 +30,12 @@ hooks_disabled() {
   [ "${SKIP_HOOKS:-0}" = "1" ]
 }
 
-# Which of PACKAGES the given file list touches. Anything outside api/ and app/
-# (docs, .specs, compose files) matches nothing, so the hook exits doing no work.
+# The app and public site both import the shared theme palette.
 packages_touched_by() {
   local files="$1" pkg
   for pkg in "${PACKAGES[@]}"; do
-    if printf '%s\n' "$files" | grep -q "^${pkg}/"; then
+    if printf '%s\n' "$files" | grep -q "^${pkg}/" \
+      || { [ "$pkg" = site ] && printf '%s\n' "$files" | grep -qx 'app/src/styles/theme.css'; }; then
       printf '%s\n' "$pkg"
     fi
   done
@@ -124,7 +124,7 @@ run_all() {
   done
 
   if [ "${#pkgs[@]}" -eq 0 ]; then
-    log "no api/ or app/ changes - nothing to check"
+    log "no api/, app/, or site/ changes - nothing to check"
     return 0
   fi
 

@@ -27,8 +27,7 @@
       "command": "docker compose logs -f",
       "problemMatcher": [],
       "group": {
-        "kind": "test",
-        "isDefault": true
+        "kind": "test"
       },
       "icon": {
         "id": "file-text",
@@ -38,6 +37,27 @@
         "clear": true,
         "focus": true,
         "panel": "shared",
+        "reveal": "always",
+        "showReuseMessage": false
+      }
+    },
+    {
+      "label": "Site Preview",
+      "type": "shell",
+      "command": "bash .vscode/tasks-site.sh",
+      "problemMatcher": [],
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "icon": {
+        "id": "globe",
+        "color": "terminal.ansiMagenta"
+      },
+      "presentation": {
+        "clear": true,
+        "focus": true,
+        "panel": "dedicated",
         "reveal": "always",
         "showReuseMessage": false
       }

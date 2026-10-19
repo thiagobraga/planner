@@ -20,7 +20,7 @@ jobs:
     timeout-minutes: 20
     strategy:
       matrix:
-        package: [., api, app]
+        package: [., api, app, site]
     defaults:
       run:
         working-directory: ${{ matrix.package }}
@@ -190,8 +190,8 @@ jobs:
           sarif_file: trivy-infra.sarif
           category: infra-${{ matrix.image }}
 
-  # Built app and API image scanning lives in 2.ci.yml (PRs) and 4.deploy.yml
-  # (release images pushed to GHCR).
+  # Built api, app and site images are scanned in 2c.container.yml for PRs.
+  # The app and API release images are scanned again in 4.deploy.yml.
 
   sbom:
     name: SBOM generation

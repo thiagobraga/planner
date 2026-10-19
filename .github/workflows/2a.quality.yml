@@ -2,6 +2,11 @@ name: 2a. Quality
 
 on:
   workflow_call:
+    inputs:
+      site_changed:
+        description: 'Validate the public site and shared theme changes'
+        type: boolean
+        default: true
 
 env:
   NODE_VERSION: '26'
@@ -88,6 +93,39 @@ jobs:
       - run: npm run lint
       - run: npm run coverage
       - run: npm run build
+
+  site:
+    name: 'Site: lint, typecheck, test, build, E2E'
+    if: inputs.site_changed
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: site
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: site/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run coverage
+      - run: npm run build
+      - name: Run standalone site E2E tests
+        env:
+          PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH: /usr/bin/google-chrome
+        run: npm run test:e2e
+      - name: Upload site Playwright traces
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: site-playwright-traces
+          path: site/test-results
 
   e2e:
     name: 'E2E: Playwright'

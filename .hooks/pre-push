@@ -50,4 +50,10 @@ while IFS= read -r pkg; do
   [ -n "$pkg" ] && pkgs+=("$pkg")
 done <<< "$(packages_touched_by "$changed")"
 
-SKIP_CSS_MINIFY=1 run_all "lint + test + build" ${pkgs[@]+"${pkgs[@]}"} -- lint test build
+SKIP_CSS_MINIFY=1 run_all "lint + test + build" ${pkgs[@]+"${pkgs[@]}"} -- lint test build || exit 1
+
+for pkg in "${pkgs[@]}"; do
+  if [ "$pkg" = site ]; then
+    run_all "site typecheck + E2E" site -- typecheck test:e2e || exit 1
+  fi
+done
