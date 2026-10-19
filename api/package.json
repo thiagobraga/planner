@@ -21,7 +21,7 @@
     "@modelcontextprotocol/sdk": "^1.32.1",
     "argon2": "^0.45.1",
     "cookie-parser": "^1.4.7",
-    "express": "^5.2.1",
+    "express": "^5.3.0",
     "express-rate-limit": "^8.7.1",
     "helmet": "^8.3.0",
     "peggy": "^5.1.0",
@@ -30,8 +30,8 @@
     "resend": "^6.32.1",
     "sanitize-html": "^2.18.0",
     "socket.io": "^4.8.4",
-    "uuid": "^14.0.2",
-    "zod": "^4.6.5",
+    "uuid": "^14.0.3",
+    "zod": "^4.6.6",
     "zxcvbn": "^4.4.2"
   },
   "devDependencies": {
@@ -39,7 +39,7 @@
     "@rolldown/binding-linux-x64-musl": "1.2.13",
     "@types/cookie-parser": "^1.4.10",
     "@types/express": "^5.0.0",
-    "@types/node": "^26.6.4",
+    "@types/node": "^26.6.5",
     "@types/pg": "^8.23.1",
     "@types/sanitize-html": "^2.16.2",
     "@types/supertest": "^7.2.1",
