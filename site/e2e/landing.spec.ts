@@ -52,16 +52,11 @@ for (const [size, viewport] of Object.entries(sizes)) {
   }
 }
 
-test('showcase, demo tasks, FAQ, destinations and keyboard work without API requests', async ({ page }) => {
+test('showcase, FAQ, destinations and keyboard work without API requests', async ({ page }) => {
   const apiRequests: string[] = [];
   page.on('request', request => { if (/\/api\/|\/socket.io/.test(request.url())) apiRequests.push(request.url()); });
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/');
-  const heroTask = page.locator('#top').getByRole('button', { name: 'Review quarterly goals' });
-  await heroTask.click();
-  await expect(heroTask).toHaveAttribute('aria-pressed', 'true');
-  await heroTask.press('Space');
-  await expect(heroTask).toHaveAttribute('aria-pressed', 'false');
   await page.getByRole('link', { name: 'See it in action' }).click();
   await expect(page).toHaveURL(/#showcase$/);
   const desk = page.getByRole('tab', { name: 'Desk', exact: true });

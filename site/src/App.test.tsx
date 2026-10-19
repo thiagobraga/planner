@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
 import App from './App';
 import { GITHUB_URL, REGISTER_URL } from './config';
@@ -19,17 +19,11 @@ describe('public landing page', () => {
     }
   });
 
-  it('changes demo tasks locally and independently of the showcase', () => {
+  it('shows real app screenshots on each device', () => {
     render(<App />);
-    const task = screen.getAllByRole('button', { name: 'Review quarterly goals' })[0];
-    expect(task).toHaveAttribute('aria-pressed', 'false');
-    fireEvent.click(task);
-    expect(task).toHaveAttribute('aria-pressed', 'true');
-    fireEvent.click(screen.getByRole('tab', { name: 'Desktop' }));
-    const previewTask = within(screen.getByRole('tabpanel')).getByRole('button', { name: 'Review quarterly goals' });
-    expect(previewTask).toHaveAttribute('aria-pressed', 'false');
-    fireEvent.click(task);
-    expect(task).toHaveAttribute('aria-pressed', 'false');
+    for (const [alt, src] of [['Planner daily list on a laptop', '/screens/desktop.png'], ['Planner monthly view on a tablet', '/screens/tablet.png'], ['Planner daily list on a phone', '/screens/phone.png']]) {
+      expect(screen.getAllByAltText(alt)[0]).toHaveAttribute('src', src);
+    }
   });
 
   it('supports keyboard tab selection and FAQ disclosure', () => {
