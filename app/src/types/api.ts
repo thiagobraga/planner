@@ -164,6 +164,7 @@ export interface ApiHabit {
   // Sub-habits inherit their parent's group, so their own groupId is always null.
   groupId: string | null;
   orderValue: number;
+  createdAt?: string;
   completions: string[]; // ISO dates (YYYY-MM-DD)
 }
 

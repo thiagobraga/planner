@@ -10,6 +10,8 @@ import { InlineNameInput } from '../ui/InlineNameInput';
 import { NO_DRAG_ATTR } from '../dnd/sensors';
 import { HabitDragHandle } from './HabitDragHandle';
 import { HabitBlockPreview } from './HabitBlockPreview';
+import { DebugCard } from '../DebugCard';
+import { useDebugStore } from '../../stores/debugStore';
 import { buildWeekDays, fmtISO, weekdayInitials, type WeekStart } from '../../utils/date';
 import { useI18n } from '../../i18n/I18nContext';
 import { dayState, flattenHabits, type HabitNode, type HabitSections } from '../../utils/habitTree';
@@ -140,6 +142,7 @@ export function HabitTimeline({
   onArchive,
 }: HabitTimelineProps) {
   const { locale, t } = useI18n();
+  const debug = useDebugStore((s) => s.enabled);
   const [menu, setMenu] = useState<{ target: HabitEditTarget; canAddSub: boolean; x: number; y: number } | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const daysViewportRef = useRef<HTMLDivElement>(null);
@@ -589,6 +592,7 @@ export function HabitTimeline({
                   />
                 ) : (
                   <>
+                    {debug && <DebugCard id={node.id} orderValue={node.orderValue} createdAt={node.createdAt} />}
                     <span
                       className="habit-timeline-row-name min-w-0 flex-1 cursor-text truncate text-sm leading-6 text-ink"
                       onDoubleClick={() => onStartEdit(target)}

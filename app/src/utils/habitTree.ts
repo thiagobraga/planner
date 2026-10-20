@@ -10,6 +10,7 @@ export interface HabitNode {
   parentId: string | null;
   groupId: string | null;
   orderValue: number;
+  createdAt?: string;
   completions: Set<string>;
   children: HabitNode[];
 }
@@ -31,6 +32,7 @@ function toNode(habit: ApiHabit): HabitNode {
     parentId: habit.parentId,
     groupId: habit.groupId,
     orderValue: habit.orderValue,
+    createdAt: habit.createdAt,
     completions: new Set(habit.completions),
     children: [],
   };
