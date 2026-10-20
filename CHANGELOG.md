@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.0](https://github.com/thiagobraga/planner/compare/v0.8.0...v0.9.0) (2026-10-20)
+
+
+### Added
+
+* wasd debug mode with task and habit debug cards ([c4bc198](https://github.com/thiagobraga/planner/commit/c4bc19830df9a20adc2f9124076b7a508c60f313))
+
 ## [0.8.0](https://github.com/thiagobraga/planner/compare/v0.7.1...v0.8.0) (2026-10-19)
 
 
