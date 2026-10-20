@@ -4,26 +4,8 @@ import { AppError } from "../utils/AppError.js";
 import { validateColor } from "../utils/color.js";
 import { buildEvent, publishEvent } from "./syncService.js";
 import { syncCompletionToStatus } from "./completionSync.js";
-
-interface StatusRow {
-  id: string;
-  collection_id: string;
-  name: string;
-  color: string;
-  order_value: number;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface Status {
-  id: string;
-  collectionId: string;
-  name: string;
-  color: string;
-  orderValue: number;
-  createdAt: string;
-  updatedAt: string;
-}
+import type { StatusRow, Status, CreateStatusInput, UpdateStatusInput, DeleteStatusOptions } from "../types/status.js";
+export type { Status } from "../types/status.js";
 
 function formatStatus(row: StatusRow): Status {
   return {
@@ -32,6 +14,10 @@ function formatStatus(row: StatusRow): Status {
     name: row.name,
     color: row.color,
     orderValue: row.order_value,
+    nextStatusMode: row.next_status_mode ?? "default",
+    nextStatusId: row.next_status_id ?? null,
+    acceptStatusId: row.accept_status_id ?? null,
+    rejectStatusId: row.reject_status_id ?? null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -236,10 +222,6 @@ export async function ensureCollectionStatuses(collectionId: string, userId: str
   }
 }
 
-export interface CreateStatusInput {
-  name: string;
-  color?: string;
-}
 
 function validateStatusName(name: unknown): string {
   if (typeof name !== "string" || name.length === 0 || name.length > 60) {
@@ -310,10 +292,20 @@ export async function createStatus(collectionId: string, userId: string, input: 
   return status;
 }
 
-export interface UpdateStatusInput {
-  name?: string;
-  color?: string;
-  position?: number;
+
+const destinationColumns = {
+  nextStatusId: "next_status_id",
+  acceptStatusId: "accept_status_id",
+  rejectStatusId: "reject_status_id",
+} as const;
+
+function invalidStatusField(field: string, message: string): AppError {
+  return new AppError({
+    code: "VALIDATION_ERROR",
+    message: "Validation failed",
+    statusCode: 400,
+    details: [{ field, message }],
+  });
 }
 
 export async function updateStatus(statusId: string, userId: string, input: UpdateStatusInput): Promise<Status> {
@@ -332,9 +324,38 @@ export async function updateStatus(statusId: string, userId: string, input: Upda
 
   const status = await verifyStatusAccess(statusId, userId);
 
+  if (input.nextStatusMode !== undefined && !["default", "custom", "disabled"].includes(input.nextStatusMode)) {
+    throw invalidStatusField("nextStatusMode", "Invalid next status mode");
+  }
+  for (const field of Object.keys(destinationColumns) as (keyof typeof destinationColumns)[]) {
+    const value = input[field];
+    if (value !== undefined && value !== null && (typeof value !== "string" || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value))) {
+      throw invalidStatusField(field, "Destination must be a status ID or null");
+    }
+  }
+  const nextMode = input.nextStatusMode ?? status.next_status_mode ?? "default";
+  const nextId = input.nextStatusId !== undefined ? input.nextStatusId : status.next_status_id;
+  if (nextMode === "custom" && !nextId) {
+    throw invalidStatusField("nextStatusId", "Custom Next requires a destination");
+  }
+
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
+
+    const destinations = Object.entries(destinationColumns)
+      .map(([field]) => ({ field, value: input[field as keyof typeof destinationColumns] }))
+      .filter((entry): entry is { field: string; value: string } => typeof entry.value === "string");
+    if (destinations.length > 0) {
+      const ids = [...new Set(destinations.map((entry) => entry.value))];
+      const result = await client.query(
+        `SELECT id FROM task_statuses WHERE collection_id = $1 AND id = ANY($2::uuid[])`,
+        [status.collection_id, ids],
+      );
+      const valid = new Set((result.rows as { id: string }[]).map((row) => row.id));
+      const invalid = destinations.find((entry) => !valid.has(entry.value));
+      if (invalid) throw invalidStatusField(invalid.field, "Destination must belong to the same collection");
+    }
 
     const setClauses: string[] = [];
     const values: unknown[] = [];
@@ -347,6 +368,16 @@ export async function updateStatus(statusId: string, userId: string, input: Upda
     if (input.color !== undefined) {
       setClauses.push(`color = $${paramIndex++}`);
       values.push(input.color);
+    }
+    if (input.nextStatusMode !== undefined) {
+      setClauses.push(`next_status_mode = $${paramIndex++}`);
+      values.push(input.nextStatusMode);
+    }
+    for (const [field, column] of Object.entries(destinationColumns) as [keyof typeof destinationColumns, string][]) {
+      if (input[field] !== undefined) {
+        setClauses.push(`${column} = $${paramIndex++}`);
+        values.push(input[field]);
+      }
     }
     if (setClauses.length > 0) {
       setClauses.push(`updated_at = NOW()`);
@@ -490,14 +521,12 @@ export async function setCollectionCompletionStatus(
   return { completionStatusId: statusId };
 }
 
-export interface DeleteStatusOptions {
-  reassignToStatusId?: string;
-}
 
 export async function deleteStatus(statusId: string, userId: string, options: DeleteStatusOptions = {}): Promise<{ success: true }> {
   const status = await verifyStatusAccess(statusId, userId);
 
   const client = await pool.connect();
+  let cleanedRoutes: StatusRow[];
   try {
     await client.query("BEGIN");
 
@@ -577,6 +606,20 @@ export async function deleteStatus(statusId: string, userId: string, options: De
       }
     }
 
+    const cleaned = await client.query(
+      `UPDATE task_statuses
+       SET next_status_id = NULLIF(next_status_id, $1),
+           accept_status_id = NULLIF(accept_status_id, $1),
+           reject_status_id = NULLIF(reject_status_id, $1),
+           next_status_mode = CASE WHEN next_status_id = $1 THEN 'disabled' ELSE next_status_mode END,
+           updated_at = NOW()
+       WHERE collection_id = $2 AND id != $1
+         AND (next_status_id = $1 OR accept_status_id = $1 OR reject_status_id = $1)
+       RETURNING *`,
+      [statusId, status.collection_id],
+    );
+    cleanedRoutes = (cleaned?.rows ?? []) as StatusRow[];
+
     await client.query(`DELETE FROM task_statuses WHERE id = $1`, [statusId]);
 
     await client.query("COMMIT");
@@ -588,5 +631,8 @@ export async function deleteStatus(statusId: string, userId: string, options: De
   }
 
   publishStatusEvent("deleted", statusId, userId, status.collection_id);
+  for (const cleaned of cleanedRoutes) {
+    publishStatusEvent("updated", cleaned.id, userId, status.collection_id, formatStatus(cleaned));
+  }
   return { success: true };
 }
