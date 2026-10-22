@@ -18,9 +18,9 @@ export function DebugCard({ id, orderValue, createdAt }: DebugCardProps) {
       title={`id: ${id}\norder: ${orderValue}\ncreated: ${createdAt ?? '-'}`}
       className="debug-card ml-1.5 inline-flex shrink-0 select-text items-center gap-1 tabular-nums text-[10px] leading-5 text-ink-light"
     >
-      <span className={chip} style={chipStyle}>[ID: {id.slice(0, 8)}]</span>
-      <span className={chip} style={chipStyle}>[Order: {orderValue}]</span>
-      <span className={chip} style={chipStyle}>[Created: {formatCreated(createdAt)}]</span>
+      <span className={chip} style={chipStyle}>ID: {id.slice(0, 8)}</span>
+      <span className={chip} style={chipStyle}>Order: {orderValue}</span>
+      <span className={chip} style={chipStyle}>Created: {formatCreated(createdAt)}</span>
     </span>
   );
 }

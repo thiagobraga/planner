@@ -22,8 +22,8 @@ test('typing wasd toggles debug cards on tasks and habits', async ({ page, api }
 
     await page.keyboard.type('wasd');
     const card = row.getByTestId('debug-card');
-    await expect(card).toContainText(`[ID: ${task.id.slice(0, 8)}]`);
-    await expect(card).toContainText(/\[Created: \d{4}(-\d{2}){5}\]/);
+    await expect(card).toContainText(`ID: ${task.id.slice(0, 8)}`);
+    await expect(card).toContainText(/Created: \d{4}(-\d{2}){5}/);
 
     await mkdir('dist/screenshots', { recursive: true });
     await page.screenshot({ path: 'dist/screenshots/debug-mode-daily-desktop.png' });
