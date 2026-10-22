@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.10.1](https://github.com/thiagobraga/planner/compare/v0.10.0...v0.10.1) (2026-10-22)
+
+
+### Fixed
+
+* **ci:** limit trivy sarif severities ([1e4dd48](https://github.com/thiagobraga/planner/commit/1e4dd4853d64a24a1c4cdae2bdf12d0378d496c7))
+* **ci:** limit trivy sarif severities so low findings do not fail scans ([62b0cc0](https://github.com/thiagobraga/planner/commit/62b0cc0c074427580c0c0e05c5454cc2ff9cc9e8))
+
 ## [0.10.0](https://github.com/thiagobraga/planner/compare/v0.9.0...v0.10.0) (2026-10-22)
 
 
