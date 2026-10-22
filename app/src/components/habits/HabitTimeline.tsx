@@ -592,13 +592,13 @@ export function HabitTimeline({
                   />
                 ) : (
                   <>
-                    {debug && <DebugCard id={node.id} orderValue={node.orderValue} createdAt={node.createdAt} />}
                     <span
                       className="habit-timeline-row-name min-w-0 flex-1 cursor-text truncate text-sm leading-6 text-ink"
                       onDoubleClick={() => onStartEdit(target)}
                     >
                       {node.name}
                     </span>
+                    {debug && <DebugCard id={node.id} orderValue={node.orderValue} createdAt={node.createdAt} />}
                     <RowOptionsButton
                       label={t('habit.optionsFor', { name: node.name })}
                       onOpen={(x, y) => setMenu({ target, canAddSub: depth === 0, x, y })}

@@ -389,8 +389,8 @@ describe('TaskItem - debug mode', () => {
     useDebugStore.setState({ enabled: true });
     renderTaskItem(task, { isEditing: false });
     const card = screen.getByTestId('debug-card');
-    expect(card).toHaveTextContent('abcdef12');
-    expect(card).toHaveTextContent('#5');
-    expect(card).toHaveTextContent('2026-10-02');
+    expect(card).toHaveTextContent('[ID: abcdef12]');
+    expect(card).toHaveTextContent('[Order: 5]');
+    expect(card).toHaveTextContent(/\[Created: 2026-10-0[12]-\d\d-\d\d-\d\d\]/);
   });
 });

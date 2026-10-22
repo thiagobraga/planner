@@ -374,7 +374,6 @@ export const TaskItem = memo(function TaskItem({
       )}
 
       <span className="task-item-title-area flex-1 flex flex-wrap items-center min-w-0">
-        {debug && <DebugCard id={task.id} orderValue={task.orderValue} createdAt={task.createdAt} />}
         {isEditing ? (
           <EditableText
             ref={editRef}
@@ -452,6 +451,7 @@ export const TaskItem = memo(function TaskItem({
             )}
           </>
         )}
+        {debug && <DebugCard id={task.id} orderValue={task.orderValue} createdAt={task.createdAt} />}
       </span>
     </div>
   );
