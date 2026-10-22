@@ -28,6 +28,7 @@ import { usePreferences } from '../hooks/usePreferences';
 import { useMidnightTimer } from '../hooks/useMidnightTimer';
 import { fmtISOInTimeZone } from '../utils/date';
 import { APP_VERSION } from '../utils/version';
+import { isProduction } from '../utils/environment';
 
 interface SidebarProps {
   isOpen?: boolean;
@@ -324,7 +325,14 @@ export function Sidebar({
             <PlannerIcon width={28} height={38} className='mt-1' />
           </div>
           <div>
-            <h1 className='text-lg leading-6 font-semibold text-ink m-0 p-0 h-6'>Planner</h1>
+            <div className='flex items-baseline gap-1.5 h-6'>
+              <h1 className='text-lg leading-6 font-semibold text-ink m-0 p-0'>Planner</h1>
+              {!isProduction() && (
+                <em className='text-sm leading-6 font-medium italic text-accent select-none'>
+                  dev
+                </em>
+              )}
+            </div>
             <p className='text-[13px] leading-6 text-ink-light m-0 p-0 opacity-60 h-6'>
               Your Bullet Journal
             </p>
