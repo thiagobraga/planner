@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.10.0](https://github.com/thiagobraga/planner/compare/v0.9.0...v0.10.0) (2026-10-22)
+
+
+### Added
+
+* **app:** add dev label to sidebar for non-production environments ([9684a41](https://github.com/thiagobraga/planner/commit/9684a41755a278e7c533759358ed7f036c0ce822))
+* **app:** add dev label to sidebar for non-production environments ([7d64950](https://github.com/thiagobraga/planner/commit/7d64950dc1e9dfc7d59d43c54653551c4cf1813e))
+
 ## [0.9.0](https://github.com/thiagobraga/planner/compare/v0.8.0...v0.9.0) (2026-10-20)
 
 
