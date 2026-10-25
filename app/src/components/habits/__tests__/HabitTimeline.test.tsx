@@ -428,8 +428,8 @@ describe('HabitTimeline - debug mode', () => {
     useDebugStore.setState({ enabled: true });
     render(<HabitTimeline {...defaultProps} sections={sections} />, { wrapper: createWrapper() });
     const card = screen.getByTestId('debug-card');
-    expect(card).toHaveTextContent('water-00');
-    expect(card).toHaveTextContent('#2');
-    expect(card).toHaveTextContent('2026-10-01');
+    expect(card).toHaveTextContent('ID: water-00');
+    expect(card).toHaveTextContent('Order: 2');
+    expect(card).toHaveTextContent(/Created: 2026-(09-30|10-01)-\d\d-\d\d-\d\d/);
   });
 });
