@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.11.0](https://github.com/thiagobraga/planner/compare/v0.10.1...v0.11.0) (2026-10-25)
+
+
+### Added
+
+* **debug:** label debug values and show them after the task ([649dff6](https://github.com/thiagobraga/planner/commit/649dff68f4f42ce266e32ea5a93e78cd90486387))
+
 ## [0.10.1](https://github.com/thiagobraga/planner/compare/v0.10.0...v0.10.1) (2026-10-22)
 
 
