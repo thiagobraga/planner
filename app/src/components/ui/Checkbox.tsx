@@ -13,7 +13,7 @@ export function Checkbox({ label, className = '', checked, ...rest }: CheckboxPr
         <input type="checkbox" checked={checked} className="ui-checkbox-input peer sr-only" {...rest} />
         <span
           className={`ui-checkbox-control w-4 h-4 rounded-xs border transition-colors duration-(--motion-fast) ${
-            checked ? 'bg-ink border-ink' : 'bg-(--planner-control-bg) border-border'
+            checked ? 'bg-ink border-ink' : 'bg-(--planner-control-bg) border-ink-light'
           }`}
         />
         {checked && (
