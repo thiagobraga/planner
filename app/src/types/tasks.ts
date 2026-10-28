@@ -80,7 +80,7 @@ export interface TaskListProps extends TaskListCallbacks {
   dayDate?: string;
   sectionId?: string;
   collectionId?: string;
-  dropData?: any;
+  dropData?: unknown;
   activeDragId?: string | null;
   renderBadge?: (task: Task) => ReactNode;
   onTaskToggle?: (id: string) => void;
