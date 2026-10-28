@@ -81,7 +81,7 @@ test('Daily board retains scheduled cards while keeping Migrate scoped to Daily 
       const column = page.locator(`[data-column-id="${columnId}"]`);
       await expect(column).toHaveCSS('border-top-width', '0px');
       await expect(column).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
-      await column.getByRole('button', { name: 'Add task', exact: true }).click();
+      await column.getByRole('button', { name: 'New task…', exact: true }).click();
       const input = column.getByRole('textbox', { name: 'Task title' });
       await expect(input).toBeFocused();
       await input.fill(title);
@@ -109,7 +109,7 @@ test('Daily board retains scheduled cards while keeping Migrate scoped to Daily 
     const futureColumn = page.locator('[data-column-id^="day:"]').first();
     const futureDate = (await futureColumn.getAttribute('data-column-id'))!.slice(4);
     const futureTitle = `Prepare next week ${suffix}`;
-    await futureColumn.getByRole('button', { name: 'Add task', exact: true }).click();
+    await futureColumn.getByRole('button', { name: 'New task…', exact: true }).click();
     await futureColumn.getByRole('textbox', { name: 'Task title' }).fill(futureTitle);
     const futureResponse = page.waitForResponse((response) => response.url().endsWith('/api/v1/tasks') && response.request().method() === 'POST');
     await futureColumn.getByRole('button', { name: 'Save', exact: true }).click();
@@ -126,11 +126,11 @@ test('Daily board retains scheduled cards while keeping Migrate scoped to Daily 
     await page.setViewportSize({ width: 390, height: 844 });
     await page.screenshot({ path: 'dist/screenshots/daily-kanban-refined-mobile.png' });
     const migrate = page.locator('[data-column-id="migrate"]');
-    await migrate.getByRole('button', { name: 'Add task', exact: true }).click();
+    await migrate.getByRole('button', { name: 'New task…', exact: true }).click();
     await expect(migrate.getByRole('textbox', { name: 'Task title' })).toBeVisible();
     await migrate.getByRole('textbox', { name: 'Task title' }).press('Escape');
     await expect(migrate.getByRole('textbox')).toHaveCount(0);
-    await expect(migrate.getByRole('button', { name: 'Add task', exact: true })).toBeFocused();
+    await expect(migrate.getByRole('button', { name: 'New task…', exact: true })).toBeFocused();
     expect(errors).toEqual([]);
   } finally {
     for (const id of createdIds) await api.delete(`/tasks/${id}`);
