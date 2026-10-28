@@ -90,6 +90,7 @@ export function WeekSelector({ weekAnchor, today, weekStart, onWeekChange, onTod
         variant="secondary"
         aria-haspopup="dialog"
         aria-expanded={open}
+        aria-label={rangeLabel}
         onClick={toggle}
         className="week-selector-trigger !gap-1 font-semibold uppercase tracking-[0.08em]"
       >
