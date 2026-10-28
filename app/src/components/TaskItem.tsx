@@ -402,16 +402,16 @@ export const TaskItem = memo(function TaskItem({
 
             {task.dueDate && !hideDueDate && (
               <span className="task-item-due-date h-6 inline-flex items-center gap-1 text-xs text-ink-light ml-1.5 whitespace-nowrap">
-                {task.recurrenceRule && <Repeat className="w-3 h-3" />}
                 {formatDueDate(task.dueDate, locale)}
-                {task.recurrenceRule && <span>{recurrenceSummary(task.recurrenceRule, locale)}</span>}
               </span>
             )}
 
-            {task.recurrenceRule && (!task.dueDate || hideDueDate) && (
-              <span className="task-item-repeat h-6 inline-flex items-center gap-1 text-xs text-ink-light ml-1.5 whitespace-nowrap" aria-label={t('datePicker.repeat')}>
-                <Repeat className="w-3 h-3" aria-hidden="true" />
-                {recurrenceSummary(task.recurrenceRule, locale)}
+            {task.recurrenceRule && (
+              <span className="task-item-repeat h-6 flex items-center ml-1.5 shrink-0" aria-label={t('datePicker.repeat')}>
+                <span className="inline-flex items-center gap-1.5 px-1 rounded-xs bg-dot/30 border border-dot/50 text-[11px] leading-4.5 text-ink/65 whitespace-nowrap">
+                  <Repeat className="w-3 h-3" aria-hidden="true" />
+                  {recurrenceSummary(task.recurrenceRule, locale)}
+                </span>
               </span>
             )}
 
