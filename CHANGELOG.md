@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.12.1](https://github.com/thiagobraga/planner/compare/v0.12.0...v0.12.1) (2026-10-28)
+
+
+### Changed
+
+* **app:** remove unused task types file ([19c8c2a](https://github.com/thiagobraga/planner/commit/19c8c2aca407a3beedd4fe9e99274866d3283a98))
+* **app:** remove unused task types file ([05b06a9](https://github.com/thiagobraga/planner/commit/05b06a97dfc3ac603658cb6e2bd47a3f84118c0d))
+
 ## [0.12.0](https://github.com/thiagobraga/planner/compare/v0.11.1...v0.12.0) (2026-10-28)
 
 
