@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.12.0](https://github.com/thiagobraga/planner/compare/v0.11.1...v0.12.0) (2026-10-28)
+
+
+### Added
+
+* **app:** ui adjustments ([1516d3a](https://github.com/thiagobraga/planner/commit/1516d3a564389e67156995cf68d26c98a6975eb6))
+
+
+### Fixed
+
+* **app:** let settings header subtitle wrap ([4b14f9e](https://github.com/thiagobraga/planner/commit/4b14f9eb37960c451fe031a7a2def913f570182e))
+* **app:** restore week selector trigger aria-label ([9cbd505](https://github.com/thiagobraga/planner/commit/9cbd505a35b962be995a63e85198ca2ce49c9edf))
+
+
+### Style
+
+* **site:** drop blob decorations from cta ([a617da0](https://github.com/thiagobraga/planner/commit/a617da087c6129059e5ce7e7fa078b812310f497))
+* **site:** drop blob decorations from hero ([f46d53a](https://github.com/thiagobraga/planner/commit/f46d53a3d457e91cac7b56f9f93889c5b2fd0800))
+* **site:** remove unused blob animation ([c0c7293](https://github.com/thiagobraga/planner/commit/c0c72935e42d8a4e1d383b01824a2b2f6dcd77e6))
+
 ## [0.11.1](https://github.com/thiagobraga/planner/compare/v0.11.0...v0.11.1) (2026-10-28)
 
 
