@@ -1,4 +1,5 @@
-import { NavLink, useNavigate } from 'react-router';
+import './Sidebar.css';
+import { useNavigate } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import { useDroppable } from '@dnd-kit/core';
 import {
@@ -181,150 +182,18 @@ export function Sidebar({
     logout();
     navigate('/login');
   };
-  if (collapsed) {
-    return (
-      <aside
-        className='sidebar sidebar-collapsed w-12 h-full flex flex-col items-center border-r border-dot bg-(--planner-sidebar-bg) py-6 shrink-0 overflow-y-auto'
-        aria-label={t('nav.navigation')}
-      >
-        {/* Logo mark */}
-        <div className='sidebar-logo mb-6' title='Planner'>
-          <PlannerIcon width={16} height={16} className='mt-1' />
-        </div>
-
-        <nav
-          aria-label={t('nav.main')}
-          className='sidebar-nav flex flex-col gap-0.5 w-full items-center'
-        >
-          {NAV_ITEMS.map((entry) => (
-            <NavLink
-              key={entry.to}
-              to={entry.to}
-              title={t(entry.labelKey)}
-              className={({ isActive }) =>
-                isActive ? 'sidebar-icon-link sidebar-icon-link--active' : 'sidebar-icon-link'
-              }
-            >
-              <entry.Icon size={16} strokeWidth={1.5} />
-            </NavLink>
-          ))}
-        </nav>
-
-        <div className='mt-auto flex flex-col gap-0.5 w-full items-center pb-6'>
-          <span
-            title={t('nav.version', { version: APP_VERSION })}
-            className='mb-1 px-1 py-0.5 rounded-xs bg-ink-light/80 text-cream text-[10px] leading-none select-none text-center'
-          >
-            v{APP_VERSION}
-          </span>
-          {isAdmin && (
-            <>
-              <NavLink
-                to='/admin/dashboard'
-                title={t('nav.adminDashboard')}
-                className={({ isActive }) =>
-                  isActive ? 'sidebar-icon-link sidebar-icon-link--active' : 'sidebar-icon-link'
-                }
-              >
-                <ShieldCheck size={16} strokeWidth={1.5} />
-              </NavLink>
-              <NavLink
-                to='/admin/users'
-                title={t('nav.adminUsers')}
-                className={({ isActive }) =>
-                  isActive ? 'sidebar-icon-link sidebar-icon-link--active' : 'sidebar-icon-link'
-                }
-              >
-                <Users size={16} strokeWidth={1.5} />
-              </NavLink>
-              <NavLink
-                to='/admin/compare'
-                title={t('nav.adminCompare')}
-                className={({ isActive }) =>
-                  isActive ? 'sidebar-icon-link sidebar-icon-link--active' : 'sidebar-icon-link'
-                }
-              >
-                <Table2 size={16} strokeWidth={1.5} />
-              </NavLink>
-            </>
-          )}
-
-          <UpdateToast updateAvailable={updateAvailable} />
-          <NavLink
-            to='/settings'
-            title={t('common.settings')}
-            className={({ isActive }) =>
-              isActive ? 'sidebar-icon-link sidebar-icon-link--active' : 'sidebar-icon-link'
-            }
-          >
-            <Settings size={16} strokeWidth={1.5} />
-          </NavLink>
-
-          <NavLink
-            to='/styleguide'
-            title={t('nav.styleguide')}
-            className={({ isActive }) =>
-              isActive ? 'sidebar-icon-link sidebar-icon-link--active' : 'sidebar-icon-link'
-            }
-          >
-            <StyleguideIcon size={16} />
-          </NavLink>
-
-          <NavLink
-            to='/help'
-            title={t('nav.help')}
-            className={({ isActive }) =>
-              isActive ? 'sidebar-icon-link sidebar-icon-link--active' : 'sidebar-icon-link'
-            }
-          >
-            <HelpCircle size={16} strokeWidth={1.5} />
-          </NavLink>
-
-          <div className='w-8 h-px bg-dot opacity-30 my-1'></div>
-
-          <a
-            href='#'
-            role='button'
-            onClick={(e) => {
-              e.preventDefault();
-              onToggleCollapsed?.();
-            }}
-            title={t('nav.expandSidebar')}
-            aria-label={t('nav.expandSidebar')}
-            className='sidebar-icon-link'
-          >
-            <PanelLeftOpen size={16} strokeWidth={1.5} />
-          </a>
-
-          <a
-            href='#'
-            role='button'
-            onClick={(e) => {
-              e.preventDefault();
-              handleLogout();
-            }}
-            title={t('nav.logout')}
-            className='sidebar-icon-link'
-          >
-            <LogOut size={16} strokeWidth={1.5} />
-          </a>
-        </div>
-      </aside>
-    );
-  }
-
   const sidebarContent = (
     <aside
-      className={`sidebar-drawer ${isOpen !== false ? 'sidebar-drawer--open' : ''} w-55 h-full flex flex-col border-r border-dot bg-(--planner-sidebar-bg) relative overflow-y-auto shrink-0`}
+      className={`sidebar-drawer ${collapsed ? 'sidebar-collapsed' : ''} ${isOpen !== false ? 'sidebar-drawer--open' : ''} w-55 h-full flex flex-col border-r border-dot bg-(--planner-sidebar-bg) relative overflow-y-auto shrink-0`}
       aria-label={t('nav.navigation')}
     >
       {/* Logo */}
-      <div className='mb-6 ml-3'>
+      <div className='sidebar-header mb-6 ml-3'>
         <div className='flex items-start gap-3'>
           <div className='shrink-0'>
-            <PlannerIcon width={28} height={38} className='mt-1' />
+            <PlannerIcon width={collapsed ? 16 : 28} height={collapsed ? 16 : 38} className='mt-1' />
           </div>
-          <div>
+          <div className='sidebar-brand-copy'>
             <div className='flex items-baseline gap-1.5 h-6'>
               <h1 className='text-lg leading-6 font-semibold text-ink m-0 p-0'>Planner</h1>
               {!isProduction() && (
@@ -363,10 +232,10 @@ export function Sidebar({
       {/* Footer utilities */}
       <div className='mt-auto pt-4'>
         <nav aria-label={t('common.settings')} className='flex flex-col'>
-          <div className='h-6 px-3 flex items-center'>
+          <div className='sidebar-version-row h-6 px-3 flex items-center'>
             <span
               title={t('nav.version', { version: APP_VERSION })}
-              className='px-1.5 py-0.5 rounded-xs bg-ink-light/80 text-cream text-[11px] leading-none select-none'
+              className='sidebar-version px-1.5 py-0.5 rounded-xs bg-ink text-cream text-[11px] leading-none select-none'
             >
               v{APP_VERSION}
             </span>
@@ -375,7 +244,7 @@ export function Sidebar({
             <>
               <SidebarNavItem
                 to='/admin/dashboard'
-                label={t('nav.admin')}
+                label={t(collapsed ? 'nav.adminDashboard' : 'nav.admin')}
                 icon={<ShieldCheck size={15} strokeWidth={1.5} />}
               />
               <SidebarNavItem
@@ -413,8 +282,8 @@ export function Sidebar({
 
           {canCollapse && (
             <SidebarNavItem
-              label={t('nav.collapseSidebar')}
-              icon={<PanelLeftClose size={15} strokeWidth={1.5} />}
+              label={t(collapsed ? 'nav.expandSidebar' : 'nav.collapseSidebar')}
+              icon={collapsed ? <PanelLeftOpen size={15} strokeWidth={1.5} /> : <PanelLeftClose size={15} strokeWidth={1.5} />}
               onClick={onToggleCollapsed}
             />
           )}

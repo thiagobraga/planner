@@ -27,6 +27,13 @@ function renderRow(props: Partial<React.ComponentProps<typeof TaskItem>> = {}, t
 const row = () => screen.getByRole('button', { name: 'Write the thing' });
 
 describe('TaskItem: click selection', () => {
+  it('includes visible collection and label text in the accessible name', () => {
+    renderRow({ collectionBadge: <span>Household</span> }, {
+      labels: [{ id: 'label-1', name: 'finance', color: '#44443d' }],
+    });
+    expect(screen.getByRole('button', { name: /Write the thing Household finance/ })).toBeInTheDocument();
+  });
+
   it('selects task row on single click', () => {
     const onStartEdit = vi.fn();
     renderRow({ onStartEdit });
@@ -34,7 +41,8 @@ describe('TaskItem: click selection', () => {
     fireEvent.click(row());
 
     expect(onStartEdit).not.toHaveBeenCalled();
-    expect(row()).toHaveAttribute('aria-selected', 'true');
+    expect(row()).toHaveAttribute('aria-pressed', 'true');
+    expect(row()).not.toHaveAttribute('aria-selected');
     expect(row().className).toContain('task-item--selected');
   });
 

@@ -23,7 +23,7 @@ describe('TaskItem checkbox setting', () => {
 
   it('keeps the dot toggle by default', () => {
     renderRow();
-    expect(screen.getByRole('button', { pressed: false })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Complete: Buy milk', pressed: false })).toBeInTheDocument();
     expect(screen.queryByRole('checkbox')).toBeNull();
   });
 

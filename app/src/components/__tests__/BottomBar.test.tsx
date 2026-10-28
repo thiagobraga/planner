@@ -40,6 +40,6 @@ describe('BottomBar', () => {
   it('renders the More button', () => {
     render(<BottomBar isMenuOpen={false} onMenuToggle={vi.fn()} onNavigate={vi.fn()} />);
 
-    expect(screen.getByRole('button', { name: /open/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'More' })).toBeInTheDocument();
   });
 });

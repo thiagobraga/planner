@@ -1,4 +1,4 @@
-import { useRef, useEffect, memo, type ReactNode } from 'react';
+import { useId, useRef, useEffect, memo, type ReactNode } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { AlarmClock, Repeat } from 'lucide-react';
@@ -134,6 +134,7 @@ export const TaskItem = memo(function TaskItem({
   onRightClick,
 }: TaskItemProps) {
   const { locale, t } = useI18n();
+  const labelId = useId();
   const showCheckboxes = useCheckboxStore((s) => s.enabled);
   const isSelected = useTaskSelectionStore((s) => s.selectedTaskIds.has(task.id));
   const selectTask = useTaskSelectionStore((s) => s.selectTask);
@@ -282,8 +283,9 @@ export const TaskItem = memo(function TaskItem({
       {...attributes}
       {...listeners}
       className={`task-item group ${isEditing ? 'task-item--editing' : ''} ${isSelected ? 'task-item--selected' : ''} ${departed ? 'task-item--departed' : isDragging ? 'task-item--placeholder' : task.isCompleted || dimmed ? 'opacity-[0.35]' : ''}`}
-      aria-label={task.title}
-      aria-selected={isSelected}
+      aria-labelledby={isEditing ? undefined : labelId}
+      aria-label={isEditing ? task.title : undefined}
+      aria-pressed={isSelected}
       onClick={(e) => {
         if (isEditing) return;
         if ((e.target as HTMLElement).closest(`[${NO_DRAG_ATTR}]`)) return;
@@ -390,7 +392,7 @@ export const TaskItem = memo(function TaskItem({
         </button>
       )}
 
-      <span className="task-item-title-area flex-1 flex flex-wrap items-center min-w-0">
+      <span id={labelId} className="task-item-title-area flex-1 flex flex-wrap items-center min-w-0">
         {isEditing ? (
           <EditableText
             ref={editRef}
@@ -423,7 +425,7 @@ export const TaskItem = memo(function TaskItem({
             )}
 
             {task.recurrenceRule && (
-              <span className="task-item-repeat h-6 flex items-center ml-1.5 shrink-0" aria-label={t('datePicker.repeat')}>
+              <span className="task-item-repeat h-6 flex items-center ml-1.5 shrink-0">
                 <span className="inline-flex items-center gap-1.5 px-1 rounded-xs bg-dot/30 border border-dot/50 text-[11px] leading-4.5 text-ink/65 whitespace-nowrap">
                   <Repeat className="w-3 h-3" aria-hidden="true" />
                   {recurrenceSummary(task.recurrenceRule, locale)}

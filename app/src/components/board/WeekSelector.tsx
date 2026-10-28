@@ -7,9 +7,7 @@ import { useI18n } from '../../i18n/I18nContext';
 
 const WEEK_DAYS = 7;
 const MAX_CALENDAR_WEEKS = 6;
-// `!` because Button's secondary variant sets text-ink in the same layer.
-const MUTED = '!text-ink-light/70';
-const ICON_BUTTON = `w-5 shrink-0 !px-0 ${MUTED}`;
+const ICON_BUTTON = 'w-5 shrink-0 !px-0';
 
 function addDays(date: Date, days: number): Date {
   const next = new Date(date);
@@ -74,7 +72,6 @@ export function WeekSelector({ weekAnchor, today, weekStart, onWeekChange, onTod
       <Button
         variant="secondary"
         size="xs"
-        className={MUTED}
         onClick={onToday ?? (() => onWeekChange(today))}
       >
         {t('page.today')}
@@ -91,14 +88,13 @@ export function WeekSelector({ weekAnchor, today, weekStart, onWeekChange, onTod
       <Button
         size="xs"
         variant="secondary"
-        aria-label={rangeLabel}
         aria-haspopup="dialog"
         aria-expanded={open}
         onClick={toggle}
-        className={`week-selector-trigger !gap-1 ${MUTED} font-semibold uppercase tracking-[0.08em]`}
+        className="week-selector-trigger !gap-1 font-semibold uppercase tracking-[0.08em]"
       >
-        <span className="inline-block w-[3.25em] text-center">{rangeStart}</span>
-        <span className="inline-block w-[2em] text-center normal-case">{rangeJoiner}</span>
+        <span className="inline-block w-[3.25em] text-center">{rangeStart}</span>{' '}
+        <span className="inline-block w-[2em] text-center normal-case">{rangeJoiner}</span>{' '}
         <span className="inline-block w-[6em] text-center">{rangeEnd}</span>
         <ChevronDown className="ml-1" size={12} strokeWidth={1.8} />
       </Button>
@@ -129,7 +125,7 @@ export function WeekSelector({ weekAnchor, today, weekStart, onWeekChange, onTod
             >
               <ChevronLeft size={14} strokeWidth={1.8} />
             </Button>
-            <span className="text-sm font-medium capitalize text-ink-light/70">{monthLabel}</span>
+            <span className="text-sm font-medium capitalize text-ink">{monthLabel}</span>
             <Button
               variant="secondary"
               size="xs"
@@ -142,7 +138,7 @@ export function WeekSelector({ weekAnchor, today, weekStart, onWeekChange, onTod
           </div>
           <div className="grid grid-cols-7 text-center">
             {weekdayInitials(weekStart, locale).map((initial, index) => (
-              <span key={index} className="h-6 text-[11px] leading-6 tracking-[0.08em] text-ink-light">{initial}</span>
+              <span key={index} className="h-6 text-[11px] leading-6 tracking-[0.08em] text-ink">{initial}</span>
             ))}
             {cells.map((date) => {
               const iso = fmtISO(date);
@@ -156,9 +152,9 @@ export function WeekSelector({ weekAnchor, today, weekStart, onWeekChange, onTod
                   aria-current={iso === todayKey ? 'date' : undefined}
                   data-in-week={inWeek ? 'true' : undefined}
                   onClick={() => pick(date)}
-                  className={`h-6 text-[13px] leading-6 transition-colors duration-[var(--motion-fast)] hover:bg-dot/35 ${
+                  className={`h-6 text-[13px] leading-6 text-ink transition-colors duration-[var(--motion-fast)] hover:bg-dot/35 ${
                     inWeek ? 'bg-dot/35' : ''
-                  } ${iso === todayKey ? 'font-semibold text-accent' : 'text-ink-light'}`}
+                  } ${iso === todayKey ? 'font-semibold' : ''}`}
                 >
                   {date.getDate()}
                 </button>

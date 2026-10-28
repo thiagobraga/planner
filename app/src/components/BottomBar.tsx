@@ -2,6 +2,7 @@ import { NavLink } from 'react-router';
 import { MoreVertical } from 'lucide-react';
 import { NAV_ITEMS } from './Sidebar';
 import { useI18n } from '../i18n/I18nContext';
+import './BottomBar.css';
 
 interface BottomBarProps {
   isMenuOpen: boolean;
@@ -28,7 +29,6 @@ export function BottomBar({ isMenuOpen, onMenuToggle, onNavigate }: BottomBarPro
       <button
         type="button"
         onClick={onMenuToggle}
-        aria-label={t('nav.open')}
         aria-expanded={isMenuOpen}
         className={`bottom-bar-item${isMenuOpen ? ' bottom-bar-item--active' : ''}`}
       >
