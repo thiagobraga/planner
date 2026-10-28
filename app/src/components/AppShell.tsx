@@ -1,4 +1,5 @@
 import { useState, useEffect, useLayoutEffect, useCallback, useRef } from 'react';
+import { useCheckboxStore } from '../stores/checkboxStore';
 import { Outlet, useNavigate, useLocation } from 'react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Sidebar } from './Sidebar';
@@ -60,6 +61,10 @@ export function AppShell() {
   const [agentNotice, setAgentNotice] = useState<string | null>(null);
   const clearAgentNotice = useCallback(() => setAgentNotice(null), []);
   const agentNoticesOn = preferences?.agentChangeNotices ?? false;
+  const showCheckboxes = preferences?.showCheckboxes ?? false;
+  useEffect(() => {
+    useCheckboxStore.setState({ enabled: showCheckboxes });
+  }, [showCheckboxes]);
 
   useSync(useCallback((event) => {
     if (event.actor) {
@@ -99,6 +104,14 @@ export function AppShell() {
       ensureFontLoaded(preferences.font);
     }
   }, [preferences?.font]);
+
+  // On <body>, not the shell: menus, selects and pickers render in portals
+  // outside the shell and would otherwise fall back to the default font.
+  const fontClass = FONT_CLASSES[preferences?.font ?? 'lora'];
+  useLayoutEffect(() => {
+    document.body.classList.add(fontClass);
+    return () => document.body.classList.remove(fontClass);
+  }, [fontClass]);
 
   useEffect(() => {
     if (preferences?.locale) {
@@ -230,7 +243,7 @@ export function AppShell() {
 
   return (
     <div
-      className={`app-shell flex h-screen bg-(--planner-page-bg) overflow-hidden ${FONT_CLASSES[preferences?.font ?? 'lora']}${preferences?.smallCaps ? ' small-caps' : ''}${useBottomBar ? ' app-shell--bottom-bar' : ''}`}
+      className={`app-shell flex h-screen bg-(--planner-page-bg) overflow-hidden ${preferences?.smallCaps ? ' small-caps' : ''}${useBottomBar ? ' app-shell--bottom-bar' : ''}`}
     >
       {/* Mobile menu button - only shown below collapsed breakpoint (≥640px uses collapsed sidebar) */}
       {!sidebarCollapsed && (

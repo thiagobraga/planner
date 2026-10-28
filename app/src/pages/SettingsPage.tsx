@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useId, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react';
+import { PageHeader } from '../components/PageHeader';
 import { createPortal } from 'react-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router';
@@ -363,6 +364,7 @@ export function SettingsPage() {
           | 'weekStart'
           | 'hideCompletedTasks'
           | 'showNotes'
+          | 'showCheckboxes'
           | 'agentChangeNotices'
           | 'dateFormat'
         >
@@ -398,6 +400,7 @@ export function SettingsPage() {
   const weekStart = preferences?.weekStart ?? 'sunday';
   const hideCompletedTasks = preferences?.hideCompletedTasks ?? false;
   const showNotes = preferences?.showNotes ?? true;
+  const showCheckboxes = preferences?.showCheckboxes ?? false;
   const agentChangeNotices = preferences?.agentChangeNotices ?? false;
   const dateFormat = preferences?.dateFormat ?? 'MMM DD ddd';
   const savedTimeZone = preferences?.timeZone ?? detectedTimeZone;
@@ -527,6 +530,10 @@ export function SettingsPage() {
     updateMutation.mutate({ showNotes: nextShowNotes });
   };
 
+  const handleShowCheckboxesChange = (nextShowCheckboxes: boolean) => {
+    updateMutation.mutate({ showCheckboxes: nextShowCheckboxes });
+  };
+
   const handleSectionChange = (nextSection: SettingsSection) => {
     navigate(`/settings/${nextSection}`);
   };
@@ -534,7 +541,7 @@ export function SettingsPage() {
   if (isLoading) {
     return (
       <div className="max-w-5xl pb-24 text-ink">
-        <h1 className="text-[18px] leading-6 font-semibold text-ink m-0">{t('settings.title')}</h1>
+        <PageHeader title={t('settings.title')} />
         <p className="text-sm leading-6 text-ink opacity-75 m-0">{t('settings.loading')}</p>
       </div>
     );
@@ -542,10 +549,10 @@ export function SettingsPage() {
 
   return (
     <div className="flex min-h-[calc(100dvh-48px)] max-w-5xl flex-col text-ink">
-      <header className="page-header-copy sticky-page-header max-w-162">
-        <div className="page-header-copy-text">
+      <header className="page-header-copy sticky-page-header max-w-162 shrink-0">
+        <div className="page-header-copy-text w-full !pr-0">
           <h1 className="m-0 h-6 p-0 text-[18px] leading-6 font-semibold text-ink">{t('settings.title')}</h1>
-          <p className="page-header-subtitle m-0 h-6 p-0 text-[13px] leading-6 text-ink-light opacity-60">
+          <p className="page-header-subtitle m-0 min-h-6 p-0 !pr-0 text-[13px] leading-6 text-ink-light opacity-60 !whitespace-normal !overflow-visible">
             {t('settings.subtitle')}
           </p>
         </div>
@@ -852,13 +859,22 @@ export function SettingsPage() {
                           );
                         })}
                       </div>
-                      <Toggle
-                        checked={showDots}
-                        onChange={handleDotsChange}
-                        disabled={disabled}
-                        label={<span className="text-sm leading-6 text-ink">{t('settings.showDots')}</span>}
-                        className="[&_button]:!p-0"
-                      />
+                      <div className="flex flex-col items-start gap-3">
+                        <Toggle
+                          checked={showDots}
+                          onChange={handleDotsChange}
+                          disabled={disabled}
+                          label={<span className="text-sm leading-6 text-ink">{t('settings.showDots')}</span>}
+                          className="[&_button]:!p-0"
+                        />
+                        <Toggle
+                          checked={showCheckboxes}
+                          onChange={handleShowCheckboxesChange}
+                          disabled={disabled}
+                          label={<span className="text-sm leading-6 text-ink">{t('settings.showCheckboxes')}</span>}
+                          className="[&_button]:!p-0"
+                        />
+                      </div>
                     </section>
                   </div>
                 </SettingsCard>

@@ -23,7 +23,7 @@ test('Kanban columns are flat and add a task in the selected status', async ({ a
     await expect(column.locator('.board-column-header')).toHaveCSS('border-bottom-width', '0px');
     await expect(column.locator('.board-column-count')).toHaveCount(0);
     await expect(page.getByText('Drop work here', { exact: true })).toHaveCount(0);
-    await column.getByRole('button', { name: 'Add task', exact: true }).click();
+    await column.getByRole('button', { name: 'New task…', exact: true }).click();
     await column.getByRole('textbox', { name: 'Task title' }).fill(title);
     await mkdir('dist/screenshots', { recursive: true });
     await page.screenshot({ path: 'dist/screenshots/collection-kanban-add-task.png' });

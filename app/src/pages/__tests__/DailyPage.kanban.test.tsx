@@ -140,7 +140,7 @@ describe('DailyPage week kanban view', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Kanban cards' }));
     await screen.findByTestId('daily-week-board');
     const column = within(container.querySelector(`[data-column-id="day:${todayKey}"]`)! as HTMLElement);
-    fireEvent.click(column.getByRole('button', { name: 'Add task' }));
+    fireEvent.click(column.getByRole('button', { name: 'New task…' }));
     const input = column.getByRole('textbox', { name: 'Task title' });
     expect(input).toHaveFocus();
     fireEvent.change(input, { target: { value: 'Plan the day' } });
@@ -158,11 +158,11 @@ describe('DailyPage week kanban view', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Kanban cards' }));
     await screen.findByTestId('daily-week-board');
     const column = within(container.querySelector('[data-column-id="migrate"]')! as HTMLElement);
-    fireEvent.click(column.getByRole('button', { name: 'Add task' }));
+    fireEvent.click(column.getByRole('button', { name: 'New task…' }));
     fireEvent.keyDown(column.getByRole('textbox'), { key: 'Escape' });
     expect(column.queryByRole('textbox')).not.toBeInTheDocument();
     expect(apiCreateTask).not.toHaveBeenCalled();
-    fireEvent.click(column.getByRole('button', { name: 'Add task' }));
+    fireEvent.click(column.getByRole('button', { name: 'New task…' }));
     const input = column.getByRole('textbox');
     fireEvent.change(input, { target: { value: 'Undated task' } });
     fireEvent.submit(input.closest('form')!);

@@ -37,6 +37,7 @@ const prefsRow = {
   small_caps: false,
   hide_completed_tasks: false,
   show_notes: true,
+  show_checkboxes: false,
   locale: "en",
   date_format: "MMM DD ddd",
   collapsed_collection_ids: [],
@@ -78,6 +79,7 @@ describe("validatePreferences", () => {
   it("rejects non-boolean behavior toggles", () => {
     expect(() => validatePreferences({ hideCompletedTasks: "yes" as unknown as boolean })).toThrow(AppError);
     expect(() => validatePreferences({ showNotes: "yes" as unknown as boolean })).toThrow(AppError);
+    expect(() => validatePreferences({ showCheckboxes: 1 as unknown as boolean })).toThrow(AppError);
     expect(() => validatePreferences({ agentChangeNotices: "yes" as unknown as boolean })).toThrow(AppError);
   });
 
@@ -150,6 +152,7 @@ describe("getPreferences", () => {
     expect(p.notificationsEnabled).toBe(true);
     expect(p.hideCompletedTasks).toBe(false);
     expect(p.showNotes).toBe(true);
+    expect(p.showCheckboxes).toBe(false);
     expect(p.locale).toBe("en");
     expect(p.collapsedCollectionIds).toEqual([]);
     expect(p.boardViewModes).toEqual({});

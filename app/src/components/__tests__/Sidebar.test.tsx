@@ -106,10 +106,15 @@ describe('Sidebar', () => {
     expect(container.querySelector('.sidebar-collapsed')).toBeTruthy();
   });
 
-  it('collapsed mode hides text labels', () => {
-    render(<Sidebar collapsed />);
-    expect(screen.queryByText('Daily')).not.toBeInTheDocument();
-    expect(screen.queryByText('Inbox')).not.toBeInTheDocument();
+  it('keeps navigation order when toggling collapsed mode', () => {
+    authState.user = { role: 'admin' };
+    const { container, rerender } = render(<Sidebar />);
+    const destinations = () => Array.from(container.querySelectorAll('a[href]'), (link) => link.getAttribute('href'));
+    const expanded = destinations();
+    rerender(<Sidebar collapsed />);
+    expect(destinations()).toEqual(expanded);
+    rerender(<Sidebar />);
+    expect(destinations()).toEqual(expanded);
   });
 
   it('renders collapsed nav items with title attributes', () => {
@@ -211,7 +216,7 @@ describe('Sidebar', () => {
     expect(logo).toHaveAttribute('srcset', '/images/logo/logo-56x76.png 2x');
   });
 
-  it('shows the 16x16 logo with a retina source in collapsed mode', () => {
+  it('uses the small logo and retina source in collapsed mode', () => {
     const { container } = render(<Sidebar collapsed />);
     const logo = container.querySelector('img[src^="/images/logo/"]');
     expect(logo).toHaveAttribute('src', '/images/logo/logo-16x16.png');

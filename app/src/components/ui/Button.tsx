@@ -12,7 +12,7 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 // Base styles shared by all sizes — height, padding, and radius are size-specific below.
 const base =
-  'inline-flex items-center justify-center gap-2 text-sm font-journal leading-none whitespace-nowrap select-none transition-[opacity,background-color,color] duration-[var(--motion-fast)] disabled:cursor-not-allowed';
+  'inline-flex items-center justify-center gap-2 text-sm leading-none whitespace-nowrap select-none transition-[opacity,background-color,color] duration-[var(--motion-fast)] disabled:cursor-not-allowed';
 
 // lg → 40px / 8px radius  (original brand spec)
 // md → 32px / 6px radius

@@ -35,7 +35,7 @@ for (const view of ['list', 'kanban'] as const) {
       const editor = column.getByRole('textbox', { name: 'New task…', exact: true });
       await expect(editor).toBeVisible();
       await expect(editor).toHaveAttribute('contenteditable', 'plaintext-only');
-      await expect(column.getByRole('button', { name: 'Add task', exact: true })).toHaveCount(0);
+      await expect(column.getByRole('button', { name: 'New task…', exact: true })).toHaveCount(0);
       await expect(column.getByRole('button', { name: /^(Save|Cancel)$/ })).toHaveCount(0);
 
       for (const title of titles.slice(0, 2)) {
@@ -130,7 +130,7 @@ test('Collection Kanban lists creates consecutive tasks inside the selected sect
     const editor = column.getByRole('textbox', { name: 'New task…', exact: true });
     await expect(editor).toBeVisible();
     await expect(editor).toHaveAttribute('contenteditable', 'plaintext-only');
-    await expect(column.getByRole('button', { name: 'Add task', exact: true })).toHaveCount(0);
+    await expect(column.getByRole('button', { name: 'New task…', exact: true })).toHaveCount(0);
     await expect(column.getByRole('button', { name: /^(Save|Cancel)$/ })).toHaveCount(0);
     const titles = [uniqueName('Section first'), uniqueName('Section second')];
 

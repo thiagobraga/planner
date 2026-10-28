@@ -13,6 +13,7 @@
   --color-priority-2: #e39133;
   --color-priority-3: #4d8fd6;
   --color-moss: #8ca46a;
+  --color-today: #7a5a3a;
   --color-syntax-operator: #8b7355;
   --color-syntax-string: #2e7d32;
   --color-syntax-error: #b71c1c;
@@ -84,6 +85,7 @@
   --color-border: #463b31;
   --color-accent: #d8705f;
   --color-accent-light: #e88a79;
+  --color-today: #c9a678;
   --color-sidebar-bg: #292219;
   --color-settings-aside: #1f1914;
   --color-on-aside: #ede3d3;

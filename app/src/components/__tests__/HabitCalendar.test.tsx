@@ -142,7 +142,7 @@ describe('HabitCalendar: inline rename', () => {
     const onCommitEdit = vi.fn();
     renderCalendar({ editing: { kind: 'habit', id: 'water' }, onCommitEdit });
 
-    const input = screen.getByPlaceholderText('Habit name');
+    const input = screen.getByPlaceholderText('New habit…');
     fireEvent.change(input, { target: { value: 'Hydrate' } });
     fireEvent.keyDown(input, { key: 'Enter' });
 
@@ -154,7 +154,7 @@ describe('HabitCalendar: inline rename', () => {
     const onCancelEdit = vi.fn();
     renderCalendar({ editing: { kind: 'habit', id: 'water' }, onCommitEdit, onCancelEdit });
 
-    fireEvent.keyDown(screen.getByPlaceholderText('Habit name'), { key: 'Escape' });
+    fireEvent.keyDown(screen.getByPlaceholderText('New habit…'), { key: 'Escape' });
 
     expect(onCommitEdit).toHaveBeenCalledWith({ kind: 'habit', id: 'water' }, 'Drink water');
     expect(onCancelEdit).not.toHaveBeenCalled();

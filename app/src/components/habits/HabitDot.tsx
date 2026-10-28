@@ -1,4 +1,6 @@
 import type { DayState } from '../../utils/habitTree';
+import { useCheckboxStore } from '../../stores/checkboxStore';
+import { CheckboxMark } from '../ui/Checkbox';
 
 export interface HabitDotProps {
   state: DayState;
@@ -14,6 +16,15 @@ export interface HabitDotProps {
 //   half  - bottom half filled, for a parent whose sub-habits are partly done
 //   full  - solid
 export function HabitDot({ state, size = 8, interactive = false }: HabitDotProps) {
+  const showCheckboxes = useCheckboxStore((s) => s.enabled);
+  if (showCheckboxes) {
+    return (
+      <span aria-hidden="true" className="habit-dot habit-dot-checkbox absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex">
+        <CheckboxMark checked={state === 'full'} mixed={state === 'half'} />
+      </span>
+    );
+  }
+
   const base = 'habit-dot absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full';
   const hover = interactive ? ' transition-colors group-hover:border-transparent group-hover:bg-dot/50' : '';
 

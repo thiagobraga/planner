@@ -340,7 +340,7 @@ export function ColorPickerPopover({ position, value, onCommit, onClose }: Color
         role="dialog"
         aria-label={t('colorPicker.title')}
         onKeyDown={handlePanelKeyDown}
-        className="color-picker fixed z-50 pointer-events-auto flex flex-col gap-3 rounded-md border border-border p-3 font-journal shadow-medium"
+        className="color-picker fixed z-50 pointer-events-auto flex flex-col gap-3 rounded-md border border-border p-3 shadow-medium"
         style={{ top: coords.top, left: coords.left, width: PANEL_WIDTH, outline: 'none', backgroundColor: 'var(--planner-overlay-bg)' }}
       >
         <div

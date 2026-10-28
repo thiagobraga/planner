@@ -1,4 +1,5 @@
 import { useRef, useState } from 'react';
+import { PlaceholderBullet } from './ui/PlaceholderBullet';
 import { EditableText } from './ui/EditableText';
 import { useI18n } from '../i18n/I18nContext';
 import { blurOnEscape } from '../utils/editableText';
@@ -30,7 +31,7 @@ export function TaskAddInput({ onCreate }: TaskAddInputProps) {
   return (
     <div>
       <div className="flex items-start min-h-6">
-        <span aria-hidden="true" className="w-6 text-center text-[10px] leading-6 text-ink opacity-25 select-none shrink-0">•</span>
+        <PlaceholderBullet />
         <EditableText
           value={draft}
           onValueChange={updateDraft}

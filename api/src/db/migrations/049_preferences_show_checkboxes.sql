@@ -1,0 +1,2 @@
+ALTER TABLE preferences
+  ADD COLUMN IF NOT EXISTS show_checkboxes BOOLEAN NOT NULL DEFAULT false;

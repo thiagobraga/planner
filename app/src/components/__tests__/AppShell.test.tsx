@@ -165,9 +165,10 @@ describe('AppShell', () => {
     mockUseQuery.mockReturnValue({
       data: { ...defaultPreferences, font: 'hubballi' },
     });
-    const { container } = render(<AppShell />);
-    const shell = container.querySelector('.app-shell');
-    expect(shell?.className).toContain('font-hubballi');
+    const { unmount } = render(<AppShell />);
+    expect(document.body).toHaveClass('font-hubballi');
+    unmount();
+    expect(document.body).not.toHaveClass('font-hubballi');
   });
 
   it('renders Sidebar', () => {

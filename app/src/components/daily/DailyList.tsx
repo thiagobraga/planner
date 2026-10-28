@@ -1,21 +1,13 @@
 import { TaskList } from '../TaskList';
+import { PlaceholderBullet } from '../ui/PlaceholderBullet';
 import { EditableText } from '../ui/EditableText';
 import { blurOnEscape } from '../../utils/editableText';
 import { useI18n } from '../../i18n/I18nContext';
-import { addDaysISO } from '../../utils/dailySections';
 import type { DailyListProps, DaySection } from '../../types/daily';
 
 const HEADING_STYLE = { lineHeight: 'var(--task-line-height, 24px)' };
 const HEADING_CLASS = 'text-[11px] tracking-[0.08em] uppercase text-ink-light h-6 m-0 font-semibold';
 const ADD_INPUT_CLASS = 'task-input task-add-input flex-1 text-[14px] leading-6 text-ink bg-transparent border-none outline-none p-0';
-
-function Bullet() {
-  return (
-    <span className="w-6 text-center text-[10px] leading-6 text-ink opacity-25 select-none shrink-0">
-      •
-    </span>
-  );
-}
 
 export function DailyList({
   pastSections,
@@ -36,7 +28,6 @@ export function DailyList({
   taskListProps,
 }: DailyListProps) {
   const { t } = useI18n();
-  const tomorrowKey = addDaysISO(todayKey, 1);
 
   const todaySection = currentSections.filter((section) => section.key === todayKey);
   const pastKeys = new Set(pastSections.map((section) => section.key));
@@ -57,7 +48,7 @@ export function DailyList({
           >
             <div style={HEADING_STYLE} className={HEADING_CLASS}>
               {section.label}
-              {isToday && <> · <span className="text-accent-light">{t('page.today')}</span></>}
+              {isToday && <> · <span className="text-today">{t('page.today')}</span></>}
             </div>
 
             <TaskList
@@ -72,7 +63,7 @@ export function DailyList({
 
             {isToday && (
               <div className="flex items-start min-h-6">
-                <Bullet />
+                <PlaceholderBullet />
                 <EditableText
                   ref={inputRef}
                   value={input}
@@ -95,7 +86,6 @@ export function DailyList({
     <div key={`${isPast ? 'past' : 'upcoming'}-${section.key}`} data-day-date={section.key} className="mt-6">
       <div style={HEADING_STYLE} className={HEADING_CLASS}>
         {section.label}
-        {section.key === tomorrowKey && <> · <span className="text-moss">TOMORROW</span></>}
       </div>
 
       <TaskList
@@ -110,7 +100,7 @@ export function DailyList({
 
       {!isPreview && (
         <div className="flex items-start min-h-6">
-          <Bullet />
+          <PlaceholderBullet />
           <EditableText
             value={futureInputs[section.key] ?? ''}
             onValueChange={(text) => onFutureInputChange(section.key, text)}

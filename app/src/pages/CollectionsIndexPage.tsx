@@ -1,4 +1,5 @@
 import { useMemo, useState, useRef } from 'react';
+import { PageHeader } from '../components/PageHeader';
 import { useNavigate } from 'react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Plus, MoreHorizontal } from 'lucide-react';
@@ -287,22 +288,23 @@ export function CollectionsIndexPage() {
 
   return (
     <div className="collections-index-page w-full max-w-2xl">
-      <header className="page-header-copy">
-        <div className="flex items-center justify-between">
-          <h1 className="text-lg leading-6 font-semibold text-ink h-6">
-            {t('nav.collections')}
-          </h1>
-          <button
-            type="button"
-            onClick={startAddRoot}
-            className="p-1.5 -mr-1.5 text-ink-light hover:text-ink bg-transparent border-0 cursor-pointer rounded-full hover:bg-(--planner-sidebar-hover-bg) transition-colors"
-            title={t('page.addCollection')}
-            aria-label={t('page.addCollection')}
-          >
-            <Plus size={20} strokeWidth={1.5} />
-          </button>
-        </div>
-      </header>
+      <PageHeader
+        title={t('nav.collections')}
+        className="!max-w-2xl"
+        toolbar={
+          <div className="page-header-toolbar">
+            <button
+              type="button"
+              onClick={startAddRoot}
+              className="p-1.5 -mr-1.5 text-ink-light hover:text-ink bg-transparent border-0 cursor-pointer rounded-full hover:bg-(--planner-sidebar-hover-bg) transition-colors"
+              title={t('page.addCollection')}
+              aria-label={t('page.addCollection')}
+            >
+              <Plus size={20} strokeWidth={1.5} />
+            </button>
+          </div>
+        }
+      />
 
       <div className="h-6" />
 

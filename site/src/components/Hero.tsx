@@ -5,8 +5,6 @@ import { REGISTER_URL } from "../config";
 export function Hero() {
   return (
     <section id="top" className="dots relative overflow-hidden pt-32 pb-20 sm:pt-40">
-      <div className="blob absolute -top-20 -left-20 h-96 w-96 rounded-full bg-accentl/20 blur-3xl" />
-      <div className="blob absolute top-40 -right-32 h-[28rem] w-[28rem] rounded-full bg-moss/20 blur-3xl" style={{ animationDelay: "-6s" }} />
       <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-paper to-transparent" />
       <div className="relative mx-auto max-w-6xl px-5 text-center">
         <R><span className="inline-flex items-center gap-2 rounded-full border border-line bg-paper/70 px-3 py-1 text-xs text-inkl backdrop-blur"><span className="h-1.5 w-1.5 animate-pulse rounded-full bg-moss" /> Daily planning, habits & real-time sync</span></R>

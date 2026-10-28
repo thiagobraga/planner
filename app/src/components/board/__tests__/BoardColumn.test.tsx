@@ -14,7 +14,7 @@ describe('BoardColumn', () => {
     );
     const input = screen.getByRole('textbox', { name: 'New task…' });
     expect(input).toHaveAttribute('contenteditable', 'plaintext-only');
-    expect(screen.queryByRole('button', { name: 'Add task' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'New task…' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Save' })).not.toBeInTheDocument();
     input.focus();
     input.textContent = 'First task';
@@ -76,7 +76,7 @@ describe('BoardColumn', () => {
     expect(container.querySelector('[data-column-id="status:todo"]')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Todo' })).toBeInTheDocument();
     expect(screen.queryByText('Drop work here')).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'Add task' }));
+    fireEvent.click(screen.getByRole('button', { name: 'New task…' }));
     fireEvent.change(screen.getByRole('textbox', { name: 'Task title' }), { target: { value: 'Plan review' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
     await waitFor(() => expect(onCreate).toHaveBeenCalledWith('Plan review', column));
@@ -90,7 +90,7 @@ describe('BoardColumn', () => {
       </PlannerDragProvider>,
     );
 
-    fireEvent.click(screen.getByRole('button', { name: 'Add task' }));
+    fireEvent.click(screen.getByRole('button', { name: 'New task…' }));
     expect(screen.getByRole('textbox', { name: 'Task title' })).toHaveAttribute('autocomplete', 'off');
   });
 

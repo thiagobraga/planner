@@ -73,6 +73,7 @@ export interface Preferences {
   smallCaps: boolean;
   hideCompletedTasks: boolean;
   showNotes: boolean;
+  showCheckboxes?: boolean;
   agentChangeNotices?: boolean;
   collapsedCollectionIds: string[];
   boardViewModes: BoardViewModes;

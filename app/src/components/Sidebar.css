@@ -1,0 +1,41 @@
+.sidebar-drawer.sidebar-collapsed {
+  width: 64px;
+  scrollbar-gutter: auto;
+  transform: none;
+  position: relative;
+  z-index: auto;
+}
+
+.sidebar-collapsed .sidebar-header {
+  height: 48px;
+  flex-shrink: 0;
+}
+
+.sidebar-collapsed .sidebar-brand-copy,
+.sidebar-collapsed nav a > span:last-child {
+  display: none;
+}
+
+.sidebar-collapsed nav a {
+  flex-shrink: 0;
+}
+
+.sidebar-collapsed .sidebar-version-row {
+  padding-inline: 0;
+  justify-content: center;
+}
+
+.sidebar-collapsed .sidebar-version {
+  padding-inline: 3px;
+  font-size: 9px;
+}
+
+.sidebar-brand-copy em {
+  color: color-mix(in srgb, var(--color-accent) 70%, var(--color-ink));
+}
+
+.sidebar-brand-copy p {
+  color: var(--color-ink);
+  opacity: 0.8;
+}
+

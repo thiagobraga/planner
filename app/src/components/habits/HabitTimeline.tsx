@@ -514,7 +514,7 @@ export function HabitTimeline({
                   <span className="absolute left-[-18px] flex h-6 w-4 items-center justify-center">
                     <Plus size={14} strokeWidth={2} />
                   </span>
-                  <span className="min-w-0 flex-1 truncate text-left text-sm leading-6">{t('page.newHabit')}</span>
+                  <span className="min-w-0 flex-1 truncate text-left text-sm leading-6">{t('common.addHabit')}</span>
                 </button>
               );
             }
@@ -586,7 +586,7 @@ export function HabitTimeline({
                   <InlineNameInput
                     commitOnEscape
                     defaultValue={node.name}
-                    placeholder={t('page.habitName')}
+                    placeholder={t('common.addHabit')}
                     onCommit={(name) => onCommitEdit(target, name)}
                     onCancel={() => onCancelEdit(target)}
                   />
