@@ -54,7 +54,7 @@ export const portugueseBrazilCatalog = {
   'auth.somethingWrong': 'Algo deu errado',
   'auth.weakPassword': 'Use pelo menos 15 caracteres',
   'nav.collections': 'Coleções',
-  'nav.collapseSidebar': 'Recolher barra lateral',
+  'nav.collapseSidebar': 'Ocultar barra',
   'nav.daily': 'Diário',
   'nav.expandSidebar': 'Expandir barra lateral',
   'nav.habits': 'Hábitos',
