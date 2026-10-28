@@ -1,6 +1,6 @@
 import { useMemo, useRef, useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueries, useQueryClient } from '@tanstack/react-query';
 import { useSync } from '../hooks/useSync';
 import { useReorganize, type Section as ReorganizeSection } from '../hooks/useReorganize';
 import { isEchoedMove, isStructuralMove } from '../utils/moveEcho';
@@ -24,7 +24,7 @@ import { useTaskVisibilityPreferences } from '../hooks/useTaskVisibilityPreferen
 import { useMidnightTimer } from '../hooks/useMidnightTimer';
 import { useDailyTasks } from '../hooks/useDailyTasks';
 import { useI18n } from '../i18n/I18nContext';
-import { fetchCollections, fetchPreferences, apiToggleTask, apiCreateTask, apiUpdateTask, apiDeleteTask } from '../api/client';
+import { fetchCollections, fetchSections, fetchPreferences, apiToggleTask, apiCreateTask, apiUpdateTask, apiDeleteTask } from '../api/client';
 import type { ApiTask } from '../types/api';
 import { ContextMenu, type ContextMenuItem } from '../components/ui/ContextMenu';
 import { flattenCollections } from '../components/CollectionTreeNav';
@@ -251,13 +251,22 @@ export function DailyPage({ view }: { view: BoardViewMode }) {
 
   // Daily spans collections, so each row states which one it belongs to.
   const { data: collections = [] } = useQuery({ queryKey: ['collections'], queryFn: fetchCollections });
+  const sectionCollectionIds = useMemo(
+    () => [...new Set(allTasks.filter((t) => t.sectionId && t.collectionId).map((t) => t.collectionId as string))],
+    [allTasks],
+  );
+  const sectionNames = useQueries({
+    queries: sectionCollectionIds.map((id) => ({ queryKey: ['sections', id], queryFn: () => fetchSections(id) })),
+    combine: (results) => new Map(results.flatMap((r) => r.data ?? []).map((s) => [s.id, s.name])),
+  });
   const renderBadge = useCallback(
     (task: Task) => {
       const collection = collections.find((c) => c.id === task.collectionId);
       if (!collection || collection.isInbox) return null;
-      return <CollectionChip name={collection.name} color={collection.color} />;
+      const section = task.sectionId ? sectionNames.get(task.sectionId) : undefined;
+      return <CollectionChip name={collection.name} color={collection.color} section={section} />;
     },
-    [collections],
+    [collections, sectionNames],
   );
 
   const handleToggle = useCallback((id: string) => {
