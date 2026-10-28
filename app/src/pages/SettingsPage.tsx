@@ -859,20 +859,22 @@ export function SettingsPage() {
                           );
                         })}
                       </div>
-                      <Toggle
-                        checked={showDots}
-                        onChange={handleDotsChange}
-                        disabled={disabled}
-                        label={<span className="text-sm leading-6 text-ink">{t('settings.showDots')}</span>}
-                        className="[&_button]:!p-0"
-                      />
-                      <Toggle
-                        checked={showCheckboxes}
-                        onChange={handleShowCheckboxesChange}
-                        disabled={disabled}
-                        label={<span className="text-sm leading-6 text-ink">{t('settings.showCheckboxes')}</span>}
-                        className="[&_button]:!p-0"
-                      />
+                      <div className="flex flex-col items-start gap-3">
+                        <Toggle
+                          checked={showDots}
+                          onChange={handleDotsChange}
+                          disabled={disabled}
+                          label={<span className="text-sm leading-6 text-ink">{t('settings.showDots')}</span>}
+                          className="[&_button]:!p-0"
+                        />
+                        <Toggle
+                          checked={showCheckboxes}
+                          onChange={handleShowCheckboxesChange}
+                          disabled={disabled}
+                          label={<span className="text-sm leading-6 text-ink">{t('settings.showCheckboxes')}</span>}
+                          className="[&_button]:!p-0"
+                        />
+                      </div>
                     </section>
                   </div>
                 </SettingsCard>
