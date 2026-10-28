@@ -213,7 +213,7 @@ export function Sidebar({
         <div className='mt-auto flex flex-col gap-0.5 w-full items-center pb-6'>
           <span
             title={t('nav.version', { version: APP_VERSION })}
-            className='mb-1 px-1 py-0.5 rounded-xs bg-ink-light text-cream text-[10px] leading-none select-none text-center'
+            className='mb-1 px-1 py-0.5 rounded-xs bg-ink-light/80 text-cream text-[10px] leading-none select-none text-center'
           >
             v{APP_VERSION}
           </span>
@@ -366,7 +366,7 @@ export function Sidebar({
           <div className='h-6 px-3 flex items-center'>
             <span
               title={t('nav.version', { version: APP_VERSION })}
-              className='px-1.5 py-0.5 rounded-xs bg-ink-light text-cream text-[11px] leading-none select-none'
+              className='px-1.5 py-0.5 rounded-xs bg-ink-light/80 text-cream text-[11px] leading-none select-none'
             >
               v{APP_VERSION}
             </span>
