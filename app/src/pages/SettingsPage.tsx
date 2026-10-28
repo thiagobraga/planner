@@ -549,10 +549,10 @@ export function SettingsPage() {
 
   return (
     <div className="flex min-h-[calc(100dvh-48px)] max-w-5xl flex-col text-ink">
-      <header className="page-header-copy sticky-page-header max-w-162">
-        <div className="page-header-copy-text">
+      <header className="page-header-copy sticky-page-header max-w-162 shrink-0">
+        <div className="page-header-copy-text w-full !pr-0">
           <h1 className="m-0 h-6 p-0 text-[18px] leading-6 font-semibold text-ink">{t('settings.title')}</h1>
-          <p className="page-header-subtitle m-0 h-6 p-0 text-[13px] leading-6 text-ink-light opacity-60">
+          <p className="page-header-subtitle m-0 min-h-6 p-0 !pr-0 text-[13px] leading-6 text-ink-light opacity-60 !whitespace-normal !overflow-visible">
             {t('settings.subtitle')}
           </p>
         </div>
