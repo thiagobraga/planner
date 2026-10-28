@@ -2,7 +2,6 @@ import { TaskList } from '../TaskList';
 import { EditableText } from '../ui/EditableText';
 import { blurOnEscape } from '../../utils/editableText';
 import { useI18n } from '../../i18n/I18nContext';
-import { addDaysISO } from '../../utils/dailySections';
 import type { DailyListProps, DaySection } from '../../types/daily';
 
 const HEADING_STYLE = { lineHeight: 'var(--task-line-height, 24px)' };
@@ -36,7 +35,6 @@ export function DailyList({
   taskListProps,
 }: DailyListProps) {
   const { t } = useI18n();
-  const tomorrowKey = addDaysISO(todayKey, 1);
 
   const todaySection = currentSections.filter((section) => section.key === todayKey);
   const pastKeys = new Set(pastSections.map((section) => section.key));
@@ -57,7 +55,7 @@ export function DailyList({
           >
             <div style={HEADING_STYLE} className={HEADING_CLASS}>
               {section.label}
-              {isToday && <> · <span className="text-accent-light">{t('page.today')}</span></>}
+              {isToday && <> · <span className="text-today">{t('page.today')}</span></>}
             </div>
 
             <TaskList
@@ -95,7 +93,6 @@ export function DailyList({
     <div key={`${isPast ? 'past' : 'upcoming'}-${section.key}`} data-day-date={section.key} className="mt-6">
       <div style={HEADING_STYLE} className={HEADING_CLASS}>
         {section.label}
-        {section.key === tomorrowKey && <> · <span className="text-moss">TOMORROW</span></>}
       </div>
 
       <TaskList
