@@ -73,7 +73,7 @@ export function TaskDatePickerPanel({ value, onSave, onClose }: TaskDatePickerPa
 
   return (
     <div
-      className="task-date-picker w-[320px] max-w-[calc(100vw-32px)] overflow-hidden font-journal text-ink"
+      className="task-date-picker w-[320px] max-w-[calc(100vw-32px)] overflow-hidden text-ink"
       onKeyDown={(e) => {
         if (e.key === 'Escape' && screen !== 'date') {
           e.stopPropagation();
