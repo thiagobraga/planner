@@ -7,6 +7,9 @@ import { useI18n } from '../../i18n/I18nContext';
 
 const WEEK_DAYS = 7;
 const MAX_CALENDAR_WEEKS = 6;
+// `!` because Button's secondary variant sets text-ink in the same layer.
+const MUTED = '!text-ink-light/70';
+const ICON_BUTTON = `w-5 shrink-0 !px-0 ${MUTED}`;
 
 function addDays(date: Date, days: number): Date {
   const next = new Date(date);
@@ -71,7 +74,7 @@ export function WeekSelector({ weekAnchor, today, weekStart, onWeekChange, onTod
       <Button
         variant="secondary"
         size="xs"
-        className="!text-ink-light"
+        className={MUTED}
         onClick={onToday ?? (() => onWeekChange(today))}
       >
         {t('page.today')}
@@ -79,7 +82,7 @@ export function WeekSelector({ weekAnchor, today, weekStart, onWeekChange, onTod
       <Button
         variant="secondary"
         size="xs"
-        className="w-5 shrink-0 !px-0 !text-ink-light"
+        className={ICON_BUTTON}
         aria-label={t('page.previousWeek')}
         onClick={() => onWeekChange(shiftWeek(weekAnchor, -1))}
       >
@@ -92,7 +95,7 @@ export function WeekSelector({ weekAnchor, today, weekStart, onWeekChange, onTod
         aria-haspopup="dialog"
         aria-expanded={open}
         onClick={toggle}
-        className="week-selector-trigger !gap-1 !text-ink-light !text-[11px] font-semibold uppercase tracking-[0.08em]"
+        className={`week-selector-trigger !gap-1 ${MUTED} font-semibold uppercase tracking-[0.08em]`}
       >
         <span className="inline-block w-[3.25em] text-center">{rangeStart}</span>
         <span className="inline-block w-[2em] text-center normal-case">{rangeJoiner}</span>
@@ -102,7 +105,7 @@ export function WeekSelector({ weekAnchor, today, weekStart, onWeekChange, onTod
       <Button
         variant="secondary"
         size="xs"
-        className="w-5 shrink-0 !px-0 !text-ink-light"
+        className={ICON_BUTTON}
         aria-label={t('page.nextWeek')}
         onClick={() => onWeekChange(shiftWeek(weekAnchor, 1))}
       >
@@ -120,17 +123,17 @@ export function WeekSelector({ weekAnchor, today, weekStart, onWeekChange, onTod
             <Button
               variant="secondary"
               size="xs"
-              className="w-5 shrink-0 !px-0 !text-ink-light"
+              className={ICON_BUTTON}
               aria-label={t('page.previousMonth')}
               onClick={() => shiftViewMonth(-1)}
             >
               <ChevronLeft size={14} strokeWidth={1.8} />
             </Button>
-            <span className="text-sm font-medium capitalize text-ink-light">{monthLabel}</span>
+            <span className="text-sm font-medium capitalize text-ink-light/70">{monthLabel}</span>
             <Button
               variant="secondary"
               size="xs"
-              className="w-5 shrink-0 !px-0 !text-ink-light"
+              className={ICON_BUTTON}
               aria-label={t('page.nextMonth')}
               onClick={() => shiftViewMonth(1)}
             >
