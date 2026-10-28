@@ -10,6 +10,7 @@ interface HabitRow {
   parent_id: string | null;
   group_id: string | null;
   order_value: number;
+  created_at: string;
 }
 
 interface HabitGroupRow {
@@ -26,6 +27,7 @@ export interface Habit {
   parentId: string | null;
   groupId: string | null;
   orderValue: number;
+  createdAt: string;
   completions: string[];
 }
 
@@ -43,6 +45,7 @@ function formatHabit(row: HabitRow, completions: string[] = []): Habit {
     parentId: row.parent_id,
     groupId: row.group_id,
     orderValue: row.order_value,
+    createdAt: row.created_at,
     completions,
   };
 }

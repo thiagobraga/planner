@@ -1,5 +1,80 @@
 # Changelog
 
+## [0.11.0](https://github.com/thiagobraga/planner/compare/v0.10.1...v0.11.0) (2026-10-25)
+
+
+### Added
+
+* **debug:** label debug values and show them after the task ([649dff6](https://github.com/thiagobraga/planner/commit/649dff68f4f42ce266e32ea5a93e78cd90486387))
+
+## [0.10.1](https://github.com/thiagobraga/planner/compare/v0.10.0...v0.10.1) (2026-10-22)
+
+
+### Fixed
+
+* **ci:** limit trivy sarif severities ([1e4dd48](https://github.com/thiagobraga/planner/commit/1e4dd4853d64a24a1c4cdae2bdf12d0378d496c7))
+* **ci:** limit trivy sarif severities so low findings do not fail scans ([62b0cc0](https://github.com/thiagobraga/planner/commit/62b0cc0c074427580c0c0e05c5454cc2ff9cc9e8))
+
+## [0.10.0](https://github.com/thiagobraga/planner/compare/v0.9.0...v0.10.0) (2026-10-22)
+
+
+### Added
+
+* **app:** add dev label to sidebar for non-production environments ([9684a41](https://github.com/thiagobraga/planner/commit/9684a41755a278e7c533759358ed7f036c0ce822))
+* **app:** add dev label to sidebar for non-production environments ([7d64950](https://github.com/thiagobraga/planner/commit/7d64950dc1e9dfc7d59d43c54653551c4cf1813e))
+
+## [0.9.0](https://github.com/thiagobraga/planner/compare/v0.8.0...v0.9.0) (2026-10-20)
+
+
+### Added
+
+* wasd debug mode with task and habit debug cards ([c4bc198](https://github.com/thiagobraga/planner/commit/c4bc19830df9a20adc2f9124076b7a508c60f313))
+
+## [0.8.0](https://github.com/thiagobraga/planner/compare/v0.7.1...v0.8.0) (2026-10-19)
+
+
+### Added
+
+* add Planner public landing page ([6916d6a](https://github.com/thiagobraga/planner/commit/6916d6a0c3e5f4f647b4ea9b945c971539925400))
+* **site:** update desk mockup image ([f715dbd](https://github.com/thiagobraga/planner/commit/f715dbdd1a19f39d7a254631e2752b14a89bb3b9))
+* **site:** use real app screenshots on device mockups ([c8814a9](https://github.com/thiagobraga/planner/commit/c8814a97f0a4abe272ac503aa592d79b3460715a))
+* **site:** use the real Planner icon as favicon and logo ([661bc31](https://github.com/thiagobraga/planner/commit/661bc31dd4a63d495a1411850ec5386486b8edfc))
+
+
+### Changed
+
+* **site:** split App.tsx into section components ([fa78f11](https://github.com/thiagobraga/planner/commit/fa78f11e086e6c2637c1a564c0f58e96be9e4c2d))
+
+## [0.7.1](https://github.com/thiagobraga/planner/compare/v0.7.0...v0.7.1) (2026-10-17)
+
+
+### Fixed
+
+* **app:** move habits today marker at midnight ([07ea349](https://github.com/thiagobraga/planner/commit/07ea3492a976fa94ea94a6a2641431592fe50590))
+* **app:** move habits today marker at midnight ([3ef93dc](https://github.com/thiagobraga/planner/commit/3ef93dc3618246224b62811dd0fc7e9d3bd7d99e))
+
+## [0.7.0](https://github.com/thiagobraga/planner/compare/v0.6.1...v0.7.0) (2026-10-17)
+
+
+### Added
+
+* **app:** show current app version on sidebar ([18b3fa4](https://github.com/thiagobraga/planner/commit/18b3fa472b7330b2a1012cff4aef67be658260bc))
+
+## [0.6.1](https://github.com/thiagobraga/planner/compare/v0.6.0...v0.6.1) (2026-10-17)
+
+
+### Changed
+
+* **app:** move API contract types to src/types/api.ts ([45eb078](https://github.com/thiagobraga/planner/commit/45eb07825663c3a78fffcb3a7537fbb7a7c0d6c9))
+* **app:** move AuthContext types to src/types/api.ts ([e5f3310](https://github.com/thiagobraga/planner/commit/e5f3310521c43eefa76476df74b1bafa012ae0ee))
+* dedicated type files (M1 api contracts) ([31cc6cc](https://github.com/thiagobraga/planner/commit/31cc6cc7e948ea2b9e204d1775613c0d33fa7ff5))
+
+
+### Style
+
+* **app,api:** enforce spaces inside braces via object-curly-spacing ([c5bc079](https://github.com/thiagobraga/planner/commit/c5bc079388550fcde502bda783cf18215994e2a4))
+* **app:** fix import spacing in M1 files ([ef852d4](https://github.com/thiagobraga/planner/commit/ef852d466e381e629d316601f1138b6e01c4b4be))
+
 ## [0.6.0](https://github.com/thiagobraga/planner/compare/v0.5.6...v0.6.0) (2026-10-16)
 
 

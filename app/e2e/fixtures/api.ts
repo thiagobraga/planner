@@ -63,6 +63,7 @@ async function readJson<T>(response: APIResponse): Promise<T> {
     const body = await response.text().catch(() => '');
     throw new Error(`API ${response.status()} ${response.url()} -> ${body || response.statusText()}`);
   }
+  if (response.status() === 204) return undefined as T;
   return response.json() as Promise<T>;
 }
 

@@ -9,7 +9,9 @@ import { isEchoedMove } from '../utils/moveEcho';
 import { ButtonGroup } from '../components/ui/ButtonGroup';
 import { Toolbar } from '../components/ui/Toolbar';
 import { PageHeader } from '../components/PageHeader';
-import { startOfDay } from '../utils/date';
+import { fmtISOInTimeZone } from '../utils/date';
+import { dateFromISO } from '../utils/dailySections';
+import { useMidnightTimer } from '../hooks/useMidnightTimer';
 import { flattenHabits, type HabitNode } from '../utils/habitTree';
 import { randomHabitGroupIcon } from '../utils/habitGroupIcon';
 import { trackCreate, resolveCreatedId } from '../utils/pendingCreates';
@@ -26,21 +28,8 @@ import {
 import type { LucideProps } from 'lucide-react';
 import { useI18n } from '../i18n/I18nContext';
 
-import {
-  fetchHabits,
-  fetchPreferences,
-  apiCreateHabit,
-  apiUpdateHabit,
-  apiDeleteHabit,
-  apiArchiveHabit,
-  apiToggleHabitCompletion,
-  apiCreateHabitGroup,
-  apiUpdateHabitGroup,
-  apiDeleteHabitGroup,
-  apiArchiveHabitGroup,
-  type ApiHabit,
-  type ApiHabitGroup,
-} from '../api/client';
+import { fetchHabits, fetchPreferences, apiCreateHabit, apiUpdateHabit, apiDeleteHabit, apiArchiveHabit, apiToggleHabitCompletion, apiCreateHabitGroup, apiUpdateHabitGroup, apiDeleteHabitGroup, apiArchiveHabitGroup } from '../api/client';
+import type { ApiHabit, ApiHabitGroup } from '../types/api';
 
 function DotsConnectedIcon(props: LucideProps) {
   return (
@@ -86,8 +75,17 @@ function isTemp(id: string) {
 
 export function HabitsPage() {
   const { t } = useI18n();
-  const today = useMemo(() => startOfDay(new Date()), []);
   const queryClient = useQueryClient();
+  const { data: preferences } = useQuery({
+    queryKey: ['preferences'],
+    queryFn: fetchPreferences,
+  });
+  const weekStart = preferences?.weekStart ?? 'sunday';
+
+  const [now, setNow] = useState(() => new Date());
+  useMidnightTimer(() => setNow(new Date()), preferences?.timeZone);
+  const todayKey = fmtISOInTimeZone(now, preferences?.timeZone);
+  const today = useMemo(() => dateFromISO(todayKey), [todayKey]);
 
   const [view, setView] = useState<HabitsView>(loadHabitsView);
   const [editing, setEditing] = useState<HabitEditTarget>();
@@ -99,6 +97,14 @@ export function HabitsPage() {
   }));
   const [weekAnchor, setWeekAnchor] = useState(() => today);
 
+  // The visible week and month follow today when the day changes.
+  const [followedToday, setFollowedToday] = useState(today);
+  if (followedToday !== today) {
+    setFollowedToday(today);
+    setWeekAnchor(today);
+    setSelected({ year: today.getFullYear(), month: today.getMonth() });
+  }
+
   const { data: habitsData, isSuccess: habitsLoaded } = useQuery({
     queryKey: ['habits'],
     queryFn: fetchHabits,
@@ -106,11 +112,6 @@ export function HabitsPage() {
   const habits = useMemo(() => habitsData?.habits ?? [], [habitsData]);
   const groups = useMemo(() => habitsData?.groups ?? [], [habitsData]);
   const groupsLoaded = habitsLoaded;
-  const { data: preferences } = useQuery({
-    queryKey: ['preferences'],
-    queryFn: fetchPreferences,
-  });
-  const weekStart = preferences?.weekStart ?? 'sunday';
 
   const setHabits = useCallback(
     (updater: (prev: ApiHabit[]) => ApiHabit[]) => {

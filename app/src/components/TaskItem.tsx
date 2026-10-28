@@ -8,11 +8,13 @@ import { useI18n } from '../i18n/I18nContext';
 import { useTaskSelectionStore } from '../stores/taskSelectionStore';
 import { usePlannerDrag } from '../contexts/usePlannerDrag';
 import { priorityClasses } from './taskPriorityClasses';
-import type { LabelSummary } from '../api/client';
+import type { LabelSummary } from '../types/api';
 import type { RecurrenceRule } from '../types/task';
 import { formatDuration, formatTimeWindow } from '../utils/taskTime';
 import { getCaret, getText, setCaret } from '../utils/editableText';
 import { EditableText } from './ui/EditableText';
+import { DebugCard } from './DebugCard';
+import { useDebugStore } from '../stores/debugStore';
 
 export interface Task {
   id: string;
@@ -131,6 +133,7 @@ export const TaskItem = memo(function TaskItem({
   const { locale, t } = useI18n();
   const isSelected = useTaskSelectionStore((s) => s.selectedTaskIds.has(task.id));
   const selectTask = useTaskSelectionStore((s) => s.selectTask);
+  const debug = useDebugStore((s) => s.enabled);
   const { activeDrag, hasMoved, overId } = usePlannerDrag();
   const touchTimerRef = useRef<NodeJS.Timeout | null>(null);
   const dragData: TaskDragData = {
@@ -448,6 +451,7 @@ export const TaskItem = memo(function TaskItem({
             )}
           </>
         )}
+        {debug && <DebugCard id={task.id} orderValue={task.orderValue} createdAt={task.createdAt} />}
       </span>
     </div>
   );

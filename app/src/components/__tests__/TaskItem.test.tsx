@@ -2,9 +2,10 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { SortableContext } from '@dnd-kit/sortable';
 import { getCaret, setCaret } from '../../utils/editableText';
 import { typeText } from '../../test/editableText';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { TaskItem, type Task } from '../TaskItem';
 import { PlannerDragProvider } from '../../contexts/PlannerDragContext';
+import { useDebugStore } from '../../stores/debugStore';
 
 function renderTaskItem(task: Task, props: Partial<React.ComponentProps<typeof TaskItem>> = {}) {
   return render(
@@ -371,5 +372,25 @@ describe('TaskItem - time, deadline and duration', () => {
     expect(container.querySelector('.task-item-time')).toBeNull();
     expect(container.querySelector('.task-item-deadline')).toBeNull();
     expect(container.querySelector('.task-item-duration')).toBeNull();
+  });
+});
+
+describe('TaskItem - debug mode', () => {
+  const task: Task = { ...baseTask, id: 'abcdef12-3456', title: 'Buy milk', orderValue: 5, createdAt: '2026-10-02T09:00:00.000Z' };
+
+  beforeEach(() => useDebugStore.setState({ enabled: false }));
+
+  it('hides the debug card by default', () => {
+    renderTaskItem(task, { isEditing: false });
+    expect(screen.queryByTestId('debug-card')).not.toBeInTheDocument();
+  });
+
+  it('shows id, order and created date when debug mode is on', () => {
+    useDebugStore.setState({ enabled: true });
+    renderTaskItem(task, { isEditing: false });
+    const card = screen.getByTestId('debug-card');
+    expect(card).toHaveTextContent('ID: abcdef12');
+    expect(card).toHaveTextContent('Order: 5');
+    expect(card).toHaveTextContent(/Created: 2026-10-0[12]-\d\d-\d\d-\d\d/);
   });
 });

@@ -1,6 +1,8 @@
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { Sidebar } from '../Sidebar';
+import { APP_VERSION } from '../../utils/version';
+import * as envUtils from '../../utils/environment';
 
 const mockLogout = vi.hoisted(() => vi.fn());
 // Mutable so a test can hand the sidebar an admin, a plain user, or nobody.
@@ -74,6 +76,29 @@ describe('Sidebar', () => {
     render(<Sidebar />);
     expect(screen.getByText('Planner')).toBeInTheDocument();
     expect(screen.getByText('Your Bullet Journal')).toBeInTheDocument();
+  });
+
+  it('renders dev label when not running in production', () => {
+    const isProdSpy = vi.spyOn(envUtils, 'isProduction').mockReturnValue(false);
+    try {
+      render(<Sidebar />);
+      const devBadge = screen.getByText('dev');
+      expect(devBadge).toBeInTheDocument();
+      expect(devBadge.tagName).toBe('EM');
+      expect(devBadge).toHaveClass('text-accent', 'italic', 'font-medium');
+    } finally {
+      isProdSpy.mockRestore();
+    }
+  });
+
+  it('hides dev label when running in production', () => {
+    const isProdSpy = vi.spyOn(envUtils, 'isProduction').mockReturnValue(true);
+    try {
+      render(<Sidebar />);
+      expect(screen.queryByText('dev')).not.toBeInTheDocument();
+    } finally {
+      isProdSpy.mockRestore();
+    }
   });
 
   it('renders collapsed mode with icon-only bar', () => {
@@ -191,5 +216,33 @@ describe('Sidebar', () => {
     const logo = container.querySelector('img[src^="/images/logo/"]');
     expect(logo).toHaveAttribute('src', '/images/logo/logo-16x16.png');
     expect(logo).toHaveAttribute('srcset', '/images/logo/logo-32x32.png 2x');
+  });
+
+  it('renders current app version above Settings in expanded mode', () => {
+    render(<Sidebar />);
+    const versionEl = screen.getByText(`v${APP_VERSION}`);
+    const settingsLink = screen.getByText('Settings').closest('a')!;
+    expect(versionEl).toBeInTheDocument();
+    expect(
+      versionEl.compareDocumentPosition(settingsLink) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+
+  it('renders current app version above Settings in collapsed mode', () => {
+    render(<Sidebar collapsed />);
+    const versionEl = screen.getByText(`v${APP_VERSION}`);
+    const settingsLink = screen.getByTitle('Settings');
+    expect(versionEl).toBeInTheDocument();
+    expect(
+      versionEl.compareDocumentPosition(settingsLink) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+
+  it('includes localized tooltip title on version element', () => {
+    render(<Sidebar />);
+    expect(screen.getByText(`v${APP_VERSION}`)).toHaveAttribute(
+      'title',
+      `Version ${APP_VERSION}`,
+    );
   });
 });

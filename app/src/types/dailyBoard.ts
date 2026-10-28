@@ -1,6 +1,6 @@
-import type { ApiTask } from '../api/client';
-import type { Task } from '../types/tasks';
-import type { TaskListCallbacks } from '../types/tasks';
+import type { ApiTask } from './api';
+import type { Task } from '../components/TaskItem';
+import type { TaskListCallbacks } from '../components/TaskList';
 import type { BoardViewMode } from './board';
 import type { DayColumn } from '../utils/dayColumns';
 import type { WeekStart } from '../utils/date';

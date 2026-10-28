@@ -6,16 +6,8 @@ import { DailyRoute } from '../DailyRoutes';
 import { dailyView } from '../../test/dailyFixtures';
 import { I18nProvider } from '../../i18n/I18nContext';
 import { PlannerDragProvider } from '../../contexts/PlannerDragContext';
-import {
-  fetchDaily,
-  fetchPreferences,
-  fetchCollections,
-  fetchInboxTasks,
-  apiCreateTask,
-  apiUpdatePreferences,
-  type ApiTask,
-  type Preferences,
-} from '../../api/client';
+import { fetchDaily, fetchPreferences, fetchCollections, fetchInboxTasks, apiCreateTask, apiUpdatePreferences } from '../../api/client';
+import type { ApiTask, Preferences } from '../../types/api';
 
 const mockFetchDaily = vi.mocked(fetchDaily);
 const mockFetchPreferences = vi.mocked(fetchPreferences);

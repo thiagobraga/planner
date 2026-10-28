@@ -90,6 +90,55 @@ updates:
         patterns:
           - '*'
 
+  - package-ecosystem: 'npm'
+    directory: '/site'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+      time: '06:00'
+      timezone: 'America/Sao_Paulo'
+    cooldown:
+      default-days: 7
+    open-pull-requests-limit: 10
+    labels:
+      - 'dependencies'
+    commit-message:
+      prefix: 'chore'
+      include: 'scope'
+    ignore:
+      - dependency-name: 'typescript'
+        update-types: ['version-update:semver-major']
+    groups:
+      security:
+        applies-to: security-updates
+        patterns:
+          - '*'
+      minor-and-patch:
+        update-types:
+          - 'minor'
+          - 'patch'
+        patterns:
+          - '*'
+
+  - package-ecosystem: 'docker'
+    directory: '/.docker/site'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+      time: '06:00'
+      timezone: 'America/Sao_Paulo'
+    cooldown:
+      default-days: 7
+    labels:
+      - 'docker'
+    commit-message:
+      prefix: 'chore'
+      include: 'scope'
+    groups:
+      docker:
+        patterns:
+          - '*'
+
   - package-ecosystem: 'docker'
     directory: '/.docker/api'
     schedule:

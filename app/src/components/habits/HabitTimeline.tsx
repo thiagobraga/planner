@@ -10,6 +10,8 @@ import { InlineNameInput } from '../ui/InlineNameInput';
 import { NO_DRAG_ATTR } from '../dnd/sensors';
 import { HabitDragHandle } from './HabitDragHandle';
 import { HabitBlockPreview } from './HabitBlockPreview';
+import { DebugCard } from '../DebugCard';
+import { useDebugStore } from '../../stores/debugStore';
 import { buildWeekDays, fmtISO, weekdayInitials, type WeekStart } from '../../utils/date';
 import { useI18n } from '../../i18n/I18nContext';
 import { dayState, flattenHabits, type HabitNode, type HabitSections } from '../../utils/habitTree';
@@ -22,7 +24,7 @@ import {
   UNGROUPED_CONTAINER,
 } from '../../utils/habitProjection';
 import type { HabitDragData, HabitGroupDragData, HabitSectionDropData } from '../../types/drag';
-import type { ApiHabitGroup } from '../../api/client';
+import type { ApiHabitGroup } from '../../types/api';
 
 const CELL_W = 24;
 // Keep the label column on a 24px multiple so the day grid aligns with the
@@ -140,6 +142,7 @@ export function HabitTimeline({
   onArchive,
 }: HabitTimelineProps) {
   const { locale, t } = useI18n();
+  const debug = useDebugStore((s) => s.enabled);
   const [menu, setMenu] = useState<{ target: HabitEditTarget; canAddSub: boolean; x: number; y: number } | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const daysViewportRef = useRef<HTMLDivElement>(null);
@@ -595,6 +598,7 @@ export function HabitTimeline({
                     >
                       {node.name}
                     </span>
+                    {debug && <DebugCard id={node.id} orderValue={node.orderValue} createdAt={node.createdAt} />}
                     <RowOptionsButton
                       label={t('habit.optionsFor', { name: node.name })}
                       onOpen={(x, y) => setMenu({ target, canAddSub: depth === 0, x, y })}

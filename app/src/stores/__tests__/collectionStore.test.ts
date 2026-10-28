@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { useCollectionStore, buildCollectionTree } from '../collectionStore';
-import type { ApiCollection } from '../../api/client';
+import type { ApiCollection } from '../../types/api';
 
 function makeCollection(overrides: Partial<ApiCollection> & { id: string }): ApiCollection {
   return {

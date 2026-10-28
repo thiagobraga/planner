@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en" data-theme="beige">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48" />
+    <link rel="icon" href="/icon-32x32.png" type="image/png" sizes="32x32" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" sizes="180x180" />
+    <meta name="description" content="A thoughtful home for daily plans, collections, and habits. Explore Planner, the open source task manager inspired by a paper journal." />
+    <meta name="theme-color" content="#f5f0e8" />
+    <script>
+      try {
+        const theme = localStorage.getItem('planner-site-theme');
+        if (['white', 'beige', 'dark'].includes(theme)) {
+          document.documentElement.dataset.theme = theme;
+          document.querySelector('meta[name="theme-color"]').content = { white: '#ffffff', beige: '#f5f0e8', dark: '#292219' }[theme];
+        }
+      } catch { /* Storage can be disabled in private browser contexts. */ }
+    </script>
+    <title>Planner | The calm of paper. The power of an app.</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

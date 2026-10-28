@@ -2,7 +2,8 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, within, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { StyleguidePage } from '../StyleguidePage';
-import { fetchPreferences, type Preferences } from '../../api/client';
+import { fetchPreferences } from '../../api/client';
+import type { Preferences } from '../../types/api';
 
 const mockFetchPreferences = vi.mocked(fetchPreferences);
 

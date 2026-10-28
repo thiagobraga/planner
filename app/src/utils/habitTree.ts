@@ -1,4 +1,4 @@
-import type { ApiHabit, ApiHabitGroup } from '../api/client';
+import type { ApiHabit, ApiHabitGroup } from '../types/api';
 
 // A parent habit is never "half done" in the database - it has no completion rows
 // at all. This is the derived state the UI renders in its place.
@@ -10,6 +10,7 @@ export interface HabitNode {
   parentId: string | null;
   groupId: string | null;
   orderValue: number;
+  createdAt?: string;
   completions: Set<string>;
   children: HabitNode[];
 }
@@ -31,6 +32,7 @@ function toNode(habit: ApiHabit): HabitNode {
     parentId: habit.parentId,
     groupId: habit.groupId,
     orderValue: habit.orderValue,
+    createdAt: habit.createdAt,
     completions: new Set(habit.completions),
     children: [],
   };

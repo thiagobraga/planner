@@ -6,10 +6,11 @@ import type {
 } from '@dnd-kit/core';
 import { usePlannerDrag, usePlannerDragHandlers } from '../contexts/usePlannerDrag';
 import { flattenTasks, getSubtreeBlock, projectMove, type FlatRow } from '../utils/taskProjection';
-import { apiMoveTask, type TaskOrderScope } from '../api/client';
+import { apiMoveTask } from '../api/client';
+import type { TaskOrderScope } from '../types/drag';
 import { trackMove } from '../utils/moveEcho';
 import type { CollectionDropData, DayDropData, NoDateDropData, SectionDropData, TaskDragData } from '../types/drag';
-import type { Task } from '../types/tasks';
+import type { Task } from '../components/TaskItem';
 
 /**
  * Normalise an API date to the bare `YYYY-MM-DD` the page models use.

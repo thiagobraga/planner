@@ -1,9 +1,10 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import React from 'react';
 import { HabitTimeline } from '../HabitTimeline';
 import type { HabitSections } from '../../../utils/habitTree';
+import { useDebugStore } from '../../../stores/debugStore';
 
 vi.mock('@dnd-kit/core', () => ({
   PointerSensor: class {},
@@ -404,5 +405,31 @@ describe('HabitTimeline', () => {
     // The button is transparent until the row is hovered or it takes focus, so
     // the class is what carries that reveal.
     expect(button).toHaveClass('habit-timeline-row-options');
+  });
+});
+
+describe('HabitTimeline - debug mode', () => {
+  const sections: HabitSections = {
+    ungrouped: [{
+      id: 'water-0000-0000', name: 'Drink water', parentId: null, groupId: null,
+      orderValue: 2, createdAt: '2026-10-01T12:00:00.000Z', completions: new Set(), children: [],
+    }],
+    groups: [],
+  };
+
+  beforeEach(() => useDebugStore.setState({ enabled: false }));
+
+  it('hides the debug card by default', () => {
+    render(<HabitTimeline {...defaultProps} sections={sections} />, { wrapper: createWrapper() });
+    expect(screen.queryByTestId('debug-card')).not.toBeInTheDocument();
+  });
+
+  it('shows id, order and created date when debug mode is on', () => {
+    useDebugStore.setState({ enabled: true });
+    render(<HabitTimeline {...defaultProps} sections={sections} />, { wrapper: createWrapper() });
+    const card = screen.getByTestId('debug-card');
+    expect(card).toHaveTextContent('ID: water-00');
+    expect(card).toHaveTextContent('Order: 2');
+    expect(card).toHaveTextContent(/Created: 2026-(09-30|10-01)-\d\d-\d\d-\d\d/);
   });
 });

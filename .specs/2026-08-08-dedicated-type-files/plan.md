@@ -1,166 +1,168 @@
-# Dedicated interface files — Plan
+# Dedicated type files — Plan
 
 ## Context
 
-Interfaces and type aliases currently live inside implementation files all over
-the codebase: component props inside `.tsx` components, service row/input types
-inside `api/src/services/*.ts`, hook options inside hook implementations, store
-state inside Zustand stores, REST contracts inside `app/src/api/client.ts`.
+Types still live inside implementation files across the codebase: component
+props in `.tsx` files, service row/input types in `api/src/services/*.ts`,
+hook options in hooks, Zustand state in stores, REST contracts in
+`app/src/api/client.ts`.
 
-Goal: move every interface/type defined in non-test source files into dedicated
-**per-domain type files** under `app/src/types/` and `api/src/types/`, so
-implementation files contain only implementation.
+Goal is unchanged from the original 2026-08-08 spec: move every
+interface/type in non-test source files into dedicated per-domain files
+under `app/src/types/` and `api/src/types/`, so implementation files
+contain only implementation. Pure refactor, no behavior change, no
+re-export shims.
 
-### Precedent
+This is a refresh of that spec against the current codebase state
+(2026-10-16). The original inventory (73 app files, 27 api files) is
+stale. New features since August added dedicated type files on their own
+(see Current state), which this plan reuses instead of replacing.
 
-- `app/src/types/drag.ts` — already a dedicated central drag-type file (created
-  for drag metadata/API contracts, commit `db82cc0`); this plan extends the
-  pattern to the whole codebase.
-- `app/src/i18n/types.ts` — already a dedicated type file; untouched.
-- `api/src/types/express.d.ts`, `app/src/types/eyedropper.d.ts` — already type
-  files; untouched.
+## Current state
 
-### Scope decisions (agreed)
+Already dedicated (do not recreate, extend where noted):
 
-1. **Layout** — central per-domain files: `app/src/types/` and `api/src/types/`
-   (not sibling `*.types.ts` files, not a hybrid).
-2. **Scope** — everything: exported *and* private interfaces/types in non-test
-   files, including component props, service row types, hook options, store
-   state, page-local shapes.
-3. **Tests** — mock interfaces defined inside `__tests__`/`*.test.ts` files
-   stay local to the tests; no change.
-4. **No re-export shims** — delete cleanly (AGENTS.md convention); every
-   importer rewrites its `import type` to the new location.
+- `app/src/types/`: `activity.ts`, `adminCompare.ts`, `apiToken.ts`,
+  `board.ts` (`BoardViewMode`), `daily.ts` (`DailySlug`, `DailyRange`,
+  `ApiDailyView`, `DaySection`, `DailyListProps`), `dailyBoard.ts`,
+  `drag.ts` (21 drag/drop types + guards), `editableText.ts`, `oauth.ts`,
+  `task.ts` (`RecurrenceRule`, `ParsedDateInput`, `TaskSchedule`),
+  `taskAddInput.ts`, `theme.ts`
+- `api/src/types/`: `activity.ts` (5), `apiToken.ts` (6), `daily.ts` (3),
+  `mcp.ts` (4), `oauth.ts` (6), `recurrence.ts` (`RecurrenceRule`,
+  `DueDate` - done), `task.ts` (`TaskTimeRow`, `TaskTimeFields`)
 
-## Inventory
+Still inline (Oct 2026 audit):
 
-- **app**: 73 non-test files contain interfaces; 92 exported interfaces
-  (across 41 files) plus ~50 private interfaces.
-- **api**: 27 non-test files contain interfaces; 49 exported plus ~20 private
-  row types.
-- Biggest consumers: `Task` (defined in `TaskItem.tsx`) is imported by 21+
-  files; `ApiTask`/`Preferences`/`ApiCollection` from `api/client.ts` are
-  imported by most pages.
+- **app**: 227 declarations in 106 files. Biggest: `api/client.ts` (31
+  contract types), `hooks/shortcuts.ts` (6), `components/habits/HabitTimeline.tsx`
+  (6), `utils/color.ts` (5), `utils/boardColumns.ts` (5),
+  `hooks/useFloatingPosition.ts` (5), `components/ui/ContextMenu.tsx` (5).
+- **api**: 95 declarations in 30 files. Biggest: `services/habitService.ts`
+  (14), `services/taskService.ts` (9), `services/statusService.ts` (6),
+  `services/preferencesService.ts` (5), `services/viewService.ts` (4),
+  `services/syncService.ts` (4), `services/labelService.ts` (4).
 
-## Deduplication (only byte-identical shapes; no other merging in this PR)
+### Scope decisions (unchanged)
 
-| Type | Current homes | Action |
+1. **Layout** - central per-domain files under `app/src/types/` and
+   `api/src/types/`. Reuse existing files; create only missing domains.
+2. **Scope** - everything: exported and private interfaces/types in
+   non-test files, including props, row types, hook options, store state,
+   page-local shapes.
+3. **Tests** - mocks in `__tests__` / `*.test.ts` stay local.
+4. **No re-export shims** - delete cleanly; importers get `import type`
+   rewrites in the same milestone.
+
+## Deduplication
+
+Only byte-identical shapes merge. Different shapes move side by side
+with distinct names.
+
+| Type | Homes | Action |
 |---|---|---|
-| `TaskOrderScope` | `app/src/types/drag.ts:42` + `app/src/api/client.ts:375` (identical) | Keep one definition, import where needed |
-| `RecurrenceRule`, `DueDate` | `api/src/engines/recurrenceEngine.ts` + `api/src/parsers/dateParser.ts` (near-identical; dateParser is a narrowed subset) | Single `api/src/types/recurrence.ts`, superset shape; verify call sites compile |
+| `TaskOrderScope` | `types/drag.ts` + `api/client.ts:420` (identical) | Keep `drag.ts`, import it |
+| `BoardGroupBy` | `types/drag.ts` + `api/client.ts:302` (identical) | Keep `drag.ts`, import it |
+| `BoardViewMode` | `types/board.ts` + `api/client.ts:303` (re-export) | Keep `board.ts`, drop re-export |
+| `ViewMode` | `components/ui/ViewToolbar.tsx:10` (dup of `BoardViewMode`) | Unify to `BoardViewMode` |
+| `RecurrenceRule`, `DueDate` | `api/src/types/recurrence.ts` (done) | `engines/recurrenceEngine.ts:5` keeps its widened `DueDate` extension; `parsers/dateParser.ts` already re-exports |
 
-Explicitly **not** merged (different shapes, all move side by side with
-distinct names):
+Do not merge:
 
-- `Task` (`components/TaskItem.tsx`) vs `Task` (`stores/taskStore.ts`, private,
-  has `recurrenceRule`, no `indent`/`labels`) vs `ApiTask` (`api/client.ts`)
-  — keep all three, rename alongside only to resolve central-file collisions.
-- `SyncEvent` (`api/src/services/syncService.ts` vs
-  `app/src/hooks/useSync.ts`) — stays per-package; no shared package exists.
-  Cross-package consolidation is a follow-up, not part of this refactor.
-- per-service `*Row` DB shapes (`TaskRow` in `taskService.ts` and
-  `viewService.ts` are different) — renamed with a domain prefix where they
-  collide in a central file.
+- `Task` (`components/TaskItem.tsx`) vs `Task` (`stores/taskStore.ts`,
+  private, has `recurrenceRule`, no `indent`/`labels`) vs `ApiTask`
+  (`api/client.ts`) - keep all three, rename store one to `StoreTask`.
+- `SyncEvent` (api `syncService.ts` vs app `useSync.ts`) - stays
+  per-package, no shared package exists.
+- `*Row` shapes (`TaskRow` in `taskService.ts` vs `viewService.ts`,
+  `PreferencesRow` vs `ViewPreferencesRow`, `StatusRow` in two services)
+  - prefix the narrower one (`ViewTaskRow`, `ViewPreferencesRow`).
+- `Section` (`taskStore.ts` vs `useReorganize.ts`) - keep store one as
+  `StoreSection` or scoped import; document in task.md rename table.
+- `Comment` (`TaskDetail.tsx`) vs DOM `Comment` - rename to `TaskComment`.
 
 ## Exceptions (stay where they are)
 
 - `.d.ts` files (`express.d.ts`, `eyedropper.d.ts`)
-- `app/src/test/setup.ts` (test infra ambient declarations)
-- `app/src/i18n/` — `types.ts` already dedicated; `catalogs.ts` is a re-export
-- Module-scoped import aliases of third-party types, e.g.
-  `type Client = PoolClient` (habitService, taskService),
-  `type ReactNode = React.ReactNode` (Sidebar), `PeggyParser` — import-time
-  conveniences, not domain types (though the `PeggyParser` alias appears in
-  both parsers and is folded into the api parsers type file)
+- `app/src/test/setup.ts` ambient declarations
+- `app/src/i18n/types.ts` (already dedicated); `Locale` derived from
+  `SUPPORTED_LOCALES` in `i18n/catalogs.ts` stays (runtime-derived)
+- Import aliases: `type Client = PoolClient` (taskService, habitService),
+  `type ReactNode = React.ReactNode` (Sidebar) - import conveniences
+- `PeggyParser` copies fold into `api/src/types/parsers.ts` (one new file)
 
 ## Target layout
 
-### `app/src/types/` (new files unless noted)
+### `app/src/types/` (extend existing where marked [E], else new [N])
 
-| File | Contents (source file) |
+| File | Contents |
 |---|---|
-| `api.ts` | All REST contract types from `app/src/api/client.ts`: `ValidationDetail`, `UserRole`, `AuthUser`, `ApiTask`, `Preferences`, `TaskMoveInput`, `MovedTaskSummary`, `TaskMoveResponse`, `ApiCollection`, `CollectionView`, `ApiSection`, `ApiHabit`, `ApiHabitGroup`, `HabitsResponse`, `HabitMoveInput/Response`, `HabitGroupMoveInput/Response`, `AdminUser`, `AdminUserList`, `AdminCounts`, `AdminHealth`, `AdminAuthStats`. `client.ts` keeps only functions. |
-| `tasks.ts` | `Task`, `TaskItemProps` (TaskItem); `TaskCallbacks`, `TaskListProps` (TaskList); `Comment`→`TaskComment`, `TaskDetailProps` (TaskDetail); `TaskBlockPreviewProps`; `TaskVisibilityControlsProps` + `VisibilityPreferenceKey/Update` (useTaskVisibilityPreferences); `DaySection` (DailyPage); store `Task`, `Section`, `TaskState` (taskStore); `TaskSelectionState`; `UseTaskDragOptions`, `ResolvedMove` (useTaskDrag); `UseSectionDragOptions`; `IndentTracker` (dragIndent); `TreeNode`, `IndentResult<T>` (taskTree); `TaskLike`, `FlatRow<T>`, `Projection` (taskProjection) |
-| `collections.ts` | `FlatCollection`, `RowProps`→`CollectionRowProps` (CollectionTreeNav); `CollectionTreeNode`, `CollectionState` (collectionStore); `CollectionMenuHandlers` (collectionMenuItems); `CollectionRowProps` (CollectionsIndexPage); `SidebarProps`, `NavItem` (Sidebar); `SidebarNavItemProps`; `SectionHeaderProps`; `SectionDeleteModalProps` |
-| `habits.ts` | `HabitBlockPreviewProps`; `HabitCalendarProps`, `HabitCalendarGridProps`; `HabitDotProps`; `HabitMonthGridProps`; `HabitTimelineProps`, `HabitEditTarget`, `TimelineRow`, `TimelineSection`, `DayCell`, `TimelineBlockPreviewProps`; `HabitsView` (HabitsPage); `UseHabitDragOptions`; `HabitRow`, `HabitProjection`, `HabitDepth` (habitProjection); `DayState`, `HabitNode`, `HabitGroupSection`, `HabitSections` (habitTree) |
-| `ui.ts` | `ButtonVariant`, `ButtonSize`, `ButtonProps`; `CheckboxProps`; `ChipProps`, `CollectionChipProps`; `ColorPickerPopoverProps`, `PickerState`, `ChannelKey`; `ContextMenuItem`, `ContextMenuProps`, `ContextMenuRootProps`, `MenuPanelProps`, `SubMenuWrapperProps`; `SelectOption`, `CustomSelectProps`; `InlineNameInputProps`; `InputProps`; `Priority`, `PriorityDotProps`; `RadioProps`; `SelectProps`; `TaskStatus`, `StatusPillProps`; `StripNavigatorProps`; `TaskRowSpecimenData`; `ToggleProps`; `ViewMode`, `ViewToolbarProps` |
-| `widgets.ts` | `ConfirmModalProps`; `TokenType`, `Token`, `FilterBarProps` (FilterBar); `QuickAddProps`; `SearchResult`, `SearchOverlayProps`; `UpdateToastProps`; `AuthShellProps`; `MonthlyCalendarSpecimenProps`; `MonthlyRowsProps`; `MonthTile`, `MonthSelectorProps`, `MonthSelectorHandle` (MonthSelector) |
-| `hooks.ts` | `ShortcutContext`, `SingleBinding`, `ChordBinding`, `Binding`, `KeyEvent`, `MatcherState` (shortcuts); `Position`, `Placement`, `Align`, `FloatingOptions`, `FloatingResult` (useFloatingPosition); `MidnightCallback` (useMidnightTimer); `VersionResponse` (useVersionCheck) |
-| `stores.ts` | `OptimisticOp<T>`, `RunOptimisticOptions<T,R>` (stores/optimistic) |
-| `sync.ts` | `SyncEvent` (hooks/useSync) |
-| `utils.ts` | `Rgb`, `Hsv`, `Hsl`, `ParsedColor`, `ColorFormat` (color); `WeekStart`, `MonthDay`, `ParsedDate` (date); `FontOption` (fontLoader); `PhraseSection` (phrases); `BackgroundTheme` (theme); `QueuedMutationMethod`, `QueuedMutation` (offlineQueue); `MovePayload`, `EchoableEvent` (moveEcho); `Ordered` (order) |
-| `i18n.ts` | `HelpSection`, `HelpContent` (helpContent — it is a pure data module; its types move here); `I18nContextValue` (I18nContext). Note: `Locale = (typeof SUPPORTED_LOCALES)[number]` stays in `i18n/catalogs.ts` — it is derived from a runtime const and cannot live in a type-only module |
-| `drag.ts` (existing) | gains `DragHandlers`, `DragOverlayInfo`, `PlannerDragContextValue` (contexts/usePlannerDrag); keeps `TaskOrderScope` (dedup winner when references converge) |
+| `api.ts` [N] | All 31 contracts from `api/client.ts`: `ValidationDetail`, `UserRole`, `AuthUser`, `ApiTask`, `LabelSummary`, `ApiStatus`, `BoardViewModes`, `Preferences`, `TaskMoveInput`, `MovedTaskSummary`, `TaskMoveResponse`, `ReorganizeMove`, `ApiCollection`, `CollectionView`, `BoardOrder`, `ApiSection`, `ApiHabit`, `ApiHabitGroup`, `HabitsResponse`, `HabitMoveInput/Response`, `HabitGroupMoveInput/Response`, `AdminUser`, `AdminUserList`, `AdminCounts`, `AdminHealth`, `AdminAuthStats`. (`BoardGroupBy`, `TaskOrderScope` import from `drag.ts`; `BoardViewMode` imports from `board.ts`). `client.ts` keeps functions only |
+| `task.ts` [E] | `Task`, `TaskItemProps` (TaskItem); `TaskListCallbacks`, `TaskListProps`; `TaskComment`, `TaskDetailProps`; `TaskBlockPreviewProps`; `TaskVisibilityControlsProps`; `StoreTask`, `StoreSection`, `TaskState` (taskStore); `TaskSelectionState`; `UseTaskDragOptions`, `ResolvedMove`; `UseSectionDragOptions`; `IndentTracker`; `TreeNode`, `IndentResult`; `TaskLike`, `FlatRow`, `Projection`; `ApiScheduleFields` (taskTime) |
+| `collections.ts` [N] | `FlatCollection`, `CollectionRowProps` (CollectionTreeNav); `CollectionTreeNode`, `CollectionState`; `CollectionMenuHandlers`; `CollectionRowProps` (CollectionsIndexPage); `SidebarProps`, `NavItem`, `SidebarNavItemProps`; `SectionHeaderProps`; `SectionDeleteModalProps` |
+| `habits.ts` [N] | `HabitBlockPreviewProps`; `HabitCalendarProps`, `HabitCalendarGridProps`; `HabitDotProps`; `HabitMonthGridProps`; `HabitTimelineProps`, `HabitEditTarget`, `TimelineRow`, `TimelineSection`, `DayCell`, `TimelineBlockPreviewProps`; `HabitsView`; `UseHabitDragOptions`; `HabitRow`, `HabitProjection`, `HabitDepth`; `DayState`, `HabitNode`, `HabitGroupSection`, `HabitSections` |
+| `ui.ts` [N] | All `components/ui/*` props: `ButtonVariant/Size/Props`, `ButtonGroupProps`, `CheckboxProps`, `ChipProps`, `CollectionChipProps`, `ColorPickerPopoverProps`, `PickerState`, `ChannelKey`, `ContextMenu*` (5), `SelectOption`, `CustomSelectProps`, `InlineNameInputProps`, `InputProps`, `Priority`, `PriorityDotProps`, `RadioProps`, `SelectProps`, `TaskStatus`, `StatusPillProps`, `StripNavigatorProps`, `TaskRowSpecimenData`, `ToggleProps`, `ToolbarProps`, `ViewSwitcherProps`, `ViewToolbarProps` (uses `BoardViewMode`), `DateScreenProps`, `RepeatPreset/Unit/Props`, `TimeScreenProps`, `TaskDatePickerPanelProps` |
+| `widgets.ts` [N] | `ConfirmModalProps`; `TokenType`, `Token`, `FilterBarProps`; `QuickAddProps`; `SearchResult`, `SearchOverlayProps`; `UpdateToastProps`; `AuthShellProps`; `MonthlyCalendarSpecimenProps`; `MonthTile`, `MonthSelectorProps`, `MonthSelectorHandle`; `MonthlyViewProps`; `PageHeaderProps`; `BottomBarProps` |
+| `hooks.ts` [N] | `ShortcutContext`, `SingleBinding`, `ChordBinding`, `Binding`, `KeyEvent`, `MatcherState`; `Position`, `Placement`, `Align`, `FloatingOptions`, `FloatingResult`; `MidnightCallback`; `VersionResponse`; `VisibilityPreferenceKey/Update`; `UseBoardDragOptions`, `ResolvedBoardMove`, `BoardSnapshot`; `BoardColumnDeleteOption`, `DeleteDraft`; `ReorganizeState`, `ReorganizePreview`, `UseReorganizeReturn`; `UseHabitDragOptions` if not in `habits.ts` |
+| `stores.ts` [N] | `OptimisticOp`, `RunOptimisticOptions` |
+| `sync.ts` [N] | `SyncEvent` (useSync) |
+| `utils.ts` [N] | `Rgb`, `Hsv`, `Hsl`, `ParsedColor`, `ColorFormat`; `WeekStart`, `WeekDay`, `MonthDay`, `ParsedDate`; `FontOption`; `PhraseSection`; `QueuedMutationMethod`, `QueuedMutation`; `MovePayload`, `EchoableEvent`; `Ordered`; `DayColumnId`, `DayColumn`; `DateQuickOptionKey/Option`; `BoardColumnId`, `BoardColumn`, `StatusListTask/Group`; `Translate` (agentNotice); `RecurrenceLocale` |
+| `i18n.ts` [N] | `HelpSection`, `HelpContent`; `I18nContextValue` |
+| `drag.ts` [E] | Add `DragHandlers`, `DragOverlayInfo`, `PlannerDragContextValue` |
+| `daily.ts` [E] | Already has `DaySection`; add `DailyPage` extras if any remain |
 
-Rough sizes: `api.ts` ~24 types, `tasks.ts` ~20, `habits.ts` ~16, `ui.ts`
-~30, `collections.ts` ~9, `widgets.ts` ~10.
+### `api/src/types/` (extend existing [E], else new [N])
 
-### `api/src/types/` (new files)
-
-| File | Contents (source file) |
+| File | Contents |
 |---|---|
-| `recurrence.ts` | `RecurrenceRule`, `DueDate` (dedup of recurrenceEngine + dateParser) |
-| `parsers.ts` | `PeggyParser` alias (unify the two parser-local copies), `ParserOptions` (dateParser) |
-| `tasks.ts` | `TaskRow`, `SubtreeRow`, `MovedTaskSummary`, `CreateTaskInput`, `UpdateTaskInput`, `MoveTaskInput`, `TaskOrderScope` (taskService) |
-| `habits.ts` | `HabitRow`, `HabitGroupRow`, `Habit`, `HabitGroup`, `CreateHabitInput`, `UpdateHabitInput`, `CompletionResult`, `UpdateHabitGroupInput`, `MoveHabitInput`, `MoveHabitResult`, `MoveHabitGroupInput`, `MoveHabitGroupResult` (habitService) |
-| `collections.ts` | `CollectionRow`, `CreateCollectionInput`, `UpdateCollectionInput` (collectionService); `SectionRow`, `CreateSectionInput`, `UpdateSectionInput` (sectionService); `InvitationRow`, `CollaboratorRow` (collaborationService); `LabelRow`, `CreateLabelInput`, `UpdateLabelInput` (labelService) |
-| `views.ts` | `TaskRow`→`ViewTaskRow`, `PreferencesRow`→`ViewPreferencesRow`, `TodayView`, `UpcomingView`, `MonthView` (viewService) |
-| `filters.ts` | `FilterExpr` (filterParser); `FilterParseError` (filterParser); `FilterRow`, `CreateFilterInput`, `UpdateFilterInput` (filterService); `EvalTask`, `EvalContext` (filterEvaluator) |
-| `sync.ts` | `SocketData`, `SyncEntityType`, `SyncEventType`, `SyncEvent` (syncService) |
-| `auth.ts` | `UserRole`, `UserData`, `RegisterInput` (authService); `SessionContext`, `SessionRow`, `SessionCookieOptions` (sessionService) |
-| `admin.ts` | `AdminUser`, `ListUsersResult`, `AdminUserRow` (adminUserService); `AdminCounts`, `AdminHealth`, `AdminAuthStats` (adminStatsService) |
-| `activity.ts` | `ActivityRow`, `ListActivityOptions` (activityService); `SearchableEntity`, `SearchResults` (searchService); `CommentRow` (commentService); `ReminderRow` (reminderService) |
-| `misc.ts` | `PreferencesRow`, `UpdatePreferencesInput` (preferencesService); `RateLimitResult`, `MemEntry` (rateLimitService); `SecurityEventType`, `SecurityEvent` (securityLogger); `ValidationError` (validate); `TaskInput` (taskValidation); `RequestContext` (requestContext) |
+| `recurrence.ts` [E, done] | Already `RecurrenceRule`, `DueDate`; no change |
+| `task.ts` [E] | Add `TaskRow`, `SubtreeRow`, `MovedTaskSummary`, `CreateTaskInput`, `UpdateTaskInput`, `MoveTaskInput`, `TaskOrderScope`, `ReorganizeMove` (taskService). Keep `TaskTimeRow`, `TaskTimeFields` |
+| `parsers.ts` [N] | Unified `PeggyParser`, `ParserOptions`; update both parsers |
+| `habits.ts` [N] | `HabitRow`, `HabitGroupRow`, `Habit`, `HabitGroup`, `HabitEntityType`, `CreateHabitInput`, `UpdateHabitInput`, `CompletionResult`, `UpdateHabitGroupInput`, `MoveHabitInput/Result`, `MoveHabitGroupInput/Result` |
+| `collections.ts` [N] | `CollectionRow`, `Create/UpdateCollectionInput`; `SectionRow`, `Create/UpdateSectionInput`; `InvitationRow`, `CollaboratorRow`; `LabelRow`, `Label`, `Create/UpdateLabelInput` |
+| `daily.ts` [E] | Add `ViewTaskRow`, `ViewPreferencesRow`, `ViewStatusRow`, `BoardOrderRow` (viewService). Keep `DailyTask`, `DailyDay`, `DailyView` |
+| `filters.ts` [N] | `FilterExpr`, `FilterParseError`, `FilterRow`, `Create/UpdateFilterInput`, `EvalTask`, `EvalContext` |
+| `sync.ts` [N] | `SocketData`, `SyncEntityType`, `SyncEventType`, `SyncEvent` |
+| `auth.ts` [N] | `UserRole`, `UserData`, `RegisterInput`; `SessionContext`, `SessionRow`, `SessionCookieOptions` |
+| `admin.ts` [N] | `AdminUser`, `ListUsersResult`, `AdminUserRow`; `AdminCounts`, `AdminHealth`, `AdminAuthStats` |
+| `activity.ts` [E] | Add `ActivityRow`, `SearchableEntity`, `SearchResults`, `CommentRow`, `ReminderRow`. Keep existing 5 |
+| `misc.ts` [N] | `PreferencesRow` (preferencesService), `BoardGroupBy`, `BoardViewMode`, `BoardViewModes`, `UpdatePreferencesInput`; `RateLimitResult`, `MemEntry`; `SecurityEventType`, `SecurityEvent`; `ValidationError`; `TaskInput`; `RequestContext`; `SyncCompletionParams`, `CompletionSyncResult`; `StatusRow`, `Status`, `DefaultStatusName`, `Create/UpdateStatusInput`, `DeleteStatusOptions` |
+| `apiToken.ts` [E] | Add `ApiTokenRow`. Keep existing 6 |
 
-Approximate naming rule in shared files: when two source files exported the
-same name with different shapes, rename the narrower/local one with a domain
-prefix (e.g. `ViewTaskRow`) so no behavioural merge happens.
+## Relevant Files
+
+- `app/src/api/client.ts` - 31 contract types, source of `types/api.ts`
+- `app/src/components/TaskItem.tsx` - canonical `Task`
+- `app/src/stores/taskStore.ts`, `collectionStore.ts`, `optimistic.ts`, `taskSelectionStore.ts` - store state
+- `app/src/components/board/*`, `app/src/components/ui/*`, `app/src/components/habits/*`, `app/src/components/monthly/*` - props
+- `app/src/hooks/*`, `app/src/contexts/*`, `app/src/utils/*` - hook/util types
+- `app/src/types/*` - existing dedicated files to extend
+- `api/src/services/*`, `api/src/parsers/*`, `api/src/engines/recurrenceEngine.ts` - service types
+- `api/src/types/*` - existing dedicated files to extend
+- `.specs/2026-08-08-dedicated-type-files/task.md` - milestone breakdown
 
 ## Execution order
 
-Each milestone: implement → `npm run build` (or `tsc --noEmit`) → `npm run
-lint` → relevant `npm test`. Conventional commits, one commit per milestone
-(finely sub-committed per domain file as diffs grow).
+1. App API contracts (`types/api.ts`).
+2. Task domain (extend `types/task.ts` + new `types/stores.ts`).
+3. Collection/nav (`types/collections.ts`).
+4. Habits (`types/habits.ts`).
+5. UI + widgets (`types/ui.ts`, `types/widgets.ts`).
+6. Hooks/contexts/misc (`types/hooks.ts`, `sync.ts`, `utils.ts`, `i18n.ts`, `drag.ts`).
+7. API types (extend `task.ts`, `daily.ts`, `activity.ts`, `apiToken.ts`; new `parsers.ts`, `habits.ts`, `collections.ts`, `filters.ts`, `sync.ts`, `auth.ts`, `admin.ts`, `misc.ts`).
+8. Sweep + full verification.
 
-1. **App API contracts** — create `app/src/types/api.ts` from
-   `api/client.ts`; rewrite every `import { type ApiX } from '../api/client'`
-   to `types/api` (~40 sites); `client.ts` keeps functions only.
-2. **Task domain** — `types/tasks.ts` + `types/stores.ts` + all task/optimistic
-   consumers (Daily, Inbox, Upcoming, Collections, TaskList, TaskItem,
-   TaskDetail, drag hooks, taskTree/taskProjection/utils).
-3. **Collection/nav domain** — `types/collections.ts`.
-4. **Habits domain** — `types/habits.ts` + HabitsPage/Timeline/Calendar +
-   habit drag/projection/tree.
-5. **UI + widgets** — `types/ui.ts`, `types/widgets.ts` (components/ui/* +
-   overlays/modals/monthly).
-6. **Hooks/contexts/misc** — `types/hooks.ts`, `types/sync.ts`,
-   `types/utils.ts`, `drag.ts` additions (useDragContext value types),
-   `types.ts` no-op.
-7. **API type files** — `api/src/types/*` per table above (split into 3–4
-   commits: recurrence/parsers; tasks/habits; collections/views/filters;
-   sync/auth/admin/activity/misc), updating all service imports.
-8. **Tail** — full sweep: grep for any remaining `interface`/`type` in
-   implementation files vs. exceptions list; full `npm test` both packages.
+Each milestone: implement, `tsc --noEmit` or `npm run build`, `npm run lint`, relevant `npm test`. One Conventional Commit per milestone.
 
 ## Verification
 
 1. `docker compose exec api npm run build && npm run lint && npm test`
 2. `docker compose exec app npm run build && npm run lint && npm test`
-3. Grep audit: no `interface`/`type` declarations remain in
-   `app/src/**/*.tsx` outside `types/` (except exceptions); printed type-only
-   imports (`import type`) everywhere a moved type is consumed
-4. Byte-diff audit of one mid-file (DailyPage) before/after to prove it's a
-   pure move (no logic drift)
+3. Grep audit: no `interface`/`type` outside `types/`, `*.test.*`, `__tests__`, `*.d.ts`, exceptions.
+4. Byte-diff of one mid-file (e.g. DailyPage) shows only removed type blocks + import rewrites.
 
-## Risks / mitigations
+## Risks
 
-- **Import path churn** (~150 files touched) — highest risk is missed
-  import sites; the build catches them all (no `any` fallbacks keep strict
-  mode working).
-- **Name collisions in central files** — resolved by domain prefix
-  (documented rename table in `task.md`), never by merging different shapes.
-- **Test breakage**: tests import `Task`/`ApiTask` from old locations —
-  updated in the same milestone as their sources.
-- This is a pure refactor: no runtime behavioral change supersedes the status
-  table; reviewers diff imports next to a source-move delta (each file's diff
-  is delete-on-one-side/addition-on-other; JSDoc moves with its type).
+- Import churn (~136 files) - build catches missed sites under strict mode.
+- Name collisions - prefix narrower shape, never merge.
+- Tests import from old locations - update in same milestone.

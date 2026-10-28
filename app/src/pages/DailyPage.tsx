@@ -15,7 +15,7 @@ import { DailyWeekBoard } from '../components/board/DailyWeekBoard';
 import { WeekSelector } from '../components/board/WeekSelector';
 import { DailyList } from '../components/daily/DailyList';
 import { MonthlyView } from '../components/monthly/MonthlyView';
-import type { Task } from '../types/tasks';
+import type { Task } from '../components/TaskItem';
 import { extractNaturalDate, fmtISO, fmtISOInTimeZone, startOfWeek } from '../utils/date';
 import { nextOrderValue } from '../utils/order';
 import { applyIndent, getParentCandidate } from '../utils/taskTree';
@@ -24,15 +24,8 @@ import { useTaskVisibilityPreferences } from '../hooks/useTaskVisibilityPreferen
 import { useMidnightTimer } from '../hooks/useMidnightTimer';
 import { useDailyTasks } from '../hooks/useDailyTasks';
 import { useI18n } from '../i18n/I18nContext';
-import {
-  fetchCollections,
-  fetchPreferences,
-  apiToggleTask,
-  apiCreateTask,
-  apiUpdateTask,
-  apiDeleteTask,
-  type ApiTask,
-} from '../api/client';
+import { fetchCollections, fetchPreferences, apiToggleTask, apiCreateTask, apiUpdateTask, apiDeleteTask } from '../api/client';
+import type { ApiTask } from '../types/api';
 import { ContextMenu, type ContextMenuItem } from '../components/ui/ContextMenu';
 import { flattenCollections } from '../components/CollectionTreeNav';
 import { Folder, ArrowUp, ArrowDown, Trash2, Calendar, Kanban, List } from 'lucide-react';
