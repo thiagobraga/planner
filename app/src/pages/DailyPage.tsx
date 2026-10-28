@@ -836,7 +836,7 @@ export function DailyPage({ view }: { view: BoardViewMode }) {
         />
       ) : (
         <>
-        <div className="daily-list-nav flex max-w-162 justify-start">
+        <div className="daily-list-nav sticky top-6 z-[9] flex max-w-162 justify-start bg-(--planner-page-bg)">
           <WeekSelector weekAnchor={weekAnchor} today={dateFromISO(todayKey)} weekStart={weekStart} onWeekChange={setWeekAnchor} onToday={goToToday} />
         </div>
         <DailyList
