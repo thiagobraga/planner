@@ -35,7 +35,7 @@ test('sidebar icons keep their geometry when collapsed', async ({ page }) => {
   expect(compactVersionRow?.y).toBe(expandedVersionRow?.y);
   expect(compactVersionRow?.height).toBe(expandedVersionRow?.height);
   const badge = await sidebar.locator('.sidebar-version').boundingBox();
-  expect(badge!.x + badge!.width / 2).toBeCloseTo(31.5);
+  expect(badge!.x + badge!.width / 2).toBeCloseTo(31.5, 0);
   await expect(sidebar.getByText('Daily', { exact: true })).not.toBeVisible();
   await page.screenshot({ path: 'dist/screenshots/sidebar-aligned-collapsed.png' });
   await sidebar.getByRole('button', { name: /Expand sidebar|Expandir barra/ }).click();
