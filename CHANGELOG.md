@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.11.1](https://github.com/thiagobraga/planner/compare/v0.11.0...v0.11.1) (2026-10-28)
+
+
+### Fixed
+
+* replace any with unknown in dropData type ([c3dc212](https://github.com/thiagobraga/planner/commit/c3dc2124fe60b5554ece9742072c52950d4934d2))
+
+
+### Changed
+
+* **app:** create dedicated type files for task domain (Milestone 2) ([3d23278](https://github.com/thiagobraga/planner/commit/3d23278f98da90e3965cad0315cfe027363870e1))
+
 ## [0.11.0](https://github.com/thiagobraga/planner/compare/v0.10.1...v0.11.0) (2026-10-25)
 
 
