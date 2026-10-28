@@ -197,6 +197,7 @@ export const englishCatalog = {
   'settings.dark': 'Dark',
   'settings.system': 'Automatic',
   'settings.showDots': 'Show background dots',
+  'settings.showCheckboxes': 'Show checkboxes instead of dots and crosses',
   'date.today': 'Today',
   'date.tomorrow': 'Tomorrow',
   'date.next': 'Next',

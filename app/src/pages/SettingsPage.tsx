@@ -363,6 +363,7 @@ export function SettingsPage() {
           | 'weekStart'
           | 'hideCompletedTasks'
           | 'showNotes'
+          | 'showCheckboxes'
           | 'agentChangeNotices'
           | 'dateFormat'
         >
@@ -398,6 +399,7 @@ export function SettingsPage() {
   const weekStart = preferences?.weekStart ?? 'sunday';
   const hideCompletedTasks = preferences?.hideCompletedTasks ?? false;
   const showNotes = preferences?.showNotes ?? true;
+  const showCheckboxes = preferences?.showCheckboxes ?? false;
   const agentChangeNotices = preferences?.agentChangeNotices ?? false;
   const dateFormat = preferences?.dateFormat ?? 'MMM DD ddd';
   const savedTimeZone = preferences?.timeZone ?? detectedTimeZone;
@@ -525,6 +527,10 @@ export function SettingsPage() {
 
   const handleShowNotesChange = (nextShowNotes: boolean) => {
     updateMutation.mutate({ showNotes: nextShowNotes });
+  };
+
+  const handleShowCheckboxesChange = (nextShowCheckboxes: boolean) => {
+    updateMutation.mutate({ showCheckboxes: nextShowCheckboxes });
   };
 
   const handleSectionChange = (nextSection: SettingsSection) => {
@@ -857,6 +863,13 @@ export function SettingsPage() {
                         onChange={handleDotsChange}
                         disabled={disabled}
                         label={<span className="text-sm leading-6 text-ink">{t('settings.showDots')}</span>}
+                        className="[&_button]:!p-0"
+                      />
+                      <Toggle
+                        checked={showCheckboxes}
+                        onChange={handleShowCheckboxesChange}
+                        disabled={disabled}
+                        label={<span className="text-sm leading-6 text-ink">{t('settings.showCheckboxes')}</span>}
                         className="[&_button]:!p-0"
                       />
                     </section>

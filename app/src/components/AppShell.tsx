@@ -1,4 +1,5 @@
 import { useState, useEffect, useLayoutEffect, useCallback, useRef } from 'react';
+import { useCheckboxStore } from '../stores/checkboxStore';
 import { Outlet, useNavigate, useLocation } from 'react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Sidebar } from './Sidebar';
@@ -60,6 +61,10 @@ export function AppShell() {
   const [agentNotice, setAgentNotice] = useState<string | null>(null);
   const clearAgentNotice = useCallback(() => setAgentNotice(null), []);
   const agentNoticesOn = preferences?.agentChangeNotices ?? false;
+  const showCheckboxes = preferences?.showCheckboxes ?? false;
+  useEffect(() => {
+    useCheckboxStore.setState({ enabled: showCheckboxes });
+  }, [showCheckboxes]);
 
   useSync(useCallback((event) => {
     if (event.actor) {

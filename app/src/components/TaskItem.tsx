@@ -15,6 +15,8 @@ import { formatDuration, formatTimeWindow } from '../utils/taskTime';
 import { getCaret, getText, setCaret } from '../utils/editableText';
 import { EditableText } from './ui/EditableText';
 import { DebugCard } from './DebugCard';
+import { useCheckboxStore } from '../stores/checkboxStore';
+import { Checkbox } from './ui/Checkbox';
 import { useDebugStore } from '../stores/debugStore';
 
 export interface Task {
@@ -132,6 +134,7 @@ export const TaskItem = memo(function TaskItem({
   onRightClick,
 }: TaskItemProps) {
   const { locale, t } = useI18n();
+  const showCheckboxes = useCheckboxStore((s) => s.enabled);
   const isSelected = useTaskSelectionStore((s) => s.selectedTaskIds.has(task.id));
   const selectTask = useTaskSelectionStore((s) => s.selectTask);
   const debug = useDebugStore((s) => s.enabled);
@@ -348,6 +351,19 @@ export const TaskItem = memo(function TaskItem({
           className="task-item-event-indicator h-6 w-6 flex items-center justify-center text-base font-normal text-ink select-none shrink-0"
         >
           ○
+        </span>
+      ) : showCheckboxes ? (
+        <span className="task-item-checkbox h-6 w-6 flex items-center justify-center shrink-0" {...{ [NO_DRAG_ATTR]: '' }}>
+          <Checkbox
+            checked={task.isCompleted}
+            aria-label={task.isCompleted
+              ? t('task.reopen', { title: task.title })
+              : t('task.complete', { title: task.title })}
+            onChange={() => undefined}
+            onClick={(e) => { e.stopPropagation(); handleCheckClick(e); }}
+            onDoubleClick={(e) => e.stopPropagation()}
+            className="[&_.ui-checkbox-box]:mt-0"
+          />
         </span>
       ) : (
         <button

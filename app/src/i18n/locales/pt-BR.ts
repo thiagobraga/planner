@@ -199,6 +199,7 @@ export const portugueseBrazilCatalog = {
   'settings.dark': 'Escuro',
   'settings.system': 'Automático',
   'settings.showDots': 'Mostrar pontos no fundo',
+  'settings.showCheckboxes': 'Mostrar caixas de seleção no lugar de pontos e cruzes',
   'date.today': 'Hoje',
   'date.tomorrow': 'Amanhã',
   'date.next': 'Próxima',
