@@ -15,6 +15,7 @@ interface PreferencesRow {
   small_caps: boolean;
   hide_completed_tasks: boolean;
   show_notes: boolean;
+  show_checkboxes: boolean;
   agent_change_notices: boolean;
   locale: string;
   date_format: string;
@@ -39,6 +40,7 @@ function formatPreferences(row: PreferencesRow) {
     smallCaps: row.small_caps,
     hideCompletedTasks: row.hide_completed_tasks,
     showNotes: row.show_notes,
+    showCheckboxes: row.show_checkboxes,
     agentChangeNotices: row.agent_change_notices,
     locale: row.locale,
     dateFormat: row.date_format ?? 'MMM DD ddd',
@@ -82,6 +84,7 @@ export interface UpdatePreferencesInput {
   smallCaps?: boolean;
   hideCompletedTasks?: boolean;
   showNotes?: boolean;
+  showCheckboxes?: boolean;
   agentChangeNotices?: boolean;
   locale?: string;
   dateFormat?: string;
@@ -132,6 +135,10 @@ export function validatePreferences(input: UpdatePreferencesInput): UpdatePrefer
 
   if (input.showNotes !== undefined && typeof input.showNotes !== "boolean") {
     errors.push({ field: "showNotes", message: "showNotes must be a boolean" });
+  }
+
+  if (input.showCheckboxes !== undefined && typeof input.showCheckboxes !== "boolean") {
+    errors.push({ field: "showCheckboxes", message: "showCheckboxes must be a boolean" });
   }
 
   if (input.agentChangeNotices !== undefined && typeof input.agentChangeNotices !== "boolean") {
@@ -257,6 +264,10 @@ export async function updatePreferences(userId: string, input: UpdatePreferences
   if (input.showNotes !== undefined) {
     setClauses.push(`show_notes = $${paramIndex++}`);
     values.push(input.showNotes);
+  }
+  if (input.showCheckboxes !== undefined) {
+    setClauses.push(`show_checkboxes = $${paramIndex++}`);
+    values.push(input.showCheckboxes);
   }
   if (input.agentChangeNotices !== undefined) {
     setClauses.push(`agent_change_notices = $${paramIndex++}`);
