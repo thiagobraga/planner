@@ -139,7 +139,7 @@ export function DailyBoardColumn({ column, title, isToday, tasks, allTasks, onTo
             <input
               autoFocus
               aria-label={t('quickAdd.taskTitle')}
-              placeholder={t('quickAdd.taskTitle')}
+              placeholder={t('common.addTask')}
               autoComplete="off"
               value={draft}
               disabled={saving}
@@ -166,7 +166,7 @@ export function DailyBoardColumn({ column, title, isToday, tasks, allTasks, onTo
           onClick={() => setEditing(true)}
         >
           <span aria-hidden="true" className="daily-board-add-icon">+</span>
-          <span>{t('board.addTask')}</span>
+          <span>{t('common.addTask')}</span>
         </button>}
       </div>
     </section>

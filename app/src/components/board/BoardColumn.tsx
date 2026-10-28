@@ -202,7 +202,7 @@ export function BoardColumn({
             <input
               autoFocus
               aria-label={t('quickAdd.taskTitle')}
-              placeholder={t('quickAdd.taskTitle')}
+              placeholder={t('common.addTask')}
               autoComplete="off"
               value={draft}
               disabled={saving}
@@ -229,7 +229,7 @@ export function BoardColumn({
           onClick={() => setEditing(true)}
         >
           <span aria-hidden="true" className="daily-board-add-icon">+</span>
-          <span>{t('board.addTask')}</span>
+          <span>{t('common.addTask')}</span>
         </button>}
       </div>
     </section>

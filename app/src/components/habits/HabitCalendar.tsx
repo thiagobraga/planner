@@ -422,7 +422,7 @@ function HabitCalendarHeading({
         <InlineNameInput
           commitOnEscape
           defaultValue={node.name}
-          placeholder={t('page.habitName')}
+          placeholder={t('common.addHabit')}
           onCommit={onCommitEdit}
           onCancel={onCancelEdit}
         />

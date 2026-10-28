@@ -1,4 +1,5 @@
 import { Fragment, useState, useRef, useCallback, useEffect, useLayoutEffect, useMemo } from 'react';
+import { PlaceholderBullet } from '../components/ui/PlaceholderBullet';
 import { useParams, Link, useNavigate } from 'react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
@@ -755,9 +756,7 @@ export function CollectionsPage() {
         />
 
         <div className="flex items-start min-h-6">
-        <span className="w-6 text-center text-[10px] leading-6 text-ink opacity-25 select-none shrink-0">
-          •
-        </span>
+        <PlaceholderBullet />
           <EditableText
             ref={inputRef}
             value={input}
@@ -807,9 +806,7 @@ export function CollectionsPage() {
               onRightClick={handleRightClick}
             />
             <div className="flex items-start min-h-6">
-              <span className="w-6 text-center text-[10px] leading-6 text-ink opacity-25 select-none shrink-0">
-                •
-              </span>
+              <PlaceholderBullet />
               <EditableText
                 value={sectionTaskInput[group.section!.id] ?? ''}
                 onValueChange={(text) => setSectionTaskInput((prev) => ({ ...prev, [group.section!.id]: text }))}
