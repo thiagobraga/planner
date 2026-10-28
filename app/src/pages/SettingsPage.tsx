@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useId, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react';
+import { PageHeader } from '../components/PageHeader';
 import { createPortal } from 'react-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router';
@@ -540,7 +541,7 @@ export function SettingsPage() {
   if (isLoading) {
     return (
       <div className="max-w-5xl pb-24 text-ink">
-        <h1 className="text-[18px] leading-6 font-semibold text-ink m-0">{t('settings.title')}</h1>
+        <PageHeader title={t('settings.title')} />
         <p className="text-sm leading-6 text-ink opacity-75 m-0">{t('settings.loading')}</p>
       </div>
     );
