@@ -1,4 +1,4 @@
-FROM node:26.12.0-alpine3.24 AS build
+FROM node:26.12.1-alpine3.24 AS build
 WORKDIR /app
 # Lockfile first so the npm ci layer survives source-only changes.
 COPY --chown=node:node app/package.json app/package-lock.json app/.npmrc ./
@@ -6,7 +6,7 @@ RUN npm ci
 COPY --chown=node:node app ./
 RUN npm run build && npm cache clean --force
 
-FROM node:26.12.0-alpine3.24 AS development
+FROM node:26.12.1-alpine3.24 AS development
 WORKDIR /app
 # Chromium for Playwright e2e tests (playwright.config.ts pins it via
 # PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH and always launches with --no-sandbox).
