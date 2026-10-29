@@ -81,7 +81,7 @@ jobs:
           persist-credentials: false
 
       - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4
-      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
@@ -152,7 +152,7 @@ jobs:
           [ -f "trivy-$COMPONENT.sarif" ] || exit 0
           jq --arg n "4c. Trivy - $COMPONENT image" '.runs[].tool.driver.name = $n' "trivy-$COMPONENT.sarif" > "trivy-$COMPONENT.tmp" && mv "trivy-$COMPONENT.tmp" "trivy-$COMPONENT.sarif"
 
-      - uses: github/codeql-action/upload-sarif@24c54180a607b1449ed407dd24f251e4e9147c8d # v4.38.3
+      - uses: github/codeql-action/upload-sarif@6f2ac81f5cd81fe351a197ba0b00d91d03cd2aee # v4.39.0
         if: always()
         with:
           sarif_file: 'trivy-${{ matrix.component }}.sarif'
@@ -174,7 +174,7 @@ jobs:
       VERSION: ${{ inputs.version }}
     steps:
       - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4
-      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}

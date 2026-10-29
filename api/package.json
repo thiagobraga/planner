@@ -1,62 +1,62 @@
 {
-  "name": "api",
-  "version": "0.12.1",
-  "private": true,
-  "type": "module",
-  "engines": {
-    "node": ">=24"
-  },
-  "scripts": {
-    "dev": "tsx watch src/index.ts",
-    "build": "tsc -p tsconfig.build.json && mkdir -p dist/parsers dist/db && cp src/parsers/*.peggy dist/parsers/ && cp -r src/db/migrations dist/db/",
-    "typecheck": "tsc --noEmit",
-    "start": "node dist/index.js",
-    "lint": "eslint src/",
-    "test": "vitest run",
-    "coverage": "vitest run --coverage",
-    "provision-user": "tsx src/db/provisionUser.ts",
-    "audit": "npm audit --production"
-  },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.32.1",
     "argon2": "^0.45.1",
     "cookie-parser": "^1.4.7",
-    "express": "^5.2.1",
+    "express": "^5.3.0",
     "express-rate-limit": "^8.7.1",
     "helmet": "^8.3.0",
-    "peggy": "^5.1.0",
+    "peggy": "^5.1.1",
     "pg": "^8.23.1",
     "redis": "^6.3.0",
-    "resend": "^6.32.1",
+    "resend": "^6.34.1",
     "sanitize-html": "^2.18.0",
     "socket.io": "^4.8.4",
-    "uuid": "^14.0.2",
+    "uuid": "^14.0.3",
     "zod": "^4.6.5",
     "zxcvbn": "^4.4.2"
   },
   "devDependencies": {
-    "@rolldown/binding-linux-x64-gnu": "1.2.13",
-    "@rolldown/binding-linux-x64-musl": "1.2.13",
+    "@eslint/js": "^10.0.1",
+    "@rolldown/binding-linux-x64-gnu": "1.2.15",
+    "@rolldown/binding-linux-x64-musl": "1.2.15",
     "@types/cookie-parser": "^1.4.10",
     "@types/express": "^5.0.0",
-    "@types/node": "^26.6.4",
+    "@types/node": "^26.6.5",
     "@types/pg": "^8.23.1",
     "@types/sanitize-html": "^2.16.2",
     "@types/supertest": "^7.2.1",
     "@types/zxcvbn": "^4.4.5",
-    "@vitest/coverage-v8": "^5.0.3",
-    "@eslint/js": "^10.0.1",
-    "eslint": "^10.12.0",
+    "@vitest/coverage-v8": "^5.0.5",
+    "eslint": "^10.13.0",
     "fast-check": "^4.10.2",
     "supertest": "^7.3.1",
     "tsx": "^4.23.15",
     "typescript": "^6.0.3",
-    "typescript-eslint": "^8.71.0",
+    "typescript-eslint": "^8.72.0",
     "vitest": "^5.0.3"
   },
+  "engines": {
+    "node": ">=24"
+  },
+  "name": "api",
   "overrides": {
-    "tar": "^7.5.20",
     "esbuild": "^0.25.0",
-    "qs": "^6.16.0"
-  }
+    "qs": "^6.17.0",
+    "tar": "^7.5.20"
+  },
+  "private": true,
+  "scripts": {
+    "audit": "npm audit --production",
+    "build": "tsc -p tsconfig.build.json && mkdir -p dist/parsers dist/db && cp src/parsers/*.peggy dist/parsers/ && cp -r src/db/migrations dist/db/",
+    "coverage": "vitest run --coverage",
+    "dev": "tsx watch src/index.ts",
+    "lint": "eslint src/",
+    "provision-user": "tsx src/db/provisionUser.ts",
+    "start": "node dist/index.js",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "type": "module",
+  "version": "0.12.1"
 }
