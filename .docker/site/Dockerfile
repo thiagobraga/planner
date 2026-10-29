@@ -1,4 +1,4 @@
-FROM node:26.10.0-alpine3.24 AS build
+FROM node:26.12.0-alpine3.24 AS build
 WORKDIR /workspace/site
 COPY --chown=node:node site/package.json site/package-lock.json site/.npmrc ./
 RUN npm ci
@@ -8,7 +8,7 @@ ARG VITE_APP_URL=https://planner.thiagobraga.dev
 ENV VITE_APP_URL=$VITE_APP_URL
 RUN npm run build && npm cache clean --force
 
-FROM node:26.10.0-alpine3.24 AS development
+FROM node:26.12.0-alpine3.24 AS development
 WORKDIR /workspace/site
 RUN apk upgrade --no-cache && apk add --no-cache chromium \
     && mkdir -p node_modules && chown -R node:node /workspace
