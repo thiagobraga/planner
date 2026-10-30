@@ -123,7 +123,7 @@ services:
   # wipe them. Generate with `npx vitest run --reporter=html` and
   # `npm run test:e2e:coverage` respectively.
   coverage:
-    image: nginx:1.31-alpine
+    image: nginx:1.31.8-alpine
     container_name: ${COMPOSE_PROJECT_NAME:-planner}-coverage
     profiles: [debug]
     networks: [proxy]
@@ -138,7 +138,7 @@ services:
 
   postgres:
     container_name: ${COMPOSE_PROJECT_NAME:-planner}-postgres
-    image: postgres:16-alpine
+    image: postgres:18-alpine
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-planner}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-planner}

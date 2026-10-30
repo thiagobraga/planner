@@ -26,7 +26,7 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["npm", "run", "dev"]
 
-FROM nginx:1.31-alpine AS production
+FROM nginx:1.31.8-alpine AS production
 ARG APK_REFRESH
 RUN apk upgrade --no-cache
 COPY --from=build /workspace/site/dist /usr/share/nginx/html
