@@ -74,5 +74,5 @@
     "test:e2e:coverage": "VITE_COVERAGE=true npm run build && PLAYWRIGHT_COVERAGE=1 npx playwright test && node e2e/merge-coverage.ts"
   },
   "type": "module",
-  "version": "0.12.1"
+  "version": "0.12.2"
 }

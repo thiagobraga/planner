@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.12.2](https://github.com/thiagobraga/planner/compare/v0.12.1...v0.12.2) (2026-10-30)
+
+
+### Fixed
+
+* **security:** resolve 32 code-scanning alert(s) via dependabatch ([10594f2](https://github.com/thiagobraga/planner/commit/10594f251754b31ab2fdeb978b1799a20e84549f))
+* **security:** resolve 32 code-scanning alert(s) via dependabatch ([64cdeaf](https://github.com/thiagobraga/planner/commit/64cdeafebc1894dfd689868bc918489095d2eb13))
+
 ## [0.12.1](https://github.com/thiagobraga/planner/compare/v0.12.0...v0.12.1) (2026-10-28)
 
 
