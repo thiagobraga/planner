@@ -60,6 +60,7 @@ if (!window.matchMedia) {
 
 if (!global.ResizeObserver) {
   global.ResizeObserver = class ResizeObserver {
+    constructor(..._args: unknown[]) {}
     observe() {}
     unobserve() {}
     disconnect() {}

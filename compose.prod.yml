@@ -2,7 +2,7 @@ services:
   # Compose creates these shared networks before a color references them as external.
   network-init:
     profiles: [setup]
-    image: nginx:1.31-alpine
+    image: nginx:1.31.8-alpine
     entrypoint: ["true"]
     networks: [backend, egress]
     read_only: true
@@ -11,7 +11,7 @@ services:
     restart: "no"
 
   router:
-    image: nginx:1.31-alpine
+    image: nginx:1.31.8-alpine
     container_name: planner-prod-router
     # The stock image starts as root, which without DAC_OVERRIDE cannot mkdir in
     # the uid 101 tmpfs below; nginx exited at startup and restart-looped.
@@ -40,7 +40,7 @@ services:
 
   postgres:
     container_name: planner-prod-postgres
-    image: postgres:16-alpine
+    image: postgres:18-alpine
     networks: [data]
     environment:
       POSTGRES_USER_FILE: /run/secrets/postgres_user
