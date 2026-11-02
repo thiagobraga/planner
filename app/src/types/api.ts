@@ -95,6 +95,11 @@ export interface TaskMoveInput {
   scope: TaskOrderScope;
   /** Zero-based index within that scope. Clamped server-side. */
   position: number;
+  /**
+   * The sibling the task lands directly below, null for the top. The server
+   * prefers it over `position`, which drifts when a sibling is hidden here.
+   */
+  afterTaskId?: string | null;
 }
 
 /** The trimmed per-task fields `moveTask` reports back - not a full task row. */
