@@ -394,7 +394,14 @@ export async function createTask(userId: string, input: CreateTaskInput) {
   const type = input.type ?? 'task';
 
   const insertQuery = `INSERT INTO tasks (id, user_id, collection_id, section_id, parent_task_id, title, description, priority, due_date, recurrence_rule, depth, type, order_value, due_time, due_timezone, deadline_date, deadline_time, deadline_timezone, duration_minutes)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12,
+       COALESCE($13::int, (
+         SELECT COALESCE(MAX(order_value) + 1000, 0) FROM tasks
+         WHERE collection_id IS NOT DISTINCT FROM $3::uuid
+           AND section_id IS NOT DISTINCT FROM $4::uuid
+           AND parent_task_id IS NOT DISTINCT FROM $5::uuid
+       )),
+       $14, $15, $16, $17, $18, $19)
      RETURNING *`;
   const insertValues = [
     id,
@@ -409,7 +416,7 @@ export async function createTask(userId: string, input: CreateTaskInput) {
     input.recurrenceRule ?? null,
     depth,
     type,
-    input.orderValue ?? 0,
+    input.orderValue ?? null,
     input.dueTime ?? null,
     input.dueTime ? input.dueTimezone ?? null : null,
     input.deadlineDate ?? null,
