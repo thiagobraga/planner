@@ -931,6 +931,12 @@ export interface MoveTaskInput {
   priority?: number;
   scope: TaskOrderScope;
   position: number;
+  /**
+   * The sibling the task lands directly below (`null` for the top of the list).
+   * Preferred over `position`: a client only sees the rows it renders, so its
+   * index drifts from the server's whenever a sibling is hidden.
+   */
+  afterTaskId?: string | null;
 }
 
 const MAX_DEPTH = 5;
@@ -980,6 +986,9 @@ function validateMoveInput(input: MoveTaskInput): void {
   }
   if (!Number.isInteger(input.position) || input.position < 0) {
     throw validationError('position', 'Position must be a non-negative integer');
+  }
+  if (input.afterTaskId !== undefined && input.afterTaskId !== null && typeof input.afterTaskId !== 'string') {
+    throw validationError('afterTaskId', 'After task id must be a string or null');
   }
 
   const scope = input.scope;
@@ -1314,6 +1323,7 @@ export async function moveTask(taskId: string, userId: string, input: MoveTaskIn
         priority: destPriority,
         movedTaskId: taskId,
         position: input.position,
+        afterTaskId: input.afterTaskId,
         movedCollectionId: destCollectionId,
         movedParentTaskId: input.parentTaskId,
         movedDepth: rootNewDepth,
@@ -1335,6 +1345,7 @@ export async function moveTask(taskId: string, userId: string, input: MoveTaskIn
         priority: destPriority,
         movedTaskId: taskId,
         position: input.position,
+        afterTaskId: input.afterTaskId,
         movedCollectionId: destCollectionId,
         movedParentTaskId: input.parentTaskId,
         movedDepth: rootNewDepth,
@@ -1351,6 +1362,7 @@ export async function moveTask(taskId: string, userId: string, input: MoveTaskIn
         parentTaskId: input.parentTaskId,
         movedTaskId: taskId,
         position: input.position,
+        afterTaskId: input.afterTaskId,
         depth: rootNewDepth,
         movedDueDate: destDueDate,
         movedStatusId: destStatusId,
@@ -1428,6 +1440,15 @@ async function verifyCollectionAccess(collectionId: string, userId: string): Pro
 
 type Client = PoolClient;
 
+/** Where in `siblingIds` a moved task is inserted: right after `afterTaskId` when given, else `position` clamped. */
+function resolveInsertIndex(siblingIds: string[], position: number, afterTaskId?: string | null): number {
+  if (afterTaskId === undefined) return Math.min(position, siblingIds.length);
+  if (afterTaskId === null) return 0;
+  const index = siblingIds.indexOf(afterTaskId);
+  if (index === -1) throw validationError('afterTaskId', 'After task is not in the target list');
+  return index + 1;
+}
+
 /**
  * The order value that sits strictly between two flanking siblings (or beyond
  * a missing side, following the existing 1000-unit gap convention: siblings
@@ -1461,6 +1482,7 @@ async function renumberCollectionScope(
     parentTaskId: string | null;
     movedTaskId: string;
     position: number;
+    afterTaskId?: string | null;
     depth: number;
     movedDueDate: string | null;
     movedStatusId: string | null;
@@ -1516,7 +1538,11 @@ async function renumberCollectionScope(
     isCompleted: opts.movedIsCompleted,
   };
 
-  const clampedPosition = Math.min(opts.position, siblings.length);
+  const clampedPosition = resolveInsertIndex(
+    siblings.map((sib) => sib.id),
+    opts.position,
+    opts.afterTaskId,
+  );
   const prevValue = clampedPosition > 0 ? siblings[clampedPosition - 1].order_value : null;
   const nextValue = clampedPosition < siblings.length ? siblings[clampedPosition].order_value : null;
   const midpoint = midpointOrFallback(prevValue, nextValue);
@@ -1572,6 +1598,7 @@ async function renumberOrderTableScope(
     priority: number;
     movedTaskId: string;
     position: number;
+    afterTaskId?: string | null;
     movedCollectionId: string;
     movedParentTaskId: string | null;
     movedDepth: number;
@@ -1656,7 +1683,11 @@ async function renumberOrderTableScope(
     isCompleted,
   });
 
-  const clampedPosition = Math.min(opts.position, siblings.length);
+  const clampedPosition = resolveInsertIndex(
+    siblings.map((sib) => sib.task_id),
+    opts.position,
+    opts.afterTaskId,
+  );
   const prevSibling = clampedPosition > 0 ? siblings[clampedPosition - 1] : null;
   const nextSibling = clampedPosition < siblings.length ? siblings[clampedPosition] : null;
   // Loose check: a real unseeded neighbor comes back as SQL NULL, but treat a
