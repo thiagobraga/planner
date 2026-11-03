@@ -15,6 +15,7 @@ export interface ExportedPreferences {
   smallCaps: boolean;
   hideCompletedTasks: boolean;
   showNotes: boolean;
+  showCheckboxes: boolean;
   agentChangeNotices: boolean;
   locale: string;
   dateFormat: string;
@@ -147,6 +148,7 @@ export interface AccountPreferencesRow {
   small_caps: boolean;
   hide_completed_tasks: boolean;
   show_notes: boolean;
+  show_checkboxes: boolean;
   agent_change_notices: boolean;
   locale: string;
   date_format: string | null;

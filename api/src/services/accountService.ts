@@ -66,7 +66,7 @@ export async function exportUserData(userId: string): Promise<AccountExportData>
   ] = await Promise.all([
     pool.query(
       `SELECT time_zone, week_start, theme, notifications_enabled, font, show_dots,
-              background, small_caps, hide_completed_tasks, show_notes,
+              background, small_caps, hide_completed_tasks, show_notes, show_checkboxes,
               agent_change_notices, locale, date_format
        FROM preferences
        WHERE user_id = $1`,
@@ -162,6 +162,7 @@ export async function exportUserData(userId: string): Promise<AccountExportData>
           smallCaps: prefRow.small_caps,
           hideCompletedTasks: prefRow.hide_completed_tasks,
           showNotes: prefRow.show_notes,
+          showCheckboxes: prefRow.show_checkboxes,
           agentChangeNotices: prefRow.agent_change_notices,
           locale: prefRow.locale,
           dateFormat: prefRow.date_format ?? "MMM DD ddd",

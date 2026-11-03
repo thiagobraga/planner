@@ -3,6 +3,7 @@ import { Link } from 'react-router';
 import { ArrowLeft } from 'lucide-react';
 import { useI18n } from '../i18n/I18nContext';
 import type { LegalLayoutProps, LegalTextSection } from '../types/legal';
+import './LegalLayout.css';
 
 export function LegalSectionHeading({ title }: { title: string }) {
   return (

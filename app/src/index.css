@@ -1436,15 +1436,3 @@ textarea:focus-visible {
     animation: none;
   }
 }
-
-@media print {
-  .legal-no-print {
-    display: none !important;
-  }
-
-  .legal-page {
-    background: #f5f0e8 !important;
-    color: #44443d !important;
-    padding: 0 !important;
-  }
-}

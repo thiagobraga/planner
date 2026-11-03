@@ -70,6 +70,12 @@ test.describe('Privacy, Terms & Account Data Management', () => {
     await expect(dataHeading).toBeVisible();
     await page.screenshot({ path: 'dist/screenshots/settings-data-privacy-desktop.png' });
 
+    await page.setViewportSize({ width: 390, height: 844 });
+    await dataHeading.scrollIntoViewIfNeeded();
+    await page.screenshot({ path: 'dist/screenshots/settings-data-privacy-mobile.png' });
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await dataHeading.scrollIntoViewIfNeeded();
+
     // Export account data and inspect downloaded JSON
     const downloadPromise = page.waitForEvent('download');
     await page.getByRole('button', { name: 'Export data' }).click();

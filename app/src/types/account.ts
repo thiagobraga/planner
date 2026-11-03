@@ -15,6 +15,7 @@ export interface ExportedPreferences {
   smallCaps: boolean;
   hideCompletedTasks: boolean;
   showNotes: boolean;
+  showCheckboxes: boolean;
   agentChangeNotices: boolean;
   locale: string;
   dateFormat: string;
