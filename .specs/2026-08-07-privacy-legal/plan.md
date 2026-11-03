@@ -159,7 +159,7 @@ In Settings (`General` tab), a dedicated **Data & Privacy** (`AccountDataSection
 
 - [x] 3.1 Create `app/src/types/account.ts` and `app/src/types/legal.ts` for dedicated frontend types
 - [x] 3.2 Add English and Brazilian Portuguese UI keys in `app/src/i18n/locales/en.ts` and `app/src/i18n/locales/pt-BR.ts` (footer links, register consent copy, Settings Data & Privacy section)
-- [x] 3.3 Create `app/src/i18n/legalContent.ts` with complete English (`en`) and Brazilian Portuguese (`pt-BR`) structured content for:
+- [x] 3.3 Create `app/src/i18n/legalContent.ts` and `app/src/i18n/legal/{privacyEn,privacyPtBR,termsEn,termsPtBR}.ts` with complete English (`en`) and Brazilian Portuguese (`pt-BR`) structured content for:
   - Privacy Policy (Data We Collect table with GDPR & LGPD bases, Data Not Collected, Third-Party Processors, Cookie Policy table, User Rights table, Data Retention, Data Security, Contact / DPO)
   - Terms of Service (Service Description, User Responsibilities, Account Termination, Intellectual Property, Limitation of Liability, Governing Law, Changes to Terms)
 
@@ -197,7 +197,11 @@ In Settings (`General` tab), a dedicated **Data & Privacy** (`AccountDataSection
 ### Frontend (`app/`)
 - `app/src/types/account.ts` (new) - Frontend TypeScript interfaces for `AccountExportData`.
 - `app/src/types/legal.ts` (new) - Dedicated TypeScript interfaces for structured legal page content (`PrivacyPolicyContent`, `TermsOfServiceContent`, `LegalSection`).
-- `app/src/i18n/legalContent.ts` (new) - Localized structured content (`en` and `pt-BR`) for Privacy Policy, Cookie Policy, and Terms of Service.
+- `app/src/i18n/legalContent.ts` (new) - Barrel mapping `en` and `pt-BR` locales to Privacy Policy and Terms of Service content modules.
+- `app/src/i18n/legal/privacyEn.ts` (new) - English Privacy Policy and Cookie Policy structured content.
+- `app/src/i18n/legal/privacyPtBR.ts` (new) - Brazilian Portuguese Privacy Policy and Cookie Policy structured content.
+- `app/src/i18n/legal/termsEn.ts` (new) - English Terms of Service structured content.
+- `app/src/i18n/legal/termsPtBR.ts` (new) - Brazilian Portuguese Terms of Service structured content.
 - `app/src/i18n/locales/en.ts` - English translation strings for auth consent notice, footer links, and Settings Data & Privacy controls.
 - `app/src/i18n/locales/pt-BR.ts` - Brazilian Portuguese translation strings for auth consent notice, footer links, and Settings Data & Privacy controls.
 - `app/src/api/client.ts` - Adds `apiExportAccountData()` and `apiDeleteAccount()` and excludes `/account` from offline mutation queueing.
