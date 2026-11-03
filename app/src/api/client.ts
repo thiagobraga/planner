@@ -33,6 +33,7 @@ import type { ParsedDateInput, TaskSchedule } from '../types/task';
 import type { ApiToken, CreateApiTokenInput, CreatedApiToken } from '../types/apiToken';
 import type { ActivityPage, ActivityQuery } from '../types/activity';
 import type { ConnectedApp, ConsentDecision, PendingAuthorization } from '../types/oauth';
+import type { AccountExportData } from '../types/account';
 
 const BASE = '/api/v1';
 
@@ -158,7 +159,7 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   // synthetic session. Everything else that mutates app data is deferred.
   // Token and OAuth endpoints are excluded too: a queued create could never show
   // the one-time secret, and a queued revoke would leave a live credential believed dead.
-  if (!path.startsWith('/auth/') && !path.startsWith('/api-tokens') && !path.startsWith('/oauth/') && WRITE_METHODS.includes(method) && !isOnline()) {
+  if (!path.startsWith('/auth/') && !path.startsWith('/api-tokens') && !path.startsWith('/oauth/') && !path.startsWith('/account') && WRITE_METHODS.includes(method) && !isOnline()) {
     // Create calls (POST with no id segment in the path) mint their id here,
     // once, so the same value is both stored on the queued record (as
     // `clientEntityId`, for later remapping - see offlineQueue.remapQueuedId)
@@ -747,4 +748,14 @@ export async function apiGetAdminHealth(): Promise<AdminHealth> {
 
 export async function apiGetAdminAuthStats(): Promise<AdminAuthStats> {
   return request<AdminAuthStats>('/admin/stats/auth');
+}
+
+// Account data export & deletion -------------------------------------------
+
+export async function apiExportAccountData(): Promise<AccountExportData> {
+  return request<AccountExportData>('/account/export');
+}
+
+export async function apiDeleteAccount(): Promise<void> {
+  await request<{ success: boolean }>('/account', { method: 'DELETE' });
 }

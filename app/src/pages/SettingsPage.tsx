@@ -16,6 +16,7 @@ import { useFloatingPosition } from '../hooks/useFloatingPosition';
 import { useI18n } from '../i18n/I18nContext';
 import { ApiTokensSection } from '../components/settings/ApiTokensSection';
 import { ConnectedAppsSection } from '../components/settings/ConnectedAppsSection';
+import { AccountDataSection } from '../components/settings/AccountDataSection';
 import type { TranslationKey } from '../i18n/catalogs';
 
 type SettingsSection = 'general' | 'appearance' | 'integrations';
@@ -771,6 +772,8 @@ export function SettingsPage() {
                         description={t('settings.showNotesDescription')}
                       />
                     </section>
+
+                    <AccountDataSection />
                   </div>
                 </SettingsCard>
               ) : activeSection === 'integrations' ? (

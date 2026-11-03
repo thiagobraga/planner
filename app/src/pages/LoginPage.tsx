@@ -76,6 +76,11 @@ export function LoginPage() {
       <div className="mt-6 flex flex-col items-center gap-1">
         <AuthLink to="/forgot-password">{t('auth.forgotPassword')}</AuthLink>
         <AuthLink to="/register">{t('auth.noAccount')}</AuthLink>
+        <div className="mt-3 flex items-center gap-3 text-[13px] leading-6 text-ink-light">
+          <AuthLink to="/privacy">{t('auth.privacyPolicy')}</AuthLink>
+          <span aria-hidden="true">·</span>
+          <AuthLink to="/terms">{t('auth.termsOfService')}</AuthLink>
+        </div>
       </div>
     </AuthShell>
   );

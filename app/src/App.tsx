@@ -24,6 +24,8 @@ import { I18nProvider } from './i18n/I18nContext';
 import { getAppTitle } from './utils/environment';
 import { safeNextPath } from './utils/safeNext';
 import { OAuthConsentPage } from './pages/OAuthConsentPage';
+import { PrivacyPage } from './pages/PrivacyPage';
+import { TermsPage } from './pages/TermsPage';
 
 /** A signed-in visit to /login goes where the sign-in was meant to lead. */
 function AfterLogin() {
@@ -44,6 +46,8 @@ function AppRoutes() {
   return (
     <BrowserRouter>
       <Routes>
+        <Route path="/privacy" element={<PrivacyPage />} />
+        <Route path="/terms" element={<TermsPage />} />
         <Route path="/login" element={isAuthenticated ? <AfterLogin /> : <LoginPage />} />
         <Route path="/oauth/consent" element={isAuthenticated ? <OAuthConsentPage /> : <LoginFirst />} />
         <Route path="/register" element={isAuthenticated ? <Navigate to="/daily" replace /> : <RegisterPage />} />
