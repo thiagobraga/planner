@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.13.0](https://github.com/thiagobraga/planner/compare/v0.12.2...v0.13.0) (2026-11-03)
+
+
+### Added
+
+* add privacy policy, terms of service, and account data export/deletion ([ef8d766](https://github.com/thiagobraga/planner/commit/ef8d766d705ab05b2f84eb107231987effd3f235))
+* **api:** add account data export and cascading deletion endpoints ([73d445c](https://github.com/thiagobraga/planner/commit/73d445c46e2471634fc790d61148313f4e143a42))
+* **app:** add account data export and deletion controls in settings ([4186b34](https://github.com/thiagobraga/planner/commit/4186b34972e74a72d856f8c80e9cf85e77b8f85e))
+* **app:** add legal and account data types and localized content ([767600a](https://github.com/thiagobraga/planner/commit/767600a5730c914c2a07c6986a41945f21356a55))
+* **app:** add public privacy and terms pages and auth legal links ([fd84683](https://github.com/thiagobraga/planner/commit/fd846832a149d495e41ad9d56264cfc2e142052d))
+
+
+### Changed
+
+* **app:** split legalContent into per-document locale modules ([fc013c9](https://github.com/thiagobraga/planner/commit/fc013c9054c389469f0ca12a48395d15452ddbae))
+* **privacy:** extract legal print styles and export showCheckboxes preference ([6df473c](https://github.com/thiagobraga/planner/commit/6df473c43bb1aae63eb2200bbcc9caea6d68c295))
+
 ## [0.12.2](https://github.com/thiagobraga/planner/compare/v0.12.1...v0.12.2) (2026-10-30)
 
 
