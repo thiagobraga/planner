@@ -159,7 +159,7 @@ In Settings (`General` tab), a dedicated **Data & Privacy** (`AccountDataSection
 - `app/src/pages/LoginPage.tsx` - Adds Privacy and Terms links in the footer.
 - `app/src/pages/RegisterPage.tsx` - Adds registration consent line and Privacy/Terms links.
 - `app/src/App.tsx` - Registers public `/privacy` and `/terms` routes outside the auth guard.
-- `app/src/index.css` - Adds `@media print` utility styles for clean printing of legal pages.
+- `app/src/components/LegalLayout.css` (new) - `@media print` utility styles for clean printing of legal pages.
 - `app/src/pages/__tests__/LegalPages.test.tsx` (new) - Unit tests for `PrivacyPage` and `TermsPage` rendering, headings, cookie section, and localization.
 - `app/src/pages/__tests__/LoginPage.test.tsx` - Unit tests verifying Privacy and Terms links on Login page.
 - `app/src/pages/__tests__/RegisterPage.test.tsx` - Unit tests verifying consent text and Privacy/Terms links on Register page.
