@@ -472,7 +472,7 @@ export const TaskItem = memo(function TaskItem({
             )}
           </>
         )}
-        {debug && <DebugCard id={task.id} orderValue={task.orderValue} createdAt={task.createdAt} />}
+        {debug && <DebugCard id={task.id} orderValue={task.orderValue} createdAt={task.createdAt} level={renderedDepth ?? task.indent ?? 0} parentId={task.parentTaskId} />}
       </span>
     </div>
   );

@@ -393,4 +393,20 @@ describe('TaskItem - debug mode', () => {
     expect(card).toHaveTextContent('Order: 5');
     expect(card).toHaveTextContent(/Created: 2026-10-0[12]-\d\d-\d\d-\d\d/);
   });
+
+  it('shows level and parent of a subtask', () => {
+    useDebugStore.setState({ enabled: true });
+    renderTaskItem({ ...task, parentTaskId: 'parent99-0000', indent: 1 }, { isEditing: false });
+    const card = screen.getByTestId('debug-card');
+    expect(card).toHaveTextContent('Level: 1');
+    expect(card).toHaveTextContent('Parent: parent99');
+  });
+
+  it('shows level 0 and no parent for a root task', () => {
+    useDebugStore.setState({ enabled: true });
+    renderTaskItem(task, { isEditing: false });
+    const card = screen.getByTestId('debug-card');
+    expect(card).toHaveTextContent('Level: 0');
+    expect(card).toHaveTextContent('Parent: -');
+  });
 });
