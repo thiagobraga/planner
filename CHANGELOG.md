@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.14.0](https://github.com/thiagobraga/planner/compare/v0.13.0...v0.14.0) (2026-11-05)
+
+
+### Added
+
+* **app:** show level and parent in wasd debug card ([1628847](https://github.com/thiagobraga/planner/commit/162884708bb999feada921130d1fa4d2bd9ead85))
+* **app:** show level and parent in wasd debug card ([bc2d0e6](https://github.com/thiagobraga/planner/commit/bc2d0e668e90ef141be0d1b4beb9c2a3ce88e25a))
+
 ## [0.13.0](https://github.com/thiagobraga/planner/compare/v0.12.2...v0.13.0) (2026-11-03)
 
 
