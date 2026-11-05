@@ -16,4 +16,19 @@ describe('DebugCard', () => {
     render(<DebugCard id="abc" orderValue={0} />);
     expect(screen.getByTestId('debug-card')).toHaveTextContent('Created: -');
   });
+
+  it('shows level and a short parent id', () => {
+    render(<DebugCard id="abc" orderValue={0} level={2} parentId="fedcba98-7654" />);
+    const card = screen.getByTestId('debug-card');
+    expect(card).toHaveTextContent('Level: 2');
+    expect(card).toHaveTextContent('Parent: fedcba98');
+    expect(card).toHaveAttribute('title', expect.stringContaining('parent: fedcba98-7654'));
+  });
+
+  it('shows a dash for a root item without a parent', () => {
+    render(<DebugCard id="abc" orderValue={0} level={0} parentId={null} />);
+    const card = screen.getByTestId('debug-card');
+    expect(card).toHaveTextContent('Level: 0');
+    expect(card).toHaveTextContent('Parent: -');
+  });
 });

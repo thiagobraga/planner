@@ -432,4 +432,24 @@ describe('HabitTimeline - debug mode', () => {
     expect(card).toHaveTextContent('Order: 2');
     expect(card).toHaveTextContent(/Created: 2026-(09-30|10-01)-\d\d-\d\d-\d\d/);
   });
+
+  it('shows level and parent for a sub-habit', () => {
+    useDebugStore.setState({ enabled: true });
+    const nested: HabitSections = {
+      ungrouped: [{
+        id: 'root-0000', name: 'Root', parentId: null, groupId: null, orderValue: 1, completions: new Set(),
+        children: [{
+          id: 'child-0000', name: 'Child', parentId: 'root-0000', groupId: null, orderValue: 2,
+          completions: new Set(), children: [],
+        }],
+      }],
+      groups: [],
+    };
+    render(<HabitTimeline {...defaultProps} sections={nested} />, { wrapper: createWrapper() });
+    const cards = screen.getAllByTestId('debug-card');
+    expect(cards[0]).toHaveTextContent('Level: 0');
+    expect(cards[0]).toHaveTextContent('Parent: -');
+    expect(cards[1]).toHaveTextContent('Level: 1');
+    expect(cards[1]).toHaveTextContent('Parent: root-000');
+  });
 });

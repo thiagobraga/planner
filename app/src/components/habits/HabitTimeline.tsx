@@ -598,7 +598,7 @@ export function HabitTimeline({
                     >
                       {node.name}
                     </span>
-                    {debug && <DebugCard id={node.id} orderValue={node.orderValue} createdAt={node.createdAt} />}
+                    {debug && <DebugCard id={node.id} orderValue={node.orderValue} createdAt={node.createdAt} level={depth} parentId={node.parentId} />}
                     <RowOptionsButton
                       label={t('habit.optionsFor', { name: node.name })}
                       onOpen={(x, y) => setMenu({ target, canAddSub: depth === 0, x, y })}
