@@ -81,14 +81,14 @@ components:
     typography: '{typography.body}'
     rounded: '{rounded.sm}'
     padding: '4px 16px'
-  sidebar-link:
+  nav-link:
     backgroundColor: '{colors.sidebar-bg}'
     textColor: '{colors.ink}'
     typography: '{typography.body}'
     rounded: '{rounded.sm}'
     padding: '0 12px'
     height: '32px'
-  sidebar-link-active:
+  nav-link-active:
     backgroundColor: '{colors.dot}'
     textColor: '{colors.ink}'
     rounded: '{rounded.sm}'
@@ -151,7 +151,7 @@ A short palette of warm, slightly aged neutrals with one brick-red anchor; every
 ### Neutral
 
 - **Cream Paper** (`#f5f0e8`): The page itself. Body background, overlay panel surface, input field surface. Never `#fff`.
-- **Sidebar Cream** (`#ebe6de`): A half-step deeper than Cream Paper, used for sidebars, toolbars, and tonal layering. The only secondary surface.
+- **Surface Cream** (`#ebe6de`): A half-step deeper than Cream Paper, used for the top bar, toolbars, and tonal layering. The only secondary surface.
 - **Dot Grey** (`#d4cfc7`): Chip backgrounds, drag-handle resting color, the printed dot grid, tonal fills. The workhorse neutral.
 - **Border** (`#e5e1d8`): The default hairline for card, panel, input, and divider strokes. A touch lighter/warmer than Dot Grey so 1px edges read as paper creases, not lines.
 - **Ink** (`#44443d`): All primary text. The "ink" of the journal. Never `#000`.
@@ -179,15 +179,15 @@ Tokens are redefined under `:root[data-theme="dark"]` in `app/src/index.css`; co
 
 | Token | Light | Dark | Role |
 | --- | --- | --- | --- |
-| Cream Paper `--color-cream` | `#f5f0e8` | `#292219` | Page and sidebar surface |
-| Sidebar Cream `--color-sidebar-bg` | `#ebe6de` | `#292219` | Sidebar; separated from the page by its 1px border |
+| Cream Paper `--color-cream` | `#f5f0e8` | `#292219` | Page surface |
+| Surface Cream `--color-sidebar-bg` | `#ebe6de` | `#292219` | Top bar; separated from the page by its 1px border |
 | Ink `--color-ink` | `#44443d` | `#ede3d3` | Primary text |
 | Ink Light `--color-ink-light` | `#8b867e` | `#aea294` | Secondary text |
 | Ink Lighter `--color-ink-lighter` | `#c5c1ba` | `#6f6358` | Muted glyphs |
 | Dot Grid `--color-dot` | `#d8d3cb` | `#3b3229` | Dot grid, dividers, chips |
 | Border `--color-border` | `#e5e1d8` | `#463b31` | Hairlines |
 | Warm Brick Red `--color-accent` | `#c9483b` | `#d8705f` | Accent, lifted for contrast on dark paper |
-| Active nav `--planner-sidebar-active-bg` | tinted dot | `#3e3228` | Selected sidebar item |
+| Active nav `--planner-sidebar-active-bg` | tinted dot | `#3e3228` | Selected navigation item |
 | Overlay `--planner-overlay-bg` | Cream Paper | `#2f271e` | Dialogs and menus, a half-step above the page |
 | Browser chrome `theme-color` | `#f5f0e8` | `#221a14` | PWA title bar |
 
@@ -209,7 +209,7 @@ The No-Pure Rule still holds: dark surfaces are warm browns, never `#000`, and i
 - **Body** (Lora 400, 14px / 24px): Task titles, prose, default text. 24px line height locks to the baseline grid.
 - **Caption** (Lora 400, 12px / 24px): Due dates, italic sub-notes, empty states. Italics are part of this style.
 - **Label** (Lora 500, 11px / 24px, `letter-spacing: 0.1em`, UPPERCASE): Section dividers ("OVERDUE", "TODAY", "COLLECTIONS"). The only uppercase style in the system.
-- **Mono** (monospace, 11px / 16px): Keyboard caps inside the help panel and the sidebar footer hints. Nothing else.
+- **Mono** (monospace, 11px / 16px): Keyboard caps inside the help panel and navigation menu shortcuts. Nothing else.
 
 ### Named Rules
 
@@ -221,7 +221,7 @@ The No-Pure Rule still holds: dark surfaces are warm browns, never `#000`, and i
 
 ## 4. Elevation
 
-Mostly flat. Depth is carried first by three quiet mechanisms: (1) tint, by stepping a surface one notch deeper than its parent (Sidebar Cream against Cream Paper, Dot Grey against Sidebar Cream); (2) hairline stroke (1px Border) between sections; (3) the printed dot grid showing through, which signals "this is the page surface, not a card." Shadows are a **last resort**, used sparingly and softly when a card, panel, or modal genuinely needs to lift off the page.
+Mostly flat. Depth is carried first by three quiet mechanisms: (1) tint, by stepping a surface one notch deeper than its parent (Surface Cream against Cream Paper, Dot Grey against Surface Cream); (2) hairline stroke (1px Border) between sections; (3) the printed dot grid showing through, which signals "this is the page surface, not a card." Shadows are a **last resort**, used sparingly and softly when a card, panel, or modal genuinely needs to lift off the page.
 
 ### Shadow Vocabulary
 
@@ -255,11 +255,11 @@ Mostly flat. Depth is carried first by three quiet mechanisms: (1) tint, by step
 - **Hover:** `rgba(212,207,199,0.4)` background.
 - **Completed state:** Title gets `line-through` and opacity 0.35.
 
-### Sidebar Link
+### Navigation Link
 
-- **Shape:** 32px tall, 4px corner radius, padded `0 12px`.
-- **Default:** Transparent on Sidebar Cream, Ink text at 60% opacity.
-- **Hover:** Opacity rises to 100%.
+- **Shape:** 32px tall for text and icon-left styles, 48px for icon-above; 4px corner radius. Narrow screens reduce horizontal padding.
+- **Default:** Transparent on Surface Cream, Ink text at 60% opacity.
+- **Hover:** Opacity rises to 100%, with a neutral tint. No transforms.
 - **Active:** Background `rgba(212,207,199,0.5)` (Dot Grey at 50%), text at 100% with `font-weight: 500`. No bar, no stripe, no arrow.
 
 ### Chips (labels)
@@ -317,9 +317,12 @@ those same components rather than copying them.
 
 ### Navigation
 
-- **Top-level:** Three primary destinations (Inbox, Daily, Upcoming) plus secondary (Habits, Collections). All in the left sidebar; no top bar.
-- **Active state:** See Sidebar Link.
-- **Mobile:** Sidebar collapses to a 240px drawer that slides in from the left with a 200ms ease transition. Backdrop dims to `rgba(44,44,44,0.3)`.
+- **Top-level:** One top bar with Daily, Inbox, Habits, Collections, and More. More contains Settings, Help, keyboard shortcuts, and admin destinations when available.
+- **Active state:** See Navigation Link. Neutral tint and medium text, without a red indicator.
+- **Style:** Account preference offers text only, icon left (default), or icon above. Settings > General and the bar's context menu change the same preference.
+- **Desktop:** 48px bar for text and icon-left, 64px for icon-above. At 900px and above, show the Planner wordmark and version. Between 641px and 899px, show only the logo, navigation, search, and account controls.
+- **Mobile:** At 640px and below, use one 60px row: logo, four primary destinations with icons above labels, and account menu. Search and secondary destinations move into the account menu. Hide the logo at 320px when needed to preserve readable labels. No bottom bar or sidebar drawer.
+- **Rhythm:** Navigation dimensions use the 4px sub-grid. Page spacing retains the 24px baseline.
 
 ## 6. Do's and Don'ts
 
@@ -328,7 +331,7 @@ those same components rather than copying them.
 - **Do** lay every vertical measurement onto the 24px (or 4px sub-step) grid. Row heights, line heights, label heights, paddings.
 - **Do** use Lora for every text element, including buttons and labels. One serif, everywhere.
 - **Do** let the dot grid show through. If a section sits on the body background, do not opaque-fill it.
-- **Do** convey depth with tint (Cream → Sidebar Cream → Dot Grey) and 1px Dot Grey hairlines, not shadow.
+- **Do** convey depth with tint (Cream → Surface Cream → Dot Grey) and 1px Dot Grey hairlines, not shadow.
 - **Do** reserve Warm Brick Red for state that requires the eye to stop: overdue, P1, error, active caret. Keep it under 10% of screen surface.
 - **Do** render counters and metrics in the Numeric style (Lora 600, 56px, tight letter-spacing) when they earn the weight.
 - **Do** use the Chain Rule to join consecutive completed habit days into a single unbroken stroke. The connected run is the chain.

@@ -161,7 +161,7 @@ All routes under `/api/v1/`. Route files: `auth`, `apiTokens`, `mcp`, `oauth`, `
 | `/styleguide`                      | `StyleguidePage`                       | Design system reference (admin only)                         |
 | `/admin/dashboard`, `/admin/users` | `AdminDashboardPage`, `AdminUsersPage` | Admin only; `/admin` redirects to dashboard                  |
 
-`AppShell` wraps all logged-in routes: sidebar, keyboard dispatch, QuickAdd/Search dialogs.
+`AppShell` wraps all logged-in routes: responsive top bar, keyboard dispatch, QuickAdd/Search dialogs.
 
 Logged-out routes sit outside `AppShell` and share `components/AuthShell.tsx`: `/login` (honors a same-origin `?next=`), `/register`, `/forgot-password`, `/reset-password?token=`. `/oauth/consent?request=` also uses `AuthShell` but requires login. `/auth/register` creates no session - `AuthContext.register()` chains into `login()`.
 
