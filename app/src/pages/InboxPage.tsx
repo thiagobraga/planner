@@ -24,10 +24,12 @@ import { useTaskDrag } from '../hooks/useTaskDrag';
 import { useSectionDrag } from '../hooks/useSectionDrag';
 import { useTaskVisibilityPreferences } from '../hooks/useTaskVisibilityPreferences';
 import { useBoardPreferences } from '../hooks/useBoardPreferences';
-import { flattenTasks } from '../utils/taskProjection';
 import { nextOrderValue } from '../utils/order';
 import { extractNaturalDate } from '../utils/date';
-import { applyIndent } from '../utils/taskTree';
+import { resolveTaskIndent } from '../utils/taskIndent';
+import { persistTaskIndent } from '../utils/persistTaskIndent';
+import { buildIndentMenuItems } from '../components/taskIndentMenu';
+import type { TaskIndentHandler, TaskIndentMenuContext, TaskListContextMenuHandler } from '../types/taskIndent';
 import { useSync } from '../hooks/useSync';
 import { isEchoedMove } from '../utils/moveEcho';
 import { useI18n } from '../i18n/I18nContext';
@@ -89,7 +91,8 @@ export function InboxPage() {
   const [editingSectionId, setEditingSectionId] = useState<string | null>(null);
   const [sectionTaskInput, setSectionTaskInput] = useState<Record<string, string>>({});
   const [, setSelectedId] = useState<string>();
-  const [contextMenu, setContextMenu] = useState<{ taskId: string; position: { x: number; y: number } } | null>(null);
+  const [contextMenu, setContextMenu] = useState<TaskIndentMenuContext | null>(null);
+  const [indentError, setIndentError] = useState(false);
   const [sectionContextMenu, setSectionContextMenu] = useState<{ sectionId: string; position: { x: number; y: number } } | null>(null);
   const [deletingSection, setDeletingSection] = useState<{ id: string; name: string; taskCount: number } | null>(null);
   const inputRef = useRef<HTMLDivElement>(null);
@@ -140,7 +143,7 @@ export function InboxPage() {
     tasks,
     setTasks,
     scope: { kind: 'collection', collectionId: data?.collectionId ?? '' },
-    onError: invalidate,
+    onError: () => { setIndentError(true); invalidate(); },
     // A task can be dropped onto a sidebar collection and leave Inbox entirely.
     onMoved: () => qc.invalidateQueries({ queryKey: ['collection'] }),
   });
@@ -367,15 +370,13 @@ export function InboxPage() {
     if (!id.startsWith('temp-')) apiDeleteTask(id).catch(() => invalidate());
   }, [invalidate]);
 
-  const handleIndent = useCallback((id: string, dir: 1 | -1) => {
-    setTasks((prev) => {
-      const flatNodes = flattenTasks(prev).map((r) => ({ ...r.task, indent: r.depth }));
-      const { tasks: nextFlat, parentTaskId, changed } = applyIndent(flatNodes, id, dir);
-      if (!changed) return prev;
-      if (!id.startsWith('temp-')) {
-        apiUpdateTask(id, { parentTaskId: parentTaskId ?? null }).catch(() => invalidate());
-      }
-      return nextFlat.map(t => t.id === id ? { ...t, parentTaskId: parentTaskId ?? undefined } : t);
+  const handleIndent: TaskIndentHandler = useCallback((id, dir, visibleTasks, scope) => {
+    const move = resolveTaskIndent(visibleTasks, id, dir, scope);
+    if (!move) return;
+    setIndentError(false);
+    persistTaskIndent(id, move, tasksRef.current, setTasks, invalidate, () => {
+      setIndentError(true);
+      invalidate();
     });
   }, [invalidate]);
 
@@ -401,9 +402,9 @@ export function InboxPage() {
 
   const { data: collections = [] } = useQuery({ queryKey: ['collections'], queryFn: fetchCollections });
 
-  const handleRightClick = useCallback((taskId: string, position: { x: number; y: number }) => {
+  const handleRightClick: TaskListContextMenuHandler = useCallback((taskId, position, visibleTasks, scope) => {
     setSelectedId(taskId);
-    setContextMenu({ taskId, position });
+    setContextMenu({ taskId, position, visibleTasks, scope });
   }, []);
 
   const handleSectionRightClick = useCallback((sectionId: string, position: { x: number; y: number }) => {
@@ -701,6 +702,7 @@ export function InboxPage() {
         )}
       </div>
 
+      {indentError && <div role="alert" className="text-accent text-sm mt-6">{t('task.moveFailed')}</div>}
       {contextMenu && (
         <ContextMenu
           position={contextMenu.position}
@@ -714,6 +716,7 @@ export function InboxPage() {
             { type: 'separator' },
             { type: 'item', label: t('contextMenu.addAbove'), icon: <ArrowUp size={14} />, onClick: () => handleAddAbove(contextMenu.taskId) },
             { type: 'item', label: t('contextMenu.addBelow'), icon: <ArrowDown size={14} />, onClick: () => handleAddBelow(contextMenu.taskId) },
+            ...buildIndentMenuItems(t, contextMenu, handleIndent),
             { type: 'separator' },
             { type: 'item', label: t('common.delete'), icon: <Trash2 size={14} />, destructive: true, onClick: () => handleDelete(contextMenu.taskId) },
           ]}

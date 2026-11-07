@@ -1,5 +1,7 @@
 import { vi } from 'vitest';
 import type { Preferences, ApiTask, ApiCollection, ApiSection, ApiStatus } from '../../types/api';
+import type { Task } from '../../components/TaskItem';
+import type { TaskOrderScope } from '../../types/drag';
 
 export const basePreferences: Preferences = {
   userId: 'user-1',
@@ -134,7 +136,7 @@ export const taskListMock = vi.fn(
     onConvertType,
     onRightClick,
   }: {
-    tasks: Array<{ id: string; title: string; type: string }>;
+    tasks: Task[];
     containerId: string;
     editingId?: string;
     onTaskToggle?: (id: string) => void;
@@ -143,9 +145,9 @@ export const taskListMock = vi.fn(
     onEditCancel?: (id: string) => void;
     onDelete?: (id: string) => void;
     onAddBelow?: (id: string) => void;
-    onIndent?: (id: string, dir: 1 | -1) => void;
+    onIndent?: (id: string, dir: 1 | -1, tasks: Task[], scope: TaskOrderScope) => void;
     onConvertType?: (id: string, type: 'task' | 'note' | 'event') => void;
-    onRightClick?: (id: string, position: { x: number; y: number }) => void;
+    onRightClick?: (id: string, position: { x: number; y: number }, tasks: Task[], scope: TaskOrderScope) => void;
   }) => (
     <div data-testid={`task-list-${containerId}`} role="list">
       <span data-testid="editing-id">{editingId ?? ''}</span>
@@ -162,10 +164,10 @@ export const taskListMock = vi.fn(
           <button data-testid={`toggle-${task.id}`} onClick={() => onTaskToggle?.(task.id)}>
             toggle
           </button>
-          <button data-testid={`indent-${task.id}`} onClick={() => onIndent?.(task.id, 1)}>
+          <button data-testid={`indent-${task.id}`} onClick={() => onIndent?.(task.id, 1, tasks, containerId.startsWith('section:') ? { kind: 'section', sectionId: containerId.slice(8) } : { kind: 'collection', collectionId: task.collectionId ?? 'col-1' })}>
             indent
           </button>
-          <button data-testid={`unindent-${task.id}`} onClick={() => onIndent?.(task.id, -1)}>
+          <button data-testid={`unindent-${task.id}`} onClick={() => onIndent?.(task.id, -1, tasks, containerId.startsWith('section:') ? { kind: 'section', sectionId: containerId.slice(8) } : { kind: 'collection', collectionId: task.collectionId ?? 'col-1' })}>
             unindent
           </button>
           <button data-testid={`delete-${task.id}`} onClick={() => onDelete?.(task.id)}>
@@ -200,7 +202,7 @@ export const taskListMock = vi.fn(
           </button>
           <button
             data-testid={`context-${task.id}`}
-            onClick={() => onRightClick?.(task.id, { x: 10, y: 10 })}
+            onClick={() => onRightClick?.(task.id, { x: 10, y: 10 }, tasks, containerId.startsWith('section:') ? { kind: 'section', sectionId: containerId.slice(8) } : { kind: 'collection', collectionId: task.collectionId ?? 'col-1' })}
           >
             context
           </button>

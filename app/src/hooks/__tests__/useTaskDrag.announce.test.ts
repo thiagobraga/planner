@@ -65,8 +65,7 @@ describe('useTaskDrag: projected-target announcements', () => {
   });
 
   it('speaks the parent title when the projection nests the row', () => {
-    // Landing on Bravo's slot puts Alpha directly above, so a rightward offset
-    // past one indent step is what makes Alpha the parent.
+    // A rightward drop over Bravo nests under Bravo.
     const move = resolveMove({
       rows,
       active: { ...active, taskId: 'c', subtreeIds: ['c'] },
@@ -75,7 +74,7 @@ describe('useTaskDrag: projected-target announcements', () => {
       scope,
     });
 
-    expect(move?.preview).toBe('Drop to place under Alpha.');
+    expect(move?.preview).toBe('Drop to place under Bravo.');
     expect(move?.preview).not.toMatch(/\b[0-9a-f-]{8,}\b/);
   });
 
@@ -104,7 +103,7 @@ describe('useTaskDrag: projected-target announcements', () => {
     expect(move?.announcement.startsWith('Moved ')).toBe(true);
   });
 
-  it('refuses a drop onto the row being dragged', () => {
+  it('retains the current position when released on its own row without indentation', () => {
     const move = resolveMove({
       rows,
       active,
@@ -113,6 +112,7 @@ describe('useTaskDrag: projected-target announcements', () => {
       scope,
     });
 
-    expect(move).toBeNull();
+    expect(move?.parentTaskId).toBeNull();
+    expect(move?.depth).toBe(0);
   });
 });

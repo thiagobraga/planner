@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { resolveMove } from '../useTaskDrag';
-import { flattenTasks, projectMove, INDENT_WIDTH } from '../../utils/taskProjection';
+import { flattenTasks, projectTaskDrop, INDENT_WIDTH } from '../../utils/taskProjection';
 import type { Task } from '../../components/TaskItem';
 import type { TaskDragData } from '../../types/drag';
 
@@ -64,7 +64,7 @@ describe('useTaskDrag: the drop lands where the slot said it would', () => {
     for (const steps of [0, 1, 2]) {
       it(`${activeId} onto ${overId}, ${steps} indent step(s)`, () => {
         const rows = oneDate(DAY);
-        const preview = projectMove(rows, activeId, overId, steps * INDENT_WIDTH);
+        const preview = projectTaskDrop(rows, activeId, overId, steps * INDENT_WIDTH);
 
         const commit = resolveMove({
           rows: everyDate,
@@ -137,7 +137,7 @@ describe('useTaskDrag: position parity survives when the commit scope carries a 
   const rows2 = flattenTasks(positionTasks.filter((t) => t.dueDate === day2));
 
   it('matches the commit position even though scopedRows carries a row the preview list omits', () => {
-    const preview = projectMove(rows2, 'p', 'n', 0);
+    const preview = projectTaskDrop(rows2, 'p', 'n', 0);
 
     const commit = resolveMove({
       rows: everyDate2,
