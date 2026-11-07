@@ -61,7 +61,7 @@ const english: HelpContent = {
       title: 'Collections & Tags',
       items: [
         'Create collections to group related tasks. Collections can be nested up to four levels deep.',
-        'Drag tasks onto collections in the sidebar to file them.',
+        'Drag tasks onto Inbox in the top bar to move them out of a collection.',
         'Add @label tags to classify tasks.',
       ],
     },
@@ -163,7 +163,7 @@ const portugueseBrazil: HelpContent = {
       title: 'Coleções e etiquetas',
       items: [
         'Crie coleções para agrupar tarefas relacionadas. Elas podem ter até quatro níveis.',
-        'Arraste tarefas para coleções na barra lateral para organizá-las.',
+        'Arraste tarefas para a Caixa de entrada na barra superior para removê-las de uma coleção.',
         'Adicione etiquetas como @etiqueta para classificar tarefas.',
       ],
     },

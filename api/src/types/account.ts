@@ -1,3 +1,5 @@
+import type { NavStyle } from "./preferences.js";
+
 export interface ExportedUser {
   email: string;
   displayName: string;
@@ -16,6 +18,7 @@ export interface ExportedPreferences {
   hideCompletedTasks: boolean;
   showNotes: boolean;
   showCheckboxes: boolean;
+  navStyle: NavStyle;
   agentChangeNotices: boolean;
   locale: string;
   dateFormat: string;
@@ -149,6 +152,7 @@ export interface AccountPreferencesRow {
   hide_completed_tasks: boolean;
   show_notes: boolean;
   show_checkboxes: boolean;
+  nav_style: NavStyle;
   agent_change_notices: boolean;
   locale: string;
   date_format: string | null;

@@ -1,27 +1,11 @@
 import React, { useEffect, useRef, useState, KeyboardEvent, useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { ChevronRight } from 'lucide-react';
-
-export interface ContextMenuItem {
-  type: 'item' | 'separator';
-  label?: React.ReactNode;
-  icon?: React.ReactNode;
-  disabled?: boolean;
-  destructive?: boolean;
-  onClick?: () => void;
-  submenu?: ContextMenuItem[];
-  /** Free-form content shown beside the item, like a submenu; `close` dismisses the whole menu. */
-  panel?: (close: () => void) => React.ReactNode;
-}
+import { Check, ChevronRight } from 'lucide-react';
+import type { ContextMenuItem, ContextMenuProps } from '../../types/contextMenu';
+export type { ContextMenuItem, ContextMenuProps } from '../../types/contextMenu';
 
 function opensChild(item: ContextMenuItem): boolean {
   return Boolean(item.panel || (item.submenu && item.submenu.length > 0));
-}
-
-export interface ContextMenuProps {
-  items: ContextMenuItem[];
-  position: { x: number; y: number };
-  onClose: () => void;
 }
 
 export function ContextMenu({ items, position, onClose }: ContextMenuProps) {
@@ -41,11 +25,6 @@ function ContextMenuRoot({ items, position, onClose }: ContextMenuRootProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const [activePath, setActivePath] = useState<number[]>([]);
 
-  // Focus the root container on mount so it can receive keyboard events
-  useEffect(() => {
-    rootRef.current?.focus();
-  }, []);
-
   // Handle clicking outside to close
   useEffect(() => {
     function handleMouseDown(e: MouseEvent) {
@@ -59,6 +38,10 @@ function ContextMenuRoot({ items, position, onClose }: ContextMenuRootProps) {
 
   // Handle keyboard navigation at the root level
   const handleKeyDown = (e: KeyboardEvent) => {
+    if (e.key === 'Tab' && (e.target as HTMLElement).closest('[role="menu"]')) {
+      onClose();
+      return;
+    }
     if (e.key === 'Escape') {
       e.stopPropagation();
       e.preventDefault();
@@ -290,7 +273,8 @@ function MenuPanel({
             <div
               key={`item-${index}`}
               data-index={index}
-              role="menuitem"
+              role={item.checked === undefined ? 'menuitem' : 'menuitemradio'}
+              aria-checked={item.checked}
               aria-disabled={item.disabled}
               className={`ui-context-menu-item ${itemClass}`}
               onClick={(e) => {
@@ -321,6 +305,14 @@ function MenuPanel({
                 {item.icon && <span className="ui-context-menu-item-icon shrink-0">{item.icon}</span>}
                 <span className="ui-context-menu-item-label truncate">{item.label}</span>
               </div>
+              {item.shortcut && (
+                <span className="ui-context-menu-item-shortcut ml-4 shrink-0 text-xs text-ink-light">
+                  {item.shortcut}
+                </span>
+              )}
+              {item.checked !== undefined && (
+                <Check size={14} aria-hidden="true" className={`ml-2 shrink-0 ${item.checked ? '' : 'invisible'}`} />
+              )}
               {opensChild(item) && (
                 <ChevronRight size={14} className="ui-context-menu-item-chevron text-ink-light ml-2" />
               )}

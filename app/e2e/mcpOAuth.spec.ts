@@ -8,7 +8,7 @@ import { API_URL, BASE_URL } from './fixtures/api';
 const ORIGIN = new URL(BASE_URL).origin;
 const MCP_URL = `${ORIGIN}/api/v1/mcp`;
 // A loopback callback the browser never actually reaches: the test intercepts it.
-const REDIRECT = 'http://127.0.0.1:9/oauth/callback';
+const REDIRECT = 'http://127.0.0.1:8765/oauth/callback';
 const PASSWORD = 'Correct-Horse-Battery-Staple-99!';
 
 test.describe('MCP OAuth sign-in', () => {
@@ -59,7 +59,7 @@ test.describe('MCP OAuth sign-in', () => {
     await page.locator('button[type="submit"]').click();
 
     await expect(page.getByRole('heading', { name: 'E2E Assistant wants to use your Planner' })).toBeVisible();
-    await expect(page.getByText('You will be sent back to 127.0.0.1:9.')).toBeVisible();
+    await expect(page.getByText('You will be sent back to 127.0.0.1:8765.')).toBeVisible();
     await page.getByRole('button', { name: 'Allow read & write' }).click();
 
     await expect.poll(() => callback?.searchParams.get('code') ?? null).not.toBeNull();

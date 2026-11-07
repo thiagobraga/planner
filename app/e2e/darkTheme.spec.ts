@@ -68,7 +68,8 @@ test.describe('Dark theme', () => {
     await chooseTheme(page, 'Dark');
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
 
-    await page.getByRole('button', { name: 'Logout' }).first().click();
+    await page.getByRole('button', { name: 'Account' }).click();
+    await page.getByRole('menuitem', { name: 'Logout' }).click();
     await page.waitForURL(/\/login/);
 
     await expect(page.locator('html')).not.toHaveAttribute('data-theme', /.+/);
