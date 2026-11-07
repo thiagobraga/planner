@@ -148,11 +148,6 @@ beforeEach(() => {
 });
 
 describe('useTaskDrag: the committed parent matches the previewed indent', () => {
-  // Dropping *on* a row inserts before it, so nesting under 'a' means dragging
-  // 'c' onto 'b': the row above the landing slot is then 'a', and one step of
-  // horizontal offset makes 'a' the parent. (Dragging onto 'a' itself lands at
-  // the top of the list, where there is no row above and no parent is possible
-  // at any offset - `projectMove` clamps depth to 0 there.)
   const tasks = [task('a', 1000), task('b', 2000), task('c', 3000)];
 
   it('commits a parent when the preview shows one indent step', async () => {
@@ -162,7 +157,8 @@ describe('useTaskDrag: the committed parent matches the previewed indent', () =>
 
     expect(stepsAtDrop).toBe(1);
     expect(mockApiMoveTask).toHaveBeenCalledTimes(1);
-    expect(mockApiMoveTask.mock.calls[0][1].parentTaskId).toBe('a');
+    expect(mockApiMoveTask.mock.calls[0][1].parentTaskId).toBe('b');
+    expect(mockApiMoveTask.mock.calls[0][1].position).toBe(0);
   });
 
   it('commits no parent when the preview shows no indent', async () => {
@@ -198,7 +194,14 @@ describe('useTaskDrag: the committed parent matches the previewed indent', () =>
     const stepsAtDrop = await drag({ active: 'c', overId: 'b', deltaX: INDENT_PX - 1 });
 
     expect(stepsAtDrop).toBe(1);
-    expect(mockApiMoveTask.mock.calls[0][1].parentTaskId).toBe('a');
+    expect(mockApiMoveTask.mock.calls[0][1].parentTaskId).toBe('b');
+  });
+
+  it('commits a rightward drop released over its own row', async () => {
+    renderHarness(tasks);
+    const stepsAtDrop = await drag({ active: 'c', overId: 'c', deltaX: INDENT_PX });
+    expect(stepsAtDrop).toBe(1);
+    expect(mockApiMoveTask.mock.calls[0][1].parentTaskId).toBe('b');
   });
 
   /**

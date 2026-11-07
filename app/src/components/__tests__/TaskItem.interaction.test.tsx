@@ -46,6 +46,41 @@ describe('TaskItem: click selection', () => {
     expect(row().className).toContain('task-item--selected');
   });
 
+  it('focuses a clicked row so Tab indents it', () => {
+    const onIndent = vi.fn();
+    renderRow({ onIndent });
+    fireEvent.click(row());
+    expect(row()).toHaveFocus();
+    fireEvent.keyDown(document.activeElement!, { key: 'Tab' });
+    expect(onIndent).toHaveBeenCalledWith('t1', 1);
+  });
+
+  it('uses bracket shortcuts on a focused row', () => {
+    const onIndent = vi.fn();
+    renderRow({ onIndent });
+    row().focus();
+    fireEvent.keyDown(row(), { key: '[' });
+    fireEvent.keyDown(row(), { key: ']' });
+    expect(onIndent.mock.calls).toEqual([['t1', 1], ['t1', -1]]);
+  });
+
+  it('uses Shift+Tab to unindent a focused row', () => {
+    const onIndent = vi.fn();
+    renderRow({ onIndent });
+    row().focus();
+    fireEvent.keyDown(row(), { key: 'Tab', shiftKey: true });
+    expect(onIndent).toHaveBeenCalledWith('t1', -1);
+  });
+
+  it('lets Tab leave the completion button without indenting', () => {
+    const onIndent = vi.fn();
+    renderRow({ onIndent });
+    const toggle = screen.getByRole('button', { name: 'Complete: Write the thing' });
+    toggle.focus();
+    expect(fireEvent.keyDown(toggle, { key: 'Tab' })).toBe(true);
+    expect(onIndent).not.toHaveBeenCalled();
+  });
+
   it('opens inline editing on double-click', () => {
     const onStartEdit = vi.fn();
     renderRow({ onStartEdit });
@@ -90,6 +125,15 @@ describe('TaskItem: edit keyboard behavior', () => {
     expect(fireEvent.keyDown(input, { key: 'ArrowUp' })).toBe(true);
     expect(fireEvent.keyDown(input, { key: 'ArrowDown' })).toBe(true);
     expect(onEditCommit).not.toHaveBeenCalled();
+  });
+
+  it('keeps brackets as text while editing the title', () => {
+    const onIndent = vi.fn();
+    renderRow({ isEditing: true, onIndent });
+    const input = screen.getByRole('textbox');
+    expect(fireEvent.keyDown(input, { key: '[' })).toBe(true);
+    expect(fireEvent.keyDown(input, { key: ']' })).toBe(true);
+    expect(onIndent).not.toHaveBeenCalled();
   });
 });
 

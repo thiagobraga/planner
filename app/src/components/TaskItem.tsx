@@ -182,16 +182,16 @@ export const TaskItem = memo(function TaskItem({
   };
 
   const handleRowKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (isEditing) return;
+    if (isEditing || e.target !== e.currentTarget) return;
     if (e.key === 'Enter' && e.shiftKey) {
       e.preventDefault();
       onStartEdit?.(task.id);
     } else if (e.key === 'Enter') {
       e.preventDefault();
       onAddBelow?.(task.id);
-    } else if (e.key === 'Tab') {
+    } else if (e.key === 'Tab' || (e.key === '[' && !e.ctrlKey && !e.metaKey && !e.altKey) || (e.key === ']' && !e.ctrlKey && !e.metaKey && !e.altKey)) {
       e.preventDefault();
-      onIndent?.(task.id, e.shiftKey ? -1 : 1);
+      onIndent?.(task.id, e.key === ']' || (e.key === 'Tab' && e.shiftKey) ? -1 : 1);
     } else if (e.key === 'Delete' || (e.key === 'Backspace' && !e.shiftKey)) {
       e.preventDefault();
       onDelete?.(task.id);
@@ -290,6 +290,7 @@ export const TaskItem = memo(function TaskItem({
         if (isEditing) return;
         if ((e.target as HTMLElement).closest(`[${NO_DRAG_ATTR}]`)) return;
         selectTask(task.id, e.ctrlKey || e.metaKey);
+        e.currentTarget.focus();
       }}
       onPointerUp={(e) => {
         // Activation is distance-based (see PRESS_ACTIVATION in dnd/sensors.ts),
@@ -312,6 +313,7 @@ export const TaskItem = memo(function TaskItem({
         const stayedOnSelf = overId === null || overId === task.id;
         if (isTaskDrag(drag) && drag.taskId === task.id && (!hasMoved || stayedOnSelf)) {
           selectTask(task.id, e.ctrlKey || e.metaKey);
+          e.currentTarget.focus();
         }
       }}
       onDoubleClick={isEditing ? undefined : () => onStartEdit?.(task.id)}

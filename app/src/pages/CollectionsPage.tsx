@@ -24,8 +24,10 @@ import { useTaskDrag } from '../hooks/useTaskDrag';
 import { useSectionDrag } from '../hooks/useSectionDrag';
 import { useTaskVisibilityPreferences } from '../hooks/useTaskVisibilityPreferences';
 import { useBoardPreferences } from '../hooks/useBoardPreferences';
-import { flattenTasks } from '../utils/taskProjection';
-import { applyIndent } from '../utils/taskTree';
+import { resolveTaskIndent } from '../utils/taskIndent';
+import { persistTaskIndent } from '../utils/persistTaskIndent';
+import { buildIndentMenuItems } from '../components/taskIndentMenu';
+import type { TaskIndentHandler, TaskIndentMenuContext, TaskListContextMenuHandler } from '../types/taskIndent';
 import { fetchCollections } from '../api/client';
 import { ContextMenu, type ContextMenuItem } from '../components/ui/ContextMenu';
 import { ColorPickerPopover } from '../components/ui/ColorPickerPopover';
@@ -98,7 +100,8 @@ export function CollectionsPage() {
   const [editingSectionId, setEditingSectionId] = useState<string | null>(null);
   const [sectionTaskInput, setSectionTaskInput] = useState<Record<string, string>>({});
   const [, setSelectedId] = useState<string>();
-  const [contextMenu, setContextMenu] = useState<{ taskId: string; position: { x: number; y: number } } | null>(null);
+  const [contextMenu, setContextMenu] = useState<TaskIndentMenuContext | null>(null);
+  const [indentError, setIndentError] = useState(false);
   const [sectionContextMenu, setSectionContextMenu] = useState<{ sectionId: string; position: { x: number; y: number } } | null>(null);
   const [crumbMenu, setCrumbMenu] = useState<{ collectionId: string; position: { x: number; y: number } } | null>(null);
   const [crumbColorPicker, setCrumbColorPicker] = useState<
@@ -155,7 +158,7 @@ export function CollectionsPage() {
     tasks,
     setTasks,
     scope: { kind: 'collection', collectionId: id },
-    onError: invalidate,
+    onError: () => { setIndentError(true); invalidate(); },
     // A task can be dropped onto Inbox or another collection in the sidebar.
     onMoved: () => {
       qc.invalidateQueries({ queryKey: ['inbox'] });
@@ -380,17 +383,15 @@ export function CollectionsPage() {
     setEditingId(undefined);
     if (!taskId.startsWith('temp-')) apiDeleteTask(taskId).catch(() => invalidate());
   }, [invalidate]);
-  const handleIndent = useCallback((taskId: string, dir: 1 | -1) => {
-    setTasks((prev) => {
-      const flatNodes = flattenTasks(prev).map((r) => ({ ...r.task, indent: r.depth }));
-      const { tasks: nextFlat, parentTaskId, changed } = applyIndent(flatNodes, taskId, dir);
-      if (!changed) return prev;
-      if (!taskId.startsWith('temp-')) {
-        apiUpdateTask(taskId, { parentTaskId: parentTaskId ?? null }).catch(() => invalidate());
-      }
-      return nextFlat.map(t => t.id === taskId ? { ...t, parentTaskId: parentTaskId ?? undefined } : t);
+  const handleIndent: TaskIndentHandler = useCallback((taskId, dir, visibleTasks, scope) => {
+    const move = resolveTaskIndent(visibleTasks, taskId, dir, scope);
+    if (!move) return;
+    setIndentError(false);
+    persistTaskIndent(taskId, move, tasks, setTasks, invalidate, () => {
+      setIndentError(true);
+      invalidate();
     });
-  }, [invalidate]);
+  }, [invalidate, tasks]);
   const handleToggle = useCallback((taskId: string) => {
     const hideCompleted = preferences?.hideCompletedTasks ?? false;
     const task = tasks.find((t) => t.id === taskId);
@@ -414,9 +415,9 @@ export function CollectionsPage() {
 
   const { data: collections = [] } = useQuery({ queryKey: ['collections'], queryFn: fetchCollections });
 
-  const handleRightClick = useCallback((taskId: string, position: { x: number; y: number }) => {
+  const handleRightClick: TaskListContextMenuHandler = useCallback((taskId, position, visibleTasks, scope) => {
     setSelectedId(taskId);
-    setContextMenu({ taskId, position });
+    setContextMenu({ taskId, position, visibleTasks, scope });
   }, []);
 
   const handleSectionRightClick = useCallback((sectionId: string, position: { x: number; y: number }) => {
@@ -851,6 +852,7 @@ export function CollectionsPage() {
         )}
       </div>
 
+      {indentError && <div role="alert" className="text-accent text-sm mt-6">{t('task.moveFailed')}</div>}
       {contextMenu && (
         <ContextMenu
           position={contextMenu.position}
@@ -864,6 +866,7 @@ export function CollectionsPage() {
             { type: 'separator' },
             { type: 'item', label: t('contextMenu.addAbove'), icon: <ArrowUp size={14} />, onClick: () => handleAddAbove(contextMenu.taskId) },
             { type: 'item', label: t('contextMenu.addBelow'), icon: <ArrowDown size={14} />, onClick: () => handleAddBelow(contextMenu.taskId) },
+            ...buildIndentMenuItems(t, contextMenu, handleIndent),
             { type: 'separator' },
             { type: 'item', label: t('common.delete'), icon: <Trash2 size={14} />, destructive: true, onClick: () => handleDelete(contextMenu.taskId) },
           ]}

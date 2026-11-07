@@ -219,14 +219,15 @@ export function projectMove<T extends TaskLike>(
   const { rest, block } = removeBlock(rows, activeId);
   if (block.length === 0) return { parentId: null, depth: 0, position: 0 };
 
-  const at = resolveAt(rest, overId);
+  const deepestRelative = Math.max(...block.map((row) => row.depth - block[0]!.depth));
+  const at = overId === activeId ? Math.min(rows.findIndex((row) => row.id === activeId), rest.length) : resolveAt(rest, overId);
   const above = rest[at - 1] ?? null;
   const below = rest[at] ?? null;
 
   const dragDepth = block[0]!.depth + Math.round(offsetX / INDENT_WIDTH);
   // You may nest one level under the row above, no deeper; and you must be at
   // least as deep as the row below, or that row would be orphaned mid-list.
-  const maxDepth = Math.min(above ? above.depth + 1 : 0, MAX_DEPTH);
+  const maxDepth = Math.min(above ? above.depth + 1 : 0, MAX_DEPTH - deepestRelative);
   const minDepth = below ? below.depth : 0;
   const depth = Math.max(minDepth, Math.min(dragDepth, maxDepth));
 
@@ -252,6 +253,32 @@ export function projectMove<T extends TaskLike>(
   return { parentId, depth, position };
 }
 
+export function projectTaskDrop<T extends TaskLike>(
+  rows: FlatRow<T>[], activeId: string, overId: string | null, offsetX: number,
+): Projection {
+  const activeIndex = rows.findIndex((row) => row.id === activeId);
+  const targetIndex = rows.findIndex((row) => row.id === overId);
+  const active = rows[activeIndex];
+  const target = rows[targetIndex];
+  if (active && target && activeId !== overId && targetIndex < activeIndex &&
+      target.depth <= active.depth && offsetX >= INDENT_WIDTH) {
+    const block = getSubtreeBlock(rows, activeId);
+    const deepestRelative = Math.max(...block.map((row) => row.depth - active.depth));
+    if (target.depth + 1 + deepestRelative <= MAX_DEPTH) {
+      return { parentId: target.id, depth: target.depth + 1, position: 0 };
+    }
+  }
+  return projectMove(rows, activeId, overId, offsetX);
+}
+
+export function projectionFitsSubtree<T extends TaskLike>(
+  rows: FlatRow<T>[], activeId: string, projection: Projection,
+): boolean {
+  const block = getSubtreeBlock(rows, activeId);
+  if (block.length === 0) return false;
+  return block.every((row) => projection.depth + row.depth - block[0]!.depth <= MAX_DEPTH);
+}
+
 /** Apply a projection, returning the reordered flat list. */
 export function applyProjection<T extends TaskLike>(
   rows: FlatRow<T>[],
@@ -261,7 +288,7 @@ export function applyProjection<T extends TaskLike>(
 ): { rows: FlatRow<T>[]; projection: Projection } {
   const projection = projectMove(rows, activeId, overId, offsetX);
   const { rest, block } = removeBlock(rows, activeId);
-  const at = resolveAt(rest, overId);
+  const at = overId === activeId ? Math.min(rows.findIndex((row) => row.id === activeId), rest.length) : resolveAt(rest, overId);
   return {
     rows: insertBlock(rest, block, at, projection.parentId, projection.depth),
     projection,

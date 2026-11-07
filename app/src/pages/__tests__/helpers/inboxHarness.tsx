@@ -11,6 +11,7 @@ export interface InboxMockRefs {
   mockFetchInboxTasks: AnyMock;
   mockApiCreateTask: AnyMock;
   mockApiUpdateTask: AnyMock;
+  mockApiMoveTask?: AnyMock;
   mockApiToggleTask: AnyMock;
   mockApiDeleteTask: AnyMock;
   mockApiCreateSection: AnyMock;
@@ -30,6 +31,7 @@ export function applyInboxDefaults(refs: InboxMockRefs): void {
   refs.mockFetchInboxTasks.mockReset();
   refs.mockApiCreateTask.mockReset();
   refs.mockApiUpdateTask.mockReset();
+  refs.mockApiMoveTask?.mockReset();
   refs.mockApiToggleTask.mockReset();
   refs.mockApiDeleteTask.mockReset();
   refs.mockApiCreateSection.mockReset();
