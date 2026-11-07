@@ -121,8 +121,8 @@ describe('AccountDataSection', () => {
 
     await waitFor(() => {
       expect(mockDelete).toHaveBeenCalledTimes(1);
+      expect(mockNotifyUnauthorized).toHaveBeenCalledTimes(1);
+      expect(screen.getByTestId('current-location')).toHaveTextContent('/login');
     });
-    expect(mockNotifyUnauthorized).toHaveBeenCalledTimes(1);
-    expect(screen.getByTestId('current-location')).toHaveTextContent('/login');
   });
 });

@@ -35,8 +35,8 @@ vi.mock('../../api/client', () => ({
   apiCreateTask: vi.fn(),
 }));
 
-vi.mock('../Sidebar', () => ({
-  Sidebar: vi.fn(() => <div data-testid="sidebar" />),
+vi.mock('../nav/TopBar', () => ({
+  TopBar: vi.fn(() => <div data-testid="topbar" />),
   NAV_ITEMS: [
     { to: '/daily', labelKey: 'nav.daily', Icon: () => null },
     { to: '/inbox', labelKey: 'nav.inbox', Icon: () => null },
@@ -171,9 +171,9 @@ describe('AppShell', () => {
     expect(document.body).not.toHaveClass('font-hubballi');
   });
 
-  it('renders Sidebar', () => {
+  it('renders TopBar', () => {
     render(<AppShell />);
-    expect(screen.getByTestId('sidebar')).toBeInTheDocument();
+    expect(screen.getByTestId('topbar')).toBeInTheDocument();
   });
 
   describe('theme', () => {

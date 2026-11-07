@@ -1,4 +1,5 @@
 import type { BackgroundPreference } from './theme';
+import type { NavStyle } from './navigation';
 import type { RecurrenceRule } from './task';
 import type { BoardViewMode } from './board';
 import type { BoardGroupBy, TaskOrderScope } from './drag';
@@ -74,6 +75,7 @@ export interface Preferences {
   hideCompletedTasks: boolean;
   showNotes: boolean;
   showCheckboxes?: boolean;
+  navStyle?: NavStyle;
   agentChangeNotices?: boolean;
   collapsedCollectionIds: string[];
   boardViewModes: BoardViewModes;

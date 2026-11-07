@@ -1,0 +1,131 @@
+import { mkdir } from 'node:fs/promises';
+import { expect, STORAGE_STATE_PATH, test } from './fixtures/api';
+import type { ApiTask } from '../src/api/client';
+
+test.use({ storageState: STORAGE_STATE_PATH });
+
+test.beforeEach(async ({ api }) => {
+  await api.patch('/preferences', { locale: 'en', navStyle: 'icon-left', background: 'beige' });
+});
+
+test('primary links navigate and mark the current destination', async ({ page }) => {
+  await page.goto('/daily/list');
+  const nav = page.getByRole('navigation', { name: 'Main navigation' });
+  for (const [name, path] of [['Inbox', '/inbox'], ['Habits', '/habits'], ['Collections', '/collections'], ['Daily', '/daily/list']]) {
+    await nav.getByRole('link', { name, exact: true }).click();
+    await expect(page).toHaveURL(new RegExp(`${path}$`));
+    await expect(nav.getByRole('link', { name, exact: true })).toHaveAttribute('aria-current', 'page');
+    await expect(page.locator('main')).toBeVisible();
+  }
+  await expect(page.locator('.sidebar-drawer, .bottom-bar')).toHaveCount(0);
+});
+
+test('style changes persist across reload and arrive in another open tab', async ({ page, context, api }) => {
+  await page.goto('/daily/list');
+  const other = await context.newPage();
+  await other.goto('/inbox');
+  await expect(other.locator('[data-nav-style]')).toHaveAttribute('data-nav-style', 'icon-left');
+  try {
+    await page.getByRole('navigation', { name: 'Main navigation' }).click({ button: 'right' });
+    await page.getByRole('menuitemradio', { name: 'Icon above' }).click();
+    await expect(page.locator('[data-nav-style]')).toHaveAttribute('data-nav-style', 'icon-top');
+    await expect(other.locator('[data-nav-style]')).toHaveAttribute('data-nav-style', 'icon-top');
+    await page.reload();
+    await expect(page.locator('[data-nav-style]')).toHaveAttribute('data-nav-style', 'icon-top');
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/settings/general');
+    await mkdir('dist/screenshots', { recursive: true });
+    await page.screenshot({ path: 'dist/screenshots/topbar-settings-390.png' });
+    await page.getByText('Text only', { exact: true }).click();
+    await expect.poll(async () => (await api.get<{ navStyle: string }>('/preferences')).navStyle).toBe('text');
+    await expect(other.locator('[data-nav-style]')).toHaveAttribute('data-nav-style', 'text');
+  } finally {
+    await other.close();
+  }
+});
+
+test('menus toggle, dismiss, restore focus and navigate with the keyboard', async ({ page }) => {
+  await page.goto('/daily/list');
+  const more = page.getByRole('button', { name: 'More', exact: true });
+  await more.click();
+  await expect(more).toHaveAttribute('aria-expanded', 'true');
+  await more.click();
+  await expect(page.getByRole('menu')).toHaveCount(0);
+  await more.focus();
+  await page.keyboard.press('Enter');
+  await expect(page.getByRole('menuitem', { name: /Settings/ })).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('menu')).toHaveCount(0);
+  await expect(more).toBeFocused();
+  await page.keyboard.press('Enter');
+  await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('Enter');
+  await expect(page).toHaveURL(/\/help$/);
+  await more.click();
+  await page.getByRole('menuitem', { name: /Keyboard shortcuts/i }).click();
+  await expect(page.getByRole('dialog', { name: /Keyboard shortcuts/i })).toBeVisible();
+  await page.getByRole('button', { name: 'Close', exact: true }).click();
+  await more.click();
+  await page.locator('main').click({ position: { x: 20, y: 100 } });
+  await expect(page.getByRole('menu')).toHaveCount(0);
+});
+
+test('phone account menu exposes search and secondary navigation without keyboard hints', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/daily/list');
+  const account = page.getByRole('button', { name: 'Account', exact: true });
+  await expect(page.getByRole('button', { name: 'More', exact: true })).not.toBeVisible();
+  await account.click();
+  const menu = page.getByRole('menu');
+  await expect(menu.getByRole('menuitem', { name: 'Search', exact: true })).toBeVisible();
+  await expect(menu.getByRole('menuitem', { name: 'Settings', exact: true })).toBeVisible();
+  await expect(menu.getByRole('menuitem', { name: 'Help', exact: true })).toBeVisible();
+  await expect(menu.getByRole('menuitem', { name: /Keyboard shortcuts/i })).toHaveCount(0);
+  await expect(menu.locator('.ui-context-menu-item-shortcut')).toHaveCount(0);
+  await menu.getByRole('menuitem', { name: 'Search', exact: true }).click();
+  await expect(page.getByRole('dialog')).toBeVisible();
+});
+
+test('dragging a collection task onto the horizontal Inbox target files it', async ({ page, api }) => {
+  const collection = await api.createCollection({ name: `Topbar drag ${Date.now()}`, color: '#c9483b' });
+  const task = await api.createTask({ title: 'File through the topbar', collectionId: collection.id });
+  try {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto(`/collection/${collection.id}`);
+    const row = page.locator(`[data-task-id="${task.id}"]`);
+    await expect(row).toBeVisible();
+    const source = await row.boundingBox();
+    const target = await page.getByRole('navigation', { name: 'Main navigation' }).getByRole('link', { name: 'Inbox', exact: true }).boundingBox();
+    expect(source).not.toBeNull();
+    expect(target).not.toBeNull();
+    await page.mouse.move(source!.x + source!.width / 2, source!.y + source!.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(source!.x + source!.width / 2, source!.y + source!.height / 2 + 10, { steps: 4 });
+    await page.mouse.move(target!.x + target!.width / 2, target!.y + target!.height / 2, { steps: 20 });
+    await page.mouse.up();
+    await expect.poll(async () => (await api.get<{ tasks: ApiTask[] }>('/views/inbox')).tasks.some((item) => item.id === task.id)).toBe(true);
+    await page.reload();
+    await expect(page.locator(`[data-task-id="${task.id}"]`)).toHaveCount(0);
+  } finally {
+    await api.delete(`/tasks/${task.id}`);
+    await api.deleteCollection(collection.id);
+  }
+});
+
+test('wider content and phone routes keep page overflow contained', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  for (const width of [1440, 390, 320]) {
+    await page.setViewportSize({ width, height: 900 });
+    for (const route of ['/daily/list', '/daily/kanban', '/daily/cards', '/daily/monthly', '/inbox', '/habits', '/collections', '/settings/general', '/help']) {
+      await page.goto(route);
+      await expect(page.locator('main')).toBeVisible();
+      await expect(page.locator('vite-error-overlay')).toHaveCount(0);
+      await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+      await expect.poll(() => page.locator('main').evaluate((main) => main.scrollWidth <= main.clientWidth + 1)).toBe(true);
+    }
+  }
+  await mkdir('dist/screenshots', { recursive: true });
+  await page.screenshot({ path: 'dist/screenshots/topbar-help-320.png' });
+  expect(errors).toEqual([]);
+});

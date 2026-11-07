@@ -113,6 +113,28 @@ afterEach(() => {
 });
 
 describe('SettingsPage', () => {
+  it('saves the selected navigation style from General', async () => {
+    renderPage('/settings/general');
+
+    const group = await screen.findByRole('radiogroup', { name: 'Navigation style' });
+    expect(within(group).getByRole('radio', { name: 'Icon left' })).toBeChecked();
+    fireEvent.click(within(group).getByRole('radio', { name: 'Icon above' }));
+
+    await waitFor(() => expect(mockUpdatePreferences).toHaveBeenCalledWith({ navStyle: 'icon-top' }));
+    await waitFor(() => expect(within(group).getByRole('radio', { name: 'Icon above' })).toBeChecked());
+  });
+
+  it('restores the saved navigation style and explains a failed save', async () => {
+    mockUpdatePreferences.mockRejectedValue(new Error('Save failed'));
+    renderPage('/settings/general');
+
+    const group = await screen.findByRole('radiogroup', { name: 'Navigation style' });
+    fireEvent.click(within(group).getByRole('radio', { name: 'Text only' }));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Could not save navigation style. Try again.');
+    expect(within(group).getByRole('radio', { name: 'Icon left' })).toBeChecked();
+  });
+
   it('defaults to the General panel and exposes its canonical URL', async () => {
     renderPage();
 
