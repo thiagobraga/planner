@@ -5,7 +5,7 @@ import type {
   DragStartEvent,
 } from '@dnd-kit/core';
 import { usePlannerDrag, usePlannerDragHandlers } from '../contexts/usePlannerDrag';
-import { flattenTasks, getSubtreeBlock, projectMove, type FlatRow } from '../utils/taskProjection';
+import { flattenTasks, getSubtreeBlock, projectTaskDrop, projectionFitsSubtree, type FlatRow } from '../utils/taskProjection';
 import { apiMoveTask } from '../api/client';
 import type { TaskOrderScope } from '../types/drag';
 import { trackMove } from '../utils/moveEcho';
@@ -116,16 +116,6 @@ export function useTaskDrag({ enabled = true, tasks, setTasks, scope, onError, o
         return;
       }
 
-      // Hovering its own row means the block is back where it started - the
-      // resting state of every drag, not an invalid target.
-      if (over.kind === 'task' && over.taskId === active.taskId) {
-        const message = 'Back in its original position.';
-        if (lastPreview.current === message) return;
-        lastPreview.current = message;
-        announce(message);
-        return;
-      }
-
       const move = resolveMove({ rows, active, over, offsetX: indentOffset(), scope });
       const message = move?.preview ?? 'That is not a valid place to drop this task.';
       if (lastPreview.current === message) return;
@@ -164,15 +154,14 @@ export function useTaskDrag({ enabled = true, tasks, setTasks, scope, onError, o
         return;
       }
 
-      // Released on its own row: nothing to do, and nothing to complain about.
-      if (over.kind === 'task' && over.taskId === active.taskId) {
-        announce('Left where it was.');
-        return;
-      }
-
       const move = resolveMove({ rows, active, over, offsetX: indentOffset(), scope });
       if (!move) {
         announce('That is not a valid place to drop this task.');
+        return;
+      }
+
+      if (over.kind === 'task' && over.taskId === active.taskId && move.parentTaskId === (active.parentTaskId ?? null)) {
+        announce('Left where it was.');
         return;
       }
 
@@ -373,12 +362,14 @@ export function resolveMove({
   }
 
   // Dropped on another task row.
-  if (active.subtreeIds.includes(over.taskId)) return null;
+  if (over.taskId !== active.taskId && active.subtreeIds.includes(over.taskId)) return null;
 
   // On Daily the row underneath defines which day's ordering applies, so the
   // page's own scope is only a fallback for a target with no date of its own.
   const targetDay = scope.kind === 'day' ? (over.dueDate ?? scope.dueDate) : null;
   const crossesDay = targetDay !== null && targetDay !== active.dueDate;
+  const crossesList = active.containerId !== over.containerId ||
+    active.collectionId !== over.collectionId || active.sectionId !== over.sectionId;
 
   const taskDateKey = (t: Task) =>
     t.dueDate ? t.dueDate.slice(0, 10) : scope.kind === 'day' ? scope.dueDate : null;
@@ -404,7 +395,7 @@ export function resolveMove({
       : rows;
   if (!scopedRows.some((r) => r.id === over.taskId)) return null;
 
-  const projected = projectMove(scopedRows, active.taskId, over.taskId, offsetX);
+  const projected = projectTaskDrop(scopedRows, active.taskId, over.taskId, offsetX);
 
   // Moving to another date is a coarse gesture: it covers a lot of vertical
   // distance, and the pointer drifts sideways on the way. Read as nesting
@@ -412,9 +403,10 @@ export function resolveMove({
   // the drop - a top-level parent landed as a child of a completed subtask on
   // the destination day. Arriving on a new date puts the task there at top
   // level; indenting it is a separate, deliberate drag afterwards.
-  const projection = crossesDay
+  const projection = crossesDay || crossesList
     ? { parentId: null, depth: 0, position: projected.position }
     : projected;
+  if (!projectionFitsSubtree(scopedRows, active.taskId, projection)) return null;
 
   // Same-space estimate of the server's midpoint write: siblings under the
   // projected parent, in the same scoped list the position was resolved

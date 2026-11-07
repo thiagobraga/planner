@@ -6,18 +6,38 @@ import {
   buildSubtreeIndex,
   flattenTasks,
   getSubtreeBlock,
-  projectMove,
+  projectTaskDrop,
+  projectionFitsSubtree,
   INDENT_WIDTH,
 } from '../utils/taskProjection';
 import { usePlannerDrag } from '../contexts/usePlannerDrag';
 import { TaskBlockPreview } from './TaskBlockPreview';
 import type { BoardColumnDropData, DayDropData, NoDateDropData, SectionDropData } from '../types/drag';
 import { useI18n } from '../i18n/I18nContext';
+import type { TaskOrderScope } from '../types/drag';
+import type { TaskIndentHandler, TaskListContextMenuHandler } from '../types/taskIndent';
+import { parseColumnId } from '../utils/boardColumns';
 
 export type TaskListCallbacks = Pick<
   TaskItemProps,
-  'onStartEdit' | 'onEditCommit' | 'onEditCancel' | 'onDelete' | 'onAddBelow' | 'onIndent' | 'onConvertType' | 'onRightClick'
->;
+  'onStartEdit' | 'onEditCommit' | 'onEditCancel' | 'onDelete' | 'onAddBelow' | 'onConvertType'
+> & { onIndent?: TaskIndentHandler; onRightClick?: TaskListContextMenuHandler };
+
+function listScope(task: Task, dayDate: string | undefined, sectionId: string | undefined,
+  collectionId: string | undefined, dropData: TaskListProps['dropData']): TaskOrderScope {
+  const collection = collectionId ?? task.collectionId ?? '';
+  if (dayDate) return { kind: 'day', dueDate: dayDate };
+  if (dropData?.kind === 'day') return { kind: 'day', dueDate: dropData.date };
+  if (dropData?.kind === 'board-column') {
+    const column = parseColumnId(dropData.columnId);
+    if (column?.groupBy === 'status') return { kind: 'status', collectionId: collection, statusId: column.value as string };
+    if (column?.groupBy === 'priority') return { kind: 'priority', collectionId: collection, priority: column.value as number };
+    if (column?.groupBy === 'section' && column.value) return { kind: 'section', sectionId: column.value as string };
+  }
+  if (sectionId) return { kind: 'section', sectionId };
+  if (dropData?.kind === 'no-date' && task.dueDate) return { kind: 'day', dueDate: task.dueDate.slice(0, 10) };
+  return { kind: 'collection', collectionId: collection };
+}
 
 export interface TaskListProps extends TaskListCallbacks {
   tasks: Task[];
@@ -98,6 +118,7 @@ export function TaskList({
   // change of projected depth or hovered row re-renders this list, and
   // reflattening the tree each time made the cost of a drag scale with the list.
   const allRows = useMemo(() => flattenTasks(tasks), [tasks]);
+  const visibleTasks = useMemo(() => allRows.map((row) => row.task), [allRows]);
   const subtreeIdsOf = useMemo(() => buildSubtreeIndex(allRows), [allRows]);
 
   // Memoised per row, because a fresh element on every render would defeat
@@ -124,6 +145,12 @@ export function TaskList({
 
   const overIndex = overId ? rows.findIndex((r) => r.id === overId) : -1;
   const holdsActiveRow = !!activeDragId && rows.some((r) => r.id === activeDragId);
+  const activeTask = allRows.find((row) => row.id === activeDragId)?.task;
+  const hoveredTask = rows[overIndex]?.task;
+  const sameNestingScope = activeTask && hoveredTask &&
+    activeTask.collectionId === hoveredTask.collectionId &&
+    (activeTask.sectionId ?? null) === (hoveredTask.sectionId ?? null) &&
+    (activeTask.dueDate?.slice(0, 10) ?? null) === (hoveredTask.dueDate?.slice(0, 10) ?? null);
 
   // The dragged row doubles as the insertion indicator: dnd-kit already moves it
   // to the drop position, so showing it at the projected depth previews exactly
@@ -133,10 +160,17 @@ export function TaskList({
   // for a target in another list, and clamping that to 0 previewed the row
   // leaping to the top of its own day whenever the pointer crossed into a
   // different one.
-  const projection =
+  const projected =
     holdsActiveRow && overIndex !== -1
-      ? projectMove(rows, activeDragId!, overId, indentSteps * INDENT_WIDTH)
+      ? projectTaskDrop(rows, activeDragId!, overId, indentSteps * INDENT_WIDTH)
       : null;
+  const destination = projected && !sameNestingScope
+    ? { ...projected, parentId: null, depth: 0 }
+    : projected;
+  const projection = destination && projectionFitsSubtree(rows, activeDragId!, destination)
+    ? destination
+    : null;
+  const nestsOnHoveredRow = hasMoved && projection?.parentId === overId && overId !== activeDragId;
 
   // Daily renders each date as its own list, so a row dragged across dates stays
   // mounted in the list it came from and this one has nothing to reposition.
@@ -212,7 +246,7 @@ export function TaskList({
               projectedDepth={
                 projection && task.id === activeDragId ? projection.depth : undefined
               }
-              departed={hasMoved && task.id === activeDragId && !landsHere}
+              departed={hasMoved && task.id === activeDragId && (!landsHere || nestsOnHoveredRow || (overIndex !== -1 && !projection))}
               collectionBadge={badges?.get(task.id)}
               isEditing={task.id === editingId}
               dimmed={dimNotes && task.type === 'note'}
@@ -223,10 +257,13 @@ export function TaskList({
               onEditCancel={onEditCancel}
               onDelete={onDelete}
               onAddBelow={onAddBelow}
-              onIndent={onIndent}
+              onIndent={onIndent ? (id, direction) => onIndent(id, direction, visibleTasks, listScope(task, dayDate, sectionId, collectionId, dropData)) : undefined}
               onConvertType={onConvertType}
-              onRightClick={onRightClick}
+              onRightClick={onRightClick ? (id, position) => onRightClick(id, position, visibleTasks, listScope(task, dayDate, sectionId, collectionId, dropData)) : undefined}
             />
+            {nestsOnHoveredRow && task.id === overId && (
+              <div aria-hidden className="task-list-slot" style={{ marginLeft: projection.depth * INDENT_WIDTH }} />
+            )}
           </div>
         ))}
       </div>

@@ -16,6 +16,7 @@ import {
   fetchInboxTasks,
   apiCreateTask,
   apiUpdateTask,
+  apiMoveTask,
   apiToggleTask,
   apiDeleteTask,
   apiCreateSection,
@@ -33,6 +34,7 @@ import { useSectionDrag } from '../../hooks/useSectionDrag';
 const mockFetchInboxTasks = vi.mocked(fetchInboxTasks);
 const mockApiCreateTask = vi.mocked(apiCreateTask);
 const mockApiUpdateTask = vi.mocked(apiUpdateTask);
+const mockApiMoveTask = vi.mocked(apiMoveTask);
 const mockApiToggleTask = vi.mocked(apiToggleTask);
 const mockApiDeleteTask = vi.mocked(apiDeleteTask);
 const mockApiCreateSection = vi.mocked(apiCreateSection);
@@ -51,6 +53,7 @@ vi.mock('../../api/client', async (importOriginal) => ({
   fetchInboxTasks: vi.fn(),
   apiCreateTask: vi.fn(),
   apiUpdateTask: vi.fn(),
+  apiMoveTask: vi.fn(),
   apiToggleTask: vi.fn(),
   apiDeleteTask: vi.fn(),
   apiCreateSection: vi.fn(),
@@ -89,7 +92,7 @@ vi.mock('../../components/board/CollectionBoard', () => ({
   CollectionBoard: collectionBoardMock,
 }));
 
-inboxBeforeEach({ mockFetchInboxTasks, mockApiCreateTask, mockApiUpdateTask, mockApiToggleTask,
+inboxBeforeEach({ mockFetchInboxTasks, mockApiCreateTask, mockApiUpdateTask, mockApiMoveTask, mockApiToggleTask,
     mockApiDeleteTask, mockApiCreateSection, mockApiUpdateSection, mockApiDeleteSection,
     mockApiUpdatePreferences, mockFetchPreferences, mockFetchCollections, mockTaskList,
     mockUseSync, mockUseTaskDrag, mockUseSectionDrag });
@@ -662,30 +665,45 @@ describe('InboxPage', () => {
 
     it('indents a task under its previous sibling and unindents it again', async () => {
       mockFetchInboxTasks.mockResolvedValue({ tasks: sampleTasks, collectionId: 'col-1' });
-      mockApiUpdateTask.mockResolvedValue(undefined);
+      mockApiMoveTask.mockResolvedValueOnce({ moved: [{ id: 'task-2', parentTaskId: 'task-1', collectionId: 'col-1', dueDate: null, orderValue: 0, depth: 1, statusId: null, priority: 4, isCompleted: true }], reordered: [] });
+      mockApiMoveTask.mockResolvedValueOnce({ moved: [{ id: 'task-2', parentTaskId: null, collectionId: 'col-1', dueDate: null, orderValue: 2, depth: 0, statusId: null, priority: 4, isCompleted: true }], reordered: [] });
       renderPage();
 
       await screen.findByText('Buy groceries');
       fireEvent.click(screen.getByTestId('indent-task-2'));
       await waitFor(() =>
-        expect(mockApiUpdateTask).toHaveBeenCalledWith('task-2', { parentTaskId: 'task-1' }),
+        expect(mockApiMoveTask).toHaveBeenCalledWith('task-2', expect.objectContaining({ parentTaskId: 'task-1', position: 0, scope: { kind: 'collection', collectionId: 'col-1' } })),
       );
 
       fireEvent.click(screen.getByTestId('unindent-task-2'));
       await waitFor(() =>
-        expect(mockApiUpdateTask).toHaveBeenCalledWith('task-2', { parentTaskId: null }),
+        expect(mockApiMoveTask).toHaveBeenCalledWith('task-2', expect.objectContaining({ parentTaskId: null, position: 1 })),
       );
+    });
+
+    it('shows both menu actions and disables directions that cannot move', async () => {
+      mockFetchInboxTasks.mockResolvedValue({ tasks: sampleTasks, collectionId: 'col-1' });
+      renderPage();
+      await screen.findByText('Buy groceries');
+      fireEvent.click(screen.getByTestId('context-task-1'));
+      expect(screen.getByRole('menuitem', { name: 'Indent' })).toHaveAttribute('aria-disabled', 'true');
+      expect(screen.getByRole('menuitem', { name: 'Unindent' })).toHaveAttribute('aria-disabled', 'true');
+      fireEvent.click(screen.getByTestId('context-task-2'));
+      expect(screen.getByRole('menuitem', { name: 'Indent' })).toHaveAttribute('aria-disabled', 'false');
+      expect(screen.getByRole('menuitem', { name: 'Unindent' })).toHaveAttribute('aria-disabled', 'true');
     });
 
     it('refetches when an indent update fails', async () => {
       mockFetchInboxTasks.mockResolvedValue({ tasks: sampleTasks, collectionId: 'col-1' });
-      mockApiUpdateTask.mockRejectedValue(new Error('boom'));
+      mockApiMoveTask.mockRejectedValue(new Error('boom'));
       renderPage();
 
       await screen.findByText('Buy groceries');
       fireEvent.click(screen.getByTestId('indent-task-2'));
 
       await waitFor(() => expect(mockFetchInboxTasks).toHaveBeenCalledTimes(2));
+      expect(await screen.findByRole('alert')).toHaveTextContent('Could not move task');
+      expect(screen.getByTestId('task-item-task-2')).toBeInTheDocument();
     });
 
     it('does nothing when unindenting a top-level task', async () => {
@@ -695,7 +713,7 @@ describe('InboxPage', () => {
       await screen.findByText('Buy groceries');
       fireEvent.click(screen.getByTestId('unindent-task-1'));
 
-      expect(mockApiUpdateTask).not.toHaveBeenCalled();
+      expect(mockApiMoveTask).not.toHaveBeenCalled();
       expect(screen.getByTestId('task-item-task-1')).toBeInTheDocument();
     });
 
@@ -709,7 +727,7 @@ describe('InboxPage', () => {
 
       fireEvent.click(screen.getByTestId(`indent-${temp.dataset.taskId}`));
 
-      expect(mockApiUpdateTask).not.toHaveBeenCalled();
+      expect(mockApiMoveTask).not.toHaveBeenCalled();
       expect(screen.getByTestId(`task-item-${temp.dataset.taskId}`)).toBeInTheDocument();
     });
 
