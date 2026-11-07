@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.14.1](https://github.com/thiagobraga/planner/compare/v0.14.0...v0.14.1) (2026-11-07)
+
+
+### Fixed
+
+* **tasks:** persist indentation across list actions ([470f4a3](https://github.com/thiagobraga/planner/commit/470f4a3c17da890c72130d70a4bffd96edeac2e8))
+* **tasks:** persist indentation across list actions ([89ce3cd](https://github.com/thiagobraga/planner/commit/89ce3cda53cdd3a88600a6e1a1f2a742d5b9f851))
+
 ## [0.14.0](https://github.com/thiagobraga/planner/compare/v0.13.0...v0.14.0) (2026-11-05)
 
 
