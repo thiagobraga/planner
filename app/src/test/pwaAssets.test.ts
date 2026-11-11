@@ -128,6 +128,12 @@ describe('in-app logos', () => {
   });
 });
 
+describe('closed-book navbar logos', () => {
+  it.each([[16, 16], [32, 32]])('ships a transparent %ix%i closed logo', (width, height) => {
+    expect(expectPng(`/images/logo/logo-closed-${width}x${height}.png`, width, height).hasAlpha).toBe(true);
+  });
+});
+
 describe('old artwork', () => {
   it('is gone from disk and from every reference', () => {
     expect(fs.readdirSync(path.join(PUBLIC, 'images')).filter((f) => f.startsWith('bulletjournal-planner'))).toEqual([]);

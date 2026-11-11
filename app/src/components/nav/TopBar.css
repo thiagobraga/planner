@@ -21,6 +21,8 @@
   border-right: 1px solid var(--color-dot);
   flex-shrink: 0;
 }
+:root[data-theme='dark'] .planner-icon-light { display: none; }
+:root[data-theme='dark'] .planner-icon-dark { display: block; }
 .topbar-brand-name { font-size: 18px; font-weight: 600; white-space: nowrap; }
 .topbar-brand-name em { font-size: 12px; font-weight: 500; color: var(--color-accent); }
 .topbar-nav { display: flex; align-items: center; gap: 4px; min-width: 0; }

@@ -68,7 +68,7 @@ export function TopBar({ onOpenSearch, onOpenShortcuts, updateAvailable = false 
     >
       <div className="topbar-brand">
         <PlannerIcon width={16} height={16} />
-        <span className="topbar-brand-name">Planner {!isProduction() && <em>dev</em>}</span>
+        <span className="topbar-brand-name">Bullet Planner {!isProduction() && <em>dev</em>}</span>
       </div>
       <nav className="topbar-nav" aria-label={t('nav.main')}>
         {NAV_ITEMS.map((item) => item.to === '/inbox'

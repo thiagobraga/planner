@@ -54,18 +54,28 @@ export const StyleguideIcon = ({ size = 15 }: NavIconProps) => (
   </svg>
 );
 
+/** Closed black book on light themes, open book on dark; CSS swaps them via `<html data-theme>`. */
 export const PlannerIcon = ({
   width,
   height,
   className = '',
 }: PlannerIconProps) => (
-  <img
-    src={`/images/logo/logo-${width}x${height}.png`}
-    srcSet={`/images/logo/logo-${width * 2}x${height * 2}.png 2x`}
-    width={width}
-    height={height}
-    className={`block shrink-0 ${className}`}
-    alt=''
-  />
+  <>
+    <img
+      src={`/images/logo/logo-closed-${width}x${height}.png`}
+      srcSet={`/images/logo/logo-closed-${width * 2}x${height * 2}.png 2x`}
+      width={width}
+      height={height}
+      className={`planner-icon-light block shrink-0 ${className}`}
+      alt=''
+    />
+    <img
+      src={`/images/logo/logo-${width}x${height}.png`}
+      srcSet={`/images/logo/logo-${width * 2}x${height * 2}.png 2x`}
+      width={width}
+      height={height}
+      className={`planner-icon-dark hidden shrink-0 ${className}`}
+      alt=''
+    />
+  </>
 );
-
