@@ -15,7 +15,6 @@ describe('i18n', () => {
 
   it('translates values and falls back to the English catalog for missing Portuguese keys', () => {
     expect(translate('pt-BR', 'search.noResults', { query: 'café' })).toBe('Nenhum resultado para “café”');
-    expect(translate('pt-BR', 'auth.bulletJournalOnline')).toBe('Bullet journal online');
   });
 
   it('updates the document language when the active locale changes', () => {

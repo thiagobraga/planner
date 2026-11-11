@@ -19,14 +19,14 @@ interface HelpContent {
 
 const english: HelpContent = {
   title: 'Help',
-  subtitle: 'Learn how to use Planner',
+  subtitle: 'Learn how to use Bullet Planner',
   onThisPage: 'On This Page',
   then: 'then',
   sections: [
     {
       id: 'welcome',
       title: 'Welcome',
-      paragraphs: ['Planner is a Bullet Journal-inspired task manager designed to help you organize your day with focus and clarity. It supports daily planning, habit tracking, collections, and works offline.'],
+      paragraphs: ['Bullet Planner is a Bullet Journal-inspired task manager designed to help you organize your day with focus and clarity. It supports daily planning, habit tracking, collections, and works offline.'],
     },
     {
       id: 'getting-started',
@@ -78,7 +78,7 @@ const english: HelpContent = {
       title: 'AI Agents & API',
       items: [
         'Create an API token in Settings > Integrations. Read only tokens can look; Read & write tokens can also add, edit, complete and delete tasks and log habits.',
-        'Planner speaks MCP: copy the Claude Code command or JSON config from Settings > Integrations into Claude Code, Claude Desktop, Cursor or VS Code, then ask things like "what is on my plate today?".',
+        'Bullet Planner speaks MCP: copy the Claude Code command or JSON config from Settings > Integrations into Claude Code, Claude Desktop, Cursor or VS Code, then ask things like "what is on my plate today?".',
         'Changes made by an agent appear live in every open tab. Revoke a token at any time to cut its agent off.',
       ],
     },
@@ -86,7 +86,7 @@ const english: HelpContent = {
       id: 'smart-dates',
       title: 'Smart Date Recognition',
       paragraphs: [
-        'Type a date phrase anywhere you add a task - Quick Add, Daily, Inbox, or a Collection - and Planner reads it out of the title, sets the due date, and removes the phrase from the task text. Phrases that imply a repeating schedule also set up recurrence.',
+        'Type a date phrase anywhere you add a task - Quick Add, Daily, Inbox, or a Collection - and Bullet Planner reads it out of the title, sets the due date, and removes the phrase from the task text. Phrases that imply a repeating schedule also set up recurrence.',
       ],
       items: [
         'today, tomorrow, yesterday',
@@ -121,14 +121,14 @@ const english: HelpContent = {
 
 const portugueseBrazil: HelpContent = {
   title: 'Ajuda',
-  subtitle: 'Aprenda a usar o Planner',
+  subtitle: 'Aprenda a usar o Bullet Planner',
   onThisPage: 'Nesta página',
   then: 'depois',
   sections: [
     {
       id: 'welcome',
       title: 'Boas-vindas',
-      paragraphs: ['O Planner é um gerenciador de tarefas inspirado no Bullet Journal para organizar seu dia com foco e clareza. Ele oferece planejamento diário, acompanhamento de hábitos, coleções e funcionamento offline.'],
+      paragraphs: ['O Bullet Planner é um gerenciador de tarefas inspirado no Bullet Journal para organizar seu dia com foco e clareza. Ele oferece planejamento diário, acompanhamento de hábitos, coleções e funcionamento offline.'],
     },
     {
       id: 'getting-started',
@@ -180,7 +180,7 @@ const portugueseBrazil: HelpContent = {
       title: 'Agentes de IA e API',
       items: [
         'Crie um token de API em Configurações > Integrações. Tokens somente leitura podem consultar; tokens de leitura e escrita também criam, editam, concluem e excluem tarefas e registram hábitos.',
-        'O Planner fala MCP: copie o comando do Claude Code ou a configuração JSON de Configurações > Integrações para o Claude Code, Claude Desktop, Cursor ou VS Code e pergunte coisas como "o que tenho para hoje?".',
+        'O Bullet Planner fala MCP: copie o comando do Claude Code ou a configuração JSON de Configurações > Integrações para o Claude Code, Claude Desktop, Cursor ou VS Code e pergunte coisas como "o que tenho para hoje?".',
         'Mudanças feitas por um agente aparecem ao vivo em todas as abas abertas. Revogue um token a qualquer momento para desconectar o agente.',
       ],
     },
@@ -188,7 +188,7 @@ const portugueseBrazil: HelpContent = {
       id: 'smart-dates',
       title: 'Reconhecimento inteligente de datas',
       paragraphs: [
-        'Digite uma data em qualquer lugar onde você cria uma tarefa - Adição rápida, Diário, Caixa de entrada ou uma Coleção - e o Planner reconhece a frase no título, define a data de vencimento e remove a frase do texto da tarefa. Frases que indicam repetição também configuram a recorrência.',
+        'Digite uma data em qualquer lugar onde você cria uma tarefa - Adição rápida, Diário, Caixa de entrada ou uma Coleção - e o Bullet Planner reconhece a frase no título, define a data de vencimento e remove a frase do texto da tarefa. Frases que indicam repetição também configuram a recorrência.',
       ],
       items: [
         'hoje, amanhã, ontem',
