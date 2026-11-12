@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.16.1](https://github.com/thiagobraga/planner/compare/v0.16.0...v0.16.1) (2026-11-12)
+
+
+### Fixed
+
+* **tasks:** reparent children at downward drop target ([7c7863e](https://github.com/thiagobraga/planner/commit/7c7863e4863aac1ee8263c0bf957f9c24f413dde))
+
 ## [0.16.0](https://github.com/thiagobraga/planner/compare/v0.15.0...v0.16.0) (2026-11-12)
 
 
