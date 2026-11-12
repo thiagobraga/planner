@@ -5,6 +5,7 @@ import { NO_DRAG_ATTR } from '../dnd/sensors';
 import { ColorPickerPopover } from '../ui/ColorPickerPopover';
 import { ContextMenu, type ContextMenuItem } from '../ui/ContextMenu';
 import { InlineNameInput } from '../ui/InlineNameInput';
+import type { ApiStatus } from '../../types/api';
 
 interface BoardColumnHeaderProps {
   columnId: string;
@@ -19,6 +20,9 @@ interface BoardColumnHeaderProps {
   onRecolor?: (color: string) => void;
   onMarkCompletion?: () => void;
   onDelete?: () => void;
+  status?: ApiStatus;
+  statuses?: ApiStatus[];
+  onUpdateRoute?: (patch: Partial<Pick<ApiStatus, 'nextStatusMode' | 'nextStatusId' | 'acceptStatusId' | 'rejectStatusId'>>) => void;
 }
 
 export function BoardColumnHeader({
@@ -34,6 +38,9 @@ export function BoardColumnHeader({
   onRecolor,
   onMarkCompletion,
   onDelete,
+  status,
+  statuses = [],
+  onUpdateRoute,
 }: BoardColumnHeaderProps) {
   const { t } = useI18n();
   const [renaming, setRenaming] = useState(false);
@@ -63,6 +70,27 @@ export function BoardColumnHeader({
         onClick: onMarkCompletion,
       });
     }
+    if (status && !isCompletionStatus && onUpdateRoute) {
+      const destinations = [...statuses].sort((a, b) => a.orderValue - b.orderValue)
+        .filter((candidate) => candidate.id !== status.id);
+      items.push({ type: 'separator' });
+      items.push({
+        type: 'item', label: t('contextMenu.nextStage'), submenu: [
+          { type: 'item', label: `${status.nextStatusMode === 'default' ? '✓ ' : ''}${t('contextMenu.defaultNextStage')}`, onClick: () => onUpdateRoute({ nextStatusMode: 'default', nextStatusId: null }) },
+          ...destinations.map((destination): ContextMenuItem => ({ type: 'item', label: `${status.nextStatusMode === 'custom' && status.nextStatusId === destination.id ? '✓ ' : ''}${destination.name}`, onClick: () => onUpdateRoute({ nextStatusMode: 'custom', nextStatusId: destination.id }) })),
+          { type: 'item', label: `${status.nextStatusMode === 'disabled' ? '✓ ' : ''}${t('contextMenu.disableNextStage')}`, onClick: () => onUpdateRoute({ nextStatusMode: 'disabled', nextStatusId: null }) },
+        ],
+      });
+      for (const route of ['acceptStatusId', 'rejectStatusId'] as const) {
+        items.push({
+          type: 'item', label: t(route === 'acceptStatusId' ? 'contextMenu.acceptStage' : 'contextMenu.rejectStage'),
+          submenu: [
+            { type: 'item', label: `${!status[route] ? '✓ ' : ''}${t('contextMenu.noStage')}`, onClick: () => onUpdateRoute({ [route]: null }) },
+            ...destinations.map((destination): ContextMenuItem => ({ type: 'item', label: `${status[route] === destination.id ? '✓ ' : ''}${destination.name}`, onClick: () => onUpdateRoute({ [route]: destination.id }) })),
+          ],
+        });
+      }
+    }
     if (onDelete) {
       items.push({ type: 'separator' });
       items.push({
@@ -73,7 +101,7 @@ export function BoardColumnHeader({
       });
     }
     return items;
-  }, [groupBy, isCompletionStatus, menuPosition, onDelete, onMarkCompletion, onRecolor, t]);
+  }, [groupBy, isCompletionStatus, menuPosition, onDelete, onMarkCompletion, onRecolor, onUpdateRoute, status, statuses, t]);
 
   return (
     <header

@@ -481,7 +481,7 @@ export async function apiCreateStatus(
 
 export async function apiUpdateStatus(
   statusId: string,
-  input: Partial<{ name: string; color: string; position: number }>,
+  input: Partial<{ name: string; color: string; position: number; nextStatusMode: ApiStatus['nextStatusMode']; nextStatusId: string | null; acceptStatusId: string | null; rejectStatusId: string | null }>,
 ): Promise<ApiStatus> {
   return request<ApiStatus>(`/statuses/${statusId}`, {
     method: 'PATCH',

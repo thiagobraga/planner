@@ -28,6 +28,12 @@ vi.mock('../MonthSelector', () => ({
 }));
 
 describe('MonthlyView', () => {
+  it('opens the task menu from a calendar entry', () => {
+    const onTaskContextMenu = vi.fn();
+    render(<MonthlyView tasks={sampleTasks} onToggle={vi.fn()} onTaskContextMenu={onTaskContextMenu} />);
+    fireEvent.click(screen.getByRole('button', { name: 'More options for Buy groceries' }));
+    expect(onTaskContextMenu).toHaveBeenCalledWith('task-1', expect.objectContaining({ x: expect.any(Number), y: expect.any(Number) }));
+  });
   const now = new Date();
   const year = now.getFullYear();
   const month = now.getMonth();

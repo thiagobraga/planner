@@ -14,7 +14,7 @@ import { Toolbar } from '../components/ui/Toolbar';
 import { ViewSwitcher } from '../components/ui/ViewSwitcher';
 import type { Task } from '../components/TaskItem';
 import type { Section } from '../stores/taskStore';
-import { fetchInboxTasks, fetchPreferences, apiCreateTask, apiUpdateTask, apiToggleTask, apiDeleteTask, fetchCollections, apiCreateSection, apiUpdateSection, apiDeleteSection } from '../api/client';
+import { fetchInboxTasks, fetchCollectionView, fetchPreferences, apiCreateTask, apiUpdateTask, apiToggleTask, apiDeleteTask, apiMoveTask, fetchCollections, apiCreateSection, apiUpdateSection, apiDeleteSection } from '../api/client';
 import type { ApiTask } from '../types/api';
 import { ContextMenu, type ContextMenuItem } from '../components/ui/ContextMenu';
 import { SectionDeleteModal } from '../components/SectionDeleteModal';
@@ -37,6 +37,7 @@ import { applySchedule, scheduleFieldsFromApi, withTimeZones } from '../utils/ta
 import { buildSetDateMenuItem } from '../components/taskDateMenuItem';
 import type { TaskSchedule } from '../types/task';
 import { blurOnEscape } from '../utils/editableText';
+import { buildTaskMenuActions } from '../utils/taskMenuActions';
 
 function apiToTask(t: ApiTask): Task {
   return {
@@ -151,12 +152,17 @@ export function InboxPage() {
   useSectionDrag({ sections, setSections, onError: invalidate });
 
   useSync(useCallback((event) => {
+    if (event.entityType === 'status') {
+      qc.invalidateQueries({ queryKey: ['inbox'] });
+      qc.invalidateQueries({ queryKey: ['collection'] });
+      return;
+    }
     if (event.entityType !== 'task') return;
     // Refetching mid-move would overwrite the optimistic state with the order the
     // server held before the request this session is still waiting on.
     if (isEchoedMove(event)) return;
     invalidate();
-  }, [invalidate]));
+  }, [invalidate, qc]));
 
   const handleAddAtEnd = (text: string) => {
     const trimmed = text.trim();
@@ -401,6 +407,12 @@ export function InboxPage() {
   }, [invalidate, preferences?.hideCompletedTasks]);
 
   const { data: collections = [] } = useQuery({ queryKey: ['collections'], queryFn: fetchCollections });
+  const menuTask = tasks.find((task) => task.id === contextMenu?.taskId);
+  const { data: menuCollection } = useQuery({
+    queryKey: ['collection', menuTask?.collectionId],
+    queryFn: () => fetchCollectionView(menuTask!.collectionId!),
+    enabled: Boolean(contextMenu && menuTask?.collectionId && menuTask.collectionId !== data?.collectionId),
+  });
 
   const handleRightClick: TaskListContextMenuHandler = useCallback((taskId, position, visibleTasks, scope) => {
     setSelectedId(taskId);
@@ -584,7 +596,7 @@ export function InboxPage() {
         ) : boardPreferences.view === 'calendar' ? (
           <>
             <div className="h-6" />
-            <MonthlyView tasks={tasks} onToggle={(taskId) => handleToggle(taskId)} />
+            <MonthlyView tasks={tasks} onToggle={(taskId) => handleToggle(taskId)} onTaskContextMenu={handleRightClick} />
           </>
         ) : (
           <>
@@ -705,9 +717,23 @@ export function InboxPage() {
       {indentError && <div role="alert" className="text-accent text-sm mt-6">{t('task.moveFailed')}</div>}
       {contextMenu && (
         <ContextMenu
+          caret
           position={contextMenu.position}
           onClose={() => setContextMenu(null)}
           items={[
+            ...buildTaskMenuActions({
+              task: menuTask,
+              statuses: menuCollection?.statuses ?? data?.statuses ?? [],
+              completionStatusId: menuCollection?.completionStatusId ?? data?.completionStatusId ?? null,
+              t,
+              onToggle: () => handleToggle(contextMenu.taskId),
+              onMove: (statusId) => {
+                if (!menuTask?.collectionId || menuTask.parentTaskId) return;
+                apiMoveTask(menuTask.id, { parentTaskId: null, collectionId: menuTask.collectionId, statusId, scope: { kind: 'status', collectionId: menuTask.collectionId, statusId }, position: Number.MAX_SAFE_INTEGER })
+                  .then(() => { invalidate(); qc.invalidateQueries({ queryKey: ['collection', menuTask.collectionId] }); })
+                  .catch(invalidate);
+              },
+            }),
             // { type: 'item', label: 'Date', icon: <Calendar size={14} />, disabled: true },
             // { type: 'item', label: 'Priority', icon: <Tag size={14} />, disabled: true },
             buildSetDateMenuItem(t, tasks.find((task) => task.id === contextMenu.taskId), handleSetSchedule),

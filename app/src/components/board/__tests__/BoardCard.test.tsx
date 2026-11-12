@@ -4,6 +4,18 @@ import { BoardCard } from '../BoardCard';
 import { PlannerDragProvider } from '../../../contexts/PlannerDragContext';
 
 describe('BoardCard', () => {
+  it('opens its task menu from the options button and keyboard', () => {
+    const onTaskContextMenu = vi.fn();
+    render(<PlannerDragProvider><BoardCard
+      task={{ id: 'task-1', title: 'Ship board', priority: 1, collectionId: 'collection-1', isCompleted: false, orderValue: 0, type: 'task' }}
+      subtasks={[]}
+      onTaskContextMenu={onTaskContextMenu}
+    /></PlannerDragProvider>);
+    fireEvent.click(screen.getByRole('button', { name: 'More options for Ship board' }));
+    expect(onTaskContextMenu).toHaveBeenCalledWith('task-1', expect.objectContaining({ x: expect.any(Number), y: expect.any(Number) }));
+    fireEvent.keyDown(screen.getByText('Ship board').closest('article')!, { key: 'ContextMenu' });
+    expect(onTaskContextMenu).toHaveBeenCalledTimes(2);
+  });
   it('renders labels and an interactive subtask checklist', () => {
     const onToggle = vi.fn();
     render(

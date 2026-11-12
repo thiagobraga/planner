@@ -302,6 +302,43 @@ describe("statusService", () => {
   });
 
   describe("updateStatus", () => {
+    it("persists stage rules for destinations in the same collection and publishes them", async () => {
+      const destinationId = "00000000-0000-4000-8000-000000000002";
+      mockQuery.mockResolvedValueOnce({ rows: [makeStatusRow()] });
+      mockClientQuery.mockResolvedValueOnce(undefined); // BEGIN
+      mockClientQuery.mockResolvedValueOnce({ rows: [makeStatusRow({ id: destinationId })] }); // destinations
+      mockClientQuery.mockResolvedValueOnce(undefined); // UPDATE
+      mockClientQuery.mockResolvedValueOnce(undefined); // COMMIT
+      mockQuery.mockResolvedValueOnce({ rows: [makeStatusRow({ next_status_mode: "custom", next_status_id: destinationId, accept_status_id: destinationId })] });
+
+      const status = await updateStatus("status-1", "user-1", {
+        nextStatusMode: "custom", nextStatusId: destinationId, acceptStatusId: destinationId,
+      });
+
+      expect(status).toMatchObject({ nextStatusMode: "custom", nextStatusId: destinationId, acceptStatusId: destinationId });
+      expect(mockClientQuery).toHaveBeenCalledWith(expect.stringContaining("next_status_mode"), expect.arrayContaining(["custom", destinationId]));
+      expect(mockPublishEvent).toHaveBeenCalledWith(expect.objectContaining({ payload: expect.objectContaining({ nextStatusMode: "custom" }) }));
+    });
+
+    it("rejects a destination from another collection", async () => {
+      const foreignId = "00000000-0000-4000-8000-000000000003";
+      mockQuery.mockResolvedValueOnce({ rows: [makeStatusRow()] });
+      mockClientQuery.mockResolvedValueOnce(undefined); // BEGIN
+      mockClientQuery.mockResolvedValueOnce({ rows: [] }); // no matching destinations
+      mockClientQuery.mockResolvedValueOnce(undefined); // ROLLBACK
+
+      await expect(updateStatus("status-1", "user-1", { acceptStatusId: foreignId })).rejects.toMatchObject({
+        code: "VALIDATION_ERROR", statusCode: 400,
+      });
+      expect(mockClientQuery).toHaveBeenCalledWith("ROLLBACK");
+    });
+
+    it("requires a destination when custom Next is chosen", async () => {
+      mockQuery.mockResolvedValueOnce({ rows: [makeStatusRow()] });
+      await expect(updateStatus("status-1", "user-1", { nextStatusMode: "custom" })).rejects.toMatchObject({
+        code: "VALIDATION_ERROR", statusCode: 400,
+      });
+    });
     it("renames and publishes", async () => {
       mockQuery.mockResolvedValueOnce({ rows: [makeStatusRow()] }); // access check
       mockClientQuery.mockResolvedValueOnce(undefined); // BEGIN
@@ -419,6 +456,21 @@ describe("statusService", () => {
   });
 
   describe("deleteStatus", () => {
+    it("clears other statuses' routes to the deleted status", async () => {
+      mockQuery.mockResolvedValueOnce({ rows: [makeStatusRow()] });
+      mockClientQuery.mockResolvedValueOnce(undefined);
+      mockClientQuery.mockResolvedValueOnce({ rows: [{ id: "col-1", completion_status_id: "status-2" }] });
+      mockClientQuery.mockResolvedValueOnce({ rows: [makeStatusRow(), makeStatusRow({ id: "status-2" })] });
+      mockClientQuery.mockResolvedValueOnce({ rows: [] }); // tasks
+      mockClientQuery.mockResolvedValueOnce(undefined); // previous status
+      mockClientQuery.mockResolvedValueOnce({ rows: [makeStatusRow({ id: "status-2" })] }); // cleaned statuses
+      mockClientQuery.mockResolvedValueOnce(undefined); // delete
+      mockClientQuery.mockResolvedValueOnce(undefined); // commit
+
+      await deleteStatus("status-1", "user-1");
+      expect(mockClientQuery).toHaveBeenCalledWith(expect.stringContaining("next_status_id = NULL"), ["status-1", "col-1"]);
+      expect(mockPublishEvent).toHaveBeenCalledWith(expect.objectContaining({ entityId: "status-2", eventType: "updated" }));
+    });
     it("reassigns tasks to the given status and deletes", async () => {
       mockQuery.mockResolvedValueOnce({ rows: [makeStatusRow({ collection_id: "col-1" })] });
       mockClientQuery.mockResolvedValueOnce(undefined); // BEGIN

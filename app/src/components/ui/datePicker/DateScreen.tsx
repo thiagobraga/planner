@@ -102,9 +102,9 @@ export function DateScreen({ draft, onChange, weekStart, onOpenTime, onOpenRepea
 
   return (
     <>
-      <ScreenHeader title={t('datePicker.title')} icon={<CalendarDays {...ICON} />} onClose={onClose} />
+      <ScreenHeader title={t('datePicker.title')} onClose={onClose} />
 
-      <div className="flex flex-col gap-3 px-3 pb-3">
+      <div className="flex flex-col gap-2 px-3 pb-2">
         <div>
           <label className={fieldShell}>
             <CalendarDays {...ICON} className="shrink-0 text-ink-light" />
@@ -163,8 +163,8 @@ export function DateScreen({ draft, onChange, weekStart, onOpenTime, onOpenRepea
                   type="button"
                   aria-pressed={active}
                   onClick={() => pickDate(date, true)}
-                  className={`flex h-8 w-full cursor-pointer items-center gap-3 rounded-xs border-none px-2 text-left text-[14px] transition-colors duration-(--motion-fast) hover:bg-dot/30 ${
-                    active ? 'bg-dot/40 text-ink' : 'bg-transparent text-ink'
+                  className={`flex h-8 w-full cursor-pointer items-center gap-2 rounded-xs border-none px-2 text-left text-[13px] transition-colors duration-(--motion-fast) hover:bg-[var(--planner-overlay-hover-bg)] ${
+                    active ? 'bg-[var(--planner-overlay-hover-bg)] text-ink' : 'bg-transparent text-ink'
                   }`}
                 >
                   <Icon {...ICON} className={key === 'today' ? 'text-accent' : 'text-ink-light'} />
@@ -179,8 +179,10 @@ export function DateScreen({ draft, onChange, weekStart, onOpenTime, onOpenRepea
 
       <Divider />
 
-      <div className="flex flex-col gap-3 p-3">
-        <MonthCalendar key={calendarKey} value={draft.dueDate} onSelect={(iso) => pickDate(iso, false)} weekStart={weekStart} />
+      <div className="flex flex-col gap-2 p-3">
+        <div className="self-center">
+          <MonthCalendar key={calendarKey} value={draft.dueDate} onSelect={(iso) => pickDate(iso, false)} weekStart={weekStart} density="compact" />
+        </div>
 
         <div className="grid grid-cols-2 gap-2">
           <button type="button" onClick={() => onOpenTime(false)} className={chip} title={timeLabel} aria-label={`${t('datePicker.addTime')}: ${timeLabel}`}>

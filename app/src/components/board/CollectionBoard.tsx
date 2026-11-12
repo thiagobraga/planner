@@ -238,6 +238,11 @@ export function CollectionBoard(props: CollectionBoardProps) {
         onRecolorColumn={handleRecolorColumn}
         onMarkCompletion={handleMarkCompletion}
         onDeleteColumn={columnDrag.openDeleteColumn}
+        statuses={props.statuses}
+        onUpdateStatusRoute={(statusId, patch) => {
+          setBoardError(null);
+          apiUpdateStatus(statusId, patch).then(invalidate).catch(reportError);
+        }}
         onCreateTask={handleCreateTask}
         presentation={props.presentation ?? 'kanban'}
         taskListProps={{ ...props.taskListProps, activeDragId }}
