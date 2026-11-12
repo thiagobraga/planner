@@ -202,7 +202,10 @@ jobs:
         env:
           # Instrumented build so e2e runs collect coverage (see test:e2e:coverage)
           VITE_COVERAGE: "true"
-      # The runner image ships Chrome with its system deps, so no browser download or apt step.
+      # Chrome is preinstalled, but retry videos need Playwright's FFmpeg binary.
+      - name: Install Playwright video dependency
+        working-directory: app
+        run: npx playwright install ffmpeg
       - name: Run e2e tests
         working-directory: app
         env:
