@@ -156,3 +156,18 @@ test('wider content and phone routes keep page overflow contained', async ({ pag
   await page.screenshot({ path: 'dist/screenshots/topbar-help-320.png' });
   expect(errors).toEqual([]);
 });
+
+test('phone bottom bar stays pinned to the viewport edge', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/daily/list');
+  const bar = page.locator('.topbar');
+  await expect(bar).toBeVisible();
+  const bottomGap = () =>
+    bar.evaluate((el) => window.innerHeight - el.getBoundingClientRect().bottom);
+  expect(await bottomGap()).toBe(0);
+  await page.evaluate(() => window.scrollTo(0, 400));
+  expect(await page.evaluate(() => document.documentElement.scrollHeight <= window.innerHeight)).toBe(true);
+  expect(await bottomGap()).toBe(0);
+  await mkdir('dist/screenshots', { recursive: true });
+  await page.screenshot({ path: 'dist/screenshots/bottom-bar-pinned-390.png' });
+});
