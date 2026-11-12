@@ -30,5 +30,5 @@ Make task context menus a reliable place to complete, reopen, organize, and move
 - `app/src/types/api.ts`, `app/src/api/client.ts` - status contract
 - `app/src/pages/DailyPage.tsx`, `app/src/pages/InboxPage.tsx`, `app/src/pages/CollectionsPage.tsx` - menu composition and actions
 - `app/src/components/TaskItem.tsx`, `app/src/components/board/`, `app/src/components/ui/ContextMenu.tsx` - task triggers and caret
-- `app/src/components/TaskDatePickerPanel.tsx`, `app/src/index.css` - compact panel styling
-- `app/src/locales/`, relevant unit and Playwright tests - labels and behavior evidence
+- `app/src/components/ui/TaskDatePickerPanel.tsx`, `app/src/components/ui/datePicker/` - compact panel styling
+- `app/src/i18n/locales/`, relevant unit and Playwright tests - labels and behavior evidence
