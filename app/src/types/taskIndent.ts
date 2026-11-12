@@ -17,13 +17,14 @@ export type TaskIndentHandler = (
 export type TaskListContextMenuHandler = (
   id: string,
   position: { x: number; y: number },
-  visibleTasks: Task[],
-  scope: TaskOrderScope,
+  visibleTasks?: Task[],
+  scope?: TaskOrderScope,
 ) => void;
 
 export interface TaskIndentMenuContext {
   taskId: string;
   position: { x: number; y: number };
-  visibleTasks: Task[];
-  scope: TaskOrderScope;
+  /** Absent for Kanban cards and calendar entries, which have no indent tree. */
+  visibleTasks?: Task[];
+  scope?: TaskOrderScope;
 }

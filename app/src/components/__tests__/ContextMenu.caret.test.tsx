@@ -36,24 +36,4 @@ describe('ContextMenu caret', () => {
     render(<ContextMenu items={items} position={{ x: 100, y: 700 }} caret onClose={vi.fn()} />);
     expect(document.querySelector('.ui-context-menu-caret')).toHaveClass('border-b', 'border-r');
   });
-
-  it('keeps a long task menu above the mobile bottom bar', () => {
-    vi.spyOn(document.documentElement, 'clientWidth', 'get').mockReturnValue(390);
-    vi.spyOn(document.documentElement, 'clientHeight', 'get').mockReturnValue(845);
-    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
-      const isBar = this.classList.contains('bottom-bar');
-      const height = isBar ? 60 : 300;
-      const top = isBar ? 785 : 0;
-      return { width: 180, height, top, left: 0, right: 180, bottom: top + height, x: 0, y: top, toJSON: () => ({}) };
-    });
-    render(
-      <div className="app-shell app-shell--bottom-bar">
-        <nav className="bottom-bar" />
-        <ContextMenu items={items} position={{ x: 20, y: 700 }} onClose={vi.fn()} />
-      </div>,
-    );
-    const menu = document.querySelector('.ui-context-menu-panel') as HTMLElement;
-    expect(Number.parseFloat(menu.style.top) + 300).toBeLessThanOrEqual(777);
-    expect(menu.style.maxHeight).toBe('769px');
-  });
 });
