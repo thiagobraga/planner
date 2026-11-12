@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, within, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { StyleguidePage } from '../StyleguidePage';
+import { MemoryRouter } from 'react-router';
 import { fetchPreferences } from '../../api/client';
 import type { Preferences } from '../../types/api';
 
@@ -38,7 +39,7 @@ function renderPage() {
   });
   return render(
     <QueryClientProvider client={client}>
-      <StyleguidePage />
+      <MemoryRouter><StyleguidePage /></MemoryRouter>
     </QueryClientProvider>,
   );
 }

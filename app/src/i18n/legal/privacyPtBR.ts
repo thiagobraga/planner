@@ -2,21 +2,21 @@ import type { PrivacyPolicyContent } from '../../types/legal';
 
 export const privacyPortugueseBrazil: PrivacyPolicyContent = {
   title: 'Política de Privacidade',
-  subtitle: 'Como o Planner coleta, processa e protege seus dados sob a LGPD e o GDPR',
+  subtitle: 'Como o Bullet Planner coleta, processa e protege seus dados sob a LGPD e o GDPR',
   lastUpdated: 'Última atualização: 7 de agosto de 2026',
   onThisPage: 'Nesta Página',
-  backToPlanner: 'Voltar ao Planner',
+  backToPlanner: 'Voltar ao Bullet Planner',
   introSection: {
     id: 'overview',
     title: 'Visão Geral',
     paragraphs: [
-      'O Planner é um gerenciador de tarefas e hábitos inspirado no método Bullet Journal. Acreditamos que suas tarefas, notas e hábitos pertencem exclusivamente a você. Esta Política de Privacidade explica quais dados pessoais coletamos, por que os tratamos, a base legal segundo a Lei Geral de Proteção de Dados Pessoais (LGPD - Lei nº 13.709/2018) e o Regulamento Geral sobre a Proteção de Dados da União Europeia (GDPR), e como você pode exercer seus direitos.',
+      'O Bullet Planner é um gerenciador de tarefas e hábitos inspirado no método Bullet Journal. Acreditamos que suas tarefas, notas e hábitos pertencem exclusivamente a você. Esta Política de Privacidade explica quais dados pessoais coletamos, por que os tratamos, a base legal segundo a Lei Geral de Proteção de Dados Pessoais (LGPD - Lei nº 13.709/2018) e o Regulamento Geral sobre a Proteção de Dados da União Europeia (GDPR), e como você pode exercer seus direitos.',
     ],
   },
   dataCollectionSection: {
     id: 'data-collection',
     title: 'Dados Coletados e Base Legal',
-    intro: 'Coletamos apenas o mínimo de dados necessário para operar sua conta e fornecer os recursos do Planner:',
+    intro: 'Coletamos apenas o mínimo de dados necessário para operar sua conta e fornecer os recursos do Bullet Planner:',
     headers: {
       category: 'Categoria de Dados',
       source: 'Origem',
@@ -129,12 +129,12 @@ export const privacyPortugueseBrazil: PrivacyPolicyContent = {
     rows: [
       {
         thirdParty: 'Google (OAuth)',
-        dataReceived: 'E-mail, nome (do Google para o Planner)',
+        dataReceived: 'E-mail, nome (do Google para o Bullet Planner)',
         purpose: 'Autenticação',
       },
       {
         thirdParty: 'Google (Calendar API)',
-        dataReceived: 'Títulos, datas e horários de eventos (do Planner para o Google)',
+        dataReceived: 'Títulos, datas e horários de eventos (do Bullet Planner para o Google)',
         purpose: 'Sincronização de calendário (opcional)',
       },
     ],
@@ -142,7 +142,7 @@ export const privacyPortugueseBrazil: PrivacyPolicyContent = {
   cookiePolicySection: {
     id: 'cookie-policy',
     title: 'Política de Cookies',
-    intro: 'O Planner utiliza apenas cookies estritamente necessários para manter sua sessão autenticada e proteger sua conta contra ataques CSRF (Cross-Site Request Forgery):',
+    intro: 'O Bullet Planner utiliza apenas cookies estritamente necessários para manter sua sessão autenticada e proteger sua conta contra ataques CSRF (Cross-Site Request Forgery):',
     headers: {
       name: 'Cookie',
       type: 'Tipo',
@@ -167,7 +167,7 @@ export const privacyPortugueseBrazil: PrivacyPolicyContent = {
       },
     ],
     noBannerNotice:
-      'Nenhum banner de consentimento de cookies é necessário porque todos os cookies definidos pelo Planner são estritamente necessários para autenticação e segurança. Não utilizamos cookies de análise, marketing ou rastreamento.',
+      'Nenhum banner de consentimento de cookies é necessário porque todos os cookies definidos pelo Bullet Planner são estritamente necessários para autenticação e segurança. Não utilizamos cookies de análise, marketing ou rastreamento.',
     googleCookieNote:
       'Quando a biblioteca Google Identity Services (GIS) é carregada para login com o Google, o Google pode definir seus próprios cookies regidos pela Política de Privacidade do Google como estritamente necessários para o fluxo OAuth.',
   },
@@ -177,7 +177,7 @@ export const privacyPortugueseBrazil: PrivacyPolicyContent = {
     intro: 'Nos termos da LGPD (Art. 18) e do GDPR, você possui os seguintes direitos sobre seus dados pessoais:',
     headers: {
       right: 'Direito',
-      implementation: 'Como Exercer no Planner',
+      implementation: 'Como Exercer no Bullet Planner',
     },
     rows: [
       {
@@ -186,7 +186,7 @@ export const privacyPortugueseBrazil: PrivacyPolicyContent = {
       },
       {
         right: 'Correção (GDPR Art. 16 / LGPD Art. 18(III))',
-        implementation: 'Edite suas tarefas, coleções e preferências diretamente no Planner',
+        implementation: 'Edite suas tarefas, coleções e preferências diretamente no Bullet Planner',
       },
       {
         right: 'Eliminação (GDPR Art. 17 / LGPD Art. 18(VI))',

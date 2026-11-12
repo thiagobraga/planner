@@ -2,8 +2,7 @@ import { useState, useEffect, useLayoutEffect, useCallback, useRef } from 'react
 import { useCheckboxStore } from '../stores/checkboxStore';
 import { Outlet, useNavigate, useLocation } from 'react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Sidebar } from './Sidebar';
-import { BottomBar } from './BottomBar';
+import { TopBar } from './nav/TopBar';
 import { QuickAdd } from './QuickAdd';
 import { SearchOverlay } from './SearchOverlay';
 import { Button } from './ui/Button';
@@ -94,9 +93,6 @@ export function AppShell() {
   const [quickAddOpen, setQuickAddOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => window.innerWidth <= 640);
-  const [useBottomBar, setUseBottomBar] = useState(() => window.innerWidth <= 640);
   const theme = useResolvedTheme(preferences?.background ?? cachedBackground());
 
   useEffect(() => {
@@ -140,19 +136,6 @@ export function AppShell() {
     }
   }, [preferences?.background]);
 
-  useEffect(() => {
-    const mq = window.matchMedia('(max-width: 640px)');
-    const handler = (e: MediaQueryListEvent) => setSidebarCollapsed(e.matches);
-    mq.addEventListener('change', handler);
-    return () => mq.removeEventListener('change', handler);
-  }, []);
-
-  useEffect(() => {
-    const mq = window.matchMedia('(max-width: 640px)');
-    const handler = (e: MediaQueryListEvent) => setUseBottomBar(e.matches);
-    mq.addEventListener('change', handler);
-    return () => mq.removeEventListener('change', handler);
-  }, []);
   const matcherStateRef = useRef<MatcherState>(createMatcherState());
   const sequenceStateRef = useRef<SequenceState>(createSequenceState());
 
@@ -160,7 +143,9 @@ export function AppShell() {
     const el = document.activeElement;
     if (!el) return false;
     const tag = el.tagName.toLowerCase();
-    return tag === 'input' || tag === 'textarea' || (el as HTMLElement).isContentEditable;
+    return ['input', 'textarea', 'select', 'button', 'a'].includes(tag)
+      || (el as HTMLElement).isContentEditable
+      || Boolean((el as HTMLElement).closest('[role=menu], [role=dialog]'));
   }, []);
 
   const handleAction = useCallback(
@@ -243,38 +228,22 @@ export function AppShell() {
 
   return (
     <div
-      className={`app-shell flex h-screen bg-(--planner-page-bg) overflow-hidden ${preferences?.smallCaps ? ' small-caps' : ''}${useBottomBar ? ' app-shell--bottom-bar' : ''}`}
+      className={`app-shell flex flex-col h-dvh bg-(--planner-page-bg) overflow-hidden ${preferences?.smallCaps ? ' small-caps' : ''}`}
     >
-      {/* Mobile menu button - only shown below collapsed breakpoint (≥640px uses collapsed sidebar) */}
-      {!sidebarCollapsed && (
-        <button
-          type="button"
-          aria-label={t('nav.open')}
-          onClick={() => setSidebarOpen(true)}
-          className="app-shell-mobile-menu-btn mobile-menu-btn hidden fixed top-3 left-3 z-[60] border border-dot rounded py-1 px-2 text-base cursor-pointer"
-          style={{ backgroundColor: 'var(--planner-control-bg)' }}
-        >
-          ☰
-        </button>
-      )}
-
       {preferencesLoading ? (
         <div className="flex-1 flex items-center justify-center text-ink-light">
           {t('common.loading')}
         </div>
       ) : (
         <PlannerDragProvider>
-          <Sidebar
-            isOpen={sidebarOpen}
-            onClose={() => setSidebarOpen(false)}
-            collapsed={useBottomBar ? false : sidebarCollapsed}
-            onToggleCollapsed={() => setSidebarCollapsed((collapsed) => !collapsed)}
-            canCollapse={!useBottomBar}
+          <TopBar
+            onOpenSearch={() => setSearchOpen(true)}
+            onOpenShortcuts={() => setHelpOpen(true)}
             updateAvailable={updateAvailable}
           />
 
           <main
-            className="app-shell-main-content main-content flex-1 overflow-y-auto p-6"
+            className="app-shell-main-content main-content min-h-0 flex-1 overflow-y-auto p-6"
             style={{
               backgroundColor: 'var(--planner-page-bg)',
               backgroundImage: preferences?.showDots === false ? 'none' : 'radial-gradient(circle, var(--color-dot) 1px, transparent 1px)',
@@ -286,13 +255,6 @@ export function AppShell() {
             <Outlet />
           </main>
 
-          {useBottomBar && (
-            <BottomBar
-              isMenuOpen={sidebarOpen}
-              onMenuToggle={() => setSidebarOpen((v) => !v)}
-              onNavigate={() => setSidebarOpen(false)}
-            />
-          )}
         </PlannerDragProvider>
       )}
 

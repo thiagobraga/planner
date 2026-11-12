@@ -1,0 +1,109 @@
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+  height: 48px;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--color-dot);
+  background: var(--planner-sidebar-bg);
+  color: var(--color-ink);
+  position: relative;
+}
+
+.topbar[data-nav-style='icon-top'] { height: 64px; }
+.topbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 24px;
+  padding-right: 16px;
+  border-right: 1px solid var(--color-dot);
+  flex-shrink: 0;
+}
+:root[data-theme='dark'] .planner-icon-light { display: none; }
+:root[data-theme='dark'] .planner-icon-dark { display: block; }
+.topbar-brand-name { font-size: 18px; font-weight: 600; white-space: nowrap; }
+.topbar-brand-name em { font-size: 12px; font-weight: 500; color: var(--color-accent); }
+.topbar-nav { display: flex; align-items: center; gap: 4px; min-width: 0; }
+.topbar-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 32px;
+  padding: 0 12px;
+  flex-shrink: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--color-ink);
+  font: inherit;
+  font-size: 14px;
+  line-height: 16px;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.topbar-item:hover, .topbar-icon-button:hover { background: var(--planner-sidebar-hover-bg); }
+.topbar-item--active, .topbar-item--active:hover { background: var(--planner-sidebar-active-bg); font-weight: 500; }
+.topbar-item-icon { display: flex; align-items: center; justify-content: center; flex-shrink: 0; opacity: 0.7; }
+.topbar[data-nav-style='text'] .topbar-item-icon { display: none; }
+.topbar[data-nav-style='icon-top'] .topbar-item { height: 48px; flex-direction: column; gap: 4px; font-size: 12px; }
+.topbar-inbox { border-radius: 4px; }
+.topbar-inbox[data-drop-target='true'] { outline: 2px solid var(--color-ink); outline-offset: 2px; }
+.topbar-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; flex-shrink: 0; }
+.topbar-version-cluster { display: flex; align-items: center; gap: 8px; }
+.topbar-version { color: var(--color-ink-light); font-size: 11px; white-space: nowrap; }
+.topbar-icon-button {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  flex-shrink: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--color-ink);
+  cursor: pointer;
+  font: inherit;
+}
+.topbar-account { border: 1px solid var(--color-dot); border-radius: 50%; font-size: 11px; font-weight: 500; }
+.topbar-item:focus-visible, .topbar-icon-button:focus-visible, .topbar:focus-visible { outline: 2px solid var(--color-ink); outline-offset: 2px; }
+.topbar-account-identity { display: flex; flex-direction: column; gap: 4px; padding-block: 8px; max-width: min(260px, calc(100vw - 64px)); }
+.topbar-account-identity strong { font-weight: 500; color: var(--color-ink); }
+.topbar-account-identity span { font-size: 12px; }
+.topbar-account-identity strong, .topbar-account-identity span { overflow: hidden; text-overflow: ellipsis; }
+.ui-context-menu-item:has(.topbar-account-identity) { height: auto; opacity: 1; cursor: default; }
+.topbar-update-dot { position: absolute; top: 0; right: 0; width: 8px; height: 8px; border-radius: 50%; background: var(--color-moss); }
+.topbar-error { position: absolute; top: 100%; right: 8px; z-index: 60; padding: 8px 12px; border: 1px solid var(--color-accent); border-radius: 4px; color: var(--color-accent); background: var(--planner-overlay-bg); font-size: 12px; }
+
+@media (max-width: 899px) {
+  .topbar { gap: 8px; padding-inline: 12px; }
+  .topbar-brand-name, .topbar-version { display: none; }
+  .topbar-brand { padding-right: 12px; }
+  .topbar-nav { gap: 0; }
+  .topbar-item { padding-inline: 8px; gap: 6px; font-size: 13px; }
+  .topbar-actions { gap: 4px; }
+  .topbar-version-cluster:not(:has([role='status'])) { display: none; }
+}
+
+@media (max-width: 640px) {
+  .topbar, .topbar[data-nav-style='icon-top'] { height: 60px; gap: 4px; padding-inline: 8px; }
+  .topbar-brand { border: 0; padding: 0; width: 24px; justify-content: center; }
+  .topbar-nav { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); flex: 1; }
+  .topbar .topbar-item { width: 100%; height: 48px; padding: 0 2px; flex-direction: column; gap: 4px; font-size: 10px; line-height: 12px; }
+  .topbar .topbar-item-icon { display: flex; }
+  .topbar .topbar-item-icon svg { width: 18px; height: 18px; }
+  .topbar .topbar-more, .topbar-search, .topbar-version-cluster { display: none; }
+  .topbar-actions { margin-left: 0; }
+  .topbar .topbar-account { width: 44px; height: 44px; border: 0; }
+  .topbar .topbar-account::before { content: ''; position: absolute; inset: 6px; border: 1px solid var(--color-dot); border-radius: 50%; }
+}
+
+@media (max-width: 328px) {
+  .topbar-brand { display: none; }
+}

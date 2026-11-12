@@ -33,8 +33,7 @@ describe('LoginPage', () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByText('Planner')).toBeInTheDocument();
-    expect(screen.getByText('Bulletjournal online')).toBeInTheDocument();
+    expect(screen.getByText('Bullet Planner')).toBeInTheDocument();
   });
 
   it('calls login and navigates on successful submit', async () => {
