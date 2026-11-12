@@ -7,7 +7,7 @@ import { apiParseDate } from '../../../api/client';
 
 vi.mock('../../../api/client', () => ({
   apiParseDate: vi.fn(),
-  fetchPreferences: vi.fn(),
+  fetchPreferences: vi.fn().mockResolvedValue({ weekStart: 'monday' }),
 }));
 
 const parse = vi.mocked(apiParseDate);
@@ -50,6 +50,14 @@ describe('TaskDatePickerPanel', () => {
   });
 
   describe('date screen', () => {
+    it('uses the compact calendar in a smaller panel with an icon-free title', () => {
+      renderPanel();
+      const panel = document.querySelector('.task-date-picker');
+      expect(panel).toHaveClass('w-[280px]');
+      expect(panel?.querySelector('.ui-month-calendar')).toHaveClass('w-fit');
+      expect(screen.getByRole('heading', { name: 'Set date' }).previousElementSibling).toBeNull();
+    });
+
     it('lists quick options with their resolved dates and saves the one picked', () => {
       const { onSave } = renderPanel({ durationMinutes: 30 });
 

@@ -1,5 +1,5 @@
 import { SortableContext, horizontalListSortingStrategy } from '@dnd-kit/sortable';
-import type { ApiTask } from '../../types/api';
+import type { ApiStatus, ApiTask } from '../../types/api';
 import type { BoardGroupBy } from '../../types/drag';
 import type { BoardViewMode } from '../../types/board';
 import type { BoardColumn as BoardColumnModel } from '../../utils/boardColumns';
@@ -21,6 +21,8 @@ interface BoardViewProps {
   onRecolorColumn?: (columnId: string, color: string) => void;
   onMarkCompletion?: (columnId: string) => void;
   onDeleteColumn?: (columnId: string) => void;
+  statuses?: ApiStatus[];
+  onUpdateStatusRoute?: (statusId: string, patch: Partial<Pick<ApiStatus, 'nextStatusMode' | 'nextStatusId' | 'acceptStatusId' | 'rejectStatusId'>>) => void;
   onCreateTask?: (title: string, column: BoardColumnModel) => Promise<void>;
   presentation?: Exclude<BoardViewMode, 'list' | 'calendar'>;
   taskListProps?: TaskListCallbacks & { editingId?: string; activeDragId?: string | null };
@@ -38,6 +40,8 @@ export function BoardView({
   onRecolorColumn,
   onMarkCompletion,
   onDeleteColumn,
+  statuses,
+  onUpdateStatusRoute,
   onCreateTask,
   presentation = 'kanban',
   taskListProps,
@@ -64,6 +68,8 @@ export function BoardView({
               onRecolor={onRecolorColumn}
               onMarkCompletion={onMarkCompletion}
               onDelete={onDeleteColumn}
+              statuses={statuses}
+              onUpdateStatusRoute={onUpdateStatusRoute}
               onCreate={onCreateTask}
               presentation={presentation}
               taskListProps={taskListProps}

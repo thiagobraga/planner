@@ -121,9 +121,21 @@
 
 .board-card-topline {
   display: grid;
-  grid-template-columns: 18px minmax(0, 1fr);
+  grid-template-columns: 18px minmax(0, 1fr) 24px;
   gap: 6px;
   align-items: start;
+}
+
+.board-card-menu {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-ink-light);
+  cursor: pointer;
 }
 
 .board-card-topline h3 {
