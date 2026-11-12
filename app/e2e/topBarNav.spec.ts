@@ -75,8 +75,16 @@ test('phone account menu exposes search and secondary navigation without keyboar
   await page.goto('/daily/list');
   const account = page.getByRole('button', { name: 'Account', exact: true });
   await expect(page.getByRole('button', { name: 'More', exact: true })).not.toBeVisible();
+  const bar = await page.locator('.topbar').boundingBox();
+  expect(Math.round(bar!.y + bar!.height)).toBe(844);
+  await expect(page.locator('.topbar').getByRole('link')).toContainText(['Daily', 'Inbox', 'Habits', 'Collections']);
+  await expect(account.locator('img.planner-icon-light')).toBeVisible();
+  await expect(account).not.toContainText(/\w/);
   await account.click();
   const menu = page.getByRole('menu');
+  const menuBox = await menu.boundingBox();
+  expect(menuBox!.y + menuBox!.height).toBeLessThanOrEqual(bar!.y + 1);
+  await page.screenshot({ path: 'dist/screenshots/mobile-nav-menu-390.png' });
   await expect(menu.getByRole('menuitem', { name: 'Search', exact: true })).toBeVisible();
   await expect(menu.getByRole('menuitem', { name: 'Settings', exact: true })).toBeVisible();
   await expect(menu.getByRole('menuitem', { name: 'Help', exact: true })).toBeVisible();
