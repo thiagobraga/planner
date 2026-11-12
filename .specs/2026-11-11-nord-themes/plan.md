@@ -80,4 +80,4 @@ Nord applies throughout the logged-in app: navigation, task views, boards, calen
 
 Both Nord presets are selectable, readable, persistent and synchronized. Existing themes and defaults retain their behavior. Interaction colors remain distinct from danger and overdue indicators. Desktop and mobile verification includes screenshots and passing relevant checks, or explicitly recorded validation gaps.
 
-No new dependencies, database columns, routes or MCP tools are required. Keep all implementation progress in this file; do not create a separate `task.md`.
+No new dependencies, database columns, routes or MCP tools are required.
