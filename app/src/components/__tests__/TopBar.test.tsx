@@ -112,6 +112,21 @@ describe('TopBar', () => {
     expect(screen.queryByRole('menuitem', { name: /Keyboard shortcuts/i })).not.toBeInTheDocument();
   });
 
+  it('shows user initials on the desktop account button', () => {
+    renderBar();
+    const account = screen.getByRole('button', { name: 'Account' });
+    expect(account).toHaveTextContent('AW');
+    expect(account.querySelector('img')).toBeNull();
+  });
+
+  it('uses the Planner icon instead of initials as the phone menu button', () => {
+    state.mobile = true;
+    renderBar();
+    const account = screen.getByRole('button', { name: 'Account' });
+    expect(account).not.toHaveTextContent('AW');
+    expect(account.querySelector('img.planner-icon-light')).not.toBeNull();
+  });
+
   it('changes style through checked context menu choices', () => {
     const { container } = renderBar();
     fireEvent.contextMenu(container.querySelector('.topbar')!, { clientX: 40, clientY: 20 });
