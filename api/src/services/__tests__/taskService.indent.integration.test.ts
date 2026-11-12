@@ -75,4 +75,23 @@ describe('task indentation move (real PostgreSQL and Redis)', () => {
     })).rejects.toBeInstanceOf(AppError);
     expect(await tree()).toEqual(before);
   });
+
+  it('persists a child moved to the next parent without disturbing siblings', async () => {
+    const first = await addTask('computer', 1000);
+    const second = await addTask('pharmacy', 2000);
+    const child = await addTask('medicine', 0, first, 1);
+    const existing = await addTask('existing', 1000, second, 1);
+
+    await moveTask(child, userId, {
+      parentTaskId: second,
+      scope: { kind: 'collection', collectionId },
+      position: 0,
+    });
+
+    const rows = await tree();
+    expect(rows.find((row) => row.title === 'medicine')).toMatchObject({ parent_task_id: second, depth: 1 });
+    expect(rows.filter((row) => row.parent_task_id === second).map((row) => row.title)).toEqual(['medicine', 'existing']);
+    expect(rows.find((row) => row.title === 'existing')?.parent_task_id).toBe(second);
+    expect((await pool.query('SELECT id FROM tasks WHERE id = $1', [existing])).rowCount).toBe(1);
+  });
 });

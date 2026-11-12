@@ -260,6 +260,11 @@ export function projectTaskDrop<T extends TaskLike>(
   const targetIndex = rows.findIndex((row) => row.id === overId);
   const active = rows[activeIndex];
   const target = rows[targetIndex];
+  if (active && target && targetIndex > activeIndex &&
+      active.depth + Math.round(offsetX / INDENT_WIDTH) > target.depth) {
+    const next = rows[targetIndex + 1];
+    return projectMove(rows, activeId, next?.id ?? null, offsetX);
+  }
   if (active && target && activeId !== overId && targetIndex < activeIndex &&
       target.depth <= active.depth && offsetX >= INDENT_WIDTH) {
     const block = getSubtreeBlock(rows, activeId);
