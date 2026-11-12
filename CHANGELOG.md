@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.16.0](https://github.com/thiagobraga/planner/compare/v0.15.0...v0.16.0) (2026-11-12)
+
+
+### Added
+
+* add shared task menu and view triggers ([82ec35a](https://github.com/thiagobraga/planner/commit/82ec35a9c1a28c74517c780496e3cd185a4e8797))
+* add task menu and collection stage workflows ([2eb4f57](https://github.com/thiagobraga/planner/commit/2eb4f57244ad9bccf7d1b17e990537a19e62b962))
+* configure collection status routes ([7099e28](https://github.com/thiagobraga/planner/commit/7099e28436d636ea8962f40b20b623cc59a57243))
+
+
+### Fixed
+
+* align task menu with topbar indent menu after rebase ([3a3b006](https://github.com/thiagobraga/planner/commit/3a3b006271bc4bdd8f91d5445ef18517ee7448bb))
+* renumber status transition migration to 051 ([c8548a2](https://github.com/thiagobraga/planner/commit/c8548a2b84ec9e9d9bf9ef039763795c9f5d09da))
+
 ## [0.15.0](https://github.com/thiagobraga/planner/compare/v0.14.1...v0.15.0) (2026-11-12)
 
 
