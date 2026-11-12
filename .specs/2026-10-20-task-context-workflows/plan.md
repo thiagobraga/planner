@@ -24,7 +24,7 @@ Make task context menus a reliable place to complete, reopen, organize, and move
 
 ## Relevant Files
 
-- `api/src/db/migrations/049_status_transition_rules.sql` - persistent rules
+- `api/src/db/migrations/051_status_transition_rules.sql` - persistent rules
 - `api/src/services/statusService.ts`, `api/src/routes/statuses.ts`, `api/src/types/` - validation, update, cleanup, and response
 - `api/src/services/completionSync.ts`, `api/src/services/taskService.ts` - existing completion and move behavior
 - `app/src/types/api.ts`, `app/src/api/client.ts` - status contract
