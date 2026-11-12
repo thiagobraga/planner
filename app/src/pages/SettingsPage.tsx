@@ -13,6 +13,7 @@ import { NavStyleField } from '../components/settings/NavStyleField';
 import type { Preferences } from '../types/api';
 import { ensureFontLoaded, type FontOption } from '../utils/fontLoader';
 import { getDetectedTimeZone } from '../utils/date';
+import { handleRadioNavigation } from '../utils/radioNavigation';
 import { THEME_SWATCHES } from '../utils/theme';
 import { useFloatingPosition } from '../hooks/useFloatingPosition';
 import { useI18n } from '../i18n/I18nContext';
@@ -62,6 +63,8 @@ const BACKGROUND_OPTIONS: Array<{ value: Preferences['background']; labelKey: Tr
   { value: 'beige', labelKey: 'settings.beige' },
   { value: 'white', labelKey: 'settings.white' },
   { value: 'dark', labelKey: 'settings.dark' },
+  { value: 'nord-light', labelKey: 'settings.nordLight' },
+  { value: 'nord-dark', labelKey: 'settings.nordDark' },
   { value: 'system', labelKey: 'settings.system' },
 ];
 
@@ -803,7 +806,7 @@ export function SettingsPage() {
                       <h3 className="text-[10px] leading-5 tracking-[0.12em] uppercase text-ink-light font-medium">
                         {t('settings.theme')}
                       </h3>
-                      <div className="grid max-w-[584px] grid-cols-2 gap-6 sm:grid-cols-4" role="radiogroup" aria-label={t('settings.theme')}>
+                      <div className="grid max-w-[584px] grid-cols-2 gap-6 sm:grid-cols-3" role="radiogroup" aria-label={t('settings.theme')} onKeyDown={handleRadioNavigation}>
                         {BACKGROUND_OPTIONS.map(({ value, labelKey }) => {
                           const selected = background === value;
                           return (
@@ -813,6 +816,8 @@ export function SettingsPage() {
                               role="radio"
                               aria-checked={selected}
                               disabled={disabled}
+                              tabIndex={selected ? 0 : -1}
+                              title={t(labelKey)}
                               onClick={() => handleBackgroundChange(value)}
                               className="group flex flex-col items-center gap-2 disabled:cursor-not-allowed disabled:opacity-50"
                             >

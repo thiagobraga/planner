@@ -45,6 +45,11 @@ const prefsRow = {
 };
 
 describe("validatePreferences", () => {
+  it.each(["nord-light", "nord-dark"])("accepts %s background without changing legacy theme values", (background) => {
+    expect(() => validatePreferences({ background })).not.toThrow();
+    expect(() => validatePreferences({ theme: background })).toThrow(AppError);
+  });
+
   it("rejects invalid timezone", () => {
     expect(() => validatePreferences({ timeZone: "Mars/Olympus" })).toThrow(AppError);
   });

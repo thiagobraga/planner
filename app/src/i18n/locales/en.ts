@@ -199,6 +199,8 @@ export const englishCatalog = {
   'settings.beige': 'Beige',
   'settings.white': 'White',
   'settings.dark': 'Dark',
+  'settings.nordLight': 'Nord Light',
+  'settings.nordDark': 'Nord Dark',
   'settings.system': 'Automatic',
   'settings.showDots': 'Show background dots',
   'settings.showCheckboxes': 'Show checkboxes instead of dots',

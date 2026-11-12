@@ -6,6 +6,11 @@ describe('updateDocumentThemeColor', () => {
     document.head.innerHTML = '<meta name="theme-color" content="#f5f0e8">';
   });
 
+  it.each([['nord-light', '#eceff4'], ['nord-dark', '#2e3440']] as const)('uses %s page color for browser chrome', (theme, color) => {
+    updateDocumentThemeColor(theme);
+    expect(document.querySelector('meta[name="theme-color"]')).toHaveAttribute('content', color);
+  });
+
   it('uses white browser chrome for the white background', () => {
     updateDocumentThemeColor('white');
 
@@ -33,6 +38,11 @@ describe('dark theme', () => {
 });
 
 describe('resolveTheme', () => {
+  it.each(['nord-light', 'nord-dark'] as const)('keeps %s fixed across OS appearances', (theme) => {
+    expect(resolveTheme(theme, true)).toBe(theme);
+    expect(resolveTheme(theme, false)).toBe(theme);
+  });
+
   it('returns fixed preferences unchanged regardless of the OS scheme', () => {
     expect(resolveTheme('beige', true)).toBe('beige');
     expect(resolveTheme('white', true)).toBe('white');

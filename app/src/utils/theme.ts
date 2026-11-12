@@ -4,6 +4,8 @@ export const THEME_COLORS: Record<ResolvedTheme, string> = {
   beige: '#f5f0e8',
   white: '#ffffff',
   dark: '#221a14',
+  'nord-light': '#eceff4',
+  'nord-dark': '#2e3440',
 };
 
 /**
@@ -14,6 +16,8 @@ export const THEME_SWATCHES: Record<BackgroundPreference, { paper: string; dot: 
   beige: { paper: 'linear-gradient(#f5f0e8, #f5f0e8)', dot: '#d8d3cb', mark: '#44443d' },
   white: { paper: 'linear-gradient(#ffffff, #ffffff)', dot: '#d4d4d4', mark: '#44443d' },
   dark: { paper: 'linear-gradient(#292219, #292219)', dot: '#3b3229', mark: '#ede3d3' },
+  'nord-light': { paper: 'linear-gradient(#eceff4, #eceff4)', dot: '#d8dee9', mark: '#2e3440' },
+  'nord-dark': { paper: 'linear-gradient(#2e3440, #2e3440)', dot: '#434c5e', mark: '#eceff4' },
   system: { paper: 'linear-gradient(135deg, #f5f0e8 50%, #292219 50%)', dot: 'rgba(139, 134, 126, 0.45)', mark: '#44443d' },
 };
 

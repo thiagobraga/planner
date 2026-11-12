@@ -175,7 +175,7 @@ A short palette of warm, slightly aged neutrals with one brick-red anchor; every
 
 The same journal read by lamplight: warm coffee paper, cream ink, a lighter brick accent. It is selected in Settings > Appearance > Theme (`Dark`, or `Automatic` to follow the OS `prefers-color-scheme`) and applies only inside the logged-in app; login, register and password reset stay on Cream Paper.
 
-Tokens are redefined under `:root[data-theme="dark"]` in `app/src/index.css`; components keep using the same utilities (`bg-cream`, `text-ink`, `border-dot`), so inverted pairs like `bg-ink text-cream` flip on their own.
+Tokens are redefined under `:root[data-theme="dark"]` in `app/src/styles/theme.css`; components keep using the same utilities (`bg-cream`, `text-ink`, `border-dot`), so inverted pairs like `bg-ink text-cream` flip on their own.
 
 | Token | Light | Dark | Role |
 | --- | --- | --- | --- |
@@ -190,6 +190,10 @@ Tokens are redefined under `:root[data-theme="dark"]` in `app/src/index.css`; co
 | Active nav `--planner-sidebar-active-bg` | tinted dot | `#3e3228` | Selected navigation item |
 | Overlay `--planner-overlay-bg` | Cream Paper | `#2f271e` | Dialogs and menus, a half-step above the page |
 | Browser chrome `theme-color` | `#f5f0e8` | `#221a14` | PWA title bar |
+
+### Nord Themes
+
+Nord Light and Nord Dark are optional fixed themes for the logged-in app. They are exceptions to the warm-neutral palette and brick-red interaction accent: Nord Light uses Snow Storm surfaces with Polar Night text, while Nord Dark reverses that relationship. Frost blue identifies interactions, and Aurora red identifies errors, destructive actions, and overdue tasks. User-assigned collection and label colors remain unchanged. Automatic continues to select Beige or Dark according to the system appearance.
 
 The No-Pure Rule still holds: dark surfaces are warm browns, never `#000`, and ink is cream, never `#fff`. Collection and label colors are user data and stay unchanged.
 

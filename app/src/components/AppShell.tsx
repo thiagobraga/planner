@@ -27,7 +27,7 @@ import { describeAgentChange } from '../utils/agentNotice';
 
 const DEBUG_SEQUENCE = 'wasd';
 const BACKGROUND_CACHE_KEY = 'planner_background';
-const BACKGROUND_PREFERENCES: readonly BackgroundPreference[] = ['beige', 'white', 'dark', 'system'];
+const BACKGROUND_PREFERENCES: readonly BackgroundPreference[] = ['beige', 'white', 'dark', 'nord-light', 'nord-dark', 'system'];
 
 /** Last saved background, so a reload paints the right palette before preferences load. */
 function cachedBackground(): BackgroundPreference {
