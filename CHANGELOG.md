@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.15.0](https://github.com/thiagobraga/planner/compare/v0.14.1...v0.15.0) (2026-11-12)
+
+
+### Added
+
+* **nav:** replace sidebar with responsive topbar ([d7727b3](https://github.com/thiagobraga/planner/commit/d7727b342ffa9ea6b30ce7e3fde7ca5b7d64f548))
+* **nav:** replace sidebar with responsive topbar ([9e18f95](https://github.com/thiagobraga/planner/commit/9e18f9598416a9059a8c78c00e069ea4c06c69eb))
+* **nav:** show closed black book logo on light themes ([05b1aaf](https://github.com/thiagobraga/planner/commit/05b1aafb454c2dd88bca9300ece39d9439c705ce))
+* **preferences:** persist navigation style across sessions ([fd6af5d](https://github.com/thiagobraga/planner/commit/fd6af5d7d0aa2f2cd440ac00062da6c13c526a12))
+
+
+### Changed
+
+* **app:** rename to Bullet Planner and drop bullet journal tagline ([22cb877](https://github.com/thiagobraga/planner/commit/22cb8777bbb787336a18433aba5c638c8692e6ab))
+
 ## [0.14.1](https://github.com/thiagobraga/planner/compare/v0.14.0...v0.14.1) (2026-11-07)
 
 
