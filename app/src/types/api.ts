@@ -55,6 +55,10 @@ export interface ApiStatus {
   name: string;
   color: string;
   orderValue: number;
+  nextStatusMode: 'default' | 'custom' | 'disabled';
+  nextStatusId: string | null;
+  acceptStatusId: string | null;
+  rejectStatusId: string | null;
   createdAt: string;
   updatedAt: string;
 }

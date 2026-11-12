@@ -17,7 +17,7 @@ import { nextOrderValue } from '../utils/order';
 import { extractNaturalDate } from '../utils/date';
 import type { Task } from '../components/TaskItem';
 import type { Section } from '../stores/taskStore';
-import { fetchCollectionView, fetchPreferences, apiCreateTask, apiUpdateTask, apiToggleTask, apiDeleteTask, apiCreateCollection, apiUpdateCollection, apiDeleteCollection, apiCreateSection, apiUpdateSection, apiDeleteSection, PALETTE_COLORS } from '../api/client';
+import { fetchCollectionView, fetchPreferences, apiCreateTask, apiUpdateTask, apiToggleTask, apiDeleteTask, apiMoveTask, apiCreateCollection, apiUpdateCollection, apiDeleteCollection, apiCreateSection, apiUpdateSection, apiDeleteSection, PALETTE_COLORS } from '../api/client';
 import type { ApiTask, ApiCollection } from '../types/api';
 import { runOptimistic, patchById, upsertById } from '../stores/optimistic';
 import { useTaskDrag } from '../hooks/useTaskDrag';
@@ -41,6 +41,8 @@ import { applySchedule, scheduleFieldsFromApi, withTimeZones } from '../utils/ta
 import { buildSetDateMenuItem } from '../components/taskDateMenuItem';
 import type { TaskSchedule } from '../types/task';
 import { blurOnEscape } from '../utils/editableText';
+import { buildTaskMenuActions } from '../utils/taskMenuActions';
+import { useSync } from '../hooks/useSync';
 
 function apiToTask(t: ApiTask): Task {
   return {
@@ -125,6 +127,11 @@ export function CollectionsPage() {
     staleTime: 30_000,
     enabled: !!id,
   });
+  useSync(useCallback((event) => {
+    if (event.entityType === 'status' && event.collectionId === id) {
+      qc.invalidateQueries({ queryKey: ['collection', id] });
+    }
+  }, [id, qc]));
   const { data: preferences } = useQuery({
     queryKey: ['preferences'],
     queryFn: fetchPreferences,
@@ -734,7 +741,7 @@ export function CollectionsPage() {
         ) : boardPreferences.view === 'calendar' ? (
           <>
             <div className="h-6" />
-            <MonthlyView tasks={tasks} onToggle={(taskId) => handleToggle(taskId)} />
+            <MonthlyView tasks={tasks} onToggle={(taskId) => handleToggle(taskId)} onTaskContextMenu={handleRightClick} />
           </>
         ) : (
         <>
@@ -855,9 +862,23 @@ export function CollectionsPage() {
       {indentError && <div role="alert" className="text-accent text-sm mt-6">{t('task.moveFailed')}</div>}
       {contextMenu && (
         <ContextMenu
+          caret
           position={contextMenu.position}
           onClose={() => setContextMenu(null)}
           items={[
+            ...buildTaskMenuActions({
+              task: tasks.find((task) => task.id === contextMenu.taskId),
+              statuses: data?.statuses ?? [],
+              completionStatusId: data?.completionStatusId ?? null,
+              t,
+              onToggle: () => handleToggle(contextMenu.taskId),
+              onMove: (statusId) => {
+                const task = tasks.find((candidate) => candidate.id === contextMenu.taskId);
+                if (!task || task.parentTaskId) return;
+                apiMoveTask(task.id, { parentTaskId: null, collectionId: id, statusId, scope: { kind: 'status', collectionId: id, statusId }, position: Number.MAX_SAFE_INTEGER })
+                  .then(invalidate).catch(invalidate);
+              },
+            }),
             // { type: 'item', label: 'Date', icon: <Calendar size={14} />, disabled: true },
             // { type: 'item', label: 'Priority', icon: <Tag size={14} />, disabled: true },
             buildSetDateMenuItem(t, tasks.find((task) => task.id === contextMenu.taskId), handleSetSchedule),

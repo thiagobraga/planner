@@ -127,6 +127,7 @@ export function DailyBoardColumn({ column, title, isToday, tasks, allTasks, onTo
               subtasks={visibleAllTasks.filter((candidate) => candidate.parentTaskId === task.id)}
               containerId={column.id}
               onToggle={onToggle}
+              onTaskContextMenu={taskListProps?.onRightClick}
               hideDueDate={hideDueDate}
             />
           ))

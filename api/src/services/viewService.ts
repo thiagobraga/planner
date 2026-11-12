@@ -43,6 +43,10 @@ interface StatusRow {
   color: string;
   completion_status_id: string | null;
   order_value: number;
+  next_status_mode: "default" | "custom" | "disabled";
+  next_status_id: string | null;
+  accept_status_id: string | null;
+  reject_status_id: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -112,6 +116,10 @@ async function getBoardMetadata(collectionId: string, userId: string) {
     name: row.name,
     color: row.color,
     orderValue: row.order_value,
+    nextStatusMode: row.next_status_mode ?? "default",
+    nextStatusId: row.next_status_id ?? null,
+    acceptStatusId: row.accept_status_id ?? null,
+    rejectStatusId: row.reject_status_id ?? null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   }));

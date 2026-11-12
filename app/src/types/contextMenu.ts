@@ -18,4 +18,6 @@ export interface ContextMenuProps {
   items: ContextMenuItem[];
   position: { x: number; y: number };
   onClose: () => void;
+  /** Draws the pointer toward the click origin; defaults to true. */
+  caret?: boolean;
 }

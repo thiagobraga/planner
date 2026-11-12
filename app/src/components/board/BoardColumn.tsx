@@ -17,6 +17,7 @@ import { BoardCard } from './BoardCard';
 import { BoardColumnHeader } from './BoardColumnHeader';
 import { TaskAddInput } from '../TaskAddInput';
 import { useI18n } from '../../i18n/I18nContext';
+import type { ApiStatus } from '../../types/api';
 
 interface BoardColumnProps {
   collectionId: string;
@@ -28,6 +29,8 @@ interface BoardColumnProps {
   onRecolor?: (columnId: string, color: string) => void;
   onMarkCompletion?: (columnId: string) => void;
   onDelete?: (columnId: string) => void;
+  statuses?: ApiStatus[];
+  onUpdateStatusRoute?: (statusId: string, patch: Partial<Pick<ApiStatus, 'nextStatusMode' | 'nextStatusId' | 'acceptStatusId' | 'rejectStatusId'>>) => void;
   onCreate?: (title: string, column: BoardColumnModel) => Promise<void>;
   presentation?: 'kanban-list' | 'kanban';
   taskListProps?: TaskListCallbacks & { editingId?: string; activeDragId?: string | null };
@@ -67,6 +70,8 @@ export function BoardColumn({
   onRecolor,
   onMarkCompletion,
   onDelete,
+  statuses,
+  onUpdateStatusRoute,
   onCreate,
   presentation = 'kanban',
   taskListProps,
@@ -168,6 +173,9 @@ export function BoardColumn({
         onRecolor={groupBy === 'status' ? (color) => onRecolor?.(column.id, color) : undefined}
         onMarkCompletion={groupBy === 'status' ? () => onMarkCompletion?.(column.id) : undefined}
         onDelete={canEdit ? () => onDelete?.(column.id) : undefined}
+        status={groupBy === 'status' ? statuses?.find((status) => status.id === column.value) : undefined}
+        statuses={statuses}
+        onUpdateRoute={typeof column.value === 'string' ? (patch) => onUpdateStatusRoute?.(column.value as string, patch) : undefined}
       />
       <div ref={setColumnDropRef} className={`board-column-cards ${presentation === 'kanban-list' ? 'board-column-lists' : ''}`}>
         {presentation === 'kanban-list' ? (
@@ -191,6 +199,7 @@ export function BoardColumn({
               containerId={column.id}
               subtreeIds={subtreeIndex.get(task.id)}
               onToggle={onToggle}
+              onTaskContextMenu={taskListProps?.onRightClick}
             />
           ))
         )}

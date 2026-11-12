@@ -10,6 +10,7 @@ export function buildIndentMenuItems(
   onIndent: TaskIndentHandler,
 ): ContextMenuItem[] {
   const { taskId, visibleTasks, scope } = context;
+  if (!visibleTasks || !scope) return [];
   return [
     {
       type: 'item', label: t('contextMenu.indent'), icon: <IndentIncrease size={14} />,

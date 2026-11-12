@@ -28,7 +28,7 @@ import { useTaskVisibilityPreferences } from '../hooks/useTaskVisibilityPreferen
 import { useMidnightTimer } from '../hooks/useMidnightTimer';
 import { useDailyTasks } from '../hooks/useDailyTasks';
 import { useI18n } from '../i18n/I18nContext';
-import { fetchCollections, fetchSections, fetchPreferences, apiToggleTask, apiCreateTask, apiUpdateTask, apiDeleteTask } from '../api/client';
+import { fetchCollections, fetchSections, fetchCollectionView, fetchPreferences, apiToggleTask, apiCreateTask, apiUpdateTask, apiDeleteTask, apiMoveTask } from '../api/client';
 import type { ApiTask } from '../types/api';
 import { ContextMenu, type ContextMenuItem } from '../components/ui/ContextMenu';
 import { flattenCollections } from '../components/CollectionTreeNav';
@@ -41,6 +41,7 @@ import type { BoardViewMode } from '../types/board';
 import { buildSetDateMenuItem } from '../components/taskDateMenuItem';
 import type { TaskSchedule } from '../types/task';
 import { blurOnEscape } from '../utils/editableText';
+import { buildTaskMenuActions } from '../utils/taskMenuActions';
 
 let tempCounter = 0;
 function tempId() { return `temp-daily-${++tempCounter}`; }
@@ -177,6 +178,10 @@ export function DailyPage({ view }: { view: BoardViewMode }) {
   }, [refreshDaily]);
 
   useSync(useCallback((event) => {
+    if (event.entityType === 'status') {
+      qc.invalidateQueries({ queryKey: ['collection'] });
+      return;
+    }
     if (event.entityType !== 'task') return;
     // Our own move, still reconciling: the optimistic state is already ahead.
     if (isEchoedMove(event)) return;
@@ -220,7 +225,7 @@ export function DailyPage({ view }: { view: BoardViewMode }) {
         }))
       );
     }
-  }, [locale, refreshDaily, prefs?.hideCompletedTasks, prefs?.showNotes, todayKey]));
+  }, [locale, qc, refreshDaily, prefs?.hideCompletedTasks, prefs?.showNotes, todayKey]));
 
   const updateSections = useCallback((updater: (prev: DaySection[]) => DaySection[]) => {
     setSections(updater);
@@ -232,6 +237,12 @@ export function DailyPage({ view }: { view: BoardViewMode }) {
   // which also drops an overdue section once its last task leaves, while
   // buildSections keeps Today rendered even when empty.
   const allTasks = useMemo(() => sections.flatMap((s) => s.tasks), [sections]);
+  const menuTask = allTasks.find((task) => task.id === contextMenu?.taskId);
+  const { data: menuCollection } = useQuery({
+    queryKey: ['collection', menuTask?.collectionId],
+    queryFn: () => fetchCollectionView(menuTask!.collectionId!),
+    enabled: Boolean(contextMenu && menuTask?.collectionId),
+  });
   const setAllTasks = useCallback(
     (updater: (prev: Task[]) => Task[]) => {
       setSections((prev) =>
@@ -773,6 +784,7 @@ export function DailyPage({ view }: { view: BoardViewMode }) {
 
       {pageContextMenu && (
         <ContextMenu
+          caret={false}
           position={pageContextMenu}
           onClose={() => setPageContextMenu(null)}
           items={[
@@ -801,6 +813,7 @@ export function DailyPage({ view }: { view: BoardViewMode }) {
           <MonthlyView
             tasks={allTasks}
             onToggle={handleToggle}
+            onTaskContextMenu={handleRightClick}
             visibleMonth={{ year: monthAnchor.getFullYear(), month: monthAnchor.getMonth() }}
             onMonthChange={(year, month) => setMonthAnchor(new Date(year, month, 1))}
           />
@@ -873,9 +886,23 @@ export function DailyPage({ view }: { view: BoardViewMode }) {
       {indentError && <div role="alert" className="text-accent text-sm mt-6">{t('task.moveFailed')}</div>}
       {contextMenu && (
         <ContextMenu
+          caret
           position={contextMenu.position}
           onClose={() => setContextMenu(null)}
           items={[
+            ...buildTaskMenuActions({
+              task: menuTask,
+              statuses: menuCollection?.statuses ?? [],
+              completionStatusId: menuCollection?.completionStatusId ?? null,
+              t,
+              onToggle: () => handleToggle(contextMenu.taskId),
+              onMove: (statusId) => {
+                if (!menuTask?.collectionId || menuTask.parentTaskId) return;
+                apiMoveTask(menuTask.id, { parentTaskId: null, collectionId: menuTask.collectionId, statusId, scope: { kind: 'status', collectionId: menuTask.collectionId, statusId }, position: Number.MAX_SAFE_INTEGER })
+                  .then(() => { refreshDaily(); qc.invalidateQueries({ queryKey: ['collection', menuTask.collectionId] }); })
+                  .catch(() => refreshDaily());
+              },
+            }),
             // { type: 'item', label: 'Date', icon: <Calendar size={14} />, disabled: true },
             // { type: 'item', label: 'Priority', icon: <Tag size={14} />, disabled: true },
             buildSetDateMenuItem(t, allTasks.find((task) => task.id === contextMenu.taskId), handleSetSchedule),

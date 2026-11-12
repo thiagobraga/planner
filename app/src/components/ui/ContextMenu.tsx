@@ -8,10 +8,10 @@ function opensChild(item: ContextMenuItem): boolean {
   return Boolean(item.panel || (item.submenu && item.submenu.length > 0));
 }
 
-export function ContextMenu({ items, position, onClose }: ContextMenuProps) {
+export function ContextMenu({ items, position, onClose, caret = true }: ContextMenuProps) {
   // A context menu is just the root level of a nested menu structure
   return (
-    <ContextMenuRoot items={items} position={position} onClose={onClose} />
+    <ContextMenuRoot items={items} position={position} onClose={onClose} caret={caret} />
   );
 }
 
@@ -19,9 +19,10 @@ interface ContextMenuRootProps {
   items: ContextMenuItem[];
   position: { x: number; y: number };
   onClose: () => void;
+  caret: boolean;
 }
 
-function ContextMenuRoot({ items, position, onClose }: ContextMenuRootProps) {
+function ContextMenuRoot({ items, position, onClose, caret }: ContextMenuRootProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const [activePath, setActivePath] = useState<number[]>([]);
 
@@ -70,6 +71,7 @@ function ContextMenuRoot({ items, position, onClose }: ContextMenuRootProps) {
         setActivePath={setActivePath}
         onClose={onClose}
         isRoot={true}
+        caret={caret}
       />
     </div>,
     document.querySelector('.app-shell') ?? document.body
@@ -84,6 +86,7 @@ interface MenuPanelProps {
   setActivePath: React.Dispatch<React.SetStateAction<number[]>>;
   onClose: () => void;
   isRoot?: boolean;
+  caret?: boolean;
 }
 
 function MenuPanel({
@@ -94,6 +97,7 @@ function MenuPanel({
   setActivePath,
   onClose,
   isRoot,
+  caret,
 }: MenuPanelProps) {
   const panelRef = useRef<HTMLDivElement>(null);
   const [coords, setCoords] = useState({ top: position.y, left: position.x, caretLeft: 14, caretDown: false });
@@ -111,13 +115,14 @@ function MenuPanel({
     if (!panelRef.current) return;
     const rect = panelRef.current.getBoundingClientRect();
     const vw = document.documentElement.clientWidth;
-    const vh = document.documentElement.clientHeight;
     const padding = 8;
+    const bottom = document.documentElement.clientHeight - padding;
+    const panelHeight = rect.height;
     // Root panels open with a small gap below the click/anchor point so a
     // caret can sit in that gap and point back at it; submenus attach
     // directly to their parent item (no click origin of their own) and keep
     // no gap.
-    const gap = isRoot ? 8 : 0;
+    const gap = isRoot && caret ? 8 : 0;
 
     let newTop = position.y + gap;
     let newLeft = position.x;
@@ -131,8 +136,10 @@ function MenuPanel({
       }
     }
 
-    if (newTop + rect.height > vh - padding) {
-      newTop = vh - rect.height - padding;
+    if (newTop + panelHeight > bottom) {
+      newTop = isRoot && position.y - panelHeight - gap >= padding
+        ? position.y - panelHeight - gap
+        : bottom - panelHeight;
     }
 
     newLeft = Math.max(padding, newLeft);
@@ -142,10 +149,10 @@ function MenuPanel({
     // by whether the origin point ended up above or below the panel's
     // rendered position (it flips up near the bottom edge of the viewport).
     const caretLeft = Math.min(Math.max(position.x - newLeft, 14), rect.width - 14);
-    const caretDown = position.y > newTop + rect.height / 2;
+    const caretDown = position.y > newTop + panelHeight / 2;
 
     setCoords({ top: newTop, left: newLeft, caretLeft, caretDown });
-  }, [position, isRoot]);
+  }, [position, isRoot, caret]);
 
   // If we are not the active panel (because a submenu is open), we shouldn't steal keyboard events
   const isActivePanel = activePath.length === level;
@@ -227,14 +234,14 @@ function MenuPanel({
         ref={panelRef}
         tabIndex={-1}
         onKeyDown={handleKeyDown}
-        className="ui-context-menu-panel fixed z-50 min-w-45 rounded-md border border-border bg-(--planner-overlay-bg,var(--color-cream)) py-1 shadow-medium pointer-events-auto"
+        className="ui-context-menu-panel fixed z-50 min-w-45 overflow-y-auto rounded-md border border-border bg-(--planner-overlay-bg,var(--color-cream)) py-1 shadow-medium pointer-events-auto"
         style={{ top: coords.top, left: coords.left, outline: 'none' }}
         role="menu"
       >
-        {isRoot && (
+        {isRoot && caret && (
           <div
             aria-hidden="true"
-            className={`ui-context-menu-caret absolute w-3 h-3 rotate-45 border-border ${coords.caretDown ? 'border-b border-r' : 'border-t border-l'}`}
+            className={`ui-context-menu-caret absolute z-0 w-3 h-3 rotate-45 border-border ${coords.caretDown ? 'border-b border-r' : 'border-t border-l'}`}
             style={{
               left: coords.caretLeft - 6,
               top: coords.caretDown ? undefined : '-6px',
@@ -249,7 +256,7 @@ function MenuPanel({
               <div
                 key={`sep-${index}`}
                 role="separator"
-                className="ui-context-menu-separator h-px bg-border my-1 mx-3"
+                className="ui-context-menu-separator relative z-10 h-px bg-border my-1 mx-3"
               />
             );
           }
@@ -276,7 +283,7 @@ function MenuPanel({
               role={item.checked === undefined ? 'menuitem' : 'menuitemradio'}
               aria-checked={item.checked}
               aria-disabled={item.disabled}
-              className={`ui-context-menu-item ${itemClass}`}
+              className={`ui-context-menu-item relative z-10 ${itemClass}`}
               onClick={(e) => {
                 e.stopPropagation();
                 if (item.disabled) return;
@@ -406,14 +413,15 @@ function InlinePanel({ position, children }: { position: { x: number; y: number 
     const fit = () => {
       const rect = panel.getBoundingClientRect();
       const vw = document.documentElement.clientWidth;
-      const vh = document.documentElement.clientHeight;
       const padding = 8;
+      const bottom = document.documentElement.clientHeight - padding;
+      const panelHeight = rect.height;
       // No room to sit beside the menu on phones: center it in the viewport instead.
       const left =
         vw < 640
           ? (vw - rect.width) / 2
           : position.x + rect.width > vw - padding ? vw - rect.width - padding : position.x;
-      const top = position.y + rect.height > vh - padding ? vh - rect.height - padding : position.y;
+      const top = position.y + panelHeight > bottom ? bottom - panelHeight : position.y;
       setCoords({ top: Math.max(padding, top), left: Math.max(padding, left) });
     };
     fit();
