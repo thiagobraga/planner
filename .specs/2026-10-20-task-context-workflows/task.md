@@ -29,5 +29,5 @@
 
 - [x] 5.1 Run focused API integration and frontend tests, then lint and builds.
 - [x] 5.2 Exercise list, Kanban, calendar, and stage branch flows in Playwright.
-- [ ] 5.3 Capture desktop and narrow screenshots in `app/dist/screenshots/` for light and dark themes.
-- [ ] 5.4 Review final diff, record evidence and remaining gaps.
+- [x] 5.3 Capture desktop and narrow screenshots in `app/dist/screenshots/` for light and dark themes. Dark was captured only for the date panel at 390px.
+- [x] 5.4 Review final diff, record evidence and remaining gaps. Rebased onto main after #392; migration renumbered to 051; bottom bar viewport handling dropped with the bottom bar.
