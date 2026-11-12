@@ -228,7 +228,7 @@ export function AppShell() {
 
   return (
     <div
-      className={`app-shell flex flex-col h-dvh bg-(--planner-page-bg) overflow-hidden ${preferences?.smallCaps ? ' small-caps' : ''}`}
+      className={`app-shell fixed inset-0 flex flex-col bg-(--planner-page-bg) overflow-hidden ${preferences?.smallCaps ? ' small-caps' : ''}`}
     >
       {preferencesLoading ? (
         <div className="flex-1 flex items-center justify-center text-ink-light">
