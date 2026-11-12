@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.17.1](https://github.com/thiagobraga/planner/compare/v0.17.0...v0.17.1) (2026-11-12)
+
+
+### Fixed
+
+* **app:** keep the mobile bottom bar pinned to the viewport ([a45a8b6](https://github.com/thiagobraga/planner/commit/a45a8b64966b6954a134ce76a9d084bc65479ab1))
+* **app:** keep the mobile bottom bar pinned to the viewport ([d54964b](https://github.com/thiagobraga/planner/commit/d54964b4cd51b1899c3af4b3f90b396d6e550a86))
+
 ## [0.17.0](https://github.com/thiagobraga/planner/compare/v0.16.2...v0.17.0) (2026-11-12)
 
 
