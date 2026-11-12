@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.17.0](https://github.com/thiagobraga/planner/compare/v0.16.2...v0.17.0) (2026-11-12)
+
+
+### Added
+
+* **nav:** bottom nav bar and planner menu on mobile ([fa03591](https://github.com/thiagobraga/planner/commit/fa03591159973a9d5a34ec5cb1ada15e5a8514a0))
+
 ## [0.16.2](https://github.com/thiagobraga/planner/compare/v0.16.1...v0.16.2) (2026-11-12)
 
 
