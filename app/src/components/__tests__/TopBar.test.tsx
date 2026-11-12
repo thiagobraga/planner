@@ -2,6 +2,9 @@ import { act, fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TopBar } from '../nav/TopBar';
+import { isProduction } from '../../utils/environment';
+
+vi.mock('../../utils/environment', () => ({ isProduction: vi.fn(() => false) }));
 
 const state = vi.hoisted(() => ({
   style: 'icon-left', mobile: false, admin: false, dragging: false,
@@ -25,11 +28,22 @@ function renderBar(route = '/daily/list') {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  vi.mocked(isProduction).mockReturnValue(false);
   state.style = 'icon-left'; state.mobile = false; state.admin = false; state.dragging = false;
   vi.spyOn(window, 'matchMedia').mockImplementation((query) => ({ matches: state.mobile, media: query, addEventListener: vi.fn(), removeEventListener: vi.fn() }) as unknown as MediaQueryList);
 });
 
 describe('TopBar', () => {
+  it.each([false, true])('renders the joined wordmark with production=%s', (production) => {
+    vi.mocked(isProduction).mockReturnValue(production);
+    const { container } = renderBar();
+    const brand = container.querySelector('.topbar-brand-name');
+    expect(brand?.firstChild?.textContent).toBe('Bullet');
+    expect(brand?.querySelector('b')).toHaveTextContent(/^Planner$/);
+    expect(brand).toHaveTextContent(production ? /^BulletPlanner$/ : /^BulletPlanner dev$/);
+    expect(brand?.querySelector('em') !== null).toBe(!production);
+  });
+
   it.each(['text', 'icon-left', 'icon-top'])('renders %s with one active primary link', (style) => {
     state.style = style;
     const { container } = renderBar();

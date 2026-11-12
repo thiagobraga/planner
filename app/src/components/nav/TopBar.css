@@ -23,7 +23,8 @@
 }
 :root[data-theme='dark'] .planner-icon-light { display: none; }
 :root[data-theme='dark'] .planner-icon-dark { display: block; }
-.topbar-brand-name { font-size: 18px; font-weight: 600; white-space: nowrap; }
+.topbar-brand-name { font-size: 18px; font-weight: 400; white-space: nowrap; }
+.topbar-brand-name > b { font-weight: 600; }
 .topbar-brand-name em { font-size: 12px; font-weight: 500; color: var(--color-accent); }
 .topbar-nav { display: flex; align-items: center; gap: 4px; min-width: 0; }
 .topbar-item {

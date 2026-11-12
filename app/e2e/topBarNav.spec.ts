@@ -8,6 +8,25 @@ test.beforeEach(async ({ api }) => {
   await api.patch('/preferences', { locale: 'en', navStyle: 'icon-left', background: 'beige' });
 });
 
+test('wordmark typography renders on desktop and stays hidden on phones', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/daily/list');
+  const brand = page.locator('.topbar-brand-name');
+  await expect(brand).toHaveText('BulletPlanner dev');
+  await expect(brand).toHaveCSS('font-weight', '400');
+  await expect(brand.locator('b')).toHaveText('Planner');
+  await expect(brand.locator('b')).toHaveCSS('font-weight', '600');
+  await mkdir('dist/screenshots', { recursive: true });
+  await page.screenshot({ path: 'dist/screenshots/brand-wordmark-desktop.png' });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(brand).toBeHidden();
+  await expect(page.getByRole('navigation', { name: 'Main navigation' })).toBeVisible();
+  await page.screenshot({ path: 'dist/screenshots/brand-wordmark-390.png' });
+  expect(errors).toEqual([]);
+});
+
 test('primary links navigate and mark the current destination', async ({ page }) => {
   await page.goto('/daily/list');
   const nav = page.getByRole('navigation', { name: 'Main navigation' });
