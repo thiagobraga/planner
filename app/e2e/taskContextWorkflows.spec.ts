@@ -131,7 +131,8 @@ test('task actions are available from Daily list, Kanban card, calendar, and Inb
     await page.goto('/daily/list');
     await openTaskMenu(page, task.id);
     await expect(page.getByRole('menuitem', { name: `Move to ${next.name}` })).toBeVisible();
-    await expect(page.getByRole('menuitem', { name: 'Increase indent' })).toHaveAttribute('aria-disabled', 'true');
+    await expect(page.getByRole('menuitem', { name: 'Indent', exact: true })).toHaveAttribute('aria-disabled', 'true');
+    await expect(page.getByRole('menuitem', { name: 'Unindent', exact: true })).toHaveAttribute('aria-disabled', 'true');
     await expect(page.locator('.ui-context-menu-caret')).toHaveCount(1);
     await page.getByRole('menuitem', { name: 'Set date' }).click();
     const picker = page.locator('.task-date-picker');
