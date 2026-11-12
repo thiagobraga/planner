@@ -60,6 +60,25 @@ const cases: [string, string[], string][] = [
 ];
 
 describe('useTaskDrag: the drop lands where the slot said it would', () => {
+  it('moves a child below the next root into that root, not its former parent', () => {
+    const rows = flattenTasks([
+      task('computer', DAY, 1000),
+      task('medicine', DAY, 0, 'computer'),
+      task('pharmacy', DAY, 2000),
+    ]);
+    const active = { ...dragData('medicine', DAY, ['medicine']), parentTaskId: 'computer', depth: 1 };
+    const move = resolveMove({
+      rows,
+      active,
+      over: dragData('pharmacy', DAY, ['pharmacy']),
+      offsetX: 0,
+      scope: { kind: 'day', dueDate: DAY },
+    });
+
+    expect(move?.input).toMatchObject({ parentTaskId: 'pharmacy', position: 0 });
+    expect(move?.depth).toBe(1);
+  });
+
   for (const [activeId, subtreeIds, overId] of cases) {
     for (const steps of [0, 1, 2]) {
       it(`${activeId} onto ${overId}, ${steps} indent step(s)`, () => {
