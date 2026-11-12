@@ -414,7 +414,7 @@ export function StyleguidePage() {
 
         <Card title="Navigation" span>
           <div className="topbar" data-nav-style="icon-left">
-            <div className="topbar-brand"><PlannerIcon width={16} height={16} /><span className="topbar-brand-name">Bullet Planner</span></div>
+            <div className="topbar-brand"><PlannerIcon width={16} height={16} /><span className="topbar-brand-name">Bullet<b>Planner</b></span></div>
             <nav className="topbar-nav" aria-label="Navigation specimen">
               {NAV_ITEMS.map((item) => <TopBarItem key={item.to} item={item} />)}
             </nav>

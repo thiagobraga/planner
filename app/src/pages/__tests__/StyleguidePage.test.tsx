@@ -45,6 +45,15 @@ function renderPage() {
 }
 
 describe('StyleguidePage (smoke)', () => {
+  it('shows the joined wordmark in the navigation specimen', async () => {
+    renderPage();
+    const section = (await screen.findByText('Navigation')).closest('section');
+    const brand = section?.querySelector('.topbar-brand-name');
+    expect(brand).toHaveTextContent(/^BulletPlanner$/);
+    expect(brand?.firstChild?.textContent).toBe('Bullet');
+    expect(brand?.querySelector('b')).toHaveTextContent(/^Planner$/);
+  });
+
   it('renders all design system sections', async () => {
     renderPage();
 
