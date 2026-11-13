@@ -132,8 +132,8 @@ export function StyleguidePage() {
   ], []);
 
   return (
-    <div className="max-w-5xl pb-24 text-ink">
-      <header className="page-header-copy sticky-page-header max-w-162">
+    <div className="pb-24 text-ink">
+      <header className="page-header-copy sticky-page-header">
         <div className="page-header-copy-text">
           <h1 className="m-0 h-6 p-0 text-lg leading-6 font-semibold text-ink">Styleguide</h1>
         </div>

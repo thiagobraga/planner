@@ -65,7 +65,8 @@ test('style changes persist across reload and arrive in another open tab', async
 
 test('menus toggle, dismiss, restore focus and navigate with the keyboard', async ({ page }) => {
   await page.goto('/daily/list');
-  const more = page.getByRole('button', { name: 'More', exact: true });
+  const more = page.getByRole('button', { name: 'Planner menu', exact: true });
+  await expect(page.getByRole('button', { name: 'More', exact: true })).toHaveCount(0);
   await more.click();
   await expect(more).toHaveAttribute('aria-expanded', 'true');
   await more.click();
@@ -89,11 +90,10 @@ test('menus toggle, dismiss, restore focus and navigate with the keyboard', asyn
   await expect(page.getByRole('menu')).toHaveCount(0);
 });
 
-test('phone account menu exposes search and secondary navigation without keyboard hints', async ({ page }) => {
+test('phone planner menu exposes name, version, search and secondary navigation without keyboard hints', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/daily/list');
-  const account = page.getByRole('button', { name: 'Account', exact: true });
-  await expect(page.getByRole('button', { name: 'More', exact: true })).not.toBeVisible();
+  const account = page.getByRole('button', { name: 'Planner menu', exact: true });
   const bar = await page.locator('.topbar').boundingBox();
   expect(Math.round(bar!.y + bar!.height)).toBe(844);
   await expect(page.locator('.topbar').getByRole('link')).toContainText(['Daily', 'Inbox', 'Habits', 'Collections']);
@@ -104,6 +104,8 @@ test('phone account menu exposes search and secondary navigation without keyboar
   const menuBox = await menu.boundingBox();
   expect(menuBox!.y + menuBox!.height).toBeLessThanOrEqual(bar!.y + 1);
   await page.screenshot({ path: 'dist/screenshots/mobile-nav-menu-390.png' });
+  await expect(menu.locator('.topbar-menu-brand')).toContainText('BulletPlanner');
+  await expect(menu.locator('.topbar-menu-brand')).toContainText(/v\d+\.\d+\.\d+/);
   await expect(menu.getByRole('menuitem', { name: 'Search', exact: true })).toBeVisible();
   await expect(menu.getByRole('menuitem', { name: 'Settings', exact: true })).toBeVisible();
   await expect(menu.getByRole('menuitem', { name: 'Help', exact: true })).toBeVisible();
@@ -111,6 +113,39 @@ test('phone account menu exposes search and secondary navigation without keyboar
   await expect(menu.locator('.ui-context-menu-item-shortcut')).toHaveCount(0);
   await menu.getByRole('menuitem', { name: 'Search', exact: true }).click();
   await expect(page.getByRole('dialog')).toBeVisible();
+});
+
+test('page and topbar row share one centered 680px column with a folder tab', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/daily/list');
+  const box = async (selector: string) => (await page.locator(selector).boundingBox())!;
+  const row = await box('.topbar-row');
+  const column = await box('.page-container');
+  expect(Math.round(column.width)).toBe(680);
+  expect(Math.round(row.width)).toBe(680);
+  expect(Math.abs(column.x - row.x)).toBeLessThanOrEqual(1);
+  expect(Math.abs(column.x - (1440 - column.x - column.width))).toBeLessThanOrEqual(1);
+  const bar = await box('.topbar');
+  expect(Math.round(bar.width)).toBe(1440);
+  const active = page.locator('.topbar-item--active');
+  await expect(active).toHaveCSS('border-top-width', '1px');
+  await expect(active).toHaveCSS('border-bottom-width', '0px');
+  await expect(active).toHaveCSS('border-top-left-radius', '6px');
+  const tab = (await active.boundingBox())!;
+  expect(Math.round(tab.y + tab.height)).toBe(Math.round(bar.y + bar.height));
+  const pageBg = await page.locator('main').evaluate((main) => getComputedStyle(main).backgroundColor);
+  await expect(active).toHaveCSS('background-color', pageBg);
+  await page.getByRole('link', { name: 'Inbox', exact: true }).click();
+  await expect(page.getByRole('link', { name: 'Inbox', exact: true })).toHaveClass(/topbar-item--active/);
+  await page.goto('/settings/general');
+  await expect(page.getByRole('button', { name: 'Planner menu', exact: true })).toHaveAttribute('aria-current', 'page');
+  await mkdir('dist/screenshots', { recursive: true });
+  await page.screenshot({ path: 'dist/screenshots/folder-tab-1440.png' });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/daily/list');
+  const narrow = await box('.page-container');
+  expect(narrow.width).toBeLessThan(390);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 });
 
 test('dragging a collection task onto the horizontal Inbox target files it', async ({ page, api }) => {

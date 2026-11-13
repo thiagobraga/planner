@@ -4,6 +4,7 @@
 
 @theme {
   --dot-grid: 24px;
+  --container-page: 680px;
 
   /* Radius scale → rounded-* utilities */
   --radius-xs: 4px;
@@ -185,8 +186,9 @@ button,
   }
 }
 
+/* both-edges keeps the page column centered under the topbar row */
 .main-content {
-  scrollbar-gutter: stable;
+  scrollbar-gutter: stable both-edges;
 }
 
 /* Dotted paper background grid, offset 12px to center dots in cells */

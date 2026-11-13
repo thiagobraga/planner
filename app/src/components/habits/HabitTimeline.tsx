@@ -419,7 +419,7 @@ export function HabitTimeline({
 
   return (
     <div ref={rootRef} className="habit-timeline">
-      <div className="habit-timeline-week-selector flex max-w-162 justify-start">
+      <div className="habit-timeline-week-selector flex justify-start">
         <WeekSelector weekAnchor={weekAnchor} today={today} weekStart={weekStart} onWeekChange={onWeekChange} onToday={onToday} />
       </div>
 
