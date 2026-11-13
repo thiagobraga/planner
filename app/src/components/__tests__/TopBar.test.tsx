@@ -174,7 +174,7 @@ describe('TopBar', () => {
   it('changes style through checked context menu choices', () => {
     const { container } = renderBar();
     fireEvent.contextMenu(container.querySelector('.topbar')!, { clientX: 40, clientY: 20 });
-    expect(screen.getByRole('menuitemradio', { name: 'Icon left' })).toHaveAttribute('aria-checked', 'true');
+    expect(screen.getByRole('menuitemradio', { name: 'Text right' })).toHaveAttribute('aria-checked', 'true');
     fireEvent.click(screen.getByRole('menuitemradio', { name: 'Text only' }));
     expect(state.mutate).toHaveBeenCalledWith({ navStyle: 'text' });
   });

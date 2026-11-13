@@ -46,7 +46,7 @@ test('style changes persist across reload and arrive in another open tab', async
   await expect(other.locator('[data-nav-style]')).toHaveAttribute('data-nav-style', 'icon-left');
   try {
     await page.getByRole('navigation', { name: 'Main navigation' }).click({ button: 'right' });
-    await page.getByRole('menuitemradio', { name: 'Icon above' }).click();
+    await page.getByRole('menuitemradio', { name: 'Text below' }).click();
     await expect(page.locator('[data-nav-style]')).toHaveAttribute('data-nav-style', 'icon-top');
     await expect(other.locator('[data-nav-style]')).toHaveAttribute('data-nav-style', 'icon-top');
     await page.reload();
