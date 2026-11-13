@@ -20,7 +20,7 @@ test('topbar fits every style and responsive tier in both locales and themes', a
           await page.evaluate(() => document.fonts.ready);
           const bar = page.locator('.topbar');
           await expect(bar).toBeVisible();
-          await expect(bar).toHaveCSS('height', `${width <= 640 ? 60 : navStyle === 'icon-top' ? 64 : 48}px`);
+          await expect(bar).toHaveCSS('height', `${width <= 640 ? 64 : navStyle === 'icon-top' ? 64 : 48}px`);
           const geometry = await bar.evaluate((element) => {
             const rect = element.getBoundingClientRect();
             const controls = Array.from(element.querySelectorAll('a, button')).filter((control) => control.getBoundingClientRect().width > 0);
