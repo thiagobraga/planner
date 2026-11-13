@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router';
-import { MoreHorizontal, Search } from 'lucide-react';
-import { useAuth } from '../../contexts/AuthContext';
+import { Search } from 'lucide-react';
 import { usePreferences } from '../../hooks/usePreferences';
 import { useUpdatePreferences } from '../../hooks/useUpdatePreferences';
 import { useI18n } from '../../i18n/I18nContext';
@@ -15,9 +14,10 @@ import { TopBarMenus } from './TopBarMenus';
 import type { TopBarMenuState, TopBarProps } from '../../types/navigation';
 import './TopBar.css';
 
+const MENU_ROUTES = /^\/(settings|help|admin|styleguide)(\/|$)/;
+
 export function TopBar({ onOpenSearch, onOpenShortcuts, updateAvailable = false }: TopBarProps) {
   const { t } = useI18n();
-  const { user } = useAuth();
   const { pathname } = useLocation();
   const { data: preferences } = usePreferences();
   const mutation = useUpdatePreferences();
@@ -38,18 +38,17 @@ export function TopBar({ onOpenSearch, onOpenShortcuts, updateAvailable = false 
     return () => query.removeEventListener('change', change);
   }, []);
 
-  const toggleMenu = (kind: 'more' | 'account', trigger: HTMLButtonElement) => {
-    if (menu?.kind === kind) { closeMenu(); return; }
+  const toggleMenu = (trigger: HTMLButtonElement) => {
+    if (menu?.kind === 'menu') { closeMenu(); return; }
     triggerRef.current = trigger;
     const rect = trigger.getBoundingClientRect();
-    setMenu({ kind, position: { x: rect.left, y: mobile ? rect.top : rect.bottom } });
+    setMenu({ kind: 'menu', position: { x: rect.left, y: mobile ? rect.top : rect.bottom } });
   };
   const openStyleMenu = (x: number, y: number) => {
     triggerRef.current = barRef.current;
     setMenu({ kind: 'style', position: { x, y } });
   };
-  const moreActive = /^\/(settings|help|admin|styleguide)(\/|$)/.test(pathname);
-  const initials = (user?.displayName || user?.email || '').split(/\s+/).slice(0, 2).map((word) => word[0]).join('').toLocaleUpperCase();
+  const menuRouteActive = MENU_ROUTES.test(pathname);
 
   return (
     <header
@@ -66,45 +65,35 @@ export function TopBar({ onOpenSearch, onOpenShortcuts, updateAvailable = false 
         }
       }}
     >
-      <div className="topbar-brand">
-        <PlannerIcon width={16} height={16} />
-        <span className="topbar-brand-name">Bullet<b>Planner</b>{!isProduction() && <em> dev</em>}</span>
-      </div>
-      <nav className="topbar-nav" aria-label={t('nav.main')}>
-        {NAV_ITEMS.map((item) => item.to === '/inbox'
-          ? <InboxTopBarItem key={item.to} item={item} />
-          : <TopBarItem key={item.to} item={item} />)}
-        <button
-          type="button"
-          className={`topbar-item topbar-more${moreActive ? ' topbar-item--active' : ''}`}
-          aria-haspopup="menu"
-          aria-current={moreActive ? 'page' : undefined}
-          aria-expanded={menu?.kind === 'more'}
-          onMouseDown={(event) => event.stopPropagation()}
-          onClick={(event) => toggleMenu('more', event.currentTarget)}
-        >
-          <span className="topbar-item-icon"><MoreHorizontal size={16} /></span>
-          <span className="topbar-item-label">{t('nav.more')}</span>
-        </button>
-      </nav>
-      <div className="topbar-actions">
-        <div className="topbar-version-cluster">
-          <span className="topbar-version" title={t('nav.version', { version: APP_VERSION })}>v{APP_VERSION}</span>
-          <UpdateToast updateAvailable={updateAvailable} />
+      <div className="topbar-row">
+        <div className="topbar-brand">
+          <span className="topbar-brand-name">Bullet<b>Planner</b>{!isProduction() && <em> dev</em>}</span>
         </div>
-        <button type="button" className="topbar-search topbar-icon-button" aria-label={t('common.search')} onClick={onOpenSearch}><Search size={16} /></button>
-        <button
-          type="button"
-          className="topbar-account topbar-icon-button"
-          aria-label={t('nav.account')}
-          aria-haspopup="menu"
-          aria-expanded={menu?.kind === 'account'}
-          onMouseDown={(event) => event.stopPropagation()}
-          onClick={(event) => toggleMenu('account', event.currentTarget)}
-        >
-          {mobile ? <PlannerIcon width={16} height={16} className="topbar-account-icon" /> : <span aria-hidden="true">{initials}</span>}
-          {mobile && updateAvailable && <span className="topbar-update-dot" aria-hidden="true" />}
-        </button>
+        <nav className="topbar-nav" aria-label={t('nav.main')}>
+          {NAV_ITEMS.map((item) => item.to === '/inbox'
+            ? <InboxTopBarItem key={item.to} item={item} />
+            : <TopBarItem key={item.to} item={item} />)}
+        </nav>
+        <div className="topbar-actions">
+          <div className="topbar-version-cluster">
+            <span className="topbar-version" title={t('nav.version', { version: APP_VERSION })}>v{APP_VERSION}</span>
+            <UpdateToast updateAvailable={updateAvailable} />
+          </div>
+          <button type="button" className="topbar-search topbar-icon-button" aria-label={t('common.search')} onClick={onOpenSearch}><Search size={16} /></button>
+          <button
+            type="button"
+            className={`topbar-menu-button topbar-icon-button${menuRouteActive ? ' topbar-icon-button--active' : ''}`}
+            aria-label={t('nav.menu')}
+            aria-haspopup="menu"
+            aria-current={menuRouteActive ? 'page' : undefined}
+            aria-expanded={menu?.kind === 'menu'}
+            onMouseDown={(event) => event.stopPropagation()}
+            onClick={(event) => toggleMenu(event.currentTarget)}
+          >
+            <PlannerIcon width={16} height={16} className="topbar-menu-icon" />
+            {updateAvailable && <span className="topbar-update-dot" aria-hidden="true" />}
+          </button>
+        </div>
       </div>
       {menu && <TopBarMenus menu={menu} mobile={mobile} navStyle={navStyle} saving={mutation.isPending} onStyleChange={(style) => mutation.mutate({ navStyle: style })} onClose={closeMenu} onOpenSearch={onOpenSearch} onOpenShortcuts={onOpenShortcuts} updateAvailable={updateAvailable} />}
       {mutation.isError && <p role="alert" className="topbar-error">{t('nav.styleSaveError')}</p>}

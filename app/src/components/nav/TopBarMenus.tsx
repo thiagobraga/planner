@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useI18n } from '../../i18n/I18nContext';
 import { ContextMenu } from '../ui/ContextMenu';
 import { StyleguideIcon } from './navIcons';
+import { APP_VERSION } from '../../utils/version';
 import { NAV_STYLE_LABELS } from './navItems';
 import type { ContextMenuItem } from '../../types/contextMenu';
 import type { NavStyle, TopBarMenusProps } from '../../types/navigation';
@@ -31,14 +32,14 @@ export function TopBarMenus({ menu, mobile, navStyle, saving, onStyleChange, onC
       type: 'item', label: t(NAV_STYLE_LABELS[style]), checked: style === navStyle, disabled: saving,
       onClick: () => onStyleChange(style),
     }));
-  } else if (menu.kind === 'more') {
-    items = utilities;
   } else {
     items = [
+      { type: 'item', disabled: true, label: <span className="topbar-menu-brand"><span>Bullet<b>Planner</b></span><span className="topbar-menu-version">v{APP_VERSION}</span></span> },
       { type: 'item', disabled: true, label: <span className="topbar-account-identity"><strong>{user?.displayName || user?.email}</strong><span>{user?.email}</span></span> },
       { type: 'separator' },
-      ...(mobile ? [...utilities, { type: 'separator' as const }] : []),
-      ...(mobile && updateAvailable ? [{ type: 'item' as const, label: `${t('update.available')} - ${t('update.refresh')}`, icon: <RefreshCw size={16} />, onClick: () => window.location.reload() }, { type: 'separator' as const }] : []),
+      ...utilities,
+      ...(updateAvailable ? [{ type: 'separator' as const }, { type: 'item' as const, label: `${t('update.available')} - ${t('update.refresh')}`, icon: <RefreshCw size={16} />, onClick: () => window.location.reload() }] : []),
+      { type: 'separator' },
       { type: 'item', label: t('nav.logout'), icon: <LogOut size={16} />, onClick: () => { logout(); navigate('/login'); } },
     ];
   }

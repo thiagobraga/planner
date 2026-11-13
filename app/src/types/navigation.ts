@@ -18,7 +18,7 @@ export interface TopBarProps {
 }
 export interface TopBarItemProps { item: NavItem }
 export interface TopBarMenuState {
-  kind: 'more' | 'account' | 'style';
+  kind: 'menu' | 'style';
   position: { x: number; y: number };
 }
 export interface TopBarMenusProps extends TopBarProps {

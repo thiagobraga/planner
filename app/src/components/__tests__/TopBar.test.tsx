@@ -57,24 +57,78 @@ describe('TopBar', () => {
     expect(screen.getByRole('link', { name: 'Collections' })).toHaveAttribute('aria-current', 'page');
   });
 
-  it('opens More with utilities, shortcuts and only authorized admin actions', () => {
-    renderBar();
-    fireEvent.click(screen.getByRole('button', { name: 'More' }));
-    expect(screen.getByRole('menuitem', { name: /Settings/ })).toHaveTextContent('g s');
-    expect(screen.getByRole('menuitem', { name: /Keyboard shortcuts/i })).toHaveTextContent('?');
-    expect(screen.queryByRole('menuitem', { name: 'Users' })).not.toBeInTheDocument();
+  it('keeps the wordmark without the book icon and has no More button', () => {
+    const { container } = renderBar();
+    expect(container.querySelector('.topbar-brand img')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'More' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Account' })).not.toBeInTheDocument();
   });
 
-  it('shows admin destinations in More', () => {
+  it('lays out wordmark, tabs and actions inside one centered row', () => {
+    const { container } = renderBar();
+    const row = container.querySelector('.topbar > .topbar-row');
+    expect(row).not.toBeNull();
+    expect([...row!.children].map((child) => child.className.split(' ')[0])).toEqual(['topbar-brand', 'topbar-nav', 'topbar-actions']);
+    const actions = row!.querySelector('.topbar-actions')!;
+    expect(actions.lastElementChild).toBe(screen.getByRole('button', { name: 'Planner menu' }));
+  });
+
+  it('uses the Planner icon as the menu button on every width', () => {
+    for (const mobile of [false, true]) {
+      state.mobile = mobile;
+      const { unmount } = renderBar();
+      const button = screen.getByRole('button', { name: 'Planner menu' });
+      expect(button.querySelector('img.planner-icon-light')).not.toBeNull();
+      expect(button).not.toHaveTextContent('AW');
+      unmount();
+    }
+  });
+
+  it('opens one menu with name, version, identity, utilities and logout', () => {
+    renderBar();
+    fireEvent.click(screen.getByRole('button', { name: 'Planner menu' }));
+    const menu = screen.getByRole('menu');
+    expect(menu.querySelector('.topbar-menu-brand')).toHaveTextContent(/BulletPlanner/);
+    expect(menu.querySelector('.topbar-menu-brand')).toHaveTextContent(/v\d+\.\d+\.\d+/);
+    expect(screen.getByText('Alex Writer')).toBeInTheDocument();
+    expect(screen.getByText('alex@example.com')).toBeInTheDocument();
+    expect(screen.getByRole('menuitem', { name: /Settings/ })).toHaveTextContent('g s');
+    expect(screen.getByRole('menuitem', { name: /Help/ })).toBeInTheDocument();
+    expect(screen.getByRole('menuitem', { name: /Keyboard shortcuts/i })).toHaveTextContent('?');
+    expect(screen.queryByRole('menuitem', { name: 'Search' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('menuitem', { name: 'Users' })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Logout' }));
+    expect(state.logout).toHaveBeenCalledOnce();
+  });
+
+  it('shows admin destinations in the menu', () => {
     state.admin = true;
     renderBar();
-    fireEvent.click(screen.getByRole('button', { name: 'More' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Planner menu' }));
     for (const name of ['Dashboard', 'Users', 'Compare', 'Styleguide']) expect(screen.getByRole('menuitem', { name })).toBeInTheDocument();
+  });
+
+  it('offers the update refresh in the menu on desktop too', () => {
+    render(<MemoryRouter><TopBar onOpenSearch={vi.fn()} onOpenShortcuts={vi.fn()} updateAvailable /></MemoryRouter>);
+    const button = screen.getByRole('button', { name: 'Planner menu' });
+    expect(button.querySelector('.topbar-update-dot')).not.toBeNull();
+    fireEvent.click(button);
+    expect(screen.getByRole('menuitem', { name: /New version available/ })).toBeInTheDocument();
+  });
+
+  it.each(['/settings/general', '/help', '/admin/users', '/styleguide'])('marks the menu button current on %s', (route) => {
+    renderBar(route);
+    expect(screen.getByRole('button', { name: 'Planner menu' })).toHaveAttribute('aria-current', 'page');
+  });
+
+  it('leaves the menu button plain on primary tabs', () => {
+    renderBar('/inbox');
+    expect(screen.getByRole('button', { name: 'Planner menu' })).not.toHaveAttribute('aria-current');
   });
 
   it('closes an open trigger without reopening and restores focus', () => {
     renderBar();
-    const trigger = screen.getByRole('button', { name: 'More' });
+    const trigger = screen.getByRole('button', { name: 'Planner menu' });
     fireEvent.click(trigger);
     fireEvent.mouseDown(trigger);
     fireEvent.click(trigger);
@@ -87,44 +141,34 @@ describe('TopBar', () => {
     const { onOpenSearch, onOpenShortcuts } = renderBar();
     fireEvent.click(screen.getByRole('button', { name: 'Search' }));
     expect(onOpenSearch).toHaveBeenCalledOnce();
-    fireEvent.click(screen.getByRole('button', { name: 'More' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Planner menu' }));
     fireEvent.click(screen.getByRole('menuitem', { name: /Keyboard shortcuts/i }));
     expect(onOpenShortcuts).toHaveBeenCalledOnce();
   });
 
-  it('shows identity and logout in desktop account menu', () => {
-    renderBar();
-    fireEvent.click(screen.getByRole('button', { name: 'Account' }));
-    expect(screen.getByText('Alex Writer')).toBeInTheDocument();
-    expect(screen.getByText('alex@example.com')).toBeInTheDocument();
-    expect(screen.queryByRole('menuitem', { name: 'Search' })).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Logout' }));
-    expect(state.logout).toHaveBeenCalledOnce();
-  });
-
-  it('puts phone utilities in account menu without keyboard hints', () => {
+  it('puts phone utilities in the menu without keyboard hints', () => {
     state.mobile = true;
     renderBar();
-    fireEvent.click(screen.getByRole('button', { name: 'Account' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Planner menu' }));
+    expect(screen.getByRole('menu').querySelector('.topbar-menu-brand')).toHaveTextContent(/BulletPlanner/);
     expect(screen.getByRole('menuitem', { name: 'Search' })).toBeInTheDocument();
     expect(screen.getByRole('menuitem', { name: 'Settings' })).toBeInTheDocument();
     expect(screen.queryByText('g s')).not.toBeInTheDocument();
     expect(screen.queryByRole('menuitem', { name: /Keyboard shortcuts/i })).not.toBeInTheDocument();
   });
 
-  it('shows user initials on the desktop account button', () => {
+  it('uses the inbox tray icon for Inbox', () => {
     renderBar();
-    const account = screen.getByRole('button', { name: 'Account' });
-    expect(account).toHaveTextContent('AW');
-    expect(account.querySelector('img')).toBeNull();
+    expect(screen.getByRole('link', { name: 'Inbox' }).querySelector('svg.lucide-inbox')).not.toBeNull();
   });
 
-  it('uses the Planner icon instead of initials as the phone menu button', () => {
-    state.mobile = true;
+  it('draws Daily as a plain square with a bold day and no binder rings', () => {
     renderBar();
-    const account = screen.getByRole('button', { name: 'Account' });
-    expect(account).not.toHaveTextContent('AW');
-    expect(account.querySelector('img.planner-icon-light')).not.toBeNull();
+    const day = screen.getByTestId('daily-day-number');
+    expect(day).toHaveAttribute('font-weight', '700');
+    const svg = day.closest('svg')!;
+    expect(svg.querySelector('path')).toBeNull();
+    expect(svg.querySelectorAll('rect')).toHaveLength(2);
   });
 
   it('changes style through checked context menu choices', () => {
