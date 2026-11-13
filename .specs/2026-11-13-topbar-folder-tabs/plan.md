@@ -1,7 +1,5 @@
 # Centered container and folder-tab topbar
 
-Status: In progress
-
 ## What the user sees
 
 ### One centered column
@@ -61,6 +59,7 @@ Branch `feat/topbar-folder-tabs`, worktree `.worktrees/topbar-folder-tabs`, stac
 Run tools capped: `docker compose exec -e NODE_OPTIONS=--max-old-space-size=2048 app nice -n 10 npm test -- --maxWorkers=2`, Playwright `--workers=2`, one suite at a time.
 
 ### 1. Container
+
 - [ ] 1.1 `index.css` `@theme`: `--container-page: 680px` (utility `max-w-page`)
 - [ ] 1.2 `AppShell.tsx`: wrap `<Outlet />` in `div.page-container.mx-auto.w-full.max-w-page`
 - [ ] 1.3 Remove `max-w-162` from all pages/components (13 uses); drop `max-w-5xl` (Settings), `max-w-[832px]` (Daily monthly), `max-w-2xl` (CollectionsIndex)
@@ -68,6 +67,7 @@ Run tools capped: `docker compose exec -e NODE_OPTIONS=--max-old-space-size=2048
 - [ ] 1.5 Tests: AppShell wrapper, PageHeader class
 
 ### 2. Topbar layout
+
 - [ ] 2.1 `TopBar.tsx`: inner `.topbar-row` grid `auto 1fr auto`, max 680 centered; header padding matches `<main>`
 - [ ] 2.2 Wordmark without icon; tabs centered; right cluster version, search, planner icon
 - [ ] 2.3 Hide version via `@container` when row is narrow
@@ -75,21 +75,25 @@ Run tools capped: `docker compose exec -e NODE_OPTIONS=--max-old-space-size=2048
 - [ ] 2.5 Planner icon on all widths (drop initials); update dot on all widths
 
 ### 3. Folder tab
+
 - [ ] 3.1 Tabs bottom-aligned, transparent border, `border-bottom: 0`, top radius
 - [ ] 3.2 Active: `--color-dot` border, page bg, `margin-bottom: -1px` over bar border
 - [ ] 3.3 `icon-top` nav style keeps folder look
 - [ ] 3.4 <=640px: reset to current bottom-bar look
 
 ### 4. Unified menu
+
 - [ ] 4.1 `TopBarMenuState.kind`: `'menu' | 'style'`
 - [ ] 4.2 Items: name + version header, identity, utilities, update, logout
 - [ ] 4.3 Remove unused `nav.more` key (en, pt-BR) after grepping callers
 
 ### 5. Icons
+
 - [ ] 5.1 Inbox: lucide `Inbox`
 - [ ] 5.2 `CalendarDayIcon`: square, filled top band, bold day, no rings
 
 ### 6. Verify and docs
+
 - [ ] 6.1 Unit, lint, build, E2E (capped)
 - [ ] 6.2 Chrome 1440px + 390px, light/dark, nav styles; screenshots in `app/dist/screenshots/`
 - [ ] 6.3 `DESIGN.md` updated
