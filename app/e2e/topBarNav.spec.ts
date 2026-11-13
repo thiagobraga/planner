@@ -95,9 +95,12 @@ test('planner menu hangs from the right edge of its button', async ({ page }) =>
   await page.goto('/daily/list');
   const button = page.getByRole('button', { name: 'Planner menu', exact: true });
   const trigger = (await button.boundingBox())!;
+  const bar = (await page.locator('.topbar').boundingBox())!;
   await button.click();
   const menu = (await page.getByRole('menu').boundingBox())!;
   expect(Math.abs(menu.x + menu.width - (trigger.x + trigger.width))).toBeLessThanOrEqual(1);
+  expect(menu.y).toBeGreaterThanOrEqual(bar.y + bar.height);
+  expect(menu.y).toBeLessThanOrEqual(bar.y + bar.height + 12);
 });
 
 test('phone planner menu exposes name, version, search and secondary navigation without keyboard hints', async ({ page }) => {

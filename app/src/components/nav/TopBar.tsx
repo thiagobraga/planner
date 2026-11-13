@@ -45,7 +45,8 @@ export function TopBar({ onOpenSearch, onOpenShortcuts, updateAvailable = false 
     if (menu?.kind === 'menu') { closeMenu(); return; }
     triggerRef.current = trigger;
     const rect = trigger.getBoundingClientRect();
-    setMenu({ kind: 'menu', position: { x: rect.right, y: mobile ? rect.top : rect.bottom } });
+    const bar = (barRef.current ?? trigger).getBoundingClientRect();
+    setMenu({ kind: 'menu', position: { x: rect.right, y: mobile ? bar.top : bar.bottom } });
   };
   const openStyleMenu = (x: number, y: number) => {
     triggerRef.current = barRef.current;
