@@ -72,7 +72,7 @@
 .topbar[data-nav-style='icon-top'] .topbar-item { flex-direction: column; gap: 4px; font-size: 12px; }
 @media (min-width: 641px) {
   .topbar[data-nav-style='icon-left'] .topbar-item { font-size: 13px; }
-  .topbar[data-nav-style='icon-top'] .topbar-item { min-width: 72px; }
+  .topbar[data-nav-style='icon-top'] .topbar-item { min-width: 72px; font-size: 11px; }
 }
 .topbar-inbox[data-drop-target='true'] { outline: 2px solid var(--color-ink); outline-offset: -2px; }
 
