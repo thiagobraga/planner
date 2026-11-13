@@ -1,5 +1,33 @@
 # Changelog
 
+## [0.17.1](https://github.com/thiagobraga/planner/compare/v0.17.0...v0.17.1) (2026-11-12)
+
+
+### Fixed
+
+* **app:** keep the mobile bottom bar pinned to the viewport ([a45a8b6](https://github.com/thiagobraga/planner/commit/a45a8b64966b6954a134ce76a9d084bc65479ab1))
+* **app:** keep the mobile bottom bar pinned to the viewport ([d54964b](https://github.com/thiagobraga/planner/commit/d54964b4cd51b1899c3af4b3f90b396d6e550a86))
+
+## [0.17.0](https://github.com/thiagobraga/planner/compare/v0.16.2...v0.17.0) (2026-11-12)
+
+
+### Added
+
+* **nav:** bottom nav bar and planner menu on mobile ([fa03591](https://github.com/thiagobraga/planner/commit/fa03591159973a9d5a34ec5cb1ada15e5a8514a0))
+
+## [0.16.2](https://github.com/thiagobraga/planner/compare/v0.16.1...v0.16.2) (2026-11-12)
+
+
+### Fixed
+
+* **ci:** install playwright ffmpeg for retry videos ([68d1e5e](https://github.com/thiagobraga/planner/commit/68d1e5e897dab6a7878b25e134f444008cb33053))
+
+
+### Style
+
+* **nav:** refine brand wordmark typography ([5c110e3](https://github.com/thiagobraga/planner/commit/5c110e3ba1eea0aad65ced6ab75a1e8d1d2ff773))
+* **nav:** refine brand wordmark typography ([e4e1cbb](https://github.com/thiagobraga/planner/commit/e4e1cbb513b577dce2b54ecc8a6f8d9273f568bb))
+
 ## [0.16.1](https://github.com/thiagobraga/planner/compare/v0.16.0...v0.16.1) (2026-11-12)
 
 

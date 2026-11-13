@@ -8,6 +8,25 @@ test.beforeEach(async ({ api }) => {
   await api.patch('/preferences', { locale: 'en', navStyle: 'icon-left', background: 'beige' });
 });
 
+test('wordmark typography renders on desktop and stays hidden on phones', async ({ page }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/daily/list');
+  const brand = page.locator('.topbar-brand-name');
+  await expect(brand).toHaveText('BulletPlanner dev');
+  await expect(brand).toHaveCSS('font-weight', '400');
+  await expect(brand.locator('b')).toHaveText('Planner');
+  await expect(brand.locator('b')).toHaveCSS('font-weight', '600');
+  await mkdir('dist/screenshots', { recursive: true });
+  await page.screenshot({ path: 'dist/screenshots/brand-wordmark-desktop.png' });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(brand).toBeHidden();
+  await expect(page.getByRole('navigation', { name: 'Main navigation' })).toBeVisible();
+  await page.screenshot({ path: 'dist/screenshots/brand-wordmark-390.png' });
+  expect(errors).toEqual([]);
+});
+
 test('primary links navigate and mark the current destination', async ({ page }) => {
   await page.goto('/daily/list');
   const nav = page.getByRole('navigation', { name: 'Main navigation' });
@@ -75,8 +94,16 @@ test('phone account menu exposes search and secondary navigation without keyboar
   await page.goto('/daily/list');
   const account = page.getByRole('button', { name: 'Account', exact: true });
   await expect(page.getByRole('button', { name: 'More', exact: true })).not.toBeVisible();
+  const bar = await page.locator('.topbar').boundingBox();
+  expect(Math.round(bar!.y + bar!.height)).toBe(844);
+  await expect(page.locator('.topbar').getByRole('link')).toContainText(['Daily', 'Inbox', 'Habits', 'Collections']);
+  await expect(account.locator('img.planner-icon-light')).toBeVisible();
+  await expect(account).not.toContainText(/\w/);
   await account.click();
   const menu = page.getByRole('menu');
+  const menuBox = await menu.boundingBox();
+  expect(menuBox!.y + menuBox!.height).toBeLessThanOrEqual(bar!.y + 1);
+  await page.screenshot({ path: 'dist/screenshots/mobile-nav-menu-390.png' });
   await expect(menu.getByRole('menuitem', { name: 'Search', exact: true })).toBeVisible();
   await expect(menu.getByRole('menuitem', { name: 'Settings', exact: true })).toBeVisible();
   await expect(menu.getByRole('menuitem', { name: 'Help', exact: true })).toBeVisible();
@@ -128,4 +155,19 @@ test('wider content and phone routes keep page overflow contained', async ({ pag
   await mkdir('dist/screenshots', { recursive: true });
   await page.screenshot({ path: 'dist/screenshots/topbar-help-320.png' });
   expect(errors).toEqual([]);
+});
+
+test('phone bottom bar stays pinned to the viewport edge', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/daily/list');
+  const bar = page.locator('.topbar');
+  await expect(bar).toBeVisible();
+  const bottomGap = () =>
+    bar.evaluate((el) => window.innerHeight - el.getBoundingClientRect().bottom);
+  expect(await bottomGap()).toBe(0);
+  await page.evaluate(() => window.scrollTo(0, 400));
+  expect(await page.evaluate(() => document.documentElement.scrollHeight <= window.innerHeight)).toBe(true);
+  expect(await bottomGap()).toBe(0);
+  await mkdir('dist/screenshots', { recursive: true });
+  await page.screenshot({ path: 'dist/screenshots/bottom-bar-pinned-390.png' });
 });

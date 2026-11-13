@@ -42,7 +42,7 @@ export function TopBar({ onOpenSearch, onOpenShortcuts, updateAvailable = false 
     if (menu?.kind === kind) { closeMenu(); return; }
     triggerRef.current = trigger;
     const rect = trigger.getBoundingClientRect();
-    setMenu({ kind, position: { x: rect.left, y: rect.bottom } });
+    setMenu({ kind, position: { x: rect.left, y: mobile ? rect.top : rect.bottom } });
   };
   const openStyleMenu = (x: number, y: number) => {
     triggerRef.current = barRef.current;
@@ -68,7 +68,7 @@ export function TopBar({ onOpenSearch, onOpenShortcuts, updateAvailable = false 
     >
       <div className="topbar-brand">
         <PlannerIcon width={16} height={16} />
-        <span className="topbar-brand-name">Bullet Planner {!isProduction() && <em>dev</em>}</span>
+        <span className="topbar-brand-name">Bullet<b>Planner</b>{!isProduction() && <em> dev</em>}</span>
       </div>
       <nav className="topbar-nav" aria-label={t('nav.main')}>
         {NAV_ITEMS.map((item) => item.to === '/inbox'
@@ -102,7 +102,7 @@ export function TopBar({ onOpenSearch, onOpenShortcuts, updateAvailable = false 
           onMouseDown={(event) => event.stopPropagation()}
           onClick={(event) => toggleMenu('account', event.currentTarget)}
         >
-          <span aria-hidden="true">{initials}</span>
+          {mobile ? <PlannerIcon width={16} height={16} className="topbar-account-icon" /> : <span aria-hidden="true">{initials}</span>}
           {mobile && updateAvailable && <span className="topbar-update-dot" aria-hidden="true" />}
         </button>
       </div>

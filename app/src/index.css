@@ -126,6 +126,13 @@
     padding: 0;
   }
 
+  /* The shell is pinned to the viewport and scrolls inside <main>; a scrolling
+     or rubber-banding document would push the bottom bar off-screen on phones. */
+  html:has(.app-shell) {
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
+
   h1, h2, h3, h4, h5, h6, p, ul, ol, li, dl, dt, dd, blockquote, figure, figcaption, pre, code, form, input, button, select, textarea {
     margin: 0;
     padding: 0;

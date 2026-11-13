@@ -23,7 +23,8 @@
 }
 :root[data-theme='dark'] .planner-icon-light { display: none; }
 :root[data-theme='dark'] .planner-icon-dark { display: block; }
-.topbar-brand-name { font-size: 18px; font-weight: 600; white-space: nowrap; }
+.topbar-brand-name { font-size: 18px; font-weight: 400; white-space: nowrap; }
+.topbar-brand-name > b { font-weight: 600; }
 .topbar-brand-name em { font-size: 12px; font-weight: 500; color: var(--color-accent); }
 .topbar-nav { display: flex; align-items: center; gap: 4px; min-width: 0; }
 .topbar-item {
@@ -92,18 +93,24 @@
 }
 
 @media (max-width: 640px) {
-  .topbar, .topbar[data-nav-style='icon-top'] { height: 60px; gap: 4px; padding-inline: 8px; }
-  .topbar-brand { border: 0; padding: 0; width: 24px; justify-content: center; }
+  .topbar, .topbar[data-nav-style='icon-top'] {
+    order: 1;
+    height: calc(60px + env(safe-area-inset-bottom));
+    gap: 4px;
+    padding-inline: 8px;
+    padding-bottom: env(safe-area-inset-bottom);
+    border-top: 1px solid var(--color-dot);
+    border-bottom: 0;
+  }
+  .topbar-brand { display: none; }
+  .topbar-error { top: auto; bottom: 100%; }
   .topbar-nav { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); flex: 1; }
   .topbar .topbar-item { width: 100%; height: 48px; padding: 0 2px; flex-direction: column; gap: 4px; font-size: 10px; line-height: 12px; }
   .topbar .topbar-item-icon { display: flex; }
   .topbar .topbar-item-icon svg { width: 18px; height: 18px; }
   .topbar .topbar-more, .topbar-search, .topbar-version-cluster { display: none; }
   .topbar-actions { margin-left: 0; }
-  .topbar .topbar-account { width: 44px; height: 44px; border: 0; }
-  .topbar .topbar-account::before { content: ''; position: absolute; inset: 6px; border: 1px solid var(--color-dot); border-radius: 50%; }
-}
-
-@media (max-width: 328px) {
-  .topbar-brand { display: none; }
+  .topbar .topbar-account { width: 44px; height: 44px; border: 0; border-radius: 4px; }
+  .topbar .topbar-account[aria-expanded='true'] { background: var(--planner-sidebar-active-bg); }
+  .topbar .topbar-account-icon { width: 24px; height: 24px; }
 }

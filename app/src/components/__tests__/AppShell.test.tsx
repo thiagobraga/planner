@@ -156,6 +156,13 @@ describe('AppShell', () => {
     expect(screen.getByTestId('outlet-content')).toBeInTheDocument();
   });
 
+  it('pins the shell to the viewport so the mobile bottom bar stays visible', () => {
+    const { container } = render(<AppShell />);
+    const shell = container.querySelector('.app-shell');
+    expect(shell).toHaveClass('fixed', 'inset-0');
+    expect(shell).not.toHaveClass('h-dvh');
+  });
+
   it('renders the Outlet content', () => {
     render(<AppShell />);
     expect(screen.getByText('Outlet content')).toBeInTheDocument();
