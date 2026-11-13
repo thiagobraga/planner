@@ -60,11 +60,11 @@ Run tools capped: `docker compose exec -e NODE_OPTIONS=--max-old-space-size=2048
 
 ### 1. Container
 
-- [ ] 1.1 `index.css` `@theme`: `--container-page: 680px` (utility `max-w-page`)
-- [ ] 1.2 `AppShell.tsx`: wrap `<Outlet />` in `div.page-container.mx-auto.w-full.max-w-page`
-- [ ] 1.3 Remove `max-w-162` from all pages/components (13 uses); drop `max-w-5xl` (Settings), `max-w-[832px]` (Daily monthly), `max-w-2xl` (CollectionsIndex)
-- [ ] 1.4 Verify boards scroll inside the column and sticky headers still stick
-- [ ] 1.5 Tests: AppShell wrapper, PageHeader class
+- [x] 1.1 `index.css` `@theme`: `--container-page: 680px` (utility `max-w-page`)
+- [x] 1.2 `AppShell.tsx`: wrap `<Outlet />` in `div.page-container.mx-auto.w-full.max-w-page`
+- [x] 1.3 Remove `max-w-162` from all pages/components (13 uses); drop `max-w-5xl` (Settings), `max-w-[832px]` (Daily monthly), `max-w-2xl` (CollectionsIndex)
+- [x] 1.4 Verify boards scroll inside the column and sticky headers still stick
+- [x] 1.5 Tests: AppShell wrapper, PageHeader class
 
 ### 2. Topbar layout
 

@@ -712,7 +712,7 @@ export function CollectionsPage() {
         }
       />
 
-      <div className={boardPreferences.view !== 'list' ? 'w-full' : 'max-w-162'}>
+      <div className={boardPreferences.view !== 'list' ? 'w-full' : undefined}>
         {boardPreferences.view !== 'list' && boardPreferences.view !== 'calendar' && data ? (
           <CollectionBoard
             collectionId={id}

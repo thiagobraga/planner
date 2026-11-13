@@ -18,7 +18,7 @@ export interface PageHeaderProps {
 // no positioning/CSS changes - see .specs/2026-08-14-page-header-button-group.
 export function PageHeader({ title, toolbar, afterTitle, titleClassName = '', className = '' }: PageHeaderProps) {
   return (
-    <header className={`page-header-copy sticky-page-header max-w-162 ${className}`}>
+    <header className={`page-header-copy sticky-page-header ${className}`}>
       <div className="page-header-copy-text">
         <h1 className={`m-0 h-6 p-0 text-[18px] leading-6 font-semibold text-ink ${titleClassName}`}>{title}</h1>
         {afterTitle}

@@ -287,10 +287,9 @@ export function CollectionsIndexPage() {
   };
 
   return (
-    <div className="collections-index-page w-full max-w-2xl">
+    <div className="collections-index-page w-full">
       <PageHeader
         title={t('nav.collections')}
-        className="!max-w-2xl"
         toolbar={
           <div className="page-header-toolbar">
             <button

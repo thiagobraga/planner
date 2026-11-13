@@ -64,7 +64,8 @@ describe('PageHeader', () => {
   it('carries the existing header/positioning classes so CSS stays unaffected', () => {
     const { container } = render(<PageHeader title="Daily" />);
     const header = container.querySelector('header');
-    expect(header).toHaveClass('page-header-copy', 'sticky-page-header', 'max-w-162');
+    expect(header).toHaveClass('page-header-copy', 'sticky-page-header');
+    expect(header?.className).not.toMatch(/max-w-/);
     expect(container.querySelector('.page-header-copy-text')).toBeInTheDocument();
   });
 
