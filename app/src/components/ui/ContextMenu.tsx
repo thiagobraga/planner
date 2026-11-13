@@ -8,10 +8,10 @@ function opensChild(item: ContextMenuItem): boolean {
   return Boolean(item.panel || (item.submenu && item.submenu.length > 0));
 }
 
-export function ContextMenu({ items, position, onClose, caret = true }: ContextMenuProps) {
+export function ContextMenu({ items, position, onClose, caret = true, align = 'start' }: ContextMenuProps) {
   // A context menu is just the root level of a nested menu structure
   return (
-    <ContextMenuRoot items={items} position={position} onClose={onClose} caret={caret} />
+    <ContextMenuRoot items={items} position={position} onClose={onClose} caret={caret} align={align} />
   );
 }
 
@@ -20,9 +20,10 @@ interface ContextMenuRootProps {
   position: { x: number; y: number };
   onClose: () => void;
   caret: boolean;
+  align: 'start' | 'end';
 }
 
-function ContextMenuRoot({ items, position, onClose, caret }: ContextMenuRootProps) {
+function ContextMenuRoot({ items, position, onClose, caret, align }: ContextMenuRootProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const [activePath, setActivePath] = useState<number[]>([]);
 
@@ -72,6 +73,7 @@ function ContextMenuRoot({ items, position, onClose, caret }: ContextMenuRootPro
         onClose={onClose}
         isRoot={true}
         caret={caret}
+        align={align}
       />
     </div>,
     document.querySelector('.app-shell') ?? document.body
@@ -87,6 +89,7 @@ interface MenuPanelProps {
   onClose: () => void;
   isRoot?: boolean;
   caret?: boolean;
+  align?: 'start' | 'end';
 }
 
 function MenuPanel({
@@ -98,6 +101,7 @@ function MenuPanel({
   onClose,
   isRoot,
   caret,
+  align = 'start',
 }: MenuPanelProps) {
   const panelRef = useRef<HTMLDivElement>(null);
   const [coords, setCoords] = useState({ top: position.y, left: position.x, caretLeft: 14, caretDown: false });
@@ -125,7 +129,7 @@ function MenuPanel({
     const gap = isRoot && caret ? 8 : 0;
 
     let newTop = position.y + gap;
-    let newLeft = position.x;
+    let newLeft = isRoot && align === 'end' ? position.x - rect.width : position.x;
 
     if (newLeft + rect.width > vw - padding) {
       if (isRoot) {
@@ -152,7 +156,7 @@ function MenuPanel({
     const caretDown = position.y > newTop + panelHeight / 2;
 
     setCoords({ top: newTop, left: newLeft, caretLeft, caretDown });
-  }, [position, isRoot, caret]);
+  }, [position, isRoot, caret, align]);
 
   // If we are not the active panel (because a submenu is open), we shouldn't steal keyboard events
   const isActivePanel = activePath.length === level;

@@ -90,6 +90,16 @@ test('menus toggle, dismiss, restore focus and navigate with the keyboard', asyn
   await expect(page.getByRole('menu')).toHaveCount(0);
 });
 
+test('planner menu hangs from the right edge of its button', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/daily/list');
+  const button = page.getByRole('button', { name: 'Planner menu', exact: true });
+  const trigger = (await button.boundingBox())!;
+  await button.click();
+  const menu = (await page.getByRole('menu').boundingBox())!;
+  expect(Math.abs(menu.x + menu.width - (trigger.x + trigger.width))).toBeLessThanOrEqual(1);
+});
+
 test('phone planner menu exposes name, version, search and secondary navigation without keyboard hints', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/daily/list');

@@ -45,5 +45,5 @@ export function TopBarMenus({ menu, mobile, navStyle, saving, onStyleChange, pho
       { type: 'item', label: t('nav.logout'), icon: <LogOut size={16} />, onClick: () => { logout(); navigate('/login'); } },
     ];
   }
-  return <ContextMenu items={items} position={menu.position} onClose={onClose} />;
+  return <ContextMenu items={items} position={menu.position} onClose={onClose} align={menu.kind === 'menu' ? 'end' : 'start'} />;
 }
