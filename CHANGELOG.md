@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.18.0](https://github.com/thiagobraga/planner/compare/v0.17.1...v0.18.0) (2026-11-13)
+
+
+### Added
+
+* **layout:** center every page in one 680px column ([2469701](https://github.com/thiagobraga/planner/commit/2469701e6c8812fc2840b7deaf5bdfe70b2e4f1f))
+* **nav:** center topbar row with folder tabs and one planner menu ([d40cf6a](https://github.com/thiagobraga/planner/commit/d40cf6a2ec8142cca6fe9c893dbf9a95baad199a))
+* **nav:** centered 680px container and folder-tab topbar ([d7062ef](https://github.com/thiagobraga/planner/commit/d7062efd4eca3bd086098a789846cfe0c5091d1b))
+* **nav:** use inbox tray and plain calendar day icons ([819e8fb](https://github.com/thiagobraga/planner/commit/819e8fbd2d78af0b375526cb5e647e98700a2fc5))
+
 ## [0.17.1](https://github.com/thiagobraga/planner/compare/v0.17.0...v0.17.1) (2026-11-12)
 
 
