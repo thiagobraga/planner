@@ -21,9 +21,9 @@ export const CalendarDayIcon = ({ size = 15 }: NavIconProps) => {
       <text
         data-testid='daily-day-number'
         x='7.5'
-        y='12.6'
+        y='11.6'
         textAnchor='middle'
-        fontSize='8'
+        fontSize='9.33'
         fontWeight='700'
         fill='currentColor'
       >
