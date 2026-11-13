@@ -94,6 +94,6 @@ Run tools capped: `docker compose exec -e NODE_OPTIONS=--max-old-space-size=2048
 
 ### 6. Verify and docs
 
-- [~] 6.1 Unit, lint, build, E2E (capped)
+- [x] 6.1 Unit, lint, build, E2E (capped); `mcpOAuth` fails on its localhost:5173 redirect, unrelated
 - [x] 6.2 Chrome 1440px + 390px, light/dark, nav styles; screenshots in `app/dist/screenshots/`
 - [x] 6.3 `DESIGN.md` updated
