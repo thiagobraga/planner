@@ -257,10 +257,11 @@ Mostly flat. Depth is carried first by three quiet mechanisms: (1) tint, by step
 
 ### Navigation Link
 
-- **Shape:** 32px tall for text and icon-left styles, 48px for icon-above; 4px corner radius. Narrow screens reduce horizontal padding.
-- **Default:** Transparent on Surface Cream, Ink text at 60% opacity.
-- **Hover:** Opacity rises to 100%, with a neutral tint. No transforms.
-- **Active:** Background `rgba(212,207,199,0.5)` (Dot Grey at 50%), text at 100% with `font-weight: 500`. No bar, no stripe, no arrow.
+- **Shape (desktop):** A folder tab sitting on the bar's bottom edge: 36px tall for text and icon-left, 52px for icon-above; square sides, 6px top corners, no bottom edge. Narrow rows reduce horizontal padding.
+- **Default:** Transparent border on Surface Cream, Ink text.
+- **Hover:** Neutral tint. No transforms.
+- **Active (desktop):** 1px Dot Grey border on left, top and right, filled with the page color and overlapping the bar border by 1px so the tab opens into the page. `font-weight: 500`. No shadow, no stripe, no red.
+- **Active (phone):** Bottom-bar cell with the active tint and a 4px radius.
 
 ### Chips (labels)
 
@@ -317,11 +318,14 @@ those same components rather than copying them.
 
 ### Navigation
 
-- **Top-level:** One top bar with Daily, Inbox, Habits, Collections, and More. More contains Settings, Help, keyboard shortcuts, and admin destinations when available.
-- **Active state:** See Navigation Link. Neutral tint and medium text, without a red indicator.
+- **Page column:** Every page sits in one centered column, `--container-page` (680px), fluid below that. Boards scroll sideways inside it. No page sets its own max width.
+- **Top-level:** One top bar with Daily, Inbox, Habits, Collections. The bar background and border span the window; its row aligns to the page column: `BulletPlanner` wordmark left, tabs centered, version, search and the Planner icon right.
+- **Planner menu:** The Planner icon opens the only menu: app name and version, account name and email, Settings, Help, keyboard shortcuts (desktop), admin destinations (admins), the update notice when a new version is ready, and Logout. The icon shows the active tint on Settings, Help, Admin and Styleguide.
+- **Active state:** See Navigation Link.
 - **Style:** Account preference offers text only, icon left (default), or icon above. Settings > General and the bar's context menu change the same preference.
-- **Desktop:** 48px bar for text and icon-left, 64px for icon-above. At 900px and above, show the Planner wordmark and version. Between 641px and 899px, show only the logo, navigation, search, and account controls.
-- **Mobile:** At 640px and below, use one 60px row: logo, four primary destinations with icons above labels, and account menu. Search and secondary destinations move into the account menu. Hide the logo at 320px when needed to preserve readable labels. No bottom bar or sidebar drawer.
+- **Desktop:** 48px bar for text and icon-left, 64px for icon-above. The version shows only while the row has its full 680px.
+- **Mobile:** At 640px and below the bar moves to the bottom as one 60px row: four primary destinations with icons above labels and the Planner icon. Search joins the Planner menu; the wordmark hides.
+- **Icons:** Daily is a plain square with a filled top band and the bold day number. Inbox is the inbox tray.
 - **Rhythm:** Navigation dimensions use the 4px sub-grid. Page spacing retains the 24px baseline.
 
 ## 6. Do's and Don'ts

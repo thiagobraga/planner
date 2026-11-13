@@ -68,32 +68,32 @@ Run tools capped: `docker compose exec -e NODE_OPTIONS=--max-old-space-size=2048
 
 ### 2. Topbar layout
 
-- [ ] 2.1 `TopBar.tsx`: inner `.topbar-row` grid `auto 1fr auto`, max 680 centered; header padding matches `<main>`
-- [ ] 2.2 Wordmark without icon; tabs centered; right cluster version, search, planner icon
-- [ ] 2.3 Hide version via `@container` when row is narrow
-- [ ] 2.4 Remove "More" button; planner icon active on settings/help/admin/styleguide
-- [ ] 2.5 Planner icon on all widths (drop initials); update dot on all widths
+- [x] 2.1 `TopBar.tsx`: inner `.topbar-row` grid `auto 1fr auto`, max 680 centered; header padding matches `<main>`
+- [x] 2.2 Wordmark without icon; tabs centered; right cluster version, search, planner icon
+- [x] 2.3 Hide version via `@container` when row is narrow
+- [x] 2.4 Remove "More" button; planner icon active on settings/help/admin/styleguide
+- [x] 2.5 Planner icon on all widths (drop initials); update dot on all widths
 
 ### 3. Folder tab
 
-- [ ] 3.1 Tabs bottom-aligned, transparent border, `border-bottom: 0`, top radius
-- [ ] 3.2 Active: `--color-dot` border, page bg, `margin-bottom: -1px` over bar border
-- [ ] 3.3 `icon-top` nav style keeps folder look
-- [ ] 3.4 <=640px: reset to current bottom-bar look
+- [x] 3.1 Tabs bottom-aligned, transparent border, `border-bottom: 0`, top radius
+- [x] 3.2 Active: `--color-dot` border, page bg, `margin-bottom: -1px` over bar border
+- [x] 3.3 `icon-top` nav style keeps folder look
+- [x] 3.4 <=640px: reset to current bottom-bar look
 
 ### 4. Unified menu
 
-- [ ] 4.1 `TopBarMenuState.kind`: `'menu' | 'style'`
-- [ ] 4.2 Items: name + version header, identity, utilities, update, logout
-- [ ] 4.3 Remove unused `nav.more` key (en, pt-BR) after grepping callers
+- [x] 4.1 `TopBarMenuState.kind`: `'menu' | 'style'`
+- [x] 4.2 Items: name + version header, identity, utilities, update, logout
+- [x] 4.3 Remove unused `nav.more` key (en, pt-BR) after grepping callers
 
 ### 5. Icons
 
-- [ ] 5.1 Inbox: lucide `Inbox`
-- [ ] 5.2 `CalendarDayIcon`: square, filled top band, bold day, no rings
+- [x] 5.1 Inbox: lucide `Inbox`
+- [x] 5.2 `CalendarDayIcon`: square, filled top band, bold day, no rings
 
 ### 6. Verify and docs
 
-- [ ] 6.1 Unit, lint, build, E2E (capped)
-- [ ] 6.2 Chrome 1440px + 390px, light/dark, nav styles; screenshots in `app/dist/screenshots/`
-- [ ] 6.3 `DESIGN.md` updated
+- [~] 6.1 Unit, lint, build, E2E (capped)
+- [x] 6.2 Chrome 1440px + 390px, light/dark, nav styles; screenshots in `app/dist/screenshots/`
+- [x] 6.3 `DESIGN.md` updated
