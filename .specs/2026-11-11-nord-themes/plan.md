@@ -1,6 +1,6 @@
 # Nord theme support
 
-**Status:** Planned. Implementation has not started.
+**Status:** In progress. Presets, palettes, controls, tests and docs are done and CI is green. Open: 2.3 (semantic `--color-danger` token exists but components still use the accent token for error and overdue) and 4.4 (empty, loading and error states not checked in both themes).
 
 ## Behavior
 
@@ -42,39 +42,39 @@ Nord applies throughout the logged-in app: navigation, task views, boards, calen
 
 ### 1. Preference contract
 
-- [ ] 1.1 Write failing validation and resolution tests for `nord-light` and `nord-dark`.
-- [ ] 1.2 Add both values to `BackgroundPreference`, `ResolvedTheme` and backend `VALID_BACKGROUNDS`.
-- [ ] 1.3 Reuse `PATCH /api/v1/preferences` with `{ background }` and the existing preference sync event. Leave the separate legacy `theme` field unchanged. No migration is needed because `background VARCHAR(20)` accommodates both identifiers.
-- [ ] 1.4 Extend AppShell's cached-background allowlist so reloads recognize both presets. Retain the existing fallback when storage is unavailable or invalid.
-- [ ] 1.5 Extend `THEME_SWATCHES` and `THEME_COLORS`, with browser colors matching each Nord page background.
-- [ ] 1.6 Keep Automatic resolving to Beige or the existing Dark theme, and keep explicit Nord selections independent of OS appearance.
+- [x] 1.1 Write failing validation and resolution tests for `nord-light` and `nord-dark`.
+- [x] 1.2 Add both values to `BackgroundPreference`, `ResolvedTheme` and backend `VALID_BACKGROUNDS`.
+- [x] 1.3 Reuse `PATCH /api/v1/preferences` with `{ background }` and the existing preference sync event. Leave the separate legacy `theme` field unchanged. No migration is needed because `background VARCHAR(20)` accommodates both identifiers.
+- [x] 1.4 Extend AppShell's cached-background allowlist so reloads recognize both presets. Retain the existing fallback when storage is unavailable or invalid.
+- [x] 1.5 Extend `THEME_SWATCHES` and `THEME_COLORS`, with browser colors matching each Nord page background.
+- [x] 1.6 Keep Automatic resolving to Beige or the existing Dark theme, and keep explicit Nord selections independent of OS appearance.
 
 ### 2. Palettes
 
-- [ ] 2.1 Add complete `:root[data-theme="nord-light"]` and `:root[data-theme="nord-dark"]` overrides in `theme.css` for surfaces, text, dot grid, boards, calendars, selection, overlays, controls and scrollbars.
-- [ ] 2.2 Set `color-scheme: light` and `color-scheme: dark` for the corresponding presets.
-- [ ] 2.3 Audit uses of the shared accent token. Separate interaction accents from error, destructive, overdue and priority colors wherever one token currently serves both purposes. Default new semantic tokens to existing colors for the original themes.
-- [ ] 2.4 Apply Nord colors to overlays rendered through portals and native controls. Preserve user-assigned collection and label colors.
-- [ ] 2.5 Keep additions out of oversized `index.css`; move its existing theme-specific shadow declarations into `theme.css` if required. Do not add card shadows or change layout.
-- [ ] 2.6 Extend palette snapshots to recognize Nord selectors while preserving original palette declarations. Check text and control contrast against the actual rendered surfaces.
+- [x] 2.1 Add complete `:root[data-theme="nord-light"]` and `:root[data-theme="nord-dark"]` overrides in `theme.css` for surfaces, text, dot grid, boards, calendars, selection, overlays, controls and scrollbars.
+- [x] 2.2 Set `color-scheme: light` and `color-scheme: dark` for the corresponding presets.
+- [~] 2.3 Audit uses of the shared accent token. Separate interaction accents from error, destructive, overdue and priority colors wherever one token currently serves both purposes. Default new semantic tokens to existing colors for the original themes.
+- [x] 2.4 Apply Nord colors to overlays rendered through portals and native controls. Preserve user-assigned collection and label colors.
+- [x] 2.5 Keep additions out of oversized `index.css`; move its existing theme-specific shadow declarations into `theme.css` if required. Do not add card shadows or change layout.
+- [x] 2.6 Extend palette snapshots to recognize Nord selectors while preserving original palette declarations. Check text and control contrast against the actual rendered surfaces.
 
 ### 3. Selection controls
 
-- [ ] 3.1 Add both options to Settings and the header theme switcher using existing optimistic saving and rollback.
-- [ ] 3.2 Add English labels `Nord Light` and `Nord Dark`, and Brazilian Portuguese labels `Nord claro` and `Nord escuro`, including accessible names and preview titles.
-- [ ] 3.3 Fit six Settings options and five header options at 390px without horizontal overflow. Keep Automatic in Settings only.
-- [ ] 3.4 Verify keyboard operation, visible focus and selected-state indicators that do not rely only on color.
-- [ ] 3.5 Accommodate the settings redesign if it lands first without making it a prerequisite. Keep this change scoped to adding the presets and their presentation.
+- [x] 3.1 Add both options to Settings and the header theme switcher using existing optimistic saving and rollback.
+- [x] 3.2 Add English labels `Nord Light` and `Nord Dark`, and Brazilian Portuguese labels `Nord claro` and `Nord escuro`, including accessible names and preview titles.
+- [x] 3.3 Fit six Settings options and five header options at 390px without horizontal overflow. Keep Automatic in Settings only.
+- [x] 3.4 Verify keyboard operation, visible focus and selected-state indicators that do not rely only on color.
+- [x] 3.5 Accommodate the settings redesign if it lands first without making it a prerequisite. Keep this change scoped to adding the presets and their presentation.
 
 ### 4. Verification and documentation
 
-- [ ] 4.1 Follow red-green-refactor for behavioral changes. Cover fixed-theme resolution, Automatic behavior, cache recognition, picker selection, loading and failed-save rollback.
-- [ ] 4.2 Add real PostgreSQL/Redis integration coverage for saving and fetching each new background and publishing the existing preference update event. Do not use mock-DB tests as the persistence proof.
-- [ ] 4.3 Extend Playwright coverage for both pickers, reload persistence, second-tab sync, OS appearance changes, switching back to existing themes and resetting the document theme on logout.
-- [ ] 4.4 Verify Daily, Inbox, Collections, Habits, Settings and portal overlays at desktop and 390px in both Nord themes. Check empty, loading, selected, disabled and error states, plus console errors.
-- [ ] 4.5 Save desktop and narrow screenshots to `app/dist/screenshots/` and link them in the implementation report.
-- [ ] 4.6 Run relevant API and frontend tests, integration tests, Playwright tests, lint, typechecks and builds. Report any remaining validation gaps explicitly.
-- [ ] 4.7 Document Nord's scoped exception to warm neutrals and brick-red interaction accents in `DESIGN.md`, including semantic danger colors. Correct the existing theme stylesheet reference.
+- [x] 4.1 Follow red-green-refactor for behavioral changes. Cover fixed-theme resolution, Automatic behavior, cache recognition, picker selection, loading and failed-save rollback.
+- [x] 4.2 Add real PostgreSQL/Redis integration coverage for saving and fetching each new background and publishing the existing preference update event. Do not use mock-DB tests as the persistence proof.
+- [x] 4.3 Extend Playwright coverage for both pickers, reload persistence, second-tab sync, OS appearance changes, switching back to existing themes and resetting the document theme on logout.
+- [~] 4.4 Verify Daily, Inbox, Collections, Habits, Settings and portal overlays at desktop and 390px in both Nord themes. Check empty, loading, selected, disabled and error states, plus console errors.
+- [x] 4.5 Save desktop and narrow screenshots to `app/dist/screenshots/` and link them in the implementation report.
+- [x] 4.6 Run relevant API and frontend tests, integration tests, Playwright tests, lint, typechecks and builds. Report any remaining validation gaps explicitly.
+- [x] 4.7 Document Nord's scoped exception to warm neutrals and brick-red interaction accents in `DESIGN.md`, including semantic danger colors. Correct the existing theme stylesheet reference.
 
 ## Acceptance
 
