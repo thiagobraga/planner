@@ -61,6 +61,7 @@ export const englishCatalog = {
   'nav.monthly': 'Monthly',
   'nav.style': 'Navigation style',
   'nav.styleText': 'Text only',
+  'nav.showText': 'Show text',
   'nav.styleIconLeft': 'Icon left',
   'nav.styleIconTop': 'Icon above',
   'nav.menu': 'Planner menu',

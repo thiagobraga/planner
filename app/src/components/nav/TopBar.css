@@ -11,7 +11,7 @@
 }
 .topbar[data-nav-style='icon-top'] { --topbar-tab-height: 52px; height: 64px; }
 
-/* Same 680px column as .page-container so the bar lines up with the page */
+/* Same 720px column as .page-container so the bar lines up with the page */
 .topbar-row {
   container: topbar-row / inline-size;
   display: grid;
@@ -107,8 +107,8 @@
 .topbar-update-dot { position: absolute; top: 2px; right: 2px; width: 8px; height: 8px; border-radius: 50%; background: var(--color-moss); }
 .topbar-error { position: absolute; top: 100%; right: 8px; z-index: 60; padding: 8px 12px; border: 1px solid var(--color-accent); border-radius: 4px; color: var(--color-accent); background: var(--planner-overlay-bg); font-size: 12px; }
 
-/* Below the full 680px row: drop the version and tighten tabs so the wordmark keeps its room */
-@container topbar-row (max-width: 679px) {
+/* Below the full 720px row: drop the version and tighten tabs so the wordmark keeps its room */
+@container topbar-row (max-width: 719px) {
   .topbar-version { display: none; }
   .topbar-row { gap: 8px; }
   .topbar-nav { gap: 0; }
@@ -127,26 +127,39 @@
     border-top: 1px solid var(--color-dot);
     border-bottom: 0;
   }
-  .topbar-row { display: flex; align-items: center; gap: 4px; max-width: none; }
+  .topbar-row { display: flex; align-items: stretch; gap: 4px; max-width: none; }
   .topbar-actions { height: auto; }
   .topbar-brand, .topbar-search, .topbar-version-cluster { display: none; }
   .topbar-error { top: auto; bottom: 100%; }
-  .topbar-nav { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); flex: 1; align-self: center; }
+  .topbar-nav { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); flex: 1; align-self: stretch; align-items: start; }
   .topbar .topbar-item, .topbar .topbar-item--active {
     width: 100%;
     height: 48px;
     margin: 0;
-    padding: 0 2px;
+    padding: 8px 2px 0;
+    justify-content: flex-start;
     flex-direction: column;
     gap: 4px;
-    border: 0;
-    border-radius: 4px;
+    border: 1px solid transparent;
+    border-top: 0;
+    border-radius: 0 0 6px 6px;
     font-size: 10px;
     line-height: 12px;
   }
-  .topbar .topbar-item--active { background: var(--planner-sidebar-active-bg); }
+  /* Mirrors the desktop folder tab: hangs from the top edge and overlaps the bar border so it opens upward */
+  .topbar .topbar-item--active {
+    height: 49px;
+    margin: -1px 0 0;
+    padding-top: 9px;
+    border-color: var(--color-dot);
+    background: var(--planner-page-bg);
+  }
   .topbar .topbar-item-icon { display: flex; }
   .topbar .topbar-item-icon svg { width: 18px; height: 18px; }
   .topbar .topbar-menu-button { width: 44px; height: 44px; }
   .topbar .topbar-menu-icon { width: 24px; height: 24px; }
+  /* Phones always show icons; the bar's menu only decides whether labels show under them */
+  .topbar[data-nav-style] .topbar-item-icon { display: flex; }
+  .topbar[data-phone-labels='hidden'] .topbar-item-label { display: none; }
+  .topbar[data-phone-labels='hidden'] .topbar-item { justify-content: center; padding-top: 0; }
 }

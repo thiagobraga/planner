@@ -179,6 +179,20 @@ describe('TopBar', () => {
     expect(state.mutate).toHaveBeenCalledWith({ navStyle: 'text' });
   });
 
+  it('offers one show-text toggle on phones that leaves the saved style alone', () => {
+    state.mobile = true; state.style = 'icon-top';
+    window.localStorage.removeItem('planner.phoneLabels');
+    const { container } = renderBar();
+    fireEvent.contextMenu(container.querySelector('.topbar')!, { clientX: 40, clientY: 20 });
+    expect(screen.queryByRole('menuitemradio', { name: 'Text only' })).toBeNull();
+    const toggle = screen.getByRole('menuitemradio', { name: 'Show text' });
+    expect(toggle).toHaveAttribute('aria-checked', 'true');
+    fireEvent.click(toggle);
+    expect(container.querySelector('.topbar')).toHaveAttribute('data-phone-labels', 'hidden');
+    expect(window.localStorage.getItem('planner.phoneLabels')).toBe('hidden');
+    expect(state.mutate).not.toHaveBeenCalled();
+  });
+
   it('registers Inbox as a collection target and suppresses drag navigation', () => {
     state.dragging = true;
     renderBar('/habits');

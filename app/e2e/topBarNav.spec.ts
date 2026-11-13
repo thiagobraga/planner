@@ -115,14 +115,14 @@ test('phone planner menu exposes name, version, search and secondary navigation 
   await expect(page.getByRole('dialog')).toBeVisible();
 });
 
-test('page and topbar row share one centered 680px column with a folder tab', async ({ page }) => {
+test('page and topbar row share one centered 720px column with a folder tab', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/daily/list');
   const box = async (selector: string) => (await page.locator(selector).boundingBox())!;
   const row = await box('.topbar-row');
   const column = await box('.page-container');
-  expect(Math.round(column.width)).toBe(680);
-  expect(Math.round(row.width)).toBe(680);
+  expect(Math.round(column.width)).toBe(720);
+  expect(Math.round(row.width)).toBe(720);
   expect(Math.abs(column.x - row.x)).toBeLessThanOrEqual(1);
   expect(Math.abs(column.x - (1440 - column.x - column.width))).toBeLessThanOrEqual(1);
   const bar = await box('.topbar');
@@ -205,4 +205,36 @@ test('phone bottom bar stays pinned to the viewport edge', async ({ page }) => {
   expect(await bottomGap()).toBe(0);
   await mkdir('dist/screenshots', { recursive: true });
   await page.screenshot({ path: 'dist/screenshots/bottom-bar-pinned-390.png' });
+});
+
+test('phone bar keeps icons and toggles only the labels from its menu', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/daily/list');
+  const bar = page.locator('.topbar');
+  const icon = page.locator('.topbar-item--active .topbar-item-icon');
+  const label = page.locator('.topbar-item--active .topbar-item-label');
+  await bar.click({ button: 'right', position: { x: 4, y: 4 } });
+  await page.getByRole('menuitemradio', { name: 'Show text' }).click();
+  await expect(label).toBeHidden();
+  await expect(icon).toBeVisible();
+  await bar.click({ button: 'right', position: { x: 4, y: 4 } });
+  await page.getByRole('menuitemradio', { name: 'Show text' }).click();
+  await expect(label).toBeVisible();
+});
+
+test('phone bottom bar tabs mirror the desktop folder tab', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/daily/list');
+  const bar = (await page.locator('.topbar').boundingBox())!;
+  const active = page.locator('.topbar-item--active');
+  await expect(active).toHaveCSS('border-top-width', '0px');
+  await expect(active).toHaveCSS('border-bottom-width', '1px');
+  await expect(active).toHaveCSS('border-top-left-radius', '0px');
+  await expect(active).toHaveCSS('border-bottom-left-radius', '6px');
+  const tab = (await active.boundingBox())!;
+  expect(Math.round(tab.y)).toBe(Math.round(bar.y));
+  const pageBg = await page.locator('main').evaluate((main) => getComputedStyle(main).backgroundColor);
+  await expect(active).toHaveCSS('background-color', pageBg);
+  await mkdir('dist/screenshots', { recursive: true });
+  await page.screenshot({ path: 'dist/screenshots/bottom-bar-folder-tab-390.png' });
 });

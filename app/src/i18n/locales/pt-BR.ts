@@ -63,6 +63,7 @@ export const portugueseBrazilCatalog = {
   'nav.monthly': 'Mensal',
   'nav.style': 'Estilo da navegação',
   'nav.styleText': 'Somente texto',
+  'nav.showText': 'Mostrar texto',
   'nav.styleIconLeft': 'Ícone à esquerda',
   'nav.styleIconTop': 'Ícone acima',
   'nav.menu': 'Menu do Planner',

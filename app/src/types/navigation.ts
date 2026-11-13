@@ -3,6 +3,7 @@ import type { LucideIcon } from 'lucide-react';
 import type { TranslationKey } from '../i18n/catalogs';
 
 export type NavStyle = 'text' | 'icon-left' | 'icon-top';
+export type PhoneLabels = 'shown' | 'hidden';
 
 export interface NavIconProps { size?: number }
 export interface PlannerIconProps { width: number; height: number; className?: string }
@@ -27,5 +28,7 @@ export interface TopBarMenusProps extends TopBarProps {
   navStyle: NavStyle;
   saving: boolean;
   onStyleChange: (style: NavStyle) => void;
+  phoneLabels: PhoneLabels;
+  onPhoneLabelsChange: (value: PhoneLabels) => void;
   onClose: () => void;
 }
