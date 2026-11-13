@@ -1,4 +1,4 @@
-# Graphify refactor
+# Core module boundaries
 
 ## Goal
 
@@ -43,16 +43,26 @@ Reduce oversized files and clarify responsibility boundaries without changing us
 
 ### 1. Baseline and scope
 
-- [ ] Verify the current graph snapshot and identify the high-degree hub and its actual responsibility.
+- [x] Verify the current graph snapshot and identify the high-degree hub and its actual responsibility.
 - [ ] Inventory current file sizes, callers, tests, and active work. Treat inferred graph edges as hypotheses until confirmed in source.
 - [ ] Run and record relevant baseline tests and builds. Add characterization tests for important uncovered behavior before moving code.
-- [ ] Establish an isolated branch and worktree according to project workflow when implementation starts.
+- [x] Establish an isolated branch and worktree according to project workflow when implementation starts.
+
+Baseline notes (2026-11-13):
+- The existing graph report is dated 2026-11-07 and has 4,681 nodes and 12,028 edges. Its highest-degree node is `useI18n()` at 159 edges. Source inspection shows that it reads the shared translation context, so the degree alone does not justify splitting it.
+- Starting line counts: API client 761, Collections page 974, Daily page 922, task service 1,975, HabitTimeline 1,012, habit service 728, CollectionTreeNav 681.
+- Settings redesign is awaiting prototype approval; avoid changing SettingsPage in this refactor until coordinated.
+- App and API baseline builds and lint passed. App lint reported 34 existing warnings. The app build reported a large-chunk warning.
+- The two real PostgreSQL task integration suites passed 13 tests, but logged Redis `ClientClosedError` publication failures. They do not verify real Redis delivery.
+- PostgreSQL 18 did not start with the compose volume's default mount. The isolated stack uses `PGDATA=/var/lib/postgresql/data/pgdata` through `/tmp/opencode/planner-graphify-compose.yml`; no existing volume was removed.
 
 ### 2. Preferences
 
 - [ ] Compare `app/src/hooks/usePreferences.ts` with query declarations in `AppShell`, `CollectionsPage`, `DailyPage`, and other consumers, including options and lifecycle behavior.
 - [ ] Use the shared hook where behavior is equivalent. Preserve the `['preferences']` cache key, loading behavior, invalidation, and sync updates.
 - [ ] Test shared-cache behavior and preference changes across views. Do not assume repeated query declarations imply repeated network requests.
+
+Progress: Daily and Collections now use the shared hook. A hook test covers two subscribers and invalidation. `AppShell` uses `retry: 2` and `ThemeSwitcher` uses `refetchOnMount: false`, so their options cannot be discarded. The targeted page tests passed but emitted React `act` warnings; investigate before treating verification as complete. The Daily Kanban Playwright suite passed four tests. Daily list screenshots were captured at desktop and 390px with no page errors; Collections browser verification remains pending.
 
 ### 3. Frontend API client
 

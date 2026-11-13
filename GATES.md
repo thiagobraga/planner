@@ -1,6 +1,6 @@
-# Gates: graphify refactor
+# Gates: core module boundaries
 
-OWNS: .specs/2026-11-12-graphify-refactor/**, app/src/**, app/e2e/**, api/src/**, GATES.md
+OWNS: .specs/2026-11-12-core-module-boundaries/**, app/src/**, app/e2e/**, api/src/**, GATES.md
 
 Scope: Preserve Planner behavior while completing each refactor phase in the spec.
 
