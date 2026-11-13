@@ -47,6 +47,12 @@ describe('WeekSelector', () => {
     expect(onWeekChange).not.toHaveBeenCalled();
   });
 
+  it('can start with its calendar open for showcases', () => {
+    setup({ defaultOpen: true });
+    expect(screen.getByRole('button', { name: RANGE })).toHaveAttribute('aria-expanded', 'true');
+    expect(screen.getByRole('button', { name: 'Previous month' })).toBeInTheDocument();
+  });
+
   it('opens a calendar from the range button and picks the week of a clicked day', () => {
     const { onWeekChange } = setup();
     const trigger = screen.getByRole('button', { name: RANGE });
