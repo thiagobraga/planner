@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.22.0](https://github.com/thiagobraga/planner/compare/v0.21.0...v0.22.0) (2026-11-14)
+
+
+### Added
+
+* **api:** add daily view, full width and merged board view preferences ([4e6a8bb](https://github.com/thiagobraga/planner/commit/4e6a8bb31eb0a7e8a0a0e7f3495aad03b7ae614a))
+* **api:** let status boards include completed tasks ([7a032f9](https://github.com/thiagobraga/planner/commit/7a032f9a6b1061f57e4d357a41b1abdc2bb2ff58))
+* **app:** add layout, style and range view model ([28c290a](https://github.com/thiagobraga/planner/commit/28c290a3a10d151180d8c60d41968a204b17dcf3))
+* **app:** add page toolbar menus, date nav and mobile slot ([1d7a13e](https://github.com/thiagobraga/planner/commit/1d7a13e3c7884ac451ae6040b3610c135b034774))
+* **app:** drive Daily from layout, style and range ([3b69abe](https://github.com/thiagobraga/planner/commit/3b69abedc10f452591122b2b4d8554fa9d472580))
+* **app:** move collections, inbox and planner menu to the page toolbar ([face1a4](https://github.com/thiagobraga/planner/commit/face1a4cb1e1739c65b21140444da883c5dff441))
+* **app:** page toolbar with layout, style and range ([0b873ef](https://github.com/thiagobraga/planner/commit/0b873efc7a4d1f8ebcacbafdb07dd28c3050444a))
+
+
+### Fixed
+
+* **app:** save preference changes in order ([3dca842](https://github.com/thiagobraga/planner/commit/3dca842f15a7d88ed11ffc9e23495476ecc60f6d))
+
 ## [0.21.0](https://github.com/thiagobraga/planner/compare/v0.20.0...v0.21.0) (2026-11-14)
 
 
