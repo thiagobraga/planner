@@ -9,6 +9,7 @@
   --color-border: #e5e1d8;
   --color-accent: #c9483b;
   --color-accent-light: #e76052;
+  --color-danger: var(--color-accent);
   --color-sidebar-bg: #ebe6de;
   --color-priority-2: #e39133;
   --color-priority-3: #4d8fd6;
@@ -114,4 +115,127 @@
   --planner-hover: rgba(237, 227, 211, 0.06);
   --planner-scrollbar-thumb: #695b50;
   --planner-scrollbar-thumb-hover: #8a7a6c;
+}
+
+/* Frost actions and Aurora danger retain separate meanings on both Nord papers. */
+:root[data-theme="nord-light"] {
+  color-scheme: light;
+  --color-cream: #eceff4;
+  --color-ink: #2e3440;
+  --color-ink-light: #4c566a;
+  --color-ink-lighter: #68768b;
+  --color-dot: #c5ccd8;
+  --color-border: #78869c;
+  --color-accent: #45688e;
+  --color-accent-light: #3d5d80;
+  --color-danger: #a83b4b;
+  --color-sidebar-bg: #e5e9f0;
+  --color-settings-aside: #3b4252;
+  --color-on-aside: #eceff4;
+  --color-priority-2: #946222;
+  --color-priority-3: #45688e;
+  --color-moss: #4e6d3e;
+  --color-today: #45688e;
+  --color-syntax-operator: #70547b;
+  --color-syntax-string: #4e6d3e;
+  --color-syntax-error: #a83b4b;
+  --planner-page-bg: #eceff4;
+  --planner-sidebar-bg: #e5e9f0;
+  --planner-card-bg: #e5e9f0;
+  --planner-board-column-bg: #e5e9f0;
+  --planner-board-card-bg: #eceff4;
+  --planner-sidebar-active-bg: #cdd5e2;
+  --planner-sidebar-hover-bg: #d8dee9;
+  --planner-task-selection-bg: #cdd5e2;
+  --planner-task-hover-bg: #e5e9f0;
+  --planner-overlay-bg: #eceff4;
+  --planner-overlay-hover-bg: #d8dee9;
+  --planner-control-bg: #eceff4;
+  --planner-control-bg-hover: #e5e9f0;
+  --planner-toggle-off-bg: #78869c;
+  --planner-toggle-knob-bg: #eceff4;
+  --planner-settings-separator: #c5ccd8;
+  --planner-monthly-ledger-bg: #e5e9f0;
+  --planner-monthly-strip-selected: #eceff4;
+  --planner-monthly-strip-idle: #e5e9f0;
+  --planner-monthly-strip-hover: #d8dee9;
+  --planner-monthly-weekend: #dfe5ee;
+  --planner-backdrop: rgba(46, 52, 64, 0.3);
+  --planner-hover: rgba(46, 52, 64, 0.06);
+  --planner-scrollbar-thumb: #78869c;
+  --planner-scrollbar-thumb-hover: #4c566a;
+  --shadow-subtle: 0 1px 2px rgba(46, 52, 64, 0.06), 0 1px 3px rgba(46, 52, 64, 0.08);
+  --shadow-medium: 0 4px 12px rgba(46, 52, 64, 0.1);
+  --shadow-overlay: 0 8px 32px rgba(46, 52, 64, 0.15);
+  --planner-drag-shadow: 0 4px 16px rgba(46, 52, 64, 0.18);
+  --planner-menu-disabled-shadow: none;
+}
+
+:root[data-theme="nord-dark"] {
+  color-scheme: dark;
+  --color-cream: #2e3440;
+  --color-ink: #eceff4;
+  --color-ink-light: #d8dee9;
+  --color-ink-lighter: #9aa7bc;
+  --color-dot: #4c566a;
+  --color-border: #8996ab;
+  --color-accent: #88c0d0;
+  --color-accent-light: #8fbcbb;
+  --color-danger: #e2a0a8;
+  --color-sidebar-bg: #3b4252;
+  --color-settings-aside: #2e3440;
+  --color-on-aside: #eceff4;
+  --color-priority-2: #ebcb8b;
+  --color-priority-3: #81a1c1;
+  --color-moss: #a3be8c;
+  --color-today: #88c0d0;
+  --color-syntax-operator: #b48ead;
+  --color-syntax-string: #a3be8c;
+  --color-syntax-error: #e2a0a8;
+  --planner-page-bg: #2e3440;
+  --planner-sidebar-bg: #3b4252;
+  --planner-card-bg: #3b4252;
+  --planner-board-column-bg: #353d4b;
+  --planner-board-card-bg: #3b4252;
+  --planner-sidebar-active-bg: #4c566a;
+  --planner-sidebar-hover-bg: #434c5e;
+  --planner-task-selection-bg: #434c5e;
+  --planner-task-hover-bg: #3b4252;
+  --planner-overlay-bg: #3b4252;
+  --planner-overlay-hover-bg: #434c5e;
+  --planner-control-bg: #3b4252;
+  --planner-control-bg-hover: #434c5e;
+  --planner-toggle-off-bg: #8996ab;
+  --planner-toggle-knob-bg: #2e3440;
+  --planner-settings-separator: #4c566a;
+  --planner-monthly-ledger-bg: #353d4b;
+  --planner-monthly-strip-selected: #434c5e;
+  --planner-monthly-strip-idle: #3b4252;
+  --planner-monthly-strip-hover: #434c5e;
+  --planner-monthly-weekend: #3b4252;
+  --planner-backdrop: rgba(23, 27, 34, 0.6);
+  --planner-hover: rgba(236, 239, 244, 0.06);
+  --planner-scrollbar-thumb: #8996ab;
+  --planner-scrollbar-thumb-hover: #d8dee9;
+  --shadow-subtle: 0 1px 2px rgba(23, 27, 34, 0.3), 0 1px 3px rgba(23, 27, 34, 0.35);
+  --shadow-medium: 0 4px 12px rgba(23, 27, 34, 0.4);
+  --shadow-overlay: 0 8px 32px rgba(23, 27, 34, 0.5);
+  --planner-drag-shadow: 0 4px 16px rgba(23, 27, 34, 0.45);
+  --planner-menu-disabled-shadow: none;
+}
+
+:root[data-theme^="nord-"] ::selection {
+  color: var(--color-cream);
+  background: var(--color-accent);
+}
+
+:root[data-theme^="nord-"] :focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+:root[data-theme^="nord-"] input,
+:root[data-theme^="nord-"] textarea,
+:root[data-theme^="nord-"] [contenteditable="true"] {
+  caret-color: var(--color-accent);
 }

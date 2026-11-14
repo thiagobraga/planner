@@ -85,7 +85,7 @@ test.describe('Dark theme', () => {
     expect(labels.slice(-2)).toEqual(['Show', 'Theme']);
 
     const themeGroup = menu.getByRole('radiogroup', { name: 'Theme' });
-    await expect(themeGroup.getByRole('radio')).toHaveCount(3);
+    await expect(themeGroup.getByRole('radio')).toHaveCount(5);
     await themeGroup.getByRole('radio', { name: 'Dark', exact: true }).click();
 
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');

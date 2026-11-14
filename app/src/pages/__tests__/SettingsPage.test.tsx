@@ -268,7 +268,7 @@ describe('SettingsPage', () => {
 
     const themeGroup = await screen.findByRole('radiogroup', { name: 'Theme' });
     const options = within(themeGroup).getAllByRole('radio').map((radio) => radio.textContent);
-    expect(options).toEqual(['Beige', 'White', 'Dark', 'Automatic']);
+    expect(options).toEqual(['Beige', 'White', 'Dark', 'Nord Light', 'Nord Dark', 'Automatic']);
 
     const dark = within(themeGroup).getByRole('radio', { name: 'Dark' });
     fireEvent.click(dark);
@@ -277,6 +277,19 @@ describe('SettingsPage', () => {
 
     fireEvent.click(within(themeGroup).getByRole('radio', { name: 'Automatic' }));
     await waitFor(() => expect(mockUpdatePreferences).toHaveBeenCalledWith({ background: 'system' }));
+  });
+
+  it.each([['Nord Light', 'nord-light'], ['Nord Dark', 'nord-dark']])('saves %s and rolls back a failed change', async (label, background) => {
+    renderPage('/settings/appearance');
+    const option = await screen.findByRole('radio', { name: label });
+    fireEvent.click(option);
+    await waitFor(() => expect(mockUpdatePreferences).toHaveBeenCalledWith({ background }));
+    await waitFor(() => expect(option).toHaveAttribute('aria-checked', 'true'));
+
+    mockUpdatePreferences.mockRejectedValueOnce(new Error('offline'));
+    fireEvent.click(screen.getByRole('radio', { name: 'White' }));
+    await waitFor(() => expect(mockUpdatePreferences).toHaveBeenCalledWith({ background: 'white' }));
+    await waitFor(() => expect(option).toHaveAttribute('aria-checked', 'true'));
   });
 
   it('saves behavior toggles and rolls back failed optimistic updates', async () => {

@@ -201,6 +201,8 @@ export const portugueseBrazilCatalog = {
   'settings.beige': 'Bege',
   'settings.white': 'Branco',
   'settings.dark': 'Escuro',
+  'settings.nordLight': 'Nord claro',
+  'settings.nordDark': 'Nord escuro',
   'settings.system': 'Automático',
   'settings.showDots': 'Mostrar pontos no fundo',
   'settings.showCheckboxes': 'Mostrar caixas de seleção ao invés de pontos',
