@@ -1,4 +1,4 @@
-import type { ComponentType } from 'react';
+import type { ComponentType, MouseEventHandler, Ref } from 'react';
 import type { LucideIcon } from 'lucide-react';
 import type { TranslationKey } from '../i18n/catalogs';
 
@@ -17,7 +17,13 @@ export interface TopBarProps {
   onOpenShortcuts: () => void;
   updateAvailable?: boolean;
 }
-export interface TopBarItemProps { item: NavItem }
+/** Extra link props let Inbox be its own drop target without a wrapper that would change its layout. */
+export interface TopBarItemProps {
+  item: NavItem;
+  ref?: Ref<HTMLAnchorElement>;
+  'data-drop-target'?: 'true';
+  onClickCapture?: MouseEventHandler<HTMLAnchorElement>;
+}
 export interface TopBarMenuState {
   kind: 'menu' | 'style';
   position: { x: number; y: number };

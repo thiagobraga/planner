@@ -205,8 +205,26 @@ describe('TopBar', () => {
     renderBar('/habits');
     expect(state.droppable).toHaveBeenCalledWith(expect.objectContaining({ id: 'topbar-inbox', data: { kind: 'collection', collectionId: 'inbox-id', isInbox: true, parentId: null }, disabled: false }));
     const inbox = screen.getByRole('link', { name: 'Inbox' });
-    expect(inbox.closest('[data-drop-target]')).toHaveAttribute('data-drop-target', 'true');
+    expect(inbox).toHaveAttribute('data-drop-target', 'true');
     expect(fireEvent.click(inbox)).toBe(false);
+  });
+
+  // Phone Safari failed to switch to Inbox while its link sat in an extra droppable
+  // wrapper; every tab must be a direct child of the nav so they lay out and hit-test alike.
+  it('renders Inbox as a direct nav child like every other tab', () => {
+    state.mobile = true; state.style = 'icon-top';
+    renderBar();
+    const nav = screen.getByRole('navigation');
+    for (const name of ['Daily', 'Inbox', 'Habits', 'Collections']) {
+      expect(screen.getByRole('link', { name }).parentElement).toBe(nav);
+    }
+  });
+
+  it('navigates to Inbox on click when nothing is dragged', () => {
+    renderBar('/habits');
+    const inbox = screen.getByRole('link', { name: 'Inbox' });
+    fireEvent.click(inbox);
+    expect(inbox).toHaveAttribute('aria-current', 'page');
   });
 
   it('keeps the calendar day current across midnight', () => {

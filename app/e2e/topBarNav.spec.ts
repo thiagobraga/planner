@@ -39,6 +39,24 @@ test('primary links navigate and mark the current destination', async ({ page })
   await expect(page.locator('.sidebar-drawer, .bottom-bar')).toHaveCount(0);
 });
 
+test.describe('phone tab bar', () => {
+  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+
+  test('tapping each tab switches the page, Inbox included', async ({ page }) => {
+    await page.goto('/habits');
+    const nav = page.getByRole('navigation', { name: 'Main navigation' });
+    // Inbox once sat in an extra drop-target wrapper; phone Safari then ignored taps on it.
+    await expect(nav.locator(':scope > a')).toHaveCount(4);
+    for (const [name, path] of [['Inbox', '/inbox'], ['Daily', '/daily/list'], ['Inbox', '/inbox'], ['Collections', '/collections'], ['Inbox', '/inbox']]) {
+      await nav.getByRole('link', { name, exact: true }).tap();
+      await expect(page).toHaveURL(new RegExp(`${path}$`));
+      await expect(nav.getByRole('link', { name, exact: true })).toHaveAttribute('aria-current', 'page');
+    }
+    await mkdir('dist/screenshots', { recursive: true });
+    await page.screenshot({ path: 'dist/screenshots/phone-tab-inbox-390.png' });
+  });
+});
+
 test('style changes persist across reload and arrive in another open tab', async ({ page, context, api }) => {
   await page.goto('/daily/list');
   const other = await context.newPage();
