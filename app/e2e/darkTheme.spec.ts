@@ -40,7 +40,7 @@ test.describe('Dark theme', () => {
 
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
     await expect.poll(() => bodyBackground(page)).toBe(DARK_PAGE_BG);
-    await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#221a14');
+    await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#292219');
 
     await page.goto('/daily');
     await expect(page.getByRole('heading', { name: 'Daily', level: 1 })).toBeVisible();
