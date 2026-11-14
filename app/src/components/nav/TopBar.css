@@ -74,7 +74,7 @@
   .topbar[data-nav-style='icon-left'] .topbar-item { font-size: 13px; }
   .topbar[data-nav-style='icon-top'] .topbar-item { min-width: 72px; }
 }
-.topbar-inbox[data-drop-target='true'] { outline: 2px solid var(--color-ink); outline-offset: -2px; }
+.topbar-item[data-drop-target='true'] { outline: 2px solid var(--color-ink); outline-offset: -2px; }
 
 .topbar-actions { display: flex; align-items: center; gap: 8px; height: var(--topbar-tab-height); min-width: 0; justify-self: end; }
 .topbar-version-cluster { display: flex; align-items: center; gap: 8px; min-width: 0; }
@@ -147,7 +147,7 @@
     max-width: none;
   }
   .topbar[data-phone-labels='hidden'] .topbar-row { grid-template-rows: 1fr auto 1fr; }
-  .topbar-nav, .topbar-inbox, .topbar[data-nav-style] .topbar-item {
+  .topbar-nav, .topbar[data-nav-style] .topbar-item {
     grid-row: 1 / -1;
     align-self: stretch;
     display: grid;
