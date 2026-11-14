@@ -16,7 +16,7 @@ test('Quick Add creates a task in the open collection without blurring the page'
 
   try {
     await page.goto(`/collection/${collection.id}`);
-    await expect(page.getByRole('button', { name: 'More options', exact: true })).toBeVisible();
+    await expect(page.locator('.page-header-row').getByRole('button', { name: 'View', exact: true })).toBeVisible();
     await page.locator('main').click({ position: { x: 4, y: 4 } });
     await page.keyboard.press('q');
 

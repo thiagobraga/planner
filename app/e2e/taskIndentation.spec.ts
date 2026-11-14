@@ -1,5 +1,6 @@
 import { mkdir } from 'node:fs/promises';
 import { expect, STORAGE_STATE_PATH, test } from './fixtures/api';
+import { chooseView } from './fixtures/view';
 
 test.use({ storageState: STORAGE_STATE_PATH });
 
@@ -43,7 +44,7 @@ test('task row shortcuts and menu persist structural indentation', async ({ api,
     await page.reload();
     await expect(row).toHaveCSS('padding-left', '0px');
 
-    await page.getByRole('button', { name: 'Kanban lists', exact: true }).click();
+    await chooseView(page, { layout: 'Columns', style: 'Notebook' });
     await expect(row).toBeVisible();
     await row.click({ button: 'right' });
     await expect(page.getByRole('menuitem', { name: 'Indent', exact: true })).toHaveAttribute('aria-disabled', 'false');
@@ -59,7 +60,7 @@ test('task row shortcuts and menu persist structural indentation', async ({ api,
     await expect(page.getByRole('menuitem', { name: 'Indent', exact: true })).toBeVisible();
     await page.screenshot({ path: 'dist/screenshots/task-indentation-mobile.png' });
     await page.keyboard.press('Escape');
-    await page.getByRole('button', { name: 'List', exact: true }).click();
+    await chooseView(page, { layout: 'List' });
     await expect(row).toHaveCSS('padding-left', '24px');
     await page.screenshot({ path: 'dist/screenshots/task-indentation-list-mobile.png' });
     await page.setViewportSize({ width: 1280, height: 720 });

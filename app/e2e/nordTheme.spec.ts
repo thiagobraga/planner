@@ -52,7 +52,7 @@ for (const preset of presets) {
 test('Nord menu choices persist and a failed save restores the previous palette', async ({ page }) => {
   await chooseTheme(page, 'Beige');
   await page.goto('/daily');
-  await page.getByRole('button', { name: 'More options', exact: true }).click();
+  await page.getByRole('button', { name: 'Planner menu', exact: true }).click();
   const group = page.getByRole('menu').getByRole('radiogroup', { name: 'Theme' });
   await expect(group.getByRole('radio')).toHaveCount(5);
   for (const preset of presets) {
@@ -63,7 +63,7 @@ test('Nord menu choices persist and a failed save restores the previous palette'
   }
   await page.reload();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'nord-dark');
-  await page.getByRole('button', { name: 'More options', exact: true }).click();
+  await page.getByRole('button', { name: 'Planner menu', exact: true }).click();
   await page.route('**/api/v1/preferences', route => route.request().method() === 'PATCH'
     ? route.fulfill({ status: 503, contentType: 'application/json', body: JSON.stringify({ error: { code: 'UNAVAILABLE', message: 'Try again' } }) })
     : route.continue());
@@ -98,7 +98,7 @@ for (const preset of presets) {
       }
       await expect(page.getByRole('radiogroup', { name: 'Theme', exact: true }).getByRole('radio')).toHaveCount(6);
       await page.goto('/daily');
-      await page.getByRole('button', { name: 'More options', exact: true }).click();
+      await page.getByRole('button', { name: 'Planner menu', exact: true }).click();
       const group = page.getByRole('menu').getByRole('radiogroup', { name: 'Theme' });
       await expect(group.getByRole('radio')).toHaveCount(5);
       await group.getByRole('radio', { name: preset.name, exact: true }).focus();

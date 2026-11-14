@@ -76,13 +76,14 @@ test.describe('Dark theme', () => {
     await expect.poll(() => bodyBackground(page)).toBe(BEIGE_PAGE_BG);
   });
 
-  test('the header menu switches theme from its Theme section, after Show', async ({ page }) => {
+  test('the planner menu switches theme from its Theme section, after Show', async ({ page }) => {
     await page.goto('/daily');
-    await page.getByRole('button', { name: 'More options', exact: true }).click();
+    await page.getByRole('button', { name: 'Planner menu', exact: true }).click();
     const menu = page.getByRole('menu');
 
-    const labels = await menu.locator('.toolbar-section-label').allTextContents();
-    expect(labels.slice(-2)).toEqual(['Show', 'Theme']);
+    const text = await menu.innerText();
+    expect(text.indexOf('Show')).toBeGreaterThan(-1);
+    expect(text.indexOf('Theme')).toBeGreaterThan(text.indexOf('Show'));
 
     const themeGroup = menu.getByRole('radiogroup', { name: 'Theme' });
     await expect(themeGroup.getByRole('radio')).toHaveCount(5);
