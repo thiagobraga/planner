@@ -141,8 +141,8 @@
     min-width: 0;
     height: auto;
     margin: 0;
-    padding: 0 2px;
-    justify-content: center;
+    padding: 19px 2px 0;
+    justify-content: flex-start;
     flex-direction: column;
     gap: 4px;
     border: 1px solid transparent;
@@ -155,6 +155,7 @@
   /* Mirrors the desktop folder tab: hangs from the top edge and overlaps the bar border so it opens upward */
   .topbar .topbar-item--active {
     margin: -1px 0 0;
+    padding-top: 20px;
     border-color: var(--color-dot);
     background: var(--planner-page-bg);
   }
