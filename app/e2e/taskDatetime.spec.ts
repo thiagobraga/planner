@@ -9,15 +9,14 @@ const plusDays = (iso: string, n: number) => isoDay(new Date(Date.parse(`${iso}T
 test('sets due time, duration and deadline from the task context menu', async ({ page, api }) => {
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
-  await api.patch('/preferences', { locale: 'en', timeZone: 'UTC' });
+  await api.patch('/preferences', { locale: 'en', timeZone: 'UTC', dailyView: { style: 'notebook', range: 'week' } });
   const today = isoDay(new Date());
   const deadline = plusDays(today, 3);
   const title = `Dentist ${Date.now()}`;
   const task = await api.post<ApiTask>('/tasks', { title, dueDate: today });
 
   try {
-    await page.goto('/daily');
-    await page.getByRole('button', { name: 'List', exact: true }).click();
+    await page.goto('/daily/list');
     const row = page.locator('.task-item').filter({ hasText: title });
     await expect(row).toBeVisible();
 
@@ -63,7 +62,7 @@ test('sets due time, duration and deadline from the task context menu', async ({
 test('repeats every 2 weeks on Saturday counted from completion', async ({ page, api }) => {
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
-  await api.patch('/preferences', { locale: 'en', timeZone: 'UTC' });
+  await api.patch('/preferences', { locale: 'en', timeZone: 'UTC', dailyView: { style: 'notebook', range: 'week' } });
   const today = isoDay(new Date());
   const title = `Long run ${Date.now()}`;
   const task = await api.post<ApiTask>('/tasks', { title, dueDate: today });

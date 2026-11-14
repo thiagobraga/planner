@@ -81,11 +81,11 @@ test.describe('Dark theme', () => {
     await page.getByRole('button', { name: 'Planner menu', exact: true }).click();
     const menu = page.getByRole('menu');
 
-    const text = await menu.innerText();
-    expect(text.indexOf('Show')).toBeGreaterThan(-1);
-    expect(text.indexOf('Theme')).toBeGreaterThan(text.indexOf('Show'));
-
     const themeGroup = menu.getByRole('radiogroup', { name: 'Theme' });
+    const show = await menu.locator('.topbar-menu-section', { hasText: 'Show' }).boundingBox();
+    const theme = await themeGroup.boundingBox();
+    expect(theme!.y).toBeGreaterThan(show!.y);
+
     await expect(themeGroup.getByRole('radio')).toHaveCount(5);
     await themeGroup.getByRole('radio', { name: 'Dark', exact: true }).click();
 

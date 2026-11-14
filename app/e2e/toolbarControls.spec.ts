@@ -60,6 +60,8 @@ test.describe('Page toolbar', () => {
     await page.keyboard.press('v');
     await page.keyboard.press('k');
     await expect(page).toHaveURL(/\/daily\/columns$/);
+    // The URL changes before the page renders the new layout; shortcuts act on what is on screen.
+    await expect(page.getByTestId('daily-week-board')).toBeVisible();
     await page.keyboard.press('v');
     await page.keyboard.press('2');
     await expect(page.getByTestId('daily-week-board').locator('[data-column-id^="day:"]')).toHaveCount(2);

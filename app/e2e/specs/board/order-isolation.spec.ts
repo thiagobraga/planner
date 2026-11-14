@@ -1,3 +1,4 @@
+import { chooseView } from '../../fixtures/view';
 import { dragCard } from '../../fixtures/drag';
 import { card, expect, moveToStatus, openBoard, statusColumn, STORAGE_STATE_PATH, test, uniqueName } from './helpers';
 
@@ -28,7 +29,7 @@ test('reordering inside a status column does not change list order', async ({ ap
     await dragCard(page, card(page, second.id), card(page, first.id));
     await expect(statusColumn(page, backlog.id).locator('[data-card-id]').first()).toHaveAttribute('data-card-id', second.id);
 
-    await page.getByRole('button', { name: 'List', exact: true }).click();
+    await chooseView(page, { layout: 'List' });
     await expect(page.locator('[data-task-id]').first()).toHaveAttribute('data-task-id', first.id);
 
     const view = await api.fetchCollectionView(collection.id);

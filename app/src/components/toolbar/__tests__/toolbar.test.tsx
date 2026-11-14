@@ -123,7 +123,7 @@ describe('DateNav', () => {
   it('moves Today into the picker when tight and highlights the range', () => {
     render(<DateNav {...base} compact hideToday />);
     expect(screen.queryByRole('button', { name: 'Today' })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: '11/13 to 11/15/2026' }));
+    fireEvent.click(screen.getByRole('button', { name: '11/13-15' }));
     const picker = screen.getByRole('dialog');
     expect(picker.querySelectorAll('[data-in-range]')).toHaveLength(3);
     fireEvent.click(within(picker).getByRole('button', { name: 'Today' }));

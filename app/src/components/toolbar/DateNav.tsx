@@ -83,7 +83,7 @@ export function DateNav({ from, to, today, weekStart, onPrevious, onNext, onToda
         variant="secondary"
         aria-haspopup="dialog"
         aria-expanded={open}
-        aria-label={fullLabel}
+        title={fullLabel}
         onClick={toggle}
         className="date-nav-trigger !gap-1 font-semibold tracking-[0.04em] whitespace-nowrap"
       >

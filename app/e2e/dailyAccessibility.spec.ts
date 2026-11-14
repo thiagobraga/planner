@@ -4,6 +4,7 @@ test.use({ storageState: STORAGE_STATE_PATH });
 
 test('Daily controls expose visible labels and valid selection state', async ({ page, api }) => {
   const dueDate = new Date().toISOString().slice(0, 10);
+  await api.patch('/preferences', { dailyView: { style: 'notebook', range: 'week' } });
   const task = await api.createTask({ title: 'Accessibility regression', dueDate });
   try {
     await page.setViewportSize({ width: 412, height: 823 });
@@ -14,7 +15,7 @@ test('Daily controls expose visible labels and valid selection state', async ({ 
     await expect(row).not.toHaveAttribute('aria-selected');
     await row.locator('.task-item-title-text').click();
     await expect(row).toHaveAttribute('aria-pressed', 'true');
-    const range = page.locator('.week-selector-trigger');
+    const range = page.locator('.date-nav-trigger');
     const visibleRange = (await range.innerText()).replace(/\s+/g, ' ').trim();
     await expect(range).toHaveAccessibleName(visibleRange);
     const more = page.getByRole('button', { name: /Planner menu|Menu do Planner/ });
