@@ -175,8 +175,14 @@ export function addDaysISO(date: string, days: number): string {
   return dt.toISOString().slice(0, 10);
 }
 
-export async function getInboxView(userId: string, now: Date = new Date()) {
+export interface ViewOptions {
+  /** A board grouped by status shows its completion column even when completed tasks are hidden. */
+  includeCompleted?: boolean;
+}
+
+export async function getInboxView(userId: string, now: Date = new Date(), options: ViewOptions = {}) {
   const settings = await getViewPreferences(userId, now);
+  const hideCompleted = settings.hideCompletedTasks && !options.includeCompleted;
   const inboxResult = await pool.query(
     `SELECT id FROM collections WHERE user_id = $1 AND is_inbox = true`,
     [userId],
@@ -192,7 +198,7 @@ export async function getInboxView(userId: string, now: Date = new Date()) {
        AND ($2::boolean = false OR t.is_completed = false)
        AND ($3::boolean = true OR NOT (t.type = 'note'))
      ORDER BY t.order_value ASC, t.created_at ASC`,
-    [userId, settings.hideCompletedTasks, settings.showNotes],
+    [userId, hideCompleted, settings.showNotes],
   );
 
   const sections = inboxCollection ? await listSections(inboxCollection.id, userId) : [];
@@ -210,8 +216,9 @@ export async function getInboxView(userId: string, now: Date = new Date()) {
   };
 }
 
-export async function getCollectionView(userId: string, collectionId: string, now: Date = new Date()) {
+export async function getCollectionView(userId: string, collectionId: string, now: Date = new Date(), options: ViewOptions = {}) {
   const settings = await getViewPreferences(userId, now);
+  const hideCompleted = settings.hideCompletedTasks && !options.includeCompleted;
   const collectionResult = await pool.query(
     `SELECT id, name, color, is_inbox FROM collections
      WHERE id = $1
@@ -232,7 +239,7 @@ export async function getCollectionView(userId: string, collectionId: string, no
        AND ($2::boolean = false OR is_completed = false)
        AND ($3::boolean = true OR NOT (type = 'note'))
      ORDER BY order_value ASC, created_at ASC`,
-    [collectionId, settings.hideCompletedTasks, settings.showNotes],
+    [collectionId, hideCompleted, settings.showNotes],
   );
 
   const sections = await listSections(collectionId, userId);

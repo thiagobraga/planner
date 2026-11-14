@@ -6,7 +6,7 @@ const router: ReturnType<typeof Router> = Router();
 
 router.get("/inbox", async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const view = await getInboxView(req.userId!);
+    const view = await getInboxView(req.userId!, new Date(), { includeCompleted: req.query.include_completed === "true" });
     res.json(view);
   } catch (err) {
     next(err);
@@ -15,7 +15,7 @@ router.get("/inbox", async (req: Request, res: Response, next: NextFunction) => 
 
 router.get("/collection/:id", async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const view = await getCollectionView(req.userId!, req.params.id as string);
+    const view = await getCollectionView(req.userId!, req.params.id as string, new Date(), { includeCompleted: req.query.include_completed === "true" });
     res.json(view);
   } catch (err) {
     next(err);
