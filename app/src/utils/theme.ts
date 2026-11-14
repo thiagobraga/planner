@@ -1,9 +1,10 @@
 import type { BackgroundPreference, ResolvedTheme } from '../types/theme';
 
+/** Browser and PWA title bar colors, matched to each theme's `--color-sidebar-bg` so the chrome continues the nav bar. */
 export const THEME_COLORS: Record<ResolvedTheme, string> = {
-  beige: '#f5f0e8',
-  white: '#ffffff',
-  dark: '#221a14',
+  beige: '#ebe6de',
+  white: '#f1f1f1',
+  dark: '#292219',
 };
 
 /**
