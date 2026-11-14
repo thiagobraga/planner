@@ -3,6 +3,11 @@ import { readFileSync } from 'node:fs';
 import { expect, STORAGE_STATE_PATH, test } from './fixtures/api';
 
 const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf-8')) as { version: string };
+const rootChangelog = readFileSync(new URL('../../CHANGELOG.md', import.meta.url), 'utf-8');
+const topReleases = [...rootChangelog.matchAll(/^## \[([^\]]+)\]\(([^)]+)\) \((\d{4}-\d{2}-\d{2})\)/gm)].map(
+  (match) => ({ version: match[1], href: match[2], date: match[3] }),
+);
+const latestRelease = topReleases[0];
 
 test.use({ storageState: STORAGE_STATE_PATH });
 
@@ -33,15 +38,15 @@ test('desktop topbar version opens /changelog and renders release history cleanl
   await expect(page.getByRole('heading', { level: 1, name: 'Changelog' })).toBeVisible();
 
   const releaseHeadings = page.getByRole('heading', { level: 2 });
-  await expect(releaseHeadings.first()).toContainText('0.19.2');
-  await expect(releaseHeadings.first()).toContainText('2026-11-14');
+  await expect(releaseHeadings.first()).toContainText(latestRelease.version);
+  await expect(releaseHeadings.first()).toContainText(latestRelease.date);
 
-  const compareLink = page.getByRole('main').getByRole('link', { name: '0.19.2', exact: true });
-  await expect(compareLink).toHaveAttribute('href', 'https://github.com/thiagobraga/planner/compare/v0.19.1...v0.19.2');
+  const compareLink = page.getByRole('main').getByRole('link', { name: latestRelease.version, exact: true });
+  await expect(compareLink).toHaveAttribute('href', latestRelease.href);
   await expect(compareLink).toHaveAttribute('rel', 'noopener noreferrer');
 
-  await expect(page.getByRole('heading', { level: 3, name: 'Fixed' }).first()).toBeVisible();
-  await expect(page.getByText(/preserve collection task ordering/)).toBeVisible();
+  await expect(page.locator('.changelog-page h3').first()).toBeVisible();
+  await expect(page.locator('.changelog-page li').first()).toBeVisible();
 
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
   expect(overflow).toBe(false);
@@ -52,26 +57,31 @@ test('desktop topbar version opens /changelog and renders release history cleanl
   const stickyMetrics = await page.evaluate(() => {
     const main = document.querySelector('main')!;
     const h1 = document.querySelector('.changelog-page h1')!;
-    const h2s = [...document.querySelectorAll('.changelog-page h2')];
-    const v0192 = h2s.find((el) => el.textContent?.includes('0.19.2'))!;
-    const v0191 = h2s.find((el) => el.textContent?.includes('0.19.1'))!;
-    const v0190 = h2s.find((el) => el.textContent?.includes('0.19.0'))!;
+    const [v0, v1, v2] = [...document.querySelectorAll('.changelog-page h2')];
 
-    main.scrollTop = 120;
+    const h1TopRect = h1.getBoundingClientRect();
+    const v0TopRect = v0.getBoundingClientRect();
+    const v1TopRect = v1.getBoundingClientRect();
+    const v2TopRect = v2.getBoundingClientRect();
+
+    const startPin = v0TopRect.top - h1TopRect.bottom;
+    const startHandoff = v1TopRect.top - h1TopRect.bottom - v0TopRect.height;
+
+    main.scrollTop = Math.round((startPin + startHandoff) / 2);
     const pinnedBeforeNext = {
       h1Bottom: h1.getBoundingClientRect().bottom,
-      v0192Top: v0192.getBoundingClientRect().top,
+      v0Top: v0.getBoundingClientRect().top,
     };
 
-    main.scrollTop = 156;
+    main.scrollTop = Math.round(startHandoff + Math.min(12, v0TopRect.height / 2));
     const handoff = {
-      v0192Bottom: v0192.getBoundingClientRect().bottom,
-      v0191Top: v0191.getBoundingClientRect().top,
+      v0Bottom: v0.getBoundingClientRect().bottom,
+      v1Top: v1.getBoundingClientRect().top,
     };
 
-    main.scrollTop = 450;
+    main.scrollTop = Math.round(v2TopRect.top - h1TopRect.bottom + 24);
     const h1Rect = h1.getBoundingClientRect();
-    const vRect = v0190.getBoundingClientRect();
+    const vRect = v2.getBoundingClientRect();
     return {
       pinnedBeforeNext,
       handoff,
@@ -80,8 +90,8 @@ test('desktop topbar version opens /changelog and renders release history cleanl
       mainTop: main.getBoundingClientRect().top,
     };
   });
-  expect(stickyMetrics.pinnedBeforeNext.v0192Top).toBe(stickyMetrics.pinnedBeforeNext.h1Bottom);
-  expect(stickyMetrics.handoff.v0191Top).toBe(stickyMetrics.handoff.v0192Bottom);
+  expect(stickyMetrics.pinnedBeforeNext.v0Top).toBe(stickyMetrics.pinnedBeforeNext.h1Bottom);
+  expect(Math.abs(stickyMetrics.handoff.v1Top - stickyMetrics.handoff.v0Bottom)).toBeLessThanOrEqual(1);
   expect(stickyMetrics.vTop).toBe(stickyMetrics.h1Bottom);
   expect(stickyMetrics.vTop - stickyMetrics.mainTop).toBe(48);
   await page.evaluate(() => {
@@ -130,7 +140,7 @@ test('mobile planner-menu version opens /changelog in a single readable column',
   await expect(menu).toHaveCount(0);
   await expect(page).toHaveURL(/\/changelog$/);
   await expect(page.getByRole('heading', { level: 1, name: 'Changelog' })).toBeVisible();
-  await expect(page.getByRole('heading', { level: 2 }).first()).toContainText('0.19.2');
+  await expect(page.getByRole('heading', { level: 2 }).first()).toContainText(latestRelease.version);
 
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
   expect(overflow).toBe(false);

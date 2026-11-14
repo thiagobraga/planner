@@ -133,7 +133,7 @@
   .topbar-version { display: none; }
   .topbar-row { gap: 8px; }
   .topbar-nav { gap: 0; }
-  .topbar-item { padding-inline: 8px; gap: 6px; font-size: 13px; }
+  .topbar-item { padding-inline: 7px; gap: 6px; font-size: 13px; }
   .topbar-actions { gap: 4px; }
 }
 @container topbar-row (max-width: 620px) {

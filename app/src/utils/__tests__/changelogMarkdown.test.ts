@@ -9,8 +9,8 @@ const rootChangelog = readFileSync(resolve(process.cwd(), '../CHANGELOG.md'), 'u
 describe('changelog bundling', () => {
   it('bundles the root CHANGELOG.md without maintaining a separate copy', () => {
     expect(CHANGELOG_MARKDOWN).toBe(rootChangelog);
-    expect(CHANGELOG_MARKDOWN).toContain('0.19.2');
     expect(CHANGELOG_MARKDOWN).toContain('0.19.1');
+    expect(CHANGELOG_MARKDOWN).toContain('0.19.0');
   });
 });
 
@@ -131,10 +131,12 @@ describe('parseChangelogMarkdown', () => {
   it('parses the entire root CHANGELOG.md in order without losing releases', () => {
     const doc = parseChangelogMarkdown(CHANGELOG_MARKDOWN);
     expect(doc.title).toBe('Changelog');
-    expect(doc.sections.length).toBeGreaterThan(10);
+    const expectedSectionCount = [...CHANGELOG_MARKDOWN.matchAll(/^##\s+/gm)].length;
+    expect(expectedSectionCount).toBeGreaterThan(10);
+    expect(doc.sections).toHaveLength(expectedSectionCount);
     const firstHeadingText = doc.sections[0].heading
       .map((n) => (n.type === 'link' ? n.children.map((c) => ('value' in c ? c.value : '')).join('') : 'value' in n ? n.value : ''))
       .join('');
-    expect(firstHeadingText).toContain('0.19.2');
+    expect(firstHeadingText).toMatch(/^\d+\.\d+\.\d+ \(\d{4}-\d{2}-\d{2}\)$/);
   });
 });
