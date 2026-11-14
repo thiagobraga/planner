@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.19.1](https://github.com/thiagobraga/planner/compare/v0.19.0...v0.19.1) (2026-11-14)
+
+
+### Fixed
+
+* **nav:** make the inbox tab its own drop target on phones ([2671c1d](https://github.com/thiagobraga/planner/commit/2671c1d561f4676cf85a338fdcd1e6bfe7f2dc13))
+* **nav:** make the inbox tab its own drop target on phones ([19580ba](https://github.com/thiagobraga/planner/commit/19580ba2fdf354a9987d258324315454267b6a33))
+
 ## [0.19.0](https://github.com/thiagobraga/planner/compare/v0.18.0...v0.19.0) (2026-11-14)
 
 
