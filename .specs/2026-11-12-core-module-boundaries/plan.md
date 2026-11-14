@@ -66,6 +66,8 @@ Progress: Daily and Collections now use the shared hook. A hook test covers two 
 
 ### 3. Frontend API client
 
+Progress: `client.ts` (761 lines) split into `transport`, `auth`, `tasks`, `preferences`, `collections`, `integrations`, `labels`, `habits`, `admin` (all under 190 lines). `client.ts` is now a barrel of `export *` so the 88 consumers and 46 module mocks keep their import path; request, auth, CSRF and error behavior moved verbatim. App tests 1449 pass, tsc and eslint clean.
+
 - [ ] Trace all exports and consumers of `app/src/api/client.ts`, including test mocks.
 - [ ] Separate shared transport from cohesive endpoint modules, such as tasks, collections, preferences, and habits, based on actual dependencies.
 - [ ] Update imports and mocks in manageable groups; preserve requests, authentication, CSRF handling, responses, and error behavior.
