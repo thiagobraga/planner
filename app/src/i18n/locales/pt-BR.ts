@@ -420,6 +420,8 @@ export const portugueseBrazilCatalog = {
   'view.range.month': 'Mês',
   'view.range.days': 'Dias',
   'view.range.weeks': 'Semanas',
+  'view.range.oneDay': '1 dia',
+  'view.range.oneWeek': '1 semana',
   'view.range.dayCount': '{{count}} dias',
   'view.range.weekCount': '{{count}} semanas',
   'view.fullWidth': 'Largura total',

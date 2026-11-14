@@ -418,6 +418,8 @@ export const englishCatalog = {
   'view.range.month': 'Month',
   'view.range.days': 'Days',
   'view.range.weeks': 'Weeks',
+  'view.range.oneDay': '1 day',
+  'view.range.oneWeek': '1 week',
   'view.range.dayCount': '{{count}} days',
   'view.range.weekCount': '{{count}} weeks',
   'view.fullWidth': 'Full width',

@@ -103,11 +103,11 @@ export function ViewMenu({ layouts, layout, onLayoutChange, style, onStyleChange
                 <>
                   <div className="page-menu-pill-row">
                     <span className="page-menu-pill-label">{t('view.range.days')}</span>
-                    {DAY_SPANS.map((value) => pill(value, value.slice(1), t('view.range.dayCount', { count: value.slice(1) })))}
+                    {DAY_SPANS.map((value) => pill(value, value.slice(1), value === 'd1' ? t('view.range.oneDay') : t('view.range.dayCount', { count: value.slice(1) })))}
                   </div>
                   <div className="page-menu-pill-row">
                     <span className="page-menu-pill-label">{t('view.range.weeks')}</span>
-                    {WEEK_SPANS.map((value) => pill(value, value.slice(1), t('view.range.weekCount', { count: value.slice(1) })))}
+                    {WEEK_SPANS.map((value) => pill(value, value.slice(1), value === 'w1' ? t('view.range.oneWeek') : t('view.range.weekCount', { count: value.slice(1) })))}
                   </div>
                   <div className="page-menu-pill-row">
                     {pill('month', t('view.range.month'), t('view.range.month'))}
