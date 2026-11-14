@@ -17,6 +17,8 @@ test('dragging a child below the next task persists the displayed parent', async
     const from = page.locator(`[data-task-id="${child.id}"]`);
     const to = page.locator(`[data-task-id="${second.id}"]`);
     await expect(from).toBeVisible();
+    // On Saturdays Today is the last day of the week, so the rows land near the viewport edge and the drag autoscrolls
+    await from.evaluate((row) => row.scrollIntoView({ block: 'center' }));
     const source = await from.boundingBox();
     const target = await to.boundingBox();
     expect(source).not.toBeNull();
