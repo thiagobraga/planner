@@ -41,7 +41,7 @@ for (const preset of presets) {
     await page.reload();
     await expect(page.locator('html')).toHaveAttribute('data-theme', preset.id);
     await other.close();
-    await page.getByRole('button', { name: 'Account', exact: true }).click();
+    await page.getByRole('button', { name: 'Planner menu', exact: true }).click();
     await page.getByRole('menuitem', { name: 'Logout', exact: true }).click();
     await expect(page).toHaveURL(/\/login/);
     await expect(page.locator('html')).not.toHaveAttribute('data-theme', /.+/);
