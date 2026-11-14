@@ -135,7 +135,7 @@
   .topbar-actions { height: auto; }
   .topbar-brand, .topbar-search, .topbar-version-cluster { display: none; }
   .topbar-error { top: auto; bottom: 100%; }
-  .topbar-nav { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; flex: 1; align-self: stretch; align-items: stretch; }
+  .topbar-nav { display: grid; grid-template-columns: repeat(4, 70px); gap: 4px; flex: 1; align-self: stretch; align-items: stretch; }
   .topbar .topbar-item, .topbar .topbar-item--active {
     width: 100%;
     min-width: 0;
@@ -148,9 +148,10 @@
     border: 1px solid transparent;
     border-top: 0;
     border-radius: 0 0 6px 6px;
-    font-size: 10px;
+    font-size: 10.5px;
     line-height: 12px;
   }
+  .topbar[data-nav-style='icon-top'] .topbar-item { font-size: 10.5px; }
   /* Mirrors the desktop folder tab: hangs from the top edge and overlaps the bar border so it opens upward */
   .topbar .topbar-item--active {
     margin: -1px 0 0;
