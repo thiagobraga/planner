@@ -189,7 +189,7 @@ Tokens are redefined under `:root[data-theme="dark"]` in `app/src/index.css`; co
 | Warm Brick Red `--color-accent` | `#c9483b` | `#d8705f` | Accent, lifted for contrast on dark paper |
 | Active nav `--planner-sidebar-active-bg` | tinted dot | `#3e3228` | Selected navigation item |
 | Overlay `--planner-overlay-bg` | Cream Paper | `#2f271e` | Dialogs and menus, a half-step above the page |
-| Browser chrome `theme-color` | `#f5f0e8` | `#221a14` | PWA title bar |
+| Browser chrome `theme-color` | `#ebe6de` | `#292219` | PWA title bar, matches the nav bar (`--color-sidebar-bg`) |
 
 The No-Pure Rule still holds: dark surfaces are warm browns, never `#000`, and ink is cream, never `#fff`. Collection and label colors are user data and stay unchanged.
 
@@ -325,7 +325,7 @@ those same components rather than copying them.
 - **Active state:** See Navigation Link.
 - **Style:** Account preference offers text only, icon left (default), or icon above. Settings > General and the bar's context menu change the same preference.
 - **Desktop:** 48px bar for text and icon-left, 64px for icon-above. The version shows only while the row has its full 720px.
-- **Mobile:** At 640px and below the bar moves to the bottom as one 60px row: four primary destinations and the Planner icon. The bar mirrors the desktop top bar: folder tabs hang from the bar's top edge, square top, 6px bottom corners, the active tab filled with the page color and overlapping the bar border so it opens upward into the page. Icons sit above labels. Search joins the Planner menu; the wordmark hides.
+- **Mobile:** At 640px and below the bar moves to the bottom as one 64px row: four primary destinations and the Planner icon. The bar mirrors the desktop top bar: folder tabs hang from the bar's top edge, square top, 6px bottom corners, the active tab filled with the page color and overlapping the bar border so it opens upward into the page. Icons sit above labels; tab icons share one line through CSS subgrid rows, each icon + label group is centered vertically, and the 36px Planner button is centered on those groups. Search joins the Planner menu; the wordmark hides.
 - **Icons:** Daily is a plain square with a filled top band and the bold day number. Inbox is the inbox tray.
 - **Rhythm:** Navigation dimensions use the 4px sub-grid. Page spacing retains the 24px baseline.
 
