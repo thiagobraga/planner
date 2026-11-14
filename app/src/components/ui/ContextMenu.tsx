@@ -238,7 +238,7 @@ function MenuPanel({
         ref={panelRef}
         tabIndex={-1}
         onKeyDown={handleKeyDown}
-        className="ui-context-menu-panel fixed z-50 min-w-45 overflow-y-auto rounded-md border border-border bg-(--planner-overlay-bg,var(--color-cream)) py-1 shadow-medium pointer-events-auto"
+        className="ui-context-menu-panel fixed z-50 min-w-45 rounded-md border border-border bg-(--planner-overlay-bg,var(--color-cream)) py-1 shadow-medium pointer-events-auto"
         style={{ top: coords.top, left: coords.left, outline: 'none' }}
         role="menu"
       >
