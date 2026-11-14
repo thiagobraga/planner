@@ -73,7 +73,7 @@ export const englishCatalog = {
   'nav.adminDashboard': 'Dashboard',
   'nav.styleguide': 'Styleguide',
   'nav.version': 'Version {{version}}',
-  'nav.openChangelog': 'View changelog (v{{version}})',
+  'nav.openChangelog': "What's new on v{{version}}",
   'changelog.title': 'Changelog',
   'changelog.empty': 'No changelog entries yet.',
   'shell.keyboardShortcuts': 'Keyboard Shortcuts',

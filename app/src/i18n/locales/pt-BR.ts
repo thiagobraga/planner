@@ -75,7 +75,7 @@ export const portugueseBrazilCatalog = {
   'nav.adminDashboard': 'Painel',
   'nav.styleguide': 'Styleguide',
   'nav.version': 'Versão {{version}}',
-  'nav.openChangelog': 'Ver histórico de versões (v{{version}})',
+  'nav.openChangelog': 'O que há de novo na v{{version}}',
   'changelog.title': 'Histórico de versões',
   'changelog.empty': 'Nenhuma alteração registrada ainda.',
   'shell.keyboardShortcuts': 'Atalhos do teclado',

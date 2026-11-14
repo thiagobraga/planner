@@ -23,7 +23,7 @@ test('desktop topbar version opens /changelog and renders release history cleanl
   await page.goto('/daily/list');
 
   const versionLink = page.getByRole('banner').getByRole('link', {
-    name: `View changelog (v${pkg.version})`,
+    name: `What's new on v${pkg.version}`,
   });
   await expect(versionLink).toBeVisible();
   await expect(versionLink).toHaveText(`v${pkg.version}`);
@@ -47,6 +47,46 @@ test('desktop topbar version opens /changelog and renders release history cleanl
   expect(overflow).toBe(false);
 
   await page.screenshot({ path: 'dist/screenshots/changelog-desktop.png', fullPage: false });
+
+  // Scrolling stays pinned seamlessly without premature gaps before the next release arrives.
+  const stickyMetrics = await page.evaluate(() => {
+    const main = document.querySelector('main')!;
+    const h1 = document.querySelector('.changelog-page h1')!;
+    const h2s = [...document.querySelectorAll('.changelog-page h2')];
+    const v0192 = h2s.find((el) => el.textContent?.includes('0.19.2'))!;
+    const v0191 = h2s.find((el) => el.textContent?.includes('0.19.1'))!;
+    const v0190 = h2s.find((el) => el.textContent?.includes('0.19.0'))!;
+
+    main.scrollTop = 120;
+    const pinnedBeforeNext = {
+      h1Bottom: h1.getBoundingClientRect().bottom,
+      v0192Top: v0192.getBoundingClientRect().top,
+    };
+
+    main.scrollTop = 156;
+    const handoff = {
+      v0192Bottom: v0192.getBoundingClientRect().bottom,
+      v0191Top: v0191.getBoundingClientRect().top,
+    };
+
+    main.scrollTop = 450;
+    const h1Rect = h1.getBoundingClientRect();
+    const vRect = v0190.getBoundingClientRect();
+    return {
+      pinnedBeforeNext,
+      handoff,
+      h1Bottom: h1Rect.bottom,
+      vTop: vRect.top,
+      mainTop: main.getBoundingClientRect().top,
+    };
+  });
+  expect(stickyMetrics.pinnedBeforeNext.v0192Top).toBe(stickyMetrics.pinnedBeforeNext.h1Bottom);
+  expect(stickyMetrics.handoff.v0191Top).toBe(stickyMetrics.handoff.v0192Bottom);
+  expect(stickyMetrics.vTop).toBe(stickyMetrics.h1Bottom);
+  expect(stickyMetrics.vTop - stickyMetrics.mainTop).toBe(48);
+  await page.evaluate(() => {
+    document.querySelector('main')!.scrollTop = 0;
+  });
   expect(consoleErrors).toEqual([]);
   expect(pageErrors).toEqual([]);
 });
@@ -56,7 +96,7 @@ test('desktop topbar version supports keyboard activation with Enter', async ({ 
   await page.goto('/daily/list');
 
   const versionLink = page.getByRole('banner').getByRole('link', {
-    name: `View changelog (v${pkg.version})`,
+    name: `What's new on v${pkg.version}`,
   });
   await versionLink.focus();
   await expect(versionLink).toBeFocused();
@@ -81,7 +121,7 @@ test('mobile planner-menu version opens /changelog in a single readable column',
   await page.getByRole('button', { name: 'Planner menu', exact: true }).click();
   const menu = page.getByRole('menu');
   const menuVersion = menu.getByRole('link', {
-    name: `View changelog (v${pkg.version})`,
+    name: `What's new on v${pkg.version}`,
   });
   await expect(menuVersion).toBeVisible();
   await expect(menuVersion).toHaveText(`v${pkg.version}`);

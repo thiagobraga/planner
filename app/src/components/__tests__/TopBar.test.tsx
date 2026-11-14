@@ -133,7 +133,7 @@ describe('TopBar', () => {
 
   it('navigates to /changelog when clicking the desktop topbar version link', () => {
     renderBar('/daily/list');
-    const versionLink = screen.getByRole('link', { name: /View changelog \(v\d+\.\d+\.\d+\)/ });
+    const versionLink = screen.getByRole('link', { name: /What's new on v\d+\.\d+\.\d+/ });
     expect(versionLink).toHaveClass('topbar-version');
     expect(versionLink).toHaveAttribute('href', '/changelog');
     fireEvent.click(versionLink);
@@ -147,7 +147,7 @@ describe('TopBar', () => {
     const menuVersion = screen.getByRole('menu').querySelector('.topbar-menu-version');
     expect(menuVersion?.tagName).toBe('A');
     expect(menuVersion).toHaveAttribute('href', '/changelog');
-    expect(menuVersion).toHaveAccessibleName(/View changelog \(v\d+\.\d+\.\d+\)/);
+    expect(menuVersion).toHaveAccessibleName(/What's new on v\d+\.\d+\.\d+/);
     fireEvent.click(menuVersion!);
     expect(screen.getByTestId('location-probe')).toHaveTextContent('/changelog');
     expect(screen.queryByRole('menu')).not.toBeInTheDocument();

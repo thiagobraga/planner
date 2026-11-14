@@ -14,9 +14,10 @@ function renderChangelog(markdown?: string) {
 }
 
 describe('ChangelogPage', () => {
-  it('renders bundled releases in order with headings, dates, categories, entries, and links', () => {
-    renderChangelog();
+  it('renders bundled releases without a subtitle and uses external-link icons instead of underlines', () => {
+    const { container } = renderChangelog();
     expect(screen.getByRole('heading', { level: 1, name: 'Changelog' })).toBeInTheDocument();
+    expect(container.querySelector('.page-header-subtitle')).not.toBeInTheDocument();
 
     const releaseHeadings = screen.getAllByRole('heading', { level: 2 });
     expect(releaseHeadings.length).toBeGreaterThan(10);
@@ -28,6 +29,17 @@ describe('ChangelogPage', () => {
     expect(compareLink).toHaveAttribute('href', 'https://github.com/thiagobraga/planner/compare/v0.19.1...v0.19.2');
     expect(compareLink).toHaveAttribute('rel', 'noopener noreferrer');
     expect(compareLink).toHaveAttribute('target', '_blank');
+    expect(compareLink).toHaveClass('no-underline');
+    expect(compareLink).not.toHaveClass('underline');
+    const externalIcon = compareLink.querySelector('svg');
+    expect(externalIcon).toBeInTheDocument();
+    expect(externalIcon).toHaveAttribute('aria-hidden', 'true');
+
+    // Commit SHA links strip surrounding parens and render in 10px monospace with ml-2.
+    const commitLink = screen.getByRole('link', { name: 'f03fe7f' });
+    expect(commitLink).toHaveClass('font-mono', 'text-[10px]', 'ml-2');
+    const commitRow = commitLink.closest('li')!;
+    expect(commitRow.textContent).not.toContain('(f03fe7f)');
 
     // Duplicate entries in 0.19.1 must both be preserved.
     const dupEntries = screen.getAllByText(/make the inbox tab its own drop target on phones/);
