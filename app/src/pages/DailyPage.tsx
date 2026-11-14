@@ -27,8 +27,9 @@ import { useTaskDrag } from '../hooks/useTaskDrag';
 import { useTaskVisibilityPreferences } from '../hooks/useTaskVisibilityPreferences';
 import { useMidnightTimer } from '../hooks/useMidnightTimer';
 import { useDailyTasks } from '../hooks/useDailyTasks';
+import { usePreferences } from '../hooks/usePreferences';
 import { useI18n } from '../i18n/I18nContext';
-import { fetchCollections, fetchSections, fetchCollectionView, fetchPreferences, apiToggleTask, apiCreateTask, apiUpdateTask, apiDeleteTask, apiMoveTask } from '../api/client';
+import { fetchCollections, fetchSections, fetchCollectionView, apiToggleTask, apiCreateTask, apiUpdateTask, apiDeleteTask, apiMoveTask } from '../api/client';
 import type { ApiTask } from '../types/api';
 import { ContextMenu, type ContextMenuItem } from '../components/ui/ContextMenu';
 import { flattenCollections } from '../components/CollectionTreeNav';
@@ -67,10 +68,7 @@ export function DailyPage({ view }: { view: BoardViewMode }) {
     sectionsRef.current = sections;
   }, [sections]);
 
-  const { data: prefs } = useQuery({
-    queryKey: ['preferences'],
-    queryFn: fetchPreferences,
-  });
+  const { data: prefs } = usePreferences();
   const dailyBoard = view === 'kanban-list' || view === 'kanban';
   const setView = useCallback((next: BoardViewMode) => navigate(`/daily/${viewToSlug(next)}`), [navigate]);
 

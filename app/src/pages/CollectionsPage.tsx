@@ -17,12 +17,13 @@ import { nextOrderValue } from '../utils/order';
 import { extractNaturalDate } from '../utils/date';
 import type { Task } from '../components/TaskItem';
 import type { Section } from '../stores/taskStore';
-import { fetchCollectionView, fetchPreferences, apiCreateTask, apiUpdateTask, apiToggleTask, apiDeleteTask, apiMoveTask, apiCreateCollection, apiUpdateCollection, apiDeleteCollection, apiCreateSection, apiUpdateSection, apiDeleteSection, PALETTE_COLORS } from '../api/client';
+import { fetchCollectionView, apiCreateTask, apiUpdateTask, apiToggleTask, apiDeleteTask, apiMoveTask, apiCreateCollection, apiUpdateCollection, apiDeleteCollection, apiCreateSection, apiUpdateSection, apiDeleteSection, PALETTE_COLORS } from '../api/client';
 import type { ApiTask, ApiCollection } from '../types/api';
 import { runOptimistic, patchById, upsertById } from '../stores/optimistic';
 import { useTaskDrag } from '../hooks/useTaskDrag';
 import { useSectionDrag } from '../hooks/useSectionDrag';
 import { useTaskVisibilityPreferences } from '../hooks/useTaskVisibilityPreferences';
+import { usePreferences } from '../hooks/usePreferences';
 import { useBoardPreferences } from '../hooks/useBoardPreferences';
 import { resolveTaskIndent } from '../utils/taskIndent';
 import { persistTaskIndent } from '../utils/persistTaskIndent';
@@ -132,10 +133,7 @@ export function CollectionsPage() {
       qc.invalidateQueries({ queryKey: ['collection', id] });
     }
   }, [id, qc]));
-  const { data: preferences } = useQuery({
-    queryKey: ['preferences'],
-    queryFn: fetchPreferences,
-  });
+  const { data: preferences } = usePreferences();
   const {
     isPending: visibilityPreferencesPending,
     setHideCompletedTasks,
