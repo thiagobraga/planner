@@ -1,3 +1,4 @@
+import { MOBILE_TOOLBAR_SLOT_ID } from './toolbar/PageToolbar';
 import { useState, useEffect, useLayoutEffect, useCallback, useRef } from 'react';
 import { useCheckboxStore } from '../stores/checkboxStore';
 import { Outlet, useNavigate, useLocation } from 'react-router';
@@ -256,6 +257,8 @@ export function AppShell() {
               <Outlet />
             </div>
           </main>
+
+          <div id={MOBILE_TOOLBAR_SLOT_ID} className="page-toolbar-mobile-slot" />
 
         </PlannerDragProvider>
       )}

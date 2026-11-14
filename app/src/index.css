@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "./styles/theme.css";
 @import "./styles/boards.css";
+@import "./styles/toolbar.css";
 
 @theme {
   --dot-grid: 24px;

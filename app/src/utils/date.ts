@@ -378,3 +378,17 @@ export function extractNaturalDate(
     recurrenceRule: parsed.recurrenceRule,
   };
 }
+
+/** Label for the date navigator: one day or a span, numeric, optionally compact for a tight toolbar. */
+export function formatRangeLabel(from: string, to: string, locale: 'en' | 'pt-BR' = 'en', compact = false): string {
+  const [fy, fm, fd] = from.split('-');
+  const [ty, tm, td] = to.split('-');
+  const pt = locale === 'pt-BR';
+  const short = (m: string, d: string) => (pt ? `${d}/${m}` : `${m}/${d}`);
+  if (from === to) return compact ? short(fm, fd) : `${short(fm, fd)}/${fy}`;
+  if (compact) {
+    if (fm !== tm || fy !== ty) return `${short(fm, fd)}-${short(tm, td)}`;
+    return pt ? `${fd}-${td}/${fm}` : `${fm}/${fd}-${td}`;
+  }
+  return `${short(fm, fd)} ${pt ? 'à' : 'to'} ${short(tm, td)}/${ty}`;
+}
