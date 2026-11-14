@@ -227,12 +227,47 @@ test('phone bar keeps icons and toggles only the labels from its menu', async ({
   const icon = page.locator('.topbar-item--active .topbar-item-icon');
   const label = page.locator('.topbar-item--active .topbar-item-label');
   await bar.click({ button: 'right', position: { x: 4, y: 4 } });
+  const panel = page.locator('.ui-context-menu-panel');
+  await expect(panel).toBeVisible();
+  expect(await panel.evaluate((el) => el.scrollHeight - el.clientHeight)).toBe(0);
   await page.getByRole('menuitemradio', { name: 'Show text' }).click();
   await expect(label).toBeHidden();
   await expect(icon).toBeVisible();
   await bar.click({ button: 'right', position: { x: 4, y: 4 } });
   await page.getByRole('menuitemradio', { name: 'Show text' }).click();
   await expect(label).toBeVisible();
+});
+
+test('phone bar icons share one line and each icon group stays centered', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/daily/list');
+  const bar = page.locator('.topbar');
+  await expect(bar).toBeVisible();
+  const measure = () => bar.evaluate((el) => {
+    const box = (node: Element) => node.getBoundingClientRect();
+    const centerY = (node: Element) => box(node).top + box(node).height / 2;
+    const menuIcon = Array.from(el.querySelectorAll('.topbar-menu-icon')).find((img) => box(img).height > 0)!;
+    const tab = el.querySelector('.topbar-item:not(.topbar-item--active)')!;
+    const icon = tab.querySelector('.topbar-item-icon')!;
+    const label = tab.querySelector('.topbar-item-label')!;
+    const groupBottom = box(label).height > 0 ? box(label).bottom : box(icon).bottom;
+    return {
+      iconCenters: Array.from(el.querySelectorAll('.topbar-item-icon')).map(centerY),
+      menuIconCenter: centerY(menuIcon),
+      menuButton: { width: box(el.querySelector('.topbar-menu-button')!).width, height: box(el.querySelector('.topbar-menu-button')!).height },
+      spaceAbove: box(icon).top - box(tab).top,
+      spaceBelow: box(tab).bottom - groupBottom,
+      labelPosition: getComputedStyle(label).position,
+    };
+  });
+  for (const labels of ['shown', 'hidden']) {
+    await bar.evaluate((el, value) => { el.dataset.phoneLabels = value; }, labels);
+    const geometry = await measure();
+    for (const center of geometry.iconCenters) expect(Math.abs(center - geometry.menuIconCenter), labels).toBeLessThanOrEqual(0.5);
+    expect(Math.abs(geometry.spaceAbove - geometry.spaceBelow), labels).toBeLessThanOrEqual(1);
+    expect(geometry.menuButton).toEqual({ width: 36, height: 36 });
+    expect(geometry.labelPosition).toBe('static');
+  }
 });
 
 test('phone bottom bar tabs mirror the desktop folder tab', async ({ page }) => {

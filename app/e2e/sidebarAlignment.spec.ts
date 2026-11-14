@@ -38,8 +38,8 @@ test('topbar fits every style and responsive tier in both locales and themes', a
           expect(geometry.clippedLabels).toEqual([]);
           await expect(page.getByRole('navigation').getByRole('link')).toHaveCount(4);
           if (width <= 640) {
-            await expect(page.locator('.topbar-menu-button')).toHaveCSS('width', '44px');
-            await expect(page.locator('.topbar-menu-button')).toHaveCSS('height', '44px');
+            await expect(page.locator('.topbar-menu-button')).toHaveCSS('width', '36px');
+            await expect(page.locator('.topbar-menu-button')).toHaveCSS('height', '36px');
           } else {
             const brand = (await page.locator('.topbar-brand-name').boundingBox())!;
             const nav = (await page.locator('.topbar-nav').boundingBox())!;
