@@ -237,3 +237,8 @@
 .app-shell.full-width {
   --container-page: 100%;
 }
+
+/* No keyboard on a phone sheet. */
+.page-menu-sheet .page-menu-item-shortcut {
+  display: none;
+}

@@ -7,11 +7,9 @@ import { SectionHeader } from '../components/SectionHeader';
 import { InlineNameInput } from '../components/ui/InlineNameInput';
 import { EditableText } from '../components/ui/EditableText';
 import { CollectionBoard } from '../components/board/CollectionBoard';
-import { BoardToolbar } from '../components/board/BoardToolbar';
+import { BoardPageToolbar } from '../components/board/BoardPageToolbar';
 import { MonthlyView } from '../components/monthly/MonthlyView';
 import { PageHeader } from '../components/PageHeader';
-import { Toolbar } from '../components/ui/Toolbar';
-import { ViewSwitcher } from '../components/ui/ViewSwitcher';
 import type { Task } from '../components/TaskItem';
 import type { Section } from '../stores/taskStore';
 import { fetchInboxTasks, fetchCollectionView, fetchPreferences, apiCreateTask, apiUpdateTask, apiToggleTask, apiDeleteTask, apiMoveTask, fetchCollections, apiCreateSection, apiUpdateSection, apiDeleteSection } from '../api/client';
@@ -22,7 +20,6 @@ import { flattenCollections } from '../components/CollectionTreeNav';
 import { Folder, ArrowUp, ArrowDown, Trash2, Pencil } from 'lucide-react';
 import { useTaskDrag } from '../hooks/useTaskDrag';
 import { useSectionDrag } from '../hooks/useSectionDrag';
-import { useTaskVisibilityPreferences } from '../hooks/useTaskVisibilityPreferences';
 import { useBoardPreferences } from '../hooks/useBoardPreferences';
 import { nextOrderValue } from '../utils/order';
 import { extractNaturalDate } from '../utils/date';
@@ -106,24 +103,27 @@ export function InboxPage() {
     inputRef.current?.focus();
   }, []);
 
-  const { data } = useQuery({
-    queryKey: ['inbox'],
-    queryFn: fetchInboxTasks,
-    staleTime: 30_000,
-  });
   const { data: preferences } = useQuery({
     queryKey: ['preferences'],
     queryFn: fetchPreferences,
   });
-  const {
-    isPending: visibilityPreferencesPending,
-    setHideCompletedTasks,
-    setShowNotes,
-  } = useTaskVisibilityPreferences(preferences);
+  // The board settings are keyed by the Inbox collection, known from the collection list before the view loads.
+  const { data: allCollections } = useQuery({ queryKey: ['collections'], queryFn: fetchCollections });
+  const [knownInboxId, setKnownInboxId] = useState(cachedInbox?.inboxCollectionId);
+  const inboxCollectionId = allCollections?.find((collection) => collection.isInbox)?.id ?? knownInboxId;
+  const boardPreferences = useBoardPreferences(inboxCollectionId, preferences);
+  const { includeCompleted } = boardPreferences;
+  const inboxKey = useMemo(() => (includeCompleted ? ['inbox', 'with-completed'] : ['inbox']), [includeCompleted]);
+  const { data } = useQuery({
+    queryKey: inboxKey,
+    queryFn: () => fetchInboxTasks({ includeCompleted }),
+    staleTime: 30_000,
+  });
 
   const [syncedData, setSyncedData] = useState(data);
   if (data !== syncedData) {
     setSyncedData(data);
+    if (data?.inboxCollectionId && data.inboxCollectionId !== knownInboxId) setKnownInboxId(data.inboxCollectionId);
     if (data?.tasks) {
       setTasks(data.tasks.map(apiToTask));
     }
@@ -132,8 +132,6 @@ export function InboxPage() {
     }
   }
 
-  const inboxCollectionId = data?.inboxCollectionId;
-  const boardPreferences = useBoardPreferences(inboxCollectionId, preferences);
 
   const invalidate = useCallback(() => qc.invalidateQueries({ queryKey: ['inbox'] }), [qc]);
 
@@ -390,7 +388,7 @@ export function InboxPage() {
     const prevTasks = tasksRef.current;
     const task = prevTasks.find((t) => t.id === id);
     const hideCompleted = preferences?.hideCompletedTasks ?? false;
-    const removeOnComplete = hideCompleted && task && !task.isCompleted;
+    const removeOnComplete = hideCompleted && !includeCompleted && task && !task.isCompleted;
 
     setTasks((prev) =>
       removeOnComplete
@@ -404,7 +402,7 @@ export function InboxPage() {
         invalidate();
       });
     }
-  }, [invalidate, preferences?.hideCompletedTasks]);
+  }, [invalidate, preferences?.hideCompletedTasks, includeCompleted]);
 
   const { data: collections = [] } = useQuery({ queryKey: ['collections'], queryFn: fetchCollections });
   const menuTask = tasks.find((task) => task.id === contextMenu?.taskId);
@@ -551,27 +549,14 @@ export function InboxPage() {
     >
       <PageHeader
         title={t('page.inbox')}
-        toolbar={
-          <Toolbar className="inbox-page-header-controls" viewSwitcher={<ViewSwitcher view={boardPreferences.view} onViewChange={boardPreferences.setView} />}>
-            <BoardToolbar
-              view={boardPreferences.view}
-              groupBy={boardPreferences.groupBy}
-              hideCompletedTasks={preferences?.hideCompletedTasks ?? false}
-              showNotes={preferences?.showNotes ?? true}
-              preferencesDisabled={!preferences || visibilityPreferencesPending}
-              onGroupByChange={boardPreferences.setGroupBy}
-              onHideCompletedTasksChange={setHideCompletedTasks}
-              onShowNotesChange={setShowNotes}
-            />
-          </Toolbar>
-        }
+        actions={<BoardPageToolbar board={boardPreferences} />}
       />
 
       <div className={boardPreferences.view !== 'list' ? 'w-full' : undefined}>
         {boardPreferences.view !== 'list' && boardPreferences.view !== 'calendar' && data && inboxCollectionId ? (
           <CollectionBoard
             collectionId={inboxCollectionId}
-            queryKey={['inbox']}
+            queryKey={inboxKey}
             groupBy={boardPreferences.groupBy}
             tasks={data.tasks}
             statuses={data.statuses}

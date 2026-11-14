@@ -110,4 +110,15 @@ export const DEFAULT_BINDINGS: Binding[] = [
   { keys: ['g', 'd'], context: 'global', action: 'navigate:daily' },
   { keys: ['g', 'h'], context: 'global', action: 'navigate:habits' },
   { keys: ['g', 's'], context: 'global', action: 'navigate:settings' },
+  // View: the page that registered a handler (usePageShortcuts) decides what each one means.
+  { keys: ['v', 'l'], context: 'global', action: 'view:layout:list' },
+  { keys: ['v', 'k'], context: 'global', action: 'view:layout:columns' },
+  { keys: ['v', 't'], context: 'global', action: 'view:layout:table' },
+  { keys: ['v', 'c'], context: 'global', action: 'view:layout:calendar' },
+  { keys: ['v', 's'], context: 'global', action: 'view:style' },
+  ...['1', '2', '3', '4', '5', '6', 'w', 'm'].map((key): ChordBinding => ({ keys: ['v', key], context: 'global', action: `view:range:${key}` })),
+  { keys: ['v', 'f'], context: 'global', action: 'view:fullWidth' },
+  { key: 't', context: 'global', action: 'view:today' },
+  { key: '[', context: 'global', action: 'view:previous' },
+  { key: ']', context: 'global', action: 'view:next' },
 ];

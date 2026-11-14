@@ -8,11 +8,9 @@ import { SectionHeader } from '../components/SectionHeader';
 import { InlineNameInput } from '../components/ui/InlineNameInput';
 import { EditableText } from '../components/ui/EditableText';
 import { CollectionBoard } from '../components/board/CollectionBoard';
-import { BoardToolbar } from '../components/board/BoardToolbar';
+import { BoardPageToolbar } from '../components/board/BoardPageToolbar';
 import { MonthlyView } from '../components/monthly/MonthlyView';
 import { PageHeader } from '../components/PageHeader';
-import { Toolbar } from '../components/ui/Toolbar';
-import { ViewSwitcher } from '../components/ui/ViewSwitcher';
 import { nextOrderValue } from '../utils/order';
 import { extractNaturalDate } from '../utils/date';
 import type { Task } from '../components/TaskItem';
@@ -22,7 +20,6 @@ import type { ApiTask, ApiCollection } from '../types/api';
 import { runOptimistic, patchById, upsertById } from '../stores/optimistic';
 import { useTaskDrag } from '../hooks/useTaskDrag';
 import { useSectionDrag } from '../hooks/useSectionDrag';
-import { useTaskVisibilityPreferences } from '../hooks/useTaskVisibilityPreferences';
 import { useBoardPreferences } from '../hooks/useBoardPreferences';
 import { resolveTaskIndent } from '../utils/taskIndent';
 import { persistTaskIndent } from '../utils/persistTaskIndent';
@@ -121,9 +118,17 @@ export function CollectionsPage() {
     inputRef.current?.focus();
   }, [id]);
 
+  const { data: preferences } = useQuery({
+    queryKey: ['preferences'],
+    queryFn: fetchPreferences,
+  });
+  const boardPreferences = useBoardPreferences(id, preferences);
+  const { includeCompleted } = boardPreferences;
+  // Same prefix as every ['collection', id] invalidation; the suffix keeps the two task sets apart.
+  const viewKey = useMemo(() => (includeCompleted ? ['collection', id, 'with-completed'] : ['collection', id]), [id, includeCompleted]);
   const { data } = useQuery({
-    queryKey: ['collection', id],
-    queryFn: () => fetchCollectionView(id),
+    queryKey: viewKey,
+    queryFn: () => fetchCollectionView(id, { includeCompleted }),
     staleTime: 30_000,
     enabled: !!id,
   });
@@ -132,16 +137,6 @@ export function CollectionsPage() {
       qc.invalidateQueries({ queryKey: ['collection', id] });
     }
   }, [id, qc]));
-  const { data: preferences } = useQuery({
-    queryKey: ['preferences'],
-    queryFn: fetchPreferences,
-  });
-  const {
-    isPending: visibilityPreferencesPending,
-    setHideCompletedTasks,
-    setShowNotes,
-  } = useTaskVisibilityPreferences(preferences);
-  const boardPreferences = useBoardPreferences(id, preferences);
 
   useLayoutEffect(() => {
     if (data?.tasks) {
@@ -402,7 +397,7 @@ export function CollectionsPage() {
   const handleToggle = useCallback((taskId: string) => {
     const hideCompleted = preferences?.hideCompletedTasks ?? false;
     const task = tasks.find((t) => t.id === taskId);
-    const removeOnComplete = hideCompleted && task && !task.isCompleted;
+    const removeOnComplete = hideCompleted && !includeCompleted && task && !task.isCompleted;
     const previousTasks = tasks;
 
     setTasks((prev) =>
@@ -418,7 +413,7 @@ export function CollectionsPage() {
         });
       }
     }
-  }, [invalidate, preferences?.hideCompletedTasks, tasks]);
+  }, [invalidate, preferences?.hideCompletedTasks, includeCompleted, tasks]);
 
   const { data: collections = [] } = useQuery({ queryKey: ['collections'], queryFn: fetchCollections });
 
@@ -696,27 +691,14 @@ export function CollectionsPage() {
             </div>
           )
         }
-        toolbar={
-          <Toolbar className="collection-page-header-controls" viewSwitcher={<ViewSwitcher view={boardPreferences.view} onViewChange={boardPreferences.setView} />}>
-            <BoardToolbar
-              view={boardPreferences.view}
-              groupBy={boardPreferences.groupBy}
-              hideCompletedTasks={preferences?.hideCompletedTasks ?? false}
-              showNotes={preferences?.showNotes ?? true}
-              preferencesDisabled={!preferences || visibilityPreferencesPending}
-              onGroupByChange={boardPreferences.setGroupBy}
-              onHideCompletedTasksChange={setHideCompletedTasks}
-              onShowNotesChange={setShowNotes}
-            />
-          </Toolbar>
-        }
+        actions={<BoardPageToolbar board={boardPreferences} />}
       />
 
       <div className={boardPreferences.view !== 'list' ? 'w-full' : undefined}>
         {boardPreferences.view !== 'list' && boardPreferences.view !== 'calendar' && data ? (
           <CollectionBoard
             collectionId={id}
-            queryKey={['collection', id]}
+            queryKey={viewKey}
             groupBy={boardPreferences.groupBy}
             tasks={data.tasks}
             statuses={data.statuses}

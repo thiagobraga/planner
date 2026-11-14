@@ -63,7 +63,7 @@ describe('StyleguidePage (smoke)', () => {
     expect(screen.getByText('Forms')).toBeInTheDocument();
     expect(screen.getByText('Chips & Tags')).toBeInTheDocument();
     expect(screen.getByText('Navigation')).toBeInTheDocument();
-    expect(screen.getByText('Toolbar / View Options')).toBeInTheDocument();
+    expect(screen.getByText('Page toolbar')).toBeInTheDocument();
     expect(screen.getByText('Task Rows')).toBeInTheDocument();
     expect(screen.getByText('Calendar & Monthly')).toBeInTheDocument();
     expect(screen.getByText('Month Selector')).toBeInTheDocument();

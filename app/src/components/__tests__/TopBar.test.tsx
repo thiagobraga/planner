@@ -8,7 +8,7 @@ vi.mock('../../utils/environment', () => ({ isProduction: vi.fn(() => false) }))
 
 const state = vi.hoisted(() => ({
   style: 'icon-left', mobile: false, admin: false, dragging: false,
-  mutate: vi.fn(), logout: vi.fn(), droppable: vi.fn(),
+  mutate: vi.fn(), logout: vi.fn(), droppable: vi.fn(), visibility: vi.fn(), hideCompleted: false,
 }));
 vi.mock('../../hooks/usePreferences', () => ({ usePreferences: () => ({ data: { navStyle: state.style } }) }));
 vi.mock('../../hooks/useUpdatePreferences', () => ({ useUpdatePreferences: () => ({ mutate: state.mutate, isPending: false, isError: false }) }));
@@ -16,7 +16,14 @@ vi.mock('../../contexts/AuthContext', () => ({ useAuth: () => ({
   user: { displayName: 'Alex Writer', email: 'alex@example.com', role: state.admin ? 'admin' : 'user' }, logout: state.logout,
 }) }));
 vi.mock('../../contexts/usePlannerDrag', () => ({ usePlannerDrag: () => ({ activeDrag: state.dragging ? { kind: 'task' } : null, overId: state.dragging ? 'topbar-inbox' : null }) }));
-vi.mock('@tanstack/react-query', () => ({ useQuery: () => ({ data: [{ id: 'inbox-id', isInbox: true }] }) }));
+vi.mock('@tanstack/react-query', () => ({
+  useQuery: ({ queryKey }: { queryKey: string[] }) => ({
+    data: queryKey[0] === 'preferences' ? { hideCompletedTasks: state.hideCompleted, showNotes: true, background: 'beige' } : [{ id: 'inbox-id', isInbox: true }],
+  }),
+  useQueryClient: () => ({ invalidateQueries: vi.fn(), cancelQueries: vi.fn(), getQueryData: vi.fn(), setQueryData: vi.fn() }),
+  useMutation: ({ mutationFn }: { mutationFn: (value: unknown) => unknown }) => ({ isPending: false, mutate: (value: unknown) => { state.visibility(value); mutationFn(value); } }),
+}));
+vi.mock('../../api/client', async (importOriginal) => ({ ...(await importOriginal<typeof import('../../api/client')>()), fetchPreferences: vi.fn(), apiUpdatePreferences: vi.fn(async () => ({})) }));
 vi.mock('@dnd-kit/core', () => ({ useDroppable: (options: unknown) => { state.droppable(options); return { setNodeRef: vi.fn() }; } }));
 
 function LocationProbe() {
@@ -92,6 +99,18 @@ describe('TopBar', () => {
       expect(button).not.toHaveTextContent('AW');
       unmount();
     }
+  });
+
+  it('shows completed tasks, notes and the theme in the planner menu', () => {
+    state.hideCompleted = true;
+    renderBar();
+    fireEvent.click(screen.getByRole('button', { name: 'Planner menu' }));
+    expect(screen.getByRole('menuitemradio', { name: 'Completed tasks' })).toHaveAttribute('aria-checked', 'false');
+    expect(screen.getByRole('menuitemradio', { name: 'Notes' })).toHaveAttribute('aria-checked', 'true');
+    expect(screen.getByRole('radiogroup', { name: 'Theme' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('menuitemradio', { name: 'Completed tasks' }));
+    expect(state.visibility).toHaveBeenCalledWith({ key: 'hideCompletedTasks', value: false });
+    state.hideCompleted = false;
   });
 
   it('opens one menu with name, version, identity, utilities and logout', () => {

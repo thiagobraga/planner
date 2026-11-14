@@ -11,7 +11,7 @@ import {
   taskListMock,
   collectionBoardMock,
 } from './helpers/inboxFixtures';
-import { renderPage, inboxList, inboxBeforeEach, openToolbarMenu } from './helpers/inboxHarness';
+import { renderPage, inboxList, inboxBeforeEach } from './helpers/inboxHarness';
 import {
   fetchInboxTasks,
   apiCreateTask,
@@ -107,29 +107,13 @@ describe('InboxPage', () => {
     expect(inboxList().querySelectorAll('[role="listitem"]')).toHaveLength(0);
   });
 
-  it('renders the header with Inbox title and controls', async () => {
+  it('renders the header with the Inbox title and the page toolbar on its row', async () => {
     renderPage();
 
-    const header = screen.getByText('Inbox').closest('header');
-    openToolbarMenu();
-    expect(header).toContainElement(screen.getByRole('checkbox', { name: 'Completed tasks' }));
-    expect(header).toContainElement(screen.getByRole('checkbox', { name: 'Notes' }));
-    expect(screen.getByRole('checkbox', { name: 'Notes' }).closest('.page-header-toolbar')).toBeInTheDocument();
-  });
-
-  it('updates the show-notes preference from the header toolbar', async () => {
-    mockApiUpdatePreferences.mockResolvedValue({ ...basePreferences, showNotes: false });
-    renderPage();
-
-    openToolbarMenu();
-    const checkbox = await screen.findByRole('checkbox', { name: 'Notes' });
-    await waitFor(() => expect(checkbox).not.toBeDisabled());
-    fireEvent.click(checkbox);
-
-    await waitFor(() =>
-      expect(mockApiUpdatePreferences).toHaveBeenCalledWith({ showNotes: false }),
-    );
-    expect(checkbox).not.toBeChecked();
+    const row = (await screen.findByText('Inbox')).closest('.page-header-row');
+    expect(row).toContainElement(screen.getByRole('button', { name: 'View' }));
+    expect(row).toContainElement(screen.getByRole('button', { name: 'Window' }));
+    expect(screen.queryByRole('checkbox', { name: 'Notes' })).not.toBeInTheDocument();
   });
 
   it('renders tasks when inbox data arrives', async () => {

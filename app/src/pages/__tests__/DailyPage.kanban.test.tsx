@@ -1,8 +1,9 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, fireEvent, within, waitFor } from '@testing-library/react';
+import { act, render, screen, fireEvent, within, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { DailyRoute } from '../DailyRoutes';
+import { runPageShortcut } from '../../stores/pageShortcutsStore';
 import { dailyView } from '../../test/dailyFixtures';
 import { I18nProvider } from '../../i18n/I18nContext';
 import { PlannerDragProvider } from '../../contexts/PlannerDragContext';
@@ -268,5 +269,17 @@ describe('DailyPage week kanban view', () => {
 
     expect(container.querySelector(`[data-column-id="day:${todayKey}"]`)).toBeNull();
     expect(container.querySelector(`[data-column-id="day:${inSevenDaysKey}"]`)).not.toBeNull();
+  });
+
+  it('answers the view shortcuts: range by number, style by v s, layout by v l', async () => {
+    const { container } = renderPage('columns');
+    await screen.findByTestId('daily-week-board');
+
+    act(() => runPageShortcut('view:range:3'));
+    await waitFor(() => expect(mockApiUpdatePreferences).toHaveBeenCalledWith({ dailyView: { style: 'notebook', range: 'd3' } }));
+    act(() => runPageShortcut('view:style'));
+    await waitFor(() => expect(mockApiUpdatePreferences).toHaveBeenLastCalledWith({ dailyView: { style: 'cards', range: 'd3' } }));
+    act(() => runPageShortcut('view:layout:list'));
+    await waitFor(() => expect(container.querySelector('[data-testid="daily-week-board"]')).toBeNull());
   });
 });

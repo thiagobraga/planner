@@ -7,7 +7,6 @@ import { CustomSelect } from '../ui/CustomSelect';
 import { PriorityDot } from '../ui/PriorityDot';
 import { Select } from '../ui/Select';
 import { StatusPill } from '../ui/StatusPill';
-import { ViewToolbar } from '../ui/ViewToolbar';
 
 describe('Checkbox', () => {
   it('renders unchecked state by default', () => {
@@ -250,45 +249,3 @@ describe('StatusPill', () => {
   });
 });
 
-describe('ViewToolbar', () => {
-  it('renders toolbar elements', () => {
-    render(<ViewToolbar />);
-    expect(screen.getByText('Filter')).toBeInTheDocument();
-    expect(screen.getByText('Show completed')).toBeInTheDocument();
-    expect(screen.getByText('Move completed to end')).toBeInTheDocument();
-    expect(screen.getByText('List')).toBeInTheDocument();
-    expect(screen.getByText('Kanban lists')).toBeInTheDocument();
-    expect(screen.getByText('Kanban cards')).toBeInTheDocument();
-  });
-
-  it('calls onFilter when Filter button is clicked', () => {
-    const onFilter = vi.fn();
-    render(<ViewToolbar onFilter={onFilter} />);
-    fireEvent.click(screen.getByText('Filter'));
-    expect(onFilter).toHaveBeenCalledTimes(1);
-  });
-
-  it('calls onViewChange when Kanban cards is clicked', () => {
-    const onViewChange = vi.fn();
-    render(<ViewToolbar onViewChange={onViewChange} />);
-    fireEvent.click(screen.getByText('Kanban cards'));
-    expect(onViewChange).toHaveBeenCalledWith('kanban');
-  });
-
-  it('calls onViewChange when Kanban lists is clicked', () => {
-    const onViewChange = vi.fn();
-    render(<ViewToolbar onViewChange={onViewChange} />);
-    fireEvent.click(screen.getByText('Kanban lists'));
-    expect(onViewChange).toHaveBeenCalledWith('kanban-list');
-  });
-
-  it('calls onShowCompletedChange when checkbox is toggled', () => {
-    const onShowCompletedChange = vi.fn();
-    const { container } = render(
-      <ViewToolbar onShowCompletedChange={onShowCompletedChange} />
-    );
-    const inputs = container.querySelectorAll('.ui-checkbox-input');
-    fireEvent.click(inputs[0]);
-    expect(onShowCompletedChange).toHaveBeenCalledTimes(1);
-  });
-});

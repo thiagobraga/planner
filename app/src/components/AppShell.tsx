@@ -1,4 +1,6 @@
 import { MOBILE_TOOLBAR_SLOT_ID } from './toolbar/PageToolbar';
+import { useFullWidth } from '../hooks/useFullWidth';
+import { runPageShortcut } from '../stores/pageShortcutsStore';
 import { useState, useEffect, useLayoutEffect, useCallback, useRef } from 'react';
 import { useCheckboxStore } from '../stores/checkboxStore';
 import { Outlet, useNavigate, useLocation } from 'react-router';
@@ -140,6 +142,8 @@ export function AppShell() {
   const matcherStateRef = useRef<MatcherState>(createMatcherState());
   const sequenceStateRef = useRef<SequenceState>(createSequenceState());
 
+  const { toggleFullWidth } = useFullWidth();
+
   const isTextInputFocused = useCallback(() => {
     const el = document.activeElement;
     if (!el) return false;
@@ -179,9 +183,14 @@ export function AppShell() {
         case 'navigate:settings':
           navigate('/settings');
           break;
+        case 'view:fullWidth':
+          toggleFullWidth();
+          break;
+        default:
+          if (action.startsWith('view:')) runPageShortcut(action);
       }
     },
-    [navigate],
+    [navigate, toggleFullWidth],
   );
 
   useEffect(() => {
@@ -229,7 +238,7 @@ export function AppShell() {
 
   return (
     <div
-      className={`app-shell fixed inset-0 flex flex-col bg-(--planner-page-bg) overflow-hidden ${preferences?.smallCaps ? ' small-caps' : ''}`}
+      className={`app-shell fixed inset-0 flex flex-col bg-(--planner-page-bg) overflow-hidden${preferences?.smallCaps ? ' small-caps' : ''}${preferences?.fullWidth ? ' full-width' : ''}`}
     >
       {preferencesLoading ? (
         <div className="flex-1 flex items-center justify-center text-ink-light">
@@ -319,6 +328,16 @@ export function AppShell() {
                   ['g d', t('shell.goDaily')],
                   ['g h', t('shell.goHabits')],
                   ['g s', t('shell.goSettings')],
+                  ['v l', t('shell.viewList')],
+                  ['v k', t('shell.viewColumns')],
+                  ['v s', t('shell.viewStyle')],
+                  ['v 1-6', t('shell.viewDays')],
+                  ['v w', t('shell.viewWeek')],
+                  ['v m', t('shell.viewMonth')],
+                  ['v f', t('view.fullWidth')],
+                  ['t', t('page.today')],
+                  ['[', t('view.previous')],
+                  [']', t('view.next')],
                   ['Enter', t('shell.editSelected')],
                   ['Delete', t('shell.deleteSelected')],
                   ['Esc', t('shell.closeDialog')],
