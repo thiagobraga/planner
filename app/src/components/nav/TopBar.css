@@ -56,15 +56,28 @@
   transition: background-color var(--motion-fast) var(--topbar-ease), border-color var(--motion-fast) var(--topbar-ease);
 }
 .topbar-item:hover, .topbar-icon-button:hover { background: var(--planner-sidebar-hover-bg); }
-/* -1px bottom margin paints over the bar border so the tab opens into the page */
+/* -1px bottom margin paints over the bar border so the tab opens into the page;
+   matching 1px bottom padding keeps inner icons/labels at the exact inactive Y center */
 .topbar-item--active, .topbar-item--active:hover {
   position: relative;
   z-index: 1;
   margin-bottom: -1px;
+  padding-bottom: 1px;
   height: calc(var(--topbar-tab-height) + 1px);
   border-color: var(--color-dot);
   background: var(--planner-page-bg);
   font-weight: 500;
+}
+/* Reserve bold label width so active tabs do not shift icons horizontally */
+.topbar-item-label::after {
+  content: attr(data-label);
+  display: block;
+  height: 0;
+  overflow: hidden;
+  visibility: hidden;
+  font-weight: 500;
+  pointer-events: none;
+  user-select: none;
 }
 .topbar-item-icon { display: flex; align-items: center; justify-content: center; flex-shrink: 0; opacity: 0.7; }
 .topbar-item--active .topbar-item-icon { opacity: 1; }
