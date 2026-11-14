@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.21.0](https://github.com/thiagobraga/planner/compare/v0.20.0...v0.21.0) (2026-11-14)
+
+
+### Added
+
+* **app:** add /changelog page from root CHANGELOG.md ([17a2d9e](https://github.com/thiagobraga/planner/commit/17a2d9eb0872a3dbfec45861925929c9d62e75c6))
+* **app:** add /changelog page from root CHANGELOG.md ([ee38d3a](https://github.com/thiagobraga/planner/commit/ee38d3a55af72162f975d284ef222415364f9f32))
+
+
+### Fixed
+
+* **ci:** resolve compact pt-br topbar collision and dynamic changelog assertions ([d2cbe69](https://github.com/thiagobraga/planner/commit/d2cbe69e10ab25186f429bbb87d3552f855dcd53))
+* **nav:** keep tab icons steady across active and inactive states ([6f35612](https://github.com/thiagobraga/planner/commit/6f356122652ca5640b71805f28b3d36b9305754b))
+
+
+### Style
+
+* **changelog:** refine sticky release headers, bullets, and sha links ([2c512eb](https://github.com/thiagobraga/planner/commit/2c512ebff49585d2341ab2c58c3345d0dce1fbe8))
+
 ## [0.20.0](https://github.com/thiagobraga/planner/compare/v0.19.2...v0.20.0) (2026-11-14)
 
 
