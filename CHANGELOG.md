@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.19.2](https://github.com/thiagobraga/planner/compare/v0.19.1...v0.19.2) (2026-11-14)
+
+
+### Fixed
+
+* **tasks:** preserve collection task ordering ([f03fe7f](https://github.com/thiagobraga/planner/commit/f03fe7f39e7f3c71aea61451bdc0364754d57871))
+
 ## [0.19.1](https://github.com/thiagobraga/planner/compare/v0.19.0...v0.19.1) (2026-11-14)
 
 
