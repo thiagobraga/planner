@@ -3,7 +3,6 @@
   <br>
   Planner
 </h1>
-
 <p align="center">
   Beautiful and easy-to-use Bullet Journal task management
 </p>
@@ -136,47 +135,47 @@ The first rollout from the legacy single-app stack briefly releases port 8080 be
 
 ```
 📁 planner/
-├── 📁 api/                          # Express + PostgreSQL + Redis backend
+├── 📁 api/                       # Express + PostgreSQL + Redis backend
 │   └── 📁 src/
-│       ├── 📁 db/                   # connection pool, Redis clients, SQL migrations (run at startup)
-│       ├── 📁 engines/              # recurrence rules (daily, weekly, monthly, yearly)
-│       ├── 📁 mcp/                  # MCP server and tools for AI agents
-│       ├── 📁 middleware/           # auth (session or token), CSRF, scopes, error handler
-│       ├── 📁 oauth/                # OAuth 2.1 provider for hosted MCP clients
-│       ├── 📁 parsers/              # Peggy grammars for the filter language and dates
-│       ├── 📁 routes/               # HTTP controllers, one file per resource under /api/v1
-│       ├── 📁 services/             # business logic and SQL; syncService broadcasts real-time events
-│       ├── 📁 types/                # shared TypeScript types
-│       └── 📁 utils/                # small helpers such as AppError
-├── 📁 app/                          # React + Vite frontend (installable PWA)
-│   ├── 📁 e2e/                      # Playwright end-to-end tests
-│   ├── 📁 public/                   # icons, splash screens, web manifest
+│       ├── 📁 db/                # connection pool, Redis clients, SQL migrations (run at startup)
+│       ├── 📁 engines/           # recurrence rules (daily, weekly, monthly, yearly)
+│       ├── 📁 mcp/               # MCP server and tools for AI agents
+│       ├── 📁 middleware/        # auth (session or token), CSRF, scopes, error handler
+│       ├── 📁 oauth/             # OAuth 2.1 provider for hosted MCP clients
+│       ├── 📁 parsers/           # Peggy grammars for the filter language and dates
+│       ├── 📁 routes/            # HTTP controllers, one file per resource under /api/v1
+│       ├── 📁 services/          # business logic and SQL; syncService broadcasts real-time events
+│       ├── 📁 types/             # shared TypeScript types
+│       └── 📁 utils/             # small helpers such as AppError
+├── 📁 app/                       # React + Vite frontend (installable PWA)
+│   ├── 📁 e2e/                   # Playwright end-to-end tests
+│   ├── 📁 public/                # icons, splash screens, web manifest
 │   └── 📁 src/
-│       ├── 📁 api/                  # fetch client and React Query setup
-│       ├── 📁 components/           # UI pieces: board, daily, dnd, habits, monthly, settings, ui
-│       ├── 📁 contexts/             # AuthContext: login state and socket lifecycle
-│       ├── 📁 hooks/                # useSync (real-time), drag and drop, preferences, shortcuts
-│       ├── 📁 i18n/                 # translations
-│       ├── 📁 pages/                # one component per route; admin/ holds admin screens
-│       ├── 📁 stores/               # Zustand stores and optimistic update helpers
-│       ├── 📁 types/                # shared TypeScript types
-│       └── 📁 utils/                # socket singleton, date ranges, small helpers
-├── 📁 site/                         # Standalone public landing page and Playwright tests
-├── 📁 .docker/                      # Dockerfiles, entrypoints, nginx, Redis and pgAdmin config
+│       ├── 📁 api/               # fetch client and React Query setup
+│       ├── 📁 components/        # UI pieces: board, daily, dnd, habits, monthly, settings, ui
+│       ├── 📁 contexts/          # AuthContext: login state and socket lifecycle
+│       ├── 📁 hooks/             # useSync (real-time), drag and drop, preferences, shortcuts
+│       ├── 📁 i18n/              # translations
+│       ├── 📁 pages/             # one component per route; admin/ holds admin screens
+│       ├── 📁 stores/            # Zustand stores and optimistic update helpers
+│       ├── 📁 types/             # shared TypeScript types
+│       └── 📁 utils/             # socket singleton, date ranges, small helpers
+├── 📁 site/                      # Standalone public landing page and Playwright tests
+├── 📁 .docker/                   # Dockerfiles, entrypoints, nginx, Redis and pgAdmin config
 ├── 📁 .github/
-│   ├── 📁 workflows/                # numbered CI, release and deploy pipelines
-│   └── 📄 dependabot.yml            # weekly dependency updates
-├── 📁 .claude/                      # Claude Code agents, commands and skills for this repo
-├── 📁 .hooks/                       # versioned git hooks (pre-commit, pre-push)
-├── 📁 .specs/                       # feature specs: plan.md (what) and task.md (how) per change
-├── 📄 CLAUDE.md                     # rules for AI agents; AGENTS.md, GEMINI.md and copilot-instructions.md symlink to it
-├── 📄 DESIGN.md                     # design system: palette, typography, spacing
-├── 📄 compose.yml                   # dev stack: api, app, site, Postgres, Redis, pgAdmin
-├── 📄 compose.prod.yml              # production stack, images from GHCR
-├── 📄 release-config.json           # release-please settings
-├── 📄 .release-manifest.json        # last released version, kept by release-please
-├── 📄 CHANGELOG.md                  # generated by release-please
-├── 📄 .env.example                  # required environment variables
+│   ├── 📁 workflows/             # numbered CI, release and deploy pipelines
+│   └── 📄 dependabot.yml         # weekly dependency updates
+├── 📁 .claude/                   # Claude Code agents, commands and skills for this repo
+├── 📁 .hooks/                    # versioned git hooks (pre-commit, pre-push)
+├── 📁 .specs/                    # feature specs: plan.md (what) and task.md (how) per change
+├── 📄 CLAUDE.md                  # rules for AI agents; AGENTS.md, GEMINI.md and copilot-instructions.md symlink to it
+├── 📄 DESIGN.md                  # design system: palette, typography, spacing
+├── 📄 compose.yml                # dev stack: api, app, site, Postgres, Redis, pgAdmin
+├── 📄 compose.prod.yml           # production stack, images from GHCR
+├── 📄 release-config.json        # release-please settings
+├── 📄 .release-manifest.json     # last released version, kept by release-please
+├── 📄 CHANGELOG.md               # generated by release-please
+├── 📄 .env.example               # required environment variables
 └── 📄 README.md
 ```
 
@@ -220,15 +219,15 @@ Workflow files and names are numbered in the order work happens. Each job carrie
 
 `ci.yml` is the only entry point. It decides what runs and calls the numbered reusable workflows, so one run in the Actions list shows the whole chain.
 
-| Workflow           | Runs when                                       | Does                                                                                                                                      |
-| ------------------ | ----------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| `ci.yml`           | PR and push to `main`, Monday schedule, by hand | 0a detects changed paths, then calls the workflows below                                                                                  |
-| `1.review.yml`     | PR                                              | 1a fails on high-severity dependency changes; 1b lints workflows with actionlint and zizmor, only when the PR touches `.github/`         |
-| `2a.quality.yml`   | After changed-path detection                    | App/API lint, tests, build, E2E; site lint, typecheck, coverage, build and standalone E2E for site/shared theme changes or non-PR runs       |
-| `2b.security.yml`  | In parallel with 2a                             | `npm audit` for root/API/app/site, secret scan, SBOM, Dockerfile and Compose checks, infra image scans; CodeQL for source/workflow changes    |
-| `2c.container.yml` | PR touching `api/`, `app/`, `site/`, `.docker/`, Compose or root `package*.json` | Builds the api, app and site images and scans them with Trivy                                                      |
-| `3.release.yml`    | Push to `main`, after 2a and 2b passed          | 3a skips if `main` moved on; 3b release-please opens or updates the release PR, or on its merge creates the tag and a **draft** release  |
-| `4.deploy.yml`     | After 3 created a release, or by hand from `main` | 4a validates blue/green scripts; 4b builds SHA images; 4c scans them; 4d moves `latest` and `vX.Y.Z`; 4e deploys to the VPS; 4f publishes the draft release |
+| Workflow           | Runs when                                                                        | Does                                                                                                                                                        |
+| ------------------ | -------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ci.yml`           | PR and push to `main`, Monday schedule, by hand                                  | 0a detects changed paths, then calls the workflows below                                                                                                    |
+| `1.review.yml`     | PR                                                                               | 1a fails on high-severity dependency changes; 1b lints workflows with actionlint and zizmor, only when the PR touches `.github/`                            |
+| `2a.quality.yml`   | After changed-path detection                                                     | App/API lint, tests, build, E2E; site lint, typecheck, coverage, build and standalone E2E for site/shared theme changes or non-PR runs                      |
+| `2b.security.yml`  | In parallel with 2a                                                              | `npm audit` for root/API/app/site, secret scan, SBOM, Dockerfile and Compose checks, infra image scans; CodeQL for source/workflow changes                  |
+| `2c.container.yml` | PR touching `api/`, `app/`, `site/`, `.docker/`, Compose or root `package*.json` | Builds the api, app and site images and scans them with Trivy                                                                                               |
+| `3.release.yml`    | Push to `main`, after 2a and 2b passed                                           | 3a skips if `main` moved on; 3b release-please opens or updates the release PR, or on its merge creates the tag and a **draft** release                     |
+| `4.deploy.yml`     | After 3 created a release, or by hand from `main`                                | 4a validates blue/green scripts; 4b builds SHA images; 4c scans them; 4d moves `latest` and `vX.Y.Z`; 4e deploys to the VPS; 4f publishes the draft release |
 
 - Release is published last: the tag exists and the GitHub Release stays a draft until 4e deployed and the public health check passed. A failed deploy rolls back and leaves the draft unpublished.
 - Deploy only follows a release merge and only runs from `main`. A manual run from another branch skips every job.

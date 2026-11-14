@@ -17,8 +17,8 @@ test('Daily controls expose visible labels and valid selection state', async ({ 
     const range = page.locator('.week-selector-trigger');
     const visibleRange = (await range.innerText()).replace(/\s+/g, ' ').trim();
     await expect(range).toHaveAccessibleName(visibleRange);
-    const more = page.locator('.bottom-bar button');
-    await expect(more).toHaveAccessibleName(/More|Mais/);
+    const more = page.getByRole('button', { name: /Planner menu|Menu do Planner/ });
+    await expect(more).toHaveAccessibleName(/Planner menu|Menu do Planner/);
     await more.click();
     await expect(more).toHaveAttribute('aria-expanded', 'true');
   } finally {

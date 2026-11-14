@@ -1,13 +1,15 @@
 import { useEffect, useLayoutEffect, useId, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react';
 import { PageHeader } from '../components/PageHeader';
 import { createPortal } from 'react-dom';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router';
 import { Check, Palette, PlugZap, Search, Settings2 } from 'lucide-react';
 import { Toggle } from '../components/ui/Toggle';
 import { Radio } from '../components/ui/Radio';
 import { Input } from '../components/ui/Input';
-import { fetchPreferences, apiUpdatePreferences } from '../api/client';
+import { fetchPreferences } from '../api/client';
+import { useUpdatePreferences } from '../hooks/useUpdatePreferences';
+import { NavStyleField } from '../components/settings/NavStyleField';
 import type { Preferences } from '../types/api';
 import { ensureFontLoaded, type FontOption } from '../utils/fontLoader';
 import { getDetectedTimeZone } from '../utils/date';
@@ -16,6 +18,7 @@ import { useFloatingPosition } from '../hooks/useFloatingPosition';
 import { useI18n } from '../i18n/I18nContext';
 import { ApiTokensSection } from '../components/settings/ApiTokensSection';
 import { ConnectedAppsSection } from '../components/settings/ConnectedAppsSection';
+import { AccountDataSection } from '../components/settings/AccountDataSection';
 import type { TranslationKey } from '../i18n/catalogs';
 
 type SettingsSection = 'general' | 'appearance' | 'integrations';
@@ -297,7 +300,6 @@ function SettingsTabList({
 
 export function SettingsPage() {
   const { t } = useI18n();
-  const qc = useQueryClient();
   const navigate = useNavigate();
   const { section } = useParams<{ section?: string }>();
   const timeZoneIdBase = useId().replace(/:/g, '');
@@ -350,47 +352,7 @@ export function SettingsPage() {
     return timeZoneOptions.filter((zone) => zone.toLowerCase().includes(query));
   }, [timeZoneDraft, timeZoneOptions]);
 
-  const updateMutation = useMutation({
-    mutationFn: (
-      patch: Partial<
-        Pick<
-          Preferences,
-          | 'font'
-          | 'locale'
-          | 'showDots'
-          | 'background'
-          | 'smallCaps'
-          | 'timeZone'
-          | 'weekStart'
-          | 'hideCompletedTasks'
-          | 'showNotes'
-          | 'showCheckboxes'
-          | 'agentChangeNotices'
-          | 'dateFormat'
-        >
-      >,
-    ) =>
-      apiUpdatePreferences(patch),
-    onMutate: async (patch) => {
-      await qc.cancelQueries({ queryKey: ['preferences'] });
-      const previous = qc.getQueryData<Preferences>(['preferences']);
-      if (previous) {
-        qc.setQueryData<Preferences>(['preferences'], { ...previous, ...patch });
-      }
-      return { previous };
-    },
-    onError: (_error, _patch, context) => {
-      if (context?.previous) {
-        qc.setQueryData(['preferences'], context.previous);
-      }
-    },
-    onSuccess: (data) => {
-      qc.setQueryData<Preferences>(['preferences'], (prev) => (prev ? { ...prev, ...data } : data));
-      qc.invalidateQueries({ queryKey: ['inbox'] });
-      qc.invalidateQueries({ queryKey: ['collection'] });
-      qc.invalidateQueries({ queryKey: ['today'] });
-    },
-  });
+  const updateMutation = useUpdatePreferences();
 
   const font = preferences?.font ?? 'lora';
   const locale = preferences?.locale ?? 'en';
@@ -540,7 +502,7 @@ export function SettingsPage() {
 
   if (isLoading) {
     return (
-      <div className="max-w-5xl pb-24 text-ink">
+      <div className="pb-24 text-ink">
         <PageHeader title={t('settings.title')} />
         <p className="text-sm leading-6 text-ink opacity-75 m-0">{t('settings.loading')}</p>
       </div>
@@ -548,8 +510,8 @@ export function SettingsPage() {
   }
 
   return (
-    <div className="flex min-h-[calc(100dvh-48px)] max-w-5xl flex-col text-ink">
-      <header className="page-header-copy sticky-page-header max-w-162 shrink-0">
+    <div className="flex min-h-[calc(100dvh-48px)] flex-col text-ink">
+      <header className="page-header-copy sticky-page-header shrink-0">
         <div className="page-header-copy-text w-full !pr-0">
           <h1 className="m-0 h-6 p-0 text-[18px] leading-6 font-semibold text-ink">{t('settings.title')}</h1>
           <p className="page-header-subtitle m-0 min-h-6 p-0 !pr-0 text-[13px] leading-6 text-ink-light opacity-60 !whitespace-normal !overflow-visible">
@@ -582,6 +544,12 @@ export function SettingsPage() {
                   headingId={panelHeadingId}
                 >
                   <div className="space-y-8">
+                    <NavStyleField
+                      value={preferences?.navStyle ?? 'icon-left'}
+                      onChange={(navStyle) => updateMutation.mutate({ navStyle })}
+                      disabled={disabled}
+                      error={updateMutation.isError && updateMutation.variables?.navStyle !== undefined}
+                    />
                     <section className="space-y-3">
                       <div>
                         <h3 className="text-[10px] leading-5 tracking-[0.12em] uppercase text-ink-light font-medium">
@@ -771,6 +739,8 @@ export function SettingsPage() {
                         description={t('settings.showNotesDescription')}
                       />
                     </section>
+
+                    <AccountDataSection />
                   </div>
                 </SettingsCard>
               ) : activeSection === 'integrations' ? (

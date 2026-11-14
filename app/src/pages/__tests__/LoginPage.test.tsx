@@ -33,8 +33,7 @@ describe('LoginPage', () => {
       </MemoryRouter>,
     );
 
-    expect(screen.getByText('Planner')).toBeInTheDocument();
-    expect(screen.getByText('Bulletjournal online')).toBeInTheDocument();
+    expect(screen.getByText('BulletPlanner')).toBeInTheDocument();
   });
 
   it('calls login and navigates on successful submit', async () => {
@@ -132,5 +131,16 @@ describe('LoginPage', () => {
 
     expect(await signIn('/oauth/consent?request=abc')).toBe('/oauth/consent?request=abc');
     expect(await signIn('//evil.example/steal')).toBe('/daily');
+  });
+
+  it('links to Privacy Policy and Terms of Service in the footer', () => {
+    render(
+      <MemoryRouter>
+        <LoginPage />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole('link', { name: 'Privacy Policy' })).toHaveAttribute('href', '/privacy');
+    expect(screen.getByRole('link', { name: 'Terms of Service' })).toHaveAttribute('href', '/terms');
   });
 });

@@ -52,7 +52,7 @@ describe('OAuthConsentPage', () => {
     mockFetch.mockResolvedValue(pending);
     renderPage();
 
-    expect(await screen.findByText('Claude wants to use your Planner')).toBeInTheDocument();
+    expect(await screen.findByText('Claude wants to use your BulletPlanner')).toBeInTheDocument();
     expect(screen.getByText('You will be sent back to claude.ai.')).toBeInTheDocument();
     expect(screen.getByText('Create, edit, complete and delete tasks, and log habits')).toBeInTheDocument();
     expect(mockFetch).toHaveBeenCalledWith('req-1');

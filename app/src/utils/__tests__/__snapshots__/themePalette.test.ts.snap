@@ -116,6 +116,7 @@ exports[`application theme palette > preserves every palette and application the
     "--color-syntax-operator": "#8b7355",
     "--color-syntax-string": "#2e7d32",
     "--color-today": "#7a5a3a",
+    "--container-page": "720px",
     "--dot-grid": "24px",
     "--font-weight-bold": "700",
     "--font-weight-medium": "500",

@@ -1,267 +1,389 @@
-# Undo/Redo Action History — Plan
+# Undo/Redo Action History
 
-## Context
+Cross-app, server-backed action history covering tasks, habits, collections, and sections. Plan and task breakdown live in this single file by request.
 
-User request (verbatim intent): a simple, cross-app action history — habits, tasks, completions,
-moves (order/collection/inbox), deletes all count. Depth is configurable (10/15/20, in Settings).
-Ctrl+Z/Cmd+Z undoes N entries; Shift+Ctrl+Z/Shift+Cmd+Z and Ctrl+Y/Cmd+Y redo.
+## What the user gets
 
-This is an ARCHITECTURAL feature: a new cross-cutting subsystem touching every mutating service
-(`taskService`, `habitService`, `collectionService`, `sectionService`, ...), `syncService`
-(undo/redo IS a mutation and must broadcast), `preferencesService` (depth setting), and
-`hooks/shortcuts.ts` (new modifier-aware keybindings). This plan was produced self-directed
-(no interactive stakeholder available during drafting) — decisions below are made and justified
-explicitly rather than left as open questions. It has not yet been reviewed/approved by the user.
-
-### Scope decisions
-
-| # | Decision | Why |
-|---|---|---|
-| 1 | **Dedicated `history_entries` table**, not a reuse/extension of `activity_events` — but every undo/redo ALSO writes a normal `activity_events` row. | `activity_events` is an unbounded audit log with partial before-data (e.g. delete only stores `{title}`) and no undone/redone state; it can't carry the ring-buffer/status semantics undo needs. But undoing/redoing IS a real user action collaborators should see in the project activity feed ("Thiago undid: deleted 'Buy milk'") — so `historyService.undo()`/`redo()` call `activityService`'s existing insert (same as any other mutation) in addition to flipping `history_entries.status`. Two tables, two jobs, both written on every undo/redo. **Approved.** |
-| 2 | **Per-user, not per-session/per-tab — and this is the headline feature, not a side effect.** History is stored server-side keyed by `user_id`, shared across all of that user's tabs/devices. Ctrl+Z in tab A performs the real undo server-side, broadcasts via `publishEvent()` (decision #7); tab B receives the sync event, patches its state, and its Redo button/shortcut is now live for the exact same entry — switching tabs and hitting Ctrl+Shift+Z/Ctrl+Y in tab B redoes it there. **Approved, called out explicitly as the flagship UX**, distinct from apps where undo is a local, per-window stack. | A per-tab stack would silently lose entries on tab close/reload and couldn't do this at all. Because the stack and the pointer (`sequence`, `status`) live in Postgres and every undo/redo is a normal `publishEvent()`-broadcast mutation, cross-tab undo/redo isn't extra work — it falls out of decisions #3 and #7 for free. The one addition this requires: the frontend's history indicator (undo/redo availability, count) must be driven by the synced stack state, never by local optimistic assumptions, so it's instantly correct after switching tabs. |
-| 3 | **Server owns the undo stack and enforces the ring buffer.** Every mutating service call pushes an entry via a shared `historyService.record(...)` helper, symmetric to how `publishEvent()` is the sole sync entry point. | Matches CLAUDE.md's "every mutation must call publishEvent()" convention — `historyService.record()` becomes the second mandatory call alongside `publishEvent()` for any undoable mutation, inside the same DB transaction as the write. |
-| 4 | **Inverse-operation + full before-snapshot record, not a diff.** Each entry stores `entity_type`, `entity_id`, `operation` (an enum: `task_create`, `task_update`, `task_delete`, `task_complete`, `task_uncomplete`, `task_move`, `task_reorder`, `habit_toggle`, `collection_move`, ...), `before_data` (JSONB, full row snapshot pre-mutation), `after_data` (JSONB, full row snapshot post-mutation, nullable for delete). | A full snapshot (not a field-level diff) is simplest to apply correctly under concurrent schema/data drift, at the cost of some storage — acceptable given rows are small JSON and the buffer is capped at ≤20/user. Diffs would require per-field replay logic per entity type; snapshots let undo be one generic "restore before_data" (or "re-run inverse for creates/deletes") operation. |
-| 5 | **Undo/Redo endpoints, not implicit stack pop client-side.** New `POST /api/v1/history/undo` and `POST /api/v1/history/redo`, each accepting `{ count?: number }` (default 1, supports "undo N entries" from the request) and returning the applied entries + resulting entity states. | Undo is itself a real mutation against real data (a task may have been touched by a collaborator since) — it must go through the same transactional, ownership-checked, sync-broadcasting path as every other write. It cannot be a pure client-side operation. |
-| 6 | **Redo stack invalidated by any new undoable action after an undo**, standard undo-stack semantics: entries have a `status` (`active` / `undone`); undo flips the N most-recent `active` entries to `undone` (ordered by `sequence`, newest first) and returns them as the "redo pool"; redo flips them back; any brand-new mutation appends a fresh `active` entry and hard-deletes all currently-`undone` entries for that user (the redo pool is discarded, matching the browser/editor convention). |
-| 7 | **Undo/redo broadcasts via `publishEvent()` like any other mutation**, using the underlying entity's existing `entityType`/`eventType` (e.g. undoing a delete emits `eventType: 'created'` for that task) plus a new `entityType: 'history'` / `eventType: 'undone'|'redone'` meta-event so other tabs can also refresh their history-affordance UI (e.g. disable the Undo toast/button when the stack is empty). | Multi-tab consistency is non-negotiable per the sync architecture in CLAUDE.md — undo from tab A must reflect in tab B exactly like a normal edit. |
-| 8 | **Depth is configurable per-user (10/15/20) via `preferences.history_depth`**, migration adds the column with default 15, validated against `[10, 15, 20]` in `preferencesService.validatePreferences`, enforced server-side as a ring buffer: on every push, if `count(active+undone) > depth`, hard-delete the oldest entries beyond the limit. | Matches the existing `preferencesService` pattern exactly (`VALID_DATE_FORMATS`-style constant, `formatPreferences`, `PATCH /preferences`) — no new settings subsystem needed. |
-| 9 | **Failure mode: skip-and-report, never crash.** If the entity referenced by a history entry no longer exists or was mutated by someone else in a conflicting way since the snapshot was taken (e.g. undo an edit but the task was hard-deleted by a collaborator), that specific entry is marked `status: 'failed'` (not applied, not retried), excluded from the ring-buffer count, and the response includes `{ applied: [...], skipped: [...] }` so the frontend can toast "Could not undo 1 of 3 actions — item no longer exists" without blocking the other N-1 entries in the batch. | "Undo N entries" implies a best-effort batch; one stale entity shouldn't abort the whole undo. Optimistic concurrency check: compare `updated_at`/`version` if present, else just attempt and catch not-found. |
-| 10 | **Extend the in-house matcher (`hooks/shortcuts.ts`) with a `modifiers` field — no third-party hotkey library.** `KeyEvent`/`Binding` have zero concept of modifier keys today (`SingleBinding.key` is a bare string like `'q'`); Ctrl+Z/Cmd+Z/Shift+Ctrl+Z/Ctrl+Y can't be expressed. **Decision: extend, don't replace.** Evaluated and rejected: `tinykeys` (tiny, handles `$mod` cross-platform, but runs its own `keydown` listener — a second, parallel shortcut system alongside the existing matcher, with its own text-input-focus guard to reimplement and keep in sync with `isTextInputFocused`); `mousetrap`/`hotkeys-js` (larger, unmaintained-ish, same dual-listener problem, plus this repo has zero other runtime deps of that shape). | The existing matcher is already the single source of truth for shortcut context — `isTextInputFocused` suppression, `Escape`/`always` context, chord timing (`CHORD_WINDOW_MS`) — and it's deliberately a pure, dependency-free, unit-testable function (`shortcuts.test.ts` tests it with zero DOM). Bolting a second library's event listener on top would mean two independent systems deciding "did the user just press a shortcut," with real risk of double-fires or diverging text-input guards. A four-line additive field (`modifiers?: { ctrlOrCmd?: boolean; shift?: boolean }`, default `{}`, so every existing binding is unaffected) keeps one matcher, one mental model, one test file. **Approved.** |
-| 11 | **Toast-with-inline-Undo is included as a UI complement**, shown after every undoable mutation (task complete, delete, move, habit toggle, etc.), with an "Undo" button that calls the same `POST /history/undo` (count=1) as Ctrl+Z. | This is the dominant UX pattern in comparable apps precisely because keyboard-only undo is easy to miss having just happened; it also gives non-keyboard users (mobile, trackpad-only) access to undo. Toast auto-dismiss should NOT remove the ability to undo via Ctrl+Z afterward — the toast is a shortcut to the same stack, not the only path. |
+- Every undoable change - task create/edit/complete/reopen/move/reorder/reorganize/delete, habit create/edit/toggle/move/archive/delete (plus habit groups), collection create/edit/archive/delete, and section create/edit/delete - is recorded in a per-user history stack.
+- `Ctrl+Z` (`Cmd+Z` on macOS) undoes the latest action (or `N` actions); `Shift+Ctrl+Z` (`Shift+Cmd+Z`) and `Ctrl+Y` (`Cmd+Y`) redo. When a text field is focused, native browser text undo/redo runs untouched.
+- **Cross-tab and cross-device undo/redo**: undoing in Tab A updates Tab B live via Socket.IO, and hitting `Ctrl+Y` in Tab B redoes that exact entry. Reloading or closing a tab never loses history.
+- After an undoable mutation, a compact bottom-right toast offers an inline **Undo** button (bulk operations like reorganize coalesce into a single `Undo (N items)` toast). Auto-dismissing the toast leaves `Ctrl+Z` available.
+- **Settings > General** adds a **History depth** selector (`10`, `15`, `20`, default `15`) enforced server-side as a ring buffer.
+- Mutations made by personal API tokens or OAuth MCP agents also enter `history_entries`, so a user can press `Ctrl+Z` in Planner to revert an unwanted agent action; write-scoped MCP clients also gain `undo_last_action` and `redo_last_action` tools.
 
 ---
 
-## Backend
+## Current state (verified against `main`)
 
-### Migration `api/src/db/migrations/040_history_entries.sql` (new — confirm exact next-free number against `main` at implementation time)
+- **Migrations**: at `049_preferences_show_checkboxes.sql` (`040` in the original draft is now `040_task_type_event.sql`; `.specs/2026-11-03-agent-task-tool` also targets `050`). Next free migration number on `main` is `050_history_entries.sql` - confirm exact number against `main` when starting implementation.
+- **1000-line file limit**:
+  - `api/src/services/taskService.ts` is **1975 lines** (already over limit). Touch it with 1-line helper calls only; put all snapshot assembly and inverse-apply logic in new focused modules (`historyService.ts` and `historyInverse.ts`).
+  - `app/src/pages/CollectionsPage.tsx` (**950 lines**), `app/src/pages/SettingsPage.tsx` (**901 lines**), and `app/src/pages/DailyPage.tsx` (**895 lines**) sit near the ceiling. Extract the settings control into `app/src/components/settings/HistoryDepthSection.tsx`, and trigger undo toasts centrally from mutation helpers/stores rather than adding per-page boilerplate.
+- **Dedicated type files**: `CLAUDE.md` requires all new interfaces and types to live under `api/src/types/` and `app/src/types/` (never inline in services, hooks, or components). `Preferences` and REST contracts already live in `app/src/types/api.ts`.
+- **Activity attribution**: `recordActivity()` in `api/src/services/activityService.ts` is the sole writer to `activity_events` and stamps `actor_type` (`session` / `token` / `oauth`), `api_token_id`, `oauth_grant_id`, and `actor_label` from `requestContext.ts`. Note `activity_events.entity_id` is `UUID NOT NULL` and `activity_events.event_type` is `VARCHAR(20) NOT NULL` (`015_activity_events.sql`), so undo/redo activity rows must pass a valid UUID `entityId` (for `habit_toggle`, use `habitId`, never `${habitId}:${date}`) and short event types (`'history_undone'` / `'history_redone'`).
+- **Auth & scopes**: global `enforceTokenScope` in `api/src/middleware/requireScope.ts` automatically allows read-only tokens on `GET /api/v1/history` while blocking them (`403 INSUFFICIENT_SCOPE`) on `POST /api/v1/history/undo` and `POST /api/v1/history/redo`.
+- **Real-time sync & echo suppression**:
+  - `SyncEventType` in `api/src/services/syncService.ts` and `app/src/hooks/useSync.ts` currently contains `'created' | 'updated' | 'deleted' | 'completed' | 'uncompleted'` (`'undone' | 'redone'` do not exist yet and must be added to both unions alongside `'history'` in `SyncEntityType`).
+  - `useSync.ts` suppresses self-echoes (`if (event.sourceId && event.sourceId === getSocketId()) return;`). The originating tab (Tab A) will NOT receive Socket.IO events for its own `POST /history/undo`, `POST /history/redo`, or normal mutations - Tab A must patch/invalidate its own React Query keys (`['daily']`, `['inbox']`, `['collection']`, `['collections']`, `['tasks']`, `['habits']`, `['habitGroups']`, `['history']`, `['activity']`) and Zustand stores on response, while Tab B updates via `useSync`.
+  - Daily views now query `['daily', from, to]` via `app/src/hooks/useDailyTasks.ts` (invalidate prefix `['daily']`).
+- **Schema additions since Aug 2026**:
+  - Tasks now carry `status_id` (`037_task_statuses.sql` + `completionSync.ts`), board order columns `order_collection_board` / `order_daily_board` (`038`), `type: 'task' | 'note' | 'event'` (`040`), and time/deadline/duration fields (`044`).
+  - `completeTask` on a recurring task marks the original row completed, clears its `recurrence_rule`, and clones a brand-new `nextTaskId` row + `task_labels`. Non-recurring `completeTask` cascades completion and `status_id` to descendants. `deleteTask` deletes the recursive subtree, `reminders`, and `task_labels`.
+  - `habitService.ts` added `archiveHabit`, `habit_groups` CRUD/archive/move, and parent-to-child fanout in `toggleCompletion`, and currently runs direct `pool.query` calls without `PoolClient` transactions.
+- **UI primitives**:
+  - No generic toast/snackbar exists yet - only `AgentNotice.tsx` (bottom-right overlay, 6s auto-dismiss) and `UpdateToast.tsx` (version banner). Build `UndoToast.tsx` + `toastStore.ts` matching `AgentNotice.tsx` tokens.
+  - `app/src/hooks/usePreferences.ts` is a 9-line read-only `useQuery` wrapper; `SettingsPage.tsx` mutates via `apiUpdatePreferences` directly and routes tabs under `/settings/:section` (`general`, `appearance`, `integrations`).
+  - Keyboard shortcuts are listed in two places: the `?` dialog in `AppShell.tsx` and `app/src/i18n/helpContent.ts` (`HelpPage.tsx`).
+
+---
+
+## Scope & Architecture Decisions
+
+| # | Decision | Rationale |
+|---|---|---|
+| 1 | **Dedicated `history_entries` table + dual-write to `activity_events` via `recordActivity()`.** | `activity_events` is an unbounded audit log with partial `before_data` and `VARCHAR(20)` event names; it cannot act as a status-tracked ring buffer. Every undo/redo flips `history_entries.status` AND calls `recordActivity(client, ...)` with `eventType: 'history_undone' \| 'history_redone'` so collaborators and token activity feeds see the revert with full actor attribution. |
+| 2 | **Per-user server-side stack (`user_id`), shared across tabs and devices.** | Storing stack state (`sequence`, `status`) in PostgreSQL and broadcasting via `publishEvent()` makes cross-tab undo/redo work out of the box and survives tab reloads. UI undo/redo availability reads synced `['history']` query state rather than tab-local memory. |
+| 3 | **Server owns recording and ring-buffer eviction inside the mutation transaction.** | Every undoable service mutation runs inside a `PoolClient` transaction and calls `historyService.record(client, ...)` alongside `recordActivity()`, then calls `publishEvent()` after `COMMIT`. |
+| 4 | **Composite snapshots (`before_data` / `after_data` JSONB), not field diffs.** | Snapshots keep undo/redo generic and resilient to concurrent schema additions (`status_id`, board orders, datetime fields). Where a single user action mutates related rows - recurring `completeTask` (`spawnedTaskId`), `deleteTask` (subtree + `task_labels` + `reminders`), cascading `completeTask` (descendant rows), parent `habit_toggle` (exact previously-completed `habitIds` on `date`), or `archiveHabit` (parent + children) - the snapshot bundles those rows so restore leaves zero orphans or lost metadata. |
+| 5 | **Explicit `POST /api/v1/history/undo` and `POST /api/v1/history/redo` endpoints (`{ count?: number }`).** | Undo/redo is a real ownership-checked, transactional write against live data that may have been edited by collaborators since the snapshot was recorded. `count` defaults to `1` (max `20`) and counts logical steps (a shared `batch_id` group counts as 1 step). |
+| 6 | **Standard redo invalidation on fresh action.** | Entries carry `status` (`'active' \| 'undone' \| 'failed'`). Undo flips the `N` newest `active` steps to `undone`; redo flips the `N` oldest `undone` steps back to `active`; any new undoable mutation hard-deletes all `undone` entries for that user before inserting the new `active` entry. |
+| 7 | **Entity sync events + `'history'` meta-event + originating-tab reconciliation.** | Undo/redo emits normal per-entity `publishEvent()` messages (`task`, `habit`, `habit_completion`, `collection`, `section`) plus `entityType: 'history'`, `eventType: 'undone' \| 'redone'`. Because `useSync.ts` filters out the caller's own `sourceId`, the calling tab reconciles its caches/stores directly from the REST response while other open tabs update via `useSync`. |
+| 8 | **Configurable depth (`10 / 15 / 20`, default `15`) in `preferences.history_depth`.** | Validated in `preferencesService.ts` via `VALID_HISTORY_DEPTHS = [10, 15, 20] as const`. On every `record()`, `historyService` evicts oldest logical steps (`COALESCE(batch_id, id)`) beyond the user's `history_depth`. |
+| 9 | **Skip-and-report failure handling (never crash a batch).** | Each logical step in `undo(userId, count)` / `redo(userId, count)` runs in a `SAVEPOINT` (or per-step transaction). If a target entity or required parent collection was permanently deleted by a collaborator or fails constraints, that entry is marked `status = 'failed'` (excluded from ring-buffer counts) and returned in `{ applied, skipped }` so the UI can notify `"Could not undo 1 action(s) - item no longer exists"`. |
+| 10 | **Additive modifier support in `app/src/hooks/shortcuts.ts` - no third-party hotkey library.** | Keeps one pure, DOM-free shortcut matcher with unified `isTextInputFocused` handling. Key normalization preserves shifted punctuation like `?` (`Shift + /`) while matching `Ctrl/Cmd+Z`, `Ctrl/Cmd+Shift+Z` (where browsers emit uppercase `e.key === 'Z'`), and `Ctrl/Cmd+Y`. |
+| 11 | **Bottom-right `UndoToast` with `batchId` coalescing.** | Reuses `AgentNotice.tsx` visual tokens (`--planner-overlay-bg`, `border-border`, `shadow-overlay`, Lora serif, 24px rhythm, `bottom-24` mobile / `sm:bottom-6 sm:right-6` desktop). Bulk actions sharing a `batchId` render one coalesced toast. |
+| 12 | **API tokens & MCP parity.** | Token/OAuth mutations through `taskService` and `habitService` record history entries under `userId` (attributed via `recordActivity()`). Write-scoped MCP servers register `undo_last_action` and `redo_last_action` tools in `api/src/mcp/tools/history.ts`. |
+
+---
+
+## Backend Design
+
+### 1. Migration `api/src/db/migrations/050_history_entries.sql`
+
+Confirm next free number against `main` before creating. Follow `.agents/skills/db-migration/SKILL.md` (no `BEGIN`/`COMMIT`, no `IF NOT EXISTS`):
 
 ```sql
+CREATE SEQUENCE history_entries_seq;
+
 CREATE TABLE history_entries (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   collection_id UUID REFERENCES collections(id) ON DELETE SET NULL,
-  sequence BIGINT NOT NULL,               -- monotonic per-user ordering (undo/redo pointer)
-  entity_type VARCHAR(20) NOT NULL,       -- 'task' | 'habit' | 'collection' | 'section' | ...
+  batch_id UUID,
+  sequence BIGINT NOT NULL DEFAULT nextval('history_entries_seq'),
+  entity_type VARCHAR(30) NOT NULL,
   entity_id UUID NOT NULL,
-  operation VARCHAR(30) NOT NULL,         -- 'task_create' | 'task_update' | 'task_delete' |
-                                           -- 'task_complete' | 'task_uncomplete' | 'task_move' |
-                                           -- 'task_reorder' | 'habit_toggle' | 'collection_*' ...
-  before_data JSONB,                      -- full row snapshot pre-mutation (null for create)
-  after_data JSONB,                       -- full row snapshot post-mutation (null for delete)
-  status VARCHAR(10) NOT NULL DEFAULT 'active',  -- 'active' | 'undone' | 'failed'
+  operation VARCHAR(40) NOT NULL,
+  summary VARCHAR(500),
+  before_data JSONB,
+  after_data JSONB,
+  status VARCHAR(10) NOT NULL DEFAULT 'active'
+    CHECK (status IN ('active', 'undone', 'failed')),
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_history_user_sequence ON history_entries(user_id, sequence DESC);
-CREATE SEQUENCE history_entries_seq;  -- per-DB monotonic source for `sequence`
+CREATE INDEX idx_history_entries_user_seq
+  ON history_entries(user_id, sequence DESC)
+  WHERE status IN ('active', 'undone');
+
+CREATE INDEX idx_history_entries_user_batch
+  ON history_entries(user_id, batch_id)
+  WHERE batch_id IS NOT NULL;
+
+ALTER TABLE preferences
+  ADD COLUMN history_depth SMALLINT NOT NULL DEFAULT 15;
 ```
 
-Use the `db-migration` skill / follow existing migration authoring conventions when this is
-actually implemented — not run as part of writing this spec.
-
-Also extend `preferences` (likely piggybacking migration `040` or a `041`):
-```sql
-ALTER TABLE preferences ADD COLUMN history_depth SMALLINT NOT NULL DEFAULT 15;
-```
-
-### `api/src/services/historyService.ts` (new)
-
-The undo/redo counterpart to `syncService.publishEvent()` — the single entry point every mutating
-service calls.
+### 2. Dedicated Types `api/src/types/history.ts`
 
 ```ts
-export async function record(client: PoolClient, entry: {
+import type { SyncEntityType } from "../services/syncService.js";
+
+export type HistoryStatus = "active" | "undone" | "failed";
+
+export type HistoryOperation =
+  | "task_create"
+  | "task_update"
+  | "task_delete"
+  | "task_complete"
+  | "task_reopen"
+  | "task_move"
+  | "task_reorder"
+  | "task_reorganize"
+  | "habit_create"
+  | "habit_update"
+  | "habit_delete"
+  | "habit_archive"
+  | "habit_toggle"
+  | "habit_move"
+  | "habit_group_create"
+  | "habit_group_update"
+  | "habit_group_delete"
+  | "habit_group_archive"
+  | "habit_group_move"
+  | "collection_create"
+  | "collection_update"
+  | "collection_delete"
+  | "collection_archive"
+  | "section_create"
+  | "section_update"
+  | "section_delete";
+
+export interface RecordHistoryInput {
   userId: string;
   collectionId?: string | null;
+  batchId?: string | null;
   entityType: SyncEntityType;
   entityId: string;
   operation: HistoryOperation;
+  summary?: string | null;
   beforeData?: unknown;
   afterData?: unknown;
-}): Promise<void>
-// Inserts inside the caller's existing transaction (mirrors the activity_events INSERT pattern
-// in taskService.deleteTask). Also enforces the ring buffer: deletes entries beyond
-// preferences.history_depth for that user, oldest-first, and hard-deletes anything currently
-// 'undone' if this is a fresh 'active' push (redo-stack invalidation, decision #6).
+}
 
-export async function undo(userId: string, count: number): Promise<UndoRedoResult>
-export async function redo(userId: string, count: number): Promise<UndoRedoResult>
-// UndoRedoResult = { applied: HistoryEntry[]; skipped: { entry: HistoryEntry; reason: string }[] }
-// Each entry undo/redo runs its own sub-transaction: re-fetch current entity state, apply the
-// inverse (restore before_data for update/delete; re-delete for create-undo; re-toggle for
-// habit_toggle), flip status, call publishEvent() for the entity + a meta 'history' event,
-// AND call activityService's insert (same as any other mutation) so undo/redo shows up in the
-// project activity feed (decision #1) — e.g. "undid: deleted 'Buy milk'".
+export interface HistoryEntry {
+  id: string;
+  userId: string;
+  collectionId: string | null;
+  batchId: string | null;
+  sequence: number;
+  entityType: SyncEntityType;
+  entityId: string;
+  operation: HistoryOperation;
+  summary: string | null;
+  status: HistoryStatus;
+  createdAt: string;
+}
+
+export interface HistoryStateResponse {
+  entries: HistoryEntry[];
+  undoCount: number;
+  redoCount: number;
+}
+
+export interface SkippedHistoryStep {
+  entry: HistoryEntry;
+  reason: string;
+}
+
+export interface UndoRedoResult {
+  applied: HistoryEntry[];
+  skipped: SkippedHistoryStep[];
+  undoCount: number;
+  redoCount: number;
+}
 ```
 
-Each service's existing mutation function gets one extra call, inside its existing transaction,
-right where `activity_events` inserts already happen (e.g. `taskService.deleteTask`,
-`taskService.updateTask`, `taskService.moveTask`, `taskService.completeTask`,
-`habitService.toggleCompletion`, `collectionService.updateCollection`'s move-related paths).
+### 3. Services (`historyService.ts` + `historyInverse.ts`)
 
-### `api/src/routes/history.ts` (new)
+Split into two modules so each stays concise (<400 lines):
 
-```
-GET  /api/v1/history                 — list current stack (for UI, e.g. "3 actions available to undo")
-POST /api/v1/history/undo  { count?: number }
-POST /api/v1/history/redo  { count?: number }
-```
-Registered in `routes/index.ts` alongside `activityRoutes`.
+- **`api/src/services/historyService.ts`**:
+  - `record(client: PoolClient, input: RecordHistoryInput): Promise<void>`:
+    1. Deletes `WHERE user_id = $1 AND status = 'undone'` (redo invalidation).
+    2. Inserts the new `active` row into `history_entries`.
+    3. Reads `(SELECT history_depth FROM preferences WHERE user_id = $1)` (fallback `15`) and deletes `active` rows belonging to logical steps (`COALESCE(batch_id, id)`) older than the newest `history_depth` steps.
+  - `listHistory(userId: string): Promise<HistoryStateResponse>`: returns active/undone entries ordered by `sequence DESC` plus logical `undoCount` and `redoCount`.
+  - `undo(userId: string, count = 1): Promise<UndoRedoResult>` and `redo(userId: string, count = 1): Promise<UndoRedoResult>`:
+    - Selects up to `count` logical steps (`active` newest-first for undo; `undone` oldest-first for redo).
+    - Runs each step via `historyInverse.applyInverse(...)` / `applyForward(...)` inside its own transaction, flips `status`, writes `recordActivity(client, { eventType: 'history_undone' | 'history_redone', ... })`, and after `COMMIT` emits entity `publishEvent()` calls plus one `'history'` meta-event (`payload: { undoCount, redoCount }`).
+    - On missing target / FK conflict, marks the step `status = 'failed'` and appends to `skipped`.
 
-### `syncService.ts` (extend)
+- **`api/src/services/historyInverse.ts`**:
+  - Snapshot helpers called from mutating services (keeping `taskService.ts` changes to 1-2 lines per function):
+    - `captureTaskSubtreeSnapshot(client, taskId)` -> `{ tasks, taskLabels, reminders }` for `deleteTask` and cascading `completeTask`.
+    - Defensive column-whitelisted `UPDATE` / `INSERT ... ON CONFLICT` helpers so snapshots remain safe across future additive migrations.
+    - Recurring `task_complete` undo: deletes `afterData.spawnedTaskId` (if still present) and restores the original task row (including `recurrence_rule` and prior `status_id`).
+    - `habit_toggle` undo/redo: restores exact `beforeData.completedHabitIds` on `beforeData.date` across parent + child habits.
 
-Add `'history'` to `SyncEntityType` and `'undone' | 'redone'` are already covered by existing
-`SyncEventType` values reused per-entity (see decision #7) — the only new type is the meta-event
-entity type `'history'` with event types `'undone' | 'redone'`.
+### 4. Routes, Sync, Preferences, and MCP
 
-### `preferencesService.ts` (extend)
-
-Add `historyDepth` to `PreferencesRow`/`formatPreferences`/`UpdatePreferencesInput`, and a
-`VALID_HISTORY_DEPTHS = [10, 15, 20] as const` validated the same way `VALID_DATE_FORMATS` is.
+- **`api/src/routes/history.ts`** (mounted at `router.use("/history", historyRoutes)` in `api/src/routes/index.ts`):
+  - `GET /api/v1/history` -> `HistoryStateResponse`
+  - `POST /api/v1/history/undo` `{ count?: number }` -> `UndoRedoResult`
+  - `POST /api/v1/history/redo` `{ count?: number }` -> `UndoRedoResult`
+- **`api/src/services/syncService.ts`**:
+  - Add `"history"` to `SyncEntityType` and `"undone" | "redone"` to `SyncEventType`.
+- **`api/src/services/preferencesService.ts`**:
+  - Add `history_depth: number` to `PreferencesRow`, `historyDepth` to `formatPreferences` / `UpdatePreferencesInput` / `updatePreferences`, and `VALID_HISTORY_DEPTHS = [10, 15, 20] as const` in `validatePreferences`.
+- **`api/src/mcp/tools/history.ts`** (registered in `api/src/mcp/server.ts` inside `if (ctx.scopes.includes("write"))`):
+  - `undo_last_action` (`count?: number`, default `1`) and `redo_last_action` (`count?: number`, default `1`).
 
 ---
 
-## Frontend
+## Frontend Design
 
-### `app/src/api/client.ts` (extend)
+### 1. Dedicated Types (`app/src/types/history.ts` & `app/src/types/api.ts`)
 
-```ts
-export async function apiUndo(count = 1): Promise<UndoRedoResult>
-export async function apiRedo(count = 1): Promise<UndoRedoResult>
-export async function fetchHistory(): Promise<HistoryEntry[]>
-```
+- Create `app/src/types/history.ts` for `HistoryEntry`, `HistoryStateResponse`, `UndoRedoResult`, `HistoryDepth` (`10 | 15 | 20`), and `UndoToastItem` (`id`, `message`, `batchId?`, `count`).
+- Extend `Preferences` in `app/src/types/api.ts` with `historyDepth: 10 | 15 | 20`.
+- Mirror `'history'` in `SyncEntityType` and `'undone' | 'redone'` in `SyncEventType` inside `app/src/hooks/useSync.ts`.
 
-### `hooks/shortcuts.ts` (extend — required matcher change, decision #10)
+### 2. Shortcut Matcher (`app/src/hooks/shortcuts.ts`)
 
-Current `SingleBinding`/`KeyEvent` carry no modifier info. Minimal additive extension:
+Extend `KeyEvent` and `SingleBinding` (or extract their types into `app/src/types/hooks.ts` if touched alongside type cleanup) without breaking shifted punctuation (`?`):
 
 ```ts
 export interface KeyEvent {
   key: string;
-  ctrlOrCmd: boolean;   // Ctrl on Windows/Linux, Cmd (metaKey) on Mac — normalized by the caller
-  shift: boolean;
+  ctrlOrCmd?: boolean;
+  shift?: boolean;
+  alt?: boolean;
   isTextInputFocused: boolean;
   timestamp: number;
 }
 
 export interface SingleBinding {
   key: string;
-  modifiers?: { ctrlOrCmd?: boolean; shift?: boolean };  // undefined/false = "must NOT be pressed"
+  modifiers?: { ctrlOrCmd?: boolean; shift?: boolean; alt?: boolean };
   context?: ShortcutContext;
   action: string;
 }
 ```
 
-`matchKey`'s single-binding lookup gains a modifier-equality check (both `ctrlOrCmd` and `shift`
-must match exactly what the binding declares, defaulting to `false`) so plain `'q'` keeps matching
-only when no modifiers are held, and doesn't accidentally fire on Ctrl+Q etc. This is backward
-compatible: every existing binding omits `modifiers`, defaults to `{}`, unchanged behavior.
+Matching rules in `matchKey`:
+- Chord prefix and completion require `!event.ctrlOrCmd && !event.alt`.
+- When `b.modifiers?.ctrlOrCmd` is `true`: require `Boolean(event.ctrlOrCmd) && !event.alt && Boolean(b.modifiers.shift) === Boolean(event.shift) && b.key.toLowerCase() === event.key.toLowerCase()`. This handles browsers emitting uppercase `'Z'` on `Ctrl+Shift+Z`.
+- When `b.modifiers?.ctrlOrCmd` is omitted/`false`: require `!event.ctrlOrCmd && !event.alt && b.key === event.key` (plus `Boolean(b.modifiers.shift) === Boolean(event.shift)` only when `b.modifiers?.shift !== undefined`). That keeps `'q'` from firing on `Ctrl+Q` or `Shift+Q` (`'Q'`) while preserving `'?'` (`Shift + /`).
 
-New bindings appended to `DEFAULT_BINDINGS`:
+Append to `DEFAULT_BINDINGS`:
 ```ts
 { key: 'z', modifiers: { ctrlOrCmd: true }, context: 'global', action: 'history:undo' },
 { key: 'z', modifiers: { ctrlOrCmd: true, shift: true }, context: 'global', action: 'history:redo' },
 { key: 'y', modifiers: { ctrlOrCmd: true }, context: 'global', action: 'history:redo' },
 ```
-The caller site (wherever `handleKey`/`window.addEventListener('keydown', ...)` currently lives —
-likely `AppShell.tsx`) must be updated to populate `ctrlOrCmd`/`shift` from the native
-`KeyboardEvent` (`e.metaKey || e.ctrlKey`, `e.shiftKey`) when constructing the `KeyEvent`.
 
-### `hooks/useHistory.ts` (new)
+Update `AppShell.tsx` `keydown` listener to pass `ctrlOrCmd: e.metaKey || e.ctrlKey`, `shift: e.shiftKey`, `alt: e.altKey`, and wire `'history:undo'` / `'history:redo'` in `handleAction`. Document the shortcuts in both `AppShell.tsx` (the `?` modal) and `app/src/i18n/helpContent.ts`.
 
-Thin wrapper mirroring `useReorganize.ts`'s shape: exposes `undo(count)`/`redo(count)`, wires the
-`history:undo`/`history:redo` shortcut actions, calls `apiUndo`/`apiRedo`, then either patches
-Zustand stores directly from the returned entity states (fast path, same pattern as `taskStore`'s
-`setTasks/updateTask/removeTask`) or invalidates the relevant React Query keys — whichever the
-touched `entityType` normally uses for that mutation kind (task changes go through
-`optimistic.ts`-style patches + `taskStore`; habit changes through the habit store/query keys).
-Also subscribes to the `'history'` sync event so a second tab's stack-availability indicator stays
-in sync.
+### 3. `useHistory.ts`, `toastStore.ts`, `UndoToast.tsx`, and `HistoryDepthSection.tsx`
 
-### Toast-with-inline-Undo (extend existing toast/notification component, decision #11)
+- **`app/src/api/client.ts`**: add `fetchHistory()`, `apiUndo(count = 1)`, `apiRedo(count = 1)`, and trigger undo toast notifications centrally on undoable API mutation helpers (with `batchId` grouping for `apiReorganizeTasks`) so 900-line page components do not need per-handler toast plumbing.
+- **`app/src/hooks/useHistory.ts`**:
+  - Queries `['history']` via React Query (`fetchHistory`).
+  - Exposes `undo(count = 1)`, `redo(count = 1)`, `canUndo`, `canRedo`, `undoCount`, `redoCount`, `isPending`.
+  - On `undo`/`redo` resolve (Tab A): updates `['history']` counts, invalidates affected React Query prefixes (`['daily']`, `['inbox']`, `['collection']`, `['collections']`, `['tasks']`, `['habits']`, `['habitGroups']`, `['activity']`), reconciles `taskStore`/`collectionStore`, and shows feedback toast (including skipped-item notice if `skipped.length > 0`).
+  - Subscribes via `useSync` to `'history'` events (Tab B) to update `['history']` immediately across tabs, and invalidates `['history']` when `event.actor` arrives from an agent.
+- **`app/src/stores/toastStore.ts` + `app/src/components/UndoToast.tsx`**:
+  - Lightweight Zustand queue/current-item store (`showUndoToast`, `dismissToast`) coalescing rapid items with matching `batchId`.
+  - Rendered in `AppShell.tsx` coordinated with `AgentNotice.tsx` (`--planner-overlay-bg`, `border-border`, `shadow-overlay`, Lora serif, 24px rhythm, `bottom-24` on mobile to clear `BottomBar`, `sm:bottom-6 sm:right-6` on desktop).
+- **`app/src/components/settings/HistoryDepthSection.tsx`**:
+  - Segmented radio cards (`10`, `15`, `20`) matching `WEEK_START_OPTIONS` styling in `SettingsPage.tsx`, rendered inside the `general` tab of `SettingsPage.tsx`.
 
-Every call site that already does a mutation (`completeTask`, `deleteTask`, `moveTask`, habit
-toggle, etc.) — surface a toast with an "Undo" action button that calls `apiUndo(1)`. Reuse
-whatever toast primitive already exists in the app (grep for existing toast/snackbar component
-before adding a new one).
+### 4. i18n (`app/src/i18n/locales/en.ts` + `pt-BR.ts`)
 
-### `SettingsPage.tsx` (extend)
+Flat typed `TranslationKey` entries (no em dashes):
 
-New "History depth" control (radio/segmented control: 10 / 15 / 20), wired through
-`usePreferences.ts`'s existing `PATCH /preferences` mutation path — same pattern as the font/theme
-controls already on that page.
-
-### i18n (`en.ts` + `pt-BR.ts`)
-
-```
-history.undo            'Undo'                 / 'Desfazer'
-history.redo            'Redo'                 / 'Refazer'
-history.undoToast       'Undid: {{action}}'    / 'Desfeito: {{action}}'
-history.skipped         'Could not undo {{count}} action(s) — item no longer exists'
-                                                 / 'Não foi possível desfazer {{count}} ação(ões) — item não existe mais'
-settings.historyDepth   'History depth'        / 'Profundidade do histórico'
-```
+- `'history.undo'`: `'Undo'` / `'Desfazer'`
+- `'history.redo'`: `'Redo'` / `'Refazer'`
+- `'history.actionDone'`: `'{{action}}'` / `'{{action}}'`
+- `'history.reorganizedCount'`: `'Reorganized {{count}} tasks'` / `'{{count}} tarefas reorganizadas'`
+- `'history.undidToast'`: `'Undid: {{action}}'` / `'Desfeito: {{action}}'`
+- `'history.redidToast'`: `'Redid: {{action}}'` / `'Refeito: {{action}}'`
+- `'history.skipped'`: `'Could not undo {{count}} action(s) - item no longer exists'` / `'Não foi possível desfazer {{count}} ação(ões) - item não existe mais'`
+- `'shell.undo'`: `'Undo last action'` / `'Desfazer última ação'`
+- `'shell.redo'`: `'Redo action'` / `'Refazer ação'`
+- `'settings.historyDepth'`: `'History depth'` / `'Profundidade do histórico'`
+- `'settings.historyDepthDescription'`: `'Maximum number of recent actions kept for undo and redo'` / `'Número máximo de ações recentes mantidas para desfazer e refazer'`
+- `'settings.historyDepthSteps'`: `'{{count}} actions'` / `'{{count}} ações'`
 
 ---
 
-## Risks / mitigations
+## Risks & Mitigations
 
-- **Cross-service snapshot drift** — a generic `before_data`/`after_data` JSONB restore assumes
-  the entity's shape hasn't changed structurally since the entry was recorded (e.g. a column was
-  dropped in a later migration). Mitigation: undo/redo apply is defensive — unknown/missing
-  columns in the snapshot are ignored on restore (partial `UPDATE ... SET` from whatever keys are
-  present), never a hard schema match.
-- **Concurrent mutation during undo** — flagged in decision #9 (skip-and-report). Additionally,
-  undo of a `task_move`/`task_reorder` could conflict with another concurrent reorder; treat the
-  same as any other stale-entity case — attempt, catch, skip, report.
-- **Ring-buffer race across tabs** — two tabs mutating simultaneously could both push near the
-  depth limit; the `sequence` column (from a DB sequence, not client-generated) plus the eviction
-  query being part of the same transaction as the push avoids double-counting.
-- **Toast fatigue** — showing a toast on every single mutation could be noisy for power users doing
-  bulk operations (e.g. reorganize's batch move). Mitigation: batch operations like
-  `POST /tasks/reorganize` record ONE history entry per moved task but should coalesce into a
-  single toast ("Undo reorganize (10 tasks)") rather than 10 separate toasts — the toast layer
-  groups by a shared `batchId` if the mutation call was a batch endpoint.
-- **Matcher extension breaking existing shortcuts** — decision #10's `modifiers` field is additive
-  and defaults to `{}`; existing tests in `shortcuts.test.ts` must be re-run/extended, not just
-  trusted, before this ships.
+- **Cross-service schema drift**: `historyInverse.ts` filters snapshot keys against current table columns on restore instead of assuming fixed column lists, so additive/dropped columns in future migrations never break existing ring-buffer rows.
+- **Recurring & cascading task side-effects**: Bundling `spawnedTaskId` (recurring complete) and subtree/labels/reminders (`deleteTask` / cascading `completeTask`) prevents orphan clones or lost metadata on undo.
+- **Self-echo drop in `useSync.ts`**: Explicitly reconciling caches in `useHistory.ts` on REST completion guarantees Tab A updates instantly while Tab B updates via Socket.IO.
+- **Near-limit files (`taskService.ts`, `SettingsPage.tsx`, `CollectionsPage.tsx`, `DailyPage.tsx`)**: Enforcing 1-line delegation in `taskService.ts`, extracting `HistoryDepthSection.tsx`, and centralizing toast triggers keeps touched files from crossing (or growing further past) the 1000-line rule.
 
 ---
 
-## Verification
+## Tasks
 
-```bash
-docker compose exec api npm run build && docker compose exec api npm run lint
-docker compose exec app npm run build && docker compose exec app npm run lint
-docker compose exec api npm test && docker compose exec app npm test
+### 0. Isolation & Setup
+
+- [ ] Create worktree `.worktrees/undo-redo-history` on branch `feat/undo-redo-history`, configure `.env` (`COMPOSE_PROJECT_NAME`, `APP_SUBDOMAIN`), run `bash .hooks/setup-hooks.sh`, start `docker compose up -d`, and open a Draft PR against `main`.
+
+### 1. Database, Types, Core History Service & Preferences (TDD)
+
+- [ ] Confirm next free migration number on `main` and create `api/src/db/migrations/050_history_entries.sql` (`history_entries_seq`, `history_entries` with `batch_id`, indexes, `preferences.history_depth`).
+- [ ] Create `api/src/types/history.ts` with all backend history contracts.
+- [ ] Extend `SyncEntityType` (`'history'`) and `SyncEventType` (`'undone' | 'redone'`) in `api/src/services/syncService.ts`.
+- [ ] Extend `api/src/services/preferencesService.ts` with `historyDepth` and `VALID_HISTORY_DEPTHS = [10, 15, 20] as const` (write unit/integration tests first in `preferencesService.test.ts`).
+- [ ] Write failing real-DB tests in `api/src/services/__tests__/historyService.test.ts` covering `record()`, ring-buffer eviction by logical `batch_id` step, redo invalidation on new push, LIFO `undo(count)` / `redo(count)`, `recordActivity()` dual-write with actor attribution, and `status = 'failed'` skip-and-report on missing entities.
+- [ ] Implement `api/src/services/historyInverse.ts` and `api/src/services/historyService.ts` to pass all service tests.
+- [ ] Write failing route tests in `api/src/routes/__tests__/history.test.ts` (session auth, read vs write API token scope enforcement, `count` validation, response shape), then implement `api/src/routes/history.ts` and mount `/history` in `api/src/routes/index.ts`.
+
+### 2. Service Mutation Wiring & MCP Tools (TDD)
+
+- [ ] Wire `historyService.record()` into `api/src/services/taskService.ts` with minimal 1-line calls per mutation (`createTask`, `updateTask`, `deleteTask` with subtree/labels/reminders snapshot, `completeTask` with recurring `spawnedTaskId` / descendant cascade snapshot, `reopenTask`, `moveTask`, `reorderTask`, `reorganizeTasks` with shared `batchId`). Extend `taskService` integration tests.
+- [ ] Wrap mutating functions in `api/src/services/habitService.ts` in `PoolClient` transactions and wire `historyService.record()` (`createHabit`, `updateHabit`, `deleteHabit`, `archiveHabit`, `toggleCompletion` with exact completed child IDs, `moveHabit`, `createGroup`, `updateGroup`, `deleteGroup`, `archiveHabitGroup`, `moveHabitGroup`). Extend `habitService` integration tests.
+- [ ] Wire `historyService.record()` into `api/src/services/collectionService.ts` (`createCollection`, `updateCollection`, `deleteCollection`, `archiveCollection`) and `api/src/services/sectionService.ts` (`createSection`, `updateSection`, `deleteSection`) with integration tests.
+- [ ] Create `api/src/mcp/tools/history.ts` (`undo_last_action`, `redo_last_action`), register in `api/src/mcp/server.ts` for `write` scope, and add MCP integration tests verifying read-only tokens cannot see or invoke them.
+
+### 3. Frontend Shortcuts, Hook, Toast, Settings & i18n (TDD)
+
+- [ ] Create `app/src/types/history.ts`, extend `Preferences` in `app/src/types/api.ts` with `historyDepth`, and mirror `'history'` + `'undone' | 'redone'` in `app/src/hooks/useSync.ts`.
+- [ ] Add English and Portuguese (`pt-BR`) keys to `app/src/i18n/locales/en.ts` and `app/src/i18n/locales/pt-BR.ts`, and add undo/redo shortcut entries to `app/src/i18n/helpContent.ts`.
+- [ ] Write failing tests in `app/src/hooks/__tests__/shortcuts.test.ts` (bare `z` ignored, `Ctrl/Cmd+Z` -> `history:undo`, `Shift+Ctrl/Cmd+Z` with uppercase `'Z'` -> `history:redo`, `Ctrl/Cmd+Y` -> `history:redo`, `?` with `shift: true` still fires `help:open`, text-input focus suppresses undo/redo), then extend `app/src/hooks/shortcuts.ts`.
+- [ ] Add `fetchHistory`, `apiUndo`, and `apiRedo` to `app/src/api/client.ts`.
+- [ ] Create `app/src/stores/toastStore.ts` and `app/src/components/UndoToast.tsx` (with unit tests in `UndoToast.test.tsx` including `batchId` coalescing), and trigger undo toasts from mutation client/store paths.
+- [ ] Write failing tests in `app/src/hooks/__tests__/useHistory.test.ts` (calling-tab cache/store invalidation, skipped-entry notice, cross-tab `'history'` sync event handling), then implement `app/src/hooks/useHistory.ts`.
+- [ ] Wire `ctrlOrCmd`/`shift`/`alt` key event fields, `history:undo` / `history:redo` dispatch, `UndoToast`, and Help modal rows in `app/src/components/AppShell.tsx`.
+- [ ] Create `app/src/components/settings/HistoryDepthSection.tsx`, mount it in `SettingsPage.tsx` under `general` (verifying `SettingsPage.tsx` stays well under 1000 lines), and extend `app/src/pages/__tests__/SettingsPage.test.tsx`.
+
+### 4. End-to-End Verification, Visual Check & Docs
+
+- [ ] Add Playwright E2E test (`app/e2e/history.spec.ts`) covering: task create/complete/delete + habit toggle -> Undo toast click -> `Ctrl+Z` LIFO chain -> `Ctrl+Y` / `Ctrl+Shift+Z` redo -> redo stack cleared after new mutation -> cross-tab undo in Page A / redo in Page B -> Settings depth cap (`10`).
+- [ ] Build and inspect UI in live Chrome at desktop and `390px` (Settings > General history depth control, Undo toast on desktop + mobile above `BottomBar`, Help dialog shortcuts), saving screenshots to `app/dist/screenshots/*.png`.
+- [ ] Update `CLAUDE.md` and `README.md` (new `history_entries` table, `/api/v1/history` endpoints, `historyService`, MCP tools, keyboard shortcuts).
+- [ ] Run full build, lint, Vitest unit/integration suites, and Playwright E2E tests:
+  ```bash
+  docker compose exec api npm run build && docker compose exec api npm run lint
+  docker compose exec app npm run build && docker compose exec app npm run lint
+  docker compose exec api npm test && docker compose exec app npm test
+  docker compose exec app npm run test:e2e
+  ```
+
+---
+
+## Relevant Files
+
 ```
+api/src/db/migrations/050_history_entries.sql        new (confirm next free number on main)
+api/src/types/history.ts                             new
+api/src/services/historyService.ts                   new
+api/src/services/historyInverse.ts                   new
+api/src/routes/history.ts                            new
+api/src/mcp/tools/history.ts                         new
+api/src/routes/index.ts                              mount /history
+api/src/mcp/server.ts                                register history write tools
+api/src/services/syncService.ts                      add 'history' entity + 'undone' | 'redone' events
+api/src/services/preferencesService.ts               add historyDepth (10 | 15 | 20)
+api/src/services/activityService.ts                  reused via recordActivity() on undo/redo
+api/src/services/taskService.ts                      minimal 1-line record() hooks (1975 lines - do not grow)
+api/src/services/habitService.ts                     wrap mutations in PoolClient tx + record()
+api/src/services/collectionService.ts                record() on create/update/delete/archive
+api/src/services/sectionService.ts                   record() on create/update/delete
+api/src/services/__tests__/historyService.test.ts    new
+api/src/routes/__tests__/history.test.ts             new
 
-**Automated tests:**
-- `api/src/services/__tests__/historyService.test.ts` — record/ring-buffer eviction, undo/redo
-  status flips, redo-stack invalidation on new action, skip-on-stale-entity.
-- `api/src/routes/__tests__/history.test.ts` — auth guard, `count` param, response shape.
-- Extend `api/src/services/__tests__/taskService.test.ts` / `habitService.test.ts` for the new
-  `historyService.record()` calls inside each mutation.
-- `app/src/hooks/__tests__/shortcuts.test.ts` — extend for modifier matching (Ctrl+Z fires,
-  bare `z` doesn't fire undo, Shift+Ctrl+Z fires redo, Ctrl+Y fires redo, existing bare-key
-  bindings unaffected).
-- `app/src/hooks/__tests__/useHistory.test.ts` — undo/redo call wiring, sync-event handling.
-
-**Manual, in the browser:**
-1. Create/complete/delete/move several tasks and toggle a habit → each shows an Undo toast.
-2. Press Ctrl+Z (Cmd+Z on Mac) repeatedly → actions reverse in LIFO order.
-3. Press Shift+Ctrl+Z / Ctrl+Y → redo restores them.
-4. Perform a new action after an undo → redo stack clears (Ctrl+Y does nothing further).
-5. Open two tabs, undo in tab A → tab B reflects the change and its stack indicator updates.
-6. Set history depth to 10 in Settings, perform 15 actions → only the last 10 are undoable.
-7. Delete a task in tab A, then undo that delete from tab A after a collaborator (tab B, different
-   user) permanently deleted a *different dependent* record → graceful skip + toast, no crash.
-
----
-
-## Status
-
-Reviewed and approved by the user (2026-08-13): decisions #1 (dedicated table + activity_events
-dual-write), #2 (per-user shared stack, cross-tab redo as flagship feature), #3–#9, and #10
-(extend in-house matcher, no third-party hotkey library) are all confirmed. Ready to move to an
-implementation plan (`writing-plans` skill) when work on this begins.
+app/src/types/history.ts                             new
+app/src/types/api.ts                                 add historyDepth to Preferences
+app/src/hooks/shortcuts.ts                           modifier matching + undo/redo bindings
+app/src/hooks/useSync.ts                             mirror 'history' + 'undone' | 'redone'
+app/src/hooks/useHistory.ts                          new
+app/src/stores/toastStore.ts                         new
+app/src/components/UndoToast.tsx                     new
+app/src/components/settings/HistoryDepthSection.tsx  new (keeps SettingsPage.tsx < 1000 lines)
+app/src/components/AppShell.tsx                      keydown modifiers, shortcut dispatch, UndoToast, help rows
+app/src/pages/SettingsPage.tsx                       mount HistoryDepthSection in General tab
+app/src/api/client.ts                                fetchHistory, apiUndo, apiRedo + toast triggers
+app/src/i18n/locales/en.ts                           English history & settings strings
+app/src/i18n/locales/pt-BR.ts                        Portuguese history & settings strings
+app/src/i18n/helpContent.ts                          Help page undo/redo shortcut entries
+app/src/hooks/__tests__/shortcuts.test.ts            modifier & shifted-punctuation tests
+app/src/hooks/__tests__/useHistory.test.ts           new
+app/src/pages/__tests__/SettingsPage.test.tsx        history depth preference tests
+app/e2e/history.spec.ts                              new Playwright E2E suite
+CLAUDE.md, README.md                                 architecture & shortcut docs
+```

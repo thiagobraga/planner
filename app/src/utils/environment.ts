@@ -3,6 +3,6 @@ export function isProduction(): boolean {
 }
 
 export function getAppTitle(): string {
-  const baseTitle = 'Planner';
+  const baseTitle = 'BulletPlanner';
   return isProduction() ? baseTitle : `${baseTitle} Dev`;
 }

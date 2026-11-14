@@ -35,8 +35,8 @@ vi.mock('../../api/client', () => ({
   apiCreateTask: vi.fn(),
 }));
 
-vi.mock('../Sidebar', () => ({
-  Sidebar: vi.fn(() => <div data-testid="sidebar" />),
+vi.mock('../nav/TopBar', () => ({
+  TopBar: vi.fn(() => <div data-testid="topbar" />),
   NAV_ITEMS: [
     { to: '/daily', labelKey: 'nav.daily', Icon: () => null },
     { to: '/inbox', labelKey: 'nav.inbox', Icon: () => null },
@@ -156,9 +156,23 @@ describe('AppShell', () => {
     expect(screen.getByTestId('outlet-content')).toBeInTheDocument();
   });
 
+  it('pins the shell to the viewport so the mobile bottom bar stays visible', () => {
+    const { container } = render(<AppShell />);
+    const shell = container.querySelector('.app-shell');
+    expect(shell).toHaveClass('fixed', 'inset-0');
+    expect(shell).not.toHaveClass('h-dvh');
+  });
+
   it('renders the Outlet content', () => {
     render(<AppShell />);
     expect(screen.getByText('Outlet content')).toBeInTheDocument();
+  });
+
+  it('centers every page in one 720px column', () => {
+    render(<AppShell />);
+    const column = screen.getByTestId('outlet-content').parentElement;
+    expect(column).toHaveClass('page-container', 'mx-auto', 'w-full', 'max-w-page');
+    expect(column?.parentElement?.tagName).toBe('MAIN');
   });
 
   it('applies font class from preferences', () => {
@@ -171,9 +185,9 @@ describe('AppShell', () => {
     expect(document.body).not.toHaveClass('font-hubballi');
   });
 
-  it('renders Sidebar', () => {
+  it('renders TopBar', () => {
     render(<AppShell />);
-    expect(screen.getByTestId('sidebar')).toBeInTheDocument();
+    expect(screen.getByTestId('topbar')).toBeInTheDocument();
   });
 
   describe('theme', () => {

@@ -46,4 +46,14 @@ describe('ContextMenu inline panel', () => {
 
     expect(screen.queryByRole('button', { name: 'Apply' })).not.toBeInTheDocument();
   });
+
+  it('keeps an inline panel open while tabbing through its controls', () => {
+    const onClose = vi.fn();
+    render(<ContextMenu items={items(vi.fn())} position={{ x: 10, y: 10 }} onClose={onClose} />);
+    fireEvent.click(screen.getByText('Set date'));
+
+    fireEvent.keyDown(screen.getByRole('button', { name: 'Apply' }), { key: 'Tab' });
+
+    expect(onClose).not.toHaveBeenCalled();
+  });
 });

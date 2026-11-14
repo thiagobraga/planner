@@ -3,46 +3,56 @@ import { expect, STORAGE_STATE_PATH, test } from './fixtures/api';
 
 test.use({ storageState: STORAGE_STATE_PATH });
 
-test('sidebar icons keep their geometry when collapsed', async ({ page }) => {
-  await page.setViewportSize({ width: 1440, height: 900 });
+test('topbar fits every style and responsive tier in both locales and themes', async ({ page, api }) => {
+  test.setTimeout(120_000);
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
-  await page.route('**/api/v1/auth/me', async (route) => {
-    const response = await route.fetch();
-    const data = await response.json();
-    await route.fulfill({ response, json: { ...data, user: { ...data.user, role: 'admin' } } });
-  });
-  await page.goto('/daily');
-  const sidebar = page.locator('aside');
-  await expect(sidebar.getByRole('link', { name: /Daily|Diário/ })).toBeVisible();
-  const geometry = () => sidebar.locator('a[href]:not([href="#"]) svg').evaluateAll((icons) =>
-    icons.map((icon) => {
-      const { x, y, width, height } = icon.getBoundingClientRect();
-      return { x, y, width, height };
-    }),
-  );
-  const expanded = await geometry();
-  const versionRow = sidebar.locator('.sidebar-version-row');
-  const expandedVersionRow = await versionRow.boundingBox();
   await mkdir('dist/screenshots', { recursive: true });
-  await page.screenshot({ path: 'dist/screenshots/sidebar-aligned-expanded.png' });
-  await sidebar.getByRole('button', { name: /Collapse sidebar|Ocultar barra|Recolher barra/ }).click();
-  await expect(sidebar).toHaveClass(/sidebar-collapsed/);
-  expect(await geometry()).toEqual(expanded);
-  expect((await sidebar.boundingBox())?.width).toBe(64);
-  await expect(sidebar.locator('.sidebar-header img')).toHaveAttribute('width', '16');
-  const compactVersionRow = await versionRow.boundingBox();
-  expect(compactVersionRow?.y).toBe(expandedVersionRow?.y);
-  expect(compactVersionRow?.height).toBe(expandedVersionRow?.height);
-  const badge = await sidebar.locator('.sidebar-version').boundingBox();
-  expect(badge!.x + badge!.width / 2).toBeCloseTo(31.5, 0);
-  await expect(sidebar.getByText('Daily', { exact: true })).not.toBeVisible();
-  await page.screenshot({ path: 'dist/screenshots/sidebar-aligned-collapsed.png' });
-  await sidebar.getByRole('button', { name: /Expand sidebar|Expandir barra/ }).click();
-  expect(await geometry()).toEqual(expanded);
-  await page.setViewportSize({ width: 390, height: 844 });
-  await page.reload();
-  await expect(page.locator('main')).toBeVisible();
-  await page.screenshot({ path: 'dist/screenshots/sidebar-aligned-mobile.png' });
+  for (const locale of ['en', 'pt-BR']) {
+    for (const background of ['beige', 'dark']) {
+      for (const navStyle of ['text', 'icon-left', 'icon-top']) {
+        await api.patch('/preferences', { locale, background, navStyle });
+        await page.goto('/daily/list');
+        await expect(page.locator('.topbar')).toHaveAttribute('data-nav-style', navStyle);
+        await expect(page.locator('html')).toHaveAttribute('data-theme', background);
+        for (const width of [1440, 641, 390, 320]) {
+          await page.setViewportSize({ width, height: 900 });
+          await page.evaluate(() => document.fonts.ready);
+          const bar = page.locator('.topbar');
+          await expect(bar).toBeVisible();
+          await expect(bar).toHaveCSS('height', `${width <= 640 ? 64 : navStyle === 'icon-top' ? 64 : 48}px`);
+          const geometry = await bar.evaluate((element) => {
+            const rect = element.getBoundingClientRect();
+            const controls = Array.from(element.querySelectorAll('a, button')).filter((control) => control.getBoundingClientRect().width > 0);
+            return {
+              overflow: element.scrollWidth - element.clientWidth,
+              controls: controls.map((control) => {
+                const box = control.getBoundingClientRect();
+                return { label: control.textContent?.trim(), inside: box.left >= rect.left && box.right <= rect.right + 1 && box.top >= rect.top && box.bottom <= rect.bottom + 1 };
+              }),
+              clippedLabels: Array.from(element.querySelectorAll('.topbar-item')).filter((item) => item.scrollWidth > item.clientWidth + 1).map((item) => item.textContent?.trim()),
+            };
+          });
+          expect(geometry.overflow, `${locale} ${background} ${navStyle} ${width}`).toBeLessThanOrEqual(1);
+          expect(geometry.controls.filter((control) => !control.inside)).toEqual([]);
+          expect(geometry.clippedLabels).toEqual([]);
+          await expect(page.getByRole('navigation').getByRole('link')).toHaveCount(4);
+          if (width <= 640) {
+            await expect(page.locator('.topbar-menu-button')).toHaveCSS('width', '36px');
+            await expect(page.locator('.topbar-menu-button')).toHaveCSS('height', '36px');
+          } else {
+            const brand = (await page.locator('.topbar-brand-name').boundingBox())!;
+            const nav = (await page.locator('.topbar-nav').boundingBox())!;
+            const actions = (await page.locator('.topbar-actions').boundingBox())!;
+            expect(brand.x + brand.width, `${locale} ${navStyle} ${width} brand`).toBeLessThanOrEqual(nav.x + 1);
+            expect(nav.x + nav.width, `${locale} ${navStyle} ${width} actions`).toBeLessThanOrEqual(actions.x + 1);
+          }
+          if (width === 1440 || navStyle === 'icon-left') {
+            await page.screenshot({ path: `dist/screenshots/topbar-${locale}-${background}-${navStyle}-${width}.png` });
+          }
+        }
+      }
+    }
+  }
   expect(errors).toEqual([]);
 });

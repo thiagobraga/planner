@@ -419,7 +419,7 @@ export function HabitTimeline({
 
   return (
     <div ref={rootRef} className="habit-timeline">
-      <div className="habit-timeline-week-selector flex max-w-162 justify-start">
+      <div className="habit-timeline-week-selector flex justify-start">
         <WeekSelector weekAnchor={weekAnchor} today={today} weekStart={weekStart} onWeekChange={onWeekChange} onToday={onToday} />
       </div>
 
@@ -598,7 +598,7 @@ export function HabitTimeline({
                     >
                       {node.name}
                     </span>
-                    {debug && <DebugCard id={node.id} orderValue={node.orderValue} createdAt={node.createdAt} />}
+                    {debug && <DebugCard id={node.id} orderValue={node.orderValue} createdAt={node.createdAt} level={depth} parentId={node.parentId} />}
                     <RowOptionsButton
                       label={t('habit.optionsFor', { name: node.name })}
                       onOpen={(x, y) => setMenu({ target, canAddSub: depth === 0, x, y })}

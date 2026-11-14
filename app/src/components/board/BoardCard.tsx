@@ -1,4 +1,4 @@
-import { CalendarDays, Check } from 'lucide-react';
+import { CalendarDays, Check, MoreHorizontal } from 'lucide-react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { ApiTask } from '../../types/api';
@@ -14,9 +14,10 @@ interface BoardCardProps {
   subtreeIds?: string[];
   onToggle?: (taskId: string, completed: boolean) => void;
   hideDueDate?: boolean;
+  onTaskContextMenu?: (taskId: string, position: { x: number; y: number }) => void;
 }
 
-export function BoardCard({ task, subtasks, containerId = '', subtreeIds, onToggle, hideDueDate }: BoardCardProps) {
+export function BoardCard({ task, subtasks, containerId = '', subtreeIds, onToggle, hideDueDate, onTaskContextMenu }: BoardCardProps) {
   const { t } = useI18n();
   const dragData: TaskDragData = {
     kind: 'task',
@@ -41,6 +42,17 @@ export function BoardCard({ task, subtasks, containerId = '', subtreeIds, onTogg
       className={`board-card ${isDragging ? 'is-dragging' : ''}`}
       data-card-id={task.id}
       style={{ transform: CSS.Transform.toString(transform), transition }}
+      onContextMenu={(event) => {
+        if (!onTaskContextMenu) return;
+        event.preventDefault();
+        onTaskContextMenu(task.id, { x: event.clientX, y: event.clientY });
+      }}
+      onKeyDown={(event) => {
+        if (!onTaskContextMenu || !(event.key === 'ContextMenu' || (event.shiftKey && event.key === 'F10'))) return;
+        event.preventDefault();
+        const rect = event.currentTarget.getBoundingClientRect();
+        onTaskContextMenu(task.id, { x: rect.left + 16, y: rect.top + 16 });
+      }}
     >
       <div className="board-card-topline">
         <button
@@ -53,6 +65,17 @@ export function BoardCard({ task, subtasks, containerId = '', subtreeIds, onTogg
           {task.isCompleted && <Check size={12} strokeWidth={2} />}
         </button>
         <h3 className={task.isCompleted ? 'line-through opacity-60' : ''}>{task.title}</h3>
+        {onTaskContextMenu && <button
+          type="button"
+          className="board-card-menu"
+          {...{ [NO_DRAG_ATTR]: '' }}
+          aria-label={t('board.moreOptions', { title: task.title })}
+          onClick={(event) => {
+            event.stopPropagation();
+            const rect = event.currentTarget.getBoundingClientRect();
+            onTaskContextMenu(task.id, { x: rect.right, y: rect.bottom });
+          }}
+        ><MoreHorizontal size={16} /></button>}
       </div>
 
       {task.labels && task.labels.length > 0 && (

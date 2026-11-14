@@ -104,3 +104,43 @@ describe('useTaskDrag: a drop onto another date lands top-level', () => {
     expect(move!.depth).toBe(1);
   });
 });
+
+describe('rightward task drops', () => {
+  const list = flattenTasks([
+    task({ id: 'parent', collectionId: 'c1', sectionId: 's1', dueDate: '2026-07-19', orderValue: 0 }),
+    task({ id: 'child', collectionId: 'c1', sectionId: 's1', dueDate: '2026-07-19', orderValue: 1000 }),
+  ]);
+  const data = (id: string): TaskDragData => ({
+    ...dragData(id, '2026-07-19', [id]), collectionId: 'c1', sectionId: 's1', containerId: 'section:s1',
+  });
+
+  it('nests as first child when released over the parent row', () => {
+    const move = resolveMove({ rows: list, active: data('child'), over: data('parent'), offsetX: 24, scope: { kind: 'section', sectionId: 's1' } });
+    expect(move?.input).toMatchObject({ parentTaskId: 'parent', position: 0 });
+    expect(move?.depth).toBe(1);
+  });
+
+  it('nests using the current position when released over its own row', () => {
+    const move = resolveMove({ rows: list, active: data('child'), over: data('child'), offsetX: 24, scope: { kind: 'section', sectionId: 's1' } });
+    expect(move?.input).toMatchObject({ parentTaskId: 'parent', position: 0 });
+  });
+
+  it('rejects a drop whose descendants would exceed depth five', () => {
+    const branch = [task({ id: 'branch', dueDate: '2026-07-19', collectionId: 'c1', sectionId: 's1', orderValue: 0 })];
+    let parentId = 'branch';
+    for (let depth = 1; depth <= 5; depth++) {
+      const id = `branch-${depth}`;
+      branch.push(task({ id, parentTaskId: parentId, dueDate: '2026-07-19', collectionId: 'c1', sectionId: 's1' }));
+      parentId = id;
+    }
+    const other = [task({ id: 'other', dueDate: '2026-07-19', collectionId: 'c1', sectionId: 's1', orderValue: 1000 })];
+    parentId = 'other';
+    for (let depth = 1; depth <= 5; depth++) {
+      const id = `other-${depth}`;
+      other.push(task({ id, parentTaskId: parentId, dueDate: '2026-07-19', collectionId: 'c1', sectionId: 's1' }));
+      parentId = id;
+    }
+    const active = { ...data('branch'), subtreeIds: branch.map((item) => item.id) };
+    expect(resolveMove({ rows: flattenTasks([...branch, ...other]), active, over: data('other-5'), offsetX: 24, scope: { kind: 'section', sectionId: 's1' } })).toBeNull();
+  });
+});

@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, within, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { StyleguidePage } from '../StyleguidePage';
+import { MemoryRouter } from 'react-router';
 import { fetchPreferences } from '../../api/client';
 import type { Preferences } from '../../types/api';
 
@@ -38,12 +39,21 @@ function renderPage() {
   });
   return render(
     <QueryClientProvider client={client}>
-      <StyleguidePage />
+      <MemoryRouter><StyleguidePage /></MemoryRouter>
     </QueryClientProvider>,
   );
 }
 
 describe('StyleguidePage (smoke)', () => {
+  it('shows the joined wordmark in the navigation specimen', async () => {
+    renderPage();
+    const section = (await screen.findByText('Navigation')).closest('section');
+    const brand = section?.querySelector('.topbar-brand-name');
+    expect(brand).toHaveTextContent(/^BulletPlanner$/);
+    expect(brand?.firstChild?.textContent).toBe('Bullet');
+    expect(brand?.querySelector('b')).toHaveTextContent(/^Planner$/);
+  });
+
   it('renders all design system sections', async () => {
     renderPage();
 

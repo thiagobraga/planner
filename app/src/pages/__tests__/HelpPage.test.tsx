@@ -29,7 +29,7 @@ describe('HelpPage (smoke)', () => {
     render(<HelpPage />);
 
     expect(screen.getByText('Help')).toBeInTheDocument();
-    expect(screen.getByText('Learn how to use Planner')).toBeInTheDocument();
+    expect(screen.getByText('Learn how to use BulletPlanner')).toBeInTheDocument();
   });
 
   it('renders all help sections', () => {

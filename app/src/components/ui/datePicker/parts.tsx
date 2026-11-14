@@ -26,9 +26,9 @@ export function ScreenHeader({ title, icon, onBack, onClose }: {
         <button type="button" aria-label={t('datePicker.back')} onClick={onBack} className={iconButton}>
           <ArrowLeft {...ICON} />
         </button>
-      ) : (
+      ) : icon ? (
         <span className="flex h-6 w-6 shrink-0 items-center justify-center text-ink">{icon}</span>
-      )}
+      ) : null}
       <h2 className="m-0 flex-1 truncate text-[16px] font-medium leading-6 text-ink">{title}</h2>
       <button type="button" aria-label={t('common.close')} onClick={onClose} className={iconButton}>
         <X {...ICON} />

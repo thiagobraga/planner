@@ -10,12 +10,13 @@ function dateKey(year: number, month: number, day: number): string {
 export interface MonthlyViewProps {
   tasks: Task[];
   onToggle: (id: string) => void;
+  onTaskContextMenu?: (id: string, position: { x: number; y: number }) => void;
   /** Month shown (0-based). Pass with `onMonthChange` when the page owns navigation, e.g. to fetch that month. */
   visibleMonth?: { year: number; month: number };
   onMonthChange?: (year: number, month: number) => void;
 }
 
-export function MonthlyView({ tasks, onToggle, visibleMonth, onMonthChange }: MonthlyViewProps) {
+export function MonthlyView({ tasks, onToggle, onTaskContextMenu, visibleMonth, onMonthChange }: MonthlyViewProps) {
   const { locale, t } = useI18n();
   const now = new Date();
   const [ownYear, setOwnYear] = useState(now.getFullYear());
@@ -107,6 +108,7 @@ export function MonthlyView({ tasks, onToggle, visibleMonth, onMonthChange }: Mo
                         key={task.id}
                         task={task}
                         onToggle={onToggle}
+                        onTaskContextMenu={onTaskContextMenu}
                       />
                     ))}
                   </div>
@@ -134,6 +136,7 @@ export function MonthlyView({ tasks, onToggle, visibleMonth, onMonthChange }: Mo
                   key={task.id}
                   task={task}
                   onToggle={onToggle}
+                  onTaskContextMenu={onTaskContextMenu}
                 />
               ))}
             </div>
@@ -144,13 +147,16 @@ export function MonthlyView({ tasks, onToggle, visibleMonth, onMonthChange }: Mo
   );
 }
 
-function MonthlyTaskEntry({ task, onToggle }: { task: Task; onToggle: (id: string) => void }) {
+function MonthlyTaskEntry({ task, onToggle, onTaskContextMenu }: { task: Task; onToggle: (id: string) => void; onTaskContextMenu?: MonthlyViewProps['onTaskContextMenu'] }) {
   const { t } = useI18n();
   const isCompleted = task.isCompleted;
   const type = task.type ?? 'task';
 
   return (
-    <div className={`flex items-center min-h-6 ${isCompleted ? 'line-through opacity-50' : ''}`}>
+    <div
+      className={`flex items-center min-h-6 ${isCompleted ? 'line-through opacity-50' : ''}`}
+      onContextMenu={(event) => { if (onTaskContextMenu) { event.preventDefault(); onTaskContextMenu(task.id, { x: event.clientX, y: event.clientY }); } }}
+    >
       {type === 'note' ? (
         <span
           aria-hidden="true"
@@ -184,6 +190,12 @@ function MonthlyTaskEntry({ task, onToggle }: { task: Task; onToggle: (id: strin
       <span className="text-[13px] leading-6 text-ink normal-case tracking-normal truncate">
         {task.title}
       </span>
+      {onTaskContextMenu && <button
+        type="button"
+        className="ml-auto px-1 text-ink-light"
+        aria-label={t('board.moreOptions', { title: task.title })}
+        onClick={(event) => { const rect = event.currentTarget.getBoundingClientRect(); onTaskContextMenu(task.id, { x: rect.right, y: rect.bottom }); }}
+      >···</button>}
     </div>
   );
 }

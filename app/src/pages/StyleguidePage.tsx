@@ -1,12 +1,15 @@
 import { useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Plus, Calendar, Trash2, Search, ListTodo, Kanban, EyeOff, FileClock } from 'lucide-react';
-import { CalendarDayIcon, MonthlyIcon, PlannerIcon } from '../components/Sidebar';
-import { SidebarNavItem } from '../components/SidebarNavItem';
-import { ChevronRight, Repeat2 } from 'lucide-react';
+import { PlannerIcon } from '../components/nav/navIcons';
+import { NAV_ITEMS } from '../components/nav/navItems';
+import { TopBarItem } from '../components/nav/TopBarItem';
+import { Repeat2 } from 'lucide-react';
 import { MonthlyCalendarSpecimen } from '../components/monthly/MonthlyCalendarSpecimen';
 import { MonthSelector } from '../components/monthly/MonthSelector';
 import { DatePickerSpecimen } from '../components/monthly/DatePickerSpecimen';
+import { WeekSelector } from '../components/board/WeekSelector';
+import { startOfDay } from '../utils/date';
 import { HabitSpecimen } from '../components/habits/HabitSpecimen';
 import { Button } from '../components/ui/Button';
 import { ButtonGroup } from '../components/ui/ButtonGroup';
@@ -55,25 +58,6 @@ const COLLECTIONS = [
   { name: 'sociopata', color: '#c98079' },
 ];
 
-const NAV_COLLECTIONS = [
-  { name: 'dev', color: '#7dbfb2', depth: 0 },
-  { name: 'openclaw', color: '#d7db96', depth: 1 },
-  { name: 'planner', color: '#d7db96', depth: 1 },
-  { name: 'health', color: '#cbd376', depth: 0 },
-  { name: 'music', color: '#c98079', depth: 0 },
-  { name: 'sociopata', color: '#d56b64', depth: 1 },
-  { name: 'senac', color: '#b97a3a', depth: 0 },
-  { name: 'tech', color: '#7ea2d6', depth: 0 },
-  { name: 'ai', color: '#a6cfc5', depth: 1 },
-] as const;
-
-const NAV = [
-  { label: 'Daily', Icon: CalendarDayIcon, active: true },
-  { label: 'Inbox', Icon: ChevronRight, active: false },
-  { label: 'Monthly', Icon: MonthlyIcon, active: false },
-  { label: 'Habits', Icon: Repeat2, active: false },
-];
-
 const SPACING = [4, 8, 16, 24, 32, 48];
 const RADII = [4, 6, 8, 12, 16];
 const MOTION = [
@@ -88,7 +72,7 @@ const PRIMARY_COLORS = [
   { name: 'Ink Lighter', var: '--color-ink-lighter', hex: '#c5c1ba', darkHex: '#6f6358' },
   { name: 'Dot Grid', var: '--color-dot', hex: '#d8d3cb', darkHex: '#3b3229' },
   { name: 'Border', var: '--color-border', hex: '#e5e1d8', darkHex: '#463b31' },
-  { name: 'Sidebar Cream', var: '--color-sidebar-bg', hex: '#ebe6de', darkHex: '#292219' },
+  { name: 'Surface Cream', var: '--color-sidebar-bg', hex: '#ebe6de', darkHex: '#292219' },
   { name: 'Cream Paper', var: '--color-cream', hex: '#f5f0e8', darkHex: '#292219' },
 ];
 
@@ -106,6 +90,7 @@ export function StyleguidePage() {
     queryFn: fetchPreferences,
   });
   const weekStart = preferences?.weekStart ?? 'sunday';
+  const [dailyWeekAnchor, setDailyWeekAnchor] = useState(() => startOfDay(new Date()));
 
   const [radioChoice, setRadioChoice] = useState('a');
   const [buttonGroupView, setButtonGroupView] = useState<'list' | 'kanban-list' | 'kanban'>('list');
@@ -150,8 +135,8 @@ export function StyleguidePage() {
   ], []);
 
   return (
-    <div className="max-w-5xl pb-24 text-ink">
-      <header className="page-header-copy sticky-page-header max-w-162">
+    <div className="pb-24 text-ink">
+      <header className="page-header-copy sticky-page-header">
         <div className="page-header-copy-text">
           <h1 className="m-0 h-6 p-0 text-lg leading-6 font-semibold text-ink">Styleguide</h1>
         </div>
@@ -430,48 +415,12 @@ export function StyleguidePage() {
           </div>
         </Card>
 
-        {/* Navigation */}
-        <Card title="Navigation">
-          <div className="w-55 border border-dot bg-(--planner-sidebar-bg) px-3 py-6">
-            <div className="mb-6 ml-3">
-              <div className="flex items-start gap-3">
-                <PlannerIcon width={28} height={38} className="mt-1" />
-                <div>
-                  <div className="h-6 text-lg font-semibold leading-6 text-ink">Planner</div>
-                  <div className="h-6 text-[13px] leading-6 text-ink-light opacity-60">Bulletjournal online</div>
-                </div>
-              </div>
-            </div>
-            <nav className="flex flex-col">
-              {NAV.map(({ label, Icon, active }) => (
-                <SidebarNavItem
-                  key={label}
-                  label={label}
-                  icon={<Icon size={15} strokeWidth={1.5} />}
-                  active={active}
-                />
-              ))}
+        <Card title="Navigation" span>
+          <div className="topbar" data-nav-style="icon-left">
+            <div className="topbar-brand"><PlannerIcon width={16} height={16} /><span className="topbar-brand-name">Bullet<b>Planner</b></span></div>
+            <nav className="topbar-nav" aria-label="Navigation specimen">
+              {NAV_ITEMS.map((item) => <TopBarItem key={item.to} item={item} />)}
             </nav>
-            <div className="mt-6">
-              <div className="flex items-center justify-between px-3">
-                <span className="text-[10px] font-medium uppercase leading-6 tracking-widest text-ink-light">Collections</span>
-                <span className="flex items-center text-sm leading-none text-ink-light" aria-hidden="true">+</span>
-              </div>
-              {NAV_COLLECTIONS.map((collection) => (
-                <div
-                  key={collection.name}
-                  className={`collection-row flex h-6 items-center gap-1.75 pr-2 text-[13px] text-ink ${collection.depth === 0 ? 'pl-3' : 'pl-5.5'}`}
-                >
-                  <span className="flex w-4 shrink-0 items-center justify-center">
-                    <span
-                      className="block w-1.75 h-1.75 rounded-full filter-[saturate(0.55)]"
-                      style={{ background: collection.color }}
-                    />
-                  </span>
-                  <span className="truncate text-[13px] text-ink opacity-60">{collection.name}</span>
-                </div>
-              ))}
-            </div>
           </div>
         </Card>
 
@@ -541,6 +490,17 @@ export function StyleguidePage() {
         {/* Calendar & Monthly */}
         <Card title="Calendar & Monthly">
           <MonthlyCalendarSpecimen compact weekStart={weekStart} />
+          <div className="flex flex-col gap-3 mt-6">
+            <p className="text-[10px] tracking-[0.08em] uppercase text-ink-light font-medium">Daily tab calendar</p>
+            <WeekSelector
+              weekAnchor={dailyWeekAnchor}
+              today={startOfDay(new Date())}
+              weekStart={weekStart}
+              onWeekChange={setDailyWeekAnchor}
+              onToday={() => setDailyWeekAnchor(startOfDay(new Date()))}
+              defaultOpen
+            />
+          </div>
         </Card>
 
         {/* Month Selector */}

@@ -1,3 +1,4 @@
+import type { NavStyle } from "../types/preferences.js";
 import pool from "../db/pool.js";
 import { AppError } from "../utils/AppError.js";
 import { buildEvent, publishEvent } from "./syncService.js";
@@ -16,6 +17,7 @@ interface PreferencesRow {
   hide_completed_tasks: boolean;
   show_notes: boolean;
   show_checkboxes: boolean;
+  nav_style: NavStyle;
   agent_change_notices: boolean;
   locale: string;
   date_format: string;
@@ -41,6 +43,7 @@ function formatPreferences(row: PreferencesRow) {
     hideCompletedTasks: row.hide_completed_tasks,
     showNotes: row.show_notes,
     showCheckboxes: row.show_checkboxes,
+    navStyle: row.nav_style,
     agentChangeNotices: row.agent_change_notices,
     locale: row.locale,
     dateFormat: row.date_format ?? 'MMM DD ddd',
@@ -49,6 +52,7 @@ function formatPreferences(row: PreferencesRow) {
   };
 }
 
+const VALID_NAV_STYLES = ["text", "icon-left", "icon-top"] as const;
 const VALID_WEEK_STARTS = ["sunday", "monday"] as const;
 const VALID_THEMES = ["light", "dark", "system"] as const;
 const VALID_FONTS = ["lora", "playpen", "hubballi"] as const;
@@ -85,6 +89,7 @@ export interface UpdatePreferencesInput {
   hideCompletedTasks?: boolean;
   showNotes?: boolean;
   showCheckboxes?: boolean;
+  navStyle?: string;
   agentChangeNotices?: boolean;
   locale?: string;
   dateFormat?: string;
@@ -139,6 +144,10 @@ export function validatePreferences(input: UpdatePreferencesInput): UpdatePrefer
 
   if (input.showCheckboxes !== undefined && typeof input.showCheckboxes !== "boolean") {
     errors.push({ field: "showCheckboxes", message: "showCheckboxes must be a boolean" });
+  }
+
+  if (input.navStyle !== undefined && !VALID_NAV_STYLES.includes(input.navStyle as NavStyle)) {
+    errors.push({ field: "navStyle", message: "navStyle must be one of: text, icon-left, icon-top" });
   }
 
   if (input.agentChangeNotices !== undefined && typeof input.agentChangeNotices !== "boolean") {
@@ -268,6 +277,10 @@ export async function updatePreferences(userId: string, input: UpdatePreferences
   if (input.showCheckboxes !== undefined) {
     setClauses.push(`show_checkboxes = $${paramIndex++}`);
     values.push(input.showCheckboxes);
+  }
+  if (input.navStyle !== undefined) {
+    setClauses.push(`nav_style = $${paramIndex++}`);
+    values.push(input.navStyle);
   }
   if (input.agentChangeNotices !== undefined) {
     setClauses.push(`agent_change_notices = $${paramIndex++}`);

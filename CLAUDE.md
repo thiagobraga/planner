@@ -1,8 +1,25 @@
-# AI Agent Instructions
+# Agent Instructions
 
-This file provides guidance to AI coding agents (Claude Code, Codex, Antigravity, OpenCode, GitHub Copilot, etc.) when working with code in this repository.
+`AGENTS.md`, `GEMINI.md`, and `.github/copilot-instructions.md` are symlinks to this file. Edit only `CLAUDE.md` and never replace a symlink.
 
-`AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, and `.github/copilot-instructions.md` are symlinks to this single file - there is nothing to synchronize manually. Edit this file only; the other names stay in sync automatically because they resolve to the same inode. Do not replace any of them with a real file.
+## Rules
+
+- **Read before editing** project files when implementing features or fixing bugs. Inspect exact definitions, trace dataflows, and check all callers before changing signatures. Scope searches to relevant files and limit log output to save tokens.
+- **Keep responses short** unless more detail is requested. Use one sentence or a short list explaining what was done and anything needed to use it. Use `/caveman ultra` when available.
+- **Avoid em dashes and AI slop** in all new output, including code, comments, documentation, commits, and chat. Skip pleasantries, flattery, repetition, recaps, filler, emojis, and unsolicited next steps. Never use em dashes; use simple dashes `-`.
+- **Keep files under 1000 lines.** Before and after editing, check line counts of touched files. Split any hand-written file approaching or exceeding the limit into focused modules (API: services/routes/helpers per concern; frontend: components/hooks/stores per concern) instead of growing it. Generated files and migrations are exempt and never hand-edited.
+- **Apply first-principles reasoning** before development. Understand root requirements and underlying behavior, choose the simplest working solution, and write clean, readable code with zero fluff and without premature abstractions.
+- **Preserve architectural boundaries** by keeping business logic in backend services (`api/src/services/`), route handlers thin, and React state clearly divided between React Query (server cache), Zustand (client/optimistic), and DB/Redis. All mutations must publish events via `publishEvent()` in `services/syncService.ts` and record activity through `recordActivity()`.
+- **Write tests for every behavioral code change** following TDD rules: write a failing test, make it pass, then refactor. Add regression tests for bug fixes. Write unit tests, real DB/Redis integration tests (no mock-DB pattern), and Playwright E2E tests. Await async work inside `act()`, `waitFor`, or `findBy*` before tests end to avoid act warnings.
+- **Verify changes before completion** by running relevant tests, type checks, builds, and integration checks. Report failures and unverified behavior explicitly. Never claim tests passed without executing them.
+- **Keep documentation updated** when changes affect `README.md`, `DESIGN.md`, `CLAUDE.md`, or `.specs/`. Follow canonical specifications for behavior and `DESIGN.md` for visual decisions. Fix conflicting code and ask before intentionally changing the design.
+- **Build accessible and responsive interfaces** using semantic components, keyboard navigation, clear feedback, consistent spacing, and `DESIGN.md` tokens (warm cream, Lora serif, brick-red accent, 24px baseline rhythm, flat elevation). Avoid visual clutter, unnecessary nesting, and duplicated components.
+- **Verify UI changes** by building and capturing affected views in Chrome at desktop and 390px. Save visual test screenshots to `./app/dist/screenshots/*.png` inside the worktree and display them as clickable markdown links.
+- **Protect database and data operations** by validating inputs, handling conflicts explicitly, and ensuring interrupted or failed operations preserve recoverability. Keep production migrations backward-compatible. Never silently overwrite or delete user data.
+- **Secure every interface** by validating inputs at system boundaries, enforcing authentication and authorization (session cookies, API tokens, OAuth), and preventing command injection, path traversal, CSRF, credential exposure, and unintended remote access.
+- **Protect credentials and user data** by storing secrets only in environment variables or Argon2id hashes, never in plain text, logs, exports, or client application state. Treat API tokens, session cookies, and OAuth tokens as sensitive revocable credentials.
+- **Prompt for worktree or branch isolation** before writing code if a user requests a coding task directly without an existing spec or running `/plan`, so implementation can be tested safely.
+- **Follow Conventional Commits** using `type(scope): summary` with lowercase imperative messages. Name branches `type/slug` (e.g. `feat/dev-sidebar-badge`) and follow the same convention for PR titles. Include the model `Co-Authored-By` trailer on the last line of every commit body.
 
 ## Project
 
@@ -10,22 +27,9 @@ Planner is a task manager with a paper-journal aesthetic (warm cream, Lora serif
 
 ## Tool Name Equivalents
 
-Different agents expose the same capability under different tool names. Read-before-edit discipline applies regardless of tool name: always read a file before modifying it, and grep for all callers before changing a function signature.
+Different agents expose the same capability under different tool names:
 
 - Skill invocation: Claude Code `Skill` tool ≈ Gemini CLI `activate_skill` tool.
-
-## Andrej Karpathy Engineering Principles
-
-When starting development, apply Karpathy core engineering principles:
-
-- **First-Principles Reasoning**: Understand root requirements and underlying systems before writing code.
-- **Extreme Simplicity**: Build the simplest working solution; avoid premature abstractions and unneeded complexity.
-- **Clean & Readable**: Write clear, self-explanatory code with zero fluff.
-- **Deep Understanding**: Inspect exact definitions and trace dataflows before modifying existing logic.
-
-## Direct Task Worktree Prompting
-
-If a user requests a coding task directly (without an existing spec or running `/plan`), the agent MUST ask whether the user wants to create a Git worktree, branch, or isolated development environment before writing code, so implementation can be tested safely.
 
 ## Quickstart
 
@@ -52,10 +56,11 @@ bash .hooks/setup-hooks.sh
 
 ### Dev hosts (Traefik on the `proxy` network)
 
-Add to `/etc/hosts`: `planner.local`, `api.planner.local`, `db.planner.local`, `coverage.planner.local`.
+Add to `/etc/hosts`: `planner.local`, `api.planner.local`, `db.planner.local`, `coverage.planner.local`, `site.planner.local`.
 
 - `https://planner.local` - app (also serves `/api` and `/socket.io`)
 - `https://api.planner.local` - API directly (e.g. `/api/v1/...`)
+- `https://site.planner.local` - marketing site (standalone React app in `site/`)
 - `https://db.planner.local` - pgAdmin (desktop mode, DB password `planner`)
 - `https://coverage.planner.local` - Vitest HTML report & E2E coverage (writes to `app/coverage-reports`, served via static nginx container)
 
@@ -148,20 +153,20 @@ All routes under `/api/v1/`. Route files: `auth`, `apiTokens`, `mcp`, `oauth`, `
 
 ### Pages & Routes
 
-| Route                              | Page                                   | Purpose                                                      |
-| ---------------------------------- | -------------------------------------- | ------------------------------------------------------------ |
-| `/daily` (default)                 | `DailyIndexRedirect`                   | Redirects to the last used view (default `list`); `/` and `/today` redirect here |
-| `/daily/list\|kanban\|cards\|monthly` | `DailyRoute` -> `DailyPage`            | The URL picks the view; an unknown one falls back to `/daily/list` |
-| `/inbox`                           | `InboxPage`                            | Unprocessed tasks                                            |
-| `/habits`                          | `HabitsPage`                           | Habit streaks (12-week grid)                                 |
-| `/collections`                     | `CollectionsIndexPage`                 | Collection/project list                                      |
-| `/collection/:id`                  | `CollectionsPage`                      | Single collection                                            |
-| `/settings/:section`               | `SettingsPage`                         | Font, theme, preferences; `/settings` -> `/settings/general` |
-| `/help`                            | `HelpPage`                             | Help                                                         |
-| `/styleguide`                      | `StyleguidePage`                       | Design system reference (admin only)                         |
-| `/admin/dashboard`, `/admin/users` | `AdminDashboardPage`, `AdminUsersPage` | Admin only; `/admin` redirects to dashboard                  |
+| Route                                 | Page                                   | Purpose                                                                          |
+| ------------------------------------- | -------------------------------------- | -------------------------------------------------------------------------------- |
+| `/daily` (default)                    | `DailyIndexRedirect`                   | Redirects to the last used view (default `list`); `/` and `/today` redirect here |
+| `/daily/list\|kanban\|cards\|monthly` | `DailyRoute` -> `DailyPage`            | The URL picks the view; an unknown one falls back to `/daily/list`               |
+| `/inbox`                              | `InboxPage`                            | Unprocessed tasks                                                                |
+| `/habits`                             | `HabitsPage`                           | Habit streaks (12-week grid)                                                     |
+| `/collections`                        | `CollectionsIndexPage`                 | Collection/project list                                                          |
+| `/collection/:id`                     | `CollectionsPage`                      | Single collection                                                                |
+| `/settings/:section`                  | `SettingsPage`                         | Font, theme, preferences; `/settings` -> `/settings/general`                     |
+| `/help`                               | `HelpPage`                             | Help                                                                             |
+| `/styleguide`                         | `StyleguidePage`                       | Design system reference (admin only)                                             |
+| `/admin/dashboard`, `/admin/users`    | `AdminDashboardPage`, `AdminUsersPage` | Admin only; `/admin` redirects to dashboard                                      |
 
-`AppShell` wraps all logged-in routes: sidebar, keyboard dispatch, QuickAdd/Search dialogs.
+`AppShell` wraps all logged-in routes: responsive top bar, keyboard dispatch, QuickAdd/Search dialogs.
 
 Logged-out routes sit outside `AppShell` and share `components/AuthShell.tsx`: `/login` (honors a same-origin `?next=`), `/register`, `/forgot-password`, `/reset-password?token=`. `/oauth/consent?request=` also uses `AuthShell` but requires login. `/auth/register` creates no session - `AuthContext.register()` chains into `login()`.
 
@@ -322,8 +327,8 @@ When instructed to work on a spec or task:
 
 1. **Read the Spec / Request**: Review requirements carefully.
 2. **Isolate Environment**:
-   - Create worktree & branch: `git worktree add ../planner-<slug> -b feat/<slug>`
-   - **New host = regenerate SSL first**: any new subdomain needs a trusted cert before it's reachable over https, or the browser session in step 4 fails with `ERR_CERT_AUTHORITY_INVALID`. Add the new domain(s) to `/p/linux/scripts/mkcert.conf` (or confirm a wildcard already covers it), run `bash /p/linux/scripts/mkcert-local` to regenerate `/p/projects/traefik/certs/localhost.pem`, then `docker restart traefik` to pick it up. Do this once per new subdomain, before adding its `/etc/hosts` entries.
+   - Create worktree & branch: `git worktree add .worktrees/<slug> -b feat/<slug>` (always inside `<project folder>/.worktrees/`, which is gitignored; never create sibling `../planner-*` folders)
+   - **New host = regenerate SSL first**: any new subdomain needs a trusted cert before it's reachable over https, or the browser session in step 4 fails with `ERR_CERT_AUTHORITY_INVALID`. Add the new domain(s) to `/p/linux/scripts/mkcert.conf` (or confirm a wildcard already covers it), run `bash /p/linux/scripts/mkcert-local` to regenerate `/p/projects/proxy/certs/localhost.pem`, then `docker restart traefik` to pick it up. Do this once per new subdomain, before adding its `/etc/hosts` entries.
 3. **Local Dev Setup & Draft PR**:
    - Copy `.env.example` to `.env` in worktree root.
    - Set `COMPOSE_PROJECT_NAME=planner-<agent>` and `APP_SUBDOMAIN=<agent>.planner`.
@@ -343,3 +348,9 @@ When instructed to work on a spec or task:
    - Keep worktree stack running during review; do NOT tear down automatically.
    - Only tear down when explicitly asked (e.g., "accept PR and remove leftovers", "remove leftovers", "tear down worktrees").
    - For "worktrees cleanup", verify branches are merged to `main`, list safe worktrees to remove, and request confirmation before running `docker compose down -v` and `git worktree remove`.
+
+<!-- graphicle:start (added by graphicle setup; graphicle disconnect removes it) -->
+## Graphicle
+Use the `graphicle` MCP server for where or how something works, for questions across files or history, and before changing unfamiliar code: `recall_project` or `query_graph` with the question, then `get_node` and `get_neighbors` for one symbol; answers cite file and lines. For an exact identifier you already know, grep is enough.
+Without the server, run `graphicle context "<question>"` in a terminal.
+<!-- graphicle:end -->

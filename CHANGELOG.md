@@ -1,5 +1,146 @@
 # Changelog
 
+## [0.19.0](https://github.com/thiagobraga/planner/compare/v0.18.0...v0.19.0) (2026-11-14)
+
+
+### Added
+
+* **app:** match browser theme color to the nav bar ([4c11d65](https://github.com/thiagobraga/planner/commit/4c11d65650583f00453134dc29cbc6fdc7c8b91e))
+* **app:** rename to BulletPlanner ([207897f](https://github.com/thiagobraga/planner/commit/207897f81b3269207a156f32ba2607a2ba373489))
+* **nav:** let shift + right click open the browser menu ([f95933c](https://github.com/thiagobraga/planner/commit/f95933cb24276dff7be2ed36eca11c9552e9b17d))
+* **nav:** mirror phone bottom bar as folder tabs ([8930663](https://github.com/thiagobraga/planner/commit/8930663c57cec550e753f9a6ca8d98f90b5d367f))
+* **nav:** mirror phone bottom bar as folder tabs ([b6693c9](https://github.com/thiagobraga/planner/commit/b6693c93992323c3ece864c9c7bef6855130711f))
+
+
+### Fixed
+
+* **nav:** align phone bar with shared subgrid rows ([d3a0314](https://github.com/thiagobraga/planner/commit/d3a031496ec195279905f249e02b05514e0e1301))
+* **nav:** align phone tab icons with the planner icon ([d17c997](https://github.com/thiagobraga/planner/commit/d17c997437039b832924e1cde328a963ff2063f8))
+* **nav:** center planner icon on phone tab groups ([ec7f653](https://github.com/thiagobraga/planner/commit/ec7f653fc3f35955b7d3d9a2d46968ca69043752))
+* **nav:** hang planner menu from the button's right edge ([835812b](https://github.com/thiagobraga/planner/commit/835812b2f4cce359ef19b4b246b026d28c547420))
+* **nav:** open planner menu below the bar's bottom edge ([b10d68d](https://github.com/thiagobraga/planner/commit/b10d68d2d2de064fdad1042b83904c4922f17c83))
+* **ui:** drop scroll overflow from context menu panels ([7419582](https://github.com/thiagobraga/planner/commit/741958261c7485d049b069a0e6637cfcc53005d0))
+
+
+### Style
+
+* **nav:** fix phone tab columns at 70px with 10.5px labels ([7e2fb3e](https://github.com/thiagobraga/planner/commit/7e2fb3e05b9a1ba3d9826eab97726ff62e2dd71e))
+* **nav:** name nav styles by text position ([34105aa](https://github.com/thiagobraga/planner/commit/34105aa84c7378e53599f073fccc2ac162e5be68))
+* **nav:** raise and enlarge the daily day number ([4851012](https://github.com/thiagobraga/planner/commit/485101224ac7aec1f66d7483f784738e7f5767fb))
+* **nav:** set icon-above text to 10.5px on desktop ([e5acb85](https://github.com/thiagobraga/planner/commit/e5acb85b642436347d20fe266cbdfa0e359f198a))
+* **nav:** set icon-above text to 11px on desktop ([55109d9](https://github.com/thiagobraga/planner/commit/55109d99a7dfb868ffa4aa9a002a536ca862f3c3))
+* **nav:** space phone tabs from screen edges ([028048f](https://github.com/thiagobraga/planner/commit/028048f95431ae066a1723ed5cdcbab83b2302e7))
+* **nav:** taller phone tabs without min-width ([45897e5](https://github.com/thiagobraga/planner/commit/45897e542bf5c5f464010418b8b5182a6bb6f16c))
+* **nav:** tune icon-left text size and icon-above tab width ([93fd28d](https://github.com/thiagobraga/planner/commit/93fd28dbac34dc4529f0fab258db0b2605dfb88c))
+
+## [0.18.0](https://github.com/thiagobraga/planner/compare/v0.17.1...v0.18.0) (2026-11-13)
+
+
+### Added
+
+* **layout:** center every page in one 680px column ([2469701](https://github.com/thiagobraga/planner/commit/2469701e6c8812fc2840b7deaf5bdfe70b2e4f1f))
+* **nav:** center topbar row with folder tabs and one planner menu ([d40cf6a](https://github.com/thiagobraga/planner/commit/d40cf6a2ec8142cca6fe9c893dbf9a95baad199a))
+* **nav:** centered 680px container and folder-tab topbar ([d7062ef](https://github.com/thiagobraga/planner/commit/d7062efd4eca3bd086098a789846cfe0c5091d1b))
+* **nav:** use inbox tray and plain calendar day icons ([819e8fb](https://github.com/thiagobraga/planner/commit/819e8fbd2d78af0b375526cb5e647e98700a2fc5))
+
+## [0.17.1](https://github.com/thiagobraga/planner/compare/v0.17.0...v0.17.1) (2026-11-12)
+
+
+### Fixed
+
+* **app:** keep the mobile bottom bar pinned to the viewport ([a45a8b6](https://github.com/thiagobraga/planner/commit/a45a8b64966b6954a134ce76a9d084bc65479ab1))
+* **app:** keep the mobile bottom bar pinned to the viewport ([d54964b](https://github.com/thiagobraga/planner/commit/d54964b4cd51b1899c3af4b3f90b396d6e550a86))
+
+## [0.17.0](https://github.com/thiagobraga/planner/compare/v0.16.2...v0.17.0) (2026-11-12)
+
+
+### Added
+
+* **nav:** bottom nav bar and planner menu on mobile ([fa03591](https://github.com/thiagobraga/planner/commit/fa03591159973a9d5a34ec5cb1ada15e5a8514a0))
+
+## [0.16.2](https://github.com/thiagobraga/planner/compare/v0.16.1...v0.16.2) (2026-11-12)
+
+
+### Fixed
+
+* **ci:** install playwright ffmpeg for retry videos ([68d1e5e](https://github.com/thiagobraga/planner/commit/68d1e5e897dab6a7878b25e134f444008cb33053))
+
+
+### Style
+
+* **nav:** refine brand wordmark typography ([5c110e3](https://github.com/thiagobraga/planner/commit/5c110e3ba1eea0aad65ced6ab75a1e8d1d2ff773))
+* **nav:** refine brand wordmark typography ([e4e1cbb](https://github.com/thiagobraga/planner/commit/e4e1cbb513b577dce2b54ecc8a6f8d9273f568bb))
+
+## [0.16.1](https://github.com/thiagobraga/planner/compare/v0.16.0...v0.16.1) (2026-11-12)
+
+
+### Fixed
+
+* **tasks:** reparent children at downward drop target ([7c7863e](https://github.com/thiagobraga/planner/commit/7c7863e4863aac1ee8263c0bf957f9c24f413dde))
+
+## [0.16.0](https://github.com/thiagobraga/planner/compare/v0.15.0...v0.16.0) (2026-11-12)
+
+
+### Added
+
+* add shared task menu and view triggers ([82ec35a](https://github.com/thiagobraga/planner/commit/82ec35a9c1a28c74517c780496e3cd185a4e8797))
+* add task menu and collection stage workflows ([2eb4f57](https://github.com/thiagobraga/planner/commit/2eb4f57244ad9bccf7d1b17e990537a19e62b962))
+* configure collection status routes ([7099e28](https://github.com/thiagobraga/planner/commit/7099e28436d636ea8962f40b20b623cc59a57243))
+
+
+### Fixed
+
+* align task menu with topbar indent menu after rebase ([3a3b006](https://github.com/thiagobraga/planner/commit/3a3b006271bc4bdd8f91d5445ef18517ee7448bb))
+* renumber status transition migration to 051 ([c8548a2](https://github.com/thiagobraga/planner/commit/c8548a2b84ec9e9d9bf9ef039763795c9f5d09da))
+
+## [0.15.0](https://github.com/thiagobraga/planner/compare/v0.14.1...v0.15.0) (2026-11-12)
+
+
+### Added
+
+* **nav:** replace sidebar with responsive topbar ([d7727b3](https://github.com/thiagobraga/planner/commit/d7727b342ffa9ea6b30ce7e3fde7ca5b7d64f548))
+* **nav:** replace sidebar with responsive topbar ([9e18f95](https://github.com/thiagobraga/planner/commit/9e18f9598416a9059a8c78c00e069ea4c06c69eb))
+* **nav:** show closed black book logo on light themes ([05b1aaf](https://github.com/thiagobraga/planner/commit/05b1aafb454c2dd88bca9300ece39d9439c705ce))
+* **preferences:** persist navigation style across sessions ([fd6af5d](https://github.com/thiagobraga/planner/commit/fd6af5d7d0aa2f2cd440ac00062da6c13c526a12))
+
+
+### Changed
+
+* **app:** rename to Bullet Planner and drop bullet journal tagline ([22cb877](https://github.com/thiagobraga/planner/commit/22cb8777bbb787336a18433aba5c638c8692e6ab))
+
+## [0.14.1](https://github.com/thiagobraga/planner/compare/v0.14.0...v0.14.1) (2026-11-07)
+
+
+### Fixed
+
+* **tasks:** persist indentation across list actions ([470f4a3](https://github.com/thiagobraga/planner/commit/470f4a3c17da890c72130d70a4bffd96edeac2e8))
+* **tasks:** persist indentation across list actions ([89ce3cd](https://github.com/thiagobraga/planner/commit/89ce3cda53cdd3a88600a6e1a1f2a742d5b9f851))
+
+## [0.14.0](https://github.com/thiagobraga/planner/compare/v0.13.0...v0.14.0) (2026-11-05)
+
+
+### Added
+
+* **app:** show level and parent in wasd debug card ([1628847](https://github.com/thiagobraga/planner/commit/162884708bb999feada921130d1fa4d2bd9ead85))
+* **app:** show level and parent in wasd debug card ([bc2d0e6](https://github.com/thiagobraga/planner/commit/bc2d0e668e90ef141be0d1b4beb9c2a3ce88e25a))
+
+## [0.13.0](https://github.com/thiagobraga/planner/compare/v0.12.2...v0.13.0) (2026-11-03)
+
+
+### Added
+
+* add privacy policy, terms of service, and account data export/deletion ([ef8d766](https://github.com/thiagobraga/planner/commit/ef8d766d705ab05b2f84eb107231987effd3f235))
+* **api:** add account data export and cascading deletion endpoints ([73d445c](https://github.com/thiagobraga/planner/commit/73d445c46e2471634fc790d61148313f4e143a42))
+* **app:** add account data export and deletion controls in settings ([4186b34](https://github.com/thiagobraga/planner/commit/4186b34972e74a72d856f8c80e9cf85e77b8f85e))
+* **app:** add legal and account data types and localized content ([767600a](https://github.com/thiagobraga/planner/commit/767600a5730c914c2a07c6986a41945f21356a55))
+* **app:** add public privacy and terms pages and auth legal links ([fd84683](https://github.com/thiagobraga/planner/commit/fd846832a149d495e41ad9d56264cfc2e142052d))
+
+
+### Changed
+
+* **app:** split legalContent into per-document locale modules ([fc013c9](https://github.com/thiagobraga/planner/commit/fc013c9054c389469f0ca12a48395d15452ddbae))
+* **privacy:** extract legal print styles and export showCheckboxes preference ([6df473c](https://github.com/thiagobraga/planner/commit/6df473c43bb1aae63eb2200bbcc9caea6d68c295))
+
 ## [0.12.2](https://github.com/thiagobraga/planner/compare/v0.12.1...v0.12.2) (2026-10-30)
 
 

@@ -81,14 +81,14 @@ components:
     typography: '{typography.body}'
     rounded: '{rounded.sm}'
     padding: '4px 16px'
-  sidebar-link:
+  nav-link:
     backgroundColor: '{colors.sidebar-bg}'
     textColor: '{colors.ink}'
     typography: '{typography.body}'
     rounded: '{rounded.sm}'
     padding: '0 12px'
     height: '32px'
-  sidebar-link-active:
+  nav-link-active:
     backgroundColor: '{colors.dot}'
     textColor: '{colors.ink}'
     rounded: '{rounded.sm}'
@@ -151,7 +151,7 @@ A short palette of warm, slightly aged neutrals with one brick-red anchor; every
 ### Neutral
 
 - **Cream Paper** (`#f5f0e8`): The page itself. Body background, overlay panel surface, input field surface. Never `#fff`.
-- **Sidebar Cream** (`#ebe6de`): A half-step deeper than Cream Paper, used for sidebars, toolbars, and tonal layering. The only secondary surface.
+- **Surface Cream** (`#ebe6de`): A half-step deeper than Cream Paper, used for the top bar, toolbars, and tonal layering. The only secondary surface.
 - **Dot Grey** (`#d4cfc7`): Chip backgrounds, drag-handle resting color, the printed dot grid, tonal fills. The workhorse neutral.
 - **Border** (`#e5e1d8`): The default hairline for card, panel, input, and divider strokes. A touch lighter/warmer than Dot Grey so 1px edges read as paper creases, not lines.
 - **Ink** (`#44443d`): All primary text. The "ink" of the journal. Never `#000`.
@@ -179,17 +179,17 @@ Tokens are redefined under `:root[data-theme="dark"]` in `app/src/index.css`; co
 
 | Token | Light | Dark | Role |
 | --- | --- | --- | --- |
-| Cream Paper `--color-cream` | `#f5f0e8` | `#292219` | Page and sidebar surface |
-| Sidebar Cream `--color-sidebar-bg` | `#ebe6de` | `#292219` | Sidebar; separated from the page by its 1px border |
+| Cream Paper `--color-cream` | `#f5f0e8` | `#292219` | Page surface |
+| Surface Cream `--color-sidebar-bg` | `#ebe6de` | `#292219` | Top bar; separated from the page by its 1px border |
 | Ink `--color-ink` | `#44443d` | `#ede3d3` | Primary text |
 | Ink Light `--color-ink-light` | `#8b867e` | `#aea294` | Secondary text |
 | Ink Lighter `--color-ink-lighter` | `#c5c1ba` | `#6f6358` | Muted glyphs |
 | Dot Grid `--color-dot` | `#d8d3cb` | `#3b3229` | Dot grid, dividers, chips |
 | Border `--color-border` | `#e5e1d8` | `#463b31` | Hairlines |
 | Warm Brick Red `--color-accent` | `#c9483b` | `#d8705f` | Accent, lifted for contrast on dark paper |
-| Active nav `--planner-sidebar-active-bg` | tinted dot | `#3e3228` | Selected sidebar item |
+| Active nav `--planner-sidebar-active-bg` | tinted dot | `#3e3228` | Selected navigation item |
 | Overlay `--planner-overlay-bg` | Cream Paper | `#2f271e` | Dialogs and menus, a half-step above the page |
-| Browser chrome `theme-color` | `#f5f0e8` | `#221a14` | PWA title bar |
+| Browser chrome `theme-color` | `#ebe6de` | `#292219` | PWA title bar, matches the nav bar (`--color-sidebar-bg`) |
 
 The No-Pure Rule still holds: dark surfaces are warm browns, never `#000`, and ink is cream, never `#fff`. Collection and label colors are user data and stay unchanged.
 
@@ -209,7 +209,7 @@ The No-Pure Rule still holds: dark surfaces are warm browns, never `#000`, and i
 - **Body** (Lora 400, 14px / 24px): Task titles, prose, default text. 24px line height locks to the baseline grid.
 - **Caption** (Lora 400, 12px / 24px): Due dates, italic sub-notes, empty states. Italics are part of this style.
 - **Label** (Lora 500, 11px / 24px, `letter-spacing: 0.1em`, UPPERCASE): Section dividers ("OVERDUE", "TODAY", "COLLECTIONS"). The only uppercase style in the system.
-- **Mono** (monospace, 11px / 16px): Keyboard caps inside the help panel and the sidebar footer hints. Nothing else.
+- **Mono** (monospace, 11px / 16px): Keyboard caps inside the help panel and navigation menu shortcuts. Nothing else.
 
 ### Named Rules
 
@@ -221,7 +221,7 @@ The No-Pure Rule still holds: dark surfaces are warm browns, never `#000`, and i
 
 ## 4. Elevation
 
-Mostly flat. Depth is carried first by three quiet mechanisms: (1) tint, by stepping a surface one notch deeper than its parent (Sidebar Cream against Cream Paper, Dot Grey against Sidebar Cream); (2) hairline stroke (1px Border) between sections; (3) the printed dot grid showing through, which signals "this is the page surface, not a card." Shadows are a **last resort**, used sparingly and softly when a card, panel, or modal genuinely needs to lift off the page.
+Mostly flat. Depth is carried first by three quiet mechanisms: (1) tint, by stepping a surface one notch deeper than its parent (Surface Cream against Cream Paper, Dot Grey against Surface Cream); (2) hairline stroke (1px Border) between sections; (3) the printed dot grid showing through, which signals "this is the page surface, not a card." Shadows are a **last resort**, used sparingly and softly when a card, panel, or modal genuinely needs to lift off the page.
 
 ### Shadow Vocabulary
 
@@ -255,12 +255,14 @@ Mostly flat. Depth is carried first by three quiet mechanisms: (1) tint, by step
 - **Hover:** `rgba(212,207,199,0.4)` background.
 - **Completed state:** Title gets `line-through` and opacity 0.35.
 
-### Sidebar Link
+### Navigation Link
 
-- **Shape:** 32px tall, 4px corner radius, padded `0 12px`.
-- **Default:** Transparent on Sidebar Cream, Ink text at 60% opacity.
-- **Hover:** Opacity rises to 100%.
-- **Active:** Background `rgba(212,207,199,0.5)` (Dot Grey at 50%), text at 100% with `font-weight: 500`. No bar, no stripe, no arrow.
+- **Shape (desktop):** A folder tab sitting on the bar's bottom edge: 36px tall for text and icon-left, 52px for icon-above; square sides, 6px top corners, no bottom edge. Narrow rows reduce horizontal padding.
+- **Default:** Transparent border on Surface Cream, Ink text.
+- **Hover:** Neutral tint. No transforms.
+- **Active (desktop):** 1px Dot Grey border on left, top and right, filled with the page color and overlapping the bar border by 1px so the tab opens into the page. `font-weight: 500`. No shadow, no stripe, no red.
+- **Shape (phone):** Mirrored folder tab on the bottom bar's top edge: square top, 6px bottom corners, no top edge.
+- **Active (phone):** Same as desktop, mirrored: 1px Dot Grey border on left, bottom and right, filled with the page color, overlapping the bar border by 1px.
 
 ### Chips (labels)
 
@@ -317,9 +319,15 @@ those same components rather than copying them.
 
 ### Navigation
 
-- **Top-level:** Three primary destinations (Inbox, Daily, Upcoming) plus secondary (Habits, Collections). All in the left sidebar; no top bar.
-- **Active state:** See Sidebar Link.
-- **Mobile:** Sidebar collapses to a 240px drawer that slides in from the left with a 200ms ease transition. Backdrop dims to `rgba(44,44,44,0.3)`.
+- **Page column:** Every page sits in one centered column, `--container-page` (720px), fluid below that. Boards scroll sideways inside it. No page sets its own max width.
+- **Top-level:** One top bar with Daily, Inbox, Habits, Collections. The bar background and border span the window; its row aligns to the page column: `BulletPlanner` wordmark left, tabs centered, version, search and the Planner icon right.
+- **Planner menu:** The Planner icon opens the only menu: app name and version, account name and email, Settings, Help, keyboard shortcuts (desktop), admin destinations (admins), the update notice when a new version is ready, and Logout. The icon shows the active tint on Settings, Help, Admin and Styleguide.
+- **Active state:** See Navigation Link.
+- **Style:** Account preference offers text only, icon left (default), or icon above. Settings > General and the bar's context menu change the same preference.
+- **Desktop:** 48px bar for text and icon-left, 64px for icon-above. The version shows only while the row has its full 720px.
+- **Mobile:** At 640px and below the bar moves to the bottom as one 64px row: four primary destinations and the Planner icon. The bar mirrors the desktop top bar: folder tabs hang from the bar's top edge, square top, 6px bottom corners, the active tab filled with the page color and overlapping the bar border so it opens upward into the page. Icons sit above labels; tab icons share one line through CSS subgrid rows, each icon + label group is centered vertically, and the 36px Planner button is centered on those groups. Search joins the Planner menu; the wordmark hides.
+- **Icons:** Daily is a plain square with a filled top band and the bold day number. Inbox is the inbox tray.
+- **Rhythm:** Navigation dimensions use the 4px sub-grid. Page spacing retains the 24px baseline.
 
 ## 6. Do's and Don'ts
 
@@ -328,7 +336,7 @@ those same components rather than copying them.
 - **Do** lay every vertical measurement onto the 24px (or 4px sub-step) grid. Row heights, line heights, label heights, paddings.
 - **Do** use Lora for every text element, including buttons and labels. One serif, everywhere.
 - **Do** let the dot grid show through. If a section sits on the body background, do not opaque-fill it.
-- **Do** convey depth with tint (Cream → Sidebar Cream → Dot Grey) and 1px Dot Grey hairlines, not shadow.
+- **Do** convey depth with tint (Cream → Surface Cream → Dot Grey) and 1px Dot Grey hairlines, not shadow.
 - **Do** reserve Warm Brick Red for state that requires the eye to stop: overdue, P1, error, active caret. Keep it under 10% of screen surface.
 - **Do** render counters and metrics in the Numeric style (Lora 600, 56px, tight letter-spacing) when they earn the weight.
 - **Do** use the Chain Rule to join consecutive completed habit days into a single unbroken stroke. The connected run is the chain.

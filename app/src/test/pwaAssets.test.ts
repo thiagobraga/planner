@@ -34,6 +34,8 @@ function expectPng(url: string, width: number, height: number) {
 
 describe.each(['manifest.webmanifest', 'manifest.dev.webmanifest'])('%s', (name) => {
   const manifest = JSON.parse(fs.readFileSync(path.join(PUBLIC, name), 'utf8')) as {
+    name: string;
+    short_name: string;
     background_color: string;
     theme_color: string;
     icons: ManifestIcon[];
@@ -61,9 +63,14 @@ describe.each(['manifest.webmanifest', 'manifest.dev.webmanifest'])('%s', (name)
     }
   });
 
-  it('uses cream for the Android splash background', () => {
+  it('uses cream for the Android splash and the nav bar color for the title bar', () => {
     expect(manifest.background_color).toBe('#f5f0e8');
-    expect(manifest.theme_color).toBe('#f5f0e8');
+    expect(manifest.theme_color).toBe('#ebe6de');
+  });
+
+  it('installs as BulletPlanner', () => {
+    expect(manifest.name).toMatch(/^BulletPlanner( Dev)?$/);
+    expect(manifest.short_name).toBe(manifest.name);
   });
 });
 
@@ -125,6 +132,12 @@ describe('in-app logos', () => {
     [128, 128],
   ])('ships a transparent %ix%i logo', (width, height) => {
     expect(expectPng(`/images/logo/logo-${width}x${height}.png`, width, height).hasAlpha).toBe(true);
+  });
+});
+
+describe('closed-book navbar logos', () => {
+  it.each([[16, 16], [32, 32]])('ships a transparent %ix%i closed logo', (width, height) => {
+    expect(expectPng(`/images/logo/logo-closed-${width}x${height}.png`, width, height).hasAlpha).toBe(true);
   });
 });
 

@@ -17,15 +17,17 @@ import { nextOrderValue } from '../utils/order';
 import { extractNaturalDate } from '../utils/date';
 import type { Task } from '../components/TaskItem';
 import type { Section } from '../stores/taskStore';
-import { fetchCollectionView, fetchPreferences, apiCreateTask, apiUpdateTask, apiToggleTask, apiDeleteTask, apiCreateCollection, apiUpdateCollection, apiDeleteCollection, apiCreateSection, apiUpdateSection, apiDeleteSection, PALETTE_COLORS } from '../api/client';
+import { fetchCollectionView, fetchPreferences, apiCreateTask, apiUpdateTask, apiToggleTask, apiDeleteTask, apiMoveTask, apiCreateCollection, apiUpdateCollection, apiDeleteCollection, apiCreateSection, apiUpdateSection, apiDeleteSection, PALETTE_COLORS } from '../api/client';
 import type { ApiTask, ApiCollection } from '../types/api';
 import { runOptimistic, patchById, upsertById } from '../stores/optimistic';
 import { useTaskDrag } from '../hooks/useTaskDrag';
 import { useSectionDrag } from '../hooks/useSectionDrag';
 import { useTaskVisibilityPreferences } from '../hooks/useTaskVisibilityPreferences';
 import { useBoardPreferences } from '../hooks/useBoardPreferences';
-import { flattenTasks } from '../utils/taskProjection';
-import { applyIndent } from '../utils/taskTree';
+import { resolveTaskIndent } from '../utils/taskIndent';
+import { persistTaskIndent } from '../utils/persistTaskIndent';
+import { buildIndentMenuItems } from '../components/taskIndentMenu';
+import type { TaskIndentHandler, TaskIndentMenuContext, TaskListContextMenuHandler } from '../types/taskIndent';
 import { fetchCollections } from '../api/client';
 import { ContextMenu, type ContextMenuItem } from '../components/ui/ContextMenu';
 import { ColorPickerPopover } from '../components/ui/ColorPickerPopover';
@@ -39,6 +41,8 @@ import { applySchedule, scheduleFieldsFromApi, withTimeZones } from '../utils/ta
 import { buildSetDateMenuItem } from '../components/taskDateMenuItem';
 import type { TaskSchedule } from '../types/task';
 import { blurOnEscape } from '../utils/editableText';
+import { buildTaskMenuActions } from '../utils/taskMenuActions';
+import { useSync } from '../hooks/useSync';
 
 function apiToTask(t: ApiTask): Task {
   return {
@@ -98,7 +102,8 @@ export function CollectionsPage() {
   const [editingSectionId, setEditingSectionId] = useState<string | null>(null);
   const [sectionTaskInput, setSectionTaskInput] = useState<Record<string, string>>({});
   const [, setSelectedId] = useState<string>();
-  const [contextMenu, setContextMenu] = useState<{ taskId: string; position: { x: number; y: number } } | null>(null);
+  const [contextMenu, setContextMenu] = useState<TaskIndentMenuContext | null>(null);
+  const [indentError, setIndentError] = useState(false);
   const [sectionContextMenu, setSectionContextMenu] = useState<{ sectionId: string; position: { x: number; y: number } } | null>(null);
   const [crumbMenu, setCrumbMenu] = useState<{ collectionId: string; position: { x: number; y: number } } | null>(null);
   const [crumbColorPicker, setCrumbColorPicker] = useState<
@@ -122,6 +127,11 @@ export function CollectionsPage() {
     staleTime: 30_000,
     enabled: !!id,
   });
+  useSync(useCallback((event) => {
+    if (event.entityType === 'status' && event.collectionId === id) {
+      qc.invalidateQueries({ queryKey: ['collection', id] });
+    }
+  }, [id, qc]));
   const { data: preferences } = useQuery({
     queryKey: ['preferences'],
     queryFn: fetchPreferences,
@@ -155,7 +165,7 @@ export function CollectionsPage() {
     tasks,
     setTasks,
     scope: { kind: 'collection', collectionId: id },
-    onError: invalidate,
+    onError: () => { setIndentError(true); invalidate(); },
     // A task can be dropped onto Inbox or another collection in the sidebar.
     onMoved: () => {
       qc.invalidateQueries({ queryKey: ['inbox'] });
@@ -380,17 +390,15 @@ export function CollectionsPage() {
     setEditingId(undefined);
     if (!taskId.startsWith('temp-')) apiDeleteTask(taskId).catch(() => invalidate());
   }, [invalidate]);
-  const handleIndent = useCallback((taskId: string, dir: 1 | -1) => {
-    setTasks((prev) => {
-      const flatNodes = flattenTasks(prev).map((r) => ({ ...r.task, indent: r.depth }));
-      const { tasks: nextFlat, parentTaskId, changed } = applyIndent(flatNodes, taskId, dir);
-      if (!changed) return prev;
-      if (!taskId.startsWith('temp-')) {
-        apiUpdateTask(taskId, { parentTaskId: parentTaskId ?? null }).catch(() => invalidate());
-      }
-      return nextFlat.map(t => t.id === taskId ? { ...t, parentTaskId: parentTaskId ?? undefined } : t);
+  const handleIndent: TaskIndentHandler = useCallback((taskId, dir, visibleTasks, scope) => {
+    const move = resolveTaskIndent(visibleTasks, taskId, dir, scope);
+    if (!move) return;
+    setIndentError(false);
+    persistTaskIndent(taskId, move, tasks, setTasks, invalidate, () => {
+      setIndentError(true);
+      invalidate();
     });
-  }, [invalidate]);
+  }, [invalidate, tasks]);
   const handleToggle = useCallback((taskId: string) => {
     const hideCompleted = preferences?.hideCompletedTasks ?? false;
     const task = tasks.find((t) => t.id === taskId);
@@ -414,9 +422,9 @@ export function CollectionsPage() {
 
   const { data: collections = [] } = useQuery({ queryKey: ['collections'], queryFn: fetchCollections });
 
-  const handleRightClick = useCallback((taskId: string, position: { x: number; y: number }) => {
+  const handleRightClick: TaskListContextMenuHandler = useCallback((taskId, position, visibleTasks, scope) => {
     setSelectedId(taskId);
-    setContextMenu({ taskId, position });
+    setContextMenu({ taskId, position, visibleTasks, scope });
   }, []);
 
   const handleSectionRightClick = useCallback((sectionId: string, position: { x: number; y: number }) => {
@@ -704,7 +712,7 @@ export function CollectionsPage() {
         }
       />
 
-      <div className={boardPreferences.view !== 'list' ? 'w-full' : 'max-w-162'}>
+      <div className={boardPreferences.view !== 'list' ? 'w-full' : undefined}>
         {boardPreferences.view !== 'list' && boardPreferences.view !== 'calendar' && data ? (
           <CollectionBoard
             collectionId={id}
@@ -733,7 +741,7 @@ export function CollectionsPage() {
         ) : boardPreferences.view === 'calendar' ? (
           <>
             <div className="h-6" />
-            <MonthlyView tasks={tasks} onToggle={(taskId) => handleToggle(taskId)} />
+            <MonthlyView tasks={tasks} onToggle={(taskId) => handleToggle(taskId)} onTaskContextMenu={handleRightClick} />
           </>
         ) : (
         <>
@@ -851,11 +859,26 @@ export function CollectionsPage() {
         )}
       </div>
 
+      {indentError && <div role="alert" className="text-accent text-sm mt-6">{t('task.moveFailed')}</div>}
       {contextMenu && (
         <ContextMenu
+          caret
           position={contextMenu.position}
           onClose={() => setContextMenu(null)}
           items={[
+            ...buildTaskMenuActions({
+              task: tasks.find((task) => task.id === contextMenu.taskId),
+              statuses: data?.statuses ?? [],
+              completionStatusId: data?.completionStatusId ?? null,
+              t,
+              onToggle: () => handleToggle(contextMenu.taskId),
+              onMove: (statusId) => {
+                const task = tasks.find((candidate) => candidate.id === contextMenu.taskId);
+                if (!task || task.parentTaskId) return;
+                apiMoveTask(task.id, { parentTaskId: null, collectionId: id, statusId, scope: { kind: 'status', collectionId: id, statusId }, position: Number.MAX_SAFE_INTEGER })
+                  .then(invalidate).catch(invalidate);
+              },
+            }),
             // { type: 'item', label: 'Date', icon: <Calendar size={14} />, disabled: true },
             // { type: 'item', label: 'Priority', icon: <Tag size={14} />, disabled: true },
             buildSetDateMenuItem(t, tasks.find((task) => task.id === contextMenu.taskId), handleSetSchedule),
@@ -864,6 +887,7 @@ export function CollectionsPage() {
             { type: 'separator' },
             { type: 'item', label: t('contextMenu.addAbove'), icon: <ArrowUp size={14} />, onClick: () => handleAddAbove(contextMenu.taskId) },
             { type: 'item', label: t('contextMenu.addBelow'), icon: <ArrowDown size={14} />, onClick: () => handleAddBelow(contextMenu.taskId) },
+            ...buildIndentMenuItems(t, contextMenu, handleIndent),
             { type: 'separator' },
             { type: 'item', label: t('common.delete'), icon: <Trash2 size={14} />, destructive: true, onClick: () => handleDelete(contextMenu.taskId) },
           ]}

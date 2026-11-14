@@ -18,13 +18,17 @@ import { MonthlyView } from '../components/monthly/MonthlyView';
 import type { Task } from '../components/TaskItem';
 import { extractNaturalDate, fmtISO, fmtISOInTimeZone, startOfWeek } from '../utils/date';
 import { nextOrderValue } from '../utils/order';
-import { applyIndent, getParentCandidate } from '../utils/taskTree';
+import { getParentCandidate } from '../utils/taskTree';
+import { resolveTaskIndent } from '../utils/taskIndent';
+import { persistTaskIndent } from '../utils/persistTaskIndent';
+import { buildIndentMenuItems } from '../components/taskIndentMenu';
+import type { TaskIndentHandler, TaskIndentMenuContext, TaskListContextMenuHandler } from '../types/taskIndent';
 import { useTaskDrag } from '../hooks/useTaskDrag';
 import { useTaskVisibilityPreferences } from '../hooks/useTaskVisibilityPreferences';
 import { useMidnightTimer } from '../hooks/useMidnightTimer';
 import { useDailyTasks } from '../hooks/useDailyTasks';
 import { useI18n } from '../i18n/I18nContext';
-import { fetchCollections, fetchSections, fetchPreferences, apiToggleTask, apiCreateTask, apiUpdateTask, apiDeleteTask } from '../api/client';
+import { fetchCollections, fetchSections, fetchCollectionView, fetchPreferences, apiToggleTask, apiCreateTask, apiUpdateTask, apiDeleteTask, apiMoveTask } from '../api/client';
 import type { ApiTask } from '../types/api';
 import { ContextMenu, type ContextMenuItem } from '../components/ui/ContextMenu';
 import { flattenCollections } from '../components/CollectionTreeNav';
@@ -37,6 +41,7 @@ import type { BoardViewMode } from '../types/board';
 import { buildSetDateMenuItem } from '../components/taskDateMenuItem';
 import type { TaskSchedule } from '../types/task';
 import { blurOnEscape } from '../utils/editableText';
+import { buildTaskMenuActions } from '../utils/taskMenuActions';
 
 let tempCounter = 0;
 function tempId() { return `temp-daily-${++tempCounter}`; }
@@ -48,7 +53,8 @@ export function DailyPage({ view }: { view: BoardViewMode }) {
   const [sections, setSections] = useState<DaySection[]>([]);
   const [editingId, setEditingId] = useState<string>();
   const [, setSelectedId] = useState<string>();
-  const [contextMenu, setContextMenu] = useState<{ taskId: string; position: { x: number; y: number } } | null>(null);
+  const [contextMenu, setContextMenu] = useState<TaskIndentMenuContext | null>(null);
+  const [indentError, setIndentError] = useState(false);
   const [pageContextMenu, setPageContextMenu] = useState<{ x: number; y: number } | null>(null);
   const [input, setInput] = useState('');
   const [selectedWeekAnchor, setWeekAnchor] = useState<Date | null>(null);
@@ -172,6 +178,10 @@ export function DailyPage({ view }: { view: BoardViewMode }) {
   }, [refreshDaily]);
 
   useSync(useCallback((event) => {
+    if (event.entityType === 'status') {
+      qc.invalidateQueries({ queryKey: ['collection'] });
+      return;
+    }
     if (event.entityType !== 'task') return;
     // Our own move, still reconciling: the optimistic state is already ahead.
     if (isEchoedMove(event)) return;
@@ -215,7 +225,7 @@ export function DailyPage({ view }: { view: BoardViewMode }) {
         }))
       );
     }
-  }, [locale, refreshDaily, prefs?.hideCompletedTasks, prefs?.showNotes, todayKey]));
+  }, [locale, qc, refreshDaily, prefs?.hideCompletedTasks, prefs?.showNotes, todayKey]));
 
   const updateSections = useCallback((updater: (prev: DaySection[]) => DaySection[]) => {
     setSections(updater);
@@ -227,6 +237,12 @@ export function DailyPage({ view }: { view: BoardViewMode }) {
   // which also drops an overdue section once its last task leaves, while
   // buildSections keeps Today rendered even when empty.
   const allTasks = useMemo(() => sections.flatMap((s) => s.tasks), [sections]);
+  const menuTask = allTasks.find((task) => task.id === contextMenu?.taskId);
+  const { data: menuCollection } = useQuery({
+    queryKey: ['collection', menuTask?.collectionId],
+    queryFn: () => fetchCollectionView(menuTask!.collectionId!),
+    enabled: Boolean(contextMenu && menuTask?.collectionId),
+  });
   const setAllTasks = useCallback(
     (updater: (prev: Task[]) => Task[]) => {
       setSections((prev) =>
@@ -240,7 +256,7 @@ export function DailyPage({ view }: { view: BoardViewMode }) {
     tasks: allTasks,
     setTasks: setAllTasks,
     scope: { kind: 'day', dueDate: todayKey },
-    onError: refreshDaily,
+    onError: () => { setIndentError(true); refreshDaily(); },
     // Daily spans every collection, so a move here can reorder a list Inbox or a
     // Collection page is caching.
     onMoved: () => {
@@ -457,22 +473,15 @@ export function DailyPage({ view }: { view: BoardViewMode }) {
     }
   }, [refreshDaily, updateSections]);
 
-  const handleIndent = useCallback((id: string, dir: 1 | -1) => {
-    updateSections((prev) =>
-      prev.map((s) => {
-        if (!s.tasks.some((t) => t.id === id)) return s;
-        // Cross-collection view: only nest under a same-collection preceding task.
-        const { tasks: next, parentTaskId, changed } = applyIndent(s.tasks, id, dir, {
-          sameCollectionOnly: true,
-        });
-        if (!changed) return s;
-        if (!id.startsWith('temp-')) {
-          apiUpdateTask(id, { parentTaskId }).catch(() => refreshDaily());
-        }
-        return { ...s, tasks: next };
-      })
-    );
-  }, [refreshDaily, updateSections]);
+  const handleIndent: TaskIndentHandler = useCallback((id, dir, visibleTasks, scope) => {
+    const move = resolveTaskIndent(visibleTasks, id, dir, scope);
+    if (!move) return;
+    setIndentError(false);
+    persistTaskIndent(id, move, sectionsRef.current.flatMap((section) => section.tasks), setAllTasks, refreshDaily, () => {
+      setIndentError(true);
+      refreshDaily();
+    });
+  }, [refreshDaily, setAllTasks]);
 
   const handleAddToday = (text: string) => {
     const trimmed = text.trim();
@@ -616,9 +625,9 @@ export function DailyPage({ view }: { view: BoardViewMode }) {
     setEditingId(tid);
   };
 
-  const handleRightClick = useCallback((id: string, position: { x: number; y: number }) => {
+  const handleRightClick: TaskListContextMenuHandler = useCallback((id, position, visibleTasks, scope) => {
     setSelectedId(id);
-    setContextMenu({ taskId: id, position });
+    setContextMenu({ taskId: id, position, visibleTasks, scope });
   }, []);
 
   const projectSubmenuItems = useMemo<ContextMenuItem[]>(() => {
@@ -775,6 +784,7 @@ export function DailyPage({ view }: { view: BoardViewMode }) {
 
       {pageContextMenu && (
         <ContextMenu
+          caret={false}
           position={pageContextMenu}
           onClose={() => setPageContextMenu(null)}
           items={[
@@ -798,11 +808,12 @@ export function DailyPage({ view }: { view: BoardViewMode }) {
       )}
 
       {view === 'calendar' ? (
-        <div className="max-w-[832px]">
+        <div>
           <div className="h-6" />
           <MonthlyView
             tasks={allTasks}
             onToggle={handleToggle}
+            onTaskContextMenu={handleRightClick}
             visibleMonth={{ year: monthAnchor.getFullYear(), month: monthAnchor.getMonth() }}
             onMonthChange={(year, month) => setMonthAnchor(new Date(year, month, 1))}
           />
@@ -836,7 +847,7 @@ export function DailyPage({ view }: { view: BoardViewMode }) {
         />
       ) : (
         <>
-        <div className="daily-list-nav sticky top-6 z-[9] flex max-w-162 justify-start bg-(--planner-page-bg)">
+        <div className="daily-list-nav sticky top-6 z-[9] flex justify-start bg-(--planner-page-bg)">
           <WeekSelector weekAnchor={weekAnchor} today={dateFromISO(todayKey)} weekStart={weekStart} onWeekChange={setWeekAnchor} onToday={goToToday} />
         </div>
         <DailyList
@@ -872,11 +883,26 @@ export function DailyPage({ view }: { view: BoardViewMode }) {
         </>
       )}
 
+      {indentError && <div role="alert" className="text-accent text-sm mt-6">{t('task.moveFailed')}</div>}
       {contextMenu && (
         <ContextMenu
+          caret
           position={contextMenu.position}
           onClose={() => setContextMenu(null)}
           items={[
+            ...buildTaskMenuActions({
+              task: menuTask,
+              statuses: menuCollection?.statuses ?? [],
+              completionStatusId: menuCollection?.completionStatusId ?? null,
+              t,
+              onToggle: () => handleToggle(contextMenu.taskId),
+              onMove: (statusId) => {
+                if (!menuTask?.collectionId || menuTask.parentTaskId) return;
+                apiMoveTask(menuTask.id, { parentTaskId: null, collectionId: menuTask.collectionId, statusId, scope: { kind: 'status', collectionId: menuTask.collectionId, statusId }, position: Number.MAX_SAFE_INTEGER })
+                  .then(() => { refreshDaily(); qc.invalidateQueries({ queryKey: ['collection', menuTask.collectionId] }); })
+                  .catch(() => refreshDaily());
+              },
+            }),
             // { type: 'item', label: 'Date', icon: <Calendar size={14} />, disabled: true },
             // { type: 'item', label: 'Priority', icon: <Tag size={14} />, disabled: true },
             buildSetDateMenuItem(t, allTasks.find((task) => task.id === contextMenu.taskId), handleSetSchedule),
@@ -885,6 +911,7 @@ export function DailyPage({ view }: { view: BoardViewMode }) {
             { type: 'separator' },
             { type: 'item', label: t('contextMenu.addAbove'), icon: <ArrowUp size={14} />, onClick: () => handleAddAbove(contextMenu.taskId) },
             { type: 'item', label: t('contextMenu.addBelow'), icon: <ArrowDown size={14} />, onClick: () => handleAddBelow(contextMenu.taskId) },
+            ...buildIndentMenuItems(t, contextMenu, handleIndent),
             { type: 'separator' },
             { type: 'item', label: t('common.delete'), icon: <Trash2 size={14} />, destructive: true, onClick: () => handleDelete(contextMenu.taskId) },
           ]}
