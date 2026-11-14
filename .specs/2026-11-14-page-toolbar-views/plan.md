@@ -39,7 +39,9 @@ Inbox   [Group: None v]                        |  View v   Window v
 
 - **View** is a text menu like a desktop app menu bar. Sections: Layout (with shortcuts), Style (segmented Notebook | Cards with icons), Range (presets as a list, or `DAYS 1 2 3 4 5 6`, `WEEKS 1 2 3`, `MONTH` as pills; the active pill is filled with ink), and Actions (Reorganize, Daily only).
 - **Window** holds **Full width**, which expands the content column to the whole window. Phase 3 adds **Split**.
-- **Group** replaces date navigation on Collections (Status, Section, Priority) and Inbox (None, Priority, Collection). It applies to every layout, not only columns.
+- **Group** replaces date navigation on Collections and Inbox (Status, Section, Priority). Inbox only holds tasks of the Inbox collection, so grouping it by collection would always show one group; it uses the same options as Collections.
+  - Phase 1 shows Group on Columns only. List keeps grouping by section; grouping List by status or priority comes with phase 2.
+- Collections and Inbox also keep their existing Calendar layout (the monthly log).
 - When the row gets tight it shrinks in order: the title truncates, the date gets compact (`13-15/11`), Today moves into the date picker, Window moves to the end of View.
 
 ### Planner menu
@@ -75,8 +77,8 @@ Layout, style, range and full width are saved per user on the server, so they fo
 
 ## Phases
 
-1. This spec: toolbar, model with existing views, planner menu, group by, mobile bar, full width, shortcuts.
-2. Table layout, Calendar (hour grid for 1-6 days and 1 week with an all-day strip; week grid for 2-3 weeks and Month), List in Cards.
+1. This spec: toolbar, model with existing views, planner menu, group by, mobile bar, full width, shortcuts. Habits drops its hamburger too: its Timeline/Calendar switch sits on the title row.
+2. Table layout, Calendar (hour grid for 1-6 days and 1 week with an all-day strip; week grid for 2-3 weeks and Month), List in Cards, Group on List.
 3. Split view: panes with any page, horizontal and vertical, draggable divider, at most 2 panes on mobile.
 
 ## Relevant Files
