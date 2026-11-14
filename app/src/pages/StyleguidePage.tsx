@@ -8,6 +8,8 @@ import { Repeat2 } from 'lucide-react';
 import { MonthlyCalendarSpecimen } from '../components/monthly/MonthlyCalendarSpecimen';
 import { MonthSelector } from '../components/monthly/MonthSelector';
 import { DatePickerSpecimen } from '../components/monthly/DatePickerSpecimen';
+import { WeekSelector } from '../components/board/WeekSelector';
+import { startOfDay } from '../utils/date';
 import { HabitSpecimen } from '../components/habits/HabitSpecimen';
 import { Button } from '../components/ui/Button';
 import { ButtonGroup } from '../components/ui/ButtonGroup';
@@ -88,6 +90,7 @@ export function StyleguidePage() {
     queryFn: fetchPreferences,
   });
   const weekStart = preferences?.weekStart ?? 'sunday';
+  const [dailyWeekAnchor, setDailyWeekAnchor] = useState(() => startOfDay(new Date()));
 
   const [radioChoice, setRadioChoice] = useState('a');
   const [buttonGroupView, setButtonGroupView] = useState<'list' | 'kanban-list' | 'kanban'>('list');
@@ -487,6 +490,17 @@ export function StyleguidePage() {
         {/* Calendar & Monthly */}
         <Card title="Calendar & Monthly">
           <MonthlyCalendarSpecimen compact weekStart={weekStart} />
+          <div className="flex flex-col gap-3 mt-6">
+            <p className="text-[10px] tracking-[0.08em] uppercase text-ink-light font-medium">Daily tab calendar</p>
+            <WeekSelector
+              weekAnchor={dailyWeekAnchor}
+              today={startOfDay(new Date())}
+              weekStart={weekStart}
+              onWeekChange={setDailyWeekAnchor}
+              onToday={() => setDailyWeekAnchor(startOfDay(new Date()))}
+              defaultOpen
+            />
+          </div>
         </Card>
 
         {/* Month Selector */}

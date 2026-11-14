@@ -4,7 +4,7 @@
 
 @theme {
   --dot-grid: 24px;
-  --container-page: 680px;
+  --container-page: 720px;
 
   /* Radius scale → rounded-* utilities */
   --radius-xs: 4px;

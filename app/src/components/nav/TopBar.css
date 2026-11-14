@@ -11,7 +11,7 @@
 }
 .topbar[data-nav-style='icon-top'] { --topbar-tab-height: 52px; height: 64px; }
 
-/* Same 680px column as .page-container so the bar lines up with the page */
+/* Same 720px column as .page-container so the bar lines up with the page */
 .topbar-row {
   container: topbar-row / inline-size;
   display: grid;
@@ -69,7 +69,11 @@
 .topbar-item-icon { display: flex; align-items: center; justify-content: center; flex-shrink: 0; opacity: 0.7; }
 .topbar-item--active .topbar-item-icon { opacity: 1; }
 .topbar[data-nav-style='text'] .topbar-item-icon { display: none; }
-.topbar[data-nav-style='icon-top'] .topbar-item { flex-direction: column; gap: 4px; font-size: 12px; }
+.topbar[data-nav-style='icon-top'] .topbar-item { flex-direction: column; gap: 2px; font-size: 10.5px; }
+@media (min-width: 641px) {
+  .topbar[data-nav-style='icon-left'] .topbar-item { font-size: 13px; }
+  .topbar[data-nav-style='icon-top'] .topbar-item { min-width: 72px; }
+}
 .topbar-inbox[data-drop-target='true'] { outline: 2px solid var(--color-ink); outline-offset: -2px; }
 
 .topbar-actions { display: flex; align-items: center; gap: 8px; height: var(--topbar-tab-height); min-width: 0; justify-self: end; }
@@ -107,8 +111,8 @@
 .topbar-update-dot { position: absolute; top: 2px; right: 2px; width: 8px; height: 8px; border-radius: 50%; background: var(--color-moss); }
 .topbar-error { position: absolute; top: 100%; right: 8px; z-index: 60; padding: 8px 12px; border: 1px solid var(--color-accent); border-radius: 4px; color: var(--color-accent); background: var(--planner-overlay-bg); font-size: 12px; }
 
-/* Below the full 680px row: drop the version and tighten tabs so the wordmark keeps its room */
-@container topbar-row (max-width: 679px) {
+/* Below the full 720px row: drop the version and tighten tabs so the wordmark keeps its room */
+@container topbar-row (max-width: 719px) {
   .topbar-version { display: none; }
   .topbar-row { gap: 8px; }
   .topbar-nav { gap: 0; }
@@ -122,31 +126,61 @@
 @media (max-width: 640px) {
   .topbar, .topbar[data-nav-style='icon-top'] {
     order: 1;
-    height: calc(60px + env(safe-area-inset-bottom));
-    padding: 0 8px env(safe-area-inset-bottom);
+    height: calc(64px + env(safe-area-inset-bottom));
+    padding: 0 8px calc(8px + env(safe-area-inset-bottom));
     border-top: 1px solid var(--color-dot);
     border-bottom: 0;
   }
-  .topbar-row { display: flex; align-items: center; gap: 4px; max-width: none; }
-  .topbar-actions { height: auto; }
   .topbar-brand, .topbar-search, .topbar-version-cluster { display: none; }
   .topbar-error { top: auto; bottom: 100%; }
-  .topbar-nav { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); flex: 1; align-self: center; }
-  .topbar .topbar-item, .topbar .topbar-item--active {
-    width: 100%;
-    height: 48px;
+
+  /*
+   * Rows: space, icon, label, space. Tabs inherit them and the row gap through subgrid,
+   * so every icon shares one line and each icon + label group stays centered.
+   * Grid gaps never collapse around an empty track, so hidden labels drop their row instead.
+   */
+  .topbar-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-rows: 1fr auto auto 1fr;
+    gap: 2px 4px;
+    max-width: none;
+  }
+  .topbar[data-phone-labels='hidden'] .topbar-row { grid-template-rows: 1fr auto 1fr; }
+  .topbar-nav, .topbar-inbox, .topbar[data-nav-style] .topbar-item {
+    grid-row: 1 / -1;
+    align-self: stretch;
+    display: grid;
+    grid-template-rows: subgrid;
+    gap: normal;
+    height: auto;
+  }
+  .topbar-nav { grid-template-columns: repeat(4, 70px); column-gap: 4px; }
+  .topbar[data-nav-style] .topbar-item {
+    justify-items: center;
+    min-width: 0;
     margin: 0;
     padding: 0 2px;
-    flex-direction: column;
-    gap: 4px;
-    border: 0;
-    border-radius: 4px;
-    font-size: 10px;
+    border: 1px solid transparent;
+    border-top: 0;
+    border-radius: 0 0 6px 6px;
+    font-size: 10.5px;
     line-height: 12px;
   }
-  .topbar .topbar-item--active { background: var(--planner-sidebar-active-bg); }
-  .topbar .topbar-item-icon { display: flex; }
+  /* Mirrors the desktop folder tab: hangs from the top edge and overlaps the bar border so it opens upward */
+  .topbar[data-nav-style] .topbar-item--active {
+    margin-top: -1px;
+    border-color: var(--color-dot);
+    background: var(--planner-page-bg);
+  }
+  /* Phones always show icons; the bar's menu only decides whether labels show under them */
+  .topbar[data-nav-style] .topbar-item-icon { display: flex; grid-row: 2; align-self: center; }
   .topbar .topbar-item-icon svg { width: 18px; height: 18px; }
-  .topbar .topbar-menu-button { width: 44px; height: 44px; }
+  .topbar .topbar-item-label { grid-row: 3; }
+  .topbar[data-phone-labels='hidden'] .topbar-item-label { display: none; }
+
+  /* Tab groups are centered in the bar, so centering the button in the bar centers it on each icon + label group */
+  .topbar-actions { grid-row: 1 / -1; align-self: stretch; height: auto; }
+  .topbar .topbar-menu-button { width: 36px; height: 36px; }
   .topbar .topbar-menu-icon { width: 24px; height: 24px; }
 }

@@ -2,27 +2,27 @@ import type { TermsOfServiceContent } from '../../types/legal';
 
 export const termsPortugueseBrazil: TermsOfServiceContent = {
   title: 'Termos de Serviço',
-  subtitle: 'Termos e condições para uso do Bullet Planner',
+  subtitle: 'Termos e condições para uso do BulletPlanner',
   lastUpdated: 'Última atualização: 7 de agosto de 2026',
   onThisPage: 'Nesta Página',
-  backToPlanner: 'Voltar ao Bullet Planner',
+  backToPlanner: 'Voltar ao BulletPlanner',
   sections: [
     {
       id: 'service-description',
       title: '1. Descrição do Serviço',
       paragraphs: [
-        'O Bullet Planner é uma aplicação digital de gerenciamento de tarefas, notas, coleções e hábitos inspirada no método Bullet Journal em papel. O Bullet Planner oferece acesso via web, sincronização em tempo real entre dispositivos e integrações opcionais via API e Model Context Protocol (MCP).',
+        'O BulletPlanner é uma aplicação digital de gerenciamento de tarefas, notas, coleções e hábitos inspirada no método Bullet Journal em papel. O BulletPlanner oferece acesso via web, sincronização em tempo real entre dispositivos e integrações opcionais via API e Model Context Protocol (MCP).',
       ],
     },
     {
       id: 'user-responsibilities',
       title: '2. Responsabilidades do Usuário',
       paragraphs: [
-        'Para utilizar o Bullet Planner, você deve criar uma conta com um endereço de e-mail válido e manter suas credenciais de acesso e tokens de API confidenciais.',
+        'Para utilizar o BulletPlanner, você deve criar uma conta com um endereço de e-mail válido e manter suas credenciais de acesso e tokens de API confidenciais.',
       ],
       items: [
         'Fornecer informações cadastrais verdadeiras e manter a segurança da sua senha e tokens de API',
-        'Não utilizar o Bullet Planner para atividades ilícitas, envio de spam ou coleta automatizada não autorizada',
+        'Não utilizar o BulletPlanner para atividades ilícitas, envio de spam ou coleta automatizada não autorizada',
         'Não tentar interromper, sobrecarregar ou contornar controles de segurança ou limites de requisições do serviço',
       ],
     },
@@ -30,7 +30,7 @@ export const termsPortugueseBrazil: TermsOfServiceContent = {
       id: 'account-termination',
       title: '3. Encerramento de Conta',
       paragraphs: [
-        'Você pode deixar de usar o Bullet Planner a qualquer momento. Você pode exportar uma cópia completa em JSON dos seus dados e excluir permanentemente sua conta em Configurações > Geral > Dados e Privacidade. A exclusão da conta remove imediatamente seu registro de usuário e exclui em cascata todas as tarefas, coleções, hábitos, etiquetas, comentários, lembretes e credenciais.',
+        'Você pode deixar de usar o BulletPlanner a qualquer momento. Você pode exportar uma cópia completa em JSON dos seus dados e excluir permanentemente sua conta em Configurações > Geral > Dados e Privacidade. A exclusão da conta remove imediatamente seu registro de usuário e exclui em cascata todas as tarefas, coleções, hábitos, etiquetas, comentários, lembretes e credenciais.',
         'Reservamo-nos o direito de suspender ou encerrar contas que violem estes Termos ou abusem da infraestrutura do serviço.',
       ],
     },
@@ -38,16 +38,16 @@ export const termsPortugueseBrazil: TermsOfServiceContent = {
       id: 'intellectual-property',
       title: '4. Propriedade Intelectual e Seus Dados',
       paragraphs: [
-        'Você mantém total propriedade sobre todas as tarefas, notas, coleções, hábitos e demais conteúdos que criar no Bullet Planner. Ao usar o serviço, você nos concede apenas o direito limitado de armazenar, processar e transmitir seu conteúdo exclusivamente para fornecer o Bullet Planner a você.',
-        'O código-fonte da aplicação Bullet Planner, o sistema de design e os elementos visuais pertencem aos autores do projeto e são licenciados conforme a licença do repositório.',
+        'Você mantém total propriedade sobre todas as tarefas, notas, coleções, hábitos e demais conteúdos que criar no BulletPlanner. Ao usar o serviço, você nos concede apenas o direito limitado de armazenar, processar e transmitir seu conteúdo exclusivamente para fornecer o BulletPlanner a você.',
+        'O código-fonte da aplicação BulletPlanner, o sistema de design e os elementos visuais pertencem aos autores do projeto e são licenciados conforme a licença do repositório.',
       ],
     },
     {
       id: 'limitation-of-liability',
       title: '5. Limitação de Responsabilidade',
       paragraphs: [
-        'O Bullet Planner é fornecido "no estado em que se encontra" e "conforme disponível", sem garantias de qualquer natureza, expressas ou implícitas.',
-        'Na extensão máxima permitida pela legislação aplicável, o Bullet Planner e seus mantenedores não serão responsáveis por quaisquer danos indiretos, incidentais, especiais ou consequenciais, ou por perda de dados decorrente do uso do serviço. Recomendamos exportar periodicamente seus dados utilizando a ferramenta integrada de exportação.',
+        'O BulletPlanner é fornecido "no estado em que se encontra" e "conforme disponível", sem garantias de qualquer natureza, expressas ou implícitas.',
+        'Na extensão máxima permitida pela legislação aplicável, o BulletPlanner e seus mantenedores não serão responsáveis por quaisquer danos indiretos, incidentais, especiais ou consequenciais, ou por perda de dados decorrente do uso do serviço. Recomendamos exportar periodicamente seus dados utilizando a ferramenta integrada de exportação.',
       ],
     },
     {

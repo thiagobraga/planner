@@ -15,15 +15,15 @@ export const CalendarDayIcon = ({ size = 15 }: NavIconProps) => {
   const day = Number(fmtISOInTimeZone(now, timeZone).slice(8));
 
   return (
-    <svg width={size} height={size} viewBox='0 0 15 15' fill='none' aria-hidden='true'>
+    <svg width={size} height={size - 1} viewBox='0 0 15 15' fill='none' aria-hidden='true'>
       <rect x='0.5' y='0.5' width='14' height='14' rx='1.5' stroke='currentColor' />
       <rect x='1' y='1' width='13' height='3' fill='currentColor' />
       <text
         data-testid='daily-day-number'
         x='7.5'
-        y='12.6'
+        y='11.6'
         textAnchor='middle'
-        fontSize='8'
+        fontSize='9.33'
         fontWeight='700'
         fill='currentColor'
       >

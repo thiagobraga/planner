@@ -46,7 +46,7 @@ test('style changes persist across reload and arrive in another open tab', async
   await expect(other.locator('[data-nav-style]')).toHaveAttribute('data-nav-style', 'icon-left');
   try {
     await page.getByRole('navigation', { name: 'Main navigation' }).click({ button: 'right' });
-    await page.getByRole('menuitemradio', { name: 'Icon above' }).click();
+    await page.getByRole('menuitemradio', { name: 'Text below' }).click();
     await expect(page.locator('[data-nav-style]')).toHaveAttribute('data-nav-style', 'icon-top');
     await expect(other.locator('[data-nav-style]')).toHaveAttribute('data-nav-style', 'icon-top');
     await page.reload();
@@ -90,6 +90,19 @@ test('menus toggle, dismiss, restore focus and navigate with the keyboard', asyn
   await expect(page.getByRole('menu')).toHaveCount(0);
 });
 
+test('planner menu hangs from the right edge of its button', async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/daily/list');
+  const button = page.getByRole('button', { name: 'Planner menu', exact: true });
+  const trigger = (await button.boundingBox())!;
+  const bar = (await page.locator('.topbar').boundingBox())!;
+  await button.click();
+  const menu = (await page.getByRole('menu').boundingBox())!;
+  expect(Math.abs(menu.x + menu.width - (trigger.x + trigger.width))).toBeLessThanOrEqual(1);
+  expect(menu.y).toBeGreaterThanOrEqual(bar.y + bar.height);
+  expect(menu.y).toBeLessThanOrEqual(bar.y + bar.height + 12);
+});
+
 test('phone planner menu exposes name, version, search and secondary navigation without keyboard hints', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/daily/list');
@@ -115,14 +128,14 @@ test('phone planner menu exposes name, version, search and secondary navigation 
   await expect(page.getByRole('dialog')).toBeVisible();
 });
 
-test('page and topbar row share one centered 680px column with a folder tab', async ({ page }) => {
+test('page and topbar row share one centered 720px column with a folder tab', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/daily/list');
   const box = async (selector: string) => (await page.locator(selector).boundingBox())!;
   const row = await box('.topbar-row');
   const column = await box('.page-container');
-  expect(Math.round(column.width)).toBe(680);
-  expect(Math.round(row.width)).toBe(680);
+  expect(Math.round(column.width)).toBe(720);
+  expect(Math.round(row.width)).toBe(720);
   expect(Math.abs(column.x - row.x)).toBeLessThanOrEqual(1);
   expect(Math.abs(column.x - (1440 - column.x - column.width))).toBeLessThanOrEqual(1);
   const bar = await box('.topbar');
@@ -205,4 +218,73 @@ test('phone bottom bar stays pinned to the viewport edge', async ({ page }) => {
   expect(await bottomGap()).toBe(0);
   await mkdir('dist/screenshots', { recursive: true });
   await page.screenshot({ path: 'dist/screenshots/bottom-bar-pinned-390.png' });
+});
+
+test('phone bar keeps icons and toggles only the labels from its menu', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/daily/list');
+  const bar = page.locator('.topbar');
+  const icon = page.locator('.topbar-item--active .topbar-item-icon');
+  const label = page.locator('.topbar-item--active .topbar-item-label');
+  await bar.click({ button: 'right', position: { x: 4, y: 4 } });
+  const panel = page.locator('.ui-context-menu-panel');
+  await expect(panel).toBeVisible();
+  expect(await panel.evaluate((el) => el.scrollHeight - el.clientHeight)).toBe(0);
+  await page.getByRole('menuitemradio', { name: 'Show text' }).click();
+  await expect(label).toBeHidden();
+  await expect(icon).toBeVisible();
+  await bar.click({ button: 'right', position: { x: 4, y: 4 } });
+  await page.getByRole('menuitemradio', { name: 'Show text' }).click();
+  await expect(label).toBeVisible();
+});
+
+test('phone bar centers tab groups and the planner icon on one line', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/daily/list');
+  const bar = page.locator('.topbar');
+  await expect(bar).toBeVisible();
+  const measure = () => bar.evaluate((el) => {
+    const box = (node: Element) => node.getBoundingClientRect();
+    const centerY = (node: Element) => box(node).top + box(node).height / 2;
+    const menuIcon = Array.from(el.querySelectorAll('.topbar-menu-icon')).find((img) => box(img).height > 0)!;
+    const tab = el.querySelector('.topbar-item:not(.topbar-item--active)')!;
+    const icon = tab.querySelector('.topbar-item-icon')!;
+    const label = tab.querySelector('.topbar-item-label')!;
+    const groupBottom = box(label).height > 0 ? box(label).bottom : box(icon).bottom;
+    return {
+      iconCenters: Array.from(el.querySelectorAll('.topbar-item-icon')).map(centerY),
+      groupCenter: (box(icon).top + groupBottom) / 2,
+      menuIconCenter: centerY(menuIcon),
+      menuButton: { width: box(el.querySelector('.topbar-menu-button')!).width, height: box(el.querySelector('.topbar-menu-button')!).height },
+      spaceAbove: box(icon).top - box(tab).top,
+      spaceBelow: box(tab).bottom - groupBottom,
+      labelPosition: getComputedStyle(label).position,
+    };
+  });
+  for (const labels of ['shown', 'hidden']) {
+    await bar.evaluate((el, value) => { el.dataset.phoneLabels = value; }, labels);
+    const geometry = await measure();
+    for (const center of geometry.iconCenters) expect(Math.abs(center - geometry.iconCenters[0]), labels).toBeLessThanOrEqual(0.5);
+    expect(Math.abs(geometry.groupCenter - geometry.menuIconCenter), labels).toBeLessThanOrEqual(0.5);
+    expect(Math.abs(geometry.spaceAbove - geometry.spaceBelow), labels).toBeLessThanOrEqual(1);
+    expect(geometry.menuButton).toEqual({ width: 36, height: 36 });
+    expect(geometry.labelPosition).toBe('static');
+  }
+});
+
+test('phone bottom bar tabs mirror the desktop folder tab', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/daily/list');
+  const bar = (await page.locator('.topbar').boundingBox())!;
+  const active = page.locator('.topbar-item--active');
+  await expect(active).toHaveCSS('border-top-width', '0px');
+  await expect(active).toHaveCSS('border-bottom-width', '1px');
+  await expect(active).toHaveCSS('border-top-left-radius', '0px');
+  await expect(active).toHaveCSS('border-bottom-left-radius', '6px');
+  const tab = (await active.boundingBox())!;
+  expect(Math.round(tab.y)).toBe(Math.round(bar.y));
+  const pageBg = await page.locator('main').evaluate((main) => getComputedStyle(main).backgroundColor);
+  await expect(active).toHaveCSS('background-color', pageBg);
+  await mkdir('dist/screenshots', { recursive: true });
+  await page.screenshot({ path: 'dist/screenshots/bottom-bar-folder-tab-390.png' });
 });

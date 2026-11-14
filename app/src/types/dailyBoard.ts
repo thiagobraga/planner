@@ -29,6 +29,8 @@ export interface WeekSelectorProps {
   onWeekChange: (date: Date) => void;
   /** Overrides the default jump to the week of `today`. */
   onToday?: () => void;
+  /** Starts with the calendar open; used by the styleguide to show the grid. */
+  defaultOpen?: boolean;
 }
 
 export interface DailyWeekBoardProps {

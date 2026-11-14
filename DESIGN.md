@@ -189,7 +189,7 @@ Tokens are redefined under `:root[data-theme="dark"]` in `app/src/index.css`; co
 | Warm Brick Red `--color-accent` | `#c9483b` | `#d8705f` | Accent, lifted for contrast on dark paper |
 | Active nav `--planner-sidebar-active-bg` | tinted dot | `#3e3228` | Selected navigation item |
 | Overlay `--planner-overlay-bg` | Cream Paper | `#2f271e` | Dialogs and menus, a half-step above the page |
-| Browser chrome `theme-color` | `#f5f0e8` | `#221a14` | PWA title bar |
+| Browser chrome `theme-color` | `#ebe6de` | `#292219` | PWA title bar, matches the nav bar (`--color-sidebar-bg`) |
 
 The No-Pure Rule still holds: dark surfaces are warm browns, never `#000`, and ink is cream, never `#fff`. Collection and label colors are user data and stay unchanged.
 
@@ -261,7 +261,8 @@ Mostly flat. Depth is carried first by three quiet mechanisms: (1) tint, by step
 - **Default:** Transparent border on Surface Cream, Ink text.
 - **Hover:** Neutral tint. No transforms.
 - **Active (desktop):** 1px Dot Grey border on left, top and right, filled with the page color and overlapping the bar border by 1px so the tab opens into the page. `font-weight: 500`. No shadow, no stripe, no red.
-- **Active (phone):** Bottom-bar cell with the active tint and a 4px radius.
+- **Shape (phone):** Mirrored folder tab on the bottom bar's top edge: square top, 6px bottom corners, no top edge.
+- **Active (phone):** Same as desktop, mirrored: 1px Dot Grey border on left, bottom and right, filled with the page color, overlapping the bar border by 1px.
 
 ### Chips (labels)
 
@@ -318,13 +319,13 @@ those same components rather than copying them.
 
 ### Navigation
 
-- **Page column:** Every page sits in one centered column, `--container-page` (680px), fluid below that. Boards scroll sideways inside it. No page sets its own max width.
+- **Page column:** Every page sits in one centered column, `--container-page` (720px), fluid below that. Boards scroll sideways inside it. No page sets its own max width.
 - **Top-level:** One top bar with Daily, Inbox, Habits, Collections. The bar background and border span the window; its row aligns to the page column: `BulletPlanner` wordmark left, tabs centered, version, search and the Planner icon right.
 - **Planner menu:** The Planner icon opens the only menu: app name and version, account name and email, Settings, Help, keyboard shortcuts (desktop), admin destinations (admins), the update notice when a new version is ready, and Logout. The icon shows the active tint on Settings, Help, Admin and Styleguide.
 - **Active state:** See Navigation Link.
 - **Style:** Account preference offers text only, icon left (default), or icon above. Settings > General and the bar's context menu change the same preference.
-- **Desktop:** 48px bar for text and icon-left, 64px for icon-above. The version shows only while the row has its full 680px.
-- **Mobile:** At 640px and below the bar moves to the bottom as one 60px row: four primary destinations with icons above labels and the Planner icon. Search joins the Planner menu; the wordmark hides.
+- **Desktop:** 48px bar for text and icon-left, 64px for icon-above. The version shows only while the row has its full 720px.
+- **Mobile:** At 640px and below the bar moves to the bottom as one 64px row: four primary destinations and the Planner icon. The bar mirrors the desktop top bar: folder tabs hang from the bar's top edge, square top, 6px bottom corners, the active tab filled with the page color and overlapping the bar border so it opens upward into the page. Icons sit above labels; tab icons share one line through CSS subgrid rows, each icon + label group is centered vertically, and the 36px Planner button is centered on those groups. Search joins the Planner menu; the wordmark hides.
 - **Icons:** Daily is a plain square with a filled top band and the bold day number. Inbox is the inbox tray.
 - **Rhythm:** Navigation dimensions use the 4px sub-grid. Page spacing retains the 24px baseline.
 

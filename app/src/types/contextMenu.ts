@@ -20,4 +20,6 @@ export interface ContextMenuProps {
   onClose: () => void;
   /** Draws the pointer toward the click origin; defaults to true. */
   caret?: boolean;
+  /** Hangs the root panel from position.x leftward when 'end'; defaults to 'start'. */
+  align?: 'start' | 'end';
 }

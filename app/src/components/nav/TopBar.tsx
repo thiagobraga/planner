@@ -9,9 +9,10 @@ import { APP_VERSION } from '../../utils/version';
 import { UpdateToast } from '../UpdateToast';
 import { PlannerIcon } from './navIcons';
 import { NAV_ITEMS } from './navItems';
+import { readPhoneLabels, writePhoneLabels } from './phoneLabels';
 import { InboxTopBarItem, TopBarItem } from './TopBarItem';
 import { TopBarMenus } from './TopBarMenus';
-import type { TopBarMenuState, TopBarProps } from '../../types/navigation';
+import type { PhoneLabels, TopBarMenuState, TopBarProps } from '../../types/navigation';
 import './TopBar.css';
 
 const MENU_ROUTES = /^\/(settings|help|admin|styleguide)(\/|$)/;
@@ -24,6 +25,8 @@ export function TopBar({ onOpenSearch, onOpenShortcuts, updateAvailable = false 
   const navStyle = preferences?.navStyle ?? 'icon-left';
   const [mobile, setMobile] = useState(() => window.matchMedia('(max-width: 640px)').matches);
   const [menu, setMenu] = useState<TopBarMenuState | null>(null);
+  const [phoneLabels, setPhoneLabels] = useState<PhoneLabels>(readPhoneLabels);
+  const changePhoneLabels = (value: PhoneLabels) => { writePhoneLabels(value); setPhoneLabels(value); };
   const triggerRef = useRef<HTMLElement | null>(null);
   const barRef = useRef<HTMLElement>(null);
   const closeMenu = useCallback(() => {
@@ -42,7 +45,8 @@ export function TopBar({ onOpenSearch, onOpenShortcuts, updateAvailable = false 
     if (menu?.kind === 'menu') { closeMenu(); return; }
     triggerRef.current = trigger;
     const rect = trigger.getBoundingClientRect();
-    setMenu({ kind: 'menu', position: { x: rect.left, y: mobile ? rect.top : rect.bottom } });
+    const bar = (barRef.current ?? trigger).getBoundingClientRect();
+    setMenu({ kind: 'menu', position: { x: rect.right, y: mobile ? bar.top : bar.bottom } });
   };
   const openStyleMenu = (x: number, y: number) => {
     triggerRef.current = barRef.current;
@@ -56,7 +60,12 @@ export function TopBar({ onOpenSearch, onOpenShortcuts, updateAvailable = false 
       tabIndex={-1}
       className="topbar"
       data-nav-style={navStyle}
-      onContextMenu={(event) => { event.preventDefault(); openStyleMenu(event.clientX, event.clientY); }}
+      data-phone-labels={phoneLabels}
+      onContextMenu={(event) => {
+        if (event.shiftKey) return;
+        event.preventDefault();
+        openStyleMenu(event.clientX, event.clientY);
+      }}
       onKeyDown={(event) => {
         if (event.key === 'ContextMenu' || (event.shiftKey && event.key === 'F10')) {
           event.preventDefault();
@@ -95,7 +104,7 @@ export function TopBar({ onOpenSearch, onOpenShortcuts, updateAvailable = false 
           </button>
         </div>
       </div>
-      {menu && <TopBarMenus menu={menu} mobile={mobile} navStyle={navStyle} saving={mutation.isPending} onStyleChange={(style) => mutation.mutate({ navStyle: style })} onClose={closeMenu} onOpenSearch={onOpenSearch} onOpenShortcuts={onOpenShortcuts} updateAvailable={updateAvailable} />}
+      {menu && <TopBarMenus menu={menu} mobile={mobile} navStyle={navStyle} saving={mutation.isPending} onStyleChange={(style) => mutation.mutate({ navStyle: style })} phoneLabels={phoneLabels} onPhoneLabelsChange={changePhoneLabels} onClose={closeMenu} onOpenSearch={onOpenSearch} onOpenShortcuts={onOpenShortcuts} updateAvailable={updateAvailable} />}
       {mutation.isError && <p role="alert" className="topbar-error">{t('nav.styleSaveError')}</p>}
     </header>
   );

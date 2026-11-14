@@ -9,7 +9,7 @@ import { NAV_STYLE_LABELS } from './navItems';
 import type { ContextMenuItem } from '../../types/contextMenu';
 import type { NavStyle, TopBarMenusProps } from '../../types/navigation';
 
-export function TopBarMenus({ menu, mobile, navStyle, saving, onStyleChange, onClose, onOpenSearch, onOpenShortcuts, updateAvailable }: TopBarMenusProps) {
+export function TopBarMenus({ menu, mobile, navStyle, saving, onStyleChange, phoneLabels, onPhoneLabelsChange, onClose, onOpenSearch, onOpenShortcuts, updateAvailable }: TopBarMenusProps) {
   const { t } = useI18n();
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -27,7 +27,9 @@ export function TopBarMenus({ menu, mobile, navStyle, saving, onStyleChange, onC
       { type: 'item' as const, label: t('nav.styleguide'), icon: <StyleguideIcon size={16} />, onClick: () => navigate('/styleguide') },
     ] : []),
   ];
-  if (menu.kind === 'style') {
+  if (menu.kind === 'style' && mobile) {
+    items = [{ type: 'item', label: t('nav.showText'), checked: phoneLabels === 'shown', onClick: () => onPhoneLabelsChange(phoneLabels === 'shown' ? 'hidden' : 'shown') }];
+  } else if (menu.kind === 'style') {
     items = (Object.keys(NAV_STYLE_LABELS) as NavStyle[]).map((style) => ({
       type: 'item', label: t(NAV_STYLE_LABELS[style]), checked: style === navStyle, disabled: saving,
       onClick: () => onStyleChange(style),
@@ -43,5 +45,5 @@ export function TopBarMenus({ menu, mobile, navStyle, saving, onStyleChange, onC
       { type: 'item', label: t('nav.logout'), icon: <LogOut size={16} />, onClick: () => { logout(); navigate('/login'); } },
     ];
   }
-  return <ContextMenu items={items} position={menu.position} onClose={onClose} />;
+  return <ContextMenu items={items} position={menu.position} onClose={onClose} align={menu.kind === 'menu' ? 'end' : 'start'} />;
 }

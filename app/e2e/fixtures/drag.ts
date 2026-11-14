@@ -10,7 +10,7 @@ function centerOf(box: { x: number; y: number; width: number; height: number }):
 }
 
 /**
- * Boards live in a 680px page column, so a far column can sit outside the
+ * Boards live in a 720px page column, so a far column can sit outside the
  * board's visible scroll area. Hold the pointer at that edge, as a person
  * would, until dnd-kit auto-scroll brings the target's center into view.
  */

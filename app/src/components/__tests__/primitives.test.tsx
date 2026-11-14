@@ -111,6 +111,14 @@ describe('ContextMenu', () => {
     expect(item).toHaveClass('bg-[var(--planner-overlay-hover-bg)]');
     expect(item).not.toHaveClass('font-journal');
   });
+
+  it('lets the caret hang outside the panel instead of turning it into scroll overflow', () => {
+    render(<ContextMenu position={{ x: 0, y: 0 }} onClose={vi.fn()} items={[{ type: 'item', label: 'Edit' }]} />);
+
+    const panel = document.querySelector('.ui-context-menu-panel');
+    expect(panel?.querySelector('.ui-context-menu-caret')).toBeInTheDocument();
+    expect(panel).not.toHaveClass('overflow-y-auto');
+  });
 });
 
 describe('CustomSelect', () => {
