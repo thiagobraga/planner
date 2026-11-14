@@ -238,7 +238,7 @@ test('phone bar keeps icons and toggles only the labels from its menu', async ({
   await expect(label).toBeVisible();
 });
 
-test('phone bar icons share one line and each icon group stays centered', async ({ page }) => {
+test('phone bar centers tab groups and the planner icon on one line', async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('/daily/list');
   const bar = page.locator('.topbar');
@@ -253,6 +253,7 @@ test('phone bar icons share one line and each icon group stays centered', async 
     const groupBottom = box(label).height > 0 ? box(label).bottom : box(icon).bottom;
     return {
       iconCenters: Array.from(el.querySelectorAll('.topbar-item-icon')).map(centerY),
+      groupCenter: (box(icon).top + groupBottom) / 2,
       menuIconCenter: centerY(menuIcon),
       menuButton: { width: box(el.querySelector('.topbar-menu-button')!).width, height: box(el.querySelector('.topbar-menu-button')!).height },
       spaceAbove: box(icon).top - box(tab).top,
@@ -263,7 +264,8 @@ test('phone bar icons share one line and each icon group stays centered', async 
   for (const labels of ['shown', 'hidden']) {
     await bar.evaluate((el, value) => { el.dataset.phoneLabels = value; }, labels);
     const geometry = await measure();
-    for (const center of geometry.iconCenters) expect(Math.abs(center - geometry.menuIconCenter), labels).toBeLessThanOrEqual(0.5);
+    for (const center of geometry.iconCenters) expect(Math.abs(center - geometry.iconCenters[0]), labels).toBeLessThanOrEqual(0.5);
+    expect(Math.abs(geometry.groupCenter - geometry.menuIconCenter), labels).toBeLessThanOrEqual(0.5);
     expect(Math.abs(geometry.spaceAbove - geometry.spaceBelow), labels).toBeLessThanOrEqual(1);
     expect(geometry.menuButton).toEqual({ width: 36, height: 36 });
     expect(geometry.labelPosition).toBe('static');
