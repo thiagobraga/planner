@@ -186,7 +186,7 @@ Reused for all menus. It already has a portal, keyboard handling, `role="menu"`,
 - [x] Check beige and dark themes, in en and pt-BR
 - [x] Sweep every route: Daily views, Inbox, Habits, Collections, Settings, Help, admin. No horizontal overflow, no console errors, wider pages still look right
 - [x] Apply Impeccable craft and manual audit checks against rendered desktop/mobile views. `DESIGN.md` wins any conflict with design skills
-- [ ] Keep PR #392 as a draft for user review; keep the stack running
+- [x] PR #392 merged; the review draft requirement no longer applies.
 
 ## Risks and verification
 

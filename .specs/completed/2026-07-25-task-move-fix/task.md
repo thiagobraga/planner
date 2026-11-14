@@ -1,5 +1,16 @@
 # Task Move Fix — Tasks
 
+## Open work summary (reviewed against origin/main)
+
+The `[~]` markers below preserve historical open items for review. They do not assert that work is actively in progress.
+
+- **Covered in code, verify remaining cases:** `useTaskDrag.ts` includes undated rows in the current day scope. `TaskList.tsx` reserves a trailing drop target, and `collision.test.ts` covers foreign-day appends. Recheck all list types and completed-task cases before closing the broader items.
+- **Quick Add:** `AppShell.tsx` dispatches `task-created` after creation, and `DailyPage.tsx` listens and refreshes the Daily query. Verify yesterday and today in the browser.
+- **Partially covered:** task reparenting has Playwright coverage in `app/e2e/taskDragReparent.spec.ts`; verify the other listed desktop, mobile, ordering, persistence, habit, and accessibility scenarios. No browser pass or test run was performed for this review.
+- **Still needs measurement:** capture a new drag performance trace, payload sizes, rendering frequency, memory and low-end device results before deciding whether the historical numeric optimization targets matter. The drag context already measures droppables before dragging.
+- **Superseded or needs product review:** sidebar collapse, sidebar drop targets, and mobile edge-open refer to the old sidebar, which was replaced by top and mobile navigation. Review the equivalent current navigation behavior instead. The named example tasks are historical manual scenarios, not required literal data.
+- **Needs individual triage:** completed-task ordering, intermittent indentation, drag overlay styling, note creation/date persistence, and the IndexedDB index error are historical reports; current behavior was not reproduced or disproved in this review. The separate `fix/task-order` branch addresses some collection ordering cases but is not merged.
+
 - [x] `app/src/utils/taskProjection.ts`: change `projectMove`/`applyProjection` to take `overId: string | null`, resolve index internally via shared `resolveAt(rest, overId)` helper
 - [x] `app/src/hooks/useTaskDrag.ts`: update `resolveMove` to pass `over.taskId` instead of pre-removal `scopedIndex`
 - [x] `app/src/components/TaskList.tsx`: update `projectMove` call to pass `overId` directly instead of derived `overIndex`
@@ -20,18 +31,18 @@
 - [x] `api/src/services/viewService.ts`: in `getTodayView` and `getUpcomingView`, select `COALESCE(o.position, t.order_value) AS order_value` so tasks carry effective day position
 - [x] `api/src/services/taskService.ts`: `moveTask`'s post-commit `moved` query (the subtree re-read at line ~998) reported raw `tasks.order_value` for day-scoped moves - always `0`/stale, since day moves only ever write `task_order.position`. The client applies `moved` as the authoritative patch right after the optimistic reorder, so this handed every day-scoped move an `orderValue: 0` the instant the request resolved, snapping the row back to the front of the list - this is the reported "orderValue: 0" bug. Fixed by LEFT JOINing `task_order` in that query and reporting `day_position ?? order_value`. Regression test: `taskService.move.test.ts` > "reports the day position, not the untouched collection order_value, in `moved`".
 - [x] `app/src/hooks/useTaskDrag.ts`: `applyMoveLocally` never set `orderValue` on the optimistically-moved task, so the immediate re-sort (siblings order by `orderValue`) left the row exactly where it started until the response patched it - a second, independent cause of the same-looking unreliability. Added a same-space midpoint estimate (`ResolvedMove.orderValue`) computed in `resolveMove` and applied in `applyMoveLocally`. Regression tests: `useTaskDrag.parity.test.ts` > "optimistic orderValue matches the projected slot".
-- [ ] `app/src/hooks/useSync.ts` / `AppShell.tsx`: update state / invalidate queries when a task is created via QuickAdd so tasks created for yesterday or today immediately appear on `DailyPage` without manual refresh
-- [ ] `app/src/hooks/useTaskDrag.ts`: update `scopedRows` filter to preserve undated tasks belonging to the current view section
-- [ ] `app/src/utils/taskProjection.ts` & `TaskList.tsx` & `collision.ts`: support dropping after the last item in a list or container
-- [ ] Write unit & integration tests covering yesterday QuickAdd creation, day-scope reordering persistence, end-of-list drops, and subtask reparenting
-- [ ] Manual browser verification: QuickAdd yesterday task, drag to last position, drag as child under last task, subtask reordering and persistence
+- [~] `app/src/hooks/useSync.ts` / `AppShell.tsx`: update state / invalidate queries when a task is created via QuickAdd so tasks created for yesterday or today immediately appear on `DailyPage` without manual refresh
+- [~] `app/src/hooks/useTaskDrag.ts`: update `scopedRows` filter to preserve undated tasks belonging to the current view section
+- [~] `app/src/utils/taskProjection.ts` & `TaskList.tsx` & `collision.ts`: support dropping after the last item in a list or container
+- [~] Write unit & integration tests covering yesterday QuickAdd creation, day-scope reordering persistence, end-of-list drops, and subtask reparenting
+- [~] Manual browser verification: QuickAdd yesterday task, drag to last position, drag as child under last task, subtask reordering and persistence
   - [x] Wrong-position repro (Daily): registered a throwaway test account against
     the running isolated stack (localhost:5174/4001, shared dev DB), created 3
     day-scoped tasks A/B/C, dragged A past C. Confirmed directly in Postgres
     (not just the UI) that the result is `B, A, C` — A landed immediately
     before C, matching the fix, not past it. Test account and its data were
     deleted afterward.
-  - [ ] Response payload size in Network tab / React Profiler re-render check /
+  - [~] Response payload size in Network tab / React Profiler re-render check /
     cross-collection drag: not completed. The MCP browser-automation `drag`
     tool doesn't reliably trigger this app's dnd-kit pointer sensor (the one
     keyboard-driven drop that did fire a move request also intermittently
@@ -129,77 +140,77 @@ after the collision.ts and dnd-kit measuring fixes above landed.
 
 ### From .specs/2026-07-18-unified-task-habit-dragging/task.md
 
-- [ ] Implement mobile edge-open — MOVED to Phase 12 on 2026-07-19. Superseded by manual
-- [ ] Verify desktop behavior in Chromium DevTools
-  - [ ] Reorder top-level tasks and subtasks
-  - [ ] Reparent through horizontal drag
-  - [ ] Drag a parent and confirm descendants follow
-  - [ ] Move completed tasks between open tasks and reload
-  - [ ] Move open and completed tasks between rendered Daily dates and reload
-  - [ ] Drop tasks onto Inbox, root collections, and sub-collections
-  - [ ] Move a subtask to its current collection and confirm top-level promotion
-  - [ ] Move Journaling into Morning Routine
-  - [ ] Reorder sub-habits and habit groups
-  - [ ] Rename task, habit, sub-habit, and Calendar habit by double-click
-  - [ ] Confirm single click does not select a task
-- [ ] Verify mobile behavior at representative narrow widths
-  - [ ] Long-press reorder without blocking normal vertical scroll
-  - [ ] Long-press completed task and move it between Daily dates
-  - [ ] Hold at left edge, auto-open sidebar, and drop on a collection — N/A, see Phase 12
-  - [ ] Cancel drag and confirm sidebar/state restoration
-  - [ ] Double-tap edit remains distinct from long-press drag
-- [ ] Verify accessibility
-  - [ ] Keyboard hierarchy movement (reparent via arrow keys) remains operable
-  - [ ] Reduced-motion preference removes nonessential drag transitions
-- [ ] Verify performance and optimize based on trace analysis (2026-07-20)
-  - [ ] HIGH: Reduce nesting phase layout recalculations
-    - [ ] Target: 10 layouts → 3 layouts, eliminate 1.4ms overhead — NOT re-traced
-  - [ ] HIGH: Memoize parent components to reduce commit frequency
-    - [ ] Target: 159 commits/sec → 90 commits/sec — NOT re-traced
-  - [ ] MEDIUM: Investigate and fix jank frames
-    - [ ] Identify 47 frames exceeding 16.67ms budget (3% jank rate)
-    - [ ] Determine cause: layout, paint, JavaScript, or GC
-    - [ ] Batch work to separate frames; use `will-change: transform` hints
-    - [ ] Target: <1% jank rate
-  - [ ] MEDIUM: Optimize memory allocations to reduce GC pauses
-    - [ ] Profile heap allocations with Chrome DevTools Memory tab
-    - [ ] Identify high-frequency temporary objects in drag path
-    - [ ] Implement object pooling for event objects, state clones
-    - [ ] Avoid spread operators in hot paths
-    - [ ] Target: 92ms GC pause → <20ms
-  - [ ] MEDIUM: Validate and optimize drop-target detection logic
-    - [ ] Review collision-detection efficiency (O(n) vs O(log n))
-    - [ ] Cache drop-zone bounding rectangles at drag start
-    - [ ] Update cache only on scroll/resize, not per mouse move
-    - [ ] Confirm spatial indexing or zone-based detection if needed
-  - [ ] LOW: Mobile/low-end device testing
-    - [ ] Test on throttled device (CPU 4x slowdown, 4G network)
-    - [ ] Verify 60 FPS target is achieved
-    - [ ] Adjust task batching if needed
-- [ ] Let the user manually collapse and expand the sidebar
-- [ ] Persist the collapsed/expanded state across reloads and sessions
-- [ ] Decide whether state is per-device (localStorage) or per-account (preferences service)
-- [ ] Define collapsed-state behavior as a drag drop target
-- [ ] Keep the toggle keyboard-operable and announced to assistive technology
-- [ ] Allow a drop into the **last** position of a day. Every drop resolves to first
-- [ ] Allow a drop **below a completed task**. Dropping under a struck-through row
-- [ ] Allow a completed task itself to be dragged anywhere in the order. Stated
-- [ ] Reconsider the midpoint-crossing threshold: a drop currently needs the pointer
-- [ ] Dropping below "Pesquisar a vitamina do Luke" applied neither the indent nor the
-- [ ] Indentation worked on later attempts in the same session, so this is intermittent:
-- [ ] A row dropped as the child of another must persist as its child, at the dropped position
-- [ ] Drop the `border-radius` on the floating card - it should read as the same block
-- [ ] Fix the right edge: the translucency stops short and leaves a strip of opaque cream
-- [ ] `-` converts a task to a note only while the input is empty
-- [ ] Committing with Enter does not keep the row where it sits: the saved row jumps to
-- [ ] After a reload, that row had moved to **today** - the date it was created under
-- [ ] `NotFoundError: Failed to execute 'index' on 'IDBObjectStore': The specified index
-- [ ] Every visible habit can be press-dragged in both Habit modes within the mode's visibility constraints
-- [ ] Sub-habits and habit groups can be manually reordered and persist after reload
-- [ ] Sidebar collection and Inbox drops work on desktop (mobile edge-open half moved to Phase 12)
-- [ ] All automated and browser acceptance checks pass
+- [~] Implement mobile edge-open — MOVED to Phase 12 on 2026-07-19. Superseded by manual
+- [~] Verify desktop behavior in Chromium DevTools
+  - [~] Reorder top-level tasks and subtasks
+  - [~] Reparent through horizontal drag
+  - [~] Drag a parent and confirm descendants follow
+  - [~] Move completed tasks between open tasks and reload
+  - [~] Move open and completed tasks between rendered Daily dates and reload
+  - [~] Drop tasks onto Inbox, root collections, and sub-collections
+  - [~] Move a subtask to its current collection and confirm top-level promotion
+  - [~] Move Journaling into Morning Routine
+  - [~] Reorder sub-habits and habit groups
+  - [~] Rename task, habit, sub-habit, and Calendar habit by double-click
+  - [~] Confirm single click does not select a task
+- [~] Verify mobile behavior at representative narrow widths
+  - [~] Long-press reorder without blocking normal vertical scroll
+  - [~] Long-press completed task and move it between Daily dates
+  - [~] Hold at left edge, auto-open sidebar, and drop on a collection — N/A, see Phase 12
+  - [~] Cancel drag and confirm sidebar/state restoration
+  - [~] Double-tap edit remains distinct from long-press drag
+- [~] Verify accessibility
+  - [~] Keyboard hierarchy movement (reparent via arrow keys) remains operable
+  - [~] Reduced-motion preference removes nonessential drag transitions
+- [~] Verify performance and optimize based on trace analysis (2026-07-20)
+  - [~] HIGH: Reduce nesting phase layout recalculations
+    - [~] Target: 10 layouts → 3 layouts, eliminate 1.4ms overhead — NOT re-traced
+  - [~] HIGH: Memoize parent components to reduce commit frequency
+    - [~] Target: 159 commits/sec → 90 commits/sec — NOT re-traced
+  - [~] MEDIUM: Investigate and fix jank frames
+    - [~] Identify 47 frames exceeding 16.67ms budget (3% jank rate)
+    - [~] Determine cause: layout, paint, JavaScript, or GC
+    - [~] Batch work to separate frames; use `will-change: transform` hints
+    - [~] Target: <1% jank rate
+  - [~] MEDIUM: Optimize memory allocations to reduce GC pauses
+    - [~] Profile heap allocations with Chrome DevTools Memory tab
+    - [~] Identify high-frequency temporary objects in drag path
+    - [~] Implement object pooling for event objects, state clones
+    - [~] Avoid spread operators in hot paths
+    - [~] Target: 92ms GC pause → <20ms
+  - [~] MEDIUM: Validate and optimize drop-target detection logic
+    - [~] Review collision-detection efficiency (O(n) vs O(log n))
+    - [~] Cache drop-zone bounding rectangles at drag start
+    - [~] Update cache only on scroll/resize, not per mouse move
+    - [~] Confirm spatial indexing or zone-based detection if needed
+  - [~] LOW: Mobile/low-end device testing
+    - [~] Test on throttled device (CPU 4x slowdown, 4G network)
+    - [~] Verify 60 FPS target is achieved
+    - [~] Adjust task batching if needed
+- [~] Let the user manually collapse and expand the sidebar
+- [~] Persist the collapsed/expanded state across reloads and sessions
+- [~] Decide whether state is per-device (localStorage) or per-account (preferences service)
+- [~] Define collapsed-state behavior as a drag drop target
+- [~] Keep the toggle keyboard-operable and announced to assistive technology
+- [~] Allow a drop into the **last** position of a day. Every drop resolves to first
+- [~] Allow a drop **below a completed task**. Dropping under a struck-through row
+- [~] Allow a completed task itself to be dragged anywhere in the order. Stated
+- [~] Reconsider the midpoint-crossing threshold: a drop currently needs the pointer
+- [~] Dropping below "Pesquisar a vitamina do Luke" applied neither the indent nor the
+- [~] Indentation worked on later attempts in the same session, so this is intermittent:
+- [~] A row dropped as the child of another must persist as its child, at the dropped position
+- [~] Drop the `border-radius` on the floating card - it should read as the same block
+- [~] Fix the right edge: the translucency stops short and leaves a strip of opaque cream
+- [~] `-` converts a task to a note only while the input is empty
+- [~] Committing with Enter does not keep the row where it sits: the saved row jumps to
+- [~] After a reload, that row had moved to **today** - the date it was created under
+- [~] `NotFoundError: Failed to execute 'index' on 'IDBObjectStore': The specified index
+- [~] Every visible habit can be press-dragged in both Habit modes within the mode's visibility constraints
+- [~] Sub-habits and habit groups can be manually reordered and persist after reload
+- [~] Sidebar collection and Inbox drops work on desktop (mobile edge-open half moved to Phase 12)
+- [~] All automated and browser acceptance checks pass
 
 ### From .specs/2026-07-20-habit-drag-parity/task.md
 
-Markers: `[ ]` not started · `[ ]` in progress · `[x]` done
-- [ ] Manual browser check, steps 1-8 in `plan.md` § Verification
+Markers: `[ ]` not started, `[~]` pending review, `[x]` done
+- [~] Manual browser check, steps 1-8 in `plan.md` § Verification

@@ -1,5 +1,13 @@
 # Daily page drag-and-drop bug fixes — Tasks
 
+## Open work summary (reviewed against origin/main)
+
+The `[~]` markers below preserve historical follow-ups for review. They do not assert active work.
+
+- **Habit indentation:** still needs investigation. `useHabitDrag.ts` and `PlannerDragContext.tsx` each create an indent tracker; code inspection alone does not establish a defect.
+- **Drag performance:** the two outstanding profiling items overlap. Capture a fresh Chrome trace and compare the same gesture with the earlier trace before deciding whether further optimization is needed. `PlannerDragContext.tsx` already uses `MeasuringStrategy.BeforeDragging`.
+- No new browser trace or tests were run for this review.
+
 Source plan: `plan.md`. Related: `.specs/2026-07-25-task-move-fix/task.md`
 (unfinished items this supersedes), `.specs/completed/2026-08-04-task-interactions-and-menus/`
 (where `dateFormat` was introduced), `.specs/completed/2026-07-20-habit-drag-parity/`
@@ -56,10 +64,10 @@ Source plan: `plan.md`. Related: `.specs/2026-07-25-task-move-fix/task.md`
 
 ## Follow-up (out of scope here)
 
-- [ ] `useHabitDrag.ts` likely shares Bug 3's dual-tracker divergence risk
+- [~] `useHabitDrag.ts` likely shares Bug 3's dual-tracker divergence risk
       (same mirrored-`IndentTracker` pattern from `2026-07-20-habit-drag-parity`)
       — not reproduced in this video, worth a dedicated check once Bug 3 lands
-- [ ] Re-profile drag performance after Bug 3 lands (console showed repeated
+- [~] Re-profile drag performance after Bug 3 lands (console showed repeated
       `[Violation] 'message' handler took 174-205ms` during drag bursts,
       matched by ~100-200ms `RunTask` clusters in the trace) — expected to
       improve as a side effect of removing the duplicate tracker/render path;
@@ -70,7 +78,7 @@ Source plan: `plan.md`. Related: `.specs/2026-07-25-task-move-fix/task.md`
 - [x] `docker compose exec app npm test`
 - [x] `docker compose exec app npm run build`
 - [x] Manual pass through all four repro scenarios in the running dev app
-- [ ] Fresh Chrome performance trace of the same gesture, compared against
+- [~] Fresh Chrome performance trace of the same gesture, compared against
       `Trace-20260806T125339.json.gz` — not re-run; the duplicate tracker and
       its second render path are gone, which was the expected source of the
       jank, but this was not measured.

@@ -3,7 +3,7 @@ import { resolveTheme, updateDocumentThemeColor } from '../theme';
 
 describe('updateDocumentThemeColor', () => {
   beforeEach(() => {
-    document.head.innerHTML = '<meta name="theme-color" content="#f5f0e8">';
+    document.head.innerHTML = '<meta name="theme-color" content="#ebe6de">';
   });
 
   it.each([['nord-light', '#eceff4'], ['nord-dark', '#2e3440']] as const)('uses %s page color for browser chrome', (theme, color) => {
@@ -11,29 +11,29 @@ describe('updateDocumentThemeColor', () => {
     expect(document.querySelector('meta[name="theme-color"]')).toHaveAttribute('content', color);
   });
 
-  it('uses white browser chrome for the white background', () => {
+  it('matches the white theme nav bar', () => {
     updateDocumentThemeColor('white');
 
-    expect(document.querySelector('meta[name="theme-color"]')).toHaveAttribute('content', '#ffffff');
+    expect(document.querySelector('meta[name="theme-color"]')).toHaveAttribute('content', '#f1f1f1');
   });
 
-  it('restores the beige install fallback for the beige background', () => {
+  it('restores the beige nav bar color for the beige background', () => {
     updateDocumentThemeColor('white');
     updateDocumentThemeColor('beige');
 
-    expect(document.querySelector('meta[name="theme-color"]')).toHaveAttribute('content', '#f5f0e8');
+    expect(document.querySelector('meta[name="theme-color"]')).toHaveAttribute('content', '#ebe6de');
   });
 });
 
 describe('dark theme', () => {
   beforeEach(() => {
-    document.head.innerHTML = '<meta name="theme-color" content="#f5f0e8">';
+    document.head.innerHTML = '<meta name="theme-color" content="#ebe6de">';
   });
 
-  it('uses the dark title-bar color for the dark theme', () => {
+  it('matches the dark theme nav bar', () => {
     updateDocumentThemeColor('dark');
 
-    expect(document.querySelector('meta[name="theme-color"]')).toHaveAttribute('content', '#221a14');
+    expect(document.querySelector('meta[name="theme-color"]')).toHaveAttribute('content', '#292219');
   });
 });
 

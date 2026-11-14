@@ -252,7 +252,9 @@ export function AppShell() {
               backgroundRepeat: 'repeat',
             }}
           >
-            <Outlet />
+            <div className="page-container mx-auto w-full max-w-page">
+              <Outlet />
+            </div>
           </main>
 
         </PlannerDragProvider>

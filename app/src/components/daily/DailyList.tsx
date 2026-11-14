@@ -118,7 +118,7 @@ export function DailyList({
   );
 
   return (
-    <div className="max-w-162">
+    <div>
       {pastSections.map((section) => renderDay(section, true))}
 
       {renderCurrent(todaySection)}

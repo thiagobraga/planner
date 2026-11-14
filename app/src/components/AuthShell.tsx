@@ -20,7 +20,7 @@ export interface AuthShellProps {
 
 // Shared frame for the four logged-out screens: login, register, forgot
 // password, reset password.
-export function AuthShell({ children, title = 'Bullet Planner', subtitle }: AuthShellProps) {
+export function AuthShell({ children, title = 'BulletPlanner', subtitle }: AuthShellProps) {
   return (
     <div className="flex min-h-dvh items-center justify-center px-4 py-6">
       <div className="w-full max-w-80">

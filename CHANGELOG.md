@@ -1,5 +1,63 @@
 # Changelog
 
+## [0.19.2](https://github.com/thiagobraga/planner/compare/v0.19.1...v0.19.2) (2026-11-14)
+
+
+### Fixed
+
+* **tasks:** preserve collection task ordering ([f03fe7f](https://github.com/thiagobraga/planner/commit/f03fe7f39e7f3c71aea61451bdc0364754d57871))
+
+## [0.19.1](https://github.com/thiagobraga/planner/compare/v0.19.0...v0.19.1) (2026-11-14)
+
+
+### Fixed
+
+* **nav:** make the inbox tab its own drop target on phones ([2671c1d](https://github.com/thiagobraga/planner/commit/2671c1d561f4676cf85a338fdcd1e6bfe7f2dc13))
+* **nav:** make the inbox tab its own drop target on phones ([19580ba](https://github.com/thiagobraga/planner/commit/19580ba2fdf354a9987d258324315454267b6a33))
+
+## [0.19.0](https://github.com/thiagobraga/planner/compare/v0.18.0...v0.19.0) (2026-11-14)
+
+
+### Added
+
+* **app:** match browser theme color to the nav bar ([4c11d65](https://github.com/thiagobraga/planner/commit/4c11d65650583f00453134dc29cbc6fdc7c8b91e))
+* **app:** rename to BulletPlanner ([207897f](https://github.com/thiagobraga/planner/commit/207897f81b3269207a156f32ba2607a2ba373489))
+* **nav:** let shift + right click open the browser menu ([f95933c](https://github.com/thiagobraga/planner/commit/f95933cb24276dff7be2ed36eca11c9552e9b17d))
+* **nav:** mirror phone bottom bar as folder tabs ([8930663](https://github.com/thiagobraga/planner/commit/8930663c57cec550e753f9a6ca8d98f90b5d367f))
+* **nav:** mirror phone bottom bar as folder tabs ([b6693c9](https://github.com/thiagobraga/planner/commit/b6693c93992323c3ece864c9c7bef6855130711f))
+
+
+### Fixed
+
+* **nav:** align phone bar with shared subgrid rows ([d3a0314](https://github.com/thiagobraga/planner/commit/d3a031496ec195279905f249e02b05514e0e1301))
+* **nav:** align phone tab icons with the planner icon ([d17c997](https://github.com/thiagobraga/planner/commit/d17c997437039b832924e1cde328a963ff2063f8))
+* **nav:** center planner icon on phone tab groups ([ec7f653](https://github.com/thiagobraga/planner/commit/ec7f653fc3f35955b7d3d9a2d46968ca69043752))
+* **nav:** hang planner menu from the button's right edge ([835812b](https://github.com/thiagobraga/planner/commit/835812b2f4cce359ef19b4b246b026d28c547420))
+* **nav:** open planner menu below the bar's bottom edge ([b10d68d](https://github.com/thiagobraga/planner/commit/b10d68d2d2de064fdad1042b83904c4922f17c83))
+* **ui:** drop scroll overflow from context menu panels ([7419582](https://github.com/thiagobraga/planner/commit/741958261c7485d049b069a0e6637cfcc53005d0))
+
+
+### Style
+
+* **nav:** fix phone tab columns at 70px with 10.5px labels ([7e2fb3e](https://github.com/thiagobraga/planner/commit/7e2fb3e05b9a1ba3d9826eab97726ff62e2dd71e))
+* **nav:** name nav styles by text position ([34105aa](https://github.com/thiagobraga/planner/commit/34105aa84c7378e53599f073fccc2ac162e5be68))
+* **nav:** raise and enlarge the daily day number ([4851012](https://github.com/thiagobraga/planner/commit/485101224ac7aec1f66d7483f784738e7f5767fb))
+* **nav:** set icon-above text to 10.5px on desktop ([e5acb85](https://github.com/thiagobraga/planner/commit/e5acb85b642436347d20fe266cbdfa0e359f198a))
+* **nav:** set icon-above text to 11px on desktop ([55109d9](https://github.com/thiagobraga/planner/commit/55109d99a7dfb868ffa4aa9a002a536ca862f3c3))
+* **nav:** space phone tabs from screen edges ([028048f](https://github.com/thiagobraga/planner/commit/028048f95431ae066a1723ed5cdcbab83b2302e7))
+* **nav:** taller phone tabs without min-width ([45897e5](https://github.com/thiagobraga/planner/commit/45897e542bf5c5f464010418b8b5182a6bb6f16c))
+* **nav:** tune icon-left text size and icon-above tab width ([93fd28d](https://github.com/thiagobraga/planner/commit/93fd28dbac34dc4529f0fab258db0b2605dfb88c))
+
+## [0.18.0](https://github.com/thiagobraga/planner/compare/v0.17.1...v0.18.0) (2026-11-13)
+
+
+### Added
+
+* **layout:** center every page in one 680px column ([2469701](https://github.com/thiagobraga/planner/commit/2469701e6c8812fc2840b7deaf5bdfe70b2e4f1f))
+* **nav:** center topbar row with folder tabs and one planner menu ([d40cf6a](https://github.com/thiagobraga/planner/commit/d40cf6a2ec8142cca6fe9c893dbf9a95baad199a))
+* **nav:** centered 680px container and folder-tab topbar ([d7062ef](https://github.com/thiagobraga/planner/commit/d7062efd4eca3bd086098a789846cfe0c5091d1b))
+* **nav:** use inbox tray and plain calendar day icons ([819e8fb](https://github.com/thiagobraga/planner/commit/819e8fbd2d78af0b375526cb5e647e98700a2fc5))
+
 ## [0.17.1](https://github.com/thiagobraga/planner/compare/v0.17.0...v0.17.1) (2026-11-12)
 
 

@@ -77,6 +77,27 @@ describe('useTaskDrag: section-aware task-row drops', () => {
     expect(move!.input.position).toBe(1);
   });
 
+  it('names the sibling above the drop so hidden siblings cannot shift it', () => {
+    const active = dragData('unsectioned-1', null, ['unsectioned-1']);
+    const below = resolveMove({
+      rows,
+      active,
+      over: dragData('work-2', 'work', ['work-2']),
+      offsetX: 0,
+      scope,
+    });
+    expect(below!.input.afterTaskId).toBe('work-1');
+
+    const top = resolveMove({
+      rows,
+      active,
+      over: dragData('work-1', 'work', ['work-1']),
+      offsetX: 0,
+      scope,
+    });
+    expect(top!.input.afterTaskId).toBeNull();
+  });
+
   it('reordering within the same section stays scoped to that section', () => {
     const active = dragData('shopping-2', 'shopping', ['shopping-2']);
     const move = resolveMove({

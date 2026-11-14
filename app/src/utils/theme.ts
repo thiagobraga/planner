@@ -1,9 +1,10 @@
 import type { BackgroundPreference, ResolvedTheme } from '../types/theme';
 
+/** Browser and PWA colors use sidebar colors for the original themes and page colors for Nord. */
 export const THEME_COLORS: Record<ResolvedTheme, string> = {
-  beige: '#f5f0e8',
-  white: '#ffffff',
-  dark: '#221a14',
+  beige: '#ebe6de',
+  white: '#f1f1f1',
+  dark: '#292219',
   'nord-light': '#eceff4',
   'nord-dark': '#2e3440',
 };

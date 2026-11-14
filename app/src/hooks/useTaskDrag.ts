@@ -432,6 +432,9 @@ export function resolveMove({
       ...(scope.kind === 'collection' ? { sectionId: targetSectionId } : {}),
       scope: targetDay ? { kind: 'day', dueDate: targetDay } : scope,
       position: projection.position,
+      ...(scope.kind === 'collection'
+        ? { afterTaskId: orderSiblings[projection.position - 1]?.id ?? null }
+        : {}),
     },
     parentTaskId: projection.parentId,
     depth: projection.depth,

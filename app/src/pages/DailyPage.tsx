@@ -808,7 +808,7 @@ export function DailyPage({ view }: { view: BoardViewMode }) {
       )}
 
       {view === 'calendar' ? (
-        <div className="max-w-[832px]">
+        <div>
           <div className="h-6" />
           <MonthlyView
             tasks={allTasks}
@@ -847,7 +847,7 @@ export function DailyPage({ view }: { view: BoardViewMode }) {
         />
       ) : (
         <>
-        <div className="daily-list-nav sticky top-6 z-[9] flex max-w-162 justify-start bg-(--planner-page-bg)">
+        <div className="daily-list-nav sticky top-6 z-[9] flex justify-start bg-(--planner-page-bg)">
           <WeekSelector weekAnchor={weekAnchor} today={dateFromISO(todayKey)} weekStart={weekStart} onWeekChange={setWeekAnchor} onToday={goToToday} />
         </div>
         <DailyList

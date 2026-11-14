@@ -15,9 +15,9 @@ function addDays(date: Date, days: number): Date {
   return next;
 }
 
-export function WeekSelector({ weekAnchor, today, weekStart, onWeekChange, onToday }: WeekSelectorProps) {
+export function WeekSelector({ weekAnchor, today, weekStart, onWeekChange, onToday, defaultOpen = false }: WeekSelectorProps) {
   const { locale, t } = useI18n();
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(defaultOpen);
   const [viewMonth, setViewMonth] = useState(() => new Date(weekAnchor.getFullYear(), weekAnchor.getMonth(), 1));
   const rootRef = useRef<HTMLDivElement>(null);
 

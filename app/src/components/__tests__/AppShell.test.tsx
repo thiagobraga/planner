@@ -168,6 +168,13 @@ describe('AppShell', () => {
     expect(screen.getByText('Outlet content')).toBeInTheDocument();
   });
 
+  it('centers every page in one 720px column', () => {
+    render(<AppShell />);
+    const column = screen.getByTestId('outlet-content').parentElement;
+    expect(column).toHaveClass('page-container', 'mx-auto', 'w-full', 'max-w-page');
+    expect(column?.parentElement?.tagName).toBe('MAIN');
+  });
+
   it('applies font class from preferences', () => {
     mockUseQuery.mockReturnValue({
       data: { ...defaultPreferences, font: 'hubballi' },

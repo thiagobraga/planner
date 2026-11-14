@@ -567,7 +567,7 @@ export function InboxPage() {
         }
       />
 
-      <div className={boardPreferences.view !== 'list' ? 'w-full' : 'max-w-162'}>
+      <div className={boardPreferences.view !== 'list' ? 'w-full' : undefined}>
         {boardPreferences.view !== 'list' && boardPreferences.view !== 'calendar' && data && inboxCollectionId ? (
           <CollectionBoard
             collectionId={inboxCollectionId}
