@@ -61,7 +61,11 @@ export function TopBar({ onOpenSearch, onOpenShortcuts, updateAvailable = false 
       className="topbar"
       data-nav-style={navStyle}
       data-phone-labels={phoneLabels}
-      onContextMenu={(event) => { event.preventDefault(); openStyleMenu(event.clientX, event.clientY); }}
+      onContextMenu={(event) => {
+        if (event.shiftKey) return;
+        event.preventDefault();
+        openStyleMenu(event.clientX, event.clientY);
+      }}
       onKeyDown={(event) => {
         if (event.key === 'ContextMenu' || (event.shiftKey && event.key === 'F10')) {
           event.preventDefault();

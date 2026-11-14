@@ -179,6 +179,13 @@ describe('TopBar', () => {
     expect(state.mutate).toHaveBeenCalledWith({ navStyle: 'text' });
   });
 
+  it('leaves the browser menu alone on shift + right click', () => {
+    const { container } = renderBar();
+    const notPrevented = fireEvent.contextMenu(container.querySelector('.topbar')!, { clientX: 40, clientY: 20, shiftKey: true });
+    expect(notPrevented).toBe(true);
+    expect(screen.queryByRole('menu')).toBeNull();
+  });
+
   it('offers one show-text toggle on phones that leaves the saved style alone', () => {
     state.mobile = true; state.style = 'icon-top';
     window.localStorage.removeItem('planner.phoneLabels');
