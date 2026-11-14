@@ -102,3 +102,36 @@ describe('shortcuts matcher', () => {
     expect(s2.pendingChord).toBeNull();
   });
 });
+
+describe('view shortcuts', () => {
+  const press = (keys: string[]) => {
+    let state = createMatcherState();
+    let action: string | null = null;
+    for (const key of keys) {
+      ({ action, nextState: state } = matchKey(DEFAULT_BINDINGS, state, { key, isTextInputFocused: false, timestamp: 0 }));
+    }
+    return action;
+  };
+
+  it.each([
+    [['v', 'l'], 'view:layout:list'],
+    [['v', 'k'], 'view:layout:columns'],
+    [['v', 't'], 'view:layout:table'],
+    [['v', 'c'], 'view:layout:calendar'],
+    [['v', 's'], 'view:style'],
+    [['v', '3'], 'view:range:3'],
+    [['v', 'w'], 'view:range:w'],
+    [['v', 'm'], 'view:range:m'],
+    [['v', 'f'], 'view:fullWidth'],
+    [['t'], 'view:today'],
+    [['['], 'view:previous'],
+    [[']'], 'view:next'],
+  ])('%j runs %s', (keys, action) => {
+    expect(press(keys)).toBe(action);
+  });
+
+  it('ignores view keys while typing', () => {
+    const { action } = matchKey(DEFAULT_BINDINGS, createMatcherState(), { key: 't', isTextInputFocused: true, timestamp: 0 });
+    expect(action).toBeNull();
+  });
+});

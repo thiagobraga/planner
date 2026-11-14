@@ -3,7 +3,6 @@ import type { ApiTask } from '../../types/api';
 import type { Task } from '../TaskItem';
 import type { DailyWeekBoardProps } from '../../types/dailyBoard';
 import { buildDayColumns, slotTaskIntoColumn } from '../../utils/dayColumns';
-import { WeekSelector } from './WeekSelector';
 import { DailyBoardColumn } from './DailyBoardColumn';
 import { useI18n } from '../../i18n/I18nContext';
 
@@ -44,7 +43,7 @@ function formatColumnDate(iso: string, locale: 'en' | 'pt-BR', format: string): 
   }
 }
 
-export function DailyWeekBoard({ tasks, weekAnchor, today, todayKey, weekStart, dateFormat, onWeekChange, onToday, onToggle, onCreate, onOrganize, presentation, taskListProps }: DailyWeekBoardProps) {
+export function DailyWeekBoard({ tasks, from, to, todayKey, dateFormat, onToggle, onCreate, onOrganize, presentation, taskListProps }: DailyWeekBoardProps) {
   const { locale, t } = useI18n();
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -57,7 +56,7 @@ export function DailyWeekBoard({ tasks, weekAnchor, today, todayKey, weekStart, 
     if (bucket) bucket.push(task);
     else rootTasksByColumn.set(columnId, [task]);
   }
-  const columns = buildDayColumns(weekAnchor, today, weekStart);
+  const columns = buildDayColumns(from, to);
 
   // Narrow screens show one or two columns at a time, so scroll today's column
   // to the left edge instead of leaving it off screen. Weeks without today keep
@@ -79,10 +78,6 @@ export function DailyWeekBoard({ tasks, weekAnchor, today, todayKey, weekStart, 
 
   return (
     <div className="daily-week-board">
-      <div className="daily-week-board-nav flex justify-start">
-        <WeekSelector weekAnchor={weekAnchor} today={today} weekStart={weekStart} onWeekChange={onWeekChange} onToday={onToday} />
-      </div>
-
       <div className="board-scroll" data-testid="daily-week-board" ref={scrollRef}>
         <div className="board-grid">
           {columns.map((column) => (

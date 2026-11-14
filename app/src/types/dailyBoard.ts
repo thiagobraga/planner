@@ -35,13 +35,11 @@ export interface WeekSelectorProps {
 
 export interface DailyWeekBoardProps {
   tasks: Task[];
-  weekAnchor: Date;
-  today: Date;
+  /** First and last day shown, one column each (YYYY-MM-DD). */
+  from: string;
+  to: string;
   todayKey: string;
-  weekStart: WeekStart;
   dateFormat: string;
-  onWeekChange: (date: Date) => void;
-  onToday?: () => void;
   onToggle?: (taskId: string, completed: boolean) => void;
   onCreate: DailyBoardColumnProps['onCreate'];
   onOrganize?: DailyBoardColumnProps['onOrganize'];

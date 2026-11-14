@@ -31,7 +31,7 @@ The design system is in [DESIGN.md](./DESIGN.md). Data flow, services and real-t
 
 ### Daily list
 
-Plan the week day by day. Overdue tasks stay visible until you move or finish them, and every task keeps its collection.
+Plan day by day. Overdue tasks stay visible until you move or finish them, and every task keeps its collection. The View menu on the title row combines a layout (List or Columns), a style (Notebook or Cards) and a range (Today, This week, Next 7 days, Upcoming, Month, or 1-6 days and 1-3 weeks on Columns).
 
 <p align="center">
   <img src=".github/assets/daily-list-desktop-light.png" alt="Daily list on desktop, light theme" height="350">
@@ -43,9 +43,9 @@ Plan the week day by day. Overdue tasks stay visible until you move or finish th
   <img src=".github/assets/daily-list-mobile-dark.png" alt="Daily list on mobile, dark theme" height="350">
 </p>
 
-### Daily Kanban
+### Daily columns
 
-The same week as cards, one column per day. Drag tasks between days to reschedule.
+One column per day, as notebook lists or cards. Drag tasks between days to reschedule.
 
 <p align="center">
   <img src=".github/assets/daily-kanban-desktop-light.png" alt="Daily Kanban on desktop, light theme" height="350">

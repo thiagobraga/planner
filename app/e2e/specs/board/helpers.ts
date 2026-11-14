@@ -15,26 +15,31 @@ export function uniqueName(prefix: string): string {
   return `${prefix}-${crypto.randomUUID().slice(0, 8)}`;
 }
 
+/** Opens a collection as Columns in Cards style through the View menu. */
 export async function openBoard(page: Page, collectionId: string): Promise<void> {
   await page.goto(`/collection/${collectionId}`);
-  await expect(page.getByRole('button', { name: 'More options', exact: true })).toBeVisible();
+  const viewButton = page.locator('.page-header-row').getByRole('button', { name: 'View', exact: true });
+  await expect(viewButton).toBeVisible();
   await expect(async () => {
-    const kanban = page.getByRole('button', { name: 'Kanban cards', exact: true });
-    if (await kanban.getAttribute('aria-pressed') !== 'true') {
-      await kanban.click();
+    if (!await page.getByTestId('board-view').isVisible()) {
+      await viewButton.click();
+      const menu = page.getByRole('menu');
+      await menu.getByRole('menuitemradio', { name: /Columns/ }).click();
+      await menu.getByRole('radio', { name: 'Cards' }).click();
+      await page.keyboard.press('Escape');
     }
     await expect(page.getByTestId('board-view')).toBeVisible({ timeout: 2_000 });
   }).toPass({ timeout: 10_000 });
 }
 
+export function groupByButton(page: Page) {
+  return page.locator('.page-header-row').getByRole('button', { name: /^Group:/ });
+}
+
 export async function setGroupBy(page: Page, label: 'Status' | 'Section' | 'Priority'): Promise<void> {
-  const select = page.locator('#board-group-by');
-  if (!await select.isVisible()) {
-    await page.getByRole('button', { name: 'More options', exact: true }).click();
-  }
-  await select.click();
-  await page.getByRole('option', { name: label, exact: true }).click();
-  await expect(select).toContainText(label);
+  await groupByButton(page).click();
+  await page.getByRole('menuitemradio', { name: label, exact: true }).click();
+  await expect(groupByButton(page)).toHaveText(`Group: ${label}`);
 }
 
 export function statusColumn(page: Page, statusId: string) {

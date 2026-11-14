@@ -7,7 +7,6 @@ import { HabitCalendar } from '../components/habits/HabitCalendar';
 import { useHabitDrag } from '../hooks/useHabitDrag';
 import { isEchoedMove } from '../utils/moveEcho';
 import { ButtonGroup } from '../components/ui/ButtonGroup';
-import { Toolbar } from '../components/ui/Toolbar';
 import { PageHeader } from '../components/PageHeader';
 import { fmtISOInTimeZone } from '../utils/date';
 import { dateFromISO } from '../utils/dailySections';
@@ -433,26 +432,19 @@ export function HabitsPage() {
     <div className="habits-page relative w-full max-w-none">
       <PageHeader
         title={t('page.habits')}
-        toolbar={
-          <Toolbar
-            className="habits-page-header-controls"
-            viewSwitcher={
-              <>
-                <ButtonGroup
-                  mode="single"
-                  value={view}
-                  onChange={handleViewChange}
-                  size="xs"
-                  items={[
-                    { value: 'timeline', label: t('page.timelineView'), icon: <DotsConnectedIcon size={12} strokeWidth={1.8} /> },
-                    { value: 'calendar', label: t('page.calendarView'), icon: <Calendar size={12} strokeWidth={1.8} /> },
-                  ]}
-                />
-              </>
-            }
-          >
-            {null}
-          </Toolbar>
+        actions={
+          <div className="page-toolbar habits-page-header-controls">
+            <ButtonGroup
+              mode="single"
+              value={view}
+              onChange={handleViewChange}
+              size="xs"
+              items={[
+                { value: 'timeline', label: t('page.timelineView'), icon: <DotsConnectedIcon size={12} strokeWidth={1.8} /> },
+                { value: 'calendar', label: t('page.calendarView'), icon: <Calendar size={12} strokeWidth={1.8} /> },
+              ]}
+            />
+          </div>
         }
       />
 

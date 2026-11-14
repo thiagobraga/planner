@@ -3,18 +3,16 @@ import { test, expect, STORAGE_STATE_PATH } from './fixtures/api';
 
 test.use({ storageState: STORAGE_STATE_PATH });
 
-test('Week selector picks a week from the calendar and returns to today', async ({ page, api }) => {
+test('Date navigator picks a week from the calendar and returns to today', async ({ page, api }) => {
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
-  await api.patch('/preferences', { locale: 'en', timeZone: 'UTC' });
+  await api.patch('/preferences', { locale: 'en', timeZone: 'UTC', dailyView: { style: 'cards', range: 'w1' } });
 
-  await page.goto('/daily');
-  await page.getByRole('button', { name: 'Kanban cards', exact: true }).click();
+  await page.goto('/daily/columns');
   await expect(page.getByTestId('daily-week-board')).toBeVisible();
 
-  const nav = page.locator('.daily-week-board-nav');
-  const trigger = nav.locator('.week-selector-trigger');
-  const currentRange = await trigger.getAttribute('aria-label');
+  const trigger = page.locator('.date-nav-trigger');
+  const currentRange = await trigger.innerText();
 
   await trigger.click();
   const dialog = page.getByRole('dialog', { name: 'Select week' });
@@ -25,10 +23,10 @@ test('Week selector picks a week from the calendar and returns to today', async 
   await dialog.getByRole('button', { name: 'Next month', exact: true }).click();
   await dialog.getByRole('button', { name: '15', exact: true }).click();
   await expect(dialog).toHaveCount(0);
-  await expect(trigger).not.toHaveAttribute('aria-label', currentRange!);
+  await expect(trigger).not.toHaveText(currentRange);
 
   await page.getByRole('button', { name: 'Today', exact: true }).click();
-  await expect(trigger).toHaveAttribute('aria-label', currentRange!);
+  await expect(trigger).toHaveText(currentRange);
 
   await trigger.click();
   await page.keyboard.press('Escape');

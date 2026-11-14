@@ -107,15 +107,13 @@ describe('Daily asks for one range per view', () => {
     await waitFor(() => expect(screen.getAllByLabelText('New task…')).toHaveLength(7));
     expect(document.querySelector('[data-day-date="2026-10-10"]')).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: 'More options' }));
-    expect(screen.queryByLabelText(/Next days/)).not.toBeInTheDocument();
     fireEvent(window, new Event('toggle-upcoming'));
     expect(requestedRanges()).toEqual(['2026-10-07..2026-10-10']);
     expect(document.querySelector('[data-day-date="2026-10-10"]')).toBeInTheDocument();
   });
 
-  it.each(['kanban', 'cards'])('/daily/%s asks for the visible week', async (slug) => {
-    renderAt(`/daily/${slug}`);
+  it('/daily/columns asks for the visible week', async () => {
+    renderAt('/daily/columns');
 
     await waitFor(() => expect(requestedRanges()).toEqual(['2026-10-04..2026-10-10']));
   });
@@ -133,8 +131,8 @@ describe('Daily asks for one range per view', () => {
     })) }, '2026-10-07'));
     renderAt('/daily/list');
     await screen.findByText('Task 20');
-    fireEvent.click(screen.getByRole('button', { name: 'More options' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Organize' }));
+    fireEvent.click(screen.getByRole('button', { name: 'View' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Organize' }));
 
     expect(document.querySelector('[data-day-date="2026-10-11"]')).toHaveTextContent('Task 20');
     expect(screen.queryByLabelText(/Next days/)).not.toBeInTheDocument();
@@ -146,11 +144,11 @@ describe('Daily asks for one range per view', () => {
   });
 
   it('fetches only the new week when the week changes', async () => {
-    renderAt('/daily/cards');
+    renderAt('/daily/columns');
     await screen.findByTestId('daily-week-board');
     await waitFor(() => expect(mockFetchDaily).toHaveBeenCalledTimes(1));
 
-    fireEvent.click(screen.getByRole('button', { name: 'Next week' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
 
     await waitFor(() => expect(requestedRanges()).toEqual(['2026-10-04..2026-10-10', '2026-10-11..2026-10-17']));
   });
@@ -159,18 +157,18 @@ describe('Daily asks for one range per view', () => {
     renderAt('/daily/list');
     await waitFor(() => expect(mockFetchDaily).toHaveBeenCalledTimes(1));
 
-    fireEvent.click(screen.getByRole('button', { name: 'Next week' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
 
     await waitFor(() => expect(requestedRanges().at(-1)).toBe('2026-10-11..2026-10-17'));
     expect(screen.getAllByLabelText('New task…')).toHaveLength(7);
   });
 
-  it.each(['list', 'cards'])('Today brings /daily/%s back to the current period', async (slug) => {
+  it.each(['list', 'columns'])('Today brings /daily/%s back to the current period', async (slug) => {
     renderAt(`/daily/${slug}`);
     await waitFor(() => expect(mockFetchDaily).toHaveBeenCalledTimes(1));
     const first = requestedRanges()[0];
 
-    fireEvent.click(screen.getByRole('button', { name: 'Next week' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
     await waitFor(() => expect(requestedRanges().at(-1)).not.toBe(first));
 
     fireEvent.click(screen.getByRole('button', { name: 'Today' }));
@@ -178,16 +176,43 @@ describe('Daily asks for one range per view', () => {
     await waitFor(() => expect(requestedRanges().at(-1)).toBe(first));
   });
 
-  it('monthly shows the Today button', async () => {
-    renderAt('/daily/monthly');
+  it('List · Month shows the Today button and asks for the whole visible month', async () => {
+    mockFetchPreferences.mockResolvedValue({ ...preferences, dailyView: { style: 'notebook', range: 'month' } });
+    renderAt('/daily/list');
 
     expect(await screen.findByRole('button', { name: 'Today' })).toBeInTheDocument();
+    await waitFor(() => expect(requestedRanges().at(-1)).toBe('2026-10-01..2026-10-31'));
   });
 
-  it('monthly asks for the whole visible month', async () => {
-    renderAt('/daily/monthly');
+  it('List · Today asks only for today', async () => {
+    mockFetchPreferences.mockResolvedValue({ ...preferences, dailyView: { style: 'notebook', range: 'today' } });
+    renderAt('/daily/list');
 
-    await waitFor(() => expect(requestedRanges()).toEqual(['2026-10-01..2026-10-31']));
+    await waitFor(() => expect(requestedRanges().at(-1)).toBe('2026-10-07..2026-10-07'));
+    await waitFor(() => expect(screen.getAllByLabelText('New task…')).toHaveLength(1));
+  });
+
+  it('List · Upcoming looks 42 days ahead and leaves out empty days', async () => {
+    mockFetchPreferences.mockResolvedValue({ ...preferences, dailyView: { style: 'notebook', range: 'upcoming' } });
+    mockFetchDaily.mockImplementation(async (from, to) => ({
+      ...dailyView({}, '2026-10-07'),
+      from,
+      to,
+      days: [{ date: '2026-10-20', tasks: [{ id: 't', title: 'Dentist', priority: 4, collectionId: 'c', isCompleted: false, orderValue: 0, depth: 0, type: 'task', dueDate: '2026-10-20' }] }],
+    }));
+    renderAt('/daily/list');
+
+    await waitFor(() => expect(requestedRanges().at(-1)).toBe('2026-10-07..2026-11-17'));
+    await screen.findByText('Dentist');
+    const days = Array.from(document.querySelectorAll('[data-day-date]')).map((el) => el.getAttribute('data-day-date'));
+    expect(days).toEqual(['2026-10-07', '2026-10-20']);
+  });
+
+  it('Columns · 3 days asks for three days from today', async () => {
+    mockFetchPreferences.mockResolvedValue({ ...preferences, dailyView: { style: 'cards', range: 'd3' } });
+    renderAt('/daily/columns');
+
+    await waitFor(() => expect(requestedRanges().at(-1)).toBe('2026-10-07..2026-10-09'));
   });
 
   it('opens the week of the preferred time zone, not the machine zone', async () => {
@@ -195,7 +220,7 @@ describe('Daily asks for one range per view', () => {
     vi.setSystemTime(new Date('2026-10-11T01:00:00Z'));
     mockFetchPreferences.mockResolvedValue({ ...preferences, timeZone: 'America/Sao_Paulo' });
 
-    renderAt('/daily/cards');
+    renderAt('/daily/columns');
 
     // The first request can use the machine zone before preferences arrive; the last one is the shown week.
     await waitFor(() => expect(requestedRanges().at(-1)).toBe('2026-10-04..2026-10-10'));

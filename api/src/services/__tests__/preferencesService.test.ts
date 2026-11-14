@@ -42,6 +42,8 @@ const prefsRow = {
   date_format: "MMM DD ddd",
   collapsed_collection_ids: [],
   board_view_modes: {},
+  daily_view: { style: "notebook", range: "week" },
+  full_width: false,
 };
 
 describe("validatePreferences", () => {
@@ -112,18 +114,31 @@ describe("validatePreferences", () => {
   it("accepts valid per-collection board modes", () => {
     expect(() => validatePreferences({
       boardViewModes: {
-        "11111111-1111-4111-8111-111111111111": { view: "kanban", groupBy: "status" },
+        "11111111-1111-4111-8111-111111111111": { layout: "columns", style: "cards", groupBy: "status" },
       },
     })).not.toThrow();
   });
 
+  it("validates the Daily view and full width", () => {
+    expect(() => validatePreferences({ dailyView: { style: "cards", range: "upcoming" }, fullWidth: true })).not.toThrow();
+    expect(() => validatePreferences({ dailyView: { style: "cards", range: "d7" as "d6" } })).toThrow(AppError);
+    expect(() => validatePreferences({ dailyView: { style: "list" as "cards", range: "week" } })).toThrow(AppError);
+    expect(() => validatePreferences({ fullWidth: 1 as unknown as boolean })).toThrow(AppError);
+  });
+
+  it("rejects board modes with unknown fields", () => {
+    expect(() => validatePreferences({
+      boardViewModes: { "11111111-1111-4111-8111-111111111111": { view: "kanban" } as never },
+    })).toThrow(AppError);
+  });
+
   it("rejects malformed board mode keys, values, and oversized maps", () => {
     expect(() => validatePreferences({
-      boardViewModes: { "not-a-uuid": { view: "kanban" } },
+      boardViewModes: { "not-a-uuid": { layout: "columns" } },
     })).toThrow(AppError);
     expect(() => validatePreferences({
       boardViewModes: {
-        "11111111-1111-4111-8111-111111111111": { view: "grid" as "kanban" },
+        "11111111-1111-4111-8111-111111111111": { layout: "grid" as "columns" },
       },
     })).toThrow(AppError);
 
@@ -274,16 +289,16 @@ describe("updatePreferences", () => {
     expect(mockBuildEvent).toHaveBeenCalledWith(expect.objectContaining({ payload: p }));
   });
 
-  it("persists board view modes as one JSONB field", async () => {
+  it("merges board view modes into the stored JSONB field", async () => {
     const boardViewModes = {
-      "11111111-1111-4111-8111-111111111111": { view: "kanban" as const, groupBy: "priority" as const },
+      "11111111-1111-4111-8111-111111111111": { layout: "columns" as const, groupBy: "priority" as const },
     };
     mockQuery.mockResolvedValueOnce({ rows: [{ ...prefsRow, board_view_modes: boardViewModes }] });
 
     const p = await updatePreferences("u1", { boardViewModes });
 
     expect(p.boardViewModes).toEqual(boardViewModes);
-    expect(mockQuery.mock.calls[0][0]).toMatch(/board_view_modes = \$1/);
+    expect(mockQuery.mock.calls[0][0]).toMatch(/board_view_modes = board_view_modes \|\|/);
     expect(mockQuery.mock.calls[0][1]).toEqual([boardViewModes, "u1"]);
   });
 

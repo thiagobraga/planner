@@ -20,7 +20,8 @@ import { Toggle } from '../components/ui/Toggle';
 import { Chip, CollectionChip } from '../components/ui/Chip';
 import { StatusPill } from '../components/ui/StatusPill';
 import { PriorityDot } from '../components/ui/PriorityDot';
-import { ViewToolbar } from '../components/ui/ViewToolbar';
+import { ViewMenu } from '../components/toolbar/ViewMenu';
+import { DateNav } from '../components/toolbar/DateNav';
 import { TaskRowSpecimen } from '../components/ui/TaskRowSpecimen';
 import { CustomSelect } from '../components/ui/CustomSelect';
 import { ContextMenu, ContextMenuItem } from '../components/ui/ContextMenu';
@@ -425,8 +426,12 @@ export function StyleguidePage() {
         </Card>
 
         {/* Toolbar / View Options */}
-        <Card title="Toolbar / View Options" span>
-          <ViewToolbar />
+        <Card title="Page toolbar" span>
+          <div className="page-toolbar">
+            <DateNav from="2026-11-13" to="2026-11-15" today="2026-11-14" weekStart="sunday" onPrevious={() => {}} onNext={() => {}} onToday={() => {}} onPick={() => {}} />
+            <span className="page-toolbar-divider" aria-hidden="true" />
+            <ViewMenu layouts={['list', 'columns']} layout="columns" onLayoutChange={() => {}} style="cards" onStyleChange={() => {}} range="d3" onRangeChange={() => {}} />
+          </div>
         </Card>
 
         {/* Task Rows */}

@@ -1,6 +1,9 @@
 import { mkdir } from 'node:fs/promises';
 import { test, expect, STORAGE_STATE_PATH } from './fixtures/api';
 import type { ApiTask } from '../src/api/client';
+import { chooseView } from './fixtures/view';
+
+const WEEK_NOTEBOOK = { style: 'notebook', range: 'week' };
 
 test.use({ storageState: STORAGE_STATE_PATH });
 
@@ -9,7 +12,7 @@ test('Migrate omits completed overdue tasks in Daily views', async ({ page, api 
   const activeTitle = `Active overdue ${Date.now()}`;
   // Two weeks back is before the shown week in every view, so it always lands in Migrate.
   const yesterday = new Date(Date.now() - 14 * 86_400_000).toISOString().slice(0, 10);
-  await api.patch('/preferences', { locale: 'en', timeZone: 'UTC', hideCompletedTasks: false });
+  await api.patch('/preferences', { locale: 'en', timeZone: 'UTC', hideCompletedTasks: false, dailyView: WEEK_NOTEBOOK });
   const task = await api.post<ApiTask>('/tasks', { title, dueDate: yesterday });
   const activeTask = await api.post<ApiTask>('/tasks', { title: activeTitle, dueDate: yesterday });
 
@@ -44,14 +47,14 @@ test('Daily board retains scheduled cards while keeping Migrate scoped to Daily 
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
   const createdIds: string[] = [];
-  await api.patch('/preferences', { locale: 'en', timeZone: 'UTC' });
+  await api.patch('/preferences', { locale: 'en', timeZone: 'UTC', dailyView: WEEK_NOTEBOOK });
   const today = new Date().toISOString().slice(0, 10);
   const suffix = Date.now();
   const datedTitle = `Plan the week ${suffix}`;
   const undatedTitle = `Sort paperwork ${suffix}`;
   const enterBoard = async () => {
-    await page.goto('/daily');
-    await page.getByRole('button', { name: 'Kanban cards', exact: true }).click();
+    await page.goto('/daily/columns');
+    await chooseView(page, { style: 'Cards', range: '1 week' });
     await expect(page.getByTestId('daily-week-board')).toBeVisible();
   };
 
@@ -105,7 +108,7 @@ test('Daily board retains scheduled cards while keeping Migrate scoped to Daily 
     const inbox = await api.get<{ tasks: ApiTask[] }>('/views/inbox');
     expect(inbox.tasks.filter((task) => createdIds.includes(task.id))).toHaveLength(2);
 
-    await page.getByRole('button', { name: 'Next week', exact: true }).click();
+    await page.getByRole('button', { name: 'Next', exact: true }).click();
     const futureColumn = page.locator('[data-column-id^="day:"]').first();
     const futureDate = (await futureColumn.getAttribute('data-column-id'))!.slice(4);
     const futureTitle = `Prepare next week ${suffix}`;
@@ -117,9 +120,9 @@ test('Daily board retains scheduled cards while keeping Migrate scoped to Daily 
     createdIds.push(futureTask.id);
     expect(futureTask.dueDate?.slice(0, 10)).toBe(futureDate);
     await enterBoard();
-    await page.getByRole('button', { name: 'Next week', exact: true }).click();
+    await page.getByRole('button', { name: 'Next', exact: true }).click();
     await expect(page.getByRole('heading', { name: futureTitle, exact: true })).toBeVisible();
-    await page.getByRole('button', { name: 'Previous week', exact: true }).click();
+    await page.getByRole('button', { name: 'Previous', exact: true }).click();
 
     await mkdir('dist/screenshots', { recursive: true });
     await page.screenshot({ path: 'dist/screenshots/daily-kanban-refined-desktop.png' });
@@ -145,8 +148,8 @@ test('Daily Kanban lists keeps journal rows and the destination date', async ({ 
   page.on('pageerror', (error) => errors.push(error.message));
 
   try {
-    await page.goto('/daily');
-    await page.getByRole('button', { name: 'Kanban lists', exact: true }).click();
+    await api.patch('/preferences', { dailyView: WEEK_NOTEBOOK });
+    await page.goto('/daily/columns');
     await expect(page.getByTestId('daily-week-board')).toBeVisible();
     const column = page.locator(`[data-column-id="day:${today}"]`);
     await expect(column.locator('.board-column-lists')).toBeVisible();
@@ -173,9 +176,9 @@ test('Daily Kanban lists keeps journal rows and the destination date', async ({ 
 test.describe('touch swipe', () => {
   test.use({ hasTouch: true, isMobile: true, viewport: { width: 390, height: 844 } });
 
-  test('Daily board snaps one day column flush left per swipe', async ({ page }) => {
-    await page.goto('/daily');
-    await page.getByRole('button', { name: 'Kanban cards', exact: true }).click();
+  test('Daily board snaps one day column flush left per swipe', async ({ page, api }) => {
+    await api.patch('/preferences', { dailyView: { style: 'cards', range: 'w1' } });
+    await page.goto('/daily/columns');
     const scroller = page.getByTestId('daily-week-board');
     await expect(scroller).toBeVisible();
     await expect(scroller).toHaveCSS('scroll-snap-type', 'x mandatory');

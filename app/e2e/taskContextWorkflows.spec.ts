@@ -1,3 +1,4 @@
+import { openBoard } from './specs/board/helpers';
 import { mkdir } from 'node:fs/promises';
 import type { Page } from '@playwright/test';
 import type { ApiStatus, ApiTask } from '../src/api/client';
@@ -58,9 +59,7 @@ test('column rules configure Next, Accept, and Reject and drive task menu moves'
       scope: { kind: 'status', collectionId: collection.id, statusId: backlog.id }, position: 0,
     });
 
-    await page.goto(`/collection/${collection.id}`);
-    await page.getByRole('button', { name: 'Kanban cards', exact: true }).click();
-    await expect(page.getByTestId('board-view')).toBeVisible();
+    await openBoard(page, collection.id);
     await chooseColumnRoute(page, backlog, 'Next stage', review.name);
     await expect.poll(async () => (await api.fetchStatuses(collection.id)).find((s) => s.id === backlog.id)?.nextStatusId).toBe(review.id);
     await chooseColumnRoute(page, backlog, 'Accept stage', completed.name);
@@ -151,6 +150,7 @@ test('task actions are available from Daily list, Kanban card, calendar, and Inb
     await page.setViewportSize({ width: 1280, height: 800 });
 
     await page.goto('/daily/cards');
+    await expect(page).toHaveURL(/\/daily\/columns$/);
     const card = page.locator(`[data-card-id="${task.id}"]`);
     await expect(card).toBeVisible();
     await card.focus();
@@ -159,6 +159,7 @@ test('task actions are available from Daily list, Kanban card, calendar, and Inb
     await page.keyboard.press('Escape');
 
     await page.goto('/daily/monthly');
+    await expect(page).toHaveURL(/\/daily\/list$/);
     const entry = page.locator('.monthly-ledger').filter({ hasText: task.title }).first();
     await expect(entry).toBeVisible();
     await entry.getByRole('button', { name: new RegExp(`More options.*${task.title}`) }).click();

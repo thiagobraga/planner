@@ -1,0 +1,244 @@
+/* Page toolbar: menus on the title row (desktop) or a bar above the navbar (phones). */
+
+.page-header-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 24px;
+}
+.page-header-row > .page-header-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.page-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+.page-toolbar-divider {
+  width: 1px;
+  height: 16px;
+  margin: 0 4px;
+  background: var(--color-border);
+}
+
+.page-menu-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 24px;
+  padding: 0 6px;
+  border-radius: var(--radius-xs);
+  font-size: 14px;
+  color: var(--color-ink);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color var(--motion-fast);
+}
+.page-menu-trigger:hover,
+.page-menu-trigger.is-open {
+  background: var(--planner-overlay-hover-bg);
+}
+.page-menu-trigger:focus-visible {
+  outline: 2px solid var(--color-ink);
+  outline-offset: 1px;
+}
+
+.page-menu-panel,
+.page-menu-sheet {
+  z-index: 60;
+  padding: 6px 0;
+  border: 1px solid var(--color-border);
+  background: var(--planner-overlay-bg, var(--color-cream));
+  box-shadow: var(--shadow-overlay);
+  color: var(--color-ink);
+}
+.page-menu-panel {
+  position: fixed;
+  min-width: 264px;
+  max-height: calc(100dvh - 16px);
+  overflow-y: auto;
+  border-radius: var(--radius-md);
+}
+.page-menu-sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  max-height: 80dvh;
+  overflow-y: auto;
+  padding-bottom: calc(24px + env(safe-area-inset-bottom));
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+
+.page-menu-section + .page-menu-section {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid var(--color-border);
+}
+.page-menu-section-label {
+  padding: 2px 16px;
+  font-size: 11px;
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-ink-light);
+}
+
+.page-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: calc(100% - 8px);
+  height: 28px;
+  margin: 0 4px;
+  padding: 0 12px 0 8px;
+  border-radius: var(--radius-xs);
+  font-size: 14px;
+  text-align: left;
+  color: var(--color-ink);
+  cursor: pointer;
+}
+.page-menu-item:hover:not(:disabled),
+.page-menu-item:focus-visible {
+  background: var(--planner-overlay-hover-bg);
+  outline: none;
+}
+.page-menu-item:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.page-menu-item-check {
+  display: inline-flex;
+  width: 14px;
+  flex: none;
+}
+.page-menu-item-icon {
+  display: inline-flex;
+  flex: none;
+  color: var(--color-ink-light);
+}
+.page-menu-item-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.page-menu-item-shortcut {
+  flex: none;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-family: inherit;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  color: var(--color-ink-light);
+}
+
+.page-menu-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 4px 12px 4px 16px;
+}
+.page-menu-segmented {
+  display: inline-flex;
+  gap: 4px;
+}
+.page-menu-segment {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  color: var(--color-ink);
+  cursor: pointer;
+}
+.page-menu-segment[aria-checked='true'] {
+  border-color: var(--color-ink);
+  background: var(--color-ink);
+  color: var(--planner-page-bg);
+}
+
+.page-menu-pill-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 16px;
+}
+.page-menu-pill-label {
+  width: 72px;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-ink-light);
+}
+.page-menu-pill {
+  min-width: 24px;
+  height: 24px;
+  padding: 0 6px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xs);
+  font-size: 13px;
+  color: var(--color-ink);
+  cursor: pointer;
+}
+.page-menu-pill:hover:not(:disabled, [aria-pressed='true']) {
+  background: var(--planner-overlay-hover-bg);
+}
+.page-menu-pill[aria-pressed='true'] {
+  border-color: var(--color-ink);
+  background: var(--color-ink);
+  color: var(--planner-page-bg);
+}
+.page-menu-pill:disabled {
+  border-color: transparent;
+  opacity: 0.4;
+  cursor: not-allowed;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-size: 11px;
+}
+.page-menu-pill:focus-visible,
+.page-menu-segment:focus-visible {
+  outline: 2px solid var(--color-ink);
+  outline-offset: 1px;
+}
+
+/* Phones: the toolbar sits in its own bar between the page and the bottom navbar. */
+.page-toolbar-mobile-slot {
+  display: none;
+}
+@media (max-width: 640px) {
+  .page-toolbar-mobile-slot:not(:empty) {
+    display: block;
+    border-top: 1px solid var(--color-dot);
+    background: var(--planner-page-bg);
+  }
+  .page-toolbar--mobile {
+    justify-content: space-between;
+    height: 48px;
+    padding: 0 12px;
+  }
+}
+
+/* Full width: the page column and the top bar row span the window. */
+.app-shell.full-width {
+  --container-page: 100%;
+}
+
+/* No keyboard on a phone sheet. */
+.page-menu-sheet .page-menu-item-shortcut {
+  display: none;
+}

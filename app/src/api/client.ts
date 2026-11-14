@@ -278,7 +278,7 @@ export async function apiConfirmPasswordReset(
 
 
 
-export async function fetchInboxTasks(): Promise<{
+export async function fetchInboxTasks(options: { includeCompleted?: boolean } = {}): Promise<{
   tasks: ApiTask[];
   collectionId: string | null;
   inboxCollectionId?: string;
@@ -287,7 +287,7 @@ export async function fetchInboxTasks(): Promise<{
   completionStatusId: string | null;
   boardOrder: BoardOrder;
 }> {
-  return request('/views/inbox');
+  return request(`/views/inbox${options.includeCompleted ? '?include_completed=true' : ''}`);
 }
 
 export async function fetchDaily(from: string, to: string): Promise<ApiDailyView> {
@@ -455,8 +455,9 @@ export async function apiArchiveCollection(id: string): Promise<ApiCollection> {
 
 
 
-export async function fetchCollectionView(id: string): Promise<CollectionView> {
-  return request<CollectionView>(`/views/collection/${id}`);
+/** `includeCompleted` overrides the hide-completed preference (status boards fill their completion column). */
+export async function fetchCollectionView(id: string, options: { includeCompleted?: boolean } = {}): Promise<CollectionView> {
+  return request<CollectionView>(`/views/collection/${id}${options.includeCompleted ? '?include_completed=true' : ''}`);
 }
 
 // Statuses ------------------------------------------------------------------

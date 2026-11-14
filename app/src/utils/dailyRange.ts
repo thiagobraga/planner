@@ -1,37 +1,25 @@
-import type { BoardViewMode } from '../types/board';
-import type { DailyRange, DailySlug } from '../types/daily';
-import { fmtISO, startOfWeek, type WeekStart } from './date';
+import type { DailyViewSettings, ViewLayout } from '../types/view';
 
-export const DEFAULT_DAILY_SLUG: DailySlug = 'list';
+/** Layouts Daily can show today, in menu order. Table and Calendar join in phase 2. */
+export const DAILY_LAYOUTS: readonly ViewLayout[] = ['list', 'columns'];
 
-const SLUG_TO_VIEW: Record<DailySlug, BoardViewMode> = {
-  list: 'list',
-  kanban: 'kanban-list',
-  cards: 'kanban',
-  monthly: 'calendar',
+export const DEFAULT_DAILY_SLUG: ViewLayout = 'list';
+
+export function slugToLayout(slug: string | undefined): ViewLayout | null {
+  return DAILY_LAYOUTS.find((layout) => layout === slug) ?? null;
+}
+
+export interface LegacyDailyView extends Partial<DailyViewSettings> {
+  layout: ViewLayout;
+}
+
+const LEGACY: Record<string, LegacyDailyView> = {
+  kanban: { layout: 'columns', style: 'notebook' },
+  cards: { layout: 'columns', style: 'cards' },
+  monthly: { layout: 'list', range: 'month' },
 };
 
-export function slugToView(slug: string | undefined): BoardViewMode | null {
-  return slug && Object.hasOwn(SLUG_TO_VIEW, slug) ? SLUG_TO_VIEW[slug as DailySlug] : null;
-}
-
-export function viewToSlug(view: BoardViewMode): DailySlug {
-  return (Object.keys(SLUG_TO_VIEW) as DailySlug[]).find((slug) => SLUG_TO_VIEW[slug] === view) ?? DEFAULT_DAILY_SLUG;
-}
-
-function addDays(date: Date, days: number): Date {
-  const d = new Date(date);
-  d.setDate(d.getDate() + days);
-  return d;
-}
-
-/** The only difference between Daily views is how many days they ask for. */
-export function dailyRange(view: BoardViewMode, anchor: Date, weekStart: WeekStart): DailyRange {
-  if (view === 'calendar') {
-    const first = new Date(anchor.getFullYear(), anchor.getMonth(), 1);
-    const last = new Date(anchor.getFullYear(), anchor.getMonth() + 1, 0);
-    return { from: fmtISO(first), to: fmtISO(last) };
-  }
-  const start = startOfWeek(anchor, weekStart);
-  return { from: fmtISO(view === 'list' ? anchor : start), to: fmtISO(addDays(start, 6)) };
+/** Old `/daily/<view>` URLs still open the view they used to show. */
+export function legacyDailySlug(slug: string | undefined): LegacyDailyView | null {
+  return slug && Object.hasOwn(LEGACY, slug) ? LEGACY[slug] : null;
 }

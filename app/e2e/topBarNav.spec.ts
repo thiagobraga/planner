@@ -96,7 +96,8 @@ test('menus toggle, dismiss, restore focus and navigate with the keyboard', asyn
   await expect(page.getByRole('menu')).toHaveCount(0);
   await expect(more).toBeFocused();
   await page.keyboard.press('Enter');
-  await page.keyboard.press('ArrowDown');
+  // Completed tasks and Notes come first, then Settings, then Help.
+  for (let i = 0; i < 3; i++) await page.keyboard.press('ArrowDown');
   await page.keyboard.press('Enter');
   await expect(page).toHaveURL(/\/help$/);
   await more.click();
@@ -210,7 +211,7 @@ test('wider content and phone routes keep page overflow contained', async ({ pag
   page.on('pageerror', (error) => errors.push(error.message));
   for (const width of [1440, 390, 320]) {
     await page.setViewportSize({ width, height: 900 });
-    for (const route of ['/daily/list', '/daily/kanban', '/daily/cards', '/daily/monthly', '/inbox', '/habits', '/collections', '/settings/general', '/help']) {
+    for (const route of ['/daily/list', '/daily/columns', '/inbox', '/habits', '/collections', '/settings/general', '/help']) {
       await page.goto(route);
       await expect(page.locator('main')).toBeVisible();
       await expect(page.locator('vite-error-overlay')).toHaveCount(0);

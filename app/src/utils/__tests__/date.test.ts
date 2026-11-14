@@ -11,6 +11,7 @@ import {
   getTimeZoneOffsetMs,
   getMsUntilMidnight,
   formatWeekRangeNumeric,
+  formatRangeLabel,
 } from '../date';
 
 describe('formatWeekRangeNumeric', () => {
@@ -183,5 +184,24 @@ describe('Brazilian Portuguese natural dates', () => {
   it('ignores an out-of-range day and falls back to plain "todo dia" (daily)', () => {
     const parsed = parseNaturalDate('Pagar aluguel todo dia 40', 'pt-BR');
     expect(parsed?.recurrenceRule).toEqual({ type: 'daily', interval: 1 });
+  });
+});
+
+describe('formatRangeLabel', () => {
+  it('shows one day with its year', () => {
+    expect(formatRangeLabel('2026-11-14', '2026-11-14', 'pt-BR')).toBe('14/11/2026');
+    expect(formatRangeLabel('2026-11-14', '2026-11-14', 'en')).toBe('11/14/2026');
+  });
+
+  it('shows a span with the year on the end', () => {
+    expect(formatRangeLabel('2026-11-13', '2026-11-15', 'pt-BR')).toBe('13/11 à 15/11/2026');
+    expect(formatRangeLabel('2026-11-13', '2026-11-15', 'en')).toBe('11/13 to 11/15/2026');
+  });
+
+  it('shortens when compact', () => {
+    expect(formatRangeLabel('2026-11-14', '2026-11-14', 'pt-BR', true)).toBe('14/11');
+    expect(formatRangeLabel('2026-11-13', '2026-11-15', 'pt-BR', true)).toBe('13-15/11');
+    expect(formatRangeLabel('2026-11-30', '2026-12-02', 'pt-BR', true)).toBe('30/11-02/12');
+    expect(formatRangeLabel('2026-11-13', '2026-11-15', 'en', true)).toBe('11/13-15');
   });
 });

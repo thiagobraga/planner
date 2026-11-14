@@ -14,9 +14,11 @@ export interface MonthlyViewProps {
   /** Month shown (0-based). Pass with `onMonthChange` when the page owns navigation, e.g. to fetch that month. */
   visibleMonth?: { year: number; month: number };
   onMonthChange?: (year: number, month: number) => void;
+  /** The page toolbar already navigates months. */
+  hideSelector?: boolean;
 }
 
-export function MonthlyView({ tasks, onToggle, onTaskContextMenu, visibleMonth, onMonthChange }: MonthlyViewProps) {
+export function MonthlyView({ tasks, onToggle, onTaskContextMenu, visibleMonth, onMonthChange, hideSelector = false }: MonthlyViewProps) {
   const { locale, t } = useI18n();
   const now = new Date();
   const [ownYear, setOwnYear] = useState(now.getFullYear());
@@ -65,12 +67,14 @@ export function MonthlyView({ tasks, onToggle, onTaskContextMenu, visibleMonth, 
 
   return (
     <div className="text-ink">
-      <MonthSelector
-        year={selectedYear}
-        month={selectedMonth}
-        onChange={handleMonthChange}
-        className="mb-6"
-      />
+      {!hideSelector && (
+        <MonthSelector
+          year={selectedYear}
+          month={selectedMonth}
+          onChange={handleMonthChange}
+          className="mb-6"
+        />
+      )}
 
       <div
         className="monthly-ledger overflow-hidden rounded-[3px]"

@@ -201,3 +201,6 @@
   .topbar .topbar-menu-button { width: 36px; height: 36px; }
   .topbar .topbar-menu-icon { width: 24px; height: 24px; }
 }
+.topbar-menu-section { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
+.topbar-menu-theme { display: flex; flex-direction: column; gap: 6px; padding-block: 4px 6px; }
+.ui-context-menu-header:has(.topbar-menu-theme) { height: auto; }

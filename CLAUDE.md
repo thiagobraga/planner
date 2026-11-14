@@ -136,7 +136,9 @@ All routes under `/api/v1/`. Route files: `auth`, `apiTokens`, `mcp`, `oauth`, `
 - `contexts/AuthContext.tsx` - auth source of truth; manages socket connect/disconnect lifecycle
 - `utils/socket.ts` - Socket.IO singleton; authenticates with the session cookie (`withCredentials`)
 - `hooks/useDailyTasks.ts` - React Query hook for one Daily range (`['daily', from, to]`); `refresh()` debounces invalidation
-- `utils/dailyRange.ts` - `dailyRange(view, anchor, weekStart, showNextDays)` and the `/daily/<slug>` mapping
+- `utils/viewRange.ts` - `resolveRange`, `shiftAnchor`, `coerceRange` for the Layout × Style × Range model (`types/view.ts`); `utils/dailyRange.ts` maps `/daily/<layout>` and redirects the old `kanban|cards|monthly` slugs
+- `components/toolbar/` - `PageToolbar` (title row on desktop, bar above the navbar on phones), `ViewMenu`, `WindowMenu`, `GroupByMenu`, `DateNav`; `hooks/useDailyView.ts` and `hooks/useBoardPreferences.ts` hold the per-page view state saved in preferences (`dailyView`, `boardViewModes`, `fullWidth`)
+- `hooks/usePageShortcuts.ts` + `stores/pageShortcutsStore.ts` - the page on screen answers the `view:*` shortcuts (`v l`, `v k`, `v s`, `v 1-6`, `v w`, `v m`, `v f`, `t`, `[`, `]`)
 - `hooks/useSync.ts` - subscribes to `"sync"` events; handler receives `SyncEvent`
 - `hooks/shortcuts.ts` - pure chord-aware keyboard matcher; `DEFAULT_BINDINGS` for `q /  ? Enter Delete Escape g+i g+t g+u`
 - `hooks/keySequence.ts` - pure multi-key sequence matcher; typing `wasd` outside text fields toggles debug mode
@@ -155,8 +157,8 @@ All routes under `/api/v1/`. Route files: `auth`, `apiTokens`, `mcp`, `oauth`, `
 
 | Route                                 | Page                                   | Purpose                                                                          |
 | ------------------------------------- | -------------------------------------- | -------------------------------------------------------------------------------- |
-| `/daily` (default)                    | `DailyIndexRedirect`                   | Redirects to the last used view (default `list`); `/` and `/today` redirect here |
-| `/daily/list\|kanban\|cards\|monthly` | `DailyRoute` -> `DailyPage`            | The URL picks the view; an unknown one falls back to `/daily/list`               |
+| `/daily` (default)                    | `DailyIndexRedirect`                   | Redirects to the last used layout (default `list`); `/` and `/today` redirect here |
+| `/daily/list\|columns`                | `DailyRoute` -> `DailyPage`            | The URL picks the layout; style and range come from preferences. Old `kanban\|cards\|monthly` links redirect |
 | `/inbox`                              | `InboxPage`                            | Unprocessed tasks                                                                |
 | `/habits`                             | `HabitsPage`                           | Habit streaks (12-week grid)                                                     |
 | `/collections`                        | `CollectionsIndexPage`                 | Collection/project list                                                          |
