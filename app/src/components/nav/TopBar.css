@@ -78,7 +78,9 @@
 
 .topbar-actions { display: flex; align-items: center; gap: 8px; height: var(--topbar-tab-height); min-width: 0; justify-self: end; }
 .topbar-version-cluster { display: flex; align-items: center; gap: 8px; min-width: 0; }
-.topbar-version { color: var(--color-ink-light); font-size: 11px; white-space: nowrap; }
+.topbar-version { color: var(--color-ink-light); font-size: 11px; white-space: nowrap; text-decoration: none; cursor: pointer; transition: color var(--motion-fast) var(--topbar-ease); }
+.topbar-version:hover, .topbar-version:focus-visible, .topbar-version[aria-current='page'] { color: var(--color-ink); text-decoration: underline; text-underline-offset: 2px; }
+.topbar-version:focus-visible { outline: 2px solid var(--color-ink); outline-offset: 2px; border-radius: 2px; }
 .topbar-icon-button {
   position: relative;
   display: flex;
@@ -102,7 +104,9 @@
 
 .topbar-menu-brand { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; width: 100%; color: var(--color-ink); font-size: 15px; }
 .topbar-menu-brand b { font-weight: 600; }
-.topbar-menu-version { color: var(--color-ink-light); font-size: 11px; }
+.topbar-menu-version { color: var(--color-ink-light); font-size: 11px; text-decoration: none; cursor: pointer; transition: color var(--motion-fast) var(--topbar-ease); }
+.topbar-menu-version:hover, .topbar-menu-version:focus-visible { color: var(--color-ink); text-decoration: underline; text-underline-offset: 2px; }
+.topbar-menu-version:focus-visible { outline: 2px solid var(--color-ink); outline-offset: 2px; border-radius: 2px; }
 .topbar-account-identity { display: flex; flex-direction: column; gap: 4px; padding-block: 4px 8px; max-width: min(260px, calc(100vw - 64px)); }
 .topbar-account-identity strong { font-weight: 500; color: var(--color-ink); }
 .topbar-account-identity span { font-size: 12px; }

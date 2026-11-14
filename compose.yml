@@ -39,7 +39,9 @@ services:
       target: development
     container_name: ${COMPOSE_PROJECT_NAME:-planner}-app
     networks: [default, proxy]
-    volumes: [./app:/app]
+    volumes:
+      - ./app:/app
+      - ./CHANGELOG.md:/CHANGELOG.md:ro
     # /app is bind-mounted, so anything the container writes there (Vite's
     # dep cache, node_modules) lands on the host owned by whoever the container
     # runs as. Without this the dev server runs as root and leaves files the

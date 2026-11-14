@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useLocation } from 'react-router';
+import { Link, useLocation } from 'react-router';
 import { Search } from 'lucide-react';
 import { usePreferences } from '../../hooks/usePreferences';
 import { useUpdatePreferences } from '../../hooks/useUpdatePreferences';
@@ -15,7 +15,7 @@ import { TopBarMenus } from './TopBarMenus';
 import type { PhoneLabels, TopBarMenuState, TopBarProps } from '../../types/navigation';
 import './TopBar.css';
 
-const MENU_ROUTES = /^\/(settings|help|admin|styleguide)(\/|$)/;
+const MENU_ROUTES = /^\/(settings|help|changelog|admin|styleguide)(\/|$)/;
 
 export function TopBar({ onOpenSearch, onOpenShortcuts, updateAvailable = false }: TopBarProps) {
   const { t } = useI18n();
@@ -85,7 +85,15 @@ export function TopBar({ onOpenSearch, onOpenShortcuts, updateAvailable = false 
         </nav>
         <div className="topbar-actions">
           <div className="topbar-version-cluster">
-            <span className="topbar-version" title={t('nav.version', { version: APP_VERSION })}>v{APP_VERSION}</span>
+            <Link
+              to="/changelog"
+              className="topbar-version"
+              title={t('nav.openChangelog', { version: APP_VERSION })}
+              aria-label={t('nav.openChangelog', { version: APP_VERSION })}
+              aria-current={pathname === '/changelog' ? 'page' : undefined}
+            >
+              v{APP_VERSION}
+            </Link>
             <UpdateToast updateAvailable={updateAvailable} />
           </div>
           <button type="button" className="topbar-search topbar-icon-button" aria-label={t('common.search')} onClick={onOpenSearch}><Search size={16} /></button>

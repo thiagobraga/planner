@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import { HelpCircle, Keyboard, LogOut, RefreshCw, Search, Settings, ShieldCheck, Table2, Users } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useI18n } from '../../i18n/I18nContext';
@@ -36,8 +36,24 @@ export function TopBarMenus({ menu, mobile, navStyle, saving, onStyleChange, pho
     }));
   } else {
     items = [
-      { type: 'item', disabled: true, label: <span className="topbar-menu-brand"><span>Bullet<b>Planner</b></span><span className="topbar-menu-version">v{APP_VERSION}</span></span> },
-      { type: 'item', disabled: true, label: <span className="topbar-account-identity"><strong>{user?.displayName || user?.email}</strong><span>{user?.email}</span></span> },
+      {
+        type: 'header',
+        label: (
+          <span className="topbar-menu-brand">
+            <span>Bullet<b>Planner</b></span>
+            <Link
+              to="/changelog"
+              className="topbar-menu-version"
+              title={t('nav.openChangelog', { version: APP_VERSION })}
+              aria-label={t('nav.openChangelog', { version: APP_VERSION })}
+              onClick={onClose}
+            >
+              v{APP_VERSION}
+            </Link>
+          </span>
+        ),
+      },
+      { type: 'header', label: <span className="topbar-account-identity"><strong>{user?.displayName || user?.email}</strong><span>{user?.email}</span></span> },
       { type: 'separator' },
       ...utilities,
       ...(updateAvailable ? [{ type: 'separator' as const }, { type: 'item' as const, label: `${t('update.available')} - ${t('update.refresh')}`, icon: <RefreshCw size={16} />, onClick: () => window.location.reload() }] : []),

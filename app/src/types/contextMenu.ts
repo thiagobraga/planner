@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 
 export interface ContextMenuItem {
-  type: 'item' | 'separator';
+  type: 'item' | 'separator' | 'header';
   label?: ReactNode;
   icon?: ReactNode;
   shortcut?: string;
