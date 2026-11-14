@@ -114,8 +114,11 @@ function renderPage(slug = 'list') {
   );
 }
 
-function openToolbarMenu() {
-  fireEvent.click(screen.getByRole('button', { name: 'More options' }));
+async function switchToColumnCards() {
+  fireEvent.click(screen.getByRole('button', { name: 'View' }));
+  fireEvent.click(screen.getByRole('menuitemradio', { name: /Columns/ }));
+  fireEvent.click(await screen.findByRole('radio', { name: 'Cards' }));
+  fireEvent.keyDown(screen.getByRole('menu'), { key: 'Escape' });
 }
 
 beforeEach(() => {
@@ -136,8 +139,7 @@ describe('DailyPage week kanban view', () => {
     vi.mocked(apiCreateTask).mockResolvedValue({ ...todayTask, id: 'created', title: 'Plan the day' });
     const { container } = renderPage();
     await screen.findByText('Today task');
-    openToolbarMenu();
-    fireEvent.click(screen.getByRole('button', { name: 'Kanban cards' }));
+    await switchToColumnCards();
     await screen.findByTestId('daily-week-board');
     const column = within(container.querySelector(`[data-column-id="day:${todayKey}"]`)! as HTMLElement);
     fireEvent.click(column.getByRole('button', { name: 'New task…' }));
@@ -154,8 +156,7 @@ describe('DailyPage week kanban view', () => {
     vi.mocked(apiCreateTask).mockRejectedValue(new Error('Unavailable'));
     const { container } = renderPage();
     await screen.findByText('Today task');
-    openToolbarMenu();
-    fireEvent.click(screen.getByRole('button', { name: 'Kanban cards' }));
+    await switchToColumnCards();
     await screen.findByTestId('daily-week-board');
     const column = within(container.querySelector('[data-column-id="migrate"]')! as HTMLElement);
     fireEvent.click(column.getByRole('button', { name: 'New task…' }));
@@ -171,12 +172,11 @@ describe('DailyPage week kanban view', () => {
     expect(apiCreateTask).toHaveBeenCalledWith(expect.objectContaining({ dueDate: undefined }));
   });
 
-  it('switches to the week board when Kanban is picked from the VIEW row, hiding the chronological list', async () => {
+  it('switches to the day columns from the View menu, hiding the chronological list', async () => {
     renderPage();
     await screen.findByText('Today task');
 
-    openToolbarMenu();
-    fireEvent.click(screen.getByRole('button', { name: 'Kanban cards' }));
+    await switchToColumnCards();
 
     expect(await screen.findByTestId('daily-week-board')).toBeInTheDocument();
     expect(screen.queryByTestId('task-list')).not.toBeInTheDocument();
@@ -186,8 +186,7 @@ describe('DailyPage week kanban view', () => {
     const { container } = renderPage();
     await screen.findByText('Today task');
 
-    openToolbarMenu();
-    fireEvent.click(screen.getByRole('button', { name: 'Kanban cards' }));
+    await switchToColumnCards();
     await screen.findByTestId('daily-week-board');
 
     const migrateColumn = container.querySelector('[data-column-id="migrate"]');
@@ -221,8 +220,7 @@ describe('DailyPage week kanban view', () => {
     const { container } = renderPage();
     await screen.findByText('Today task');
 
-    openToolbarMenu();
-    fireEvent.click(screen.getByRole('button', { name: 'Kanban cards' }));
+    await switchToColumnCards();
     await screen.findByTestId('daily-week-board');
 
     expect(container.querySelector(`[data-column-id="day:${todayKey}"] .board-card-date`)).toBeNull();
@@ -250,23 +248,23 @@ describe('DailyPage week kanban view', () => {
     fireEvent.contextMenu(container.querySelector('.daily-page')!, { clientX: 100, clientY: 100 });
 
     expect(await screen.findByRole('menu')).toBeInTheDocument();
-    expect(screen.getByRole('menuitem', { name: 'List' })).toBeInTheDocument();
-    expect(screen.getByRole('menuitem', { name: 'Kanban lists' })).toBeInTheDocument();
-    expect(screen.getByRole('menuitem', { name: 'Kanban cards' })).toBeInTheDocument();
+    expect(screen.getByRole('menuitemradio', { name: 'List' })).toHaveAttribute('aria-checked', 'true');
+    expect(screen.getByRole('menuitemradio', { name: 'Columns' })).toBeInTheDocument();
+    expect(screen.getByRole('menuitemradio', { name: 'Notebook' })).toBeInTheDocument();
+    expect(screen.getByRole('menuitemradio', { name: 'Cards' })).toBeInTheDocument();
     expect(screen.queryByRole('menuitem', { name: /Next days/ })).not.toBeInTheDocument();
   });
 
-  it('moves the visible week forward when the next-week arrow is clicked', async () => {
+  it('moves the visible week forward when the next arrow is clicked', async () => {
     const { container } = renderPage();
     await screen.findByText('Today task');
 
-    openToolbarMenu();
-    fireEvent.click(screen.getByRole('button', { name: 'Kanban cards' }));
+    await switchToColumnCards();
     await screen.findByTestId('daily-week-board');
 
     expect(container.querySelector(`[data-column-id="day:${todayKey}"]`)).not.toBeNull();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Next week' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
 
     expect(container.querySelector(`[data-column-id="day:${todayKey}"]`)).toBeNull();
     expect(container.querySelector(`[data-column-id="day:${inSevenDaysKey}"]`)).not.toBeNull();

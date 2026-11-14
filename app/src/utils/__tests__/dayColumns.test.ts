@@ -15,14 +15,8 @@ function task(overrides: Partial<Task> = {}): Task {
 }
 
 describe('buildDayColumns', () => {
-  it('returns the 7 days, then Migrate - sunday-first week', () => {
-    // 2026-09-22 is a Tuesday. Local-time constructor - fmtISO/buildWeekDays
-    // read local getters, so a UTC-Z string would shift a day west of UTC.
-    const anchor = new Date(2026, 8, 22);
-    const today = anchor;
-    const columns = buildDayColumns(anchor, today, 'sunday');
-
-    expect(columns.map((c) => c.id)).toEqual([
+  it('returns every day of the range, then Migrate', () => {
+    expect(buildDayColumns('2026-09-20', '2026-09-26').map((c) => c.id)).toEqual([
       'day:2026-09-20',
       'day:2026-09-21',
       'day:2026-09-22',
@@ -34,20 +28,15 @@ describe('buildDayColumns', () => {
     ]);
   });
 
-  it('shifts to a monday-first week when weekStart is monday', () => {
-    const anchor = new Date(2026, 8, 22);
-    const columns = buildDayColumns(anchor, anchor, 'monday');
-
-    expect(columns[0]!.id).toBe('day:2026-09-21');
-    expect(columns[6]!.id).toBe('day:2026-09-27');
-    expect(columns[7]!.id).toBe('migrate');
+  it('handles a single day and spans across months', () => {
+    expect(buildDayColumns('2026-09-22', '2026-09-22').map((c) => c.id)).toEqual(['day:2026-09-22', 'migrate']);
+    const columns = buildDayColumns('2026-09-29', '2026-10-02');
+    expect(columns.map((c) => c.iso)).toEqual(['2026-09-29', '2026-09-30', '2026-10-01', '2026-10-02', null]);
+    expect(columns[0]!.weekday).toBe(2);
   });
 
   it('every column, including Migrate, is droppable', () => {
-    const anchor = new Date(2026, 8, 22);
-    const columns = buildDayColumns(anchor, anchor, 'sunday');
-
-    expect(columns.every((c) => c.droppable)).toBe(true);
+    expect(buildDayColumns('2026-09-20', '2026-09-26').every((c) => c.droppable)).toBe(true);
   });
 });
 

@@ -26,7 +26,10 @@ export function PageToolbar({ nav, view, fullWidth, onFullWidthChange }: PageToo
   useLayoutEffect(() => {
     const row = ref.current?.parentElement;
     if (!row || typeof ResizeObserver === 'undefined') return;
-    const update = () => setDensity(densityForWidth(row.clientWidth));
+    // Zero means not laid out yet (or a test DOM); keep the roomy row until there is a width.
+    const update = () => {
+      if (row.clientWidth > 0) setDensity(densityForWidth(row.clientWidth));
+    };
     update();
     const observer = new ResizeObserver(update);
     observer.observe(row);

@@ -32,7 +32,7 @@ export function useBoardPreferences(collectionId: string | undefined, preference
   const mode = collectionId ? preferences?.boardViewModes?.[collectionId] : undefined;
   const [localView, setLocalView] = useState(() => ({ collectionId, view: loadView(collectionId) }));
   const view = localView.collectionId === collectionId ? localView.view : loadView(collectionId);
-  const groupBy = mode?.groupBy ?? 'status';
+  const groupBy: BoardGroupBy = mode?.groupBy === 'section' || mode?.groupBy === 'priority' ? mode.groupBy : 'status';
 
   const persistGroupBy = useCallback((groupBy: BoardGroupBy) => {
     if (!collectionId || !preferences) return;

@@ -175,15 +175,12 @@ describe('DailyPage', () => {
     const header = title.closest('header');
 
     expect(header).toBeInTheDocument();
-    expect(header).toContainElement(screen.getByRole('button', { name: 'List' }));
-    expect(screen.getByRole('button', { name: 'List' })).toHaveAttribute('aria-pressed', 'true');
-    fireEvent.click(screen.getByRole('button', { name: 'More options' }));
-    expect(screen.getByRole('menu')).not.toContainElement(screen.getByRole('button', { name: 'List' }));
-    expect(within(screen.getByRole('menu')).queryByText('View')).not.toBeInTheDocument();
-    expect(header).toContainElement(screen.getByRole('checkbox', { name: 'Completed tasks' }));
-    expect(header).toContainElement(screen.getByRole('checkbox', { name: 'Notes' }));
-    expect(screen.queryByRole('checkbox', { name: 'Next days' })).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'List' }).closest('.page-header-toolbar')).toBeInTheDocument();
+    const row = header!.querySelector('.page-header-row') as HTMLElement;
+    for (const name of ['Today', 'Previous', 'Next', 'View', 'Window']) {
+      expect(row).toContainElement(screen.getByRole('button', { name }));
+    }
+    expect(screen.queryByRole('button', { name: 'More options' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('checkbox', { name: 'Completed tasks' })).not.toBeInTheDocument();
   });
 
   it('groups tasks from before this week under Migrate', async () => {

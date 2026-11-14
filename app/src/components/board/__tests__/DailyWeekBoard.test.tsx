@@ -15,19 +15,16 @@ describe('DailyWeekBoard', () => {
       if (this.dataset.today === 'true') return rect(900, 220);
       return rect(0, 0);
     });
-    const today = new Date(2026, 9, 2);
 
     render(
       <I18nProvider>
         <PlannerDragProvider>
           <DailyWeekBoard
             tasks={[]}
-            weekAnchor={today}
-            today={today}
+            from="2026-09-27"
+            to="2026-10-03"
             todayKey="2026-10-02"
-            weekStart="sunday"
             dateFormat="MMM DD ddd"
-            onWeekChange={vi.fn()}
             onToggle={vi.fn()}
             onCreate={vi.fn()}
             presentation="kanban"

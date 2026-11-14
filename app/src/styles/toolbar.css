@@ -133,6 +133,9 @@
 }
 .page-menu-item-shortcut {
   flex: none;
+  padding: 0;
+  border: 0;
+  background: none;
   font-family: inherit;
   font-size: 12px;
   letter-spacing: 0.06em;
@@ -191,7 +194,7 @@
   color: var(--color-ink);
   cursor: pointer;
 }
-.page-menu-pill:hover:not(:disabled) {
+.page-menu-pill:hover:not(:disabled, [aria-pressed='true']) {
   background: var(--planner-overlay-hover-bg);
 }
 .page-menu-pill[aria-pressed='true'] {
