@@ -13,6 +13,7 @@ export function TopBarItem({ item, ...linkProps }: TopBarItemProps) {
   const inCollection = item.to === '/collections' && pathname.startsWith('/collection/');
   const active = inCollection || pathname === item.to || pathname.startsWith(`${item.to}/`);
   const NavigationLink = inCollection ? Link : NavLink;
+  const label = t(item.labelKey);
   return (
     <NavigationLink
       {...linkProps}
@@ -21,7 +22,7 @@ export function TopBarItem({ item, ...linkProps }: TopBarItemProps) {
       className={`topbar-item${active ? ' topbar-item--active' : ''}`}
     >
       <span className="topbar-item-icon" aria-hidden="true"><item.Icon size={16} strokeWidth={1.5} /></span>
-      <span className="topbar-item-label">{t(item.labelKey)}</span>
+      <span className="topbar-item-label" data-label={label}>{label}</span>
     </NavigationLink>
   );
 }

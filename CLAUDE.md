@@ -163,6 +163,7 @@ All routes under `/api/v1/`. Route files: `auth`, `apiTokens`, `mcp`, `oauth`, `
 | `/collection/:id`                     | `CollectionsPage`                      | Single collection                                                                |
 | `/settings/:section`                  | `SettingsPage`                         | Font, theme, preferences; `/settings` -> `/settings/general`                     |
 | `/help`                               | `HelpPage`                             | Help                                                                             |
+| `/changelog`                          | `ChangelogPage`                        | Release history bundled from `CHANGELOG.md`                                      |
 | `/styleguide`                         | `StyleguidePage`                       | Design system reference (admin only)                                             |
 | `/admin/dashboard`, `/admin/users`    | `AdminDashboardPage`, `AdminUsersPage` | Admin only; `/admin` redirects to dashboard                                      |
 

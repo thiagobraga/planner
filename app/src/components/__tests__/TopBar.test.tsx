@@ -1,5 +1,5 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
-import { MemoryRouter } from 'react-router';
+import { MemoryRouter, useLocation } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TopBar } from '../nav/TopBar';
 import { isProduction } from '../../utils/environment';
@@ -19,10 +19,20 @@ vi.mock('../../contexts/usePlannerDrag', () => ({ usePlannerDrag: () => ({ activ
 vi.mock('@tanstack/react-query', () => ({ useQuery: () => ({ data: [{ id: 'inbox-id', isInbox: true }] }) }));
 vi.mock('@dnd-kit/core', () => ({ useDroppable: (options: unknown) => { state.droppable(options); return { setNodeRef: vi.fn() }; } }));
 
+function LocationProbe() {
+  const { pathname } = useLocation();
+  return <div data-testid="location-probe">{pathname}</div>;
+}
+
 function renderBar(route = '/daily/list') {
   const onOpenSearch = vi.fn();
   const onOpenShortcuts = vi.fn();
-  const view = render(<MemoryRouter initialEntries={[route]}><TopBar onOpenSearch={onOpenSearch} onOpenShortcuts={onOpenShortcuts} /></MemoryRouter>);
+  const view = render(
+    <MemoryRouter initialEntries={[route]}>
+      <TopBar onOpenSearch={onOpenSearch} onOpenShortcuts={onOpenShortcuts} />
+      <LocationProbe />
+    </MemoryRouter>,
+  );
   return { ...view, onOpenSearch, onOpenShortcuts };
 }
 
@@ -116,9 +126,31 @@ describe('TopBar', () => {
     expect(screen.getByRole('menuitem', { name: /New version available/ })).toBeInTheDocument();
   });
 
-  it.each(['/settings/general', '/help', '/admin/users', '/styleguide'])('marks the menu button current on %s', (route) => {
+  it.each(['/settings/general', '/help', '/changelog', '/admin/users', '/styleguide'])('marks the menu button current on %s', (route) => {
     renderBar(route);
     expect(screen.getByRole('button', { name: 'Planner menu' })).toHaveAttribute('aria-current', 'page');
+  });
+
+  it('navigates to /changelog when clicking the desktop topbar version link', () => {
+    renderBar('/daily/list');
+    const versionLink = screen.getByRole('link', { name: /What's new on v\d+\.\d+\.\d+/ });
+    expect(versionLink).toHaveClass('topbar-version');
+    expect(versionLink).toHaveAttribute('href', '/changelog');
+    fireEvent.click(versionLink);
+    expect(screen.getByTestId('location-probe')).toHaveTextContent('/changelog');
+  });
+
+  it.each([false, true])('navigates to /changelog when clicking the planner-menu version with mobile=%s', (mobile) => {
+    state.mobile = mobile;
+    renderBar('/daily/list');
+    fireEvent.click(screen.getByRole('button', { name: 'Planner menu' }));
+    const menuVersion = screen.getByRole('menu').querySelector('.topbar-menu-version');
+    expect(menuVersion?.tagName).toBe('A');
+    expect(menuVersion).toHaveAttribute('href', '/changelog');
+    expect(menuVersion).toHaveAccessibleName(/What's new on v\d+\.\d+\.\d+/);
+    fireEvent.click(menuVersion!);
+    expect(screen.getByTestId('location-probe')).toHaveTextContent('/changelog');
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
   });
 
   it('leaves the menu button plain on primary tabs', () => {

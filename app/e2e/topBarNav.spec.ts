@@ -306,3 +306,27 @@ test('phone bottom bar tabs mirror the desktop folder tab', async ({ page }) => 
   await mkdir('dist/screenshots', { recursive: true });
   await page.screenshot({ path: 'dist/screenshots/bottom-bar-folder-tab-390.png' });
 });
+
+test('daily calendar icon keeps identical size and position across active and inactive states', async ({ page }) => {
+  const measureDailyIcon = async () =>
+    page.getByRole('link', { name: 'Daily', exact: true }).locator('svg').evaluate((el) => {
+      const r = el.getBoundingClientRect();
+      return { x: r.x, y: r.y, width: r.width, height: r.height };
+    });
+
+  for (const viewport of [{ width: 1440, height: 900 }, { width: 390, height: 844 }]) {
+    await page.setViewportSize(viewport);
+    await page.goto('/daily/list');
+    await expect(page.getByRole('link', { name: 'Daily', exact: true })).toHaveClass(/topbar-item--active/);
+    const activeBox = await measureDailyIcon();
+
+    await page.getByRole('link', { name: 'Inbox', exact: true }).click();
+    await expect(page.getByRole('link', { name: 'Inbox', exact: true })).toHaveClass(/topbar-item--active/);
+    const inactiveBox = await measureDailyIcon();
+
+    expect(activeBox.width, `${viewport.width}`).toBe(inactiveBox.width);
+    expect(activeBox.height, `${viewport.width}`).toBe(inactiveBox.height);
+    expect(Math.abs(activeBox.x - inactiveBox.x), `${viewport.width} x`).toBe(0);
+    expect(Math.abs(activeBox.y - inactiveBox.y), `${viewport.width} y`).toBe(0);
+  }
+});

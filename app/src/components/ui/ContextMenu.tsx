@@ -8,6 +8,10 @@ function opensChild(item: ContextMenuItem): boolean {
   return Boolean(item.panel || (item.submenu && item.submenu.length > 0));
 }
 
+function isNavigableItem(item: ContextMenuItem): boolean {
+  return item.type === 'item' && !item.disabled;
+}
+
 export function ContextMenu({ items, position, onClose, caret = true, align = 'start' }: ContextMenuProps) {
   // A context menu is just the root level of a nested menu structure
   return (
@@ -110,7 +114,7 @@ function MenuPanel({
 
   // Find first non-disabled item on mount
   useLayoutEffect(() => {
-    const firstActive = items.findIndex(i => i.type === 'item' && !i.disabled);
+    const firstActive = items.findIndex(isNavigableItem);
     setHighlightedIndex(firstActive >= 0 ? firstActive : -1);
   }, [items]);
 
@@ -181,7 +185,7 @@ function MenuPanel({
         e.preventDefault();
         setHighlightedIndex((prev) => {
           let next = prev + 1;
-          while (next < items.length && (items[next].type === 'separator' || items[next].disabled)) next++;
+          while (next < items.length && !isNavigableItem(items[next])) next++;
           return next < items.length ? next : prev;
         });
         break;
@@ -189,7 +193,7 @@ function MenuPanel({
         e.preventDefault();
         setHighlightedIndex((prev) => {
           let next = prev - 1;
-          while (next >= 0 && (items[next].type === 'separator' || items[next].disabled)) next--;
+          while (next >= 0 && !isNavigableItem(items[next])) next--;
           return next >= 0 ? next : prev;
         });
         break;
@@ -262,6 +266,18 @@ function MenuPanel({
                 role="separator"
                 className="ui-context-menu-separator relative z-10 h-px bg-border my-1 mx-3"
               />
+            );
+          }
+
+          if (item.type === 'header') {
+            return (
+              <div
+                key={`header-${index}`}
+                role="presentation"
+                className="ui-context-menu-header relative z-10 flex items-center px-3 mx-1 text-sm text-ink-light select-none"
+              >
+                {item.label}
+              </div>
             );
           }
 
