@@ -62,7 +62,7 @@ Baseline notes (2026-11-13):
 - [ ] Use the shared hook where behavior is equivalent. Preserve the `['preferences']` cache key, loading behavior, invalidation, and sync updates.
 - [ ] Test shared-cache behavior and preference changes across views. Do not assume repeated query declarations imply repeated network requests.
 
-Progress: Daily and Collections now use the shared hook. A hook test covers two subscribers and invalidation. `AppShell` uses `retry: 2` and `ThemeSwitcher` uses `refetchOnMount: false`, so their options cannot be discarded. The targeted page tests passed but emitted React `act` warnings; investigate before treating verification as complete. The Daily Kanban Playwright suite passed four tests. Daily list screenshots were captured at desktop and 390px with no page errors; Collections browser verification remains pending.
+Progress: Daily and Collections now use the shared hook. A hook test covers two subscribers and invalidation. `AppShell` uses `retry: 2` and `ThemeSwitcher` uses `refetchOnMount: false`, so their options cannot be discarded. Page tests pass (277). The 32 React `act` warnings are identical on main, so they predate this phase. The Daily Kanban Playwright suite passed four tests. Daily list screenshots were captured at desktop and 390px with no page errors; Collections browser verification remains pending.
 
 ### 3. Frontend API client
 
