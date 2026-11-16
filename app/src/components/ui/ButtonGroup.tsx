@@ -1,25 +1,5 @@
-import type { ReactNode } from 'react';
-import { Button, type ButtonSize } from './Button';
-
-export interface ButtonGroupItem<T extends string> {
-  value: T;
-  label: string;
-  icon?: ReactNode;
-  showLabel?: boolean;
-  disabled?: boolean;
-}
-
-type ButtonGroupSelection<T extends string> =
-  | { mode: 'single'; value: T; onChange: (value: T) => void }
-  | { mode: 'multi'; value: T[]; onChange: (value: T) => void };
-
-export type ButtonGroupProps<T extends string> = ButtonGroupSelection<T> & {
-  items: ButtonGroupItem<T>[];
-  size?: ButtonSize;
-  disabled?: boolean;
-  className?: string;
-  'aria-label'?: string;
-};
+import { Button } from './Button';
+import type { ButtonGroupItem, ButtonGroupProps } from '../../types/ui';
 
 // A segmented control built from real Button instances - same primary/
 // secondary look as every other button in the app. Only the touching side of

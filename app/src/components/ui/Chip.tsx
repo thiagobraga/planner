@@ -1,9 +1,4 @@
-import type { ReactNode } from 'react';
-
-export interface ChipProps {
-  children: ReactNode;
-  className?: string;
-}
+import type { ChipProps, CollectionChipProps } from '../../types/ui';
 
 // Generic tag/label chip: dot-grey pill, ink text.
 export function Chip({ children, className = '' }: ChipProps) {
@@ -14,15 +9,6 @@ export function Chip({ children, className = '' }: ChipProps) {
       {children}
     </span>
   );
-}
-
-export interface CollectionChipProps {
-  name: string;
-  /** Literal CSS color value (hex/rgb(a)/hsl(a)); falls back to ink-light. */
-  color?: string;
-  /** Section of the task, attached to the chip on a transparent background. */
-  section?: string;
-  className?: string;
 }
 
 // Collection chip: quiet dot-grey pill with a colored dot + name.

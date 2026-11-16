@@ -1,9 +1,10 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { SortableContext } from '@dnd-kit/sortable';
 import { describe, it, expect, vi } from 'vitest';
-import { TaskItem, type Task } from '../TaskItem';
+import { TaskItem } from '../TaskItem';
 import { NO_DRAG_ATTR } from '../dnd/sensors';
 import { PlannerDragProvider } from '../../contexts/PlannerDragContext';
+import type { Task } from '../../types/task';
 
 function renderRow(props: Partial<React.ComponentProps<typeof TaskItem>> = {}, task: Partial<Task> = {}) {
   const full: Task = {

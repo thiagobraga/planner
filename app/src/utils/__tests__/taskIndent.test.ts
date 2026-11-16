@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { resolveTaskIndent } from '../taskIndent';
-import type { Task } from '../../components/TaskItem';
+import type { Task } from '../../types/task';
 
 const row = (id: string, orderValue: number, extra: Partial<Task> = {}): Task => ({
   id, title: id, orderValue, priority: 4, isCompleted: false, type: 'task',

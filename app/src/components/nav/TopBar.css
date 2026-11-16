@@ -113,7 +113,8 @@
 }
 .topbar-icon-button--active, .topbar-menu-button[aria-expanded='true'] { background: var(--planner-sidebar-active-bg); }
 .topbar-menu-icon { width: 20px; height: 20px; }
-.topbar-item:focus-visible, .topbar-icon-button:focus-visible, .topbar:focus-visible { outline: 2px solid var(--color-ink); outline-offset: 2px; }
+.topbar-item:focus-visible, .topbar-icon-button:focus-visible { outline: 2px solid var(--color-ink); outline-offset: 2px; }
+.topbar:focus, .topbar:focus-visible { outline: none; }
 
 .topbar-menu-brand { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; width: 100%; color: var(--color-ink); font-size: 15px; }
 .topbar-menu-brand b { font-weight: 600; }

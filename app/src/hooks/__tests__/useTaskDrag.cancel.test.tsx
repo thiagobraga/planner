@@ -2,7 +2,7 @@ import { render, act } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { PlannerDragProvider } from '../../contexts/PlannerDragContext';
 import { useTaskDrag } from '../useTaskDrag';
-import type { Task } from '../../components/TaskItem';
+import type { Task } from '../../types/task';
 
 vi.mock('../../api/client', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../../api/client')>()),

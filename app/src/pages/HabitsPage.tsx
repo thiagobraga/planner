@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSync } from '../hooks/useSync';
 import { HabitTimeline } from '../components/habits/HabitTimeline';
-import type { HabitEditTarget } from '../types/habitTimeline';
+import type { HabitEditTarget, HabitNode } from '../types/habits';
 import { HabitCalendar } from '../components/habits/HabitCalendar';
 import { useHabitDrag } from '../hooks/useHabitDrag';
 import { isEchoedMove } from '../utils/moveEcho';
@@ -11,7 +11,7 @@ import { PageHeader } from '../components/PageHeader';
 import { fmtISOInTimeZone } from '../utils/date';
 import { dateFromISO } from '../utils/dailySections';
 import { useMidnightTimer } from '../hooks/useMidnightTimer';
-import { flattenHabits, type HabitNode } from '../utils/habitTree';
+import { flattenHabits } from '../utils/habitTree';
 import { randomHabitGroupIcon } from '../utils/habitGroupIcon';
 import { trackCreate, resolveCreatedId } from '../utils/pendingCreates';
 import {
@@ -25,7 +25,6 @@ import {
   parentToggleTarget,
 } from '../utils/habitTree';
 import { useI18n } from '../i18n/I18nContext';
-
 import { fetchHabits, fetchPreferences, apiCreateHabit, apiUpdateHabit, apiDeleteHabit, apiArchiveHabit, apiToggleHabitCompletion, apiCreateHabitGroup, apiUpdateHabitGroup, apiDeleteHabitGroup, apiArchiveHabitGroup } from '../api/client';
 import type { ApiHabit, ApiHabitGroup } from '../types/api';
 import type { HabitsView } from '../types/habits';

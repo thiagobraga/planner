@@ -1,29 +1,12 @@
-import type { ApiSection, ApiStatus, ApiTask, BoardOrder } from '../types/api';
+import type { ApiStatus, ApiTask } from '../types/api';
+import type {
+  BoardColumn,
+  BoardColumnId,
+  BuildColumnsInput,
+  StatusListGroup,
+  StatusListTask,
+} from '../types/board';
 import type { BoardGroupBy } from '../types/drag';
-
-export type BoardColumnId = `status:${string}` | `section:${string}` | `priority:${number}`;
-
-export interface BoardColumn {
-  id: BoardColumnId;
-  value: string | number | null;
-  title: string;
-  color?: string;
-  isCompletionStatus?: boolean;
-  tasks: ApiTask[];
-}
-
-interface StatusListTask {
-  id: string;
-  parentTaskId?: string;
-  statusId?: string | null;
-}
-
-export interface StatusListGroup<T> {
-  id: string;
-  title: string;
-  color: string;
-  tasks: T[];
-}
 
 export function buildStatusListGroups<T extends StatusListTask>(
   tasks: T[],
@@ -67,17 +50,6 @@ export function parseColumnId(columnId: string): { groupBy: BoardGroupBy; value:
   if (groupBy === 'section' && rawValue) return { groupBy, value: rawValue === 'none' ? null : rawValue };
   if (groupBy === 'priority' && /^[1-4]$/.test(rawValue)) return { groupBy, value: Number(rawValue) };
   return null;
-}
-
-interface BuildColumnsInput {
-  groupBy: BoardGroupBy;
-  tasks: ApiTask[];
-  statuses: ApiStatus[];
-  completionStatusId: string | null;
-  sections: ApiSection[];
-  boardOrder: BoardOrder;
-  noSectionTitle: string;
-  priorityTitle: (priority: number) => string;
 }
 
 function sortTasks(tasks: ApiTask[], positions?: Record<string, number>) {

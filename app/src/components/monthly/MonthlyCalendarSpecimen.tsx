@@ -1,5 +1,6 @@
-import { weekdayColumnIndex, weekdayShortNames, type WeekStart } from '../../utils/date';
+import { weekdayColumnIndex, weekdayShortNames } from '../../utils/date';
 import { useI18n } from '../../i18n/I18nContext';
+import type { MonthlyCalendarSpecimenProps } from '../../types/widgets';
 
 const DAYS = Array.from({ length: 31 }, (_, i) => i + 1);
 const MONTH_START_DAY = 5;
@@ -12,11 +13,6 @@ const MONTH_TASKS: Record<number, string[]> = {
   21: ['Send invoices'],
   28: ['Plan June'],
 };
-
-interface MonthlyCalendarSpecimenProps {
-  compact?: boolean;
-  weekStart: WeekStart;
-}
 
 export function MonthlyCalendarSpecimen({ compact = false, weekStart }: MonthlyCalendarSpecimenProps) {
   const { locale } = useI18n();

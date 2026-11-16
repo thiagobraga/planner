@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { listDays, type ListDaysInput } from '../dailyListDays';
-import type { Task } from '../../components/TaskItem';
+import type { Task } from '../../types/task';
 
 const task = { id: 't', title: 'T', priority: 4, isCompleted: false, orderValue: 0, type: 'task' } as Task;
 const base: ListDaysInput = {

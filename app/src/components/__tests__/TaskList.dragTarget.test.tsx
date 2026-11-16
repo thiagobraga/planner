@@ -2,7 +2,7 @@ import { render, act } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { TaskList } from '../TaskList';
 import { PlannerDragProvider } from '../../contexts/PlannerDragContext';
-import type { Task } from '../TaskItem';
+import type { Task } from '../../types/task';
 
 /**
  * A day's droppable must reach into the 24px seam below it, whether the list

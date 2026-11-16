@@ -5,7 +5,8 @@ import { NO_DRAG_ATTR } from '../dnd/sensors';
 import { DebugCard } from '../DebugCard';
 import { useDebugStore } from '../../stores/debugStore';
 import { useI18n } from '../../i18n/I18nContext';
-import type { HabitEditTarget, HabitTimelineLabelsProps } from '../../types/habitTimeline';
+import type { HabitTimelineLabelsProps } from '../../types/habitTimeline';
+import type { HabitEditTarget } from '../../types/habits';
 import { INDENT } from '../../utils/habitTimeline';
 import {
   RowOptionsButton,

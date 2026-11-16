@@ -1,7 +1,8 @@
 import type { KeyboardEvent, ReactNode, RefObject } from 'react';
-import type { TaskListCallbacks } from '../components/TaskList';
-import type { Task } from '../components/TaskItem';
+import type { Task, TaskListCallbacks } from './task';
 import type { ApiTask } from './api';
+import type { useDailyView } from '../hooks/useDailyView';
+import type { WeekStart } from '../utils/date';
 
 /** The view segment of /daily/<view>. */
 export type DailySlug = 'list' | 'kanban' | 'cards' | 'monthly';
@@ -48,4 +49,13 @@ export interface DailyListProps {
     activeDragId?: string | null;
     renderBadge?: (task: Task) => ReactNode;
   };
+}
+
+export interface DailyToolbarProps {
+  view: ReturnType<typeof useDailyView>;
+  todayKey: string;
+  weekStart: WeekStart;
+  /** Reorganize is offered only when there is something to move. */
+  onReorganize?: () => void;
+  onToday: () => void;
 }

@@ -1,9 +1,7 @@
 import type { ReactNode } from 'react';
 import type { ApiHabitGroup } from './api';
-import type { HabitNode, HabitSections } from '../utils/habitTree';
+import type { HabitEditTarget, HabitNode, HabitSections } from './habits';
 import type { WeekStart } from '../utils/date';
-
-export type HabitEditTarget = { kind: 'habit' | 'group'; id: string };
 
 // Every row is one 24px band. Labels and day cells render from this same list so
 // the two columns cannot drift out of alignment.
@@ -142,4 +140,13 @@ export interface TimelineSectionDropProps {
   groupId: string | null;
   droppable: boolean;
   children: ReactNode;
+}
+
+export interface UseHabitTimelineDragOptions {
+  sections: HabitSections;
+  collapsed: ReadonlySet<string>;
+  activeDragId?: string | null;
+  days: TimelineDayCell[];
+  dayColClass: DayColClass;
+  labelColWidth: number;
 }
