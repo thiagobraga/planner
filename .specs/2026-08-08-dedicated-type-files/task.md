@@ -57,16 +57,17 @@ Naming rule: rename narrower shape with domain prefix (`ViewTaskRow`,
 
 ## Milestone 3 — collection/nav (`app/src/types/collections.ts`)
 
-- [ ] Create `app/src/types/collections.ts`: `FlatCollection`,
-      `CollectionRowProps` (CollectionTreeNav); `CollectionTreeNode`,
+- [x] Create `app/src/types/collections.ts`: `FlatCollection`,
+      `CollectionTreeRowProps` (CollectionTreeNav `RowProps`); `CollectionTreeNode`,
       `CollectionState`; `CollectionMenuHandlers`;
-      `CollectionRowProps` (CollectionsIndexPage - merge if identical);
-      `SidebarProps`, `NavItem`, `SidebarNavItemProps`;
-      `SectionHeaderProps`; `SectionDeleteModalProps`
-- [ ] Update importers (Sidebar, CollectionTreeNav, collectionStore,
+      `CollectionRowProps` (CollectionsIndexPage);
+      `SectionHeaderProps`; `SectionDeleteModalProps`. `SidebarProps` and
+      `SidebarNavItemProps` no longer exist; nav types live in
+      `types/navigation.ts`
+- [x] Update importers (Sidebar, CollectionTreeNav, collectionStore,
       CollectionsPage/Index, DailyPage, tests)
-- [ ] Verify: `docker compose exec app npm run build && npm run lint`
-- [ ] Commit: `refactor(app): extract collection and nav types`
+- [x] Verify: `docker compose exec app npm run build && npm run lint`
+- [x] Commit: `refactor(app): extract collection and nav types`
 
 ## Milestone 4 — habits (`app/src/types/habits.ts`)
 

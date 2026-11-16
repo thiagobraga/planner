@@ -9,29 +9,11 @@ import { buildCollectionMenuItems } from '../components/collectionMenuItems';
 import { runOptimistic, patchById, upsertById } from '../stores/optimistic';
 import { fetchCollections, apiCreateCollection, apiDeleteCollection, apiUpdateCollection, PALETTE_COLORS } from '../api/client';
 import type { ApiCollection } from '../types/api';
-import { buildCollectionTree, type CollectionTreeNode } from '../stores/collectionStore';
+import { buildCollectionTree } from '../stores/collectionStore';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { useI18n } from '../i18n/I18nContext';
+import type { CollectionRowProps, CollectionTreeNode } from '../types/collections';
 
-
-interface CollectionRowProps {
-  node: CollectionTreeNode;
-  depth: number;
-  menuOpenId: string | null;
-  setMenuOpenId: (id: string | null) => void;
-  renamingId: string | null;
-  addingSubFor: string | null;
-  editingName: string;
-  setEditingName: (val: string) => void;
-  onRename: (node: CollectionTreeNode) => void;
-  onAddSub: (node: CollectionTreeNode) => void;
-  onDelete: (node: CollectionTreeNode) => void;
-  onSaveRename: (node: CollectionTreeNode) => void;
-  onCancelRename: () => void;
-  onSaveNewSub: (parentId: string) => void;
-  onCancelNewSub: () => void;
-  onColorCommit: (node: CollectionTreeNode, color: string) => void;
-}
 
 function CollectionRow({ node, depth, ...props }: CollectionRowProps) {
   const { t } = useI18n();
