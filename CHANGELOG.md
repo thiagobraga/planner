@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.24.0](https://github.com/thiagobraga/planner/compare/v0.23.1...v0.24.0) (2026-11-16)
+
+
+### Added
+
+* **i18n:** migrate translation runtime to i18next ([ec37f5f](https://github.com/thiagobraga/planner/commit/ec37f5f413991f6ac58b57b5a2cc2c2850e7d584))
+
+
+### Fixed
+
+* **daily:** stop old daily links from losing the saved view ([0b16e00](https://github.com/thiagobraga/planner/commit/0b16e009624b1615697417a2e0e26c337ce1f4b9))
+
 ## [0.23.1](https://github.com/thiagobraga/planner/compare/v0.23.0...v0.23.1) (2026-11-16)
 
 
