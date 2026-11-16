@@ -1,33 +1,24 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { ApiError, apiCreateTask, apiCreateStatus, apiMoveTask, apiSetCollectionCompletionStatus, apiSeedStatuses, apiUpdateSection, apiUpdateStatus } from '../../api/client';
-import type { ApiSection, ApiStatus, ApiTask, BoardOrder } from '../../types/api';
-import type { BoardGroupBy } from '../../types/drag';
+import {
+  ApiError,
+  apiCreateTask,
+  apiCreateStatus,
+  apiMoveTask,
+  apiSetCollectionCompletionStatus,
+  apiSeedStatuses,
+  apiUpdateSection,
+  apiUpdateStatus,
+} from '../../api/client';
 import { useI18n } from '../../i18n/I18nContext';
 import { buildColumns } from '../../utils/boardColumns';
-import type { BoardColumn as BoardColumnModel } from '../../utils/boardColumns';
-import type { BoardViewMode } from '../../types/board';
-
+import type { BoardColumn as BoardColumnModel } from '../../types/board';
 import { useBoardColumnDrag } from '../../hooks/useBoardColumnDrag';
 import { useBoardDrag } from '../../hooks/useBoardDrag';
 import { ConfirmModal } from '../ConfirmModal';
 import { ColumnDeleteModal } from './ColumnDeleteModal';
 import { BoardView } from './BoardView';
-import type { TaskListCallbacks } from '../../types/task';
-
-interface CollectionBoardProps {
-  collectionId: string;
-  queryKey: readonly unknown[];
-  groupBy: BoardGroupBy;
-  tasks: ApiTask[];
-  statuses: ApiStatus[];
-  completionStatusId: string | null;
-  sections: ApiSection[];
-  boardOrder: BoardOrder;
-  onToggle?: (taskId: string, completed: boolean) => void;
-  presentation?: Exclude<BoardViewMode, 'list' | 'calendar'>;
-  taskListProps?: TaskListCallbacks & { editingId?: string; activeDragId?: string | null };
-}
+import type { CollectionBoardProps } from '../../types/board';
 
 export function CollectionBoard(props: CollectionBoardProps) {
   const { t } = useI18n();

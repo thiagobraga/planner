@@ -10,10 +10,10 @@ import { CollectionBoard } from '../components/board/CollectionBoard';
 import { BoardPageToolbar } from '../components/board/BoardPageToolbar';
 import { MonthlyView } from '../components/monthly/MonthlyView';
 import { PageHeader } from '../components/PageHeader';
-
 import { fetchInboxTasks, fetchCollectionView, fetchPreferences, apiCreateTask, apiUpdateTask, apiToggleTask, apiDeleteTask, apiMoveTask, fetchCollections, apiCreateSection, apiUpdateSection, apiDeleteSection } from '../api/client';
 import type { ApiTask } from '../types/api';
-import { ContextMenu, type ContextMenuItem } from '../components/ui/ContextMenu';
+import { ContextMenu } from '../components/ui/ContextMenu';
+import type { ContextMenuItem } from '../types/contextMenu';
 import { SectionDeleteModal } from '../components/SectionDeleteModal';
 import { flattenCollections } from '../components/CollectionTreeNav';
 import { Folder, ArrowUp, ArrowDown, Trash2, Pencil } from 'lucide-react';

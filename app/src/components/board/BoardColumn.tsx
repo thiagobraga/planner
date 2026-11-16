@@ -3,39 +3,19 @@ import { useDroppable } from '@dnd-kit/core';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { ApiTask } from '../../types/api';
-import type { BoardGroupBy } from '../../types/drag';
 import { TaskList } from '../TaskList';
-
 import type {
   BoardColumnDragData,
   BoardColumnDropData,
   BoardColumnHeaderDropData,
 } from '../../types/drag';
-import type { BoardColumn as BoardColumnModel } from '../../utils/boardColumns';
 import { buildSubtreeIndex, flattenTasks } from '../../utils/taskProjection';
 import { BoardCard } from './BoardCard';
 import { BoardColumnHeader } from './BoardColumnHeader';
 import { TaskAddInput } from '../TaskAddInput';
 import { useI18n } from '../../i18n/I18nContext';
-import type { ApiStatus } from '../../types/api';
-import type { Task, TaskListCallbacks } from '../../types/task';
-
-interface BoardColumnProps {
-  collectionId: string;
-  groupBy: BoardGroupBy;
-  column: BoardColumnModel;
-  allTasks: ApiTask[];
-  onToggle?: (taskId: string, completed: boolean) => void;
-  onRename?: (columnId: string, name: string) => void;
-  onRecolor?: (columnId: string, color: string) => void;
-  onMarkCompletion?: (columnId: string) => void;
-  onDelete?: (columnId: string) => void;
-  statuses?: ApiStatus[];
-  onUpdateStatusRoute?: (statusId: string, patch: Partial<Pick<ApiStatus, 'nextStatusMode' | 'nextStatusId' | 'acceptStatusId' | 'rejectStatusId'>>) => void;
-  onCreate?: (title: string, column: BoardColumnModel) => Promise<void>;
-  presentation?: 'kanban-list' | 'kanban';
-  taskListProps?: TaskListCallbacks & { editingId?: string; activeDragId?: string | null };
-}
+import type { Task } from '../../types/task';
+import type { BoardColumnProps } from '../../types/board';
 
 function asJournalTask(task: ApiTask): Task {
   return {

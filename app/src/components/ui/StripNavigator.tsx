@@ -1,10 +1,5 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import type { ButtonHTMLAttributes } from 'react';
-
-interface StripNavigatorProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'children'> {
-  direction: 'previous' | 'next';
-  bordered?: boolean;
-}
+import type { StripNavigatorProps } from '../../types/ui';
 
 export function StripNavigator({ direction, bordered = false, className = '', ...props }: StripNavigatorProps) {
   const Icon = direction === 'previous' ? ChevronLeft : ChevronRight;

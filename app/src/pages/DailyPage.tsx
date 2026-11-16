@@ -9,7 +9,6 @@ import { DailyWeekBoard } from '../components/board/DailyWeekBoard';
 import { DailyToolbar } from '../components/daily/DailyToolbar';
 import { DailyList } from '../components/daily/DailyList';
 import { MonthlyView } from '../components/monthly/MonthlyView';
-
 import { extractNaturalDate, fmtISOInTimeZone } from '../utils/date';
 import { nextOrderValue } from '../utils/order';
 import { getParentCandidate } from '../utils/taskTree';
@@ -24,7 +23,8 @@ import { useDailyTasks } from '../hooks/useDailyTasks';
 import { useI18n } from '../i18n/I18nContext';
 import { fetchCollections, fetchSections, fetchCollectionView, fetchPreferences, apiToggleTask, apiCreateTask, apiUpdateTask, apiDeleteTask, apiMoveTask } from '../api/client';
 import type { ApiTask } from '../types/api';
-import { ContextMenu, type ContextMenuItem } from '../components/ui/ContextMenu';
+import { ContextMenu } from '../components/ui/ContextMenu';
+import type { ContextMenuItem } from '../types/contextMenu';
 import { flattenCollections } from '../components/CollectionTreeNav';
 import { Folder, ArrowUp, ArrowDown, Trash2, Columns3, List } from 'lucide-react';
 import { applySchedule, withTimeZones } from '../utils/taskTime';

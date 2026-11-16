@@ -1,5 +1,5 @@
 import { Palette, Pencil, FolderPlus, Trash2 } from 'lucide-react';
-import type { ContextMenuItem } from './ui/ContextMenu';
+import type { ContextMenuItem } from '../types/contextMenu';
 import type { TranslationKey } from '../i18n/catalogs';
 import type { CollectionMenuHandlers } from '../types/collections';
 

@@ -1,7 +1,6 @@
 import { Calendar } from 'lucide-react';
-import type { ContextMenuItem } from './ui/ContextMenu';
+import type { ContextMenuItem } from '../types/contextMenu';
 import { TaskDatePickerPanel } from './ui/TaskDatePickerPanel';
-
 import type { Task, TaskSchedule } from '../types/task';
 import type { TranslationKey } from '../i18n/catalogs';
 

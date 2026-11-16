@@ -13,7 +13,6 @@ import { MonthlyView } from '../components/monthly/MonthlyView';
 import { PageHeader } from '../components/PageHeader';
 import { nextOrderValue } from '../utils/order';
 import { extractNaturalDate } from '../utils/date';
-
 import { fetchCollectionView, fetchPreferences, apiCreateTask, apiUpdateTask, apiToggleTask, apiDeleteTask, apiMoveTask, apiCreateCollection, apiUpdateCollection, apiDeleteCollection, apiCreateSection, apiUpdateSection, apiDeleteSection, PALETTE_COLORS } from '../api/client';
 import type { ApiTask, ApiCollection } from '../types/api';
 import { runOptimistic, patchById, upsertById } from '../stores/optimistic';
@@ -25,7 +24,8 @@ import { persistTaskIndent } from '../utils/persistTaskIndent';
 import { buildIndentMenuItems } from '../components/taskIndentMenu';
 import type { TaskIndentHandler, TaskIndentMenuContext, TaskListContextMenuHandler } from '../types/taskIndent';
 import { fetchCollections } from '../api/client';
-import { ContextMenu, type ContextMenuItem } from '../components/ui/ContextMenu';
+import { ContextMenu } from '../components/ui/ContextMenu';
+import type { ContextMenuItem } from '../types/contextMenu';
 import { ColorPickerPopover } from '../components/ui/ColorPickerPopover';
 import { buildCollectionMenuItems } from '../components/collectionMenuItems';
 import { ConfirmModal } from '../components/ConfirmModal';

@@ -2,10 +2,7 @@ import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { useI18n } from '../../i18n/I18nContext';
 import { InlineNameInput } from '../ui/InlineNameInput';
-
-interface AddColumnButtonProps {
-  onAdd?: (name: string) => void;
-}
+import type { AddColumnButtonProps } from '../../types/board';
 
 export function AddColumnButton({ onAdd }: AddColumnButtonProps) {
   const { t } = useI18n();

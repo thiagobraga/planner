@@ -86,7 +86,7 @@ Naming rule: rename narrower shape with domain prefix (`ViewTaskRow`,
 
 ## Milestone 5 — UI + widgets (`app/src/types/ui.ts`, `types/widgets.ts`)
 
-- [ ] Create `app/src/types/ui.ts`: `ButtonVariant/Size/Props`,
+- [x] Create `app/src/types/ui.ts`: `ButtonVariant/Size/Props`,
       `ButtonGroupProps`; `CheckboxProps`; `ChipProps`,
       `CollectionChipProps`; `ColorPickerPopoverProps`, `PickerState`,
       `ChannelKey`; `ContextMenu*` (5); `SelectOption`,
@@ -97,16 +97,16 @@ Naming rule: rename narrower shape with domain prefix (`ViewTaskRow`,
       `ViewSwitcherProps`; `ViewToolbarProps` (use `BoardViewMode`);
       `DateScreenProps`, `RepeatPreset/Unit/Props`, `TimeScreenProps`,
       `TaskDatePickerPanelProps`
-- [ ] Create `app/src/types/widgets.ts`: `ConfirmModalProps`; `TokenType`,
+- [x] Create `app/src/types/widgets.ts`: `ConfirmModalProps`; `TokenType`,
       `Token`, `FilterBarProps`; `QuickAddProps`; `SearchResult`,
       `SearchOverlayProps`; `UpdateToastProps`; `AuthShellProps`;
       `MonthlyCalendarSpecimenProps`; `MonthlyViewProps`; `MonthTile`,
       `MonthSelectorProps`, `MonthSelectorHandle`; `PageHeaderProps`;
       `BottomBarProps`
-- [ ] Update importers (all `components/ui/*`, overlays, monthly/*, callers,
+- [x] Update importers (all `components/ui/*`, overlays, monthly/*, callers,
       tests)
-- [ ] Verify: `docker compose exec app npm run build && npm run lint`
-- [ ] Commit: `refactor(app): extract UI and widget prop types`
+- [x] Verify: `docker compose exec app npm run build && npm run lint`
+- [x] Commit: `refactor(app): extract UI and widget prop types`
 
 ## Milestone 6 — hooks/contexts/misc
 

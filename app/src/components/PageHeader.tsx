@@ -1,19 +1,4 @@
-import type { ReactNode } from 'react';
-
-export interface PageHeaderProps {
-  title: ReactNode;
-  subtitle?: string;
-  /** A `<Toolbar>` element - PageHeader renders it as-is; Toolbar owns its own layout classes. */
-  toolbar?: ReactNode;
-  /** A `<PageToolbar>` kept on the title's own row, right-aligned; the title truncates first. */
-  actions?: ReactNode;
-  /** Extra content in `.page-header-copy-text`, after the title/subtitle (e.g. CollectionsPage's inline sub-collection input). */
-  afterTitle?: ReactNode;
-  /** Extra classes on the `<h1>` (e.g. CollectionsPage's breadcrumb-trail layout). */
-  titleClassName?: string;
-  /** Extra classes on the outer `<header>`. */
-  className?: string;
-}
+import type { PageHeaderProps } from '../types/widgets';
 
 // De-dups the header markup every page (Daily/Monthly/Habits/Inbox/Collections)
 // repeated verbatim. Wraps the current, already-settled CSS classes as-is -
