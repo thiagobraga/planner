@@ -135,8 +135,8 @@ Naming rule: rename narrower shape with domain prefix (`ViewTaskRow`,
 
 ## Milestone 7 — api types
 
-- [ ] `api/src/types/recurrence.ts`: already done - verify only
-- [ ] `api/src/types/parsers.ts` (new): unified `PeggyParser`,
+- [x] `api/src/types/recurrence.ts`: move engine-specific due date and remove type re-exports
+- [x] `api/src/types/parsers.ts` (new): unified `PeggyParser`,
       `ParserOptions`; update both parsers
 - [ ] Extend `api/src/types/task.ts`: add `TaskRow`, `SubtreeRow`,
       `MovedTaskSummary`, `CreateTaskInput`, `UpdateTaskInput`,
@@ -151,14 +151,14 @@ Naming rule: rename narrower shape with domain prefix (`ViewTaskRow`,
       `LabelRow`, `Label`, `Create/UpdateLabelInput`
 - [ ] Extend `api/src/types/daily.ts`: add `ViewTaskRow`,
       `ViewPreferencesRow`, `ViewStatusRow`, `BoardOrderRow`
-- [ ] Create `api/src/types/filters.ts`: `FilterExpr`, `FilterParseError`,
+- [x] Create `api/src/types/filters.ts`: `FilterExpr`, `FilterParseError`,
       `FilterRow`, `Create/UpdateFilterInput`, `EvalTask`, `EvalContext`
-- [ ] Create `api/src/types/sync.ts`: `SocketData`, `SyncEntityType`,
+- [x] Create `api/src/types/sync.ts`: `SocketData`, `SyncEntityType`,
       `SyncEventType`, `SyncEvent`
 - [x] Create `api/src/types/auth.ts`: `UserRole`, `UserData`,
       `RegisterInput`; `SessionContext`, `SessionRow`,
       `SessionCookieOptions`
-- [ ] Create `api/src/types/admin.ts`: `AdminUser`, `AdminUserRow`,
+- [x] Create `api/src/types/admin.ts`: `AdminUser`, `AdminUserRow`,
       `ListUsersResult`; `AdminCounts`, `AdminHealth`, `AdminAuthStats`
 - [ ] Extend `api/src/types/activity.ts`: add `ActivityRow`,
       `SearchableEntity`, `SearchResults`, `CommentRow`, `ReminderRow`

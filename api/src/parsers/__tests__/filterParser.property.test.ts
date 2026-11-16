@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
-import { parseFilter, type FilterExpr } from '../filterParser.js';
+import { parseFilter } from '../filterParser.js';
+import type { FilterExpr } from '../../types/filters.js';
 import { printFilter } from '../filterPrinter.js';
 
 const arbIdent = fc.stringMatching(/^[a-zA-Z0-9_]{1,20}$/);

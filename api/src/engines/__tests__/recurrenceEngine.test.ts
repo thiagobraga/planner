@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { computeNextOccurrence, planNextOccurrence, DueDate, RecurrenceRule } from '../recurrenceEngine.js';
+import { computeNextOccurrence, planNextOccurrence } from '../recurrenceEngine.js';
+import type { RecurrenceDueDate as DueDate, RecurrenceRule } from '../../types/recurrence.js';
 
 describe('recurrenceEngine', () => {
   describe('daily', () => {

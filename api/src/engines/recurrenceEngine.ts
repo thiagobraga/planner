@@ -1,10 +1,4 @@
-import type { DueDate as ParsedDueDate, RecurrenceRule } from '../types/recurrence.js';
-
-export type { RecurrenceRule };
-
-export interface DueDate extends Omit<ParsedDueDate, 'date'> {
-  date: string | Date; // YYYY-MM-DD or Date object
-}
+import type { RecurrenceDueDate as DueDate, RecurrenceRule } from '../types/recurrence.js';
 
 function parseDate(dateStr: string | Date): { year: number; month: number; day: number } {
   let dateString: string;

@@ -4,37 +4,10 @@ import { securityLog } from "../utils/securityLogger.js";
 import { revokeAllUserSessions } from "./sessionService.js";
 import { revokeAllUserTokens } from "./apiTokenService.js";
 import { revokeAllUserGrants } from "./oauthService.js";
-import type { UserRole } from "../types/auth.js";
+import type { AdminUser, AdminUserRow, ListUsersResult } from "../types/admin.js";
 
 const DEFAULT_LIMIT = 25;
 const MAX_LIMIT = 100;
-
-export interface AdminUser {
-  id: string;
-  email: string;
-  displayName: string | null;
-  role: UserRole;
-  createdAt: string;
-  disabledAt: string | null;
-  lastSeenAt: string | null;
-  activeSessions: number;
-}
-
-export interface ListUsersResult {
-  users: AdminUser[];
-  nextCursor: string | null;
-}
-
-interface AdminUserRow {
-  id: string;
-  email: string;
-  display_name: string | null;
-  role: UserRole;
-  created_at: Date;
-  disabled_at: Date | null;
-  last_seen_at: Date | null;
-  active_sessions: string;
-}
 
 function mapUser(row: AdminUserRow): AdminUser {
   return {
