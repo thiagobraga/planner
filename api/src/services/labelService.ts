@@ -3,26 +3,9 @@ import pool from "../db/pool.js";
 import { AppError } from "../utils/AppError.js";
 import { validateColor } from "../utils/color.js";
 import { buildEvent, publishEvent } from "./syncService.js";
+import type { CreateLabelInput, Label, LabelRow, UpdateLabelInput } from "../types/collections.js";
 
 const NAME_REGEX = /^[a-zA-Z0-9_]+$/;
-
-interface LabelRow {
-  id: string;
-  user_id: string;
-  name: string;
-  color: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface Label {
-  id: string;
-  userId: string;
-  name: string;
-  color: string;
-  createdAt: string;
-  updatedAt: string;
-}
 
 function formatLabel(row: LabelRow): Label {
   return {
@@ -181,11 +164,6 @@ export async function listLabels(userId: string) {
   return result.rows.map((row) => formatLabel(row as LabelRow));
 }
 
-export interface CreateLabelInput {
-  name: string;
-  color: string;
-}
-
 export async function createLabel(userId: string, input: CreateLabelInput) {
   const name = validateName(input.name);
   const color = validateColor(input.color);
@@ -203,11 +181,6 @@ export async function createLabel(userId: string, input: CreateLabelInput) {
   const label = formatLabel(result.rows[0] as LabelRow);
   publishLabelEvent("created", label.id, userId, label);
   return label;
-}
-
-export interface UpdateLabelInput {
-  name?: string;
-  color?: string;
 }
 
 export async function updateLabel(labelId: string, userId: string, input: UpdateLabelInput) {

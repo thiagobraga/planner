@@ -145,7 +145,7 @@ Naming rule: rename narrower shape with domain prefix (`ViewTaskRow`,
       `Habit`, `HabitGroup`, `HabitEntityType`, `CreateHabitInput`,
       `UpdateHabitInput`, `CompletionResult`, `UpdateHabitGroupInput`,
       `MoveHabitInput/Result`, `MoveHabitGroupInput/Result`
-- [ ] Create `api/src/types/collections.ts`: `CollectionRow`,
+- [x] Create `api/src/types/collections.ts`: `CollectionRow`,
       `Create/UpdateCollectionInput`; `SectionRow`,
       `Create/UpdateSectionInput`; `InvitationRow`, `CollaboratorRow`;
       `LabelRow`, `Label`, `Create/UpdateLabelInput`

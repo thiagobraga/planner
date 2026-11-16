@@ -3,22 +3,7 @@ import { createHash, randomBytes } from "crypto";
 import pool from "../db/pool.js";
 import { AppError } from "../utils/AppError.js";
 import { isValidEmail } from "../utils/email.js";
-
-interface InvitationRow {
-  id: string;
-  collection_id: string;
-  email: string;
-  token_hash: string;
-  accepted_at: string | null;
-  created_at: string;
-}
-
-interface CollaboratorRow {
-  id: string;
-  collection_id: string;
-  user_id: string;
-  created_at: string;
-}
+import type { CollaboratorRow, InvitationRow } from "../types/collections.js";
 
 function formatInvitation(row: InvitationRow) {
   return {

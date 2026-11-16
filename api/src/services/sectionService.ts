@@ -1,15 +1,7 @@
 import { v4 as uuidv4 } from "uuid";
 import pool from "../db/pool.js";
 import { AppError } from "../utils/AppError.js";
-
-interface SectionRow {
-  id: string;
-  collection_id: string;
-  name: string;
-  order_value: number;
-  created_at: string;
-  updated_at: string;
-}
+import type { CreateSectionInput, SectionRow, UpdateSectionInput } from "../types/collections.js";
 
 function formatSection(row: SectionRow) {
   return {
@@ -70,10 +62,6 @@ export async function listSections(collectionId: string, userId: string) {
   return result.rows.map((row) => formatSection(row as SectionRow));
 }
 
-export interface CreateSectionInput {
-  name: string;
-}
-
 export async function createSection(collectionId: string, userId: string, input: CreateSectionInput) {
   // Validate name (1-120 chars)
   if (!input.name || input.name.length === 0 || input.name.length > 120) {
@@ -103,11 +91,6 @@ export async function createSection(collectionId: string, userId: string, input:
   );
 
   return formatSection(result.rows[0] as SectionRow);
-}
-
-export interface UpdateSectionInput {
-  name?: string;
-  position?: number;
 }
 
 export async function updateSection(sectionId: string, userId: string, input: UpdateSectionInput) {
