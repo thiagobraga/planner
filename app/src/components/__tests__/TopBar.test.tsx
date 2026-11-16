@@ -8,7 +8,7 @@ vi.mock('../../utils/environment', () => ({ isProduction: vi.fn(() => false) }))
 
 const state = vi.hoisted(() => ({
   style: 'icon-left', mobile: false, admin: false, dragging: false,
-  mutate: vi.fn(), logout: vi.fn(), droppable: vi.fn(), visibility: vi.fn(), hideCompleted: false,
+  mutate: vi.fn(), logout: vi.fn(), droppable: vi.fn(), visibility: vi.fn(), query: vi.fn(), hideCompleted: false,
 }));
 vi.mock('../../hooks/usePreferences', () => ({ usePreferences: () => ({ data: { navStyle: state.style } }) }));
 vi.mock('../../hooks/useUpdatePreferences', () => ({ useUpdatePreferences: () => ({ mutate: state.mutate, isPending: false, isError: false }) }));
@@ -17,8 +17,8 @@ vi.mock('../../contexts/AuthContext', () => ({ useAuth: () => ({
 }) }));
 vi.mock('../../contexts/usePlannerDrag', () => ({ usePlannerDrag: () => ({ activeDrag: state.dragging ? { kind: 'task' } : null, overId: state.dragging ? 'topbar-inbox' : null }) }));
 vi.mock('@tanstack/react-query', () => ({
-  useQuery: ({ queryKey }: { queryKey: string[] }) => ({
-    data: queryKey[0] === 'preferences' ? { hideCompletedTasks: state.hideCompleted, showNotes: true, background: 'beige' } : [{ id: 'inbox-id', isInbox: true }],
+  useQuery: (options: { queryKey: string[]; enabled?: boolean }) => (state.query(options), {
+    data: options.queryKey[0] === 'preferences' ? { hideCompletedTasks: state.hideCompleted, showNotes: true, background: 'beige' } : [{ id: 'inbox-id', isInbox: true }],
   }),
   useQueryClient: () => ({ invalidateQueries: vi.fn(), cancelQueries: vi.fn(), getQueryData: vi.fn(), setQueryData: vi.fn() }),
   useMutation: ({ mutationFn }: { mutationFn: (value: unknown) => unknown }) => ({ isPending: false, mutate: (value: unknown) => { state.visibility(value); mutationFn(value); } }),
@@ -254,10 +254,22 @@ describe('TopBar', () => {
   it('registers Inbox as a collection target and suppresses drag navigation', () => {
     state.dragging = true;
     renderBar('/habits');
-    expect(state.droppable).toHaveBeenCalledWith(expect.objectContaining({ id: 'topbar-inbox', data: { kind: 'collection', collectionId: 'inbox-id', isInbox: true, parentId: null }, disabled: false }));
+    expect(state.droppable).toHaveBeenCalledWith(expect.objectContaining({ id: 'topbar-inbox', data: { kind: 'collection', collectionId: 'inbox-id', isInbox: true, parentId: null } }));
     const inbox = screen.getByRole('link', { name: 'Inbox' });
     expect(inbox).toHaveAttribute('data-drop-target', 'true');
     expect(fireEvent.click(inbox)).toBe(false);
+  });
+
+  it('fetches collections for the Inbox target only while a task is dragged', () => {
+    renderBar();
+    expect(state.query).toHaveBeenCalledWith(expect.objectContaining({ queryKey: ['collections'], enabled: false }));
+    // Registered before the drag so it is measured with the other drop targets.
+    expect(state.droppable).toHaveBeenCalledWith(expect.objectContaining({ id: 'topbar-inbox' }));
+    expect(state.droppable).not.toHaveBeenCalledWith(expect.objectContaining({ disabled: true }));
+
+    state.dragging = true;
+    renderBar();
+    expect(state.query).toHaveBeenCalledWith(expect.objectContaining({ queryKey: ['collections'], enabled: true }));
   });
 
   // Phone Safari failed to switch to Inbox while its link sat in an extra droppable
