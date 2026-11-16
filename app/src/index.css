@@ -274,19 +274,12 @@ button,
   background: transparent;
 }
 
-.habit-timeline-days-viewport {
-  scrollbar-width: none;
-  touch-action: pan-x;
-
-  &::-webkit-scrollbar {
-    display: none;
-  }
-}
-
+/* The scroller's 24px top padding counts toward sticky offsets, so 24px here
+   lands the selector right under the stuck page header. */
 .habit-timeline-selectors-sticky,
 .habit-calendar-selector-sticky {
   position: sticky;
-  top: 48px;
+  top: 24px;
   z-index: 21;
   padding-top: 24px;
   background-color: var(--planner-page-bg);
