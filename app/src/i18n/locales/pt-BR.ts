@@ -266,8 +266,6 @@ export const portugueseBrazilCatalog = {
   'page.deleteSectionMoveTasks': 'Mover tarefas para o nível superior',
   'page.timelineView': 'Visualização em linha do tempo',
   'page.calendarView': 'Visualização em calendário',
-  'page.previousDays': 'Dias anteriores',
-  'page.nextDays': 'Próximos dias',
   'page.previousMonth': 'Mês anterior',
   'page.nextMonth': 'Próximo mês',
   'page.previousWeek': 'Semana anterior',

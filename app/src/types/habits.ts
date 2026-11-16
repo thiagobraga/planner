@@ -126,71 +126,15 @@ export interface HabitCalendarGridProps {
 
 export type HabitEditTarget = { kind: 'habit' | 'group'; id: string };
 
-// Every row is one 24px band. Labels and day cells render from this same list so
-// the two columns cannot drift out of alignment.
-export type TimelineRow =
-  | { key: string; kind: 'group-header'; group: ApiHabitGroup }
-  | { key: string; kind: 'habit'; node: HabitNode; depth: number; groupId: string | null }
-  | { key: string; kind: 'add-habit'; groupId: string | null }
-  | { key: string; kind: 'spacer' }
-  | { key: string; kind: 'add-group' };
-
-/**
- * One drop region of the label column.
- *
- * Rows are grouped into sections so a habit can be dropped into a group that has
- * no rows to aim at. The day-grid column re-flattens these back into one list,
- * so both columns still render exactly the same bands in the same order.
- */
-export interface TimelineSection {
-  key: string;
-  /** Null for the ungrouped list; absent entirely for the trailing add-group area. */
-  groupId: string | null;
-  /** The tail section holds only chrome and accepts nothing. */
-  droppable: boolean;
-  rows: TimelineRow[];
-}
-
-export interface DayCell {
-  iso: string;
-  letter: string;
-  dayOfMonth: number;
-  future: boolean;
-  isWeekend: boolean;
-}
-
-export interface HabitTimelineProps {
-  sections: HabitSections;
+export interface HabitsToolbarProps {
+  view: HabitsView;
+  onViewChange: (view: HabitsView) => void;
+  weekAnchor: Date;
   today: Date;
   weekStart: WeekStart;
-  weekAnchor: Date;
   onWeekChange: (date: Date) => void;
-  onToday?: () => void;
-  todaySignal?: number;
-  editing?: HabitEditTarget;
-  collapsed: ReadonlySet<string>;
-  /** The habit or group currently being dragged, so its block can be collapsed. */
-  activeDragId?: string | null;
-  onToggleCollapse: (id: string) => void;
-  onToggleDay: (node: HabitNode, iso: string) => void;
-  onStartEdit: (target: HabitEditTarget) => void;
-  onCommitEdit: (target: HabitEditTarget, name: string) => void;
-  onCancelEdit: (target: HabitEditTarget) => void;
-  onAddHabit: (options: { groupId: string | null; parentId?: string }) => void;
-  onAddGroup: () => void;
-  onToggleGroupIcon: (id: string) => void;
-  onDelete: (target: HabitEditTarget) => void;
-  onArchive: (target: HabitEditTarget) => void;
-}
-
-/** The dragged habit and the sub-habits it carries, drawn as whole rows. */
-export interface TimelineBlockPreviewProps {
-  rows: { node: HabitNode; depth: number }[];
-  days: DayCell[];
-  dayColClass: (day: DayCell) => string;
-  labelColWidth: number;
-  /** How far the days viewport is scrolled, so the marks line up under the row. */
-  scrollLeft: number;
-  /** Visible width of the days viewport; the track is clipped to it. */
-  trackWidth: number;
+  /** Back to the current week (timeline) or month (calendar). */
+  onToday: () => void;
+  /** `[` and `]` in the calendar step one month. */
+  onMonthShift: (delta: -1 | 1) => void;
 }

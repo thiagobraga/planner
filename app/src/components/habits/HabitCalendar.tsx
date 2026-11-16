@@ -10,14 +10,14 @@ import { usePlannerDrag } from '../../contexts/usePlannerDrag';
 import { dayState } from '../../utils/habitTree';
 import { containerForGroup } from '../../utils/habitProjection';
 import type { HabitDragData, HabitGroupDragData, HabitSectionDropData } from '../../types/drag';
-import type { ApiHabitGroup } from '../../types/api';
-import type { WeekStart } from '../../utils/date';
-import { useI18n } from '../../i18n/I18nContext';
 import type {
   HabitCalendarGridProps,
   HabitCalendarProps,
   HabitNode,
 } from '../../types/habits';
+import type { ApiHabitGroup } from '../../types/api';
+import type { WeekStart } from '../../utils/date';
+import { useI18n } from '../../i18n/I18nContext';
 
 /** One card column, which the grid and the drag preview both size from. */
 const CARD_W = 192;
@@ -231,6 +231,7 @@ function SortableGroupHeading({
     </h2>
   );
 }
+
 
 function HabitCalendarGrid({
   habits,

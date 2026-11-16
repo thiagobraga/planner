@@ -82,12 +82,6 @@ vi.mock('../../ui/ContextMenu', () => ({
   ),
 }));
 
-vi.mock('../../ui/StripNavigator', () => ({
-  StripNavigator: ({ direction: _direction, ...props }: { direction: string } & React.ButtonHTMLAttributes<HTMLButtonElement>) => (
-    <button type="button" {...props} />
-  ),
-}));
-
 vi.mock('../../ui/InlineNameInput', () => ({
   InlineNameInput: () => null,
 }));
@@ -113,7 +107,6 @@ const defaultProps = {
   today: new Date(2026, 6, 18),
   weekStart: 'sunday' as const,
   weekAnchor: new Date(2026, 6, 18),
-  onWeekChange: vi.fn(),
   onToggleDay: vi.fn(),
   onStartEdit: vi.fn(),
   onCommitEdit: vi.fn(),
@@ -140,13 +133,17 @@ describe('HabitTimeline', () => {
     expect(button).toHaveClass('hover:opacity-100');
   });
 
-  it('shrinks the habit name column to keep five day columns visible on iPhone-sized screens', async () => {
+  it.each([
+    [291, '120px'],
+    [354, '168px'],
+    [1000, '264px'],
+  ])('sizes the name column on the 24px grid so the whole week fits in %ipx', async (timelineWidth, labelWidth) => {
     const originalResizeObserver = window.ResizeObserver;
     class MockResizeObserver {
       constructor(private readonly callback: ResizeObserverCallback) {}
 
       observe(target: Element) {
-        const width = target.classList.contains('habit-timeline') ? 291 : 0;
+        const width = target.classList.contains('habit-timeline') ? timelineWidth : 0;
         this.callback(
           [{ contentRect: { width } } as ResizeObserverEntry],
           this as unknown as ResizeObserver,
@@ -166,7 +163,7 @@ describe('HabitTimeline', () => {
     try {
       const { container } = render(<HabitTimeline {...defaultProps} />, { wrapper: createWrapper() });
       await waitFor(() => {
-        expect(container.querySelector('.habit-timeline-labels')).toHaveStyle({ width: '171px' });
+        expect(container.querySelector('.habit-timeline-labels')).toHaveStyle({ width: labelWidth });
       });
     } finally {
       Object.defineProperty(window, 'ResizeObserver', {
@@ -200,22 +197,29 @@ describe('HabitTimeline', () => {
     expect(numbers(container)).toEqual(['13', '14', '15', '16', '17', '18', '19']);
   });
 
-  it('steps the week anchor by 7 days via the prev/next week buttons', () => {
-    const onWeekChange = vi.fn();
-    render(
-      <HabitTimeline
-        {...defaultProps}
-        weekAnchor={new Date(2026, 6, 18)}
-        onWeekChange={onWeekChange}
-      />,
+  it('shows the whole week without day paging or a week selector of its own', () => {
+    render(<HabitTimeline {...defaultProps} />, { wrapper: createWrapper() });
+
+    expect(screen.queryByRole('button', { name: 'Previous days' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Next days' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Previous week' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Today' })).not.toBeInTheDocument();
+  });
+
+  it('does not dim the days after today', () => {
+    const sections: HabitSections = {
+      ungrouped: [{ id: 'water', name: 'Water', parentId: null, groupId: null, orderValue: 0, completions: new Set<string>(), children: [] }],
+      groups: [],
+    };
+    // Wednesday Jul 15, so Thu-Sat are still ahead.
+    const { container } = render(
+      <HabitTimeline {...defaultProps} sections={sections} today={new Date(2026, 6, 15)} weekAnchor={new Date(2026, 6, 15)} />,
       { wrapper: createWrapper() },
     );
 
-    fireEvent.click(screen.getByLabelText('Previous week'));
-    expect(onWeekChange).toHaveBeenCalledWith(new Date(2026, 6, 11));
-
-    fireEvent.click(screen.getByLabelText('Next week'));
-    expect(onWeekChange).toHaveBeenCalledWith(new Date(2026, 6, 25));
+    expect(container.querySelectorAll('.habit-timeline-header-day')).toHaveLength(7);
+    expect(container.querySelectorAll('.habit-timeline-day-placeholder')).toHaveLength(3);
+    expect(container.querySelectorAll('.opacity-40')).toHaveLength(0);
   });
 
   it('hides the group icon while keeping its name visible', () => {
