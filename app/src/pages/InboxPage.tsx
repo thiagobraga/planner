@@ -10,7 +10,7 @@ import { CollectionBoard } from '../components/board/CollectionBoard';
 import { BoardPageToolbar } from '../components/board/BoardPageToolbar';
 import { MonthlyView } from '../components/monthly/MonthlyView';
 import { PageHeader } from '../components/PageHeader';
-import { fetchInboxTasks, fetchCollectionView, fetchPreferences, apiCreateTask, apiUpdateTask, apiToggleTask, apiDeleteTask, apiMoveTask, fetchCollections, apiCreateSection, apiUpdateSection, apiDeleteSection } from '../api/client';
+import { fetchInboxTasks, fetchCollectionView, apiCreateTask, apiUpdateTask, apiToggleTask, apiDeleteTask, apiMoveTask, fetchCollections, apiCreateSection, apiUpdateSection, apiDeleteSection } from '../api/client';
 import type { ApiTask } from '../types/api';
 import { ContextMenu } from '../components/ui/ContextMenu';
 import type { ContextMenuItem } from '../types/contextMenu';
@@ -19,6 +19,7 @@ import { flattenCollections } from '../components/CollectionTreeNav';
 import { Folder, ArrowUp, ArrowDown, Trash2, Pencil } from 'lucide-react';
 import { useTaskDrag } from '../hooks/useTaskDrag';
 import { useSectionDrag } from '../hooks/useSectionDrag';
+import { usePreferences } from '../hooks/usePreferences';
 import { useBoardPreferences } from '../hooks/useBoardPreferences';
 import { nextOrderValue } from '../utils/order';
 import { extractNaturalDate } from '../utils/date';
@@ -102,10 +103,7 @@ export function InboxPage() {
     inputRef.current?.focus();
   }, []);
 
-  const { data: preferences } = useQuery({
-    queryKey: ['preferences'],
-    queryFn: fetchPreferences,
-  });
+  const { data: preferences } = usePreferences();
   // The board settings are keyed by the Inbox collection, known from the collection list before the view loads.
   const { data: allCollections } = useQuery({ queryKey: ['collections'], queryFn: fetchCollections });
   const [knownInboxId, setKnownInboxId] = useState(cachedInbox?.inboxCollectionId);

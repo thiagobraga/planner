@@ -1,11 +1,10 @@
 import { useEffect } from 'react';
 import { Navigate, useParams } from 'react-router';
-import { useQuery } from '@tanstack/react-query';
-import { fetchPreferences } from '../api/client';
 import { DailyPage } from './DailyPage';
 import { DEFAULT_DAILY_SLUG, legacyDailySlug, slugToLayout, type LegacyDailyView } from '../utils/dailyRange';
 import { DEFAULT_DAILY_VIEW } from '../hooks/useDailyView';
 import { usePatchPreferences } from '../hooks/usePatchPreferences';
+import { usePreferences } from '../hooks/usePreferences';
 import type { ViewLayout } from '../types/view';
 
 const LAST_LAYOUT_STORAGE_KEY = 'planner.daily.lastLayout.v2';
@@ -25,7 +24,7 @@ export function DailyIndexRedirect() {
 
 /** Old `/daily/kanban|cards|monthly` links keep opening what they used to show. */
 function LegacyDailyRedirect({ legacy }: { legacy: LegacyDailyView }) {
-  const { data: prefs, isError } = useQuery({ queryKey: ['preferences'], queryFn: fetchPreferences });
+  const { data: prefs, isError } = usePreferences();
   const patchPreferences = usePatchPreferences();
   const { layout, ...settings } = legacy;
   const loaded = prefs !== undefined;

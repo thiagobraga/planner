@@ -25,7 +25,8 @@ import {
   parentToggleTarget,
 } from '../utils/habitTree';
 import { useI18n } from '../i18n/I18nContext';
-import { fetchHabits, fetchPreferences, apiCreateHabit, apiUpdateHabit, apiDeleteHabit, apiArchiveHabit, apiToggleHabitCompletion, apiCreateHabitGroup, apiUpdateHabitGroup, apiDeleteHabitGroup, apiArchiveHabitGroup } from '../api/client';
+import { usePreferences } from '../hooks/usePreferences';
+import { fetchHabits, apiCreateHabit, apiUpdateHabit, apiDeleteHabit, apiArchiveHabit, apiToggleHabitCompletion, apiCreateHabitGroup, apiUpdateHabitGroup, apiDeleteHabitGroup, apiArchiveHabitGroup } from '../api/client';
 import type { ApiHabit, ApiHabitGroup } from '../types/api';
 import type { HabitsView } from '../types/habits';
 
@@ -52,10 +53,7 @@ function isTemp(id: string) {
 export function HabitsPage() {
   const { t } = useI18n();
   const queryClient = useQueryClient();
-  const { data: preferences } = useQuery({
-    queryKey: ['preferences'],
-    queryFn: fetchPreferences,
-  });
+  const { data: preferences } = usePreferences();
   const weekStart = preferences?.weekStart ?? 'sunday';
 
   const [now, setNow] = useState(() => new Date());
