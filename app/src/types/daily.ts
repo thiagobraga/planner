@@ -1,8 +1,10 @@
 import type { KeyboardEvent, ReactNode, RefObject } from 'react';
-import type { Task, TaskListCallbacks } from './task';
-import type { ApiTask } from './api';
+import type { Task, TaskListCallbacks, TaskSchedule } from './task';
+import type { ApiCollection, ApiStatus, ApiTask } from './api';
 import type { useDailyView } from '../hooks/useDailyView';
 import type { WeekStart } from '../utils/date';
+import type { ViewLayout } from './view';
+import type { TaskIndentHandler, TaskIndentMenuContext } from './taskIndent';
 
 /** The view segment of /daily/<view>. */
 export type DailySlug = 'list' | 'kanban' | 'cards' | 'monthly';
@@ -58,4 +60,38 @@ export interface DailyToolbarProps {
   /** Reorganize is offered only when there is something to move. */
   onReorganize?: () => void;
   onToday: () => void;
+}
+
+export interface DailyReorganizeConfirmProps {
+  isVisible: boolean;
+  onConfirm: () => Promise<void>;
+  onCancel: () => void;
+}
+
+export interface DailyPageContextMenuProps {
+  position: { x: number; y: number } | null;
+  layout: ViewLayout;
+  view: ReturnType<typeof useDailyView>;
+  hideCompletedTasks: boolean;
+  showNotes: boolean;
+  onClose: () => void;
+  onSetHideCompletedTasks: (value: boolean) => void;
+  onSetShowNotes: (value: boolean) => void;
+}
+
+export interface DailyTaskContextMenuProps {
+  contextMenu: TaskIndentMenuContext | null;
+  menuTask?: Task;
+  statuses: ApiStatus[];
+  completionStatusId: string | null;
+  collections: ApiCollection[];
+  onClose: () => void;
+  onToggle: (taskId: string) => void;
+  onMoveStatus: (task: Task, statusId: string | null) => void;
+  onSetSchedule: (taskId: string, schedule: TaskSchedule) => void;
+  onAssignCollection: (taskId: string, collectionId: string) => void;
+  onAddAbove: (taskId: string) => void;
+  onAddBelow: (taskId: string) => void;
+  onIndent: TaskIndentHandler;
+  onDelete: (taskId: string) => void;
 }

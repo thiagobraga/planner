@@ -1,11 +1,10 @@
 import { useCallback } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { fetchPreferences } from '../api/client';
+import { usePreferences } from './usePreferences';
 import { usePatchPreferences } from './usePatchPreferences';
 
 /** Whether the page column spans the whole window, saved per user. */
 export function useFullWidth() {
-  const { data: prefs } = useQuery({ queryKey: ['preferences'], queryFn: fetchPreferences });
+  const { data: prefs } = usePreferences();
   const patchPreferences = usePatchPreferences();
   const fullWidth = prefs?.fullWidth ?? false;
   const setFullWidth = useCallback((value: boolean) => {
