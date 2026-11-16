@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSync } from '../hooks/useSync';
-import { HabitTimeline, type HabitEditTarget } from '../components/habits/HabitTimeline';
+import { HabitTimeline } from '../components/habits/HabitTimeline';
+import type { HabitEditTarget } from '../types/habitTimeline';
 import { HabitCalendar } from '../components/habits/HabitCalendar';
 import { useHabitDrag } from '../hooks/useHabitDrag';
 import { isEchoedMove } from '../utils/moveEcho';

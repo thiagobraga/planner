@@ -1,112 +1,13 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
-import { ChevronDown, ChevronRight, MoreHorizontal, Plus, Pencil, Smile, Trash2, Archive } from 'lucide-react';
-import { useDroppable } from '@dnd-kit/core';
-import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import { ContextMenu } from '../ui/ContextMenu';
-import { HabitDot, dotAriaProps } from './HabitDot';
-import { InlineNameInput } from '../ui/InlineNameInput';
-import { NO_DRAG_ATTR } from '../dnd/sensors';
-import { HabitDragHandle } from './HabitDragHandle';
-import { HabitBlockPreview } from './HabitBlockPreview';
-import { DebugCard } from '../DebugCard';
-import { useDebugStore } from '../../stores/debugStore';
-import { buildWeekDays, fmtISO, weekdayInitials, type WeekStart } from '../../utils/date';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useHabitTimelineDrag } from '../../hooks/useHabitTimelineDrag';
 import { useI18n } from '../../i18n/I18nContext';
-import { dayState, flattenHabits, type HabitNode, type HabitSections } from '../../utils/habitTree';
-import { usePlannerDrag } from '../../contexts/usePlannerDrag';
-import {
-  flattenHabitRows,
-  projectHabitMove,
-  containerForGroup,
-  HABIT_INDENT_WIDTH,
-  UNGROUPED_CONTAINER,
-} from '../../utils/habitProjection';
-import type { HabitDragData, HabitGroupDragData, HabitSectionDropData } from '../../types/drag';
-import type { ApiHabitGroup } from '../../types/api';
-
-const CELL_W = 24;
-const WEEK_W = CELL_W * 7;
-// The label column stays on a 24px multiple so the day grid lands on the
-// dotted paper background. It shrinks on narrow screens so the whole week fits.
-const LABEL_COL_W = 264;
-const INDENT = 24;
-
-export type HabitEditTarget = { kind: 'habit' | 'group'; id: string };
-
-// Every row is one 24px band. Labels and day cells render from this same list so
-// the two columns cannot drift out of alignment.
-type TimelineRow =
-  | { key: string; kind: 'group-header'; group: ApiHabitGroup }
-  | { key: string; kind: 'habit'; node: HabitNode; depth: number; groupId: string | null }
-  | { key: string; kind: 'add-habit'; groupId: string | null }
-  | { key: string; kind: 'spacer' }
-  | { key: string; kind: 'add-group' };
-
-/**
- * One drop region of the label column.
- *
- * Rows are grouped into sections so a habit can be dropped into a group that has
- * no rows to aim at. The day-grid column re-flattens these back into one list,
- * so both columns still render exactly the same bands in the same order.
- */
-interface TimelineSection {
-  key: string;
-  /** Null for the ungrouped list; absent entirely for the trailing add-group area. */
-  groupId: string | null;
-  /** The tail section holds only chrome and accepts nothing. */
-  droppable: boolean;
-  rows: TimelineRow[];
-}
-
-export interface HabitTimelineProps {
-  sections: HabitSections;
-  today: Date;
-  weekStart: WeekStart;
-  weekAnchor: Date;
-  editing?: HabitEditTarget;
-  collapsed: ReadonlySet<string>;
-  /** The habit or group currently being dragged, so its block can be collapsed. */
-  activeDragId?: string | null;
-  onToggleCollapse: (id: string) => void;
-  onToggleDay: (node: HabitNode, iso: string) => void;
-  onStartEdit: (target: HabitEditTarget) => void;
-  onCommitEdit: (target: HabitEditTarget, name: string) => void;
-  onCancelEdit: (target: HabitEditTarget) => void;
-  onAddHabit: (options: { groupId: string | null; parentId?: string }) => void;
-  onAddGroup: () => void;
-  onToggleGroupIcon: (id: string) => void;
-  onDelete: (target: HabitEditTarget) => void;
-  onArchive: (target: HabitEditTarget) => void;
-}
-
-interface DayCell {
-  iso: string;
-  letter: string;
-  dayOfMonth: number;
-  future: boolean;
-  isWeekend: boolean;
-}
-
-/**
- * A day's mark and whether it joins the run either side of it.
- *
- * Any day with progress is part of the chain, so a partly-done parent day links
- * rather than breaking the run. Shared by the live row and the drag preview so
- * a habit lifted off the list draws the same chain it drew in place.
- */
-function dayLink(node: HabitNode, days: DayCell[], i: number) {
-  const state = dayState(node, days[i]!.iso);
-  const linked = state !== 'empty';
-  return {
-    state,
-    prevLinked: i > 0 && linked && dayState(node, days[i - 1]!.iso) !== 'empty',
-    nextLinked:
-      i < days.length - 1 &&
-      linked &&
-      !days[i + 1]!.future &&
-      dayState(node, days[i + 1]!.iso) !== 'empty',
-  };
-}
+import type { HabitTimelineProps, TimelineDayCell, TimelineMenuState } from '../../types/habitTimeline';
+import { buildWeekDays, fmtISO, weekdayInitials } from '../../utils/date';
+import { buildTimelineSections, labelColumnWidth, timelineSortableIds } from '../../utils/habitTimeline';
+import { HabitTimelineDayGrid } from './HabitTimelineDayGrid';
+import { HabitTimelineDayHeader } from './HabitTimelineDayHeader';
+import { HabitTimelineLabels } from './HabitTimelineLabels';
+import { HabitTimelineMenu } from './HabitTimelineMenu';
 
 // Horizontal habit tracker for one week: one row per habit, one column per day,
 // always exactly 7 columns aligned to the weekStart preference. The week itself
@@ -132,16 +33,27 @@ export function HabitTimeline({
   onDelete,
   onArchive,
 }: HabitTimelineProps) {
-  const { locale, t } = useI18n();
-  const debug = useDebugStore((s) => s.enabled);
-  const [menu, setMenu] = useState<{ target: HabitEditTarget; canAddSub: boolean; x: number; y: number } | null>(null);
+  const { locale } = useI18n();
+  const [menu, setMenu] = useState<TimelineMenuState | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
   const [timelineWidth, setTimelineWidth] = useState<number | null>(null);
-  const { indentSteps, overId, setOverlayNode } = usePlannerDrag();
   const labelColWidth = labelColumnWidth(timelineWidth);
 
+  useEffect(() => {
+    const node = rootRef.current;
+    if (!node) return;
+
+    const resizeObserver = new ResizeObserver((entries) => {
+      const width = entries[0]?.contentRect.width;
+      if (width) setTimelineWidth(width);
+    });
+
+    resizeObserver.observe(node);
+    return () => resizeObserver.disconnect();
+  }, []);
+
   const dayLetters = weekdayInitials(weekStart, locale);
-  const days = useMemo<DayCell[]>(
+  const days = useMemo<TimelineDayCell[]>(
     () =>
       buildWeekDays(weekAnchor, today, weekStart).map((d, i) => ({
         iso: d.iso,
@@ -154,729 +66,73 @@ export function HabitTimeline({
   );
 
   const todayISO = fmtISO(today);
-
-  useEffect(() => {
-    const node = rootRef.current;
-    if (!node) return;
-
-    const syncTimelineWidth = (width: number) => setTimelineWidth(width);
-    const resizeObserver = new ResizeObserver((entries) => {
-      const width = entries[0]?.contentRect.width;
-      if (width) syncTimelineWidth(width);
-    });
-
-    resizeObserver.observe(node);
-    return () => resizeObserver.disconnect();
-  }, []);
-
   const dayColClass = useCallback(
-    (d: DayCell) =>
+    (d: TimelineDayCell) =>
       `${d.isWeekend ? 'habit-timeline-weekend-col' : ''} ${d.iso === todayISO ? 'habit-timeline-today-col' : ''}`,
     [todayISO],
   );
 
-  const timelineSections = useMemo<TimelineSection[]>(() => {
-    // A dragged parent's sub-habits are pulled out of the list for the duration
-    // of the drag, exactly as the task list does: dnd-kit sorts each row on its
-    // own, so leaving them behind would strand them under the wrong parent while
-    // the block is in flight. The overlay's "+N" stands in for them.
-    const carried = new Set<string>();
-    if (activeDragId) {
-      const dragged = [...sections.ungrouped, ...sections.groups.flatMap((s) => s.habits)].find(
-        (node) => node.id === activeDragId,
-      );
-      for (const child of dragged?.children ?? []) carried.add(child.id);
-    }
-
-    const habitRows = (nodes: HabitNode[], groupId: string | null): TimelineRow[] => {
-      const out: TimelineRow[] = [];
-      for (const { node, depth } of flattenHabits(nodes)) {
-        // A collapsed parent hides its sub-habits but keeps its own row.
-        if (depth > 0 && node.parentId && collapsed.has(node.parentId)) continue;
-        if (carried.has(node.id)) continue;
-        out.push({ key: `habit-${node.id}`, kind: 'habit', node, depth, groupId });
-      }
-      return out;
-    };
-
-    const out: TimelineSection[] = [
-      {
-        key: UNGROUPED_CONTAINER,
-        groupId: null,
-        droppable: true,
-        rows: [
-          ...habitRows(sections.ungrouped, null),
-          { key: 'add-habit-root', kind: 'add-habit', groupId: null },
-        ],
-      },
-    ];
-
-    for (const section of sections.groups) {
-      out.push({
-        key: section.group.id,
-        groupId: section.group.id,
-        droppable: true,
-        rows: [
-          { key: `spacer-${section.group.id}`, kind: 'spacer' },
-          { key: `group-${section.group.id}`, kind: 'group-header', group: section.group },
-          ...habitRows(section.habits, section.group.id),
-          { key: `add-habit-${section.group.id}`, kind: 'add-habit', groupId: section.group.id },
-        ],
-      });
-    }
-
-    out.push({
-      key: 'timeline-tail',
-      groupId: null,
-      droppable: false,
-      rows: [
-        { key: 'spacer-add-group', kind: 'spacer' },
-        { key: 'add-group', kind: 'add-group' },
-      ],
-    });
-
-    return out;
-  }, [sections, collapsed, activeDragId]);
-
+  const timelineSections = useMemo(
+    () => buildTimelineSections(sections, collapsed, activeDragId),
+    [sections, collapsed, activeDragId],
+  );
   // The day grid renders the same bands in the same order, flattened back out.
-  const rows = useMemo<TimelineRow[]>(
-    () => timelineSections.flatMap((section) => section.rows),
-    [timelineSections],
-  );
+  const rows = useMemo(() => timelineSections.flatMap((section) => section.rows), [timelineSections]);
+  const sortableIds = useMemo(() => timelineSortableIds(rows), [rows]);
 
-  // Everything the shared DndContext can address in this view: habit rows to
-  // reorder against, and group headers to move whole groups.
-  const sortableIds = useMemo(
-    () =>
-      rows
-        .filter((row) => row.kind === 'habit' || row.kind === 'group-header')
-        .map((row) => (row.kind === 'habit' ? row.node.id : row.kind === 'group-header' ? row.group.id : '')),
-    [rows],
-  );
+  const { insertionBeforeId, insertionDepth } = useHabitTimelineDrag({
+    sections,
+    collapsed,
+    activeDragId,
+    days,
+    dayColClass,
+    labelColWidth,
+  });
 
-  // Where the block would land, previewed as an insertion line. The timeline is
-  // a two-column grid, so rows deliberately do not slide out of the way - only
-  // the label column could move, and the day cells would fall out of step.
-  const dragRows = useMemo(() => flattenHabitRows(sections), [sections]);
-  const projection =
-    activeDragId && overId && dragRows.some((r) => r.id === activeDragId)
-      ? projectHabitMove(
-          dragRows,
-          activeDragId,
-          Math.max(0, dragRows.findIndex((r) => r.id === overId)),
-          indentSteps * HABIT_INDENT_WIDTH,
-        )
-      : null;
-
-  // The row the line is drawn above: the first sibling at or after the projected
-  // position within the target scope.
-  const insertionBeforeId = useMemo(() => {
-    if (!projection || !activeDragId) return null;
-    const siblings = dragRows.filter(
-      (row) =>
-        row.id !== activeDragId &&
-        (projection.parentId
-          ? row.parentId === projection.parentId
-          : row.depth === 0 && row.groupId === projection.groupId),
-    );
-    return siblings[projection.position]?.id ?? null;
-  }, [projection, activeDragId, dragRows]);
-
-  // What travels under the pointer: the dragged habit drawn as a whole row -
-  // label, marks and all - together with the sub-habits it carries. A group
-  // header has no day track of its own, so it lifts as its heading.
-  const draggedBlock = useMemo(() => {
-    if (!activeDragId) return null;
-
-    const roots = [...sections.ungrouped, ...sections.groups.flatMap((s) => s.habits)];
-    const found = findNodeWithDepth(roots, activeDragId);
-    if (!found) return null;
-
-    // A collapsed parent's sub-habits are not on screen, so they do not travel.
-    const carried = collapsed.has(found.node.id) ? [] : found.node.children;
-    return [found, ...carried.map((child) => ({ node: child, depth: found.depth + 1 }))];
-  }, [sections, activeDragId, collapsed]);
-
-  useEffect(() => {
-    if (!activeDragId) return;
-
-    if (!draggedBlock) {
-      const group = sections.groups.find((s) => s.group.id === activeDragId);
-      if (!group) return;
-      setOverlayNode(
-        <HabitBlockPreview
-          name={group.group.name}
-          icon={group.group.icon}
-          count={group.habits.length}
-          kind="habit-group"
-        />,
-      );
-      return () => setOverlayNode(null);
-    }
-
-    setOverlayNode(
-      <HabitTimelineBlockPreview
-        rows={draggedBlock}
-        days={days}
-        dayColClass={dayColClass}
-        labelColWidth={labelColWidth}
-      />,
-    );
-    return () => setOverlayNode(null);
-  }, [activeDragId, draggedBlock, sections, days, dayColClass, labelColWidth, setOverlayNode]);
-
-  const isEditing = (kind: 'habit' | 'group', id: string) =>
-    editing?.kind === kind && editing.id === id;
-
-  const menuGroup = menu?.target.kind === 'group'
-    ? sections.groups.find((section) => section.group.id === menu.target.id)?.group
-    : undefined;
+  const menuGroup =
+    menu?.target.kind === 'group'
+      ? sections.groups.find((section) => section.group.id === menu.target.id)?.group
+      : undefined;
 
   return (
     <div ref={rootRef} className="habit-timeline">
-      <div className="habit-timeline-selectors-sticky">
-        <div className="habit-timeline-day-selector flex min-w-0 items-start gap-0">
-          <div className="h-12 shrink-0 min-w-0" style={{ width: labelColWidth }} aria-hidden="true" />
-          <div className="habit-timeline-header flex h-12 shrink-0" style={{ width: WEEK_W }}>
-            {days.map((d) => (
-              <div
-                key={d.iso}
-                className={`habit-timeline-header-day flex h-12 shrink-0 flex-col items-center justify-center ${dayColClass(d)}`}
-                style={{ width: CELL_W }}
-              >
-                <span className="habit-timeline-header-day-letter block h-6 w-full text-center text-[10px] leading-[24px] text-ink-light opacity-70">
-                  {d.letter}
-                </span>
-                <span
-                  className={`habit-timeline-header-day-number block h-6 w-full text-center text-[10px] leading-[24px] ${d.iso === todayISO ? 'text-ink font-semibold' : 'text-ink-light'
-                    }`}
-                >
-                  {d.dayOfMonth}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
+      <HabitTimelineDayHeader days={days} dayColClass={dayColClass} labelColWidth={labelColWidth} todayISO={todayISO} />
 
       <div className="habit-timeline-table min-w-0">
         <div className="habit-timeline-body flex min-w-0 items-start gap-0">
-          <div className="habit-timeline-labels shrink-0 min-w-0" style={{ width: labelColWidth }}>
-            <SortableContext items={sortableIds} strategy={verticalListSortingStrategy}>
-            {timelineSections.map((section) => (
-              <TimelineSectionDrop
-                key={section.key}
-                groupId={section.groupId}
-                droppable={section.droppable}
-              >
-            {section.rows.map((row) => {
-              if (row.kind === 'spacer') {
-                return <div key={row.key} className="h-6" aria-hidden="true" />;
-              }
-
-            if (row.kind === 'add-group') {
-              return (
-                <button
-                  key={row.key}
-                  type="button"
-                  onClick={onAddGroup}
-                  className="habit-timeline-add-group group flex h-6 w-full min-w-0 items-center pr-2 text-ink-light opacity-0 transition-opacity hover:opacity-100 focus-visible:opacity-100"
-                >
-                  <span className="flex h-6 w-6 shrink-0 items-center justify-center">+</span>
-                  <span className="min-w-0 flex-1 truncate text-left uppercase tracking-widest text-[10px] font-semibold">
-                    {t('page.newSection')}
-                  </span>
-                </button>
-              );
-            }
-
-            if (row.kind === 'add-habit') {
-              return (
-                <button
-                  key={row.key}
-                  type="button"
-                  onClick={() => onAddHabit({ groupId: row.groupId })}
-                  className="habit-timeline-add-habit group relative flex h-6 w-full min-w-0 items-center pr-2 text-ink-lighter transition-colors hover:text-ink"
-                >
-                  <span className="absolute left-[-18px] flex h-6 w-4 items-center justify-center">
-                    <Plus size={14} strokeWidth={2} />
-                  </span>
-                  <span className="min-w-0 flex-1 truncate text-left text-sm leading-6">{t('common.addHabit')}</span>
-                </button>
-              );
-            }
-
-            if (row.kind === 'group-header') {
-              const target: HabitEditTarget = { kind: 'group', id: row.group.id };
-              return (
-                <SortableGroupHeader
-                  key={row.key}
-                  group={row.group}
-                  dimmed={activeDragId === row.group.id}
-                >
-                  {isEditing('group', row.group.id) ? (
-                    <InlineNameInput
-                      commitOnEscape
-                      defaultValue={row.group.name}
-                      className="uppercase tracking-[0.1em] text-[10px] font-semibold text-ink-light"
-                      onCommit={(name) => onCommitEdit(target, name)}
-                      onCancel={() => onCancelEdit(target)}
-                    />
-                  ) : (
-                    <>
-                      <span
-                        className="habit-timeline-group-name min-w-0 flex-1 cursor-text truncate text-[10px] font-semibold uppercase leading-6 tracking-[0.1em] text-ink-light"
-                        onDoubleClick={() => onStartEdit(target)}
-                      >
-                        {row.group.name}
-                      </span>
-                      <RowOptionsButton
-                      label={t('habit.optionsFor', { name: row.group.name })}
-                        onOpen={(x, y) => setMenu({ target, canAddSub: false, x, y })}
-                      />
-                    </>
-                  )}
-                </SortableGroupHeader>
-              );
-            }
-
-            const { node, depth } = row;
-            const target: HabitEditTarget = { kind: 'habit', id: node.id };
-            const hasChildren = node.children.length > 0;
-            const isCollapsed = collapsed.has(node.id);
-
-            return (
-              <SortableHabitLabelRow
-                key={row.key}
-                node={node}
-                depth={depth}
-                groupId={row.groupId}
-                indent={INDENT}
-                dimmed={activeDragId === node.id}
-                showInsertionBefore={insertionBeforeId === node.id}
-                insertionDepth={projection?.depth ?? 0}
-              >
-                {hasChildren ? (
-                  <button
-                    type="button"
-                    aria-label={isCollapsed ? `Expand ${node.name}` : `Collapse ${node.name}`}
-                    aria-expanded={!isCollapsed}
-                    onClick={() => onToggleCollapse(node.id)}
-                    {...{ [NO_DRAG_ATTR]: '' }}
-                    className="habit-timeline-row-disclosure flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center border-none bg-transparent p-0 text-ink-light hover:text-ink"
-                  >
-                    {isCollapsed ? <ChevronRight size={12} /> : <ChevronDown size={12} />}
-                  </button>
-                ) : null}
-
-                {isEditing('habit', node.id) ? (
-                  <InlineNameInput
-                    commitOnEscape
-                    defaultValue={node.name}
-                    placeholder={t('common.addHabit')}
-                    onCommit={(name) => onCommitEdit(target, name)}
-                    onCancel={() => onCancelEdit(target)}
-                  />
-                ) : (
-                  <>
-                    <span
-                      className="habit-timeline-row-name min-w-0 flex-1 cursor-text truncate text-sm leading-6 text-ink"
-                      onDoubleClick={() => onStartEdit(target)}
-                    >
-                      {node.name}
-                    </span>
-                    {debug && <DebugCard id={node.id} orderValue={node.orderValue} createdAt={node.createdAt} level={depth} parentId={node.parentId} />}
-                    <RowOptionsButton
-                      label={t('habit.optionsFor', { name: node.name })}
-                      onOpen={(x, y) => setMenu({ target, canAddSub: depth === 0, x, y })}
-                    />
-                  </>
-                )}
-              </SortableHabitLabelRow>
-            );
-            })}
-              </TimelineSectionDrop>
-            ))}
-            </SortableContext>
-          </div>
-
-          <div className="habit-timeline-days shrink-0">
-            <div className="habit-timeline-table-inner" style={{ width: WEEK_W }}>
-              {rows.map((row) => {
-              // Non-habit rows still occupy a band so both columns stay in step,
-              // and keep the weekend/today column shading unbroken top to bottom.
-              if (row.kind !== 'habit') {
-                return (
-                  <div key={row.key} className="flex h-6" aria-hidden="true">
-                    {days.map((d) => (
-                      <span
-                        key={d.iso}
-                        className={`h-6 shrink-0 ${dayColClass(d)}`}
-                        style={{ width: CELL_W }}
-                      />
-                    ))}
-                  </div>
-                );
-              }
-
-              const { node } = row;
-              return (
-                <div key={row.key} className="habit-timeline-row flex h-6">
-                  {days.map((d, i) => {
-                    if (d.future) {
-                      return (
-                        <span
-                          key={d.iso}
-                          aria-hidden="true"
-                          className={`habit-timeline-day-placeholder h-6 shrink-0 ${dayColClass(d)}`}
-                          style={{ width: CELL_W }}
-                        />
-                      );
-                    }
-
-                    const { state, prevLinked, nextLinked } = dayLink(node, days, i);
-
-                    return (
-                      <button
-                        key={d.iso}
-                        type="button"
-                        onClick={() => onToggleDay(node, d.iso)}
-                        aria-label={`${node.name} ${d.iso}`}
-                        {...dotAriaProps(state)}
-                        className={`habit-timeline-day-cell group relative h-6 shrink-0 cursor-pointer border-none bg-transparent p-0 ${dayColClass(
-                          d,
-                        )}`}
-                        style={{ width: CELL_W }}
-                      >
-                        {prevLinked && (
-                          <span
-                            aria-hidden="true"
-                            className="habit-timeline-day-connector-prev absolute top-1/2 left-0 h-px -translate-y-1/2"
-                            style={{ width: CELL_W / 2, background: 'var(--color-ink-lighter)' }}
-                          />
-                        )}
-                        {nextLinked && (
-                          <span
-                            aria-hidden="true"
-                            className="habit-timeline-day-connector-next absolute top-1/2 right-0 h-px -translate-y-1/2"
-                            style={{ width: CELL_W / 2, background: 'var(--color-ink-lighter)' }}
-                          />
-                        )}
-                        <HabitDot state={state} interactive />
-                      </button>
-                    );
-                  })}
-                </div>
-              );
-              })}
-            </div>
-          </div>
+          <HabitTimelineLabels
+            sections={timelineSections}
+            sortableIds={sortableIds}
+            width={labelColWidth}
+            editing={editing}
+            collapsed={collapsed}
+            activeDragId={activeDragId}
+            insertionBeforeId={insertionBeforeId}
+            insertionDepth={insertionDepth}
+            onOpenMenu={setMenu}
+            onToggleCollapse={onToggleCollapse}
+            onStartEdit={onStartEdit}
+            onCommitEdit={onCommitEdit}
+            onCancelEdit={onCancelEdit}
+            onAddHabit={onAddHabit}
+            onAddGroup={onAddGroup}
+          />
+          <HabitTimelineDayGrid rows={rows} days={days} dayColClass={dayColClass} onToggleDay={onToggleDay} />
         </div>
       </div>
 
       {menu && (
-        <ContextMenu
-          position={{ x: menu.x, y: menu.y }}
+        <HabitTimelineMenu
+          menu={menu}
+          groupHasIcon={Boolean(menuGroup?.icon)}
           onClose={() => setMenu(null)}
-          items={[
-            { type: 'item', label: t('common.rename'), icon: <Pencil size={14} />, onClick: () => onStartEdit(menu.target) },
-            ...(menu.target.kind === 'group'
-              ? [
-                {
-                  type: 'item' as const,
-                  label: menuGroup?.icon ? t('habit.removeIcon') : t('habit.addIcon'),
-                  icon: <Smile size={14} />,
-                  onClick: () => onToggleGroupIcon(menu.target.id),
-                },
-              ]
-              : []),
-            ...(menu.canAddSub
-              ? [
-                {
-                  type: 'item' as const,
-                  label: t('habit.addSubHabit'),
-                  icon: <Plus size={14} />,
-                  onClick: () => onAddHabit({ groupId: null, parentId: menu.target.id }),
-                },
-              ]
-              : []),
-            { type: 'separator' },
-            {
-              type: 'item',
-              label: menu.target.kind === 'group' ? t('habit.archiveGroup') : t('habit.archive'),
-              icon: <Archive size={14} />,
-              onClick: () => onArchive(menu.target),
-            },
-            {
-              type: 'item',
-              label: menu.target.kind === 'group' ? t('habit.deleteGroup') : t('common.delete'),
-              icon: <Trash2 size={14} />,
-              destructive: true,
-              onClick: () => onDelete(menu.target),
-            },
-          ]}
+          onStartEdit={onStartEdit}
+          onToggleGroupIcon={onToggleGroupIcon}
+          onAddHabit={onAddHabit}
+          onArchive={onArchive}
+          onDelete={onDelete}
         />
       )}
     </div>
   );
-}
-
-/**
- * One drop region of the label column - the ungrouped list, or one group.
- *
- * Registered even when it holds no habits, because an empty group has no row to
- * aim at and would otherwise be unreachable by drag.
- */
-function TimelineSectionDrop({
-  groupId,
-  droppable,
-  children,
-}: {
-  groupId: string | null;
-  droppable: boolean;
-  children: ReactNode;
-}) {
-  const data: HabitSectionDropData = { kind: 'habit-section', groupId };
-  const { setNodeRef, isOver } = useDroppable({
-    id: `section-${containerForGroup(groupId)}`,
-    data,
-    disabled: !droppable,
-  });
-
-  return (
-    <div
-      ref={droppable ? setNodeRef : undefined}
-      data-drop-target={isOver ? 'true' : undefined}
-      className={`habit-timeline-section ${isOver ? 'habit-timeline-section--drop-target' : ''}`}
-    >
-      {children}
-    </div>
-  );
-}
-
-/** Locate a habit anywhere in the tree, keeping the depth it renders at. */
-function findNodeWithDepth(
-  nodes: HabitNode[],
-  id: string,
-  depth = 0,
-): { node: HabitNode; depth: number } | null {
-  for (const node of nodes) {
-    if (node.id === id) return { node, depth };
-    const found = findNodeWithDepth(node.children, id, depth + 1);
-    if (found) return found;
-  }
-  return null;
-}
-
-/** The dragged habit and the sub-habits it carries, drawn as whole rows. */
-interface TimelineBlockPreviewProps {
-  rows: { node: HabitNode; depth: number }[];
-  days: DayCell[];
-  dayColClass: (day: DayCell) => string;
-  labelColWidth: number;
-}
-
-/**
- * The dragged habit rows, drawn as they appear in the timeline, for the overlay.
- *
- * Deliberately not the row components: those register sortable hooks and own
- * edit state, none of which belongs to a copy floating under the pointer. The
- * day cells are spans rather than buttons here for the same reason.
- *
- * The timeline splits one row across two columns - the label column and the
- * week - so the preview rebuilds that geometry with the same widths.
- */
-function HabitTimelineBlockPreview({
-  rows,
-  days,
-  dayColClass,
-  labelColWidth,
-}: TimelineBlockPreviewProps) {
-  const base = rows[0]?.depth ?? 0;
-
-  return (
-    <div className="habit-timeline-block-preview" aria-hidden>
-      {rows.map(({ node, depth }) => (
-        <div key={node.id} className="flex h-6 items-start">
-          <div
-            className="habit-timeline-row-label flex h-6 min-w-0 shrink-0 items-center pr-2"
-            // Depths are relative to the block, so a sub-habit dragged out of
-            // level 1 draws flush rather than indented into empty space.
-            style={{ width: labelColWidth, paddingLeft: Math.max(0, depth - base) * INDENT }}
-          >
-            <span className="habit-timeline-row-name min-w-0 flex-1 truncate text-sm leading-6 text-ink">
-              {node.name}
-            </span>
-          </div>
-
-          <div className="flex h-6 shrink-0" style={{ width: WEEK_W }}>
-              {days.map((d, i) => {
-                if (d.future) {
-                  return (
-                    <span
-                      key={d.iso}
-                      className={`habit-timeline-day-placeholder h-6 shrink-0 ${dayColClass(d)}`}
-                      style={{ width: CELL_W }}
-                    />
-                  );
-                }
-
-                const { state, prevLinked, nextLinked } = dayLink(node, days, i);
-                return (
-                  <span
-                    key={d.iso}
-                    className={`habit-timeline-day-cell relative h-6 shrink-0 ${dayColClass(d)}`}
-                    style={{ width: CELL_W }}
-                  >
-                    {prevLinked && (
-                      <span
-                        className="habit-timeline-day-connector-prev absolute top-1/2 left-0 h-px -translate-y-1/2"
-                        style={{ width: CELL_W / 2, background: 'var(--color-ink-lighter)' }}
-                      />
-                    )}
-                    {nextLinked && (
-                      <span
-                        className="habit-timeline-day-connector-next absolute top-1/2 right-0 h-px -translate-y-1/2"
-                        style={{ width: CELL_W / 2, background: 'var(--color-ink-lighter)' }}
-                      />
-                    )}
-                    <HabitDot state={state} />
-                  </span>
-                );
-              })}
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-/**
- * A habit label row, draggable through the shared context.
- *
- * Deliberately does not apply dnd-kit's transform. The timeline is two columns
- * driven by one row list, and only this column would move - the day cells would
- * slide out of step with their own habit. The insertion line previews the
- * landing position instead.
- */
-function SortableHabitLabelRow({
-  node,
-  depth,
-  groupId,
-  indent,
-  dimmed,
-  showInsertionBefore,
-  insertionDepth,
-  children,
-}: {
-  node: HabitNode;
-  depth: number;
-  groupId: string | null;
-  indent: number;
-  dimmed: boolean;
-  showInsertionBefore: boolean;
-  insertionDepth: number;
-  children: ReactNode;
-}) {
-  const childIds = node.children.map((c) => c.id);
-  const data = (
-    depth === 0
-      ? {
-          kind: 'habit',
-          habitId: node.id,
-          parentId: null,
-          groupId,
-          containerId: containerForGroup(groupId),
-          childIds,
-        }
-      : {
-          kind: 'habit',
-          habitId: node.id,
-          parentId: node.parentId!,
-          groupId: null,
-          // The section is the parent's, which a sub-habit's own null groupId
-          // cannot name.
-          containerId: containerForGroup(groupId),
-          childIds: [],
-        }
-  ) as HabitDragData;
-
-  const { attributes, listeners, setNodeRef, isDragging } = useSortable({ id: node.id, data });
-
-  return (
-    <>
-      {showInsertionBefore && (
-        <div
-          aria-hidden="true"
-          className="habit-timeline-insertion relative h-0"
-          style={{ marginLeft: insertionDepth * indent }}
-        >
-          <span className="absolute inset-x-0 -top-px block h-px bg-ink" />
-        </div>
-      )}
-      <div
-        ref={setNodeRef}
-        {...attributes}
-        {...listeners}
-        style={{ paddingLeft: depth * indent, opacity: isDragging || dimmed ? 0.4 : 1 }}
-        className="habit-timeline-row-label group flex h-6 min-w-0 items-center pr-2"
-        aria-label={node.name}
-      >
-        <HabitDragHandle label={node.name} />
-        {children}
-      </div>
-    </>
-  );
-}
-
-/** A group header, draggable to reorder whole groups. */
-function SortableGroupHeader({
-  group,
-  dimmed,
-  children,
-}: {
-  group: ApiHabitGroup;
-  dimmed: boolean;
-  children: ReactNode;
-}) {
-  const data: HabitGroupDragData = { kind: 'habit-group', groupId: group.id };
-  const { attributes, listeners, setNodeRef, isDragging } = useSortable({ id: group.id, data });
-
-  return (
-    <div
-      ref={setNodeRef}
-      {...attributes}
-      {...listeners}
-      style={{ opacity: isDragging || dimmed ? 0.4 : 1 }}
-      className="habit-timeline-group-header group flex h-6 min-w-0 items-center pr-2"
-      aria-label={group.name}
-    >
-      <HabitDragHandle label={group.name} />
-      {children}
-    </div>
-  );
-}
-
-function RowOptionsButton({ label, onOpen }: { label: string; onOpen: (x: number, y: number) => void }) {
-  return (
-    <button
-      type="button"
-      aria-label={label}
-      {...{ [NO_DRAG_ATTR]: '' }}
-      className="habit-timeline-row-options flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-[4px] text-ink-light opacity-0 transition-opacity duration-75 hover:bg-dot/30 hover:text-ink focus:opacity-100 group-hover:opacity-100"
-      onClick={(event) => {
-        const rect = event.currentTarget.getBoundingClientRect();
-        onOpen(rect.left, rect.bottom + 4);
-      }}
-    >
-      <MoreHorizontal size={14} />
-    </button>
-  );
-}
-
-/** The widest label column, on the 24px grid, that still leaves room for the whole week. */
-function labelColumnWidth(timelineWidth: number | null): number {
-  if (timelineWidth == null) return LABEL_COL_W;
-  const fitted = Math.floor((timelineWidth - WEEK_W) / CELL_W) * CELL_W;
-  return Math.max(0, Math.min(LABEL_COL_W, fitted));
 }
