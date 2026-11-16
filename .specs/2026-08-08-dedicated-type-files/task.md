@@ -110,29 +110,28 @@ Naming rule: rename narrower shape with domain prefix (`ViewTaskRow`,
 
 ## Milestone 6 — hooks/contexts/misc
 
-- [ ] `types/hooks.ts` additions: `ShortcutContext`, `SingleBinding`,
+- [x] `types/hooks.ts` additions: `ShortcutContext`, `SingleBinding`,
       `ChordBinding`, `Binding`, `KeyEvent`, `MatcherState`;
       `Position`, `Placement`, `Align`, `FloatingOptions`,
       `FloatingResult`; `MidnightCallback`; `VersionResponse`;
-      `UseBoardDragOptions`, `ResolvedBoardMove`, `BoardSnapshot`;
+      `UseBoardDragOptions`, `ResolvedBoardMove`, `BoardMoveSnapshot`;
       `BoardColumnDeleteOption`, `DeleteDraft`; `ReorganizeState`,
       `ReorganizePreview`, `UseReorganizeReturn`
-- [ ] Create `app/src/types/sync.ts`: `SyncEvent` (useSync)
-- [ ] Create `app/src/types/utils.ts`: `Rgb`, `Hsv`, `Hsl`, `ParsedColor`,
+- [x] Create `app/src/types/sync.ts`: `SyncEvent` (useSync)
+- [x] Create `app/src/types/utils.ts`: `Rgb`, `Hsv`, `Hsl`, `ParsedColor`,
       `ColorFormat`; `WeekStart`, `WeekDay`, `MonthDay`, `ParsedDate`;
       `FontOption`; `PhraseSection`; `QueuedMutationMethod`,
       `QueuedMutation`; `MovePayload`, `EchoableEvent`; `Ordered`;
       `DayColumnId`, `DayColumn`; `DateQuickOptionKey/Option`;
-      `BoardColumnId`, `BoardColumn`, `StatusListTask/Group`;
       `AgentTranslate`; `RecurrenceLocale`
-- [ ] Create `app/src/types/i18n.ts`: `HelpSection`, `HelpContent`;
+- [x] Create `app/src/types/i18n.ts`: `HelpSection`, `HelpContent`;
       `I18nContextValue`. Leave `Locale` in `catalogs.ts`
-- [ ] Add to `types/drag.ts`: `DragHandlers`, `DragOverlayInfo`,
+- [x] Add to `types/drag.ts`: `DragHandlers`, `DragOverlayInfo`,
       `PlannerDragContextValue`
-- [ ] Update importers and tests; confirm `TaskOrderScope`/`BoardGroupBy`
+- [x] Update importers and tests; confirm `TaskOrderScope`/`BoardGroupBy`
       referenced from `drag.ts` only
-- [ ] Verify: `docker compose exec app npm run build && npm run lint`
-- [ ] Commit: `refactor(app): extract hook, util, sync and drag-context types`
+- [x] Verify: `docker compose exec app npm run build && npm run lint`
+- [x] Commit: `refactor(app): extract hook, util, sync and drag-context types`
 
 ## Milestone 7 — api types
 

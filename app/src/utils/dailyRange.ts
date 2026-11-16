@@ -1,4 +1,5 @@
-import type { DailyViewSettings, ViewLayout } from '../types/view';
+import type { LegacyDailyView } from '../types/daily';
+import type { ViewLayout } from '../types/view';
 
 /** Layouts Daily can show today, in menu order. Table and Calendar join in phase 2. */
 export const DAILY_LAYOUTS: readonly ViewLayout[] = ['list', 'columns'];
@@ -7,10 +8,6 @@ export const DEFAULT_DAILY_SLUG: ViewLayout = 'list';
 
 export function slugToLayout(slug: string | undefined): ViewLayout | null {
   return DAILY_LAYOUTS.find((layout) => layout === slug) ?? null;
-}
-
-export interface LegacyDailyView extends Partial<DailyViewSettings> {
-  layout: ViewLayout;
 }
 
 const LEGACY: Record<string, LegacyDailyView> = {

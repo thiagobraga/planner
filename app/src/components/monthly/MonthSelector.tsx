@@ -1,7 +1,8 @@
 import { useEffect, useState, useRef, useLayoutEffect, useImperativeHandle, type CSSProperties } from 'react';
 import { Button } from '../ui/Button';
 import { StripNavigator } from '../ui/StripNavigator';
-import { useI18n, type Locale } from '../../i18n/I18nContext';
+import { useI18n } from '../../i18n/I18nContext';
+import type { Locale } from '../../i18n/catalogs';
 import type { MonthSelectorHandle, MonthSelectorProps, MonthTile } from '../../types/widgets';
 
 const MONTH_WINDOW = 3;

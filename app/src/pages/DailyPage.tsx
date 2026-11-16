@@ -1,7 +1,8 @@
 import { useMemo, useRef, useState, useEffect, useCallback } from 'react';
 import { useQuery, useQueries, useQueryClient } from '@tanstack/react-query';
 import { useSync } from '../hooks/useSync';
-import { useReorganize, type Section as ReorganizeSection } from '../hooks/useReorganize';
+import { useReorganize } from '../hooks/useReorganize';
+import type { Section as ReorganizeSection } from '../types/hooks';
 import { isEchoedMove, isStructuralMove } from '../utils/moveEcho';
 import { PageHeader } from '../components/PageHeader';
 import { CollectionChip } from '../components/ui/Chip';

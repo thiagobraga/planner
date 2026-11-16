@@ -26,14 +26,14 @@ import {
 } from '../components/dnd/sensors';
 import { plannerCollisionDetection } from '../components/dnd/collision';
 import { createIndentTracker } from '../utils/dragIndent';
-import type { DragData, DragKind } from '../types/drag';
-import {
-  PlannerDragContext,
-  INDENT_PX,
-  type DragHandlers,
-  type DragOverlayInfo,
-  type PlannerDragContextValue,
-} from './usePlannerDrag';
+import type {
+  DragData,
+  DragHandlers,
+  DragKind,
+  DragOverlayInfo,
+  PlannerDragContextValue,
+} from '../types/drag';
+import { PlannerDragContext, INDENT_PX } from './usePlannerDrag';
 
 /**
  * The app's single DndContext, wrapping both the Sidebar and the routed page.

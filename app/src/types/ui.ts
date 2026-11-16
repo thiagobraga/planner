@@ -5,8 +5,7 @@ import type {
   SelectHTMLAttributes,
 } from 'react';
 import type { ParsedDateInput, RecurrenceRule, TaskSchedule } from './task';
-import type { Hsv } from '../utils/color';
-import type { WeekStart } from '../utils/date';
+import type { Hsv, WeekStart } from './utils';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'tertiary' | 'destructive';
 export type ButtonSize = 'lg' | 'md' | 'sm' | 'xs';

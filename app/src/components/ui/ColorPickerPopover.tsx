@@ -12,8 +12,8 @@ import {
   rgbToHsl,
   rgbToHsv,
   hslToRgb,
-  type ColorFormat,
 } from '../../utils/color';
+import type { ColorFormat } from '../../types/utils';
 import { PALETTE_COLORS, fetchSavedColors, apiAddSavedColor } from '../../api/client';
 import { useI18n } from '../../i18n/I18nContext';
 import type { TranslationKey } from '../../i18n/catalogs';

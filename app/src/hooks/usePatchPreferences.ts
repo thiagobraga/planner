@@ -2,8 +2,7 @@ import { useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { apiUpdatePreferences } from '../api/client';
 import type { Preferences } from '../types/api';
-
-type PreferencesPatch = Partial<Omit<Preferences, 'userId'>>;
+import type { PreferencesPatch } from '../types/hooks';
 
 // Saves go out one at a time, so quick successive changes (a layout switch that also moves
 // the range, then a range shortcut) reach the server in the order the user made them.

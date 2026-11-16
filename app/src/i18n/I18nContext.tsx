@@ -2,12 +2,12 @@ import { createContext, useCallback, useContext, useEffect, useState, type React
 import {
   englishCatalog,
   portugueseBrazilCatalog,
+  SUPPORTED_LOCALES,
+  type Locale,
   type TranslationCatalog,
   type TranslationKey,
 } from './catalogs';
-
-export const SUPPORTED_LOCALES = ['en', 'pt-BR'] as const;
-export type Locale = (typeof SUPPORTED_LOCALES)[number];
+import type { I18nContextValue } from '../types/i18n';
 
 const catalogs: Record<Locale, TranslationCatalog> = {
   en: englishCatalog,
@@ -29,13 +29,6 @@ export function translate(
     (text, [name, value]) => text.replaceAll(`{{${name}}}`, String(value)),
     template,
   );
-}
-
-interface I18nContextValue {
-  locale: Locale;
-  setLocale: (locale: string | null | undefined) => void;
-  t: (key: TranslationKey, values?: Record<string, string | number>) => string;
-  formatDate: (date: Date | number, options?: Intl.DateTimeFormatOptions) => string;
 }
 
 const defaultValue: I18nContextValue = {

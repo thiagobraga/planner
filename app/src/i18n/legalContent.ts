@@ -1,4 +1,4 @@
-import type { Locale } from './I18nContext';
+import type { Locale } from './catalogs';
 import type { PrivacyPolicyContent, TermsOfServiceContent } from '../types/legal';
 import { privacyEnglish } from './legal/privacyEn';
 import { privacyPortugueseBrazil } from './legal/privacyPtBR';

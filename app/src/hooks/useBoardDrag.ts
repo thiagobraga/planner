@@ -9,39 +9,12 @@ import { flattenTasks, getSubtreeBlock } from '../utils/taskProjection';
 import { parseColumnId } from '../utils/boardColumns';
 import type { DropData, TaskDragData, TaskOrderScope } from '../types/drag';
 import { useI18n } from '../i18n/I18nContext';
-
-interface UseBoardDragOptions {
-  enabled?: boolean;
-  tasks: ApiTask[];
-  boardOrder: BoardOrder;
-  groupBy: BoardGroupBy;
-  collectionId: string;
-  statuses: ApiStatus[];
-  sections: ApiSection[];
-  completionStatusId: string | null;
-  setTasks: (updater: (prev: ApiTask[]) => ApiTask[]) => void;
-  setBoardOrder: (updater: (prev: BoardOrder) => BoardOrder) => void;
-  onError?: () => void;
-  onMoved?: () => void;
-}
-
-interface ResolvedBoardMove {
-  input: Parameters<typeof apiMoveTask>[1];
-  announcement: string;
-  preview: string;
-  parentTaskId: string | null;
-}
-
-interface BoardMoveSnapshot {
-  tasks: ApiTask[];
-  boardOrder: BoardOrder;
-}
-
-interface BoardA11yMessages {
-  dropToColumn: (column: string) => string;
-  movedToColumn: (column: string) => string;
-  dropAsSubtask: (title: string) => string;
-}
+import type {
+  BoardA11yMessages,
+  BoardMoveSnapshot,
+  ResolvedBoardMove,
+  UseBoardDragOptions,
+} from '../types/hooks';
 
 const defaultA11yMessages: BoardA11yMessages = {
   dropToColumn: (column) => `Drop to move to ${column}.`,

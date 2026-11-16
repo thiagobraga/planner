@@ -1,4 +1,4 @@
-import type { WeekStart } from '../utils/date';
+import type { WeekStart } from './utils';
 import type { ApiHabit, ApiHabitGroup } from './api';
 
 export type DayState = 'empty' | 'half' | 'full';

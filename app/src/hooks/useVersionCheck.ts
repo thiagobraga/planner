@@ -1,10 +1,6 @@
 import { useEffect, useState } from 'react';
 import { getSocket } from '../utils/socket';
-
-interface VersionResponse {
-  current: string;
-  latest: string;
-}
+import type { VersionResponse } from '../types/hooks';
 
 /**
  * One listener for the whole app, at module scope rather than per hook

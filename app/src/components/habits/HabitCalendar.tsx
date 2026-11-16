@@ -16,7 +16,7 @@ import type {
   HabitNode,
 } from '../../types/habits';
 import type { ApiHabitGroup } from '../../types/api';
-import type { WeekStart } from '../../utils/date';
+import type { WeekStart } from '../../types/utils';
 import { useI18n } from '../../i18n/I18nContext';
 
 /** One card column, which the grid and the drag preview both size from. */

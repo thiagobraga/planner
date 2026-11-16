@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import type { Task } from './task';
-import type { WeekStart } from '../utils/date';
+import type { WeekStart } from './utils';
 
 export interface AuthShellProps {
   children: ReactNode;
