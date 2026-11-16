@@ -232,7 +232,6 @@ function SortableGroupHeading({
   );
 }
 
-
 function HabitCalendarGrid({
   habits,
   groupId,
