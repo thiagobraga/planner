@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.23.1](https://github.com/thiagobraga/planner/compare/v0.23.0...v0.23.1) (2026-11-16)
+
+
+### Fixed
+
+* **nav:** stop focusing topbar header on style menu close ([5d81834](https://github.com/thiagobraga/planner/commit/5d818345dd7082bf5e6b1606d24b0fc13c39f7dd))
+
 ## [0.23.0](https://github.com/thiagobraga/planner/compare/v0.22.0...v0.23.0) (2026-11-16)
 
 
