@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.24.1](https://github.com/thiagobraga/planner/compare/v0.24.0...v0.24.1) (2026-11-16)
+
+
+### Fixed
+
+* **tasks:** rename task lookup helpers to avoid CodeQL false positive ([647e183](https://github.com/thiagobraga/planner/commit/647e18368b3e3bb543030172fcac775e79d726fc))
+
+
+### Changed
+
+* clarify core module boundaries ([990b231](https://github.com/thiagobraga/planner/commit/990b2311647500c4c5c9e466bba0e5dba811f9d4))
+* **collections:** extract breadcrumb, section, and task hooks ([3f5dfa6](https://github.com/thiagobraga/planner/commit/3f5dfa6d9512acd1b3f81a3c5f88b3b674d8f470))
+* **daily:** extract sync, task actions, and overlay modules ([2c2e689](https://github.com/thiagobraga/planner/commit/2c2e689e715a0af85897799f51a863c86b969b76))
+* **daily:** split useDailyTaskActions into create hook and mutation helpers ([8a2df5d](https://github.com/thiagobraga/planner/commit/8a2df5d7ebfc11f0455b30bccbe5d8ac1174b98c))
+* extract collectionTree utils, SortableCollectionRow, and habit service types ([4be0c08](https://github.com/thiagobraga/planner/commit/4be0c08e02227ede2c6a37e088bf27ae0e761fac))
+* **preferences:** use shared usePreferences hook across remaining consumers ([4a25a66](https://github.com/thiagobraga/planner/commit/4a25a665943dff1d581653355614bd639ea9a2b7))
+* **tasks:** split move.ts into moveDestination, moveSubtree, and reorganize ([f459383](https://github.com/thiagobraga/planner/commit/f4593838a2a84cc1756f8a10c9234c12082d2f4c))
+* **tasks:** split taskService into focused domain modules ([78a85b7](https://github.com/thiagobraga/planner/commit/78a85b7e33539e73bfb6d142a38faa4570bbffa6))
+
 ## [0.24.0](https://github.com/thiagobraga/planner/compare/v0.23.1...v0.24.0) (2026-11-16)
 
 
