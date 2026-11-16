@@ -2,15 +2,7 @@ import { v4 as uuidv4 } from "uuid";
 import sanitizeHtml from "sanitize-html";
 import pool from "../db/pool.js";
 import { AppError } from "../utils/AppError.js";
-
-interface CommentRow {
-  id: string;
-  task_id: string;
-  user_id: string;
-  body: string;
-  created_at: string;
-  updated_at: string | null;
-}
+import type { CommentRow } from "../types/activity.js";
 
 const SANITIZE_OPTIONS: sanitizeHtml.IOptions = {
   allowedTags: [],

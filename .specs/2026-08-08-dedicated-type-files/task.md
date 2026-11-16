@@ -160,9 +160,9 @@ Naming rule: rename narrower shape with domain prefix (`ViewTaskRow`,
       `SessionCookieOptions`
 - [x] Create `api/src/types/admin.ts`: `AdminUser`, `AdminUserRow`,
       `ListUsersResult`; `AdminCounts`, `AdminHealth`, `AdminAuthStats`
-- [ ] Extend `api/src/types/activity.ts`: add `ActivityRow`,
+- [x] Extend `api/src/types/activity.ts`: add `ActivityRow`,
       `SearchableEntity`, `SearchResults`, `CommentRow`, `ReminderRow`
-- [ ] Extend `api/src/types/apiToken.ts`: add `ApiTokenRow`
+- [x] Extend `api/src/types/apiToken.ts`: add `ApiTokenRow`
 - [ ] Create `api/src/types/misc.ts`: `PreferencesRow` (preferencesService),
       `BoardGroupBy`, `BoardViewMode`, `BoardViewModes`,
       `UpdatePreferencesInput`; `RateLimitResult`, `MemEntry`;
