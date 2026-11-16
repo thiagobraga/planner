@@ -71,18 +71,18 @@ Naming rule: rename narrower shape with domain prefix (`ViewTaskRow`,
 
 ## Milestone 4 — habits (`app/src/types/habits.ts`)
 
-- [ ] Create `app/src/types/habits.ts`: `HabitBlockPreviewProps`;
+- [x] Create `app/src/types/habits.ts`: `HabitBlockPreviewProps`;
       `HabitCalendarProps`, `HabitCalendarGridProps`; `HabitDotProps`;
       `HabitMonthGridProps`; `HabitTimelineProps`, `HabitEditTarget`,
       `TimelineRow`, `TimelineSection`, `DayCell`,
-      `TimelineBlockPreviewProps`; `HabitsView`;
+      `TimelineBlockPreviewProps`; `HabitsView`; `UseHabitDragOptions` (useHabitDrag);
       `HabitRow`, `HabitProjection`, `HabitDepth` (habitProjection);
       `DayState`, `HabitNode`, `HabitGroupSection`, `HabitSections`
       (habitTree)
-- [ ] Update importers (HabitsPage, habits/*, useHabitDrag, projection/tree
+- [x] Update importers (HabitsPage, habits/*, useHabitDrag, projection/tree
       consumers, tests)
-- [ ] Verify: `docker compose exec app npm run build && npm run lint`
-- [ ] Commit: `refactor(app): extract habit domain types`
+- [x] Verify: `docker compose exec app npm run build && npm run lint`
+- [x] Commit: `refactor(app): extract habit domain types`
 
 ## Milestone 5 — UI + widgets (`app/src/types/ui.ts`, `types/widgets.ts`)
 

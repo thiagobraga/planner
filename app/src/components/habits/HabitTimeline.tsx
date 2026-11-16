@@ -12,9 +12,9 @@ import { HabitDragHandle } from './HabitDragHandle';
 import { HabitBlockPreview } from './HabitBlockPreview';
 import { DebugCard } from '../DebugCard';
 import { useDebugStore } from '../../stores/debugStore';
-import { buildWeekDays, fmtISO, weekdayInitials, type WeekStart } from '../../utils/date';
+import { buildWeekDays, fmtISO, weekdayInitials } from '../../utils/date';
 import { useI18n } from '../../i18n/I18nContext';
-import { dayState, flattenHabits, type HabitNode, type HabitSections } from '../../utils/habitTree';
+import { dayState, flattenHabits } from '../../utils/habitTree';
 import { usePlannerDrag } from '../../contexts/usePlannerDrag';
 import {
   flattenHabitRows,
@@ -25,6 +25,15 @@ import {
 } from '../../utils/habitProjection';
 import type { HabitDragData, HabitGroupDragData, HabitSectionDropData } from '../../types/drag';
 import type { ApiHabitGroup } from '../../types/api';
+import type {
+  DayCell,
+  HabitEditTarget,
+  HabitNode,
+  HabitTimelineProps,
+  TimelineBlockPreviewProps,
+  TimelineRow,
+  TimelineSection,
+} from '../../types/habits';
 
 const CELL_W = 24;
 // Keep the label column on a 24px multiple so the day grid aligns with the
@@ -34,65 +43,6 @@ const NARROW_LABEL_COL_W = 216;
 const LABEL_COL_W = 248;
 const MOBILE_MAX_W = 640;
 const INDENT = 24;
-
-export type HabitEditTarget = { kind: 'habit' | 'group'; id: string };
-
-// Every row is one 24px band. Labels and day cells render from this same list so
-// the two columns cannot drift out of alignment.
-type TimelineRow =
-  | { key: string; kind: 'group-header'; group: ApiHabitGroup }
-  | { key: string; kind: 'habit'; node: HabitNode; depth: number; groupId: string | null }
-  | { key: string; kind: 'add-habit'; groupId: string | null }
-  | { key: string; kind: 'spacer' }
-  | { key: string; kind: 'add-group' };
-
-/**
- * One drop region of the label column.
- *
- * Rows are grouped into sections so a habit can be dropped into a group that has
- * no rows to aim at. The day-grid column re-flattens these back into one list,
- * so both columns still render exactly the same bands in the same order.
- */
-interface TimelineSection {
-  key: string;
-  /** Null for the ungrouped list; absent entirely for the trailing add-group area. */
-  groupId: string | null;
-  /** The tail section holds only chrome and accepts nothing. */
-  droppable: boolean;
-  rows: TimelineRow[];
-}
-
-export interface HabitTimelineProps {
-  sections: HabitSections;
-  today: Date;
-  weekStart: WeekStart;
-  weekAnchor: Date;
-  onWeekChange: (date: Date) => void;
-  onToday?: () => void;
-  todaySignal?: number;
-  editing?: HabitEditTarget;
-  collapsed: ReadonlySet<string>;
-  /** The habit or group currently being dragged, so its block can be collapsed. */
-  activeDragId?: string | null;
-  onToggleCollapse: (id: string) => void;
-  onToggleDay: (node: HabitNode, iso: string) => void;
-  onStartEdit: (target: HabitEditTarget) => void;
-  onCommitEdit: (target: HabitEditTarget, name: string) => void;
-  onCancelEdit: (target: HabitEditTarget) => void;
-  onAddHabit: (options: { groupId: string | null; parentId?: string }) => void;
-  onAddGroup: () => void;
-  onToggleGroupIcon: (id: string) => void;
-  onDelete: (target: HabitEditTarget) => void;
-  onArchive: (target: HabitEditTarget) => void;
-}
-
-interface DayCell {
-  iso: string;
-  letter: string;
-  dayOfMonth: number;
-  future: boolean;
-  isWeekend: boolean;
-}
 
 /**
  * A day's mark and whether it joins the run either side of it.
@@ -115,10 +65,6 @@ function dayLink(node: HabitNode, days: DayCell[], i: number) {
   };
 }
 
-// Horizontal habit tracker for the current week: one row per habit, one column
-// per day, always exactly 7 columns aligned to the weekStart preference.
-// Sub-habits sit indented under their parent, and the parent shows their combined
-// state - empty, half, or full.
 export function HabitTimeline({
   sections,
   today,
@@ -790,17 +736,6 @@ function findNodeWithDepth(
 }
 
 /** The dragged habit and the sub-habits it carries, drawn as whole rows. */
-interface TimelineBlockPreviewProps {
-  rows: { node: HabitNode; depth: number }[];
-  days: DayCell[];
-  dayColClass: (day: DayCell) => string;
-  labelColWidth: number;
-  /** How far the days viewport is scrolled, so the marks line up under the row. */
-  scrollLeft: number;
-  /** Visible width of the days viewport; the track is clipped to it. */
-  trackWidth: number;
-}
-
 /**
  * The dragged habit rows, drawn as they appear in the timeline, for the overlay.
  *

@@ -1,13 +1,6 @@
-import type { DayState } from '../../utils/habitTree';
+import type { DayState, HabitDotProps } from '../../types/habits';
 import { useCheckboxStore } from '../../stores/checkboxStore';
 import { CheckboxMark } from '../ui/Checkbox';
-
-export interface HabitDotProps {
-  state: DayState;
-  size?: number;
-  /** Renders the hover affordance used by interactive day cells. */
-  interactive?: boolean;
-}
 
 // The single source of truth for how a habit day looks, shared by the timeline
 // and the calendar so a parent habit reads identically in both.

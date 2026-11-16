@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Calendar } from 'lucide-react';
 import { useSync } from '../hooks/useSync';
-import { HabitTimeline, type HabitEditTarget } from '../components/habits/HabitTimeline';
+import { HabitTimeline } from '../components/habits/HabitTimeline';
 import { HabitCalendar } from '../components/habits/HabitCalendar';
 import { useHabitDrag } from '../hooks/useHabitDrag';
 import { isEchoedMove } from '../utils/moveEcho';
@@ -11,7 +11,7 @@ import { PageHeader } from '../components/PageHeader';
 import { fmtISOInTimeZone } from '../utils/date';
 import { dateFromISO } from '../utils/dailySections';
 import { useMidnightTimer } from '../hooks/useMidnightTimer';
-import { flattenHabits, type HabitNode } from '../utils/habitTree';
+import { flattenHabits } from '../utils/habitTree';
 import { randomHabitGroupIcon } from '../utils/habitGroupIcon';
 import { trackCreate, resolveCreatedId } from '../utils/pendingCreates';
 import {
@@ -29,6 +29,7 @@ import { useI18n } from '../i18n/I18nContext';
 
 import { fetchHabits, fetchPreferences, apiCreateHabit, apiUpdateHabit, apiDeleteHabit, apiArchiveHabit, apiToggleHabitCompletion, apiCreateHabitGroup, apiUpdateHabitGroup, apiDeleteHabitGroup, apiArchiveHabitGroup } from '../api/client';
 import type { ApiHabit, ApiHabitGroup } from '../types/api';
+import type { HabitEditTarget, HabitNode, HabitsView } from '../types/habits';
 
 function DotsConnectedIcon(props: LucideProps) {
   return (
@@ -51,7 +52,7 @@ function DotsConnectedIcon(props: LucideProps) {
   );
 }
 
-type HabitsView = 'timeline' | 'calendar';
+
 const HABITS_VIEW_STORAGE_KEY = 'planner.habits.view.v1';
 
 function loadHabitsView(): HabitsView {
