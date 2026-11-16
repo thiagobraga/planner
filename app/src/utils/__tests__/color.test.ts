@@ -19,6 +19,8 @@ const rgbArb = fc.record({
   b: fc.integer({ min: 0, max: 255 }),
 });
 
+const HSL_MAX_DRIFT = 5;
+
 const alphaArb = fc.integer({ min: 0, max: 100 }).map((n) => n / 100);
 
 // The API's own validator, transcribed - every string the picker emits must
@@ -120,12 +122,21 @@ describe('color conversions', () => {
           expect(parsed).not.toBeNull();
           const back = parsed!.rgb as Rgb;
           // hsl display rounds to whole degrees/percents, so a channel can drift
-          // by a couple of steps; the picker treats that as the same swatch.
-          expect(Math.abs(back.r - rgb.r)).toBeLessThanOrEqual(4);
-          expect(Math.abs(back.g - rgb.g)).toBeLessThanOrEqual(4);
-          expect(Math.abs(back.b - rgb.b)).toBeLessThanOrEqual(4);
+          // a few steps; the picker treats that as the same swatch. 5 is the
+          // worst case over every rgb color, found by exhaustive search.
+          expect(Math.abs(back.r - rgb.r)).toBeLessThanOrEqual(HSL_MAX_DRIFT);
+          expect(Math.abs(back.g - rgb.g)).toBeLessThanOrEqual(HSL_MAX_DRIFT);
+          expect(Math.abs(back.b - rgb.b)).toBeLessThanOrEqual(HSL_MAX_DRIFT);
         }),
       );
+    });
+
+    it('keeps saturated colors near the hue boundary within the hsl drift bound', () => {
+      // Counterexamples a random run found against the old bound of 4.
+      for (const rgb of [{ r: 228, g: 230, b: 2 }, { r: 2, g: 228, b: 230 }]) {
+        const back = parseColor(formatColor(rgb, 1, 'hsl'))!.rgb;
+        expect(Math.max(Math.abs(back.r - rgb.r), Math.abs(back.g - rgb.g), Math.abs(back.b - rgb.b))).toBe(HSL_MAX_DRIFT);
+      }
     });
 
     it('parses functional notation with and without spaces', () => {
