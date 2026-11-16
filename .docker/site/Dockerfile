@@ -3,7 +3,7 @@ WORKDIR /workspace/site
 COPY --chown=node:node site/package.json site/package-lock.json site/.npmrc ./
 RUN npm ci
 COPY --chown=node:node site ./
-COPY --chown=node:node app/src/styles/theme.css /workspace/app/src/styles/theme.css
+COPY --chown=node:node app/src/styles/theme.css app/src/styles/palettes.css /workspace/app/src/styles/
 ARG VITE_APP_URL=https://planner.thiagobraga.dev
 ENV VITE_APP_URL=$VITE_APP_URL
 RUN npm run build && npm cache clean --force
@@ -15,7 +15,7 @@ RUN apk upgrade --no-cache && apk add --no-cache chromium \
 ENV PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium-browser
 COPY --chown=node:node --chmod=755 .docker/site/entrypoint.sh /entrypoint.sh
 COPY --chown=node:node site ./
-COPY --chown=node:node app/src/styles/theme.css /workspace/app/src/styles/theme.css
+COPY --chown=node:node app/src/styles/theme.css app/src/styles/palettes.css /workspace/app/src/styles/
 ARG DOCKER_USER=1000:1000
 ENV NPM_CONFIG_CACHE=/tmp/npm-cache
 RUN mkdir -p /tmp/npm-cache && chown -R "$DOCKER_USER" /workspace /tmp/npm-cache

@@ -48,7 +48,7 @@ export function AuthLink({ to, children }: { to: string; children: ReactNode }) 
 
 export function AuthFormError({ children }: { children: ReactNode }) {
   return (
-    <p role="alert" className="text-[13px] leading-6 text-accent">
+    <p role="alert" className="text-[13px] leading-6 text-danger-text">
       {children}
     </p>
   );

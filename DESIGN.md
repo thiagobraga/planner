@@ -5,13 +5,13 @@ colors:
   cream: '#f5f0e8'
   sidebar-bg: '#ebe6de'
   ink: '#44443d'
-  ink-light: '#8b867e'
+  ink-light: '#6f665a'
   dot: '#d4cfc7'
   border: '#e5e1d8'
   accent: '#c9483b'
   accent-light: '#e76052'
-  priority-2: '#e39133'
-  priority-3: '#4d8fd6'
+  priority-2: '#754b1e'
+  priority-3: '#45688e'
   moss: '#8ca46a'
 typography:
   display:
@@ -155,12 +155,12 @@ A short palette of warm, slightly aged neutrals with one brick-red anchor; every
 - **Dot Grey** (`#d4cfc7`): Chip backgrounds, drag-handle resting color, the printed dot grid, tonal fills. The workhorse neutral.
 - **Border** (`#e5e1d8`): The default hairline for card, panel, input, and divider strokes. A touch lighter/warmer than Dot Grey so 1px edges read as paper creases, not lines.
 - **Ink** (`#44443d`): All primary text. The "ink" of the journal. Never `#000`.
-- **Ink Light** (`#8b867e`): Secondary text, captions, italics, due-date labels, empty-state copy, kbd hints.
+- **Ink Light** (`#6f665a`): Secondary text, captions, italics, due-date labels, empty-state copy, kbd hints. This deeper shade keeps small text readable on both paper surfaces.
 
 ### Tertiary (priority data only)
 
-- **Pencil Orange** (`#e39133`): P2 priority bullets only.
-- **Annotation Blue** (`#4d8fd6`): P3 priority bullets only.
+- **Pencil Orange** (`--color-priority-2`): P2 priority bullets and selected priority controls. The original `#e39133` anchor remains warning-400; light themes select a deeper shade for contrast.
+- **Annotation Blue** (`--color-priority-3`): P3 priority bullets and selected priority controls. The original `#4d8fd6` anchor remains info-500; light themes select a deeper shade for contrast.
 - **Soft Moss** (`#8ca46a`): Success / "Done" status only (completed status pills, positive confirmations). Like the tertiary priority colors, it is not a free-to-use accent.
 
 ### Named Rules
@@ -169,7 +169,7 @@ A short palette of warm, slightly aged neutrals with one brick-red anchor; every
 
 **The No-Pure Rule.** No `#fff`, no `#000`. Every neutral is tinted toward the warm hue (yellow-red, around hue 60–70 in OKLCH). The body background is Cream Paper, not white. Text is Ink, not black.
 
-**The Tertiary Restraint Rule.** Pencil Orange and Annotation Blue exist only on priority bullets inside a task row. They are not free-to-use accent colors. They never appear as backgrounds, borders, or text.
+**The Tertiary Restraint Rule.** Pencil Orange and Annotation Blue identify priority bullets and selected priority controls. They are not free-to-use accent colors for unrelated text, borders, or backgrounds.
 
 ### Dark Theme (Night Journal)
 
@@ -182,20 +182,50 @@ Tokens are redefined under `:root[data-theme="dark"]` in `app/src/styles/theme.c
 | Cream Paper `--color-cream` | `#f5f0e8` | `#292219` | Page surface |
 | Surface Cream `--color-sidebar-bg` | `#ebe6de` | `#292219` | Top bar; separated from the page by its 1px border |
 | Ink `--color-ink` | `#44443d` | `#ede3d3` | Primary text |
-| Ink Light `--color-ink-light` | `#8b867e` | `#aea294` | Secondary text |
-| Ink Lighter `--color-ink-lighter` | `#c5c1ba` | `#6f6358` | Muted glyphs |
+| Ink Light `--color-ink-light` | `#6f665a` | `#aea294` | Secondary text |
+| Ink Lighter `--color-ink-lighter` | `#a59b8d` | `#918274` | Decorative or disabled glyphs, never body copy |
 | Dot Grid `--color-dot` | `#d8d3cb` | `#3b3229` | Dot grid, dividers, chips |
 | Border `--color-border` | `#e5e1d8` | `#463b31` | Hairlines |
 | Warm Brick Red `--color-accent` | `#c9483b` | `#d8705f` | Accent, lifted for contrast on dark paper |
-| Active nav `--planner-sidebar-active-bg` | tinted dot | `#3e3228` | Selected navigation item |
-| Overlay `--planner-overlay-bg` | Cream Paper | `#2f271e` | Dialogs and menus, a half-step above the page |
+| Active nav `--planner-sidebar-active-bg` | tinted dot | `#3b3229` | Selected navigation item |
+| Overlay `--planner-overlay-bg` | Cream Paper | `#292219` | Dialogs and menus use the page's paper shade |
 | Browser chrome `theme-color` | `#ebe6de` | `#292219` | PWA title bar, matches the nav bar (`--color-sidebar-bg`) |
 
 ### Nord Themes
 
 Nord Light and Nord Dark are optional fixed themes for the logged-in app. They are exceptions to the warm-neutral palette and brick-red interaction accent: Nord Light uses Snow Storm surfaces with Polar Night text, while Nord Dark reverses that relationship. Frost blue identifies interactions, and Aurora red identifies errors, destructive actions, and overdue tasks. User-assigned collection and label colors remain unchanged. Automatic continues to select Beige or Dark according to the system appearance.
 
-The No-Pure Rule still holds: dark surfaces are warm browns, never `#000`, and ink is cream, never `#fff`. Collection and label colors are user data and stay unchanged.
+White is an existing fixed theme and the explicit exception for a white page. Nord themes use cool neutrals. All dark themes avoid pure black. Collection and label colors are user data and stay unchanged.
+
+### Numbered Theme Scales
+
+`app/src/styles/palettes.css` owns six color families: neutral, accent, danger, warning, info, and success. Each family has eleven shades named `50`, `100`, `200`, `300`, `400`, `500`, `600`, `700`, `800`, `900`, and `950`, following Tailwind's numbering convention. These are Planner colors, not Tailwind's preset palettes. Lower numbers are lighter; higher numbers are darker. Tokens use `--palette-<family>-<shade>`.
+
+White, Beige, Dark, Nord Light, and Nord Dark each resolve a complete set of scales. Themes share functional colors where appropriate; warm paper and neutral white have their own neutral scales, and the two Nord themes share Snow Storm / Polar Night and Frost scales. Existing page and accent anchors remain in every theme. Secondary text and priority indicators use stronger shades where their previous colors lacked contrast.
+
+`app/src/styles/theme.css` maps numbered shades to semantic roles. Components consume semantic tokens, so a theme can change the selected shade without changing the component. The styleguide reads these same CSS definitions and displays all five palettes together, including hex values and semantic usage. Viewing a palette never changes the user's selected theme.
+
+| Role | White | Beige | Dark | Nord Light | Nord Dark |
+| --- | --- | --- | --- | --- | --- |
+| Page | neutral-50 | neutral-100 | neutral-900 | neutral-50 | neutral-900 |
+| Primary text | neutral-800 | neutral-800 | neutral-100 | neutral-900 | neutral-50 |
+| Secondary text | neutral-600 | neutral-600 | neutral-300 | neutral-600 | neutral-200 |
+| Accent fill / indicator | accent-600 | accent-600 | accent-400 | accent-700 | accent-300 |
+| Accent text | accent-800 | accent-800 | accent-300 | accent-800 | accent-300 |
+| Danger fill / indicator | accent-600 | accent-600 | accent-400 | danger-700 | danger-300 |
+| Danger text | accent-800 | accent-800 | accent-300 | danger-800 | danger-200 |
+
+Choose shades by role and contrast:
+
+- Use `--color-ink` for primary text and `--color-ink-light` for secondary text. `--color-ink-lighter` is reserved for decoration and disabled elements.
+- Keep `--color-accent` as the theme's anchor for fills and indicators. Use `--color-accent-text` for small colored text; the Beige anchor itself does not meet 4.5:1 against paper.
+- Use `--color-danger-text` for destructive or overdue labels, with `--color-danger` for fills and indicators. This keeps Nord's Frost interactions distinct from Aurora errors.
+- Pair filled controls with their foreground: `--color-on-accent`, `--color-on-danger`, `--color-on-warning`, or `--color-on-info`. Do not assume cream is readable on every theme's accent.
+- Use `--color-warning`, `--color-info`, and `--color-success` for state text. Their numbered shades also support quiet tinted state backgrounds. Priority colors retain their separate semantic tokens; the original bright colors remain available in the scales.
+- Use `--planner-page-bg`, `--planner-card-bg`, and `--planner-overlay-bg` for surfaces, and `--color-border` for decorative hairlines. Interactive outlines use `--color-focus`.
+- Do not recolor stored collection, label, or status colors. Numbered palettes describe product UI, while user-selected colors remain user data.
+
+Regression tests verify complete scales, preserved anchors, semantic usage, 4.5:1 text and filled-control contrast, 3:1 priority indicators and focus outlines, and text contrast on tinted state backgrounds. Decorative dots and hairlines are not text or interactive boundaries and do not need those ratios.
 
 ## 3. Typography
 

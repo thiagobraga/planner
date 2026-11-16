@@ -154,7 +154,7 @@
   border: 1px solid var(--color-ink-lighter);
   border-radius: 2px;
   background: transparent;
-  color: var(--color-cream);
+  color: var(--color-on-accent);
 }
 
 .board-card-check.is-complete {
@@ -297,7 +297,7 @@
 }
 
 .daily-week-board .daily-board-column-title span {
-  color: var(--color-accent-light);
+  color: var(--color-accent-text);
 }
 
 .daily-week-board [data-column-id='migrate'] .board-column-header h2 {
@@ -397,7 +397,7 @@
 .daily-board-editor-save {
   border: 1px solid var(--color-accent);
   background: var(--color-accent);
-  color: var(--color-cream);
+  color: var(--color-on-accent);
 }
 
 .daily-board-editor-cancel {
@@ -411,7 +411,7 @@
 }
 
 .daily-board-editor [role='alert'] {
-  color: var(--color-accent);
+  color: var(--color-danger-text);
 }
 
 .status-task-groups {
@@ -475,7 +475,7 @@
 .board-error {
   min-height: 24px;
   margin-bottom: 12px;
-  color: var(--color-accent);
+  color: var(--color-danger-text);
   font-size: 12px;
   line-height: 24px;
 }

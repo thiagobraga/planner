@@ -709,7 +709,7 @@ export function DailyPage({ layout }: { layout: ViewLayout }) {
           <span className="reorganize-confirm inline-flex items-center gap-1 text-[13px]">
             {t('reorganize.confirm')}
             <button
-              className="text-accent underline text-decoration-color-accent cursor-pointer hover:opacity-80"
+              className="text-accent-text underline decoration-accent-text cursor-pointer hover:opacity-80"
               onClick={() => {
                 reorg.confirmReorganize().catch((err) => console.error('Reorganize failed', err));
               }}
@@ -718,7 +718,7 @@ export function DailyPage({ layout }: { layout: ViewLayout }) {
             </button>
             <span>·</span>
             <button
-              className="text-accent underline text-decoration-color-accent cursor-pointer hover:opacity-80"
+              className="text-accent-text underline decoration-accent-text cursor-pointer hover:opacity-80"
               onClick={reorg.cancelReorganize}
             >
               {t('common.no')}
@@ -823,7 +823,7 @@ export function DailyPage({ layout }: { layout: ViewLayout }) {
         </>
       )}
 
-      {indentError && <div role="alert" className="text-accent text-sm mt-6">{t('task.moveFailed')}</div>}
+      {indentError && <div role="alert" className="text-danger-text text-sm mt-6">{t('task.moveFailed')}</div>}
       {contextMenu && (
         <ContextMenu
           caret

@@ -18,7 +18,7 @@ export function Input({
   className = '',
   ...rest
 }: InputProps) {
-  const borderClass = error ? 'border-accent' : 'border-border focus-within:border-ink';
+  const borderClass = error ? 'border-danger' : 'border-border focus-within:border-ink';
   const message = error ? errorText : helpText;
 
   return (
@@ -42,7 +42,7 @@ export function Input({
         )}
       </div>
       {message && (
-        <p className={`ui-input-message mt-1 text-xs leading-5 ${error ? 'text-accent' : 'text-ink-light'}`}>
+        <p className={`ui-input-message mt-1 text-xs leading-5 ${error ? 'text-danger-text' : 'text-ink-light'}`}>
           {message}
         </p>
       )}

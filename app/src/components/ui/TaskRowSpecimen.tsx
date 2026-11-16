@@ -56,7 +56,7 @@ export function TaskRowSpecimen({
       <Flag
         size={14}
         strokeWidth={1.5}
-        className={`shrink-0 ${flagged ? 'text-accent fill-accent' : 'text-ink-light opacity-40'}`}
+        className={`shrink-0 ${flagged ? 'text-danger-text fill-danger-text' : 'text-ink-light opacity-40'}`}
       />
       <MoreHorizontal size={16} strokeWidth={1.5} className="text-ink-light shrink-0" />
     </div>

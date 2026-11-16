@@ -35,6 +35,7 @@ Create Planner-specific color scales using the [Tailwind 50-950 convention](http
 - `app/src/pages/__tests__/StyleguidePage.test.tsx`: styleguide regression coverage.
 - `app/e2e/themePalettes.spec.ts`: browser coverage and responsive theme checks.
 - `DESIGN.md`: palette structure and shade selection guidance.
+- `.docker/site/Dockerfile`: include the shared palette stylesheet in site image stages.
 - `.specs/2026-11-16-theme-color-scales/plan.md`: approved scope, technical checklist, and verification status.
 
 ## Technical Checklist
@@ -47,19 +48,32 @@ Create Planner-specific color scales using the [Tailwind 50-950 convention](http
 - [x] Start isolated stack and trusted browser preview. Dependencies use dedicated /tmp bind mounts because /p is full.
 
 ### 2. Palette foundations
-- [ ] Inventory `app/src/styles/theme.css` anchors and semantic roles.
-- [ ] Write failing regression tests for five themes, 11 shades, semantic mappings, and contrast.
-- [ ] Define neutral, accent, and functional scales with dedicated shared types.
-- [ ] Map existing semantic tokens to palette shades, preserving theme identities.
+- [x] Inventory `app/src/styles/theme.css` anchors and semantic roles.
+- [x] Write failing regression tests for five themes, 11 shades, semantic mappings, and contrast.
+- [x] Define neutral, accent, and functional scales with dedicated shared types.
+- [x] Map existing semantic tokens to palette shades, preserving theme identities.
 
 ### 3. Apply and document
-- [ ] Replace component-specific fixed UI colors with semantic palette tokens; preserve user-assigned colors.
-- [ ] Add failing styleguide tests, then render all five palettes with labels, values, and semantic usage without changing saved preferences.
-- [ ] Update `DESIGN.md` with mappings and shade selection guidance.
+- [x] Replace component-specific fixed UI colors with semantic palette tokens; preserve user-assigned colors.
+- [x] Add failing styleguide tests, then render all five palettes with labels, values, and semantic usage without changing saved preferences.
+- [x] Update `DESIGN.md` with mappings and shade selection guidance.
 
 ### 4. Verify and deliver
-- [ ] Add and run targeted Playwright coverage, including desktop and 390px for all themes.
-- [ ] Inspect affected views, text, controls, focus, and state contrast; save screenshots in `app/dist/screenshots/`.
-- [ ] Run relevant unit tests, lint, typecheck, and build.
+- [x] Add and run targeted Playwright coverage, including desktop and 390px for all themes.
+- [x] Inspect affected views, text, controls, focus, and state contrast; save screenshots in `app/dist/screenshots/`.
+- [x] Run relevant unit tests, lint, typecheck, and build.
 - [ ] Review diff, check touched file sizes, commit and push scoped changes.
 - [ ] Update checklist with evidence and mark PR ready for review; keep stack running.
+
+## Verification Evidence
+
+- Unit suite: 177 files, 1,543 tests passed. Existing Daily/Collections async act warnings remain.
+- Browser verification: palette matrix covers all five themes at 1440px and 390px, saved-theme preservation, runtime text/control/focus contrast, keyboard focus, quick-add controls, reload persistence, and console errors.
+- Existing Dark/Nord browser suites exercise portal colors, synchronization, automatic mode, failed-save recovery, and logout. All 13 relevant cases passed across the final matrix run and the updated Dark overlay rerun.
+- Screenshots: `app/dist/screenshots/palettes-<theme>-<width>.png` and `palette-controls-<theme>-<width>.png`.
+- Intentional shade consolidation: Dark overlays now use neutral-900 (`#292219`), documented in `DESIGN.md`; page, accent, and dot anchors stay preserved. Secondary/state text uses stronger shades for readable contrast.
+- No backend/schema changes. Browser tests use real API sessions and preferences against isolated PostgreSQL/Redis. Styleguide browser tests require dedicated test-admin environment variables and were executed locally.
+- Mechanical design audit: no findings in new palette styles/components. Existing alternative selectable fonts remain unchanged.
+- Local setup: ignored Compose override pins fresh PostgreSQL 16 and mounts worktree-only dependencies from `/tmp/planner-theme-color-scales/` because `/p` ran out of disk space. Preview: `https://theme-color-scales.planner.local`.
+
+- Final app lint passed with 40 existing warnings; TypeScript and production build passed. The shared marketing Docker context now includes the imported palette stylesheet; site image verification is in progress.

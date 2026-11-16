@@ -61,7 +61,7 @@ export function SectionDeleteModal({
         </p>
         <div className="flex flex-col gap-2">
           {taskCount > 0 && (
-            <Button variant="secondary" onClick={onDeleteTasks} className="w-full text-accent">
+            <Button variant="destructive" onClick={onDeleteTasks} className="w-full">
               {t('page.deleteSectionAndTasks')}
             </Button>
           )}

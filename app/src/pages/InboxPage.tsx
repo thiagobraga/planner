@@ -699,7 +699,7 @@ export function InboxPage() {
         )}
       </div>
 
-      {indentError && <div role="alert" className="text-accent text-sm mt-6">{t('task.moveFailed')}</div>}
+      {indentError && <div role="alert" className="text-danger-text text-sm mt-6">{t('task.moveFailed')}</div>}
       {contextMenu && (
         <ContextMenu
           caret

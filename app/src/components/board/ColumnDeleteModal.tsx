@@ -85,7 +85,7 @@ export function ColumnDeleteModal({
         {errorMessage && (
           <div
             role="alert"
-            className="mb-4 rounded-xs border border-accent/30 bg-accent/10 px-3 py-2 text-[13px] leading-6 text-accent"
+            className="mb-4 rounded-xs border border-danger/30 bg-danger/10 px-3 py-2 text-[13px] leading-6 text-danger-text"
           >
             {errorMessage}
           </div>

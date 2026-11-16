@@ -31,7 +31,7 @@ const variants: Record<ButtonVariant, string> = {
   tertiary:
     'bg-transparent text-ink border border-transparent disabled:opacity-40',
   destructive:
-    'bg-transparent text-accent border border-accent hover:bg-accent/10 disabled:opacity-40',
+    'bg-transparent text-danger-text border border-danger hover:bg-danger/10 disabled:opacity-40',
 };
 
 export function Button({

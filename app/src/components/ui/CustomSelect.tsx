@@ -189,7 +189,7 @@ export function CustomSelect({
     text-sm text-left bg-[var(--planner-control-bg)] border rounded-[8px]
     transition-colors duration-[var(--motion-fast)]
     ${disabled ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}
-    ${error ? 'border-accent text-accent' : 'border-border focus:border-ink'}
+    ${error ? 'border-danger text-danger-text' : 'border-border focus:border-ink'}
     outline-none
     ${className}
   `;
@@ -220,11 +220,11 @@ export function CustomSelect({
         >
           {selectedOption ? selectedOption.label : placeholder}
         </span>
-        <ChevronDown size={16} className={`ui-custom-select-chevron ${error ? 'text-accent' : 'text-ink-light'}`} />
+        <ChevronDown size={16} className={`ui-custom-select-chevron ${error ? 'text-danger-text' : 'text-ink-light'}`} />
       </div>
 
       {error && errorText && (
-        <span className="text-[13px] text-accent mt-0.5">{errorText}</span>
+        <span className="text-[13px] text-danger-text mt-0.5">{errorText}</span>
       )}
 
       {isOpen && (alwaysOpen ? (

@@ -10,7 +10,7 @@ export interface PriorityDotProps {
 
 // Priority bullet colors - mirrors TaskItem's priorityClasses mapping.
 const DOT_COLOR: Record<Priority, string> = {
-  1: 'bg-accent',
+  1: 'bg-danger',
   2: 'bg-priority-2',
   3: 'bg-priority-3',
   4: 'bg-ink',

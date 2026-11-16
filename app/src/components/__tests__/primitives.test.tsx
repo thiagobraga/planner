@@ -16,7 +16,7 @@ describe('Checkbox', () => {
   });
 
   it('renders checked state', () => {
-    const { container } = render(<Checkbox label="Checked" checked />);
+    const { container } = render(<Checkbox label="Checked" checked readOnly />);
     const input = container.querySelector('.ui-checkbox-input') as HTMLInputElement;
     expect(input.checked).toBe(true);
   });
@@ -185,10 +185,10 @@ describe('CustomSelect', () => {
 });
 
 describe('PriorityDot', () => {
-  it('renders P1 with accent color', () => {
+  it('renders P1 with danger color', () => {
     const { container } = render(<PriorityDot priority={1} />);
     const dot = container.querySelector('.ui-priority-dot-circle');
-    expect(dot).toHaveClass('bg-accent');
+    expect(dot).toHaveClass('bg-danger');
   });
 
   it('renders P4 with ink color', () => {
