@@ -715,6 +715,11 @@ textarea:focus-visible {
   .habits-page {
     --page-header-toolbar-space: 120px;
   }
+  /* Reach into the main column's 12px right padding so the name column gets one
+     more 24px cell next to the full week. */
+  .habit-timeline {
+    margin-right: -12px;
+  }
   .page-header-copy {
     width: 100%;
   }

@@ -26,6 +26,7 @@ test('habits show the whole week with week navigation in the page toolbar', asyn
       expect(box).toBeLessThanOrEqual(width);
     }
     await expect(page.locator('.habit-timeline .opacity-40')).toHaveCount(0);
+    expect(await page.locator('main').evaluate((main) => main.scrollWidth <= main.clientWidth)).toBe(true);
     await page.screenshot({ path: `dist/screenshots/habits-toolbar-${name}.png` });
 
     await toolbar.getByLabel('Next').click();
