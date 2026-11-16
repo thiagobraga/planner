@@ -99,6 +99,7 @@ function renderPage() {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  window.localStorage.removeItem('planner.habits.view.v1');
   mockFetchHabits.mockResolvedValue({ habits: [], groups: [] });
   mockFetchHabitGroups.mockResolvedValue([]);
   mockApiUpdateHabitGroup.mockReset();
@@ -143,10 +144,52 @@ describe('HabitsPage', () => {
     expect(screen.queryByTestId('habit-calendar')).not.toBeInTheDocument();
   });
 
-  it('keeps Today out of the header, it lives in the week and month selectors', () => {
+  it('puts week navigation in the header toolbar for the timeline', async () => {
     renderPage();
 
+    const header = screen.getByText('Habits').closest('header')!;
+    expect(header).toContainElement(screen.getByRole('button', { name: 'Today' }));
+    expect(header).toContainElement(screen.getByRole('button', { name: 'Previous' }));
+    expect(header).toContainElement(screen.getByRole('button', { name: 'Next' }));
+    await screen.findByTestId('habit-timeline');
+  });
+
+  it('drops week navigation in the calendar, which keeps its month strip', async () => {
+    renderPage();
+
+    fireEvent.click(screen.getByLabelText('Calendar view'));
+
+    expect(await screen.findByTestId('habit-calendar')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Today' })).not.toBeInTheDocument();
+  });
+
+  it('moves the toolbar into the bar above the navbar on phones', async () => {
+    const matchMedia = window.matchMedia;
+    window.matchMedia = ((query: string) => ({
+      matches: true,
+      media: query,
+      onchange: null,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      addListener: () => {},
+      removeListener: () => {},
+      dispatchEvent: () => false,
+    })) as typeof window.matchMedia;
+    const slot = document.createElement('div');
+    slot.id = 'page-toolbar-mobile-slot';
+    document.body.appendChild(slot);
+
+    try {
+      renderPage();
+
+      const header = screen.getByText('Habits').closest('header')!;
+      expect(slot).toContainElement(await screen.findByLabelText('Timeline view'));
+      expect(header).not.toContainElement(screen.getByLabelText('Timeline view'));
+      expect(slot).toContainElement(screen.getByRole('button', { name: 'Previous' }));
+    } finally {
+      slot.remove();
+      window.matchMedia = matchMedia;
+    }
   });
 
   it('calls fetchHabits on mount', () => {
