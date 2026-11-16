@@ -1,4 +1,1 @@
-import { englishCatalog } from './locales/en';
-
-export type TranslationKey = keyof typeof englishCatalog;
-export type TranslationCatalog = Record<TranslationKey, string>;
+export type { I18nContextValue, Locale, TranslationCatalog, TranslationKey } from '../types/i18n';

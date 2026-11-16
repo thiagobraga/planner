@@ -1,87 +1,67 @@
-import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import { I18nextProvider, useTranslation } from 'react-i18next';
+import type { I18nContextValue, Locale, TranslationKey } from '../types/i18n';
 import {
-  englishCatalog,
-  portugueseBrazilCatalog,
-  type TranslationCatalog,
-  type TranslationKey,
-} from './catalogs';
+  createI18nInstance,
+  detectInitialLocale,
+  LOCALE_STORAGE_KEY,
+  resolveLocale,
+  SUPPORTED_LOCALES,
+  translate,
+} from './i18n';
 
-export const SUPPORTED_LOCALES = ['en', 'pt-BR'] as const;
-export type Locale = (typeof SUPPORTED_LOCALES)[number];
-
-const catalogs: Record<Locale, TranslationCatalog> = {
-  en: englishCatalog,
-  'pt-BR': portugueseBrazilCatalog,
-};
-const LOCALE_STORAGE_KEY = 'planner_locale';
-
-export function resolveLocale(locale: string | null | undefined): Locale {
-  return locale?.toLowerCase().startsWith('pt') ? 'pt-BR' : 'en';
-}
-
-export function translate(
-  locale: Locale,
-  key: TranslationKey,
-  values: Record<string, string | number> = {},
-): string {
-  const template = catalogs[locale][key] ?? englishCatalog[key];
-  return Object.entries(values).reduce(
-    (text, [name, value]) => text.replaceAll(`{{${name}}}`, String(value)),
-    template,
-  );
-}
-
-interface I18nContextValue {
-  locale: Locale;
-  setLocale: (locale: string | null | undefined) => void;
-  t: (key: TranslationKey, values?: Record<string, string | number>) => string;
-  formatDate: (date: Date | number, options?: Intl.DateTimeFormatOptions) => string;
-}
-
-const defaultValue: I18nContextValue = {
-  locale: 'en',
-  setLocale: () => {},
-  t: (key, values) => translate('en', key, values),
-  formatDate: (date, options) => new Intl.DateTimeFormat('en', options).format(date),
-};
-
-const I18nContext = createContext<I18nContextValue>(defaultValue);
-
-function browserLocale(): Locale {
-  if (typeof window !== 'undefined') {
-    const savedLocale = window.localStorage.getItem(LOCALE_STORAGE_KEY);
-    if (savedLocale && SUPPORTED_LOCALES.includes(savedLocale as Locale)) {
-      return savedLocale as Locale;
-    }
-  }
-  if (typeof navigator === 'undefined') return 'en';
-  return resolveLocale(navigator.languages?.[0] ?? navigator.language);
-}
+export { resolveLocale, SUPPORTED_LOCALES, translate };
+export type { Locale };
 
 export function I18nProvider({ children }: { children: ReactNode }) {
-  const [locale, setResolvedLocale] = useState<Locale>(browserLocale);
-  const setLocale = useCallback((nextLocale: string | null | undefined) => {
-    const resolvedLocale = resolveLocale(nextLocale);
-    if (typeof window !== 'undefined') {
-      window.localStorage.setItem(LOCALE_STORAGE_KEY, resolvedLocale);
-    }
-    setResolvedLocale(resolvedLocale);
-  }, []);
+  const [instance] = useState(() => createI18nInstance(detectInitialLocale()));
 
   useEffect(() => {
-    document.documentElement.lang = locale;
-  }, [locale]);
+    const syncDocumentLang = (lng: string) => {
+      document.documentElement.lang = resolveLocale(lng);
+    };
+    syncDocumentLang(instance.resolvedLanguage ?? instance.language);
+    instance.on('languageChanged', syncDocumentLang);
+    return () => {
+      instance.off('languageChanged', syncDocumentLang);
+    };
+  }, [instance]);
 
-  const value: I18nContextValue = {
-    locale,
-    setLocale,
-    t: (key, values) => translate(locale, key, values),
-    formatDate: (date, options) => new Intl.DateTimeFormat(locale, options).format(date),
-  };
-
-  return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
+  return <I18nextProvider i18n={instance}>{children}</I18nextProvider>;
 }
 
-export function useI18n() {
-  return useContext(I18nContext);
+export function useI18n(): I18nContextValue {
+  const { t: i18nT, i18n: activeI18n } = useTranslation();
+  const locale = resolveLocale(activeI18n.resolvedLanguage ?? activeI18n.language);
+
+  const setLocale = useCallback(
+    (nextLocale: string | null | undefined) => {
+      const resolvedLocale = resolveLocale(nextLocale);
+      if (typeof window !== 'undefined') {
+        window.localStorage.setItem(LOCALE_STORAGE_KEY, resolvedLocale);
+      }
+      document.documentElement.lang = resolvedLocale;
+      void activeI18n.changeLanguage(resolvedLocale);
+    },
+    [activeI18n],
+  );
+
+  const t = useCallback(
+    (key: TranslationKey, values?: Record<string, string | number>) =>
+      values ? i18nT(key, values) : i18nT(key),
+    [i18nT],
+  );
+
+  const formatDate = useCallback(
+    (date: Date | number, options?: Intl.DateTimeFormatOptions) =>
+      new Intl.DateTimeFormat(locale, options).format(date),
+    [locale],
+  );
+
+  return {
+    locale,
+    setLocale,
+    t,
+    formatDate,
+  };
 }

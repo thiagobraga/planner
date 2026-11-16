@@ -1,9 +1,4 @@
-export type TaskStatus = 'open' | 'in_progress' | 'done' | 'blocked';
-
-export interface StatusPillProps {
-  status: TaskStatus;
-  className?: string;
-}
+import type { StatusPillProps, TaskStatus } from '../../types/ui';
 
 // Tinted pills, one per status. Distinct from priority bullets and label chips.
 const STATUS: Record<TaskStatus, { label: string; className: string }> = {

@@ -1,16 +1,7 @@
 import { useEffect } from 'react';
 import { Button } from './ui/Button';
 import { useI18n } from '../i18n/I18nContext';
-
-interface ConfirmModalProps {
-  isOpen: boolean;
-  title: string;
-  message: string;
-  confirmLabel?: string;
-  cancelLabel?: string;
-  onConfirm: () => void;
-  onCancel: () => void;
-}
+import type { ConfirmModalProps } from '../types/widgets';
 
 export function ConfirmModal({
   isOpen,

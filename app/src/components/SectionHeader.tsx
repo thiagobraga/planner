@@ -5,18 +5,7 @@ import { HabitDragHandle } from './habits/HabitDragHandle';
 import { InlineNameInput } from './ui/InlineNameInput';
 import { NO_DRAG_ATTR } from './dnd/sensors';
 import { useI18n } from '../i18n/I18nContext';
-import type { Section } from '../stores/taskStore';
-
-interface SectionHeaderProps {
-  section: Section;
-  collectionId: string;
-  isEditing: boolean;
-  onEdit: () => void;
-  onCommitName: (name: string) => void;
-  onCancelEdit: () => void;
-  onDelete: () => void;
-  onRightClick?: (position: { x: number; y: number }) => void;
-}
+import type { SectionHeaderProps } from '../types/collections';
 
 export function SectionHeader({
   section,

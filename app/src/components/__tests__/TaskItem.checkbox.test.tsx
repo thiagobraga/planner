@@ -1,9 +1,10 @@
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import { SortableContext } from '@dnd-kit/sortable';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { TaskItem, type Task } from '../TaskItem';
+import { TaskItem } from '../TaskItem';
 import { PlannerDragProvider } from '../../contexts/PlannerDragContext';
 import { useCheckboxStore } from '../../stores/checkboxStore';
+import type { Task } from '../../types/task';
 
 const task: Task = { id: 't1', title: 'Buy milk', priority: 4, isCompleted: false, orderValue: 0, type: 'task' };
 

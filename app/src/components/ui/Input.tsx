@@ -1,12 +1,4 @@
-import type { InputHTMLAttributes, ReactNode } from 'react';
-
-export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
-  icon?: ReactNode;
-  trailing?: ReactNode;
-  error?: boolean;
-  helpText?: string;
-  errorText?: string;
-}
+import type { InputProps } from '../../types/ui';
 
 // 40px tall, 8px radius, 1px border, theme surface, leading icon 8px before value.
 export function Input({

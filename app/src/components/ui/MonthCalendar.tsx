@@ -1,19 +1,9 @@
 import { useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { fmtISO, startOfDay, weekdayColumnIndex, weekdayInitials, type WeekStart } from '../../utils/date';
+import { fmtISO, startOfDay, weekdayColumnIndex, weekdayInitials } from '../../utils/date';
 import { parseISODate } from '../../utils/dateQuickOptions';
 import { useI18n } from '../../i18n/I18nContext';
-
-export interface MonthCalendarProps {
-  /** Selected day as YYYY-MM-DD. */
-  value: string | null;
-  onSelect: (iso: string) => void;
-  weekStart: WeekStart;
-  /** Days after this YYYY-MM-DD are disabled. */
-  maxDate?: string;
-  /** `compact` is the 24px Styleguide grid; `comfortable` the date picker's. */
-  density?: 'compact' | 'comfortable';
-}
+import type { MonthCalendarProps } from '../../types/ui';
 
 /** One month at a time: today ringed, the selected day filled with ink. */
 export function MonthCalendar({ value, onSelect, weekStart, maxDate, density = 'comfortable' }: MonthCalendarProps) {

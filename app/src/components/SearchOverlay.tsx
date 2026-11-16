@@ -1,13 +1,11 @@
 import { useState, useRef, useLayoutEffect, useCallback, useMemo } from 'react';
-import type { Task } from './TaskItem';
 import { useI18n } from '../i18n/I18nContext';
+import type { Task } from '../types/task';
+import type { SearchOverlayProps, SearchResult } from '../types/widgets';
 
-interface SearchResult {
-  type: 'task' | 'collection' | 'label';
-  id: string;
-  title: string;
-  subtitle?: string;
-}
+const EMPTY_TASKS: Task[] = [];
+const EMPTY_COLLECTIONS: Array<{ id: string; name: string }> = [];
+const EMPTY_LABELS: Array<{ id: string; name: string }> = [];
 
 function groupResults(results: SearchResult[]) {
   const tasks = results.filter((r) => r.type === 'task');
@@ -15,19 +13,6 @@ function groupResults(results: SearchResult[]) {
   const labels = results.filter((r) => r.type === 'label');
   return { tasks, collections, labels };
 }
-
-interface SearchOverlayProps {
-  isOpen: boolean;
-  onClose: () => void;
-  tasks?: Task[];
-  collections?: Array<{ id: string; name: string }>;
-  labels?: Array<{ id: string; name: string }>;
-  onSelectTask?: (id: string) => void;
-}
-
-const EMPTY_TASKS: Task[] = [];
-const EMPTY_COLLECTIONS: Array<{ id: string; name: string }> = [];
-const EMPTY_LABELS: Array<{ id: string; name: string }> = [];
 
 export function SearchOverlay({
   isOpen,

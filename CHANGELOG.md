@@ -1,5 +1,76 @@
 # Changelog
 
+## [0.24.2](https://github.com/thiagobraga/planner/compare/v0.24.1...v0.24.2) (2026-11-16)
+
+
+### Fixed
+
+* **deps:** override minimatch to ^11.0.1 for dependabot alerts ([d3d9a5b](https://github.com/thiagobraga/planner/commit/d3d9a5b2791d55f6bfc46510bc58afeb533a183a))
+
+## [0.24.1](https://github.com/thiagobraga/planner/compare/v0.24.0...v0.24.1) (2026-11-16)
+
+
+### Fixed
+
+* **tasks:** rename task lookup helpers to avoid CodeQL false positive ([647e183](https://github.com/thiagobraga/planner/commit/647e18368b3e3bb543030172fcac775e79d726fc))
+
+
+### Changed
+
+* clarify core module boundaries ([990b231](https://github.com/thiagobraga/planner/commit/990b2311647500c4c5c9e466bba0e5dba811f9d4))
+* **collections:** extract breadcrumb, section, and task hooks ([3f5dfa6](https://github.com/thiagobraga/planner/commit/3f5dfa6d9512acd1b3f81a3c5f88b3b674d8f470))
+* **daily:** extract sync, task actions, and overlay modules ([2c2e689](https://github.com/thiagobraga/planner/commit/2c2e689e715a0af85897799f51a863c86b969b76))
+* **daily:** split useDailyTaskActions into create hook and mutation helpers ([8a2df5d](https://github.com/thiagobraga/planner/commit/8a2df5d7ebfc11f0455b30bccbe5d8ac1174b98c))
+* extract collectionTree utils, SortableCollectionRow, and habit service types ([4be0c08](https://github.com/thiagobraga/planner/commit/4be0c08e02227ede2c6a37e088bf27ae0e761fac))
+* **preferences:** use shared usePreferences hook across remaining consumers ([4a25a66](https://github.com/thiagobraga/planner/commit/4a25a665943dff1d581653355614bd639ea9a2b7))
+* **tasks:** split move.ts into moveDestination, moveSubtree, and reorganize ([f459383](https://github.com/thiagobraga/planner/commit/f4593838a2a84cc1756f8a10c9234c12082d2f4c))
+* **tasks:** split taskService into focused domain modules ([78a85b7](https://github.com/thiagobraga/planner/commit/78a85b7e33539e73bfb6d142a38faa4570bbffa6))
+
+## [0.24.0](https://github.com/thiagobraga/planner/compare/v0.23.1...v0.24.0) (2026-11-16)
+
+
+### Added
+
+* **i18n:** migrate translation runtime to i18next ([ec37f5f](https://github.com/thiagobraga/planner/commit/ec37f5f413991f6ac58b57b5a2cc2c2850e7d584))
+
+
+### Fixed
+
+* **daily:** stop old daily links from losing the saved view ([0b16e00](https://github.com/thiagobraga/planner/commit/0b16e009624b1615697417a2e0e26c337ce1f4b9))
+
+## [0.23.1](https://github.com/thiagobraga/planner/compare/v0.23.0...v0.23.1) (2026-11-16)
+
+
+### Fixed
+
+* **nav:** stop focusing topbar header on style menu close ([5d81834](https://github.com/thiagobraga/planner/commit/5d818345dd7082bf5e6b1606d24b0fc13c39f7dd))
+
+## [0.23.0](https://github.com/thiagobraga/planner/compare/v0.22.0...v0.23.0) (2026-11-16)
+
+
+### Added
+
+* **habits:** full week timeline with navigation in the page toolbar ([7b32f6e](https://github.com/thiagobraga/planner/commit/7b32f6e2f8a7150aa60da984aed38269eb938f7f))
+* **habits:** move week navigation and view switch into the page toolbar ([f5eb906](https://github.com/thiagobraga/planner/commit/f5eb906b9d5f63f2e48133fca49ef728ee6499d4))
+* **habits:** show the whole week in the timeline without day paging ([3c159b2](https://github.com/thiagobraga/planner/commit/3c159b202c98e615a84d95f697f8fdc33ce3fd83))
+
+
+### Changed
+
+* **app:** extract collection and nav types to src/types/collections.ts ([8efa72d](https://github.com/thiagobraga/planner/commit/8efa72d024ea16cbd62f887924f715286e19be4a))
+* **app:** extract habit domain types to src/types/habits.ts ([e5c77de](https://github.com/thiagobraga/planner/commit/e5c77dee7ad435b8096168f9312db0d88bf62c12))
+* **app:** extract task domain types to src/types/task.ts ([e57099e](https://github.com/thiagobraga/planner/commit/e57099e8090bd09a032c97ec9bfee00edf2c81da))
+* **app:** extract UI, widget, and board prop types ([957cd78](https://github.com/thiagobraga/planner/commit/957cd784417dd6335a7c042301dd6afe5bab4504))
+* extract inline types into dedicated type files ([14bf042](https://github.com/thiagobraga/planner/commit/14bf0425c7958c8dfdef0b8f75d2dabdde14b01f))
+* **habits:** split the timeline into focused modules ([a850b4b](https://github.com/thiagobraga/planner/commit/a850b4b142391fc8386df9958d77dbabc33c3813))
+
+
+### Style
+
+* **app:** drop stray blank lines left by type extraction ([5699509](https://github.com/thiagobraga/planner/commit/5699509649528f887f8d661297520c6de9e147d5))
+* **app:** tidy merged habit imports ([fbadf6c](https://github.com/thiagobraga/planner/commit/fbadf6c7a5bea90ac0c71dbd7a9b7f29dd020a66))
+* **habits:** give the name column one more cell on phones ([a1303ff](https://github.com/thiagobraga/planner/commit/a1303ff4805153d71abac54b30825302b3140690))
+
 ## [0.22.0](https://github.com/thiagobraga/planner/compare/v0.21.0...v0.22.0) (2026-11-14)
 
 

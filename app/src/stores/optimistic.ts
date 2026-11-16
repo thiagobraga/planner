@@ -1,12 +1,7 @@
 // Pure helpers for optimistic mutations against an array of entities.
 // Each operation captures a snapshot for revert and a "commit" step on success.
 
-export interface OptimisticOp<T extends { id: string }> {
-  // Apply the optimistic change to the working set.
-  apply: (state: T[]) => T[];
-  // Snapshot used by revert if the API call fails.
-  snapshot: T[];
-}
+import type { OptimisticOp, RunOptimisticOptions } from '../types/stores';
 
 export function applyOptimistic<T extends { id: string }>(
   state: T[],
@@ -39,20 +34,6 @@ export function patchById<T extends { id: string }>(state: T[], id: string, patc
 }
 
 // Runner: apply optimistic, await the API call, revert on failure within a budget.
-export interface RunOptimisticOptions<T extends { id: string }, R> {
-  state: T[];
-  apply: (state: T[]) => T[];
-  call: () => Promise<R>;
-  // Called with the next state after applying optimistically.
-  onApply?: (next: T[]) => void;
-  // Called with the snapshot when revert is triggered (failure path).
-  onRevert?: (snapshot: T[]) => void;
-  // Called with the API result on success.
-  onSuccess?: (result: R) => void;
-  // Max ms to wait for the API call before treating it as failed (default 2000).
-  revertTimeoutMs?: number;
-}
-
 export async function runOptimistic<T extends { id: string }, R>(opts: RunOptimisticOptions<T, R>): Promise<R> {
   const { state, apply, call, onApply, onRevert, onSuccess, revertTimeoutMs = 2000 } = opts;
   const { next, op } = applyOptimistic(state, apply);

@@ -1,14 +1,4 @@
-import type { ButtonHTMLAttributes, ReactNode } from 'react';
-
-export type ButtonVariant = 'primary' | 'secondary' | 'tertiary' | 'destructive';
-export type ButtonSize = 'lg' | 'md' | 'sm' | 'xs';
-
-export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: ButtonVariant;
-  size?: ButtonSize;
-  leftIcon?: ReactNode;
-  children: ReactNode;
-}
+import type { ButtonProps, ButtonSize, ButtonVariant } from '../../types/ui';
 
 // Base styles shared by all sizes — height, padding, and radius are size-specific below.
 const base =

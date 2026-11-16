@@ -2,26 +2,7 @@ import React, { useRef, useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronDown } from 'lucide-react';
 import { useFloatingPosition } from '../../hooks/useFloatingPosition';
-
-export interface SelectOption {
-  value: string;
-  label: string;
-  disabled?: boolean;
-}
-
-export interface CustomSelectProps {
-  label?: string;
-  placeholder?: string;
-  options: SelectOption[];
-  value?: string;
-  onChange?: (value: string) => void;
-  disabled?: boolean;
-  error?: boolean;
-  errorText?: string;
-  className?: string;
-  id?: string;
-  alwaysOpen?: boolean;
-}
+import type { CustomSelectProps, SelectOption } from '../../types/ui';
 
 export function CustomSelect({
   label,

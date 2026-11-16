@@ -1,17 +1,8 @@
 import { ChevronRight, Calendar, Flag, MoreHorizontal } from 'lucide-react';
 import { Checkbox } from './Checkbox';
-import { PriorityDot, type Priority } from './PriorityDot';
+import { PriorityDot } from './PriorityDot';
 import { Chip } from './Chip';
-
-export interface TaskRowSpecimenData {
-  title: string;
-  priority?: Priority;
-  tags?: string[];
-  date?: string;
-  completed?: boolean;
-  selected?: boolean;
-  flagged?: boolean;
-}
+import type { TaskRowSpecimenData } from '../../types/ui';
 
 // Presentational task row matching the brand-guide "LINHAS DE TAREFA" spec.
 // Kept separate from the live bullet-based TaskItem.

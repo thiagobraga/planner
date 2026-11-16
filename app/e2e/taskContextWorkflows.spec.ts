@@ -3,6 +3,7 @@ import { mkdir } from 'node:fs/promises';
 import type { Page } from '@playwright/test';
 import type { ApiStatus, ApiTask } from '../src/api/client';
 import { expect, test, STORAGE_STATE_PATH } from './fixtures/api';
+import { expectSavedDailyView } from './fixtures/view';
 
 test.use({ storageState: STORAGE_STATE_PATH });
 
@@ -151,6 +152,7 @@ test('task actions are available from Daily list, Kanban card, calendar, and Inb
 
     await page.goto('/daily/cards');
     await expect(page).toHaveURL(/\/daily\/columns$/);
+    await expectSavedDailyView(api, { style: 'cards' });
     const card = page.locator(`[data-card-id="${task.id}"]`);
     await expect(card).toBeVisible();
     await card.focus();
@@ -160,6 +162,7 @@ test('task actions are available from Daily list, Kanban card, calendar, and Inb
 
     await page.goto('/daily/monthly');
     await expect(page).toHaveURL(/\/daily\/list$/);
+    await expectSavedDailyView(api, { style: 'cards', range: 'month' });
     const entry = page.locator('.monthly-ledger').filter({ hasText: task.title }).first();
     await expect(entry).toBeVisible();
     await entry.getByRole('button', { name: new RegExp(`More options.*${task.title}`) }).click();

@@ -15,6 +15,8 @@ import {
   apiDeleteSection,
   apiUpdatePreferences,
   apiUpdateCollection,
+  apiCreateCollection,
+  apiDeleteCollection,
   fetchSavedColors,
   apiAddSavedColor,
 } from '../../api/client';
@@ -29,16 +31,33 @@ const mockApiDeleteTask = vi.mocked(apiDeleteTask);
 const mockApiDeleteSection = vi.mocked(apiDeleteSection);
 const mockApiUpdatePreferences = vi.mocked(apiUpdatePreferences);
 const mockApiUpdateCollection = vi.mocked(apiUpdateCollection);
+const mockApiCreateCollection = vi.mocked(apiCreateCollection);
+const mockApiDeleteCollection = vi.mocked(apiDeleteCollection);
 const mockFetchSavedColors = vi.mocked(fetchSavedColors);
 const mockApiAddSavedColor = vi.mocked(apiAddSavedColor);
 const taskListMock = vi.hoisted(() =>
-  vi.fn(({ tasks }: { tasks: { id: string; title: string; labels?: unknown[] }[] }) => (
-    <div data-testid="task-list">
-      {tasks.map((t, i) => (
-        <div key={i}>{t.title}</div>
-      ))}
-    </div>
-  )),
+  vi.fn(
+    ({
+      tasks,
+      onTaskToggle,
+    }: {
+      tasks: { id: string; title: string; labels?: unknown[] }[];
+      onTaskToggle?: (id: string) => void;
+    }) => (
+      <div data-testid="task-list">
+        {tasks.map((t, i) => (
+          <div key={i}>
+            <span>{t.title}</span>
+            {onTaskToggle && (
+              <button type="button" onClick={() => onTaskToggle(t.id)}>
+                Toggle {t.title}
+              </button>
+            )}
+          </div>
+        ))}
+      </div>
+    ),
+  ),
 );
 
 vi.mock('../../api/client', async (importOriginal) => ({
@@ -119,6 +138,7 @@ function renderPage(initialPath = '/collection/test-collection-id') {
       <MemoryRouter initialEntries={[initialPath]}>
         <Routes>
           <Route path="/collection/:id" element={<CollectionsPage />} />
+          <Route path="/daily" element={<div>Daily Destination</div>} />
         </Routes>
       </MemoryRouter>
     </QueryClientProvider>,
@@ -136,6 +156,8 @@ beforeEach(() => {
   mockApiDeleteSection.mockReset();
   mockApiUpdatePreferences.mockReset();
   mockApiUpdateCollection.mockReset();
+  mockApiCreateCollection.mockReset();
+  mockApiDeleteCollection.mockReset();
   mockFetchSavedColors.mockReset();
   mockApiAddSavedColor.mockReset();
   taskListMock.mockClear();
@@ -190,6 +212,7 @@ describe('CollectionsPage', () => {
   it('renders add task input', async () => {
     renderPage();
 
+    await screen.findByText('Test Collection');
     const input = await screen.findByRole('textbox', { name: 'New task…' });
     expect(input).toBeInTheDocument();
   });
@@ -198,6 +221,7 @@ describe('CollectionsPage', () => {
     mockApiCreateTask.mockResolvedValue({ id: 'created-1', title: 'Draft spec' } as Awaited<ReturnType<typeof apiCreateTask>>);
     renderPage();
 
+    await screen.findByText('Test Collection');
     const input = await screen.findByRole('textbox', { name: 'New task…' });
     typeText(input, 'Draft spec');
     fireEvent.blur(input);
@@ -212,6 +236,7 @@ describe('CollectionsPage', () => {
   it('renders add-task fields as contenteditable text, not form inputs', async () => {
     renderPage();
 
+    await screen.findByText('Test Collection');
     const inputs = await screen.findAllByRole('textbox', { name: 'New task…' });
     for (const input of inputs) expect(input).toHaveAttribute('contenteditable', 'plaintext-only');
   });
@@ -333,10 +358,86 @@ describe('CollectionsPage', () => {
         expect(mockApiUpdateCollection).toHaveBeenCalledWith('test-collection-id', { name: 'Renamed' }),
       );
     });
+
+    it('creates a sub-collection under the targeted crumb', async () => {
+      mockApiCreateCollection.mockResolvedValue({
+        ...childCollection,
+        id: 'sub-id',
+        name: 'Child Sub',
+        parentId: 'test-collection-id',
+      });
+
+      const menu = await openCrumbMenu('Test Collection');
+      fireEvent.click(within(menu).getByText('Add sub-collection'));
+
+      const input = await screen.findByPlaceholderText('Collection name…');
+      fireEvent.change(input, { target: { value: 'Child Sub' } });
+      fireEvent.keyDown(input, { key: 'Enter' });
+
+      await waitFor(() =>
+        expect(mockApiCreateCollection).toHaveBeenCalledWith(
+          expect.objectContaining({ name: 'Child Sub', parentId: 'test-collection-id' }),
+        ),
+      );
+    });
+
+    it('deletes the targeted collection after confirmation and navigates to daily', async () => {
+      mockApiDeleteCollection.mockResolvedValue(undefined);
+
+      const menu = await openCrumbMenu('Test Collection');
+      fireEvent.click(within(menu).getByText('Delete'));
+
+      const dialog = await screen.findByRole('dialog');
+      fireEvent.click(within(dialog).getByRole('button', { name: 'Delete' }));
+
+      await waitFor(() =>
+        expect(mockApiDeleteCollection).toHaveBeenCalledWith('test-collection-id'),
+      );
+      expect(await screen.findByText('Daily Destination')).toBeInTheDocument();
+    });
+  });
+
+  it('deletes both tasks and section when confirmed in section delete modal', async () => {
+    mockFetchCollectionView.mockResolvedValue({
+      ...collectionViewData,
+      tasks: [{ ...collectionViewData.tasks[0], sectionId: 'section-1' }],
+      sections: [{
+        id: 'section-1',
+        name: 'Work',
+        collectionId: 'test-collection-id',
+        orderValue: 0,
+      }],
+    });
+    mockApiDeleteTask.mockResolvedValue(undefined);
+    mockApiDeleteSection.mockResolvedValue(undefined);
+    renderPage();
+
+    fireEvent.doubleClick(await screen.findByText('Work'));
+    const input = screen.getByDisplayValue('Work');
+    fireEvent.change(input, { target: { value: '' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Delete section and tasks' }));
+
+    await waitFor(() => expect(mockApiDeleteTask).toHaveBeenCalledWith('task-1'));
+    await waitFor(() => expect(mockApiDeleteSection).toHaveBeenCalledWith('section-1'));
+  });
+
+  it('restores a completed task when toggle fails under hideCompletedTasks', async () => {
+    mockFetchPreferences.mockResolvedValue({ ...defaultPreferences, hideCompletedTasks: true });
+    mockApiToggleTask.mockRejectedValueOnce(new Error('network error'));
+    renderPage();
+
+    const toggleBtn = await screen.findByRole('button', { name: 'Toggle Task 1' });
+    fireEvent.click(toggleBtn);
+
+    await waitFor(() => expect(mockApiToggleTask).toHaveBeenCalledWith('task-1', true));
+    expect(await screen.findByText('Task 1')).toBeInTheDocument();
   });
 
   it('renders the "+ New section" button with opacity-0 and hover:opacity-100 classes', async () => {
     renderPage();
+    await screen.findByText('Test Collection');
     const button = await screen.findByRole('button', { name: /New section/i });
     expect(button).toBeInTheDocument();
     expect(button).toHaveClass('opacity-0');

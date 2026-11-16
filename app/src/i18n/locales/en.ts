@@ -264,8 +264,6 @@ export const englishCatalog = {
   'page.deleteSectionMoveTasks': 'Move tasks to top-level',
   'page.timelineView': 'Timeline view',
   'page.calendarView': 'Calendar view',
-  'page.previousDays': 'Previous days',
-  'page.nextDays': 'Next days',
   'page.previousMonth': 'Previous month',
   'page.nextMonth': 'Next month',
   'page.previousWeek': 'Previous week',

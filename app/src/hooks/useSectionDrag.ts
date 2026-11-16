@@ -3,15 +3,8 @@ import type { DragEndEvent } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
 import { usePlannerDragHandlers } from '../contexts/usePlannerDrag';
 import { apiUpdateSection } from '../api/client';
-import type { Section } from '../stores/taskStore';
+import type { UseSectionDragOptions } from '../types/task';
 import type { SectionHeaderDragData } from '../types/drag';
-
-interface UseSectionDragOptions {
-  sections: Section[];
-  setSections: (updater: (prev: Section[]) => Section[]) => void;
-  /** Called after a failed reorder, so the page can refetch authoritative order. */
-  onError?: () => void;
-}
 
 /**
  * Turns a drag gesture over a section header into a reorder.

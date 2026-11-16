@@ -1,5 +1,4 @@
 import { useMemo, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { Plus, Calendar, Trash2, Search, ListTodo, Kanban, EyeOff, FileClock } from 'lucide-react';
 import { PlannerIcon } from '../components/nav/navIcons';
 import { NAV_ITEMS } from '../components/nav/navItems';
@@ -24,9 +23,10 @@ import { ViewMenu } from '../components/toolbar/ViewMenu';
 import { DateNav } from '../components/toolbar/DateNav';
 import { TaskRowSpecimen } from '../components/ui/TaskRowSpecimen';
 import { CustomSelect } from '../components/ui/CustomSelect';
-import { ContextMenu, ContextMenuItem } from '../components/ui/ContextMenu';
+import { ContextMenu } from '../components/ui/ContextMenu';
+import type { ContextMenuItem } from '../types/contextMenu';
 import { Briefcase, Calendar as CalendarIcon, Tag, ArrowUp, ArrowDown } from 'lucide-react';
-import { fetchPreferences } from '../api/client';
+import { usePreferences } from '../hooks/usePreferences';
 import { BoardCard } from '../components/board/BoardCard';
 import { UpdateToastBanner } from '../components/UpdateToast';
 import { OfflineIndicatorBanner } from '../components/OfflineIndicator';
@@ -69,10 +69,7 @@ const MOTION = [
 ];
 
 export function StyleguidePage() {
-  const { data: preferences } = useQuery({
-    queryKey: ['preferences'],
-    queryFn: fetchPreferences,
-  });
+  const { data: preferences } = usePreferences();
   const weekStart = preferences?.weekStart ?? 'sunday';
   const [dailyWeekAnchor, setDailyWeekAnchor] = useState(() => startOfDay(new Date()));
 
@@ -551,8 +548,6 @@ export function StyleguidePage() {
             </TokenRow>
           </div>
         </Card>
-
-
 
         {/* Context Menu */}
         <Card title="Context Menu">

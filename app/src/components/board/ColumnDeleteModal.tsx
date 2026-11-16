@@ -1,19 +1,7 @@
 import { useEffect } from 'react';
 import { Button } from '../ui/Button';
 import { useI18n } from '../../i18n/I18nContext';
-import type { BoardColumnDeleteOption } from '../../hooks/useBoardColumnDrag';
-
-export interface ColumnDeleteModalProps {
-  isOpen: boolean;
-  title: string;
-  message: string;
-  reassignOptions: BoardColumnDeleteOption[];
-  selectedReassignToId: string | null;
-  errorMessage: string | null;
-  onChangeReassignToId: (value: string | null) => void;
-  onDelete: () => void;
-  onCancel: () => void;
-}
+import type { ColumnDeleteModalProps } from '../../types/board';
 
 export function ColumnDeleteModal({
   isOpen,

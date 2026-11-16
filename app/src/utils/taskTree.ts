@@ -1,3 +1,5 @@
+import type { IndentResult, TreeNode } from '../types/task';
+
 // Phase 6 - Tree-aware indentation helpers.
 //
 // Tasks are rendered as a flat, visually-ordered array where each item carries
@@ -8,12 +10,6 @@
 // must shift with the item.
 
 export const MAX_INDENT = 5;
-
-export interface TreeNode {
-  id: string;
-  indent?: number;
-  collectionId?: string;
-}
 
 /**
  * Compute the new indent level for a Tab (dir=1) or Shift+Tab (dir=-1).
@@ -76,15 +72,6 @@ export function getDescendants<T extends TreeNode>(tasks: T[], index: number): T
     out.push(tasks[i]!);
   }
   return out;
-}
-
-export interface IndentResult<T> {
-  /** The list with the task (and its subtree) re-indented, or the original list unchanged. */
-  tasks: T[];
-  /** The new parent id to persist (`null` = top level). Only meaningful when `changed`. */
-  parentTaskId: string | null;
-  /** False when the keypress was a no-op - callers should skip the API call. */
-  changed: boolean;
 }
 
 /**

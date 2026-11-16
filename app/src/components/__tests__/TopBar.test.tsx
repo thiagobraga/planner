@@ -288,4 +288,24 @@ describe('TopBar', () => {
       expect(screen.getByTestId('daily-day-number')).toHaveTextContent('24');
     } finally { vi.useRealTimers(); }
   });
+
+  it('does not focus the topbar header when dismissing the right-click style menu', () => {
+    const { container } = renderBar();
+    const topbar = container.querySelector('.topbar') as HTMLElement;
+    expect(topbar).not.toHaveAttribute('tabindex');
+    fireEvent.contextMenu(topbar, { clientX: 40, clientY: 20 });
+    fireEvent.keyDown(screen.getByRole('menu'), { key: 'Escape' });
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+    expect(topbar).not.toHaveFocus();
+  });
+
+  it('restores focus to the active topbar link when the style menu closes after Shift+F10', () => {
+    renderBar();
+    const daily = screen.getByRole('link', { name: 'Daily' });
+    daily.focus();
+    fireEvent.keyDown(daily, { key: 'F10', shiftKey: true });
+    expect(screen.getByRole('menuitemradio', { name: 'Text right' })).toBeInTheDocument();
+    fireEvent.keyDown(screen.getByRole('menu'), { key: 'Escape' });
+    expect(daily).toHaveFocus();
+  });
 });
