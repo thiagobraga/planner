@@ -1,14 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { NO_DRAG_ATTR } from '../dnd/sensors';
-
-interface InlineNameInputProps {
-  defaultValue: string;
-  placeholder?: string;
-  className?: string;
-  onCommit: (name: string) => void;
-  onCancel: () => void;
-  commitOnEscape?: boolean;
-}
+import type { InlineNameInputProps } from '../../types/ui';
 
 /**
  * Swap-to-input rename for a task row, section, habit, group, or collection.

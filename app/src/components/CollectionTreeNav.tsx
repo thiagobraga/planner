@@ -20,6 +20,7 @@ import { runOptimistic, patchById, upsertById } from '../stores/optimistic';
 import { ConfirmModal } from './ConfirmModal';
 import { useI18n } from '../i18n/I18nContext';
 import { loadCollapsedCollectionIds, saveCollapsedCollectionIds } from '../utils/collectionCollapseStorage';
+import type { CollectionTreeRowProps, FlatCollection } from '../types/collections';
 
 const INDENT = 22;
 const MAX_DEPTH = 4; // backend enforces nesting depth of 4
@@ -82,14 +83,6 @@ export function getHierarchicalColor(
   const rootColor = getOriginalColor(lastId);
   const family = COLOR_SHADE_FAMILIES[rootColor] || [rootColor];
   return family[depth % family.length];
-}
-
-export interface FlatCollection {
-  id: string;
-  name: string;
-  color: string;
-  parentId: string | null;
-  depth: number;
 }
 
 // Flatten the visible (non-inbox, non-archived) collections into a depth-annotated,
@@ -509,25 +502,6 @@ export function CollectionTreeNav() {
   );
 }
 
-interface RowProps {
-  item: FlatCollection;
-  depth: number;
-  isActive: boolean;
-  isEditing: boolean;
-  hasChildren: boolean;
-  isExpanded: boolean;
-  draft: string;
-  onNavigate: () => void;
-  onStartRename: () => void;
-  onDraftChange: (v: string) => void;
-  onCommitRename: () => void;
-  onCancelRename: () => void;
-  onToggleCollapsed: () => void;
-  onAddSub: () => void;
-  onDelete: () => void;
-  onColorCommit: (color: string) => void;
-}
-
 function SortableCollectionRow({
   item,
   depth,
@@ -545,7 +519,7 @@ function SortableCollectionRow({
   onAddSub,
   onDelete,
   onColorCommit,
-}: RowProps) {
+}: CollectionTreeRowProps) {
   const { t } = useI18n();
   const [contextPos, setContextPos] = useState<{ x: number; y: number } | null>(null);
   const [colorPickerPos, setColorPickerPos] = useState<{ x: number; y: number } | null>(null);

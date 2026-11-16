@@ -1,16 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import {
-  buildSubtreeIndex,
-  flattenTasks,
-  getSubtreeBlock,
-  removeBlock,
-  insertBlock,
-  projectMove,
-  applyProjection,
-  MAX_DEPTH,
-  INDENT_WIDTH,
-  type TaskLike,
-} from '../taskProjection';
+import { buildSubtreeIndex, flattenTasks, getSubtreeBlock, removeBlock, insertBlock, projectMove, applyProjection, MAX_DEPTH, INDENT_WIDTH } from '../taskProjection';
+import type { TaskLike } from '../../types/task';
 
 function t(id: string, parentTaskId: string | null = null, orderValue = 0, createdAt = '2026-01-01'): TaskLike {
   return { id, parentTaskId, orderValue, createdAt };

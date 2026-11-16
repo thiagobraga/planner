@@ -1,7 +1,7 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { TaskDetail } from '../TaskDetail';
-import type { Task } from '../TaskItem';
+import type { Task } from '../../types/task';
 
 const sampleTask: Task = {
   id: 'task-1',

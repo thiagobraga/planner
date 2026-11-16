@@ -1,18 +1,7 @@
 import { useState, useRef, useLayoutEffect, useCallback } from 'react';
-
 import { parseNaturalDate, extractNaturalDate } from '../utils/date';
 import { useI18n } from '../i18n/I18nContext';
-
-interface QuickAddProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSubmit: (
-    title: string,
-    dueDate?: string,
-    recurrenceRule?: object | null,
-    type?: 'task' | 'note' | 'event',
-  ) => void;
-}
+import type { QuickAddProps } from '../types/widgets';
 
 /** BuJo rapid-logging prefixes, mirroring TaskItem's inline conversion markers. */
 const QUICK_ADD_PREFIXES: Record<string, 'note' | 'event'> = {

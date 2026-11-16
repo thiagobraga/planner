@@ -1,8 +1,14 @@
 import React, { useEffect, useRef, useState, KeyboardEvent, useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Check, ChevronRight } from 'lucide-react';
-import type { ContextMenuItem, ContextMenuProps } from '../../types/contextMenu';
-export type { ContextMenuItem, ContextMenuProps } from '../../types/contextMenu';
+import type {
+  ContextMenuItem,
+  ContextMenuProps,
+  ContextMenuRootProps,
+  InlinePanelProps,
+  MenuPanelProps,
+  SubMenuWrapperProps,
+} from '../../types/contextMenu';
 
 function opensChild(item: ContextMenuItem): boolean {
   return Boolean(item.panel || (item.submenu && item.submenu.length > 0));
@@ -17,14 +23,6 @@ export function ContextMenu({ items, position, onClose, caret = true, align = 's
   return (
     <ContextMenuRoot items={items} position={position} onClose={onClose} caret={caret} align={align} />
   );
-}
-
-interface ContextMenuRootProps {
-  items: ContextMenuItem[];
-  position: { x: number; y: number };
-  onClose: () => void;
-  caret: boolean;
-  align: 'start' | 'end';
 }
 
 function ContextMenuRoot({ items, position, onClose, caret, align }: ContextMenuRootProps) {
@@ -82,18 +80,6 @@ function ContextMenuRoot({ items, position, onClose, caret, align }: ContextMenu
     </div>,
     document.querySelector('.app-shell') ?? document.body
   );
-}
-
-interface MenuPanelProps {
-  items: ContextMenuItem[];
-  position: { x: number; y: number };
-  level: number;
-  activePath: number[];
-  setActivePath: React.Dispatch<React.SetStateAction<number[]>>;
-  onClose: () => void;
-  isRoot?: boolean;
-  caret?: boolean;
-  align?: 'start' | 'end';
 }
 
 function MenuPanel({
@@ -364,16 +350,6 @@ function MenuPanel({
   );
 }
 
-interface SubMenuWrapperProps {
-  parentItem: ContextMenuItem;
-  parentRef: React.RefObject<HTMLDivElement | null>;
-  itemIndex: number;
-  level: number;
-  activePath: number[];
-  setActivePath: React.Dispatch<React.SetStateAction<number[]>>;
-  onClose: () => void;
-}
-
 function SubMenuWrapper({
   parentItem,
   parentRef,
@@ -422,7 +398,7 @@ function SubMenuWrapper({
   );
 }
 
-function InlinePanel({ position, children }: { position: { x: number; y: number }; children: React.ReactNode }) {
+function InlinePanel({ position, children }: InlinePanelProps) {
   const panelRef = useRef<HTMLDivElement>(null);
   const [coords, setCoords] = useState({ top: position.y, left: position.x });
 

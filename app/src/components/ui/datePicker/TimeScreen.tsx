@@ -1,6 +1,5 @@
 import { CalendarDays, ChevronRight, Clock, Flag, Repeat } from 'lucide-react';
 import { useI18n } from '../../../i18n/I18nContext';
-import type { TaskSchedule } from '../../../types/task';
 import { fmtISO } from '../../../utils/date';
 import { parseISODate } from '../../../utils/dateQuickOptions';
 import { recurrenceSummary } from '../../../utils/recurrenceSummary';
@@ -9,16 +8,7 @@ import { Button } from '../Button';
 import { Toggle } from '../Toggle';
 import { DURATION_OPTIONS, DURATION_PRESETS, formatDurationLabel } from './durations';
 import { Divider, ICON, ScreenHeader, SectionLabel, bareInput, fieldShell } from './parts';
-
-interface TimeScreenProps {
-  draft: TaskSchedule;
-  onChange: (patch: Partial<TaskSchedule>) => void;
-  onBack: () => void;
-  onCancel: () => void;
-  onSave: () => void;
-  onOpenRepeat: () => void;
-  onClose: () => void;
-}
+import type { TimeScreenProps } from '../../../types/ui';
 
 export function TimeScreen({ draft, onChange, onBack, onCancel, onSave, onOpenRepeat, onClose }: TimeScreenProps) {
   const { t, locale } = useI18n();

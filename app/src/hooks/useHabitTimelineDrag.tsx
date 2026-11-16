@@ -2,19 +2,9 @@ import { useEffect, useMemo } from 'react';
 import { HabitBlockPreview } from '../components/habits/HabitBlockPreview';
 import { HabitTimelineBlockPreview } from '../components/habits/HabitTimelineBlockPreview';
 import { usePlannerDrag } from '../contexts/usePlannerDrag';
-import type { DayColClass, TimelineDayCell } from '../types/habitTimeline';
 import { HABIT_INDENT_WIDTH, flattenHabitRows, projectHabitMove } from '../utils/habitProjection';
 import { findNodeWithDepth } from '../utils/habitTimeline';
-import type { HabitSections } from '../utils/habitTree';
-
-interface UseHabitTimelineDragOptions {
-  sections: HabitSections;
-  collapsed: ReadonlySet<string>;
-  activeDragId?: string | null;
-  days: TimelineDayCell[];
-  dayColClass: DayColClass;
-  labelColWidth: number;
-}
+import type { UseHabitTimelineDragOptions } from '../types/habitTimeline';
 
 /**
  * The timeline's side of a habit drag: where the insertion line goes, and what

@@ -5,12 +5,7 @@ import { CSS } from '@dnd-kit/utilities';
 import type { ApiTask } from '../../types/api';
 import type { CardSubtasksDropData, TaskDragData } from '../../types/drag';
 import { NO_DRAG_ATTR } from '../dnd/sensors';
-
-interface BoardCardChecklistProps {
-  parentTask: ApiTask;
-  tasks: ApiTask[];
-  onToggle?: (taskId: string, completed: boolean) => void;
-}
+import type { BoardCardChecklistProps } from '../../types/board';
 
 function SortableChecklistRow({
   task,

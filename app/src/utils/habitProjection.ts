@@ -11,30 +11,13 @@
 // pure: no dnd-kit, no React, no API calls, which is what makes the rules
 // exhaustively testable.
 
-import type { HabitSections, HabitNode } from './habitTree';
+import type { HabitDepth, HabitNode, HabitProjection, HabitRow, HabitSections } from '../types/habits';
 
 /** The page grid. One indent step of horizontal drag is one nesting level. */
 export const HABIT_INDENT_WIDTH = 24;
 
 /** Droppable id for the section holding roots that belong to no group. */
 export const UNGROUPED_CONTAINER = 'habits-ungrouped';
-
-/** A habit hierarchy is one level deep, so depth is only ever root or child. */
-export type HabitDepth = 0 | 1;
-
-export interface HabitRow {
-  id: string;
-  name: string;
-  /** Null for a root habit. */
-  parentId: string | null;
-  /** For a root, the group it sits in. A child inherits its parent's, so null. */
-  groupId: string | null;
-  depth: HabitDepth;
-  /** The section this row renders in - a group id, or UNGROUPED_CONTAINER. */
-  containerId: string;
-  /** Sub-habits carried along by this root. Non-empty means it cannot become one. */
-  childIds: string[];
-}
 
 /** The container id a root with this group belongs to. */
 export function containerForGroup(groupId: string | null): string {
@@ -120,16 +103,6 @@ export function removeHabitBlock(
 export function canBecomeSubHabit(rows: HabitRow[], id: string): boolean {
   const row = rows.find((r) => r.id === id);
   return row ? row.childIds.length === 0 : false;
-}
-
-export interface HabitProjection {
-  /** The parent the habit would take; null when it lands as a root. */
-  parentId: string | null;
-  /** The group it would belong to; always null when it lands as a sub-habit. */
-  groupId: string | null;
-  depth: HabitDepth;
-  /** Zero-based index among its new siblings - not the flat render index. */
-  position: number;
 }
 
 /**

@@ -1,23 +1,11 @@
 import { useMemo } from 'react';
-import { buildMonthDays, fmtISO, weekdayInitials, type WeekStart } from '../../utils/date';
-import type { DayState } from '../../utils/habitTree';
+import { buildMonthDays, fmtISO, weekdayInitials } from '../../utils/date';
+import type { HabitMonthGridProps } from '../../types/habits';
 import { HabitDot, dotAriaProps } from './HabitDot';
 import { NO_DRAG_ATTR } from '../dnd/sensors';
 import { useI18n } from '../../i18n/I18nContext';
 
 const CELL = 24;
-export interface HabitMonthGridProps {
-  year: number;
-  month: number;
-  today: Date;
-  weekStart: WeekStart;
-  /** Resolves the rendered state of one day. Parents report their derived state. */
-  stateFor: (iso: string) => DayState;
-  onToggle?: (iso: string) => void;
-  label?: string;
-  readOnly?: boolean;
-}
-
 // One month of habit days as a weekday-aligned dot grid. Consecutive fully
 // completed days are joined by a connector bar, the same chain language the
 // timeline uses. Extracted from the styleguide specimen so both render from one

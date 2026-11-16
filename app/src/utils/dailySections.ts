@@ -1,8 +1,8 @@
 import type { ApiTask } from '../types/api';
-import type { Task } from '../components/TaskItem';
 import type { ApiDailyView, DaySection } from '../types/daily';
 import { fmtISO, fmtISOInTimeZone } from './date';
 import { scheduleFieldsFromApi } from './taskTime';
+import type { Task } from '../types/task';
 
 export function dayLabel(d: Date, locale: 'en' | 'pt-BR', format: string = 'MMM DD ddd'): string {
   const clean = locale === 'pt-BR' ? (val: string) => val.replace(/\./g, '') : (val: string) => val;

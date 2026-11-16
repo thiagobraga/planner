@@ -1,5 +1,6 @@
 import type { TimelineDayCell, TimelineNodeAtDepth, TimelineRow, TimelineSection } from '../types/habitTimeline';
-import { dayState, flattenHabits, type HabitNode, type HabitSections } from './habitTree';
+import { dayState, flattenHabits } from './habitTree';
+import type { HabitNode, HabitSections } from '../types/habits';
 import { UNGROUPED_CONTAINER } from './habitProjection';
 
 export const CELL_W = 24;

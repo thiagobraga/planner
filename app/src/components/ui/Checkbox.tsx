@@ -1,9 +1,5 @@
-import type { InputHTMLAttributes, ReactNode } from 'react';
 import { Check, Minus } from 'lucide-react';
-
-export interface CheckboxProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'type'> {
-  label?: ReactNode;
-}
+import type { CheckboxProps } from '../../types/ui';
 
 /** The drawn box alone, shared by Checkbox and the habit day cells. `mixed` is a partly done parent. */
 export function CheckboxMark({ checked, mixed = false }: { checked: boolean; mixed?: boolean }) {

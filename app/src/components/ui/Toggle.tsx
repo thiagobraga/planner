@@ -1,13 +1,4 @@
-import type { ReactNode } from 'react';
-
-export interface ToggleProps {
-  checked: boolean;
-  onChange?: (checked: boolean) => void;
-  disabled?: boolean;
-  label?: ReactNode;
-  id?: string;
-  className?: string;
-}
+import type { ToggleProps } from '../../types/ui';
 
 // Pill switch (role="switch") with theme-aware off track and knob surfaces.
 export function Toggle({ checked, onChange, disabled = false, label, id, className = '' }: ToggleProps) {
