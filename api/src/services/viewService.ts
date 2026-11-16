@@ -28,6 +28,11 @@ export interface TaskRow extends TaskTimeRow {
   status_id: string | null;
   created_at: string;
   updated_at: string;
+  /** Joined by views that span collections (Daily), so rows can name their collection without a second request. */
+  collection_name?: string;
+  collection_color?: string;
+  collection_is_inbox?: boolean;
+  section_name?: string | null;
 }
 
 interface PreferencesRow {
@@ -80,6 +85,12 @@ export function formatTask(row: TaskRow) {
     statusId: row.status_id,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    ...(row.collection_name !== undefined && {
+      collectionName: row.collection_name,
+      collectionColor: row.collection_color,
+      collectionIsInbox: row.collection_is_inbox,
+    }),
+    ...(row.section_name != null && { sectionName: row.section_name }),
   };
 }
 
