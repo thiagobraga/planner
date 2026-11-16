@@ -4,7 +4,7 @@ import { securityLog } from "../utils/securityLogger.js";
 import { revokeAllUserSessions } from "./sessionService.js";
 import { revokeAllUserTokens } from "./apiTokenService.js";
 import { revokeAllUserGrants } from "./oauthService.js";
-import type { UserRole } from "./authService.js";
+import type { UserRole } from "../types/auth.js";
 
 const DEFAULT_LIMIT = 25;
 const MAX_LIMIT = 100;

@@ -155,7 +155,7 @@ Naming rule: rename narrower shape with domain prefix (`ViewTaskRow`,
       `FilterRow`, `Create/UpdateFilterInput`, `EvalTask`, `EvalContext`
 - [ ] Create `api/src/types/sync.ts`: `SocketData`, `SyncEntityType`,
       `SyncEventType`, `SyncEvent`
-- [ ] Create `api/src/types/auth.ts`: `UserRole`, `UserData`,
+- [x] Create `api/src/types/auth.ts`: `UserRole`, `UserData`,
       `RegisterInput`; `SessionContext`, `SessionRow`,
       `SessionCookieOptions`
 - [ ] Create `api/src/types/admin.ts`: `AdminUser`, `AdminUserRow`,
