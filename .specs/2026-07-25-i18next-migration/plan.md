@@ -9,8 +9,19 @@ Replace Planner's custom translation runtime with `i18next` and `react-i18next` 
 - Initialize static resources with English fallback, `en` and `pt-BR` support, flat dotted keys, React-safe interpolation, and Suspense disabled.
 - Keep `I18nProvider`, `useI18n()`, `Locale`, and the current return shape. Internally, use `I18nextProvider`, `useTranslation()`, and `changeLanguage()`.
 - Preserve locale precedence: cached locale for first paint, authenticated preference as source of truth, browser locale as fallback, then English.
-- Keep document language synchronization, localStorage caching, preference synchronization, `Intl` date formatting, natural-language date parsing, and structured help content outside i18next during this phase.
+- Keep document language synchronization, localStorage caching, preference synchronization, `Intl` date formatting, natural-language date parsing, and structured help and legal content outside i18next during this phase.
 - Remove the custom translation implementation only after parity tests pass. Do not change the API schema or database migration.
+
+## Relevant Files
+- `app/package.json` - add `i18next` and `react-i18next` dependencies
+- `app/src/types/i18n.ts` - shared i18n types (`Locale`, `TranslationKey`, `TranslationCatalog`, `I18nContextValue`)
+- `app/src/types/i18next.d.ts` - i18next TypeScript module augmentation for compile-time key checking
+- `app/src/i18n/i18n.ts` - i18next instance creation and static resource registration
+- `app/src/i18n/I18nContext.tsx` - `I18nProvider` and `useI18n()` backed by `I18nextProvider` and `useTranslation()`
+- `app/src/i18n/types.ts` - re-exports from `app/src/types/i18n.ts`
+- `app/src/i18n/catalogs.ts` - catalog and type re-exports
+- `app/src/i18n/__tests__/I18nContext.test.tsx` - unit and parity tests for i18next runtime and facade
+- `app/e2e/i18nLanguageSwitch.spec.ts` - Playwright E2E test for language switching and reload persistence
 
 ## Interfaces
 - `useI18n()` remains compatible: `{ locale, setLocale, t, formatDate }`.
