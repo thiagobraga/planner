@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.24.2](https://github.com/thiagobraga/planner/compare/v0.24.1...v0.24.2) (2026-11-16)
+
+
+### Fixed
+
+* **deps:** override minimatch to ^11.0.1 for dependabot alerts ([d3d9a5b](https://github.com/thiagobraga/planner/commit/d3d9a5b2791d55f6bfc46510bc58afeb533a183a))
+
 ## [0.24.1](https://github.com/thiagobraga/planner/compare/v0.24.0...v0.24.1) (2026-11-16)
 
 
