@@ -1,6 +1,7 @@
 import { useState, useRef, useLayoutEffect, useCallback, useMemo } from 'react';
-import type { Task } from './TaskItem';
+
 import { useI18n } from '../i18n/I18nContext';
+import type { Task } from '../types/task';
 
 interface SearchResult {
   type: 'task' | 'collection' | 'label';

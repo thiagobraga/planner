@@ -3,11 +3,12 @@ import type { ApiStatus, ApiTask } from '../../types/api';
 import type { BoardGroupBy } from '../../types/drag';
 import type { BoardViewMode } from '../../types/board';
 import type { BoardColumn as BoardColumnModel } from '../../utils/boardColumns';
-import type { TaskListCallbacks } from '../TaskList';
+
 import { AddColumnButton } from './AddColumnButton';
 import { BoardColumn } from './BoardColumn';
 import { usePlannerDrag } from '../../contexts/usePlannerDrag';
 import { useEffect } from 'react';
+import type { TaskListCallbacks } from '../../types/task';
 
 interface BoardViewProps {
   collectionId: string;

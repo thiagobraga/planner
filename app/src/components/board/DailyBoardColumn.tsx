@@ -3,11 +3,12 @@ import { useDroppable } from '@dnd-kit/core';
 import type { DailyBoardColumnProps } from '../../types/dailyBoard';
 import type { DayDropData, NoDateDropData } from '../../types/drag';
 import { TaskList } from '../TaskList';
-import type { Task } from '../TaskItem';
+
 import { BoardCard } from './BoardCard';
 import { Button } from '../ui/Button';
 import { TaskAddInput } from '../TaskAddInput';
 import { useI18n } from '../../i18n/I18nContext';
+import type { Task } from '../../types/task';
 
 function asJournalTask(task: DailyBoardColumnProps['allTasks'][number]): Task {
   return {

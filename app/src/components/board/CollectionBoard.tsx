@@ -7,12 +7,13 @@ import { useI18n } from '../../i18n/I18nContext';
 import { buildColumns } from '../../utils/boardColumns';
 import type { BoardColumn as BoardColumnModel } from '../../utils/boardColumns';
 import type { BoardViewMode } from '../../types/board';
-import type { TaskListCallbacks } from '../TaskList';
+
 import { useBoardColumnDrag } from '../../hooks/useBoardColumnDrag';
 import { useBoardDrag } from '../../hooks/useBoardDrag';
 import { ConfirmModal } from '../ConfirmModal';
 import { ColumnDeleteModal } from './ColumnDeleteModal';
 import { BoardView } from './BoardView';
+import type { TaskListCallbacks } from '../../types/task';
 
 interface CollectionBoardProps {
   collectionId: string;

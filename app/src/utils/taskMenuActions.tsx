@@ -1,8 +1,9 @@
 import { Check, RotateCcw } from 'lucide-react';
-import type { Task } from '../components/TaskItem';
+
 import type { ContextMenuItem } from '../components/ui/ContextMenu';
 import type { TranslationKey } from '../i18n/catalogs';
 import type { ApiStatus } from '../types/api';
+import type { Task } from '../types/task';
 
 export function resolveStageActions(task: Task, statuses: ApiStatus[], completionStatusId: string | null) {
   const none = { next: null, accept: null, reject: null };

@@ -4,8 +4,9 @@ import type React from 'react';
 import { PlannerDragProvider } from '../../contexts/PlannerDragContext';
 import { useTaskDrag } from '../useTaskDrag';
 import { apiMoveTask } from '../../api/client';
-import type { Task } from '../../components/TaskItem';
+
 import type { TaskDragData } from '../../types/drag';
+import type { Task } from '../../types/task';
 
 /**
  * Two drags on the same list, the second starting before the first settles.

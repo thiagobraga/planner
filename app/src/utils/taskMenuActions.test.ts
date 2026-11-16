@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { buildTaskMenuActions, resolveStageActions } from './taskMenuActions';
 import type { ApiStatus } from '../types/api';
-import type { Task } from '../components/TaskItem';
+import type { Task } from '../types/task';
 
 const status = (id: string, orderValue: number, changes: Partial<ApiStatus> = {}): ApiStatus => ({
   id, collectionId: 'collection', name: id, color: '#44443d', orderValue,

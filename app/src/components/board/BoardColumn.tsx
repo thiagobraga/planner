@@ -4,8 +4,8 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { ApiTask } from '../../types/api';
 import type { BoardGroupBy } from '../../types/drag';
-import { TaskList, type TaskListCallbacks } from '../TaskList';
-import type { Task } from '../TaskItem';
+import { TaskList } from '../TaskList';
+
 import type {
   BoardColumnDragData,
   BoardColumnDropData,
@@ -18,6 +18,7 @@ import { BoardColumnHeader } from './BoardColumnHeader';
 import { TaskAddInput } from '../TaskAddInput';
 import { useI18n } from '../../i18n/I18nContext';
 import type { ApiStatus } from '../../types/api';
+import type { Task, TaskListCallbacks } from '../../types/task';
 
 interface BoardColumnProps {
   collectionId: string;

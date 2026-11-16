@@ -1,3 +1,5 @@
+import type { ApiScheduleFields, TaskSchedule } from '../types/task';
+
 export function formatDuration(minutes: number): string {
   const hours = Math.floor(minutes / 60);
   const rest = minutes % 60;
@@ -9,16 +11,6 @@ export function formatTimeWindow(start: string, end: string | null | undefined):
   return end ? `${start}-${end}` : start;
 }
 
-import type { RecurrenceRule, TaskSchedule } from '../types/task';
-
-interface ApiScheduleFields {
-  dueTime?: string | null;
-  endTime?: string | null;
-  deadlineDate?: string | null;
-  deadlineTime?: string | null;
-  durationMinutes?: number | null;
-  recurrenceRule?: RecurrenceRule | null;
-}
 
 export function scheduleFieldsFromApi(t: ApiScheduleFields): Required<ApiScheduleFields> {
   return {

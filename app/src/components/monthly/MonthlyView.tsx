@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { MonthSelector } from './MonthSelector';
 import { useI18n } from '../../i18n/I18nContext';
-import type { Task } from '../TaskItem';
+import type { Task } from '../../types/task';
 
 function dateKey(year: number, month: number, day: number): string {
   return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;

@@ -1,8 +1,9 @@
-import type { Task } from '../components/TaskItem';
+
 import type { TaskIndentMove } from '../types/taskIndent';
 import { apiMoveTask } from '../api/client';
 import { trackMove } from './moveEcho';
 import { flattenTasks, getSubtreeBlock } from './taskProjection';
+import type { Task } from '../types/task';
 
 export function persistTaskIndent(
   id: string,

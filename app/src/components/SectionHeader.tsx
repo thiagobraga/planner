@@ -5,10 +5,10 @@ import { HabitDragHandle } from './habits/HabitDragHandle';
 import { InlineNameInput } from './ui/InlineNameInput';
 import { NO_DRAG_ATTR } from './dnd/sensors';
 import { useI18n } from '../i18n/I18nContext';
-import type { Section } from '../stores/taskStore';
+import type { StoreSection } from '../types/task';
 
 interface SectionHeaderProps {
-  section: Section;
+  section: StoreSection;
   collectionId: string;
   isEditing: boolean;
   onEdit: () => void;

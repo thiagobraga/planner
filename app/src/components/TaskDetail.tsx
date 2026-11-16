@@ -1,6 +1,5 @@
 import { useState, useLayoutEffect, useRef } from 'react';
-import type { Task } from './TaskItem';
-import type { RecurrenceRule } from '../types/task';
+import type { RecurrenceRule, TaskComment, TaskDetailProps } from '../types/task';
 import { useI18n } from '../i18n/I18nContext';
 
 const PRIORITIES = [
@@ -26,19 +25,6 @@ const priorityTextClasses: Record<number, string> = {
   4: 'text-ink-light',
 };
 
-interface Comment {
-  id: string;
-  text: string;
-  createdAt: string;
-}
-
-interface TaskDetailProps {
-  task: Task | null;
-  onClose: () => void;
-  onUpdate?: (id: string, updates: Partial<Task>) => void;
-  onDelete?: (id: string) => void;
-}
-
 export function TaskDetail({ task, onClose, onUpdate, onDelete }: TaskDetailProps) {
   const { locale, t } = useI18n();
   const [title, setTitle] = useState('');
@@ -51,7 +37,7 @@ export function TaskDetail({ task, onClose, onUpdate, onDelete }: TaskDetailProp
   const [recurrenceRule, setRecurrenceRule] = useState<object | null>(null);
   const [priority, setPriority] = useState(4);
   const [newComment, setNewComment] = useState('');
-  const [comments, setComments] = useState<Comment[]>([]);
+  const [comments, setComments] = useState<TaskComment[]>([]);
   const [subtasks, setSubtasks] = useState<Array<{ id: string; title: string; isCompleted: boolean }>>([]);
   const [newSubtask, setNewSubtask] = useState('');
   const [confirmDelete, setConfirmDelete] = useState(false);

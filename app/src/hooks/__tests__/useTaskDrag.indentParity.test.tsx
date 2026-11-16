@@ -5,8 +5,9 @@ import { PlannerDragProvider } from '../../contexts/PlannerDragContext';
 import { usePlannerDrag, INDENT_PX } from '../../contexts/usePlannerDrag';
 import { useTaskDrag } from '../useTaskDrag';
 import { apiMoveTask } from '../../api/client';
-import type { Task } from '../../components/TaskItem';
+
 import type { TaskDragData } from '../../types/drag';
+import type { Task } from '../../types/task';
 
 /**
  * The indent the preview draws and the parent the drop commits must agree.

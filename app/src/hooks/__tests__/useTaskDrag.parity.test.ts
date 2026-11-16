@@ -1,8 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { resolveMove } from '../useTaskDrag';
 import { flattenTasks, projectTaskDrop, INDENT_WIDTH } from '../../utils/taskProjection';
-import type { Task } from '../../components/TaskItem';
+
 import type { TaskDragData } from '../../types/drag';
+import type { Task } from '../../types/task';
 
 /**
  * The slot a list draws and the move that commits have to agree.

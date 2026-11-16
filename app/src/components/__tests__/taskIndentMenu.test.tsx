@@ -1,7 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 import { buildIndentMenuItems } from '../taskIndentMenu';
-import type { Task } from '../TaskItem';
+
 import type { TaskIndentMenuContext } from '../../types/taskIndent';
+import type { Task } from '../../types/task';
 
 const row = (id: string, orderValue: number, parentTaskId?: string): Task => ({
   id, title: id, priority: 4, isCompleted: false, orderValue, parentTaskId,

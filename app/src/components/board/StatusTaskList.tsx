@@ -1,7 +1,8 @@
 import { Fragment, type ComponentProps, type ReactNode } from 'react';
 import { TaskList } from '../TaskList';
-import type { Task } from '../TaskItem';
+
 import type { StatusListGroup } from '../../utils/boardColumns';
+import type { Task } from '../../types/task';
 
 type SharedTaskListProps = Omit<
   ComponentProps<typeof TaskList>,

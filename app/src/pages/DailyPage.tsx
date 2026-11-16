@@ -9,7 +9,7 @@ import { DailyWeekBoard } from '../components/board/DailyWeekBoard';
 import { DailyToolbar } from '../components/daily/DailyToolbar';
 import { DailyList } from '../components/daily/DailyList';
 import { MonthlyView } from '../components/monthly/MonthlyView';
-import type { Task } from '../components/TaskItem';
+
 import { extractNaturalDate, fmtISOInTimeZone } from '../utils/date';
 import { nextOrderValue } from '../utils/order';
 import { getParentCandidate } from '../utils/taskTree';
@@ -34,7 +34,7 @@ import { useDailyView } from '../hooks/useDailyView';
 import type { DaySection } from '../types/daily';
 import type { ViewLayout } from '../types/view';
 import { buildSetDateMenuItem } from '../components/taskDateMenuItem';
-import type { TaskSchedule } from '../types/task';
+import type { Task, TaskSchedule } from '../types/task';
 import { blurOnEscape } from '../utils/editableText';
 import { buildTaskMenuActions } from '../utils/taskMenuActions';
 
