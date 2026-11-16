@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState, useEffect, useCallback } from 'react';
-import { useQuery, useQueries, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useSync } from '../hooks/useSync';
 import { useReorganize, type Section as ReorganizeSection } from '../hooks/useReorganize';
 import { isEchoedMove, isStructuralMove } from '../utils/moveEcho';
@@ -22,13 +22,13 @@ import { useTaskVisibilityPreferences } from '../hooks/useTaskVisibilityPreferen
 import { useMidnightTimer } from '../hooks/useMidnightTimer';
 import { useDailyTasks } from '../hooks/useDailyTasks';
 import { useI18n } from '../i18n/I18nContext';
-import { fetchCollections, fetchSections, fetchCollectionView, fetchPreferences, apiToggleTask, apiCreateTask, apiUpdateTask, apiDeleteTask, apiMoveTask } from '../api/client';
+import { fetchCollections, fetchCollectionView, fetchPreferences, apiToggleTask, apiCreateTask, apiUpdateTask, apiDeleteTask, apiMoveTask } from '../api/client';
 import type { ApiTask } from '../types/api';
 import { ContextMenu, type ContextMenuItem } from '../components/ui/ContextMenu';
 import { flattenCollections } from '../components/CollectionTreeNav';
 import { Folder, ArrowUp, ArrowDown, Trash2, Columns3, List } from 'lucide-react';
 import { applySchedule, withTimeZones } from '../utils/taskTime';
-import { apiToTask, buildSections, dateFromISO, dayLabel, flattenDaily } from '../utils/dailySections';
+import { apiToTask, buildSections, dateFromISO, dayLabel, flattenDaily, movedToCollection, withJoinedNames } from '../utils/dailySections';
 import { listDays } from '../utils/dailyListDays';
 import { useDailyView } from '../hooks/useDailyView';
 import type { DaySection } from '../types/daily';
@@ -156,6 +156,11 @@ export function DailyPage({ layout }: { layout: ViewLayout }) {
       qc.invalidateQueries({ queryKey: ['collection'] });
       return;
     }
+    // Rows carry their collection and section names, so a rename or delete refetches them.
+    if (event.entityType === 'collection' || event.entityType === 'section') {
+      if (event.eventType !== 'created') refreshDaily();
+      return;
+    }
     if (event.entityType !== 'task') return;
     // Our own move, still reconciling: the optimistic state is already ahead.
     if (isEchoedMove(event)) return;
@@ -172,6 +177,7 @@ export function DailyPage({ layout }: { layout: ViewLayout }) {
       );
     } else if (event.eventType === 'created' && event.payload) {
       const created = apiToTask(event.payload as ApiTask);
+      if (created.collectionName === undefined) refreshDaily();
       setSections((prev) => {
         const alreadyPresent = prev.some((s) => s.tasks.some((t) => t.id === created.id));
         if (alreadyPresent) return prev;
@@ -192,10 +198,13 @@ export function DailyPage({ layout }: { layout: ViewLayout }) {
       });
     } else if (event.payload) {
       const updated = apiToTask(event.payload as ApiTask);
+      const current = sectionsRef.current.flatMap((s) => s.tasks).find((t) => t.id === event.entityId);
+      const { needsNames } = current ? withJoinedNames(updated, current) : { needsNames: false };
+      if (needsNames) refreshDaily();
       setSections((prev) =>
         prev.map((s) => ({
           ...s,
-          tasks: s.tasks.map((t) => (t.id === event.entityId ? updated : t)),
+          tasks: s.tasks.map((t) => (t.id === event.entityId ? withJoinedNames(updated, t).task : t)),
         }))
       );
     }
@@ -239,25 +248,17 @@ export function DailyPage({ layout }: { layout: ViewLayout }) {
     },
   });
 
-  // Daily spans collections, so each row states which one it belongs to.
-  const { data: collections = [] } = useQuery({ queryKey: ['collections'], queryFn: fetchCollections });
-  const sectionCollectionIds = useMemo(
-    () => [...new Set(allTasks.filter((t) => t.sectionId && t.collectionId).map((t) => t.collectionId as string))],
-    [allTasks],
-  );
-  const sectionNames = useQueries({
-    queries: sectionCollectionIds.map((id) => ({ queryKey: ['sections', id], queryFn: () => fetchSections(id) })),
-    combine: (results) => new Map(results.flatMap((r) => r.data ?? []).map((s) => [s.id, s.name])),
+  // Only the move submenu lists collections; rows name their own.
+  const { data: collections = [] } = useQuery({
+    queryKey: ['collections'],
+    queryFn: fetchCollections,
+    enabled: contextMenu !== null,
   });
-  const renderBadge = useCallback(
-    (task: Task) => {
-      const collection = collections.find((c) => c.id === task.collectionId);
-      if (!collection || collection.isInbox) return null;
-      const section = task.sectionId ? sectionNames.get(task.sectionId) : undefined;
-      return <CollectionChip name={collection.name} color={collection.color} section={section} />;
-    },
-    [collections, sectionNames],
-  );
+  // Daily spans collections, so each row states which one it belongs to.
+  const renderBadge = useCallback((task: Task) => {
+    if (!task.collectionName || task.collectionIsInbox) return null;
+    return <CollectionChip name={task.collectionName} color={task.collectionColor} section={task.sectionName} />;
+  }, []);
 
   const handleToggle = useCallback((id: string) => {
     const prevSections = sectionsRef.current;
@@ -617,7 +618,7 @@ export function DailyPage({ layout }: { layout: ViewLayout }) {
       onClick: () => {
         if (contextMenu?.taskId) {
           const taskId = contextMenu.taskId;
-          setAllTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, collectionId: c.id } : t)));
+          setAllTasks((prev) => prev.map((t) => (t.id === taskId ? movedToCollection(t, c) : t)));
           apiUpdateTask(taskId, { collectionId: c.id }).catch(() => refreshDaily());
         }
       },
@@ -636,7 +637,7 @@ export function DailyPage({ layout }: { layout: ViewLayout }) {
           const inbox = collections.find((c) => c.isInbox);
           if (inbox) {
             const taskId = contextMenu.taskId;
-            setAllTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, collectionId: inbox.id } : t)));
+            setAllTasks((prev) => prev.map((t) => (t.id === taskId ? movedToCollection(t, inbox) : t)));
             apiUpdateTask(taskId, { collectionId: inbox.id }).catch(() => refreshDaily());
           }
         }

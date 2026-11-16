@@ -42,6 +42,10 @@ export interface Task {
   indent?: number;
   type: 'task' | 'note' | 'event';
   createdAt?: string;
+  collectionName?: string;
+  collectionColor?: string;
+  collectionIsInbox?: boolean;
+  sectionName?: string;
   /** Set on Reorganize preview rows whose due date would change, for a highlight. */
   moved?: boolean;
 }
