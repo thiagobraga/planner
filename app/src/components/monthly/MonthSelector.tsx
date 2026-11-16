@@ -2,18 +2,13 @@ import { useEffect, useState, useRef, useLayoutEffect, useImperativeHandle, type
 import { Button } from '../ui/Button';
 import { StripNavigator } from '../ui/StripNavigator';
 import { useI18n, type Locale } from '../../i18n/I18nContext';
+import type { MonthSelectorHandle, MonthSelectorProps, MonthTile } from '../../types/widgets';
 
 const MONTH_WINDOW = 3;
 const MONTH_STRIP_RANGE = MONTH_WINDOW * 2;
 const MONTH_STRIP_GAP = 24;
 const MONTH_CARD_SIZE = 60;
 const MONTH_STRIP_DURATION_MS = 220;
-
-type MonthTile = {
-  year: number;
-  month: number;
-  offset: number;
-};
 
 function shiftMonth(year: number, month: number, delta: number): Omit<MonthTile, 'offset'> {
   const next = new Date(year, month + delta, 1);
@@ -31,17 +26,6 @@ function buildMonthStrip(year: number, month: number, range: number): MonthTile[
 function formatMonthLabel(year: number, month: number, locale: Locale): string {
   const label = new Intl.DateTimeFormat(locale, { month: 'short' }).format(new Date(year, month, 1));
   return (locale === 'pt-BR' ? label.replaceAll('.', '') : label).toLocaleUpperCase(locale);
-}
-
-export interface MonthSelectorProps {
-  year: number;
-  month: number; // 0-based
-  onChange: (year: number, month: number) => void;
-  className?: string;
-}
-
-export interface MonthSelectorHandle {
-  animateTo: (year: number, month: number) => void;
 }
 
 export const MonthSelector = ({

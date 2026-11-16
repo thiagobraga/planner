@@ -1,28 +1,31 @@
 import React, { useEffect, useRef, useState, KeyboardEvent, useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Check, ChevronRight } from 'lucide-react';
-import type { ContextMenuItem, ContextMenuProps } from '../../types/contextMenu';
-export type { ContextMenuItem, ContextMenuProps } from '../../types/contextMenu';
+import type {
+  ContextMenuItem,
+  ContextMenuProps,
+  ContextMenuRootProps,
+  InlinePanelProps,
+  MenuPanelProps,
+  SubMenuWrapperProps,
+} from '../../types/contextMenu';
 
 function opensChild(item: ContextMenuItem): boolean {
   return Boolean(item.panel || (item.submenu && item.submenu.length > 0));
 }
 
-export function ContextMenu({ items, position, onClose, caret = true }: ContextMenuProps) {
+function isNavigableItem(item: ContextMenuItem): boolean {
+  return item.type === 'item' && !item.disabled;
+}
+
+export function ContextMenu({ items, position, onClose, caret = true, align = 'start' }: ContextMenuProps) {
   // A context menu is just the root level of a nested menu structure
   return (
-    <ContextMenuRoot items={items} position={position} onClose={onClose} caret={caret} />
+    <ContextMenuRoot items={items} position={position} onClose={onClose} caret={caret} align={align} />
   );
 }
 
-interface ContextMenuRootProps {
-  items: ContextMenuItem[];
-  position: { x: number; y: number };
-  onClose: () => void;
-  caret: boolean;
-}
-
-function ContextMenuRoot({ items, position, onClose, caret }: ContextMenuRootProps) {
+function ContextMenuRoot({ items, position, onClose, caret, align }: ContextMenuRootProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const [activePath, setActivePath] = useState<number[]>([]);
 
@@ -72,21 +75,11 @@ function ContextMenuRoot({ items, position, onClose, caret }: ContextMenuRootPro
         onClose={onClose}
         isRoot={true}
         caret={caret}
+        align={align}
       />
     </div>,
     document.querySelector('.app-shell') ?? document.body
   );
-}
-
-interface MenuPanelProps {
-  items: ContextMenuItem[];
-  position: { x: number; y: number };
-  level: number;
-  activePath: number[];
-  setActivePath: React.Dispatch<React.SetStateAction<number[]>>;
-  onClose: () => void;
-  isRoot?: boolean;
-  caret?: boolean;
 }
 
 function MenuPanel({
@@ -98,6 +91,7 @@ function MenuPanel({
   onClose,
   isRoot,
   caret,
+  align = 'start',
 }: MenuPanelProps) {
   const panelRef = useRef<HTMLDivElement>(null);
   const [coords, setCoords] = useState({ top: position.y, left: position.x, caretLeft: 14, caretDown: false });
@@ -106,7 +100,7 @@ function MenuPanel({
 
   // Find first non-disabled item on mount
   useLayoutEffect(() => {
-    const firstActive = items.findIndex(i => i.type === 'item' && !i.disabled);
+    const firstActive = items.findIndex(isNavigableItem);
     setHighlightedIndex(firstActive >= 0 ? firstActive : -1);
   }, [items]);
 
@@ -125,7 +119,7 @@ function MenuPanel({
     const gap = isRoot && caret ? 8 : 0;
 
     let newTop = position.y + gap;
-    let newLeft = position.x;
+    let newLeft = isRoot && align === 'end' ? position.x - rect.width : position.x;
 
     if (newLeft + rect.width > vw - padding) {
       if (isRoot) {
@@ -152,7 +146,7 @@ function MenuPanel({
     const caretDown = position.y > newTop + panelHeight / 2;
 
     setCoords({ top: newTop, left: newLeft, caretLeft, caretDown });
-  }, [position, isRoot, caret]);
+  }, [position, isRoot, caret, align]);
 
   // If we are not the active panel (because a submenu is open), we shouldn't steal keyboard events
   const isActivePanel = activePath.length === level;
@@ -177,7 +171,7 @@ function MenuPanel({
         e.preventDefault();
         setHighlightedIndex((prev) => {
           let next = prev + 1;
-          while (next < items.length && (items[next].type === 'separator' || items[next].disabled)) next++;
+          while (next < items.length && !isNavigableItem(items[next])) next++;
           return next < items.length ? next : prev;
         });
         break;
@@ -185,7 +179,7 @@ function MenuPanel({
         e.preventDefault();
         setHighlightedIndex((prev) => {
           let next = prev - 1;
-          while (next >= 0 && (items[next].type === 'separator' || items[next].disabled)) next--;
+          while (next >= 0 && !isNavigableItem(items[next])) next--;
           return next >= 0 ? next : prev;
         });
         break;
@@ -234,7 +228,7 @@ function MenuPanel({
         ref={panelRef}
         tabIndex={-1}
         onKeyDown={handleKeyDown}
-        className="ui-context-menu-panel fixed z-50 min-w-45 overflow-y-auto rounded-md border border-border bg-(--planner-overlay-bg,var(--color-cream)) py-1 shadow-medium pointer-events-auto"
+        className="ui-context-menu-panel fixed z-50 min-w-45 rounded-md border border-border bg-(--planner-overlay-bg,var(--color-cream)) py-1 shadow-medium pointer-events-auto"
         style={{ top: coords.top, left: coords.left, outline: 'none' }}
         role="menu"
       >
@@ -258,6 +252,18 @@ function MenuPanel({
                 role="separator"
                 className="ui-context-menu-separator relative z-10 h-px bg-border my-1 mx-3"
               />
+            );
+          }
+
+          if (item.type === 'header') {
+            return (
+              <div
+                key={`header-${index}`}
+                role="presentation"
+                className="ui-context-menu-header relative z-10 flex items-center px-3 mx-1 text-sm text-ink-light select-none"
+              >
+                {item.label}
+              </div>
             );
           }
 
@@ -344,16 +350,6 @@ function MenuPanel({
   );
 }
 
-interface SubMenuWrapperProps {
-  parentItem: ContextMenuItem;
-  parentRef: React.RefObject<HTMLDivElement | null>;
-  itemIndex: number;
-  level: number;
-  activePath: number[];
-  setActivePath: React.Dispatch<React.SetStateAction<number[]>>;
-  onClose: () => void;
-}
-
 function SubMenuWrapper({
   parentItem,
   parentRef,
@@ -402,7 +398,7 @@ function SubMenuWrapper({
   );
 }
 
-function InlinePanel({ position, children }: { position: { x: number; y: number }; children: React.ReactNode }) {
+function InlinePanel({ position, children }: InlinePanelProps) {
   const panelRef = useRef<HTMLDivElement>(null);
   const [coords, setCoords] = useState({ top: position.y, left: position.x });
 

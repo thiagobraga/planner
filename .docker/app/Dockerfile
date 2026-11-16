@@ -4,6 +4,7 @@ WORKDIR /app
 COPY --chown=node:node app/package.json app/package-lock.json app/.npmrc ./
 RUN npm ci
 COPY --chown=node:node app ./
+COPY --chown=node:node CHANGELOG.md /CHANGELOG.md
 RUN npm run build && npm cache clean --force
 
 FROM node:26.12.1-alpine3.24 AS development
@@ -14,6 +15,7 @@ RUN apk upgrade --no-cache && apk add --no-cache chromium
 ENV PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium-browser
 COPY --chown=node:node --chmod=755 .docker/app/entrypoint.sh /entrypoint.sh
 COPY --chown=node:node app ./
+COPY --chown=node:node CHANGELOG.md /CHANGELOG.md
 EXPOSE 5173
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["npm", "run", "dev"]

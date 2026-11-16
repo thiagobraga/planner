@@ -8,21 +8,16 @@ import { SectionHeader } from '../components/SectionHeader';
 import { InlineNameInput } from '../components/ui/InlineNameInput';
 import { EditableText } from '../components/ui/EditableText';
 import { CollectionBoard } from '../components/board/CollectionBoard';
-import { BoardToolbar } from '../components/board/BoardToolbar';
+import { BoardPageToolbar } from '../components/board/BoardPageToolbar';
 import { MonthlyView } from '../components/monthly/MonthlyView';
 import { PageHeader } from '../components/PageHeader';
-import { Toolbar } from '../components/ui/Toolbar';
-import { ViewSwitcher } from '../components/ui/ViewSwitcher';
 import { nextOrderValue } from '../utils/order';
 import { extractNaturalDate } from '../utils/date';
-import type { Task } from '../components/TaskItem';
-import type { Section } from '../stores/taskStore';
 import { fetchCollectionView, apiCreateTask, apiUpdateTask, apiToggleTask, apiDeleteTask, apiMoveTask, apiCreateCollection, apiUpdateCollection, apiDeleteCollection, apiCreateSection, apiUpdateSection, apiDeleteSection, PALETTE_COLORS } from '../api/client';
 import type { ApiTask, ApiCollection } from '../types/api';
 import { runOptimistic, patchById, upsertById } from '../stores/optimistic';
 import { useTaskDrag } from '../hooks/useTaskDrag';
 import { useSectionDrag } from '../hooks/useSectionDrag';
-import { useTaskVisibilityPreferences } from '../hooks/useTaskVisibilityPreferences';
 import { usePreferences } from '../hooks/usePreferences';
 import { useBoardPreferences } from '../hooks/useBoardPreferences';
 import { resolveTaskIndent } from '../utils/taskIndent';
@@ -30,7 +25,8 @@ import { persistTaskIndent } from '../utils/persistTaskIndent';
 import { buildIndentMenuItems } from '../components/taskIndentMenu';
 import type { TaskIndentHandler, TaskIndentMenuContext, TaskListContextMenuHandler } from '../types/taskIndent';
 import { fetchCollections } from '../api/client';
-import { ContextMenu, type ContextMenuItem } from '../components/ui/ContextMenu';
+import { ContextMenu } from '../components/ui/ContextMenu';
+import type { ContextMenuItem } from '../types/contextMenu';
 import { ColorPickerPopover } from '../components/ui/ColorPickerPopover';
 import { buildCollectionMenuItems } from '../components/collectionMenuItems';
 import { ConfirmModal } from '../components/ConfirmModal';
@@ -40,7 +36,7 @@ import { Folder, ArrowUp, ArrowDown, Trash2, Pencil, ChevronRight } from 'lucide
 import { useI18n } from '../i18n/I18nContext';
 import { applySchedule, scheduleFieldsFromApi, withTimeZones } from '../utils/taskTime';
 import { buildSetDateMenuItem } from '../components/taskDateMenuItem';
-import type { TaskSchedule } from '../types/task';
+import type { StoreSection, Task, TaskSchedule } from '../types/task';
 import { blurOnEscape } from '../utils/editableText';
 import { buildTaskMenuActions } from '../utils/taskMenuActions';
 import { useSync } from '../hooks/useSync';
@@ -71,8 +67,8 @@ function apiToTask(t: ApiTask): Task {
 let tempCounter = 0;
 function tempId() { return `temp-${++tempCounter}`; }
 
-function buildSectionGroups(tasks: Task[], sections: Section[]) {
-  const groups: Array<{ section: Section | null; tasks: Task[] }> = [];
+function buildSectionGroups(tasks: Task[], sections: StoreSection[]) {
+  const groups: Array<{ section: StoreSection | null; tasks: Task[] }> = [];
 
   // Top-level tasks (sectionId-less)
   groups.push({
@@ -97,7 +93,7 @@ export function CollectionsPage() {
   const navigate = useNavigate();
   const qc = useQueryClient();
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [sections, setSections] = useState<Section[]>([]);
+  const [sections, setSections] = useState<StoreSection[]>([]);
   const [input, setInput] = useState('');
   const [editingId, setEditingId] = useState<string | undefined>();
   const [editingSectionId, setEditingSectionId] = useState<string | null>(null);
@@ -122,9 +118,14 @@ export function CollectionsPage() {
     inputRef.current?.focus();
   }, [id]);
 
+  const { data: preferences } = usePreferences();
+  const boardPreferences = useBoardPreferences(id, preferences);
+  const { includeCompleted } = boardPreferences;
+  // Same prefix as every ['collection', id] invalidation; the suffix keeps the two task sets apart.
+  const viewKey = useMemo(() => (includeCompleted ? ['collection', id, 'with-completed'] : ['collection', id]), [id, includeCompleted]);
   const { data } = useQuery({
-    queryKey: ['collection', id],
-    queryFn: () => fetchCollectionView(id),
+    queryKey: viewKey,
+    queryFn: () => fetchCollectionView(id, { includeCompleted }),
     staleTime: 30_000,
     enabled: !!id,
   });
@@ -133,13 +134,6 @@ export function CollectionsPage() {
       qc.invalidateQueries({ queryKey: ['collection', id] });
     }
   }, [id, qc]));
-  const { data: preferences } = usePreferences();
-  const {
-    isPending: visibilityPreferencesPending,
-    setHideCompletedTasks,
-    setShowNotes,
-  } = useTaskVisibilityPreferences(preferences);
-  const boardPreferences = useBoardPreferences(id, preferences);
 
   useLayoutEffect(() => {
     if (data?.tasks) {
@@ -400,7 +394,7 @@ export function CollectionsPage() {
   const handleToggle = useCallback((taskId: string) => {
     const hideCompleted = preferences?.hideCompletedTasks ?? false;
     const task = tasks.find((t) => t.id === taskId);
-    const removeOnComplete = hideCompleted && task && !task.isCompleted;
+    const removeOnComplete = hideCompleted && !includeCompleted && task && !task.isCompleted;
     const previousTasks = tasks;
 
     setTasks((prev) =>
@@ -416,7 +410,7 @@ export function CollectionsPage() {
         });
       }
     }
-  }, [invalidate, preferences?.hideCompletedTasks, tasks]);
+  }, [invalidate, preferences?.hideCompletedTasks, includeCompleted, tasks]);
 
   const { data: collections = [] } = useQuery({ queryKey: ['collections'], queryFn: fetchCollections });
 
@@ -694,27 +688,14 @@ export function CollectionsPage() {
             </div>
           )
         }
-        toolbar={
-          <Toolbar className="collection-page-header-controls" viewSwitcher={<ViewSwitcher view={boardPreferences.view} onViewChange={boardPreferences.setView} />}>
-            <BoardToolbar
-              view={boardPreferences.view}
-              groupBy={boardPreferences.groupBy}
-              hideCompletedTasks={preferences?.hideCompletedTasks ?? false}
-              showNotes={preferences?.showNotes ?? true}
-              preferencesDisabled={!preferences || visibilityPreferencesPending}
-              onGroupByChange={boardPreferences.setGroupBy}
-              onHideCompletedTasksChange={setHideCompletedTasks}
-              onShowNotesChange={setShowNotes}
-            />
-          </Toolbar>
-        }
+        actions={<BoardPageToolbar board={boardPreferences} />}
       />
 
-      <div className={boardPreferences.view !== 'list' ? 'w-full' : 'max-w-162'}>
+      <div className={boardPreferences.view !== 'list' ? 'w-full' : undefined}>
         {boardPreferences.view !== 'list' && boardPreferences.view !== 'calendar' && data ? (
           <CollectionBoard
             collectionId={id}
-            queryKey={['collection', id]}
+            queryKey={viewKey}
             groupBy={boardPreferences.groupBy}
             tasks={data.tasks}
             statuses={data.statuses}

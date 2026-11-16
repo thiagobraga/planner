@@ -13,6 +13,7 @@ import { NavStyleField } from '../components/settings/NavStyleField';
 import type { Preferences } from '../types/api';
 import { ensureFontLoaded, type FontOption } from '../utils/fontLoader';
 import { getDetectedTimeZone } from '../utils/date';
+import { handleRadioNavigation } from '../utils/radioNavigation';
 import { THEME_SWATCHES } from '../utils/theme';
 import { useFloatingPosition } from '../hooks/useFloatingPosition';
 import { useI18n } from '../i18n/I18nContext';
@@ -62,6 +63,8 @@ const BACKGROUND_OPTIONS: Array<{ value: Preferences['background']; labelKey: Tr
   { value: 'beige', labelKey: 'settings.beige' },
   { value: 'white', labelKey: 'settings.white' },
   { value: 'dark', labelKey: 'settings.dark' },
+  { value: 'nord-light', labelKey: 'settings.nordLight' },
+  { value: 'nord-dark', labelKey: 'settings.nordDark' },
   { value: 'system', labelKey: 'settings.system' },
 ];
 
@@ -502,7 +505,7 @@ export function SettingsPage() {
 
   if (isLoading) {
     return (
-      <div className="max-w-5xl pb-24 text-ink">
+      <div className="pb-24 text-ink">
         <PageHeader title={t('settings.title')} />
         <p className="text-sm leading-6 text-ink opacity-75 m-0">{t('settings.loading')}</p>
       </div>
@@ -510,8 +513,8 @@ export function SettingsPage() {
   }
 
   return (
-    <div className="flex min-h-[calc(100dvh-48px)] max-w-5xl flex-col text-ink">
-      <header className="page-header-copy sticky-page-header max-w-162 shrink-0">
+    <div className="flex min-h-[calc(100dvh-48px)] flex-col text-ink">
+      <header className="page-header-copy sticky-page-header shrink-0">
         <div className="page-header-copy-text w-full !pr-0">
           <h1 className="m-0 h-6 p-0 text-[18px] leading-6 font-semibold text-ink">{t('settings.title')}</h1>
           <p className="page-header-subtitle m-0 min-h-6 p-0 !pr-0 text-[13px] leading-6 text-ink-light opacity-60 !whitespace-normal !overflow-visible">
@@ -803,7 +806,7 @@ export function SettingsPage() {
                       <h3 className="text-[10px] leading-5 tracking-[0.12em] uppercase text-ink-light font-medium">
                         {t('settings.theme')}
                       </h3>
-                      <div className="grid max-w-[584px] grid-cols-2 gap-6 sm:grid-cols-4" role="radiogroup" aria-label={t('settings.theme')}>
+                      <div className="grid max-w-[584px] grid-cols-2 gap-6 sm:grid-cols-3" role="radiogroup" aria-label={t('settings.theme')} onKeyDown={handleRadioNavigation}>
                         {BACKGROUND_OPTIONS.map(({ value, labelKey }) => {
                           const selected = background === value;
                           return (
@@ -813,6 +816,8 @@ export function SettingsPage() {
                               role="radio"
                               aria-checked={selected}
                               disabled={disabled}
+                              tabIndex={selected ? 0 : -1}
+                              title={t(labelKey)}
                               onClick={() => handleBackgroundChange(value)}
                               className="group flex flex-col items-center gap-2 disabled:cursor-not-allowed disabled:opacity-50"
                             >

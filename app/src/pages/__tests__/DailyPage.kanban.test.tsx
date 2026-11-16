@@ -1,8 +1,9 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, fireEvent, within, waitFor } from '@testing-library/react';
+import { act, render, screen, fireEvent, within, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { DailyRoute } from '../DailyRoutes';
+import { runPageShortcut } from '../../stores/pageShortcutsStore';
 import { dailyView } from '../../test/dailyFixtures';
 import { I18nProvider } from '../../i18n/I18nContext';
 import { PlannerDragProvider } from '../../contexts/PlannerDragContext';
@@ -114,8 +115,11 @@ function renderPage(slug = 'list') {
   );
 }
 
-function openToolbarMenu() {
-  fireEvent.click(screen.getByRole('button', { name: 'More options' }));
+async function switchToColumnCards() {
+  fireEvent.click(screen.getByRole('button', { name: 'View' }));
+  fireEvent.click(screen.getByRole('menuitemradio', { name: /Columns/ }));
+  fireEvent.click(await screen.findByRole('radio', { name: 'Cards' }));
+  fireEvent.keyDown(screen.getByRole('menu'), { key: 'Escape' });
 }
 
 beforeEach(() => {
@@ -136,8 +140,7 @@ describe('DailyPage week kanban view', () => {
     vi.mocked(apiCreateTask).mockResolvedValue({ ...todayTask, id: 'created', title: 'Plan the day' });
     const { container } = renderPage();
     await screen.findByText('Today task');
-    openToolbarMenu();
-    fireEvent.click(screen.getByRole('button', { name: 'Kanban cards' }));
+    await switchToColumnCards();
     await screen.findByTestId('daily-week-board');
     const column = within(container.querySelector(`[data-column-id="day:${todayKey}"]`)! as HTMLElement);
     fireEvent.click(column.getByRole('button', { name: 'New task…' }));
@@ -154,8 +157,7 @@ describe('DailyPage week kanban view', () => {
     vi.mocked(apiCreateTask).mockRejectedValue(new Error('Unavailable'));
     const { container } = renderPage();
     await screen.findByText('Today task');
-    openToolbarMenu();
-    fireEvent.click(screen.getByRole('button', { name: 'Kanban cards' }));
+    await switchToColumnCards();
     await screen.findByTestId('daily-week-board');
     const column = within(container.querySelector('[data-column-id="migrate"]')! as HTMLElement);
     fireEvent.click(column.getByRole('button', { name: 'New task…' }));
@@ -171,12 +173,11 @@ describe('DailyPage week kanban view', () => {
     expect(apiCreateTask).toHaveBeenCalledWith(expect.objectContaining({ dueDate: undefined }));
   });
 
-  it('switches to the week board when Kanban is picked from the VIEW row, hiding the chronological list', async () => {
+  it('switches to the day columns from the View menu, hiding the chronological list', async () => {
     renderPage();
     await screen.findByText('Today task');
 
-    openToolbarMenu();
-    fireEvent.click(screen.getByRole('button', { name: 'Kanban cards' }));
+    await switchToColumnCards();
 
     expect(await screen.findByTestId('daily-week-board')).toBeInTheDocument();
     expect(screen.queryByTestId('task-list')).not.toBeInTheDocument();
@@ -186,8 +187,7 @@ describe('DailyPage week kanban view', () => {
     const { container } = renderPage();
     await screen.findByText('Today task');
 
-    openToolbarMenu();
-    fireEvent.click(screen.getByRole('button', { name: 'Kanban cards' }));
+    await switchToColumnCards();
     await screen.findByTestId('daily-week-board');
 
     const migrateColumn = container.querySelector('[data-column-id="migrate"]');
@@ -221,8 +221,7 @@ describe('DailyPage week kanban view', () => {
     const { container } = renderPage();
     await screen.findByText('Today task');
 
-    openToolbarMenu();
-    fireEvent.click(screen.getByRole('button', { name: 'Kanban cards' }));
+    await switchToColumnCards();
     await screen.findByTestId('daily-week-board');
 
     expect(container.querySelector(`[data-column-id="day:${todayKey}"] .board-card-date`)).toBeNull();
@@ -250,25 +249,37 @@ describe('DailyPage week kanban view', () => {
     fireEvent.contextMenu(container.querySelector('.daily-page')!, { clientX: 100, clientY: 100 });
 
     expect(await screen.findByRole('menu')).toBeInTheDocument();
-    expect(screen.getByRole('menuitem', { name: 'List' })).toBeInTheDocument();
-    expect(screen.getByRole('menuitem', { name: 'Kanban lists' })).toBeInTheDocument();
-    expect(screen.getByRole('menuitem', { name: 'Kanban cards' })).toBeInTheDocument();
+    expect(screen.getByRole('menuitemradio', { name: 'List' })).toHaveAttribute('aria-checked', 'true');
+    expect(screen.getByRole('menuitemradio', { name: 'Columns' })).toBeInTheDocument();
+    expect(screen.getByRole('menuitemradio', { name: 'Notebook' })).toBeInTheDocument();
+    expect(screen.getByRole('menuitemradio', { name: 'Cards' })).toBeInTheDocument();
     expect(screen.queryByRole('menuitem', { name: /Next days/ })).not.toBeInTheDocument();
   });
 
-  it('moves the visible week forward when the next-week arrow is clicked', async () => {
+  it('moves the visible week forward when the next arrow is clicked', async () => {
     const { container } = renderPage();
     await screen.findByText('Today task');
 
-    openToolbarMenu();
-    fireEvent.click(screen.getByRole('button', { name: 'Kanban cards' }));
+    await switchToColumnCards();
     await screen.findByTestId('daily-week-board');
 
     expect(container.querySelector(`[data-column-id="day:${todayKey}"]`)).not.toBeNull();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Next week' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
 
     expect(container.querySelector(`[data-column-id="day:${todayKey}"]`)).toBeNull();
     expect(container.querySelector(`[data-column-id="day:${inSevenDaysKey}"]`)).not.toBeNull();
+  });
+
+  it('answers the view shortcuts: range by number, style by v s, layout by v l', async () => {
+    const { container } = renderPage('columns');
+    await screen.findByTestId('daily-week-board');
+
+    act(() => runPageShortcut('view:range:3'));
+    await waitFor(() => expect(mockApiUpdatePreferences).toHaveBeenCalledWith({ dailyView: { style: 'notebook', range: 'd3' } }));
+    act(() => runPageShortcut('view:style'));
+    await waitFor(() => expect(mockApiUpdatePreferences).toHaveBeenLastCalledWith({ dailyView: { style: 'cards', range: 'd3' } }));
+    act(() => runPageShortcut('view:layout:list'));
+    await waitFor(() => expect(container.querySelector('[data-testid="daily-week-board"]')).toBeNull());
   });
 });

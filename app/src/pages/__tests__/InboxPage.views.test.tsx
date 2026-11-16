@@ -9,7 +9,8 @@ import {
   taskListMock,
   collectionBoardMock,
 } from './helpers/inboxFixtures';
-import { renderPage, createInboxHarness, inboxBeforeEach, openToolbarMenu } from './helpers/inboxHarness';
+import { basePreferences } from './helpers/inboxFixtures';
+import { renderPage, createInboxHarness, inboxBeforeEach } from './helpers/inboxHarness';
 import { trackMove, resetTrackedMoves } from '../../utils/moveEcho';
 import {
   fetchInboxTasks,
@@ -99,14 +100,18 @@ inboxBeforeEach({ mockFetchInboxTasks, mockApiCreateTask, mockApiUpdateTask, moc
     mockApiUpdatePreferences, mockFetchPreferences, mockFetchCollections, mockTaskList,
     mockUseSync, mockUseTaskDrag, mockUseSectionDrag });
 
+  function withBoardMode(mode: Record<string, string>) {
+    mockFetchPreferences.mockResolvedValue({ ...basePreferences, boardViewModes: { 'col-1': mode } });
+  }
+
   describe('view modes', () => {
-    it('renders the kanban board when the local view says so', async () => {
+    it('renders the board when the saved layout says so', async () => {
       mockFetchInboxTasks.mockResolvedValue({
         ...baseInboxData,
         inboxCollectionId: 'col-1',
         tasks: sampleTasks,
       });
-      window.localStorage.setItem('planner.boardViews.v1', JSON.stringify({ 'col-1': 'kanban' }));
+      withBoardMode({ layout: 'columns', style: 'cards' });
       renderPage();
 
       const board = await screen.findByTestId('collection-board');
@@ -115,21 +120,20 @@ inboxBeforeEach({ mockFetchInboxTasks, mockApiCreateTask, mockApiUpdateTask, moc
       expect(screen.queryByTestId('task-list-collection:inbox')).not.toBeInTheDocument();
     });
 
-    it('keeps Kanban lists local while preserving the board grouping controls', async () => {
+    it('shows Columns in Notebook style with the grouping menu', async () => {
       mockFetchInboxTasks.mockResolvedValue({
         ...baseInboxData,
         inboxCollectionId: 'col-1',
         tasks: sampleTasks,
       });
-      window.localStorage.setItem('planner.boardViews.v1', JSON.stringify({ 'col-1': 'kanban-list' }));
+      withBoardMode({ layout: 'columns' });
       renderPage();
 
       expect(await screen.findByTestId('collection-board')).toHaveAttribute('data-presentation', 'kanban-list');
-      openToolbarMenu();
-      expect(screen.getByRole('button', { name: 'Kanban lists' })).toHaveAttribute('aria-pressed', 'true');
+      expect(screen.getByRole('button', { name: 'Group: Status' })).toBeInTheDocument();
     });
 
-    it('switches to the kanban view from the toolbar and keeps it local', async () => {
+    it('switches to Columns from the View menu and saves it for the Inbox collection', async () => {
       mockFetchInboxTasks.mockResolvedValue({
         ...baseInboxData,
         inboxCollectionId: 'col-1',
@@ -137,16 +141,11 @@ inboxBeforeEach({ mockFetchInboxTasks, mockApiCreateTask, mockApiUpdateTask, moc
       });
       renderPage();
       await screen.findByText('Buy groceries');
-      openToolbarMenu();
-      const showNotes = await screen.findByRole('checkbox', { name: 'Notes' });
-      await waitFor(() => expect(showNotes).not.toBeDisabled());
 
-      const kanbanButton = screen.getByRole('button', { name: 'Kanban cards' });
-      fireEvent.click(kanbanButton);
+      fireEvent.click(screen.getByRole('button', { name: 'View' }));
+      fireEvent.click(screen.getByRole('menuitemradio', { name: /Columns/ }));
 
-      expect(mockApiUpdatePreferences).not.toHaveBeenCalled();
-      expect(window.localStorage.getItem('planner.boardViews.v1')).toBe(JSON.stringify({ 'col-1': 'kanban' }));
-      expect(await screen.findByTestId('collection-board')).toBeInTheDocument();
+      await waitFor(() => expect(mockApiUpdatePreferences).toHaveBeenCalledWith({ boardViewModes: { 'col-1': { layout: 'columns' } } }));
     });
 
     it('toggles a task from the kanban board', async () => {
@@ -155,7 +154,7 @@ inboxBeforeEach({ mockFetchInboxTasks, mockApiCreateTask, mockApiUpdateTask, moc
         inboxCollectionId: 'col-1',
         tasks: sampleTasks,
       });
-      window.localStorage.setItem('planner.boardViews.v1', JSON.stringify({ 'col-1': 'kanban' }));
+      withBoardMode({ layout: 'columns', style: 'cards' });
       renderPage();
 
       const board = await screen.findByTestId('collection-board');

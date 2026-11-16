@@ -72,8 +72,9 @@ export async function apiArchiveCollection(id: string): Promise<ApiCollection> {
   return request<ApiCollection>(`/collections/${id}/archive`, { method: 'POST' });
 }
 
-export async function fetchCollectionView(id: string): Promise<CollectionView> {
-  return request<CollectionView>(`/views/collection/${id}`);
+/** `includeCompleted` overrides the hide-completed preference (status boards fill their completion column). */
+export async function fetchCollectionView(id: string, options: { includeCompleted?: boolean } = {}): Promise<CollectionView> {
+  return request<CollectionView>(`/views/collection/${id}${options.includeCompleted ? '?include_completed=true' : ''}`);
 }
 
 // Statuses ------------------------------------------------------------------

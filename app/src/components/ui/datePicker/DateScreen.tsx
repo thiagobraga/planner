@@ -1,16 +1,30 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ArrowRight, CalendarDays, CalendarRange, ChevronRight, Clock, CornerDownLeft, Flag, Repeat, Sun, Sunrise } from 'lucide-react';
+import {
+  ArrowRight,
+  CalendarDays,
+  CalendarRange,
+  ChevronRight,
+  Clock,
+  CornerDownLeft,
+  Flag,
+  Repeat,
+  Sun,
+  Sunrise,
+} from 'lucide-react';
 import { useI18n } from '../../../i18n/I18nContext';
 import type { TranslationKey } from '../../../i18n/catalogs';
 import { apiParseDate } from '../../../api/client';
-import type { ParsedDateInput, TaskSchedule } from '../../../types/task';
-import type { WeekStart } from '../../../utils/date';
-import { dateQuickOptions, formatShortDay, type DateQuickOptionKey } from '../../../utils/dateQuickOptions';
+import {
+  dateQuickOptions,
+  formatShortDay,
+  type DateQuickOptionKey,
+} from '../../../utils/dateQuickOptions';
 import { recurrenceSummary } from '../../../utils/recurrenceSummary';
 import { formatDurationLabel } from './durations';
 import { Button } from '../Button';
 import { MonthCalendar } from '../MonthCalendar';
 import { Divider, ICON, ScreenHeader, bareInput, fieldShell } from './parts';
+import type { DatePreview, DateScreenProps } from '../../../types/ui';
 
 const QUICK_ICONS: Record<DateQuickOptionKey, typeof Sun> = {
   today: Sun,
@@ -26,8 +40,6 @@ const QUICK_LABELS: Record<DateQuickOptionKey, TranslationKey> = {
   nextWeek: 'datePicker.nextWeek',
 };
 
-type Preview = { status: 'idle' | 'none' } | { status: 'found'; result: ParsedDateInput };
-
 const PARSE_DELAY_MS = 250;
 
 // Focusing on a touch screen would raise the keyboard over the calendar.
@@ -35,24 +47,13 @@ function focusOnFinePointer(input: HTMLInputElement | null) {
   if (input && window.matchMedia?.('(pointer: fine)').matches) input.focus({ preventScroll: true });
 }
 
-interface DateScreenProps {
-  draft: TaskSchedule;
-  onChange: (patch: Partial<TaskSchedule>) => void;
-  weekStart: WeekStart;
-  onOpenTime: (focusDeadline: boolean) => void;
-  onOpenRepeat: () => void;
-  onSave: () => void;
-  onRemove: () => void;
-  onClose: () => void;
-}
-
 export function DateScreen({ draft, onChange, weekStart, onOpenTime, onOpenRepeat, onSave, onRemove, onClose }: DateScreenProps) {
   const { t, locale } = useI18n();
   const [text, setText] = useState('');
   // The verdict for one query; a stale one (text changed since) reads as idle.
-  const [parsed, setParsed] = useState<{ query: string; preview: Preview }>({ query: '', preview: { status: 'idle' } });
+  const [parsed, setParsed] = useState<{ query: string; preview: DatePreview }>({ query: '', preview: { status: 'idle' } });
   const query = text.trim();
-  const preview: Preview = query && parsed.query === query ? parsed.preview : { status: 'idle' };
+  const preview: DatePreview = query && parsed.query === query ? parsed.preview : { status: 'idle' };
   const quickOptions = useMemo(() => dateQuickOptions(new Date(), weekStart), [weekStart]);
   // Remount the calendar on a date picked elsewhere so it pages to that month.
   const [calendarKey, setCalendarKey] = useState(0);

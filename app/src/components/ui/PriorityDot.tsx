@@ -1,12 +1,4 @@
-export type Priority = 1 | 2 | 3 | 4;
-
-export interface PriorityDotProps {
-  /** 1–4; omit or pass undefined for the default (grey) dot. */
-  priority?: Priority;
-  /** Render the "P1"…"P4" label after the dot. */
-  showLabel?: boolean;
-  className?: string;
-}
+import type { Priority, PriorityDotProps } from '../../types/ui';
 
 // Priority bullet colors - mirrors TaskItem's priorityClasses mapping.
 const DOT_COLOR: Record<Priority, string> = {

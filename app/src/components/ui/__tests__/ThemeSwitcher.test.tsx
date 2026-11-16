@@ -39,6 +39,8 @@ describe('ThemeSwitcher', () => {
       'Beige',
       'White',
       'Dark',
+      'Nord Light',
+      'Nord Dark',
     ]);
   });
 
@@ -59,6 +61,27 @@ describe('ThemeSwitcher', () => {
     await waitFor(() => expect(queryClient.getQueryData<Preferences>(['preferences'])?.background).toBe('dark'));
     await waitFor(() => expect(mockUpdatePreferences).toHaveBeenCalledWith({ background: 'dark' }));
     await waitFor(() => expect(screen.getByRole('radio', { name: 'Dark' })).toHaveAttribute('aria-checked', 'true'));
+  });
+
+  it.each([['Nord Light', 'nord-light'], ['Nord Dark', 'nord-dark']])('saves %s and restores the prior selection on failure', async (label, background) => {
+    mockUpdatePreferences.mockRejectedValue(new Error('offline'));
+    renderSwitcher();
+
+    fireEvent.click(screen.getByRole('radio', { name: label }));
+
+    await waitFor(() => expect(mockUpdatePreferences).toHaveBeenCalledWith({ background }));
+    await waitFor(() => expect(screen.getByRole('radio', { name: 'Beige' })).toHaveAttribute('aria-checked', 'true'));
+    expect(screen.getByRole('radio', { name: label })).toHaveAttribute('aria-checked', 'false');
+  });
+
+  it('selects and focuses the adjacent theme with arrow keys', async () => {
+    mockUpdatePreferences.mockImplementation(async (patch) => ({ ...basePreferences, ...patch }));
+    renderSwitcher();
+
+    fireEvent.keyDown(screen.getByRole('radio', { name: 'Dark' }), { key: 'ArrowRight' });
+
+    await waitFor(() => expect(mockUpdatePreferences).toHaveBeenCalledWith({ background: 'nord-light' }));
+    expect(screen.getByRole('radio', { name: 'Nord Light' })).toHaveFocus();
   });
 
   it('rolls back when saving fails', async () => {

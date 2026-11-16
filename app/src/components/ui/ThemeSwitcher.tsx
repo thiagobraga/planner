@@ -5,6 +5,7 @@ import type { Preferences } from '../../types/api';
 import { useI18n } from '../../i18n/I18nContext';
 import type { TranslationKey } from '../../i18n/catalogs';
 import type { BackgroundPreference } from '../../types/theme';
+import { handleRadioNavigation } from '../../utils/radioNavigation';
 import { THEME_SWATCHES } from '../../utils/theme';
 import { ToolbarSectionLabel } from './ToolbarSectionLabel';
 
@@ -13,6 +14,8 @@ const MENU_THEMES: Array<{ value: BackgroundPreference; labelKey: TranslationKey
   { value: 'beige', labelKey: 'settings.beige' },
   { value: 'white', labelKey: 'settings.white' },
   { value: 'dark', labelKey: 'settings.dark' },
+  { value: 'nord-light', labelKey: 'settings.nordLight' },
+  { value: 'nord-dark', labelKey: 'settings.nordDark' },
 ];
 
 export function ThemeSwitcher() {
@@ -46,7 +49,7 @@ export function ThemeSwitcher() {
   return (
     <>
       <ToolbarSectionLabel>{t('menu.theme')}</ToolbarSectionLabel>
-      <div role="radiogroup" aria-label={t('menu.theme')} className="theme-switcher flex items-center gap-2">
+      <div role="radiogroup" aria-label={t('menu.theme')} onKeyDown={handleRadioNavigation} className="theme-switcher flex flex-wrap items-center gap-2">
         {MENU_THEMES.map(({ value, labelKey }) => {
           const selected = current === value;
           const swatch = THEME_SWATCHES[value];
@@ -56,6 +59,7 @@ export function ThemeSwitcher() {
               type="button"
               role="radio"
               aria-checked={selected}
+              tabIndex={selected || !current || current === 'system' && value === 'beige' ? 0 : -1}
               aria-label={t(labelKey)}
               title={t(labelKey)}
               disabled={!preferences}

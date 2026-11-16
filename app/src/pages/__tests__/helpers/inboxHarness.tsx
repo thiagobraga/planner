@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { MemoryRouter } from 'react-router';
 import { beforeEach, afterEach, vi, type MockInstance } from 'vitest';
@@ -68,10 +68,6 @@ export function inboxBeforeEach(refs: InboxMockRefs): void {
   afterEach(() => {
     vi.restoreAllMocks();
   });
-}
-
-export function openToolbarMenu(): void {
-  fireEvent.click(screen.getByRole('button', { name: 'More options' }));
 }
 
 export function renderPage(

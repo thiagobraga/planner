@@ -1,7 +1,7 @@
 import type { BackgroundPreference } from './theme';
 import type { NavStyle } from './navigation';
 import type { RecurrenceRule } from './task';
-import type { BoardViewMode } from './board';
+import type { DailyViewSettings, InboxGroupBy, ViewLayout, ViewStyle } from './view';
 import type { BoardGroupBy, TaskOrderScope } from './drag';
 
 export interface ValidationDetail {
@@ -63,7 +63,13 @@ export interface ApiStatus {
   updatedAt: string;
 }
 
-export type BoardViewModes = Record<string, { view?: BoardViewMode; groupBy?: BoardGroupBy }>;
+export interface BoardViewSettings {
+  layout?: ViewLayout;
+  style?: ViewStyle;
+  groupBy?: BoardGroupBy | InboxGroupBy;
+}
+
+export type BoardViewModes = Record<string, BoardViewSettings>;
 
 export interface Preferences {
   userId: string;
@@ -83,6 +89,8 @@ export interface Preferences {
   agentChangeNotices?: boolean;
   collapsedCollectionIds: string[];
   boardViewModes: BoardViewModes;
+  dailyView?: DailyViewSettings;
+  fullWidth?: boolean;
   dateFormat?: string;
 }
 
@@ -101,6 +109,11 @@ export interface TaskMoveInput {
   scope: TaskOrderScope;
   /** Zero-based index within that scope. Clamped server-side. */
   position: number;
+  /**
+   * The sibling the task lands directly below, null for the top. The server
+   * prefers it over `position`, which drifts when a sibling is hidden here.
+   */
+  afterTaskId?: string | null;
 }
 
 /** The trimmed per-task fields `moveTask` reports back - not a full task row. */

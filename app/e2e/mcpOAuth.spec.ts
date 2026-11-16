@@ -58,7 +58,7 @@ test.describe('MCP OAuth sign-in', () => {
     await page.locator('input[type="password"]').fill(PASSWORD);
     await page.locator('button[type="submit"]').click();
 
-    await expect(page.getByRole('heading', { name: 'E2E Assistant wants to use your Bullet Planner' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'E2E Assistant wants to use your BulletPlanner' })).toBeVisible();
     await expect(page.getByText('You will be sent back to 127.0.0.1:8765.')).toBeVisible();
     await page.getByRole('button', { name: 'Allow read & write' }).click();
 

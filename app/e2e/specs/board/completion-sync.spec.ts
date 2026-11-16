@@ -1,3 +1,4 @@
+import { chooseView } from '../../fixtures/view';
 import { dragCard } from '../../fixtures/drag';
 import { card, expect, moveToStatus, openBoard, statusColumn, STORAGE_STATE_PATH, test, uniqueName } from './helpers';
 
@@ -21,7 +22,7 @@ test('completion column and list checkbox stay synchronized', async ({ api, page
     await dragCard(page, card(page, task.id), statusColumn(page, completed.id).locator('.board-column-cards'));
     await expect(card(page, task.id).getByRole('heading')).toHaveClass(/line-through/);
 
-    await page.getByRole('button', { name: 'List', exact: true }).click();
+    await chooseView(page, { layout: 'List' });
     const row = page.locator(`[data-task-id="${task.id}"]`);
     await expect(row.locator('.task-item-title-text')).toHaveClass(/line-through/);
     await row.getByRole('button', { name: new RegExp(`Reopen.*${task.title}`, 'i') }).click();

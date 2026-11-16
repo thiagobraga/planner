@@ -106,10 +106,6 @@ const defaultPreferences = {
   showNotes: true,
 };
 
-function openToolbarMenu() {
-  fireEvent.click(screen.getByRole('button', { name: 'More options' }));
-}
-
 function renderPage(initialPath = '/collection/test-collection-id') {
   const client = new QueryClient({
     defaultOptions: {
@@ -174,33 +170,14 @@ const childCollection = {
 };
 
 describe('CollectionsPage', () => {
-  it('renders the collection name in the breadcrumb', async () => {
+  it('renders the collection name with the page toolbar on its row', async () => {
     renderPage();
 
     const title = await screen.findByText('Test Collection');
-    const header = title.closest('header');
-    openToolbarMenu();
-
-    expect(header).toBeInTheDocument();
-    expect(header).toContainElement(screen.getByRole('checkbox', { name: 'Completed tasks' }));
-    expect(header).toContainElement(screen.getByRole('checkbox', { name: 'Notes' }));
-    expect(screen.getByRole('checkbox', { name: 'Notes' }).closest('.page-header-toolbar')).toBeInTheDocument();
-  });
-
-  it('updates completed-task visibility from the header toolbar', async () => {
-    mockApiUpdatePreferences.mockResolvedValue({ ...defaultPreferences, hideCompletedTasks: true });
-    renderPage();
-
-    await screen.findByText('Test Collection');
-    openToolbarMenu();
-    const checkbox = await screen.findByRole('checkbox', { name: 'Completed tasks' });
-    await waitFor(() => expect(checkbox).not.toBeDisabled());
-    fireEvent.click(checkbox);
-
-    await waitFor(() =>
-      expect(mockApiUpdatePreferences).toHaveBeenCalledWith({ hideCompletedTasks: true }),
-    );
-    expect(checkbox).not.toBeChecked();
+    const row = title.closest('.page-header-row');
+    expect(row).toContainElement(screen.getByRole('button', { name: 'View' }));
+    expect(row).toContainElement(screen.getByRole('button', { name: 'Window' }));
+    expect(screen.queryByRole('button', { name: 'More options' })).not.toBeInTheDocument();
   });
 
   it('does not render Inbox header', async () => {
@@ -269,7 +246,7 @@ describe('CollectionsPage', () => {
     renderPage();
 
     await screen.findByText('Test Collection');
-    expect(mockFetchCollectionView).toHaveBeenCalledWith('test-collection-id');
+    expect(mockFetchCollectionView).toHaveBeenCalledWith('test-collection-id', { includeCompleted: false });
   });
 
   it('preserves structured labels in the task mapper', async () => {

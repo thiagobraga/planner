@@ -17,6 +17,7 @@ import { HabitsPage } from './pages/HabitsPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { StyleguidePage } from './pages/StyleguidePage';
 import { HelpPage } from './pages/HelpPage';
+import { ChangelogPage } from './pages/ChangelogPage';
 import { AdminUsersPage } from './pages/admin/AdminUsersPage';
 import { AdminDashboardPage } from './pages/admin/AdminDashboardPage';
 import { AdminComparePage } from './pages/admin/AdminComparePage';
@@ -64,6 +65,7 @@ function AppRoutes() {
           <Route path="/settings/:section" element={<SettingsPage />} />
           <Route path="/styleguide" element={isAdmin ? <StyleguidePage /> : <Navigate to="/daily" replace />} />
           <Route path="/help" element={<HelpPage />} />
+          <Route path="/changelog" element={<ChangelogPage />} />
           <Route path="/collections" element={<CollectionsIndexPage />} />
           <Route path="/collection/:id" element={<CollectionsPage />} />
           <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />

@@ -14,7 +14,7 @@ describe('application theme palette', () => {
     const css = readStyles(resolve(import.meta.dirname, '../../index.css')).replace(/\/\*[\s\S]*?\*\//g, '');
     const declarations: Record<string, Record<string, string>> = {};
 
-    for (const match of css.matchAll(/(@theme|:root(?:\[data-theme="(?:white|dark)"\])?)\s*\{([^{}]*)\}/g)) {
+    for (const match of css.matchAll(/(@theme|:root(?:\[data-theme="(?:white|dark|nord-light|nord-dark)"\])?)\s*\{([^{}]*)\}/g)) {
       const selector = match[1];
       declarations[selector] ??= {};
       for (const declaration of match[2].split(';')) {

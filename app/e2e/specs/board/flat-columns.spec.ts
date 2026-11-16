@@ -1,7 +1,7 @@
 import { mkdir } from 'node:fs/promises';
 
 import type { ApiTask } from '../../../src/api/client';
-import { expect, openBoard, statusColumn, STORAGE_STATE_PATH, test, uniqueName } from './helpers';
+import { expect, openBoard, setGroupBy, statusColumn, STORAGE_STATE_PATH, test, uniqueName } from './helpers';
 
 test.use({ storageState: STORAGE_STATE_PATH });
 
@@ -38,10 +38,7 @@ test('Kanban columns are flat and add a task in the selected status', async ({ a
     ).toBe(status.id);
 
     await page.screenshot({ path: 'dist/screenshots/collection-kanban-flat-columns.png' });
-    await page.getByRole('button', { name: 'More options', exact: true }).click();
-    await page.locator('#board-group-by').click();
-    await page.getByRole('option', { name: 'Priority', exact: true }).click();
-    await expect(page.locator('#board-group-by')).toContainText('Priority');
+    await setGroupBy(page, 'Priority');
     expect(errors).toEqual([]);
   } finally {
     await api.deleteCollection(collection.id);

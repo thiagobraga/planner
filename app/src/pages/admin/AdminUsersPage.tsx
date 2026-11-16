@@ -155,7 +155,7 @@ export function AdminUsersPage() {
 
   return (
     <div className="admin-users-page w-full max-w-4xl">
-      <header className="page-header-copy sticky-page-header max-w-162">
+      <header className="page-header-copy sticky-page-header">
         <div className="page-header-copy-text">
           <h1 className="m-0 h-6 p-0 text-lg leading-6 font-semibold text-ink">{t('admin.usersTitle')}</h1>
           <p className="page-header-subtitle m-0 h-6 p-0 text-[13px] leading-6 text-ink-light opacity-60">

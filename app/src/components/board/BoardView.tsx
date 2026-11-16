@@ -1,32 +1,9 @@
 import { SortableContext, horizontalListSortingStrategy } from '@dnd-kit/sortable';
-import type { ApiStatus, ApiTask } from '../../types/api';
-import type { BoardGroupBy } from '../../types/drag';
-import type { BoardViewMode } from '../../types/board';
-import type { BoardColumn as BoardColumnModel } from '../../utils/boardColumns';
-import type { TaskListCallbacks } from '../TaskList';
 import { AddColumnButton } from './AddColumnButton';
 import { BoardColumn } from './BoardColumn';
 import { usePlannerDrag } from '../../contexts/usePlannerDrag';
 import { useEffect } from 'react';
-
-interface BoardViewProps {
-  collectionId: string;
-  groupBy: BoardGroupBy;
-  columns: BoardColumnModel[];
-  tasks: ApiTask[];
-  canAddColumn?: boolean;
-  onToggle?: (taskId: string, completed: boolean) => void;
-  onAddColumn?: (name: string) => void;
-  onRenameColumn?: (columnId: string, name: string) => void;
-  onRecolorColumn?: (columnId: string, color: string) => void;
-  onMarkCompletion?: (columnId: string) => void;
-  onDeleteColumn?: (columnId: string) => void;
-  statuses?: ApiStatus[];
-  onUpdateStatusRoute?: (statusId: string, patch: Partial<Pick<ApiStatus, 'nextStatusMode' | 'nextStatusId' | 'acceptStatusId' | 'rejectStatusId'>>) => void;
-  onCreateTask?: (title: string, column: BoardColumnModel) => Promise<void>;
-  presentation?: Exclude<BoardViewMode, 'list' | 'calendar'>;
-  taskListProps?: TaskListCallbacks & { editingId?: string; activeDragId?: string | null };
-}
+import type { BoardViewProps } from '../../types/board';
 
 export function BoardView({
   collectionId,

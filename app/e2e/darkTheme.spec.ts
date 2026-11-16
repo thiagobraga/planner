@@ -40,7 +40,7 @@ test.describe('Dark theme', () => {
 
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
     await expect.poll(() => bodyBackground(page)).toBe(DARK_PAGE_BG);
-    await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#221a14');
+    await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#292219');
 
     await page.goto('/daily');
     await expect(page.getByRole('heading', { name: 'Daily', level: 1 })).toBeVisible();
@@ -68,7 +68,7 @@ test.describe('Dark theme', () => {
     await chooseTheme(page, 'Dark');
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
 
-    await page.getByRole('button', { name: 'Account' }).click();
+    await page.getByRole('button', { name: 'Planner menu' }).click();
     await page.getByRole('menuitem', { name: 'Logout' }).click();
     await page.waitForURL(/\/login/);
 
@@ -76,16 +76,17 @@ test.describe('Dark theme', () => {
     await expect.poll(() => bodyBackground(page)).toBe(BEIGE_PAGE_BG);
   });
 
-  test('the header menu switches theme from its Theme section, after Show', async ({ page }) => {
+  test('the planner menu switches theme from its Theme section, after Show', async ({ page }) => {
     await page.goto('/daily');
-    await page.getByRole('button', { name: 'More options', exact: true }).click();
+    await page.getByRole('button', { name: 'Planner menu', exact: true }).click();
     const menu = page.getByRole('menu');
 
-    const labels = await menu.locator('.toolbar-section-label').allTextContents();
-    expect(labels.slice(-2)).toEqual(['Show', 'Theme']);
-
     const themeGroup = menu.getByRole('radiogroup', { name: 'Theme' });
-    await expect(themeGroup.getByRole('radio')).toHaveCount(3);
+    const show = await menu.locator('.topbar-menu-section', { hasText: 'Show' }).boundingBox();
+    const theme = await themeGroup.boundingBox();
+    expect(theme!.y).toBeGreaterThan(show!.y);
+
+    await expect(themeGroup.getByRole('radio')).toHaveCount(5);
     await themeGroup.getByRole('radio', { name: 'Dark', exact: true }).click();
 
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');

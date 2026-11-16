@@ -2,21 +2,21 @@ import type { PrivacyPolicyContent } from '../../types/legal';
 
 export const privacyEnglish: PrivacyPolicyContent = {
   title: 'Privacy Policy',
-  subtitle: 'How Bullet Planner collects, processes, and protects your data under GDPR and LGPD',
+  subtitle: 'How BulletPlanner collects, processes, and protects your data under GDPR and LGPD',
   lastUpdated: 'Last updated: August 7, 2026',
   onThisPage: 'On This Page',
-  backToPlanner: 'Back to Bullet Planner',
+  backToPlanner: 'Back to BulletPlanner',
   introSection: {
     id: 'overview',
     title: 'Overview',
     paragraphs: [
-      'Bullet Planner is a Bullet Journal-inspired task and habit manager. We believe your personal tasks, notes, and habits belong to you. This Privacy Policy explains what personal data we collect, why we process it, the legal basis under the European Union General Data Protection Regulation (GDPR) and the Brazilian General Data Protection Law (LGPD - Lei No. 13.709/2018), and how you can exercise your data rights.',
+      'BulletPlanner is a Bullet Journal-inspired task and habit manager. We believe your personal tasks, notes, and habits belong to you. This Privacy Policy explains what personal data we collect, why we process it, the legal basis under the European Union General Data Protection Regulation (GDPR) and the Brazilian General Data Protection Law (LGPD - Lei No. 13.709/2018), and how you can exercise your data rights.',
     ],
   },
   dataCollectionSection: {
     id: 'data-collection',
     title: 'Data We Collect & Legal Basis',
-    intro: 'We collect only the minimum data necessary to operate your account and provide Bullet Planner features:',
+    intro: 'We collect only the minimum data necessary to operate your account and provide BulletPlanner features:',
     headers: {
       category: 'Data Category',
       source: 'Source',
@@ -142,7 +142,7 @@ export const privacyEnglish: PrivacyPolicyContent = {
   cookiePolicySection: {
     id: 'cookie-policy',
     title: 'Cookie Policy',
-    intro: 'Bullet Planner uses only strictly necessary cookies required to keep you signed in and protect your account against Cross-Site Request Forgery (CSRF):',
+    intro: 'BulletPlanner uses only strictly necessary cookies required to keep you signed in and protect your account against Cross-Site Request Forgery (CSRF):',
     headers: {
       name: 'Cookie',
       type: 'Type',
@@ -167,7 +167,7 @@ export const privacyEnglish: PrivacyPolicyContent = {
       },
     ],
     noBannerNotice:
-      'No cookie consent banner is required because all cookies set by Bullet Planner are strictly necessary for authentication and security. We do not use analytics, marketing, or third-party tracking cookies.',
+      'No cookie consent banner is required because all cookies set by BulletPlanner are strictly necessary for authentication and security. We do not use analytics, marketing, or third-party tracking cookies.',
     googleCookieNote:
       'When the Google Identity Services (GIS) library is loaded for Google sign-in, Google may set its own cookies governed by Google Privacy Policy as strictly necessary for the OAuth flow.',
   },
@@ -177,7 +177,7 @@ export const privacyEnglish: PrivacyPolicyContent = {
     intro: 'Under GDPR and LGPD, you have the following rights over your personal data:',
     headers: {
       right: 'Right',
-      implementation: 'How to Exercise in Bullet Planner',
+      implementation: 'How to Exercise in BulletPlanner',
     },
     rows: [
       {
@@ -186,7 +186,7 @@ export const privacyEnglish: PrivacyPolicyContent = {
       },
       {
         right: 'Rectification (GDPR Art. 16 / LGPD Art. 18(III))',
-        implementation: 'Edit your tasks, collections, and preferences directly in Bullet Planner',
+        implementation: 'Edit your tasks, collections, and preferences directly in BulletPlanner',
       },
       {
         right: 'Erasure (GDPR Art. 17 / LGPD Art. 18(VI))',

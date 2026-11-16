@@ -13,31 +13,17 @@ import {
   rgbToHsv,
   hslToRgb,
   type ColorFormat,
-  type Hsv,
 } from '../../utils/color';
 import { PALETTE_COLORS, fetchSavedColors, apiAddSavedColor } from '../../api/client';
 import { useI18n } from '../../i18n/I18nContext';
 import type { TranslationKey } from '../../i18n/catalogs';
+import type { ChannelKey, ColorPickerPopoverProps, PickerState } from '../../types/ui';
 
 const PANEL_WIDTH = 248;
 const VIEWPORT_PADDING = 8;
 const FALLBACK_COLOR = '#65788a';
 
 export const SAVED_COLORS_QUERY_KEY = ['savedColors'] as const;
-
-export interface ColorPickerPopoverProps {
-  position: { x: number; y: number };
-  value: string;
-  onCommit: (color: string) => void;
-  onClose: () => void;
-}
-
-interface PickerState {
-  hsv: Hsv;
-  alpha: number;
-}
-
-type ChannelKey = 'r' | 'g' | 'b' | 'h' | 's' | 'l';
 
 const CHANNELS: Record<ColorFormat, readonly ChannelKey[]> = {
   hex: [],

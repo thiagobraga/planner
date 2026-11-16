@@ -1,18 +1,17 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Calendar } from 'lucide-react';
 import { useSync } from '../hooks/useSync';
-import { HabitTimeline, type HabitEditTarget } from '../components/habits/HabitTimeline';
+import { HabitTimeline } from '../components/habits/HabitTimeline';
+import type { HabitEditTarget, HabitNode } from '../types/habits';
 import { HabitCalendar } from '../components/habits/HabitCalendar';
 import { useHabitDrag } from '../hooks/useHabitDrag';
 import { isEchoedMove } from '../utils/moveEcho';
-import { ButtonGroup } from '../components/ui/ButtonGroup';
-import { Toolbar } from '../components/ui/Toolbar';
+import { HabitsToolbar } from '../components/habits/HabitsToolbar';
 import { PageHeader } from '../components/PageHeader';
 import { fmtISOInTimeZone } from '../utils/date';
 import { dateFromISO } from '../utils/dailySections';
 import { useMidnightTimer } from '../hooks/useMidnightTimer';
-import { flattenHabits, type HabitNode } from '../utils/habitTree';
+import { flattenHabits } from '../utils/habitTree';
 import { randomHabitGroupIcon } from '../utils/habitGroupIcon';
 import { trackCreate, resolveCreatedId } from '../utils/pendingCreates';
 import {
@@ -25,34 +24,11 @@ import {
   habitsToToggle,
   parentToggleTarget,
 } from '../utils/habitTree';
-import type { LucideProps } from 'lucide-react';
 import { useI18n } from '../i18n/I18nContext';
-
 import { fetchHabits, fetchPreferences, apiCreateHabit, apiUpdateHabit, apiDeleteHabit, apiArchiveHabit, apiToggleHabitCompletion, apiCreateHabitGroup, apiUpdateHabitGroup, apiDeleteHabitGroup, apiArchiveHabitGroup } from '../api/client';
 import type { ApiHabit, ApiHabitGroup } from '../types/api';
+import type { HabitsView } from '../types/habits';
 
-function DotsConnectedIcon(props: LucideProps) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width={props.size ?? 24}
-      height={props.size ?? 24}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={props.strokeWidth ?? 2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      {...props}
-    >
-      <circle cx="5" cy="12" r="2" />
-      <circle cx="19" cy="12" r="2" />
-      <line x1="7" y1="12" x2="17" y2="12" />
-    </svg>
-  );
-}
-
-type HabitsView = 'timeline' | 'calendar';
 const HABITS_VIEW_STORAGE_KEY = 'planner.habits.view.v1';
 
 function loadHabitsView(): HabitsView {
@@ -89,7 +65,6 @@ export function HabitsPage() {
 
   const [view, setView] = useState<HabitsView>(loadHabitsView);
   const [editing, setEditing] = useState<HabitEditTarget>();
-  const [todaySignal, setTodaySignal] = useState(0);
   const [collapsedHabitIds, setCollapsedHabitIds] = useState<Set<string>>(() => loadCollapsedHabitIds());
   const [selected, setSelected] = useState(() => ({
     year: today.getFullYear(),
@@ -420,39 +395,32 @@ export function HabitsPage() {
   }, []);
 
   const handleToday = useCallback(() => {
-    if (view === 'timeline') {
-      setWeekAnchor(today);
-      setTodaySignal((signal) => signal + 1);
-      return;
-    }
-
-    handleMonthChange(today.getFullYear(), today.getMonth());
+    if (view === 'timeline') setWeekAnchor(today);
+    else handleMonthChange(today.getFullYear(), today.getMonth());
   }, [handleMonthChange, today, view]);
+
+  const handleMonthShift = useCallback((delta: -1 | 1) => {
+    setSelected(({ year, month }) => {
+      const next = new Date(year, month + delta, 1);
+      return { year: next.getFullYear(), month: next.getMonth() };
+    });
+  }, []);
 
   return (
     <div className="habits-page relative w-full max-w-none">
       <PageHeader
         title={t('page.habits')}
-        toolbar={
-          <Toolbar
-            className="habits-page-header-controls"
-            viewSwitcher={
-              <>
-                <ButtonGroup
-                  mode="single"
-                  value={view}
-                  onChange={handleViewChange}
-                  size="xs"
-                  items={[
-                    { value: 'timeline', label: t('page.timelineView'), icon: <DotsConnectedIcon size={12} strokeWidth={1.8} /> },
-                    { value: 'calendar', label: t('page.calendarView'), icon: <Calendar size={12} strokeWidth={1.8} /> },
-                  ]}
-                />
-              </>
-            }
-          >
-            {null}
-          </Toolbar>
+        actions={
+          <HabitsToolbar
+            view={view}
+            onViewChange={handleViewChange}
+            weekAnchor={weekAnchor}
+            today={today}
+            weekStart={weekStart}
+            onWeekChange={handleWeekChange}
+            onToday={handleToday}
+            onMonthShift={handleMonthShift}
+          />
         }
       />
 
@@ -462,9 +430,6 @@ export function HabitsPage() {
           today={today}
           weekStart={weekStart}
           weekAnchor={weekAnchor}
-          onWeekChange={handleWeekChange}
-          onToday={handleToday}
-          todaySignal={todaySignal}
           editing={editing}
           collapsed={visibleCollapsedHabitIds}
           activeDragId={activeDragId}

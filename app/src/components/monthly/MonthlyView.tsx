@@ -1,22 +1,14 @@
 import { useMemo, useState } from 'react';
 import { MonthSelector } from './MonthSelector';
 import { useI18n } from '../../i18n/I18nContext';
-import type { Task } from '../TaskItem';
+import type { Task } from '../../types/task';
+import type { MonthlyViewProps } from '../../types/widgets';
 
 function dateKey(year: number, month: number, day: number): string {
   return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 }
 
-export interface MonthlyViewProps {
-  tasks: Task[];
-  onToggle: (id: string) => void;
-  onTaskContextMenu?: (id: string, position: { x: number; y: number }) => void;
-  /** Month shown (0-based). Pass with `onMonthChange` when the page owns navigation, e.g. to fetch that month. */
-  visibleMonth?: { year: number; month: number };
-  onMonthChange?: (year: number, month: number) => void;
-}
-
-export function MonthlyView({ tasks, onToggle, onTaskContextMenu, visibleMonth, onMonthChange }: MonthlyViewProps) {
+export function MonthlyView({ tasks, onToggle, onTaskContextMenu, visibleMonth, onMonthChange, hideSelector = false }: MonthlyViewProps) {
   const { locale, t } = useI18n();
   const now = new Date();
   const [ownYear, setOwnYear] = useState(now.getFullYear());
@@ -65,12 +57,14 @@ export function MonthlyView({ tasks, onToggle, onTaskContextMenu, visibleMonth, 
 
   return (
     <div className="text-ink">
-      <MonthSelector
-        year={selectedYear}
-        month={selectedMonth}
-        onChange={handleMonthChange}
-        className="mb-6"
-      />
+      {!hideSelector && (
+        <MonthSelector
+          year={selectedYear}
+          month={selectedMonth}
+          onChange={handleMonthChange}
+          className="mb-6"
+        />
+      )}
 
       <div
         className="monthly-ledger overflow-hidden rounded-[3px]"

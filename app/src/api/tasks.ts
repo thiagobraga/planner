@@ -5,7 +5,7 @@ import type { ParsedDateInput, TaskSchedule } from '../types/task';
 
 // Tasks ---------------------------------------------------------------------
 
-export async function fetchInboxTasks(): Promise<{
+export async function fetchInboxTasks(options: { includeCompleted?: boolean } = {}): Promise<{
   tasks: ApiTask[];
   collectionId: string | null;
   inboxCollectionId?: string;
@@ -14,7 +14,7 @@ export async function fetchInboxTasks(): Promise<{
   completionStatusId: string | null;
   boardOrder: BoardOrder;
 }> {
-  return request('/views/inbox');
+  return request(`/views/inbox${options.includeCompleted ? '?include_completed=true' : ''}`);
 }
 
 export async function fetchDaily(from: string, to: string): Promise<ApiDailyView> {

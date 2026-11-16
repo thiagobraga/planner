@@ -1,9 +1,5 @@
-import type { SelectHTMLAttributes } from 'react';
 import { ChevronDown } from 'lucide-react';
-
-export interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
-  error?: boolean;
-}
+import type { SelectProps } from '../../types/ui';
 
 // Styled native <select>: same shell as Input with a trailing chevron.
 export function Select({ error = false, className = '', children, ...rest }: SelectProps) {

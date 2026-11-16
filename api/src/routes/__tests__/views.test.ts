@@ -30,14 +30,14 @@ describe("views routes", () => {
     mockGetInboxView.mockResolvedValue({ tasks: [] });
     const res = await request(app).get("/api/v1/views/inbox");
     expect(res.status).toBe(200);
-    expect(mockGetInboxView).toHaveBeenCalledWith("test-user");
+    expect(mockGetInboxView).toHaveBeenCalledWith("test-user", expect.any(Date), { includeCompleted: false });
   });
 
   it("GET /api/v1/views/collection/:id → calls getCollectionView", async () => {
     mockGetCollectionView.mockResolvedValue({ tasks: [] });
     const res = await request(app).get("/api/v1/views/collection/c1");
     expect(res.status).toBe(200);
-    expect(mockGetCollectionView).toHaveBeenCalledWith("test-user", "c1");
+    expect(mockGetCollectionView).toHaveBeenCalledWith("test-user", "c1", expect.any(Date), { includeCompleted: false });
   });
 
   it("GET /api/v1/views/collection/:id → passes through per-task labels", async () => {

@@ -7,9 +7,10 @@ dedicated per-domain type files. No behaviour change, no re-export shims.
 Tests keep local mocks. `.d.ts`, `test/setup.ts`, `i18n/types.ts` stay
 (see plan Exceptions).
 
-Branch state: `feat/dedicated-type-files` reset to `main` at `f7ed232`.
-Prior M1 work on the stale branch was dropped (client.ts has since grown
-board types and MonthlyRows was deleted). All milestones below are `[ ]`.
+Branch state: `refactor/dedicated-type-files`, branched from `main` at
+`fc5918c4`. M1 (`types/api.ts`) is on `main`. An earlier M2 attempt created
+`types/tasks.ts` but never updated importers, so it was deleted as unused;
+M2 below was redone against the current tree.
 
 Naming rule: rename narrower shape with domain prefix (`ViewTaskRow`,
 `TaskComment`, `StoreTask`) - never merge different shapes.
@@ -35,7 +36,7 @@ Naming rule: rename narrower shape with domain prefix (`ViewTaskRow`,
 
 ## Milestone 2 — task domain (extend `app/src/types/task.ts`, new `types/stores.ts`)
 
-- [ ] Extend `app/src/types/task.ts` (keep `RecurrenceRule`,
+- [x] Extend `app/src/types/task.ts` (keep `RecurrenceRule`,
       `ParsedDateInput`, `TaskSchedule`): add `Task`, `TaskItemProps`
       (TaskItem); `TaskListCallbacks`, `TaskListProps`; `TaskComment`
       (renamed from TaskDetail `Comment`), `TaskDetailProps`;
@@ -46,45 +47,46 @@ Naming rule: rename narrower shape with domain prefix (`ViewTaskRow`,
       (dragIndent); `TreeNode`, `IndentResult` (taskTree);
       `TaskLike`, `FlatRow`, `Projection` (taskProjection);
       `ApiScheduleFields` (taskTime)
-- [ ] Create `app/src/types/stores.ts`: `OptimisticOp`, `RunOptimisticOptions`
-- [ ] Create `app/src/types/hooks.ts` (part): `VisibilityPreferenceKey`,
+- [x] Create `app/src/types/stores.ts`: `OptimisticOp`, `RunOptimisticOptions`
+- [x] Create `app/src/types/hooks.ts` (part): `VisibilityPreferenceKey`,
       `VisibilityPreferenceUpdate`
-- [ ] Update importers (Daily, Inbox, Collections, TaskList, TaskItem,
+- [x] Update importers (Daily, Inbox, Collections, TaskList, TaskItem,
       TaskDetail, drag hooks, tree/projection utils, stores, tests)
-- [ ] Verify: `docker compose exec app npm run build && npm run lint`
-- [ ] Commit: `refactor(app): extract task domain types to src/types/`
+- [x] Verify: `docker compose exec app npm run build && npm run lint && npm test`
+- [x] Commit: `refactor(app): extract task domain types to src/types/task.ts`
 
 ## Milestone 3 — collection/nav (`app/src/types/collections.ts`)
 
-- [ ] Create `app/src/types/collections.ts`: `FlatCollection`,
-      `CollectionRowProps` (CollectionTreeNav); `CollectionTreeNode`,
+- [x] Create `app/src/types/collections.ts`: `FlatCollection`,
+      `CollectionTreeRowProps` (CollectionTreeNav `RowProps`); `CollectionTreeNode`,
       `CollectionState`; `CollectionMenuHandlers`;
-      `CollectionRowProps` (CollectionsIndexPage - merge if identical);
-      `SidebarProps`, `NavItem`, `SidebarNavItemProps`;
-      `SectionHeaderProps`; `SectionDeleteModalProps`
-- [ ] Update importers (Sidebar, CollectionTreeNav, collectionStore,
+      `CollectionRowProps` (CollectionsIndexPage);
+      `SectionHeaderProps`; `SectionDeleteModalProps`. `SidebarProps` and
+      `SidebarNavItemProps` no longer exist; nav types live in
+      `types/navigation.ts`
+- [x] Update importers (Sidebar, CollectionTreeNav, collectionStore,
       CollectionsPage/Index, DailyPage, tests)
-- [ ] Verify: `docker compose exec app npm run build && npm run lint`
-- [ ] Commit: `refactor(app): extract collection and nav types`
+- [x] Verify: `docker compose exec app npm run build && npm run lint`
+- [x] Commit: `refactor(app): extract collection and nav types`
 
 ## Milestone 4 — habits (`app/src/types/habits.ts`)
 
-- [ ] Create `app/src/types/habits.ts`: `HabitBlockPreviewProps`;
+- [x] Create `app/src/types/habits.ts`: `HabitBlockPreviewProps`;
       `HabitCalendarProps`, `HabitCalendarGridProps`; `HabitDotProps`;
       `HabitMonthGridProps`; `HabitTimelineProps`, `HabitEditTarget`,
       `TimelineRow`, `TimelineSection`, `DayCell`,
-      `TimelineBlockPreviewProps`; `HabitsView`;
+      `TimelineBlockPreviewProps`; `HabitsView`; `UseHabitDragOptions` (useHabitDrag);
       `HabitRow`, `HabitProjection`, `HabitDepth` (habitProjection);
       `DayState`, `HabitNode`, `HabitGroupSection`, `HabitSections`
       (habitTree)
-- [ ] Update importers (HabitsPage, habits/*, useHabitDrag, projection/tree
+- [x] Update importers (HabitsPage, habits/*, useHabitDrag, projection/tree
       consumers, tests)
-- [ ] Verify: `docker compose exec app npm run build && npm run lint`
-- [ ] Commit: `refactor(app): extract habit domain types`
+- [x] Verify: `docker compose exec app npm run build && npm run lint`
+- [x] Commit: `refactor(app): extract habit domain types`
 
 ## Milestone 5 — UI + widgets (`app/src/types/ui.ts`, `types/widgets.ts`)
 
-- [ ] Create `app/src/types/ui.ts`: `ButtonVariant/Size/Props`,
+- [x] Create `app/src/types/ui.ts`: `ButtonVariant/Size/Props`,
       `ButtonGroupProps`; `CheckboxProps`; `ChipProps`,
       `CollectionChipProps`; `ColorPickerPopoverProps`, `PickerState`,
       `ChannelKey`; `ContextMenu*` (5); `SelectOption`,
@@ -95,16 +97,16 @@ Naming rule: rename narrower shape with domain prefix (`ViewTaskRow`,
       `ViewSwitcherProps`; `ViewToolbarProps` (use `BoardViewMode`);
       `DateScreenProps`, `RepeatPreset/Unit/Props`, `TimeScreenProps`,
       `TaskDatePickerPanelProps`
-- [ ] Create `app/src/types/widgets.ts`: `ConfirmModalProps`; `TokenType`,
+- [x] Create `app/src/types/widgets.ts`: `ConfirmModalProps`; `TokenType`,
       `Token`, `FilterBarProps`; `QuickAddProps`; `SearchResult`,
       `SearchOverlayProps`; `UpdateToastProps`; `AuthShellProps`;
       `MonthlyCalendarSpecimenProps`; `MonthlyViewProps`; `MonthTile`,
       `MonthSelectorProps`, `MonthSelectorHandle`; `PageHeaderProps`;
       `BottomBarProps`
-- [ ] Update importers (all `components/ui/*`, overlays, monthly/*, callers,
+- [x] Update importers (all `components/ui/*`, overlays, monthly/*, callers,
       tests)
-- [ ] Verify: `docker compose exec app npm run build && npm run lint`
-- [ ] Commit: `refactor(app): extract UI and widget prop types`
+- [x] Verify: `docker compose exec app npm run build && npm run lint`
+- [x] Commit: `refactor(app): extract UI and widget prop types`
 
 ## Milestone 6 — hooks/contexts/misc
 

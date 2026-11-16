@@ -1,8 +1,7 @@
 import { Calendar } from 'lucide-react';
-import type { ContextMenuItem } from './ui/ContextMenu';
+import type { ContextMenuItem } from '../types/contextMenu';
 import { TaskDatePickerPanel } from './ui/TaskDatePickerPanel';
-import type { Task } from './TaskItem';
-import type { TaskSchedule } from '../types/task';
+import type { Task, TaskSchedule } from '../types/task';
 import type { TranslationKey } from '../i18n/catalogs';
 
 // Some views keep the API's full timestamp ("2026-10-15T00:00:00.000Z"); the picker works in date keys.

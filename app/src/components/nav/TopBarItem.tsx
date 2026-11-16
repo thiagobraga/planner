@@ -7,20 +7,22 @@ import { useI18n } from '../../i18n/I18nContext';
 import type { CollectionDropData } from '../../types/drag';
 import type { TopBarItemProps } from '../../types/navigation';
 
-export function TopBarItem({ item }: TopBarItemProps) {
+export function TopBarItem({ item, ...linkProps }: TopBarItemProps) {
   const { t } = useI18n();
   const { pathname } = useLocation();
   const inCollection = item.to === '/collections' && pathname.startsWith('/collection/');
   const active = inCollection || pathname === item.to || pathname.startsWith(`${item.to}/`);
   const NavigationLink = inCollection ? Link : NavLink;
+  const label = t(item.labelKey);
   return (
     <NavigationLink
+      {...linkProps}
       to={item.to}
       aria-current={inCollection ? 'page' : undefined}
       className={`topbar-item${active ? ' topbar-item--active' : ''}`}
     >
       <span className="topbar-item-icon" aria-hidden="true"><item.Icon size={16} strokeWidth={1.5} /></span>
-      <span className="topbar-item-label">{t(item.labelKey)}</span>
+      <span className="topbar-item-label" data-label={label}>{label}</span>
     </NavigationLink>
   );
 }
@@ -34,13 +36,11 @@ export function InboxTopBarItem({ item }: TopBarItemProps) {
     : undefined;
   const { setNodeRef } = useDroppable({ id: 'topbar-inbox', data, disabled: !inboxId });
   return (
-    <div
+    <TopBarItem
+      item={item}
       ref={setNodeRef}
-      className="topbar-inbox"
       data-drop-target={activeDrag?.kind === 'task' && overId === 'topbar-inbox' ? 'true' : undefined}
       onClickCapture={(event) => { if (activeDrag) event.preventDefault(); }}
-    >
-      <TopBarItem item={item} />
-    </div>
+    />
   );
 }

@@ -6,6 +6,7 @@ import istanbul from "vite-plugin-istanbul";
 // `lightningcss` inside the pre-push docker environment doesn't abort config
 // parsing. If the import fails, fall back to null and omit the plugin.
 import { VitePWA } from "vite-plugin-pwa";
+import { changelogPlugin } from "./changelogPlugin.ts";
 
 const pkg = JSON.parse(
   readFileSync(new URL("./package.json", import.meta.url), "utf-8"),
@@ -35,6 +36,7 @@ export default defineConfig({
   },
   plugins: [
     react(),
+    changelogPlugin(),
     tailwindcss && tailwindcss(),
     coverageInstrumentation &&
       istanbul({

@@ -33,6 +33,18 @@ describe("navigation preferences (real PostgreSQL and Redis)", () => {
     await Promise.all([redisClient.quit(), redisPubClient.quit(), redisSubClient.quit()]);
   });
 
+  it.each(["nord-light", "nord-dark"])("persists and broadcasts %s background", async (background) => {
+    events.length = 0;
+    const before = (await request(app).get("/preferences")).body;
+    const response = await request(app).patch("/preferences").send({ background });
+    expect(response.status).toBe(200);
+    expect(response.body.background).toBe(background);
+    expect((await request(app).get("/preferences")).body).toMatchObject({ background, theme: before.theme });
+    await vi.waitFor(() => expect(events).toContainEqual(expect.objectContaining({
+      userId, entityType: "preferences", payload: expect.objectContaining({ background }),
+    })));
+  });
+
   it("defaults to icon-left", async () => {
     const response = await request(app).get("/preferences");
     expect(response.status).toBe(200);

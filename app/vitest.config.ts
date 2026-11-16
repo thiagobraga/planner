@@ -1,4 +1,5 @@
 import { defineProject } from "vitest/config";
+import { changelogPlugin } from "./changelogPlugin.ts";
 
 // The HTML report is opt-in via `--reporter=html`: including the reporter in
 // the config would generate it on every test run, but without it the CLI flag
@@ -9,6 +10,7 @@ const htmlReportRequested =
   (process.argv.includes("--reporter") && process.argv.includes("html"));
 
 export default defineProject({
+  plugins: [changelogPlugin()],
   test: {
     name: "app",
     environment: "happy-dom",

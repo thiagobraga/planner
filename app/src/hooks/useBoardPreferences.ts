@@ -1,61 +1,46 @@
-import { useCallback, useState } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
-import { apiUpdatePreferences } from '../api/client';
-import type { Preferences } from '../types/api';
+import { useCallback } from 'react';
+import { usePatchPreferences } from './usePatchPreferences';
+import type { BoardViewSettings, Preferences } from '../types/api';
 import type { BoardGroupBy } from '../types/drag';
 import type { BoardViewMode } from '../types/board';
+import type { ViewLayout, ViewStyle } from '../types/view';
 
-const BOARD_VIEW_STORAGE_KEY = 'planner.boardViews.v1';
+/** Layouts a collection (or Inbox) can show today. */
+export const BOARD_LAYOUTS: readonly ViewLayout[] = ['list', 'columns', 'calendar'];
 
-function loadView(collectionId: string | undefined): BoardViewMode {
-  if (!collectionId) return 'list';
-  try {
-    const stored = JSON.parse(window.localStorage.getItem(BOARD_VIEW_STORAGE_KEY) ?? '{}') as Record<string, unknown>;
-    const view = stored[collectionId];
-    return view === 'kanban' || view === 'kanban-list' ? view : 'list';
-  } catch {
-    return 'list';
-  }
+function presentation(layout: ViewLayout, style: ViewStyle): BoardViewMode {
+  if (layout === 'columns') return style === 'cards' ? 'kanban' : 'kanban-list';
+  return layout === 'calendar' ? 'calendar' : 'list';
 }
 
-function saveView(collectionId: string, view: BoardViewMode): void {
-  try {
-    const stored = JSON.parse(window.localStorage.getItem(BOARD_VIEW_STORAGE_KEY) ?? '{}') as Record<string, unknown>;
-    window.localStorage.setItem(BOARD_VIEW_STORAGE_KEY, JSON.stringify({ ...stored, [collectionId]: view }));
-  } catch {
-    // Local view state is optional when browser storage is unavailable.
-  }
-}
-
+/** Layout, style and grouping of one collection, saved per collection in preferences. */
 export function useBoardPreferences(collectionId: string | undefined, preferences: Preferences | undefined) {
-  const queryClient = useQueryClient();
+  const patchPreferences = usePatchPreferences();
   const mode = collectionId ? preferences?.boardViewModes?.[collectionId] : undefined;
-  const [localView, setLocalView] = useState(() => ({ collectionId, view: loadView(collectionId) }));
-  const view = localView.collectionId === collectionId ? localView.view : loadView(collectionId);
-  const groupBy = mode?.groupBy ?? 'status';
+  const layout: ViewLayout = mode?.layout && BOARD_LAYOUTS.includes(mode.layout) ? mode.layout : 'list';
+  const style: ViewStyle = mode?.style ?? 'notebook';
+  const groupBy: BoardGroupBy = mode?.groupBy === 'section' || mode?.groupBy === 'priority' ? mode.groupBy : 'status';
 
-  const persistGroupBy = useCallback((groupBy: BoardGroupBy) => {
+  const save = useCallback((change: BoardViewSettings) => {
     if (!collectionId || !preferences) return;
-    const previous = preferences;
-    const currentModes = preferences.boardViewModes ?? {};
-    const boardViewModes = {
-      ...currentModes,
-      [collectionId]: { groupBy },
-    };
-    queryClient.setQueryData<Preferences>(['preferences'], { ...preferences, boardViewModes });
-    apiUpdatePreferences({ boardViewModes })
-      .then((updated) => queryClient.setQueryData(['preferences'], updated))
-      .catch(() => {
-        queryClient.setQueryData(['preferences'], previous);
-        queryClient.invalidateQueries({ queryKey: ['preferences'] });
-      });
-  }, [collectionId, preferences, queryClient]);
+    const current = preferences.boardViewModes ?? {};
+    patchPreferences(
+      { boardViewModes: { [collectionId]: change } },
+      { boardViewModes: { ...current, [collectionId]: { ...current[collectionId], ...change } } },
+    ).catch((error: unknown) => console.error('Saving the board view failed', error));
+  }, [collectionId, preferences, patchPreferences]);
 
-  const setView = useCallback((next: BoardViewMode) => {
-    if (!collectionId) return;
-    setLocalView({ collectionId, view: next });
-    saveView(collectionId, next);
-  }, [collectionId]);
-
-  return { view, groupBy, setView, setGroupBy: persistGroupBy };
+  return {
+    layout,
+    style,
+    groupBy,
+    /** The presentation boards and lists already understand. */
+    view: presentation(layout, style),
+    /** A status board keeps its completion column filled even when completed tasks are hidden. */
+    includeCompleted: Boolean(preferences?.hideCompletedTasks) && layout === 'columns' && groupBy === 'status',
+    setLayout: (next: ViewLayout) => save({ layout: next }),
+    setStyle: (next: ViewStyle) => save({ style: next }),
+    toggleStyle: () => save({ style: style === 'notebook' ? 'cards' : 'notebook' }),
+    setGroupBy: (next: BoardGroupBy) => save({ groupBy: next }),
+  };
 }

@@ -10,6 +10,44 @@ function centerOf(box: { x: number; y: number; width: number; height: number }):
 }
 
 /**
+ * Boards live in a 720px page column, so a far column can sit outside the
+ * board's visible scroll area. Hold the pointer at that edge, as a person
+ * would, until dnd-kit auto-scroll brings the target's center into view.
+ */
+async function revealByAutoScroll(page: Page, to: Locator, from: Point, end: Point): Promise<Point> {
+  const visible = () => to.evaluate((element) => {
+    const box = element.getBoundingClientRect();
+    const center = box.left + box.width / 2;
+    let clip = { left: 0, right: window.innerWidth };
+    for (let node = element.parentElement; node; node = node.parentElement) {
+      if (node.scrollWidth > node.clientWidth && getComputedStyle(node).overflowX !== 'visible') {
+        const rect = node.getBoundingClientRect();
+        clip = { left: rect.left, right: rect.right };
+        break;
+      }
+    }
+    return { center, clip, y: box.top + box.height / 2 };
+  });
+
+  let state = await visible();
+  if (state.center >= state.clip.left && state.center <= state.clip.right) return end;
+  const edgeX = state.center > state.clip.right ? state.clip.right - 8 : state.clip.left + 8;
+  const steps = 6;
+  for (let step = 1; step <= steps; step += 1) {
+    await page.mouse.move(from.x + (edgeX - from.x) * (step / steps), from.y);
+  }
+  for (let attempt = 0; attempt < 40; attempt += 1) {
+    await page.waitForTimeout(100);
+    state = await visible();
+    if (state.center >= state.clip.left + 24 && state.center <= state.clip.right - 24) break;
+  }
+  await page.mouse.move(Math.max(state.clip.left + 40, Math.min(state.center, state.clip.right - 40)), from.y);
+  await page.waitForTimeout(100);
+  state = await visible();
+  return { x: state.center, y: state.y };
+}
+
+/**
  * Drag a card with real pointer events.
  *
  * dnd-kit needs a pointer-down plus a movement delta that clears the activation
@@ -45,11 +83,12 @@ export async function dragCard(page: Page, from: Locator, to: Locator): Promise<
   await page.waitForTimeout(80);
   await page.mouse.move(activationPoint.x, activationPoint.y);
 
+  const target = await revealByAutoScroll(page, to, activationPoint, end);
   const steps = 8;
   for (let step = 1; step <= steps; step += 1) {
     await page.mouse.move(
-      activationPoint.x + (end.x - activationPoint.x) * (step / steps),
-      activationPoint.y + (end.y - activationPoint.y) * (step / steps),
+      activationPoint.x + (target.x - activationPoint.x) * (step / steps),
+      activationPoint.y + (target.y - activationPoint.y) * (step / steps),
     );
   }
 

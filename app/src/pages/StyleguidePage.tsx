@@ -8,6 +8,8 @@ import { Repeat2 } from 'lucide-react';
 import { MonthlyCalendarSpecimen } from '../components/monthly/MonthlyCalendarSpecimen';
 import { MonthSelector } from '../components/monthly/MonthSelector';
 import { DatePickerSpecimen } from '../components/monthly/DatePickerSpecimen';
+import { WeekSelector } from '../components/board/WeekSelector';
+import { startOfDay } from '../utils/date';
 import { HabitSpecimen } from '../components/habits/HabitSpecimen';
 import { Button } from '../components/ui/Button';
 import { ButtonGroup } from '../components/ui/ButtonGroup';
@@ -18,10 +20,12 @@ import { Toggle } from '../components/ui/Toggle';
 import { Chip, CollectionChip } from '../components/ui/Chip';
 import { StatusPill } from '../components/ui/StatusPill';
 import { PriorityDot } from '../components/ui/PriorityDot';
-import { ViewToolbar } from '../components/ui/ViewToolbar';
+import { ViewMenu } from '../components/toolbar/ViewMenu';
+import { DateNav } from '../components/toolbar/DateNav';
 import { TaskRowSpecimen } from '../components/ui/TaskRowSpecimen';
 import { CustomSelect } from '../components/ui/CustomSelect';
-import { ContextMenu, ContextMenuItem } from '../components/ui/ContextMenu';
+import { ContextMenu } from '../components/ui/ContextMenu';
+import type { ContextMenuItem } from '../types/contextMenu';
 import { Briefcase, Calendar as CalendarIcon, Tag, ArrowUp, ArrowDown } from 'lucide-react';
 import { fetchPreferences } from '../api/client';
 import { BoardCard } from '../components/board/BoardCard';
@@ -88,6 +92,7 @@ export function StyleguidePage() {
     queryFn: fetchPreferences,
   });
   const weekStart = preferences?.weekStart ?? 'sunday';
+  const [dailyWeekAnchor, setDailyWeekAnchor] = useState(() => startOfDay(new Date()));
 
   const [radioChoice, setRadioChoice] = useState('a');
   const [buttonGroupView, setButtonGroupView] = useState<'list' | 'kanban-list' | 'kanban'>('list');
@@ -132,8 +137,8 @@ export function StyleguidePage() {
   ], []);
 
   return (
-    <div className="max-w-5xl pb-24 text-ink">
-      <header className="page-header-copy sticky-page-header max-w-162">
+    <div className="pb-24 text-ink">
+      <header className="page-header-copy sticky-page-header">
         <div className="page-header-copy-text">
           <h1 className="m-0 h-6 p-0 text-lg leading-6 font-semibold text-ink">Styleguide</h1>
         </div>
@@ -422,8 +427,12 @@ export function StyleguidePage() {
         </Card>
 
         {/* Toolbar / View Options */}
-        <Card title="Toolbar / View Options" span>
-          <ViewToolbar />
+        <Card title="Page toolbar" span>
+          <div className="page-toolbar">
+            <DateNav from="2026-11-13" to="2026-11-15" today="2026-11-14" weekStart="sunday" onPrevious={() => {}} onNext={() => {}} onToday={() => {}} onPick={() => {}} />
+            <span className="page-toolbar-divider" aria-hidden="true" />
+            <ViewMenu layouts={['list', 'columns']} layout="columns" onLayoutChange={() => {}} style="cards" onStyleChange={() => {}} range="d3" onRangeChange={() => {}} />
+          </div>
         </Card>
 
         {/* Task Rows */}
@@ -487,6 +496,17 @@ export function StyleguidePage() {
         {/* Calendar & Monthly */}
         <Card title="Calendar & Monthly">
           <MonthlyCalendarSpecimen compact weekStart={weekStart} />
+          <div className="flex flex-col gap-3 mt-6">
+            <p className="text-[10px] tracking-[0.08em] uppercase text-ink-light font-medium">Daily tab calendar</p>
+            <WeekSelector
+              weekAnchor={dailyWeekAnchor}
+              today={startOfDay(new Date())}
+              weekStart={weekStart}
+              onWeekChange={setDailyWeekAnchor}
+              onToday={() => setDailyWeekAnchor(startOfDay(new Date()))}
+              defaultOpen
+            />
+          </div>
         </Card>
 
         {/* Month Selector */}
@@ -586,8 +606,6 @@ export function StyleguidePage() {
             </TokenRow>
           </div>
         </Card>
-
-
 
         {/* Context Menu */}
         <Card title="Context Menu">

@@ -175,7 +175,7 @@ A short palette of warm, slightly aged neutrals with one brick-red anchor; every
 
 The same journal read by lamplight: warm coffee paper, cream ink, a lighter brick accent. It is selected in Settings > Appearance > Theme (`Dark`, or `Automatic` to follow the OS `prefers-color-scheme`) and applies only inside the logged-in app; login, register and password reset stay on Cream Paper.
 
-Tokens are redefined under `:root[data-theme="dark"]` in `app/src/index.css`; components keep using the same utilities (`bg-cream`, `text-ink`, `border-dot`), so inverted pairs like `bg-ink text-cream` flip on their own.
+Tokens are redefined under `:root[data-theme="dark"]` in `app/src/styles/theme.css`; components keep using the same utilities (`bg-cream`, `text-ink`, `border-dot`), so inverted pairs like `bg-ink text-cream` flip on their own.
 
 | Token | Light | Dark | Role |
 | --- | --- | --- | --- |
@@ -189,7 +189,11 @@ Tokens are redefined under `:root[data-theme="dark"]` in `app/src/index.css`; co
 | Warm Brick Red `--color-accent` | `#c9483b` | `#d8705f` | Accent, lifted for contrast on dark paper |
 | Active nav `--planner-sidebar-active-bg` | tinted dot | `#3e3228` | Selected navigation item |
 | Overlay `--planner-overlay-bg` | Cream Paper | `#2f271e` | Dialogs and menus, a half-step above the page |
-| Browser chrome `theme-color` | `#f5f0e8` | `#221a14` | PWA title bar |
+| Browser chrome `theme-color` | `#ebe6de` | `#292219` | PWA title bar, matches the nav bar (`--color-sidebar-bg`) |
+
+### Nord Themes
+
+Nord Light and Nord Dark are optional fixed themes for the logged-in app. They are exceptions to the warm-neutral palette and brick-red interaction accent: Nord Light uses Snow Storm surfaces with Polar Night text, while Nord Dark reverses that relationship. Frost blue identifies interactions, and Aurora red identifies errors, destructive actions, and overdue tasks. User-assigned collection and label colors remain unchanged. Automatic continues to select Beige or Dark according to the system appearance.
 
 The No-Pure Rule still holds: dark surfaces are warm browns, never `#000`, and ink is cream, never `#fff`. Collection and label colors are user data and stay unchanged.
 
@@ -257,10 +261,12 @@ Mostly flat. Depth is carried first by three quiet mechanisms: (1) tint, by step
 
 ### Navigation Link
 
-- **Shape:** 32px tall for text and icon-left styles, 48px for icon-above; 4px corner radius. Narrow screens reduce horizontal padding.
-- **Default:** Transparent on Surface Cream, Ink text at 60% opacity.
-- **Hover:** Opacity rises to 100%, with a neutral tint. No transforms.
-- **Active:** Background `rgba(212,207,199,0.5)` (Dot Grey at 50%), text at 100% with `font-weight: 500`. No bar, no stripe, no arrow.
+- **Shape (desktop):** A folder tab sitting on the bar's bottom edge: 36px tall for text and icon-left, 52px for icon-above; square sides, 6px top corners, no bottom edge. Narrow rows reduce horizontal padding.
+- **Default:** Transparent border on Surface Cream, Ink text.
+- **Hover:** Neutral tint. No transforms.
+- **Active (desktop):** 1px Dot Grey border on left, top and right, filled with the page color and overlapping the bar border by 1px so the tab opens into the page. `font-weight: 500`. No shadow, no stripe, no red.
+- **Shape (phone):** Mirrored folder tab on the bottom bar's top edge: square top, 6px bottom corners, no top edge.
+- **Active (phone):** Same as desktop, mirrored: 1px Dot Grey border on left, bottom and right, filled with the page color, overlapping the bar border by 1px.
 
 ### Chips (labels)
 
@@ -317,11 +323,16 @@ those same components rather than copying them.
 
 ### Navigation
 
-- **Top-level:** One top bar with Daily, Inbox, Habits, Collections, and More. More contains Settings, Help, keyboard shortcuts, and admin destinations when available.
-- **Active state:** See Navigation Link. Neutral tint and medium text, without a red indicator.
+- **Page column:** Every page sits in one centered column, `--container-page` (720px), fluid below that. Boards scroll sideways inside it. No page sets its own max width. Window > Full width sets `--container-page: 100%` on the shell, widening the column and the top bar row together.
+- **Top-level:** One top bar with Daily, Inbox, Habits, Collections. The bar background and border span the window; its row aligns to the page column: `BulletPlanner` wordmark left, tabs centered, version, search and the Planner icon right.
+- **Planner menu:** The Planner icon opens the only menu: app name and version, account name and email, Show (completed tasks, notes), Theme swatches, Settings, Help, keyboard shortcuts (desktop), admin destinations (admins), the update notice when a new version is ready, and Logout. The icon shows the active tint on Settings, Help, Admin and Styleguide.
+- **Active state:** See Navigation Link.
 - **Style:** Account preference offers text only, icon left (default), or icon above. Settings > General and the bar's context menu change the same preference.
-- **Desktop:** 48px bar for text and icon-left, 64px for icon-above. At 900px and above, show the Planner wordmark and version. Between 641px and 899px, show only the logo, navigation, search, and account controls.
-- **Mobile:** At 640px and below, use one 60px row: logo, four primary destinations with icons above labels, and account menu. Search and secondary destinations move into the account menu. Hide the logo at 320px when needed to preserve readable labels. No bottom bar or sidebar drawer.
+- **Desktop:** 48px bar for text and icon-left, 64px for icon-above. The version shows only while the row has its full 720px.
+- **Mobile:** At 640px and below the bar moves to the bottom as one 64px row: four primary destinations and the Planner icon. The bar mirrors the desktop top bar: folder tabs hang from the bar's top edge, square top, 6px bottom corners, the active tab filled with the page color and overlapping the bar border so it opens upward into the page. Icons sit above labels; tab icons share one line through CSS subgrid rows, each icon + label group is centered vertically, and the 36px Planner button is centered on those groups. Search joins the Planner menu; the wordmark hides.
+- **Page toolbar:** Always on the title row, right-aligned; the title truncates first. Order: navigation (Today, previous, range picker, next on Daily; `Group: X` on Collections and Inbox when showing Columns), a 1px divider, then `View ▾` and `Window ▾` as text menus like a desktop menu bar. Menus show each shortcut on the right in ink-light (`v l`). View holds Layout (List, Columns; Table and Calendar in phase 2), Style (segmented Notebook | Cards with icons), Range (named presets on List, `DAYS 1-6`, `WEEKS 1-3`, `MONTH` pills on Columns, the active pill filled with ink, unavailable ones disabled) and Actions. When the row tightens it sheds, in order: compact date (`13-15/11`), the Today button (moves into the picker), Window (folds into View). Overlay drop-shadow only on the open panel.
+- **Phone toolbar:** At 640px and below the toolbar leaves the title row for a 48px bar between the page and the bottom navbar; View opens a bottom sheet with the same sections and no shortcut hints. Window hides, since phones already use the full width.
+- **Icons:** Daily is a plain square with a filled top band and the bold day number. Inbox is the inbox tray.
 - **Rhythm:** Navigation dimensions use the 4px sub-grid. Page spacing retains the 24px baseline.
 
 ## 6. Do's and Don'ts

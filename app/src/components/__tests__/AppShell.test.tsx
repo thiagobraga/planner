@@ -168,6 +168,13 @@ describe('AppShell', () => {
     expect(screen.getByText('Outlet content')).toBeInTheDocument();
   });
 
+  it('centers every page in one 720px column', () => {
+    render(<AppShell />);
+    const column = screen.getByTestId('outlet-content').parentElement;
+    expect(column).toHaveClass('page-container', 'mx-auto', 'w-full', 'max-w-page');
+    expect(column?.parentElement?.tagName).toBe('MAIN');
+  });
+
   it('applies font class from preferences', () => {
     mockUseQuery.mockReturnValue({
       data: { ...defaultPreferences, font: 'hubballi' },
@@ -197,8 +204,8 @@ describe('AppShell', () => {
       expect(updateDocumentThemeColor).toHaveBeenLastCalledWith('dark');
     });
 
-    it('removes the theme on unmount so logged-out screens stay beige', () => {
-      mockUseQuery.mockReturnValue({ data: { ...defaultPreferences, background: 'dark' } });
+    it.each(['dark', 'nord-light', 'nord-dark'])('removes %s on unmount so logged-out screens stay beige', (background) => {
+      mockUseQuery.mockReturnValue({ data: { ...defaultPreferences, background } });
 
       const { unmount } = render(<AppShell />);
       unmount();
@@ -207,13 +214,13 @@ describe('AppShell', () => {
       expect(updateDocumentThemeColor).toHaveBeenLastCalledWith('beige');
     });
 
-    it('uses the cached background until preferences load', () => {
-      localStorage.setItem('planner_background', 'dark');
+    it.each(['dark', 'nord-light', 'nord-dark'])('uses cached %s until preferences load', (background) => {
+      localStorage.setItem('planner_background', background);
       mockUseQuery.mockReturnValue({ data: undefined });
 
       render(<AppShell />);
 
-      expect(document.documentElement).toHaveAttribute('data-theme', 'dark');
+      expect(document.documentElement).toHaveAttribute('data-theme', background);
     });
 
     it('caches the loaded background for the next reload', () => {

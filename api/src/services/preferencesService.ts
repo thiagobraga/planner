@@ -1,4 +1,4 @@
-import type { NavStyle } from "../types/preferences.js";
+import type { BoardGroupBy, BoardViewModes, DailyView, NavStyle, ViewLayout, ViewRange, ViewStyle } from "../types/preferences.js";
 import pool from "../db/pool.js";
 import { AppError } from "../utils/AppError.js";
 import { buildEvent, publishEvent } from "./syncService.js";
@@ -23,11 +23,9 @@ interface PreferencesRow {
   date_format: string;
   collapsed_collection_ids: string[];
   board_view_modes: BoardViewModes;
+  daily_view: DailyView;
+  full_width: boolean;
 }
-
-export type BoardGroupBy = "status" | "section" | "priority";
-export type BoardViewMode = "list" | "kanban";
-export type BoardViewModes = Record<string, { view?: BoardViewMode; groupBy?: BoardGroupBy }>;
 
 function formatPreferences(row: PreferencesRow) {
   return {
@@ -49,6 +47,8 @@ function formatPreferences(row: PreferencesRow) {
     dateFormat: row.date_format ?? 'MMM DD ddd',
     collapsedCollectionIds: row.collapsed_collection_ids,
     boardViewModes: row.board_view_modes ?? {},
+    dailyView: row.daily_view,
+    fullWidth: row.full_width,
   };
 }
 
@@ -56,10 +56,35 @@ const VALID_NAV_STYLES = ["text", "icon-left", "icon-top"] as const;
 const VALID_WEEK_STARTS = ["sunday", "monday"] as const;
 const VALID_THEMES = ["light", "dark", "system"] as const;
 const VALID_FONTS = ["lora", "playpen", "hubballi"] as const;
-const VALID_BACKGROUNDS = ["beige", "white", "dark", "system"] as const;
+const VALID_BACKGROUNDS = ["beige", "white", "dark", "system", "nord-light", "nord-dark"] as const;
 const VALID_LOCALES = ["en", "pt-BR"] as const;
-const VALID_GROUPINGS = ["status", "section", "priority"] as const;
-const VALID_VIEW_MODES = ["list", "kanban"] as const;
+const VALID_GROUPINGS: readonly BoardGroupBy[] = ["status", "section", "priority", "none", "collection"];
+const VALID_LAYOUTS: readonly ViewLayout[] = ["list", "columns", "table", "calendar"];
+const VALID_STYLES: readonly ViewStyle[] = ["notebook", "cards"];
+const VALID_RANGES: readonly ViewRange[] = [
+  "today", "tomorrow", "week", "next7", "upcoming", "month",
+  "d1", "d2", "d3", "d4", "d5", "d6", "w1", "w2", "w3",
+];
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function isValidDailyView(value: unknown): value is DailyView {
+  return isPlainObject(value)
+    && Object.keys(value).length === 2
+    && VALID_STYLES.includes(value.style as ViewStyle)
+    && VALID_RANGES.includes(value.range as ViewRange);
+}
+
+function isValidBoardMode(value: unknown): boolean {
+  if (!isPlainObject(value)) return false;
+  const { layout, style, groupBy, ...rest } = value;
+  return Object.keys(rest).length === 0
+    && (layout === undefined || VALID_LAYOUTS.includes(layout as ViewLayout))
+    && (style === undefined || VALID_STYLES.includes(style as ViewStyle))
+    && (groupBy === undefined || VALID_GROUPINGS.includes(groupBy as BoardGroupBy));
+}
 export const VALID_DATE_FORMATS = [
   "MMM DD ddd",
   "DD/MM ddd",
@@ -94,7 +119,10 @@ export interface UpdatePreferencesInput {
   locale?: string;
   dateFormat?: string;
   collapsedCollectionIds?: string[];
+  /** Entries are merged into the stored ones, key by key. */
   boardViewModes?: BoardViewModes;
+  dailyView?: DailyView;
+  fullWidth?: boolean;
 }
 
 export function validatePreferences(input: UpdatePreferencesInput): UpdatePreferencesInput {
@@ -174,28 +202,25 @@ export function validatePreferences(input: UpdatePreferencesInput): UpdatePrefer
   }
 
   if (input.boardViewModes !== undefined) {
-    const entries = typeof input.boardViewModes === "object"
-      && input.boardViewModes !== null
-      && !Array.isArray(input.boardViewModes)
-      ? Object.entries(input.boardViewModes)
-      : null;
+    const entries = isPlainObject(input.boardViewModes) ? Object.entries(input.boardViewModes) : null;
     const validEntries = entries !== null
       && entries.length <= 200
-      && entries.every(([collectionId, mode]) => {
-        if (!isUuid(collectionId) || typeof mode !== "object" || mode === null || Array.isArray(mode)) {
-          return false;
-        }
-        const { view, groupBy } = mode as { view?: unknown; groupBy?: unknown };
-        return (view === undefined || VALID_VIEW_MODES.includes(view as BoardViewMode))
-          && (groupBy === undefined || VALID_GROUPINGS.includes(groupBy as BoardGroupBy));
-      });
+      && entries.every(([collectionId, mode]) => isUuid(collectionId) && isValidBoardMode(mode));
 
     if (!validEntries) {
       errors.push({
         field: "boardViewModes",
-        message: "boardViewModes must contain at most 200 UUID keys with valid view and groupBy values",
+        message: "boardViewModes must contain at most 200 UUID keys with valid layout, style and groupBy values",
       });
     }
+  }
+
+  if (input.dailyView !== undefined && !isValidDailyView(input.dailyView)) {
+    errors.push({ field: "dailyView", message: "dailyView must be { style, range } with known values" });
+  }
+
+  if (input.fullWidth !== undefined && typeof input.fullWidth !== "boolean") {
+    errors.push({ field: "fullWidth", message: "fullWidth must be a boolean" });
   }
 
   if (errors.length > 0) {
@@ -299,8 +324,21 @@ export async function updatePreferences(userId: string, input: UpdatePreferences
     values.push([...new Set(input.collapsedCollectionIds)]);
   }
   if (input.boardViewModes !== undefined) {
-    setClauses.push(`board_view_modes = $${paramIndex++}`);
+    // Each sent entry is merged into the stored one, so changing one field of one
+    // collection never drops its other fields or the other collections.
+    setClauses.push(`board_view_modes = board_view_modes || COALESCE((
+      SELECT jsonb_object_agg(entry.key, COALESCE(board_view_modes -> entry.key, '{}'::jsonb) || entry.value)
+      FROM jsonb_each($${paramIndex++}::jsonb) AS entry
+    ), '{}'::jsonb)`);
     values.push(input.boardViewModes);
+  }
+  if (input.dailyView !== undefined) {
+    setClauses.push(`daily_view = $${paramIndex++}`);
+    values.push({ style: input.dailyView.style, range: input.dailyView.range });
+  }
+  if (input.fullWidth !== undefined) {
+    setClauses.push(`full_width = $${paramIndex++}`);
+    values.push(input.fullWidth);
   }
 
   if (setClauses.length === 0) {

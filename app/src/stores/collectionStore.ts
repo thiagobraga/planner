@@ -1,23 +1,6 @@
 import { create } from 'zustand';
 import type { ApiCollection } from '../types/api';
-
-export interface CollectionTreeNode {
-  id: string;
-  name: string;
-  color: string;
-  parentId: string | null;
-  orderValue: number;
-  isInbox: boolean;
-  children: CollectionTreeNode[];
-}
-
-interface CollectionState {
-  collections: ApiCollection[];
-  setCollections: (collections: ApiCollection[]) => void;
-  addCollection: (collection: ApiCollection) => void;
-  updateCollection: (id: string, updates: Partial<ApiCollection>) => void;
-  removeCollection: (id: string) => void;
-}
+import type { CollectionState, CollectionTreeNode } from '../types/collections';
 
 export const useCollectionStore = create<CollectionState>((set) => ({
   collections: [],

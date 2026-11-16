@@ -3,6 +3,7 @@ import type { ApiSection, ApiTask } from '../src/api/client';
 import type { ApiDailyView } from '../src/types/daily';
 import { expect, STORAGE_STATE_PATH, test } from './fixtures/api';
 import { setGroupBy, uniqueName } from './specs/board/helpers';
+import { chooseView } from './fixtures/view';
 
 test.use({ storageState: STORAGE_STATE_PATH });
 
@@ -123,7 +124,7 @@ test('Collection Kanban lists creates consecutive tasks inside the selected sect
       name: uniqueName('Features'),
     });
     await page.goto(`/collection/${collection.id}`);
-    await page.getByRole('button', { name: 'Kanban lists', exact: true }).click();
+    await chooseView(page, { layout: 'Columns', style: 'Notebook' });
     await expect(page.getByTestId('board-view')).toBeVisible();
     await setGroupBy(page, 'Section');
     const column = page.locator(`[data-column-id="section:${section.id}"]`);

@@ -1,18 +1,6 @@
-import { Fragment, type ComponentProps, type ReactNode } from 'react';
+import { Fragment } from 'react';
 import { TaskList } from '../TaskList';
-import type { Task } from '../TaskItem';
-import type { StatusListGroup } from '../../utils/boardColumns';
-
-type SharedTaskListProps = Omit<
-  ComponentProps<typeof TaskList>,
-  'tasks' | 'containerId' | 'sectionId' | 'dayDate'
->;
-
-interface StatusTaskListProps {
-  groups: StatusListGroup<Task>[];
-  taskListProps: SharedTaskListProps;
-  afterFirstGroup?: ReactNode;
-}
+import type { StatusTaskListProps } from '../../types/board';
 
 export function StatusTaskList({ groups, taskListProps, afterFirstGroup }: StatusTaskListProps) {
   return (

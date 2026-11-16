@@ -1,22 +1,15 @@
 import { useMemo, useRef, useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router';
 import { useQuery, useQueries, useQueryClient } from '@tanstack/react-query';
 import { useSync } from '../hooks/useSync';
 import { useReorganize, type Section as ReorganizeSection } from '../hooks/useReorganize';
 import { isEchoedMove, isStructuralMove } from '../utils/moveEcho';
-import { TaskVisibilityControls } from '../components/TaskVisibilityControls';
 import { PageHeader } from '../components/PageHeader';
 import { CollectionChip } from '../components/ui/Chip';
-import { Button } from '../components/ui/Button';
-import { ViewSwitcher } from '../components/ui/ViewSwitcher';
-import { Toolbar } from '../components/ui/Toolbar';
-import { ToolbarSectionLabel } from '../components/ui/ToolbarSectionLabel';
 import { DailyWeekBoard } from '../components/board/DailyWeekBoard';
-import { WeekSelector } from '../components/board/WeekSelector';
+import { DailyToolbar } from '../components/daily/DailyToolbar';
 import { DailyList } from '../components/daily/DailyList';
 import { MonthlyView } from '../components/monthly/MonthlyView';
-import type { Task } from '../components/TaskItem';
-import { extractNaturalDate, fmtISO, fmtISOInTimeZone, startOfWeek } from '../utils/date';
+import { extractNaturalDate, fmtISOInTimeZone } from '../utils/date';
 import { nextOrderValue } from '../utils/order';
 import { getParentCandidate } from '../utils/taskTree';
 import { resolveTaskIndent } from '../utils/taskIndent';
@@ -31,26 +24,27 @@ import { usePreferences } from '../hooks/usePreferences';
 import { useI18n } from '../i18n/I18nContext';
 import { fetchCollections, fetchSections, fetchCollectionView, apiToggleTask, apiCreateTask, apiUpdateTask, apiDeleteTask, apiMoveTask } from '../api/client';
 import type { ApiTask } from '../types/api';
-import { ContextMenu, type ContextMenuItem } from '../components/ui/ContextMenu';
+import { ContextMenu } from '../components/ui/ContextMenu';
+import type { ContextMenuItem } from '../types/contextMenu';
 import { flattenCollections } from '../components/CollectionTreeNav';
-import { Folder, ArrowUp, ArrowDown, Trash2, Calendar, Kanban, List } from 'lucide-react';
+import { Folder, ArrowUp, ArrowDown, Trash2, Columns3, List } from 'lucide-react';
 import { applySchedule, withTimeZones } from '../utils/taskTime';
-import { addDaysISO, apiToTask, buildSections, dateFromISO, dayLabel, flattenDaily } from '../utils/dailySections';
-import { dailyRange, viewToSlug } from '../utils/dailyRange';
+import { apiToTask, buildSections, dateFromISO, dayLabel, flattenDaily } from '../utils/dailySections';
+import { listDays } from '../utils/dailyListDays';
+import { useDailyView } from '../hooks/useDailyView';
 import type { DaySection } from '../types/daily';
-import type { BoardViewMode } from '../types/board';
+import type { ViewLayout } from '../types/view';
 import { buildSetDateMenuItem } from '../components/taskDateMenuItem';
-import type { TaskSchedule } from '../types/task';
+import type { Task, TaskSchedule } from '../types/task';
 import { blurOnEscape } from '../utils/editableText';
 import { buildTaskMenuActions } from '../utils/taskMenuActions';
 
 let tempCounter = 0;
 function tempId() { return `temp-daily-${++tempCounter}`; }
 
-export function DailyPage({ view }: { view: BoardViewMode }) {
+export function DailyPage({ layout }: { layout: ViewLayout }) {
   const { locale, t } = useI18n();
   const qc = useQueryClient();
-  const navigate = useNavigate();
   const [sections, setSections] = useState<DaySection[]>([]);
   const [editingId, setEditingId] = useState<string>();
   const [, setSelectedId] = useState<string>();
@@ -58,8 +52,6 @@ export function DailyPage({ view }: { view: BoardViewMode }) {
   const [indentError, setIndentError] = useState(false);
   const [pageContextMenu, setPageContextMenu] = useState<{ x: number; y: number } | null>(null);
   const [input, setInput] = useState('');
-  const [selectedWeekAnchor, setWeekAnchor] = useState<Date | null>(null);
-  const [selectedMonthAnchor, setMonthAnchor] = useState<Date | null>(null);
   const [futureInputs, setFutureInputs] = useState<Record<string, string>>({});
   const inputRef = useRef<HTMLDivElement>(null);
   const todaySectionRef = useRef<HTMLDivElement>(null);
@@ -69,8 +61,6 @@ export function DailyPage({ view }: { view: BoardViewMode }) {
   }, [sections]);
 
   const { data: prefs } = usePreferences();
-  const dailyBoard = view === 'kanban-list' || view === 'kanban';
-  const setView = useCallback((next: BoardViewMode) => navigate(`/daily/${viewToSlug(next)}`), [navigate]);
 
   const prefsRef = useRef(prefs);
   useEffect(() => {
@@ -79,9 +69,8 @@ export function DailyPage({ view }: { view: BoardViewMode }) {
 
   const [now, setNow] = useState(() => new Date());
   const todayKey = useMemo(() => fmtISOInTimeZone(now, prefs?.timeZone), [now, prefs?.timeZone]);
-  // Until the user navigates, the visible week and month follow today in the preferred time zone.
-  const weekAnchor = useMemo(() => selectedWeekAnchor ?? dateFromISO(todayKey), [selectedWeekAnchor, todayKey]);
-  const monthAnchor = useMemo(() => selectedMonthAnchor ?? dateFromISO(todayKey), [selectedMonthAnchor, todayKey]);
+  const view = useDailyView(layout, prefs, todayKey);
+  const monthLog = layout === 'list' && view.range === 'month';
 
   const dateFormat = prefs?.dateFormat ?? 'MMM DD ddd';
   const localeRef = useRef(locale);
@@ -94,19 +83,9 @@ export function DailyPage({ view }: { view: BoardViewMode }) {
   }, [dateFormat]);
 
   const weekStart = prefs?.weekStart ?? 'sunday';
-  const weekStartKey = fmtISO(startOfWeek(weekAnchor, weekStart));
-  // The list follows today until the week selector moves it to another week.
-  const browsingWeek = view === 'list' && weekStartKey !== fmtISO(startOfWeek(dateFromISO(todayKey), weekStart));
-
-  const range = useMemo(
-    () => dailyRange(
-      browsingWeek ? 'kanban-list' : view,
-      view === 'calendar' ? monthAnchor : view === 'list' && !browsingWeek ? dateFromISO(todayKey) : weekAnchor,
-      weekStart,
-    ),
-    [view, browsingWeek, monthAnchor, weekAnchor, todayKey, weekStart],
-  );
-  const { data: daily, isError: dailyFailed, refresh: refreshDaily } = useDailyTasks(range.from, range.to);
+  // A List that includes today asks only from today on: earlier days arrive as overdue, in their own day.
+  const fetchFrom = layout === 'list' && !monthLog && view.includesToday ? todayKey : view.from;
+  const { data: daily, isError: dailyFailed, refresh: refreshDaily } = useDailyTasks(fetchFrom, view.to);
 
   // Rebuilt when preferences (locale/dateFormat) arrive after the data, so the
   // labels settle without another round trip. Local edits live in `sections`
@@ -148,12 +127,11 @@ export function DailyPage({ view }: { view: BoardViewMode }) {
     });
   }, []);
 
-  // Dropping the anchors makes the week and month follow today again.
+  // Dropping the anchor makes the range follow today again.
   const goToToday = useCallback(() => {
-    setWeekAnchor(null);
-    setMonthAnchor(null);
+    view.today();
     handleToday();
-  }, [handleToday]);
+  }, [view, handleToday]);
 
   useMidnightTimer(
     useCallback(() => {
@@ -164,11 +142,7 @@ export function DailyPage({ view }: { view: BoardViewMode }) {
     prefs?.timeZone,
   );
 
-  const {
-    isPending: visibilityPreferencesPending,
-    setHideCompletedTasks,
-    setShowNotes,
-  } = useTaskVisibilityPreferences(prefs, refreshDaily);
+  const { setHideCompletedTasks, setShowNotes } = useTaskVisibilityPreferences(prefs, refreshDaily);
 
   useEffect(() => {
     window.addEventListener('task-created', refreshDaily);
@@ -691,34 +665,19 @@ export function DailyPage({ view }: { view: BoardViewMode }) {
     [reorg.state, reorg.previewSections, todayKey],
   );
 
-  // A browsed week shows every day, empty ones included, so each can take a task.
-  const browsedDays = useMemo(() => {
-    if (!browsingWeek) return null;
-    return Array.from({ length: 7 }, (_, i) => addDaysISO(weekStartKey, i))
-      .map((key) => sections.find((s) => s.key === key)
-        ?? { key, label: dayLabel(dateFromISO(key), locale, dateFormat), tasks: [] });
-  }, [browsingWeek, weekStartKey, sections, locale, dateFormat]);
-
-  const futureDays = useMemo<DaySection[]>(() => {
-    if (view !== 'list' || browsingWeek) return [];
-    const days = [];
-    for (let key = addDaysISO(todayKey, 1); key <= range.to; key = addDaysISO(key, 1)) {
-      days.push(sections.find((s) => s.key === key)
-        ?? { key, label: dayLabel(dateFromISO(key), locale, dateFormat), tasks: [] });
-    }
-    return days;
-  }, [view, browsingWeek, todayKey, range.to, sections, locale, dateFormat]);
-
-  // The week shown by the list keeps its earlier days, empty ones included.
-  const pastDays = useMemo<DaySection[]>(() => {
-    if (view !== 'list' || browsingWeek || reorg.state === 'preview') return [];
-    const days = [];
-    for (let key = weekStartKey; key < todayKey; key = addDaysISO(key, 1)) {
-      days.push(sections.find((s) => s.key === key)
-        ?? { key, label: dayLabel(dateFromISO(key), locale, dateFormat), tasks: [] });
-    }
-    return days;
-  }, [view, browsingWeek, reorg.state, weekStartKey, todayKey, sections, locale, dateFormat]);
+  const { past: pastDays, future: futureDays, browsed: browsedDays } = useMemo(
+    () => listDays({
+      sections,
+      from: view.from,
+      to: view.to,
+      todayKey,
+      hideEmptyDays: view.hideEmptyDays,
+      preview: reorg.state === 'preview',
+      locale,
+      dateFormat,
+    }),
+    [sections, view.from, view.to, view.hideEmptyDays, todayKey, reorg.state, locale, dateFormat],
+  );
 
   return (
     <div
@@ -735,49 +694,35 @@ export function DailyPage({ view }: { view: BoardViewMode }) {
     >
       <PageHeader
         title={t('page.daily')}
-        toolbar={
-          <Toolbar className="daily-page-header-controls" viewSwitcher={
-            <>
-              <ViewSwitcher view={view} onViewChange={setView} />
-            </>
-          }>
-            {reorg.state === 'preview' ? (
-              <span className="reorganize-confirm inline-flex items-center gap-1 text-[13px]">
-                {t('reorganize.confirm')}
-                <button
-                  className="text-accent underline text-decoration-color-accent cursor-pointer hover:opacity-80"
-                  onClick={() => {
-                    reorg.confirmReorganize().catch((err) => console.error('Reorganize failed', err));
-                  }}
-                >
-                  {t('common.yes')}
-                </button>
-                <span>·</span>
-                <button
-                  className="text-accent underline text-decoration-color-accent cursor-pointer hover:opacity-80"
-                  onClick={reorg.cancelReorganize}
-                >
-                  {t('common.no')}
-                </button>
-              </span>
-            ) : (
-              reorg.showButton && (
-                <Button variant="secondary" size="xs" onClick={reorg.startPreview}>
-                  {t('reorganize.button')}
-                </Button>
-              )
-            )}
-
-            <ToolbarSectionLabel>{t('menu.show')}</ToolbarSectionLabel>
-            <TaskVisibilityControls
-              hideCompletedTasks={prefs?.hideCompletedTasks ?? false}
-              showNotes={prefs?.showNotes ?? true}
-              disabled={!prefs || visibilityPreferencesPending}
-              onHideCompletedTasksChange={setHideCompletedTasks}
-              onShowNotesChange={setShowNotes}
-            />
-          </Toolbar>
+        actions={
+          <DailyToolbar
+            view={view}
+            todayKey={todayKey}
+            weekStart={weekStart}
+            onToday={goToToday}
+            onReorganize={reorg.showButton && reorg.state !== 'preview' ? reorg.startPreview : undefined}
+          />
         }
+        afterTitle={reorg.state === 'preview' && (
+          <span className="reorganize-confirm inline-flex items-center gap-1 text-[13px]">
+            {t('reorganize.confirm')}
+            <button
+              className="text-accent underline text-decoration-color-accent cursor-pointer hover:opacity-80"
+              onClick={() => {
+                reorg.confirmReorganize().catch((err) => console.error('Reorganize failed', err));
+              }}
+            >
+              {t('common.yes')}
+            </button>
+            <span>·</span>
+            <button
+              className="text-accent underline text-decoration-color-accent cursor-pointer hover:opacity-80"
+              onClick={reorg.cancelReorganize}
+            >
+              {t('common.no')}
+            </button>
+          </span>
+        )}
       />
 
       {pageContextMenu && (
@@ -786,10 +731,11 @@ export function DailyPage({ view }: { view: BoardViewMode }) {
           position={pageContextMenu}
           onClose={() => setPageContextMenu(null)}
           items={[
-            { type: 'item', label: t('toolbar.list'), icon: <List size={14} />, onClick: () => setView('list') },
-            { type: 'item', label: t('toolbar.kanbanLists'), icon: <Kanban size={14} />, onClick: () => setView('kanban-list') },
-            { type: 'item', label: t('toolbar.kanbanCards'), icon: <Kanban size={14} />, onClick: () => setView('kanban') },
-            { type: 'item', label: t('toolbar.calendar'), icon: <Calendar size={14} />, onClick: () => setView('calendar') },
+            { type: 'item', label: t('view.layout.list'), icon: <List size={14} />, checked: layout === 'list', onClick: () => view.setLayout('list') },
+            { type: 'item', label: t('view.layout.columns'), icon: <Columns3 size={14} />, checked: layout === 'columns', onClick: () => view.setLayout('columns') },
+            { type: 'separator' },
+            { type: 'item', label: t('view.style.notebook'), checked: view.style === 'notebook', onClick: () => view.setStyle('notebook') },
+            { type: 'item', label: t('view.style.cards'), checked: view.style === 'cards', onClick: () => view.setStyle('cards') },
             { type: 'separator' },
             {
               type: 'item',
@@ -805,30 +751,27 @@ export function DailyPage({ view }: { view: BoardViewMode }) {
         />
       )}
 
-      {view === 'calendar' ? (
-        <div className="max-w-[832px]">
+      {monthLog ? (
+        <div>
           <div className="h-6" />
           <MonthlyView
             tasks={allTasks}
             onToggle={handleToggle}
             onTaskContextMenu={handleRightClick}
-            visibleMonth={{ year: monthAnchor.getFullYear(), month: monthAnchor.getMonth() }}
-            onMonthChange={(year, month) => setMonthAnchor(new Date(year, month, 1))}
+            visibleMonth={{ year: dateFromISO(view.from).getFullYear(), month: dateFromISO(view.from).getMonth() }}
+            hideSelector
           />
         </div>
-      ) : dailyBoard ? (
+      ) : layout === 'columns' ? (
         <DailyWeekBoard
           tasks={allTasks}
-          weekAnchor={weekAnchor}
-          today={dateFromISO(todayKey)}
+          from={view.from}
+          to={view.to}
           todayKey={todayKey}
-          weekStart={weekStart}
           dateFormat={dateFormat}
-          onWeekChange={setWeekAnchor}
-          onToday={goToToday}
           onToggle={handleToggle}
           onCreate={handleBoardCreate}
-          presentation={view}
+          presentation={view.style === 'cards' ? 'kanban' : 'kanban-list'}
           taskListProps={{
             activeDragId,
             editingId,
@@ -845,9 +788,6 @@ export function DailyPage({ view }: { view: BoardViewMode }) {
         />
       ) : (
         <>
-        <div className="daily-list-nav sticky top-6 z-[9] flex max-w-162 justify-start bg-(--planner-page-bg)">
-          <WeekSelector weekAnchor={weekAnchor} today={dateFromISO(todayKey)} weekStart={weekStart} onWeekChange={setWeekAnchor} onToday={goToToday} />
-        </div>
         <DailyList
           pastSections={pastDays}
           futureSections={previewFutureSections ?? browsedDays ?? futureDays}

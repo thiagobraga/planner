@@ -30,6 +30,13 @@ describe('useResolvedTheme', () => {
     window.matchMedia = originalMatchMedia;
   });
 
+  it.each(['nord-light', 'nord-dark'] as const)('keeps %s fixed when OS appearance changes', (theme) => {
+    const { result } = renderHook(() => useResolvedTheme(theme));
+    act(() => setSystemDark(true));
+    expect(result.current).toBe(theme);
+    expect(listeners.size).toBe(0);
+  });
+
   it('returns a fixed preference as-is', () => {
     matches = true;
     const { result } = renderHook(() => useResolvedTheme('white'));

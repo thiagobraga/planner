@@ -1,6 +1,9 @@
 import { mkdir } from 'node:fs/promises';
 import { test, expect, STORAGE_STATE_PATH } from './fixtures/api';
 import type { ApiTask } from '../src/api/client';
+import { chooseView, expectSavedDailyView } from './fixtures/view';
+
+const WEEK_NOTEBOOK = { style: 'notebook', range: 'week' };
 
 test.use({ storageState: STORAGE_STATE_PATH });
 
@@ -15,10 +18,10 @@ function daysBetween(from: string, to: string): number {
   return (Date.parse(to) - Date.parse(from)) / 86_400_000;
 }
 
-test('each Daily route shows its view and loads it with one range request', async ({ page, api }) => {
+test('each Daily layout shows its view and loads it with one range request', async ({ page, api }) => {
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
-  await api.patch('/preferences', { locale: 'en', timeZone: 'UTC', weekStart: 'sunday' });
+  await api.patch('/preferences', { locale: 'en', timeZone: 'UTC', weekStart: 'sunday', dailyView: WEEK_NOTEBOOK });
   const today = new Date().toISOString().slice(0, 10);
   const title = `Range check ${Date.now()}`;
   const task = await api.post<ApiTask>('/tasks', { title, dueDate: today });
@@ -45,10 +48,11 @@ test('each Daily route shows its view and loads it with one range request', asyn
     expect(new Date(`${list.to}T12:00:00Z`).getUTCDay()).toBe(6);
     await expect(page.getByRole('checkbox', { name: 'Next days', exact: true })).toHaveCount(0);
 
-    // On the first day of the week, List and Kanban reuse the same cached range.
+    // On the first day of the week, List and Columns reuse the same cached range.
     dailyCalls.length = 0;
-    await page.getByRole('button', { name: 'Kanban cards', exact: true }).click();
-    await expect(page).toHaveURL(/\/daily\/cards$/);
+    await chooseView(page, { layout: 'Columns', style: 'Cards' });
+    await expect(page).toHaveURL(/\/daily\/columns$/);
+    await expectSavedDailyView(api, { style: 'cards' });
     await expect(page.getByTestId('daily-week-board')).toBeVisible();
     await expect(page.getByRole('heading', { name: title, exact: true })).toBeVisible();
     const sameRange = new Date(`${today}T12:00:00Z`).getUTCDay() === 0;
@@ -59,20 +63,23 @@ test('each Daily route shows its view and loads it with one range request', asyn
 
     // Another week asks for that range only.
     dailyCalls.length = 0;
-    await page.getByRole('button', { name: 'Next week', exact: true }).click();
+    await page.getByRole('button', { name: 'Next', exact: true }).click();
     await expect.poll(() => dailyCalls.length).toBe(1);
     expect(daysBetween(week.from, rangeOf(dailyCalls[0]!).from)).toBe(7);
 
-    // The URL, not storage, decides the view after a reload.
+    // The old monthly link opens List · Month, which the saved range keeps after a reload.
     await page.goto('/daily/monthly');
-    await expect(page).toHaveURL(/\/daily\/monthly$/);
+    await expect(page).toHaveURL(/\/daily\/list$/);
     await expect(page.locator('.monthly-ledger').first()).toBeVisible();
+    await expectSavedDailyView(api, { style: 'cards', range: 'month' });
     await page.reload();
     await expect(page.locator('.monthly-ledger').first()).toBeVisible();
 
-    // /daily returns to the last view; an unknown view falls back to the list.
+    // /daily returns to the last layout; an unknown one falls back to the list.
+    await page.goto('/daily/columns');
+    await expect(page.getByTestId('daily-week-board')).toBeVisible();
     await page.goto('/daily');
-    await expect(page).toHaveURL(/\/daily\/monthly$/);
+    await expect(page).toHaveURL(/\/daily\/columns$/);
     await page.goto('/daily/weekly');
     await expect(page).toHaveURL(/\/daily\/list$/);
 
@@ -88,7 +95,7 @@ test('future tasks remain visible across Daily views without Upcoming, and Reorg
   test.setTimeout(60_000);
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
-  await api.patch('/preferences', { locale: 'en', timeZone: 'UTC', weekStart: 'sunday' });
+  await api.patch('/preferences', { locale: 'en', timeZone: 'UTC', weekStart: 'sunday', dailyView: WEEK_NOTEBOOK });
   const today = new Date().toISOString().slice(0, 10);
   const nextWeek = new Date(`${today}T12:00:00Z`);
   nextWeek.setUTCDate(nextWeek.getUTCDate() + 7 - nextWeek.getUTCDay());
@@ -103,7 +110,7 @@ test('future tasks remain visible across Daily views without Upcoming, and Reorg
   try {
     tasks.push(await api.post<ApiTask>('/tasks', { title, dueDate: nextDate }));
     await page.goto('/daily/list');
-    await page.getByRole('button', { name: 'Next week', exact: true }).click();
+    await page.getByRole('button', { name: 'Next', exact: true }).click();
     await expect(page.getByText(title, { exact: true })).toBeVisible();
     await expect(page.getByRole('checkbox', { name: 'Next days', exact: true })).toHaveCount(0);
     await page.keyboard.press('g');
@@ -116,9 +123,10 @@ test('future tasks remain visible across Daily views without Upcoming, and Reorg
     await page.screenshot({ path: 'dist/screenshots/daily-without-upcoming-mobile.png', fullPage: true });
     await page.setViewportSize({ width: 1280, height: 900 });
 
-    for (const route of ['kanban', 'cards']) {
-      await page.goto(`/daily/${route}`);
-      await page.getByRole('button', { name: 'Next week', exact: true }).click();
+    for (const style of ['notebook', 'cards']) {
+      await api.patch('/preferences', { dailyView: { style, range: 'w1' } });
+      await page.goto('/daily/columns');
+      await page.getByRole('button', { name: 'Next', exact: true }).click();
       await expect(page.getByText(title, { exact: true })).toBeVisible();
       await expect(page.getByRole('checkbox', { name: 'Next days', exact: true })).toHaveCount(0);
     }
@@ -129,9 +137,10 @@ test('future tasks remain visible across Daily views without Upcoming, and Reorg
     for (let i = 0; i < 8; i++) {
       tasks.push(await api.post<ApiTask>('/tasks', { title: `Reorganize ${i} ${Date.now()}`, dueDate: today }));
     }
+    await api.patch('/preferences', { dailyView: WEEK_NOTEBOOK });
     await page.goto('/daily/list');
-    await page.getByRole('button', { name: 'More options', exact: true }).click();
-    await page.getByRole('button', { name: 'Organize', exact: true }).click();
+    await page.getByRole('button', { name: 'View', exact: true }).click();
+    await page.getByRole('menuitem', { name: 'Organize', exact: true }).click();
     await expect(page.locator('.reorganize-confirm')).toBeVisible();
     await expect(page.locator('[data-day-date]').filter({ hasText: 'Reorganize' })).toHaveCount(2);
     await page.getByRole('button', { name: 'No', exact: true }).click();

@@ -11,7 +11,7 @@ test.use({ storageState: STORAGE_STATE_PATH, timezoneId: TZ, locale: 'pt-BR' });
 const dayKey = (d: Date) => new Intl.DateTimeFormat('en-CA', { timeZone: TZ }).format(d);
 
 // The Playwright user is shared by every spec, so the preferences this one changes must not leak.
-let originalPreferences: Pick<Preferences, 'locale' | 'timeZone' | 'weekStart' | 'hideCompletedTasks'>;
+let originalPreferences: Pick<Preferences, 'locale' | 'timeZone' | 'weekStart' | 'hideCompletedTasks' | 'dailyView'>;
 
 test.afterEach(async ({ api }) => {
   await api.patch('/preferences', originalPreferences);
@@ -19,9 +19,9 @@ test.afterEach(async ({ api }) => {
 
 test('Today marker moves to the next day at midnight in every view', async ({ context, api }) => {
   test.setTimeout(REAL ? 30 * 60_000 : 90_000);
-  const { locale, timeZone, weekStart, hideCompletedTasks } = await api.get<Preferences>('/preferences');
-  originalPreferences = { locale, timeZone, weekStart, hideCompletedTasks };
-  await api.patch('/preferences', { locale: 'pt-BR', timeZone: TZ, weekStart: 'sunday', hideCompletedTasks: false });
+  const { locale, timeZone, weekStart, hideCompletedTasks, dailyView } = await api.get<Preferences>('/preferences');
+  originalPreferences = { locale, timeZone, weekStart, hideCompletedTasks, dailyView };
+  await api.patch('/preferences', { locale: 'pt-BR', timeZone: TZ, weekStart: 'sunday', hideCompletedTasks: false, dailyView: { style: 'notebook', range: 'week' } });
 
   // The fake clock only affects the pages, so the node side derives its days from the same start.
   const start = REAL ? new Date() : new Date('2026-10-16T23:59:45-03:00');
@@ -40,9 +40,15 @@ test('Today marker moves to the next day at midnight in every view', async ({ co
   const errors: string[] = [];
   for (const page of Object.values(views)) page.on('pageerror', (e) => errors.push(e.message));
 
+  // The range is one saved preference, so only this tab is told to show List · Month.
+  await views.monthly.route('**/api/v1/preferences', async (route) => {
+    if (route.request().method() !== 'GET') return route.continue();
+    const response = await route.fetch();
+    await route.fulfill({ response, json: { ...(await response.json()), dailyView: { style: 'notebook', range: 'month' } } });
+  });
   await views.list.goto('/daily/list');
-  await views.kanban.goto('/daily/kanban');
-  await views.monthly.goto('/daily/monthly');
+  await views.kanban.goto('/daily/columns');
+  await views.monthly.goto('/daily/list');
   await views.habits.goto('/habits');
 
   const listToday = (date: string) => views.list.locator(`[data-day-date="${date}"]`).getByText('Hoje', { exact: true });

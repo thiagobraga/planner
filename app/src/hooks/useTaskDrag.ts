@@ -5,12 +5,12 @@ import type {
   DragStartEvent,
 } from '@dnd-kit/core';
 import { usePlannerDrag, usePlannerDragHandlers } from '../contexts/usePlannerDrag';
-import { flattenTasks, getSubtreeBlock, projectTaskDrop, projectionFitsSubtree, type FlatRow } from '../utils/taskProjection';
+import { flattenTasks, getSubtreeBlock, projectTaskDrop, projectionFitsSubtree } from '../utils/taskProjection';
 import { apiMoveTask } from '../api/client';
 import type { TaskOrderScope } from '../types/drag';
 import { trackMove } from '../utils/moveEcho';
 import type { CollectionDropData, DayDropData, NoDateDropData, SectionDropData, TaskDragData } from '../types/drag';
-import type { Task } from '../components/TaskItem';
+import type { FlatRow, ResolvedMove, Task, UseTaskDragOptions } from '../types/task';
 
 /**
  * Normalise an API date to the bare `YYYY-MM-DD` the page models use.
@@ -24,25 +24,6 @@ import type { Task } from '../components/TaskItem';
 function toISODate(value: string | null | undefined): string | undefined {
   if (!value) return undefined;
   return value.slice(0, 10);
-}
-
-interface UseTaskDragOptions {
-  enabled?: boolean;
-  /** Current rows, flat and unordered; the hook builds the tree itself. */
-  tasks: Task[];
-  /** Apply an optimistic result, and restore a snapshot on failure. */
-  setTasks: (updater: (prev: Task[]) => Task[]) => void;
-  /** The ordering scope a drop in this page's own list belongs to. */
-  scope: TaskOrderScope;
-  /** Called after a failed move so the page can refetch authoritative order. */
-  onError?: () => void;
-  /**
-   * Called after a successful move, so the page can invalidate the *other* views
-   * a move can reach into. A task dropped on a sidebar collection leaves this
-   * page's list and joins one this page does not own; without this, navigating
-   * there would serve a cache that never saw the move.
-   */
-  onMoved?: () => void;
 }
 
 /**
@@ -245,27 +226,6 @@ export function useTaskDrag({ enabled = true, tasks, setTasks, scope, onError, o
   return { activeDragId };
 }
 
-interface ResolvedMove {
-  input: Parameters<typeof apiMoveTask>[1];
-  parentTaskId: string | null;
-  depth: number;
-  /**
-   * A same-space estimate of the server's midpoint, so the optimistic
-   * re-sort (which orders siblings by `orderValue`, same as `flattenTasks`)
-   * lands the row where it was dropped instead of snapping back to its old
-   * slot until the authoritative response arrives.
-   */
-  orderValue: number;
-  /** Past tense, spoken once the move has committed. */
-  announcement: string;
-  /**
-   * Present tense, spoken while the row hovers this target. A keyboard user
-   * arrowing through positions never sees the overlay, so without this the
-   * projected target is invisible to them until they commit the drop.
-   */
-  preview: string;
-}
-
 /**
  * Translate a drop target into the move the API should perform.
  *
@@ -432,6 +392,9 @@ export function resolveMove({
       ...(scope.kind === 'collection' ? { sectionId: targetSectionId } : {}),
       scope: targetDay ? { kind: 'day', dueDate: targetDay } : scope,
       position: projection.position,
+      ...(scope.kind === 'collection'
+        ? { afterTaskId: orderSiblings[projection.position - 1]?.id ?? null }
+        : {}),
     },
     parentTaskId: projection.parentId,
     depth: projection.depth,
