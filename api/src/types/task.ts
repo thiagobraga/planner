@@ -138,6 +138,21 @@ export interface ReorganizeMove {
   dueDate: string;
 }
 
+export interface ResolvedMoveDestination {
+  subtreeIds: string[];
+  rootNewDepth: number;
+  depthDelta: number;
+  destCollectionId: string;
+  destSectionId: string | null;
+  destDueDate: string | null;
+  crossesCollection: boolean;
+  crossesDate: boolean;
+  destStatusId: string | null;
+  destPriority: number;
+  statusChanged: boolean;
+  destStatusIsCompletion: boolean;
+}
+
 export interface RenumberCollectionScopeOptions {
   collectionId: string;
   sectionId: string | null;

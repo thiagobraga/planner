@@ -21,8 +21,9 @@ import {
   validationError,
 } from './task/validation.js';
 import { completeTask, reopenTask } from './task/completion.js';
-import { moveTask, reorganizeTasks } from './task/move.js';
+import { moveTask } from './task/move.js';
 import { reorderTask } from './task/ordering.js';
+import { reorganizeTasks } from './task/reorganize.js';
 
 export {
   completeTask,

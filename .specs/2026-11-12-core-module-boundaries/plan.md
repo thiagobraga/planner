@@ -91,7 +91,7 @@ Progress:
 - [x] Extract cohesive task operations incrementally. Preserve access checks, transactional boundaries, activity attribution, event publication, and service contracts.
 - [x] Run relevant service, route, MCP, and integration tests after each extraction.
 
-Progress: Added real PostgreSQL + Redis lifecycle and rollback integration suite (`taskService.lifecycle.integration.test.ts`). Split `api/src/services/taskService.ts` from 2,013 lines down to 482 lines alongside `task/move.ts` (467), `task/ordering.ts` (376), `task/completion.ts` (207), `task/validation.ts` (131), `task/format.ts` (42), `task/access.ts` (39), `task/events.ts` (21), and `types/task.ts` (173).
+Progress: Added real PostgreSQL + Redis lifecycle and rollback integration suite (`taskService.lifecycle.integration.test.ts`). Split `api/src/services/taskService.ts` from 2,013 lines down to 483 lines alongside `task/ordering.ts` (376), `task/moveSubtree.ts` (215), `task/completion.ts` (207), `task/moveDestination.ts` (149), `task/validation.ts` (131), `task/reorganize.ts` (114), `task/move.ts` (72), `task/format.ts` (42), `task/access.ts` (39), `task/events.ts` (21), and `types/task.ts` (188).
 
 ### 6. Other candidates
 
