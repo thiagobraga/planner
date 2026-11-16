@@ -3,8 +3,6 @@ import { ChevronDown, ChevronRight, MoreHorizontal, Plus, Pencil, Smile, Trash2,
 import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { ContextMenu } from '../ui/ContextMenu';
-import { StripNavigator } from '../ui/StripNavigator';
-import { WeekSelector } from '../board/WeekSelector';
 import { HabitDot, dotAriaProps } from './HabitDot';
 import { InlineNameInput } from '../ui/InlineNameInput';
 import { NO_DRAG_ATTR } from '../dnd/sensors';
@@ -27,12 +25,10 @@ import type { HabitDragData, HabitGroupDragData, HabitSectionDropData } from '..
 import type { ApiHabitGroup } from '../../types/api';
 
 const CELL_W = 24;
-// Keep the label column on a 24px multiple so the day grid aligns with the
-// app's dotted paper background.
-const NARROW_LABEL_COL_W = 216;
-// 15% wider than the narrow cap once the screen is past mobile.
-const LABEL_COL_W = 248;
-const MOBILE_MAX_W = 640;
+const WEEK_W = CELL_W * 7;
+// The label column stays on a 24px multiple so the day grid lands on the
+// dotted paper background. It shrinks on narrow screens so the whole week fits.
+const LABEL_COL_W = 264;
 const INDENT = 24;
 
 export type HabitEditTarget = { kind: 'habit' | 'group'; id: string };
@@ -67,9 +63,6 @@ export interface HabitTimelineProps {
   today: Date;
   weekStart: WeekStart;
   weekAnchor: Date;
-  onWeekChange: (date: Date) => void;
-  onToday?: () => void;
-  todaySignal?: number;
   editing?: HabitEditTarget;
   collapsed: ReadonlySet<string>;
   /** The habit or group currently being dragged, so its block can be collapsed. */
@@ -115,8 +108,9 @@ function dayLink(node: HabitNode, days: DayCell[], i: number) {
   };
 }
 
-// Horizontal habit tracker for the current week: one row per habit, one column
-// per day, always exactly 7 columns aligned to the weekStart preference.
+// Horizontal habit tracker for one week: one row per habit, one column per day,
+// always exactly 7 columns aligned to the weekStart preference. The week itself
+// is picked in the page toolbar.
 // Sub-habits sit indented under their parent, and the parent shows their combined
 // state - empty, half, or full.
 export function HabitTimeline({
@@ -124,9 +118,6 @@ export function HabitTimeline({
   today,
   weekStart,
   weekAnchor,
-  onWeekChange,
-  onToday,
-  todaySignal,
   editing,
   collapsed,
   activeDragId,
@@ -145,18 +136,9 @@ export function HabitTimeline({
   const debug = useDebugStore((s) => s.enabled);
   const [menu, setMenu] = useState<{ target: HabitEditTarget; canAddSub: boolean; x: number; y: number } | null>(null);
   const rootRef = useRef<HTMLDivElement>(null);
-  const daysViewportRef = useRef<HTMLDivElement>(null);
-  const daysHeaderViewportRef = useRef<HTMLDivElement>(null);
   const [timelineWidth, setTimelineWidth] = useState<number | null>(null);
-  const [canPagePrevious, setCanPagePrevious] = useState(false);
-  const [canPageNext, setCanPageNext] = useState(false);
   const { indentSteps, overId, setOverlayNode } = usePlannerDrag();
-  const labelColWidth = useMemo(() => {
-    if (timelineWidth == null || window.innerWidth <= MOBILE_MAX_W) return Math.min(LABEL_COL_W, NARROW_LABEL_COL_W);
-    if (timelineWidth < 390) return Math.max(0, Math.min(NARROW_LABEL_COL_W, timelineWidth - CELL_W * 5));
-    if (timelineWidth < 480) return Math.max(0, Math.min(NARROW_LABEL_COL_W, timelineWidth - CELL_W * 7));
-    return LABEL_COL_W;
-  }, [timelineWidth]);
+  const labelColWidth = labelColumnWidth(timelineWidth);
 
   const dayLetters = weekdayInitials(weekStart, locale);
   const days = useMemo<DayCell[]>(
@@ -187,12 +169,9 @@ export function HabitTimeline({
     return () => resizeObserver.disconnect();
   }, []);
 
-  // Weekend/today tint always applies; future columns additionally dim so every
-  // future day - weekend or not - fades by the same uniform amount.
   const dayColClass = useCallback(
     (d: DayCell) =>
-      `${d.isWeekend ? 'habit-timeline-weekend-col' : ''} ${d.iso === todayISO ? 'habit-timeline-today-col' : ''} ${d.future ? 'opacity-40' : ''
-      }`,
+      `${d.isWeekend ? 'habit-timeline-weekend-col' : ''} ${d.iso === todayISO ? 'habit-timeline-today-col' : ''}`,
     [todayISO],
   );
 
@@ -335,80 +314,16 @@ export function HabitTimeline({
       return () => setOverlayNode(null);
     }
 
-    const viewport = daysViewportRef.current;
-      setOverlayNode(
-        <HabitTimelineBlockPreview
-          rows={draggedBlock}
-          days={days}
-          dayColClass={dayColClass}
-          labelColWidth={labelColWidth}
-          scrollLeft={viewport?.scrollLeft ?? 0}
-          trackWidth={viewport?.clientWidth ?? 0}
-        />,
+    setOverlayNode(
+      <HabitTimelineBlockPreview
+        rows={draggedBlock}
+        days={days}
+        dayColClass={dayColClass}
+        labelColWidth={labelColWidth}
+      />,
     );
     return () => setOverlayNode(null);
   }, [activeDragId, draggedBlock, sections, days, dayColClass, labelColWidth, setOverlayNode]);
-
-  const updatePagingState = useCallback(() => {
-    const viewport = daysViewportRef.current;
-    if (!viewport) return;
-
-    // Read every layout value up front, before the header's scrollLeft write
-    // below - writing then reading again would force a synchronous reflow.
-    const { scrollLeft, clientWidth, scrollWidth } = viewport;
-
-    if (daysHeaderViewportRef.current) {
-      daysHeaderViewportRef.current.scrollLeft = scrollLeft;
-    }
-    setCanPagePrevious(scrollLeft > 1);
-    setCanPageNext(scrollLeft + clientWidth < scrollWidth - 1);
-  }, []);
-
-  // Native scroll fires on every tick (dozens/sec during a fling or the
-  // smooth-scroll paging animation); coalesce to one update per frame so the
-  // read/write above and the resulting re-render don't run at scroll-event
-  // frequency.
-  const pagingRafRef = useRef<number | null>(null);
-  const handleDaysScroll = useCallback(() => {
-    if (pagingRafRef.current != null) return;
-    pagingRafRef.current = requestAnimationFrame(() => {
-      pagingRafRef.current = null;
-      updatePagingState();
-    });
-  }, [updatePagingState]);
-
-  useEffect(() => {
-    return () => {
-      if (pagingRafRef.current != null) cancelAnimationFrame(pagingRafRef.current);
-    };
-  }, []);
-
-  useEffect(() => {
-    const viewport = daysViewportRef.current;
-    if (!viewport) return;
-
-    const todayIndex = days.findIndex((d) => d.iso === todayISO);
-    if (todayIndex !== -1) {
-      const centerLeft = todayIndex * CELL_W + CELL_W / 2 - viewport.clientWidth / 2;
-      const snapLeft = Math.round(Math.max(0, centerLeft) / CELL_W) * CELL_W;
-      viewport.scrollTo({ left: snapLeft });
-    } else {
-      viewport.scrollTo({ left: 0 });
-    }
-    updatePagingState();
-
-    const resizeObserver = new ResizeObserver(updatePagingState);
-    resizeObserver.observe(viewport);
-    return () => resizeObserver.disconnect();
-  }, [days, todayISO, todaySignal, updatePagingState]);
-
-  const pageDays = (direction: -1 | 1) => {
-    const viewport = daysViewportRef.current;
-    if (!viewport) return;
-
-    const visibleCells = Math.max(1, Math.floor(viewport.clientWidth / CELL_W));
-    viewport.scrollBy({ left: direction * visibleCells * CELL_W, behavior: 'smooth' });
-  };
 
   const isEditing = (kind: 'habit' | 'group', id: string) =>
     editing?.kind === kind && editing.id === id;
@@ -419,56 +334,28 @@ export function HabitTimeline({
 
   return (
     <div ref={rootRef} className="habit-timeline">
-      <div className="habit-timeline-week-selector flex justify-start">
-        <WeekSelector weekAnchor={weekAnchor} today={today} weekStart={weekStart} onWeekChange={onWeekChange} onToday={onToday} />
-      </div>
-
       <div className="habit-timeline-selectors-sticky">
         <div className="habit-timeline-day-selector flex min-w-0 items-start gap-0">
           <div className="h-12 shrink-0 min-w-0" style={{ width: labelColWidth }} aria-hidden="true" />
-
-          <StripNavigator
-            direction="previous"
-            aria-label={t('page.previousDays')}
-            disabled={!canPagePrevious}
-            onClick={() => pageDays(-1)}
-            className="habit-timeline-days-prev"
-          />
-
-          <div
-            ref={daysHeaderViewportRef}
-            className="habit-timeline-days-header-viewport min-w-0 flex-1 overflow-hidden"
-          >
-            <div className="habit-timeline-header flex h-12" style={{ width: days.length * CELL_W }}>
-              {days.map((d) => (
-                <div
-                  key={d.iso}
-                  className={`habit-timeline-header-day flex h-12 shrink-0 flex-col items-center justify-center ${dayColClass(
-                    d,
-                  )}`}
-                  style={{ width: CELL_W }}
+          <div className="habit-timeline-header flex h-12 shrink-0" style={{ width: WEEK_W }}>
+            {days.map((d) => (
+              <div
+                key={d.iso}
+                className={`habit-timeline-header-day flex h-12 shrink-0 flex-col items-center justify-center ${dayColClass(d)}`}
+                style={{ width: CELL_W }}
+              >
+                <span className="habit-timeline-header-day-letter block h-6 w-full text-center text-[10px] leading-[24px] text-ink-light opacity-70">
+                  {d.letter}
+                </span>
+                <span
+                  className={`habit-timeline-header-day-number block h-6 w-full text-center text-[10px] leading-[24px] ${d.iso === todayISO ? 'text-ink font-semibold' : 'text-ink-light'
+                    }`}
                 >
-                  <span className="habit-timeline-header-day-letter block h-6 w-full text-center text-[10px] leading-[24px] text-ink-light opacity-70">
-                    {d.letter}
-                  </span>
-                  <span
-                    className={`habit-timeline-header-day-number block h-6 w-full text-center text-[10px] leading-[24px] ${d.iso === todayISO ? 'text-ink font-semibold' : 'text-ink-light'
-                      }`}
-                  >
-                    {d.dayOfMonth}
-                  </span>
-                </div>
-              ))}
-            </div>
+                  {d.dayOfMonth}
+                </span>
+              </div>
+            ))}
           </div>
-
-          <StripNavigator
-            direction="next"
-            aria-label={t('page.nextDays')}
-            disabled={!canPageNext}
-            onClick={() => pageDays(1)}
-            className="habit-timeline-days-next"
-          />
         </div>
       </div>
 
@@ -613,14 +500,8 @@ export function HabitTimeline({
             </SortableContext>
           </div>
 
-          <div className="h-6 w-6 shrink-0" aria-hidden="true" />
-
-          <div
-            ref={daysViewportRef}
-            onScroll={handleDaysScroll}
-            className="habit-timeline-days-viewport min-w-0 flex-1 overflow-x-auto overscroll-x-contain scroll-smooth snap-x snap-mandatory"
-          >
-            <div className="habit-timeline-table-inner" style={{ width: days.length * CELL_W }}>
+          <div className="habit-timeline-days shrink-0">
+            <div className="habit-timeline-table-inner" style={{ width: WEEK_W }}>
               {rows.map((row) => {
               // Non-habit rows still occupy a band so both columns stay in step,
               // and keep the weekend/today column shading unbroken top to bottom.
@@ -630,7 +511,7 @@ export function HabitTimeline({
                     {days.map((d) => (
                       <span
                         key={d.iso}
-                        className={`h-6 shrink-0 snap-start ${dayColClass(d)}`}
+                        className={`h-6 shrink-0 ${dayColClass(d)}`}
                         style={{ width: CELL_W }}
                       />
                     ))}
@@ -647,7 +528,7 @@ export function HabitTimeline({
                         <span
                           key={d.iso}
                           aria-hidden="true"
-                          className={`habit-timeline-day-placeholder h-6 shrink-0 snap-start ${dayColClass(d)}`}
+                          className={`habit-timeline-day-placeholder h-6 shrink-0 ${dayColClass(d)}`}
                           style={{ width: CELL_W }}
                         />
                       );
@@ -662,7 +543,7 @@ export function HabitTimeline({
                         onClick={() => onToggleDay(node, d.iso)}
                         aria-label={`${node.name} ${d.iso}`}
                         {...dotAriaProps(state)}
-                        className={`habit-timeline-day-cell group relative h-6 shrink-0 snap-start cursor-pointer border-none bg-transparent p-0 ${dayColClass(
+                        className={`habit-timeline-day-cell group relative h-6 shrink-0 cursor-pointer border-none bg-transparent p-0 ${dayColClass(
                           d,
                         )}`}
                         style={{ width: CELL_W }}
@@ -690,8 +571,6 @@ export function HabitTimeline({
               })}
             </div>
           </div>
-
-          <div className="h-6 w-6 shrink-0" aria-hidden="true" />
         </div>
       </div>
 
@@ -795,10 +674,6 @@ interface TimelineBlockPreviewProps {
   days: DayCell[];
   dayColClass: (day: DayCell) => string;
   labelColWidth: number;
-  /** How far the days viewport is scrolled, so the marks line up under the row. */
-  scrollLeft: number;
-  /** Visible width of the days viewport; the track is clipped to it. */
-  trackWidth: number;
 }
 
 /**
@@ -808,19 +683,14 @@ interface TimelineBlockPreviewProps {
  * edit state, none of which belongs to a copy floating under the pointer. The
  * day cells are spans rather than buttons here for the same reason.
  *
- * The timeline splits one row across two columns - a fixed label column and a
- * horizontally scrolled days viewport - so the preview rebuilds that geometry
- * itself: label column, the 24px gutter between them, then the track shifted by
- * the viewport's own scroll offset and clipped to its width. Without that shift
- * the marks would sit under the wrong days the moment the week is scrolled.
+ * The timeline splits one row across two columns - the label column and the
+ * week - so the preview rebuilds that geometry with the same widths.
  */
 function HabitTimelineBlockPreview({
   rows,
   days,
   dayColClass,
   labelColWidth,
-  scrollLeft,
-  trackWidth,
 }: TimelineBlockPreviewProps) {
   const base = rows[0]?.depth ?? 0;
 
@@ -839,13 +709,7 @@ function HabitTimelineBlockPreview({
             </span>
           </div>
 
-          <div className="h-6 w-6 shrink-0" />
-
-          <div className="h-6 overflow-hidden" style={{ width: trackWidth }}>
-            <div
-              className="flex h-6"
-              style={{ width: days.length * CELL_W, transform: `translateX(${-scrollLeft}px)` }}
-            >
+          <div className="flex h-6 shrink-0" style={{ width: WEEK_W }}>
               {days.map((d, i) => {
                 if (d.future) {
                   return (
@@ -880,7 +744,6 @@ function HabitTimelineBlockPreview({
                   </span>
                 );
               })}
-            </div>
           </div>
         </div>
       ))}
@@ -1009,4 +872,11 @@ function RowOptionsButton({ label, onOpen }: { label: string; onOpen: (x: number
       <MoreHorizontal size={14} />
     </button>
   );
+}
+
+/** The widest label column, on the 24px grid, that still leaves room for the whole week. */
+function labelColumnWidth(timelineWidth: number | null): number {
+  if (timelineWidth == null) return LABEL_COL_W;
+  const fitted = Math.floor((timelineWidth - WEEK_W) / CELL_W) * CELL_W;
+  return Math.max(0, Math.min(LABEL_COL_W, fitted));
 }
