@@ -68,34 +68,34 @@ Evidence: `/home/thiago/Downloads/performance-planner` (DevTools trace), Lightho
 Legend: `[ ]` not started, `[~]` in progress, `[x]` completed.
 
 ### 0. Setup (per PR)
-- [ ] 0.1 Worktree and branch: `git worktree add .worktrees/<slug> -b <branch>` for `perf/daily-chip-names`, `perf/lighthouse-go-live`, `perf/runtime-hotspots`
-- [ ] 0.2 Copy `.env.example` to `.env`; set `COMPOSE_PROJECT_NAME=planner-<agent>`, `APP_SUBDOMAIN=<agent>.planner`
-- [ ] 0.3 Add new subdomain to `/p/linux/scripts/mkcert.conf` if needed, run `bash /p/linux/scripts/mkcert-local`, `docker restart traefik`
-- [ ] 0.4 `bash .hooks/setup-hooks.sh`; `docker compose up -d`
-- [ ] 0.5 Draft PR against `main` per branch
+- [x] 0.1 Worktree and branch: `git worktree add .worktrees/<slug> -b <branch>` for `perf/daily-chip-names`, `perf/lighthouse-go-live`, `perf/runtime-hotspots`
+- [x] 0.2 Copy `.env.example` to `.env`; set `COMPOSE_PROJECT_NAME=planner-<agent>`, `APP_SUBDOMAIN=<agent>.planner`
+- [x] 0.3 Add new subdomain to `/p/linux/scripts/mkcert.conf` if needed, run `bash /p/linux/scripts/mkcert-local`, `docker restart traefik`
+- [~] 0.4 `bash .hooks/setup-hooks.sh`; `docker compose up -d` (hooks on all three; stack only for PR 1 while `/p` is nearly full. `compose.yml` mounts `postgres:18` at `/var/lib/postgresql/data`, which a fresh volume rejects; local ignored `compose.override.yml` sets `PGDATA` to that path)
+- [x] 0.5 Draft PR against `main` per branch (#436, #437, #438)
 
 ### 1. PR `perf/daily-chip-names`
 
 #### 1.1 API (TDD: integration test first, real DB)
-- [ ] 1.1.1 Test: daily view returns `collectionName`, `collectionColor`, `sectionName` for sectioned task; omits `sectionName` for unsectioned; reflects renamed collection and section
-- [ ] 1.1.2 `dailyService.ts`: select `p.name AS collection_name`, `p.color AS collection_color`, `s.name AS section_name`; add `LEFT JOIN sections s ON s.id = t.section_id`
-- [ ] 1.1.3 `viewService.ts`: extend `TaskRow` with optional name fields; `formatTask` emits `collectionName`, `collectionColor`, `sectionName` when present
-- [ ] 1.1.4 Confirm `taskService` create, update and sync payloads still validate without names
-- [ ] 1.1.5 `mcp/format.ts`: use `task.collectionName` on `get_today` / `get_upcoming`; drop `collectionNameMap` lookup in `mcp/tools/views.ts` if now redundant
+- [x] 1.1.1 Test: daily view returns `collectionName`, `collectionColor`, `sectionName` for sectioned task; omits `sectionName` for unsectioned; reflects renamed collection and section
+- [x] 1.1.2 `dailyService.ts`: select `p.name AS collection_name`, `p.color AS collection_color`, `s.name AS section_name`; add `LEFT JOIN sections s ON s.id = t.section_id`
+- [x] 1.1.3 `viewService.ts`: extend `TaskRow` with optional name fields; `formatTask` emits `collectionName`, `collectionColor`, `sectionName` when present. Also `collectionIsInbox`, since the chip hides Inbox tasks and no longer has the collections list to ask
+- [x] 1.1.4 Confirm `taskService` create, update and sync payloads still validate without names (`taskService` keeps its own `formatTask`; unchanged)
+- [x] 1.1.5 `mcp/format.ts`: use `task.collectionName` on `get_today` / `get_upcoming`; drop `collectionNameMap` lookup in `mcp/tools/views.ts` if now redundant
 
 #### 1.2 Frontend (TDD)
-- [ ] 1.2.1 `types/api.ts`: add optional `collectionName`, `collectionColor`, `sectionName` to `ApiTask`
-- [ ] 1.2.2 Test: chip renders from task fields; no request to `/collections/:id/sections`
-- [ ] 1.2.3 `DailyPage.tsx`: build chip from task fields; remove `useQueries` over `fetchSections` and `sectionNames` map
-- [ ] 1.2.4 `DailyPage.tsx`: `collections` query `enabled` only when move menu opens
-- [ ] 1.2.5 `TopBarItem.tsx`: fetch collections (for Inbox drop target) only when a drag starts
-- [ ] 1.2.6 `hooks/useSync.ts`: collection and section rename or delete events invalidate `['daily']`
+- [x] 1.2.1 `types/api.ts`: add optional `collectionName`, `collectionColor`, `collectionIsInbox`, `sectionName` to `ApiTask` (and `Task`, via `apiToTask`)
+- [x] 1.2.2 Test: chip renders from task fields; no request to `/collections/:id/sections` (`DailyPage.chip.test.tsx`)
+- [x] 1.2.3 `DailyPage.tsx`: build chip from task fields; remove `useQueries` over `fetchSections` and `sectionNames` map
+- [x] 1.2.4 `DailyPage.tsx`: `collections` query `enabled` only when move menu opens; a move sets the new names optimistically (`movedToCollection`)
+- [x] 1.2.5 `TopBarItem.tsx`: fetch collections (for Inbox drop target) only when a drag starts. The droppable stays enabled so it is measured before the drag (`MeasuringStrategy.BeforeDragging`); it has no data until collections load
+- [x] 1.2.6 Collection and section rename or delete events refetch the Daily range. Done in the Daily sync handler (`DailyPage.tsx`), not the generic `useSync.ts`. Task sync payloads carry no names: an update in the same collection and section keeps the row's names (`withJoinedNames`); a create or a move refetches
 
 #### 1.3 Verification
-- [ ] 1.3.1 Playwright: `/daily/list` makes no `/collections` or `/sections` request until move menu or drag
-- [ ] 1.3.2 `npm test` (api and app), lint, build
-- [ ] 1.3.3 Desktop and 390px screenshots in `app/dist/screenshots/`; check chip layout shift is gone
-- [ ] 1.3.4 Mark PR ready for review
+- [x] 1.3.1 Playwright: `/daily/list` makes no `/collections` or `/sections` request until move menu or drag (`e2e/dailyChipRequests.spec.ts`)
+- [x] 1.3.2 `npm test` (api 1145, app 1542 passing), lint (no errors), build
+- [x] 1.3.3 Desktop and 390px screenshots in `app/dist/screenshots/`; the chip now renders in the same pass as its row. Remaining CLS on `/daily/list` (0.0225 desktop) is the day list growing when the daily data arrives, pushing later days down 72px; see 3.3
+- [x] 1.3.4 Mark PR ready for review
 
 ### 2. PR `perf/lighthouse-go-live`
 
@@ -146,6 +146,7 @@ Legend: `[ ]` not started, `[~]` in progress, `[x]` completed.
 - [ ] 3.3.1 Check whether `/daily` waits for `preferences` before the daily query (range from `dailyView`)
 - [ ] 3.3.2 If it waits: start the daily query with default range from cache or prefetch preferences alongside `auth/me` (`AuthContext.tsx`, `hooks/useDailyView.ts`)
 - [ ] 3.3.3 Verify request order in trace: `daily` starts before `preferences` resolves
+- [ ] 3.3.4 Measure CLS on `/daily/list`: day sections render before the daily data and later days shift down when tasks arrive (0.0225 desktop, found in PR 1)
 
 #### 3.4 Verification
 - [ ] 3.4.1 Tests, lint, build
