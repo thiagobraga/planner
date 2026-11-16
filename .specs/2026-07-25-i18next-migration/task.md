@@ -4,7 +4,7 @@
   - [x] Move English and pt-BR translations into separate typed locale modules
   - [x] Preserve the existing catalog exports and runtime behavior
   - [x] Run focused and full app validation
-- [ ] Add the i18next runtime
+- [~] Add the i18next runtime
   - [ ] Install `i18next` and `react-i18next`
   - [ ] Register the static typed resources with English fallback
   - [ ] Add i18next TypeScript module augmentation
@@ -14,7 +14,7 @@
   - [ ] Preserve locale resolution, localStorage caching, preferences, and document language behavior
 - [ ] Remove the custom translation runtime
   - [ ] Delete the custom interpolation and lookup implementation
-  - [ ] Keep `Intl` date helpers, natural-language parsing, and structured help content unchanged
+  - [ ] Keep `Intl` date helpers, natural-language parsing, and structured help and legal content unchanged
 - [ ] Verify behavior parity
   - [ ] Run focused i18n and settings tests
   - [ ] Run the complete app test, build, and lint gates
