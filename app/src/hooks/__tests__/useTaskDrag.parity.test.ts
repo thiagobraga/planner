@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { resolveMove } from '../useTaskDrag';
 import { flattenTasks, projectTaskDrop, INDENT_WIDTH } from '../../utils/taskProjection';
-
 import type { TaskDragData } from '../../types/drag';
 import type { Task } from '../../types/task';
 

@@ -1,4 +1,3 @@
-
 import type { TaskIndentMove } from '../types/taskIndent';
 import { apiMoveTask } from '../api/client';
 import { trackMove } from './moveEcho';

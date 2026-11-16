@@ -1,5 +1,4 @@
 import type { ApiTask } from '../types/api';
-
 import type { ApiDailyView, DaySection } from '../types/daily';
 import { fmtISO, fmtISOInTimeZone } from './date';
 import { scheduleFieldsFromApi } from './taskTime';

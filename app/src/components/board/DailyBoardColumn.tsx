@@ -3,7 +3,6 @@ import { useDroppable } from '@dnd-kit/core';
 import type { DailyBoardColumnProps } from '../../types/dailyBoard';
 import type { DayDropData, NoDateDropData } from '../../types/drag';
 import { TaskList } from '../TaskList';
-
 import { BoardCard } from './BoardCard';
 import { Button } from '../ui/Button';
 import { TaskAddInput } from '../TaskAddInput';

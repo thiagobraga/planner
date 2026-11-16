@@ -11,7 +11,6 @@ export function formatTimeWindow(start: string, end: string | null | undefined):
   return end ? `${start}-${end}` : start;
 }
 
-
 export function scheduleFieldsFromApi(t: ApiScheduleFields): Required<ApiScheduleFields> {
   return {
     dueTime: t.dueTime ?? null,

@@ -14,7 +14,6 @@ import { ConfirmModal } from '../components/ConfirmModal';
 import { useI18n } from '../i18n/I18nContext';
 import type { CollectionRowProps, CollectionTreeNode } from '../types/collections';
 
-
 function CollectionRow({ node, depth, ...props }: CollectionRowProps) {
   const { t } = useI18n();
   const navigate = useNavigate();

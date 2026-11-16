@@ -1,6 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
 import { buildIndentMenuItems } from '../taskIndentMenu';
-
 import type { TaskIndentMenuContext } from '../../types/taskIndent';
 import type { Task } from '../../types/task';
 

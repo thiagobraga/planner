@@ -2,7 +2,6 @@ import { render, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { useSectionDrag } from '../useSectionDrag';
 import { apiUpdateSection } from '../../api/client';
-
 import type { DragEndEvent } from '@dnd-kit/core';
 import type { SectionHeaderDragData } from '../../types/drag';
 import type { StoreSection } from '../../types/task';

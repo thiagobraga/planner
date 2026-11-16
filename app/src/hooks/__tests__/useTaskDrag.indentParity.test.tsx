@@ -5,7 +5,6 @@ import { PlannerDragProvider } from '../../contexts/PlannerDragContext';
 import { usePlannerDrag, INDENT_PX } from '../../contexts/usePlannerDrag';
 import { useTaskDrag } from '../useTaskDrag';
 import { apiMoveTask } from '../../api/client';
-
 import type { TaskDragData } from '../../types/drag';
 import type { Task } from '../../types/task';
 

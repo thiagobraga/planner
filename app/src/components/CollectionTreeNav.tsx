@@ -502,7 +502,6 @@ export function CollectionTreeNav() {
   );
 }
 
-
 function SortableCollectionRow({
   item,
   depth,

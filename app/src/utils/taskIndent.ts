@@ -1,4 +1,3 @@
-
 import type { TaskOrderScope } from '../types/drag';
 import type { TaskIndentMove } from '../types/taskIndent';
 import { flattenTasks, getSubtreeBlock, MAX_DEPTH } from './taskProjection';

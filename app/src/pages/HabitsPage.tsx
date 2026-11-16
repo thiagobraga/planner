@@ -26,7 +26,6 @@ import {
 } from '../utils/habitTree';
 import type { LucideProps } from 'lucide-react';
 import { useI18n } from '../i18n/I18nContext';
-
 import { fetchHabits, fetchPreferences, apiCreateHabit, apiUpdateHabit, apiDeleteHabit, apiArchiveHabit, apiToggleHabitCompletion, apiCreateHabitGroup, apiUpdateHabitGroup, apiDeleteHabitGroup, apiArchiveHabitGroup } from '../api/client';
 import type { ApiHabit, ApiHabitGroup } from '../types/api';
 import type { HabitEditTarget, HabitNode, HabitsView } from '../types/habits';
@@ -51,7 +50,6 @@ function DotsConnectedIcon(props: LucideProps) {
     </svg>
   );
 }
-
 
 const HABITS_VIEW_STORAGE_KEY = 'planner.habits.view.v1';
 

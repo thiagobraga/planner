@@ -1,6 +1,5 @@
 import { useLayoutEffect, useRef } from 'react';
 import type { ApiTask } from '../../types/api';
-
 import type { DailyWeekBoardProps } from '../../types/dailyBoard';
 import { buildDayColumns, slotTaskIntoColumn } from '../../utils/dayColumns';
 import { DailyBoardColumn } from './DailyBoardColumn';

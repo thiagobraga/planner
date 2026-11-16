@@ -4,7 +4,6 @@ import type React from 'react';
 import { PlannerDragProvider } from '../../contexts/PlannerDragContext';
 import { useTaskDrag } from '../useTaskDrag';
 import { apiMoveTask } from '../../api/client';
-
 import type { TaskDragData } from '../../types/drag';
 import type { Task } from '../../types/task';
 
