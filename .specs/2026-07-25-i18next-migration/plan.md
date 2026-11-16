@@ -21,6 +21,7 @@ Replace Planner's custom translation runtime with `i18next` and `react-i18next` 
 - `app/src/i18n/types.ts` - re-exports from `app/src/types/i18n.ts`
 - `app/src/i18n/catalogs.ts` - catalog and type re-exports
 - `app/src/i18n/__tests__/I18nContext.test.tsx` - unit and parity tests for i18next runtime and facade
+- `app/e2e/i18nLanguageSwitch.spec.ts` - Playwright E2E test for language switching and reload persistence
 
 ## Interfaces
 - `useI18n()` remains compatible: `{ locale, setLocale, t, formatDate }`.
