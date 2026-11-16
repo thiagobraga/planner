@@ -15,7 +15,7 @@ import type {
   DeletingCollectionState,
 } from '../types/collections';
 import { runOptimistic, patchById, upsertById } from '../stores/optimistic';
-import { getHierarchicalColor } from '../components/CollectionTreeNav';
+import { getHierarchicalColor } from '../utils/collectionTree';
 
 export function useCollectionBreadcrumbs(
   id: string,

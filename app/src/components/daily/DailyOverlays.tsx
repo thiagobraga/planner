@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { ArrowDown, ArrowUp, Columns3, Folder, List, Trash2 } from 'lucide-react';
 import { useI18n } from '../../i18n/I18nContext';
 import { ContextMenu } from '../ui/ContextMenu';
-import { flattenCollections } from '../CollectionTreeNav';
+import { flattenCollections } from '../../utils/collectionTree';
 import { buildIndentMenuItems } from '../taskIndentMenu';
 import { buildSetDateMenuItem } from '../taskDateMenuItem';
 import { buildTaskMenuActions } from '../../utils/taskMenuActions';

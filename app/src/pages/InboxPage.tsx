@@ -15,7 +15,7 @@ import type { ApiTask } from '../types/api';
 import { ContextMenu } from '../components/ui/ContextMenu';
 import type { ContextMenuItem } from '../types/contextMenu';
 import { SectionDeleteModal } from '../components/SectionDeleteModal';
-import { flattenCollections } from '../components/CollectionTreeNav';
+import { flattenCollections } from '../utils/collectionTree';
 import { Folder, ArrowUp, ArrowDown, Trash2, Pencil } from 'lucide-react';
 import { useTaskDrag } from '../hooks/useTaskDrag';
 import { useSectionDrag } from '../hooks/useSectionDrag';
