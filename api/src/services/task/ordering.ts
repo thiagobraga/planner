@@ -6,7 +6,7 @@ import type {
   RenumberOrderTableScopeOptions,
   TaskRow,
 } from '../../types/task.js';
-import { verifyTaskAccess } from './access.js';
+import { getAccessibleTask } from './access.js';
 import { formatTask } from './format.js';
 import { validationError } from './validation.js';
 
@@ -329,7 +329,7 @@ export async function reorderTask(taskId: string, userId: string, position: numb
     throw validationError('position', 'Position must be a non-negative integer');
   }
 
-  const task = await verifyTaskAccess(taskId, userId);
+  const task = await getAccessibleTask(taskId, userId);
 
   const client = await pool.connect();
   try {

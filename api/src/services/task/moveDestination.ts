@@ -5,7 +5,7 @@ import type {
   SubtreeRow,
   TaskRow,
 } from '../../types/task.js';
-import { verifyCollectionAccess, verifyTaskAccess } from './access.js';
+import { getAccessibleTask, requireCollectionRow } from './access.js';
 import { MAX_DEPTH, validationError } from './validation.js';
 
 export async function loadAndLockSubtree(
@@ -53,7 +53,7 @@ export async function resolveMoveDestination(
     if (subtreeIds.includes(input.parentTaskId)) {
       throw validationError('parentTaskId', 'A task cannot be moved inside its own subtree');
     }
-    destParent = await verifyTaskAccess(input.parentTaskId, userId);
+    destParent = await getAccessibleTask(input.parentTaskId, userId);
   }
 
   const rootOldDepth = task.depth;
@@ -83,7 +83,7 @@ export async function resolveMoveDestination(
 
   // Task ownership can outlive collaboration membership, so task access alone
   // does not prove the user still has access to the resolved destination.
-  await verifyCollectionAccess(destCollectionId, userId);
+  await requireCollectionRow(destCollectionId, userId);
 
   // `undefined` keeps the current date - that is what makes a sidebar drop
   // file a dated task into a collection without knocking it off its day.

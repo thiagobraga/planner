@@ -11,7 +11,7 @@ import type {
   TaskRow,
   UpdateTaskInput,
 } from '../types/task.js';
-import { verifyTaskAccess } from './task/access.js';
+import { getAccessibleTask } from './task/access.js';
 import { publishTaskDeleted, publishTaskEvent } from './task/events.js';
 import { formatTask } from './task/format.js';
 import {
@@ -60,7 +60,7 @@ export async function createTask(userId: string, input: CreateTaskInput) {
 
   if (input.parentTaskId) {
     // Verify parent exists and user has access
-    const parentTask = await verifyTaskAccess(input.parentTaskId, userId);
+    const parentTask = await getAccessibleTask(input.parentTaskId, userId);
 
     // Inherit parent's collection_id and section_id
     collectionId = parentTask.collection_id;
@@ -187,7 +187,7 @@ export async function updateTask(taskId: string, userId: string, input: UpdateTa
   });
 
   await verifyLabelOwnership(input.labelIds ?? [], userId);
-  const task = await verifyTaskAccess(taskId, userId);
+  const task = await getAccessibleTask(taskId, userId);
   validateTimeNeedsDate(
     input,
     input.dueDate !== undefined ? input.dueDate : task.due_date,
@@ -209,7 +209,7 @@ export async function updateTask(taskId: string, userId: string, input: UpdateTa
       reparentDelta = 0 - task.depth;
     } else {
       // Verify parent exists and user has access
-      const parentTask = await verifyTaskAccess(input.parentTaskId, userId);
+      const parentTask = await getAccessibleTask(input.parentTaskId, userId);
 
       // Cycle detection: walk up parent chain from proposed parent
       await detectCycle(taskId, input.parentTaskId);
@@ -434,7 +434,7 @@ async function detectCycle(taskId: string, proposedParentId: string): Promise<vo
 }
 
 export async function deleteTask(taskId: string, userId: string): Promise<{ success: true }> {
-  const task = await verifyTaskAccess(taskId, userId);
+  const task = await getAccessibleTask(taskId, userId);
 
   const client = await pool.connect();
   try {

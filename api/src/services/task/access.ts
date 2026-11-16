@@ -2,7 +2,7 @@ import pool from '../../db/pool.js';
 import { AppError } from '../../utils/AppError.js';
 import type { TaskRow } from '../../types/task.js';
 
-export async function verifyTaskAccess(taskId: string, userId: string): Promise<TaskRow> {
+export async function getAccessibleTask(taskId: string, userId: string): Promise<TaskRow> {
   const result = await pool.query(
     `SELECT t.* FROM tasks t
      WHERE t.id = $1
@@ -26,7 +26,7 @@ export async function verifyTaskAccess(taskId: string, userId: string): Promise<
   return result.rows[0] as TaskRow;
 }
 
-export async function verifyCollectionAccess(collectionId: string, userId: string): Promise<void> {
+export async function requireCollectionRow(collectionId: string, userId: string): Promise<void> {
   const result = await pool.query(
     `SELECT id FROM collections
      WHERE id = $1

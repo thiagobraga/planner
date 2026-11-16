@@ -1,6 +1,6 @@
 import pool from '../../db/pool.js';
 import type { MoveTaskInput, TaskRow } from '../../types/task.js';
-import { verifyTaskAccess } from './access.js';
+import { getAccessibleTask } from './access.js';
 import { publishTaskEvent } from './events.js';
 import { formatTask, toMovedTaskSummary } from './format.js';
 import { loadAndLockSubtree, resolveMoveDestination } from './moveDestination.js';
@@ -23,7 +23,7 @@ export async function moveTask(taskId: string, userId: string, input: MoveTaskIn
 
   // Authenticate before resolving anything else, so an unauthorized caller
   // cannot probe which task or collection ids exist by reading error shapes.
-  const task = await verifyTaskAccess(taskId, userId);
+  const task = await getAccessibleTask(taskId, userId);
 
   const client = await pool.connect();
   try {

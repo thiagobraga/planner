@@ -7,12 +7,12 @@ import { recordActivity } from '../activityService.js';
 import { syncStatusToCompletion } from '../completionSync.js';
 import { attachLabels } from '../labelService.js';
 import { getUserTimezone, localDateInTimezone } from '../viewService.js';
-import { verifyTaskAccess } from './access.js';
+import { getAccessibleTask } from './access.js';
 import { publishTaskEvent } from './events.js';
 import { formatTask } from './format.js';
 
 export async function completeTask(taskId: string, userId: string, now: Date = new Date()) {
-  const task = await verifyTaskAccess(taskId, userId);
+  const task = await getAccessibleTask(taskId, userId);
 
   // A rule past its `until` date yields no next occurrence: complete it like a one-off task.
   let nextDueDateObj = null;
@@ -163,7 +163,7 @@ export async function completeTask(taskId: string, userId: string, now: Date = n
 }
 
 export async function reopenTask(taskId: string, userId: string) {
-  const task = await verifyTaskAccess(taskId, userId);
+  const task = await getAccessibleTask(taskId, userId);
 
   const client = await pool.connect();
   try {
