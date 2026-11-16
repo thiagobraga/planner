@@ -1,11 +1,11 @@
 import { useEffect } from 'react';
 import { Navigate, useParams } from 'react-router';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
+import { fetchPreferences } from '../api/client';
 import { DailyPage } from './DailyPage';
 import { DEFAULT_DAILY_SLUG, legacyDailySlug, slugToLayout, type LegacyDailyView } from '../utils/dailyRange';
 import { DEFAULT_DAILY_VIEW } from '../hooks/useDailyView';
 import { usePatchPreferences } from '../hooks/usePatchPreferences';
-import type { Preferences } from '../types/api';
 import type { ViewLayout } from '../types/view';
 
 const LAST_LAYOUT_STORAGE_KEY = 'planner.daily.lastLayout.v2';
@@ -25,17 +25,21 @@ export function DailyIndexRedirect() {
 
 /** Old `/daily/kanban|cards|monthly` links keep opening what they used to show. */
 function LegacyDailyRedirect({ legacy }: { legacy: LegacyDailyView }) {
-  const queryClient = useQueryClient();
+  const { data: prefs, isError } = useQuery({ queryKey: ['preferences'], queryFn: fetchPreferences });
   const patchPreferences = usePatchPreferences();
   const { layout, ...settings } = legacy;
+  const loaded = prefs !== undefined;
 
+  // Waits for the saved view: merging into the default on a fresh load would drop the
+  // saved style, and only a loaded cache gets the optimistic update the page renders from.
   useEffect(() => {
-    const current = queryClient.getQueryData<Preferences>(['preferences'])?.dailyView ?? DEFAULT_DAILY_VIEW;
-    patchPreferences({ dailyView: { ...current, ...settings } }).catch(() => undefined);
-    // Runs once per redirect; the settings come from a constant table.
+    if (!prefs) return;
+    patchPreferences({ dailyView: { ...(prefs.dailyView ?? DEFAULT_DAILY_VIEW), ...settings } }).catch(() => undefined);
+    // Runs once, when preferences first arrive; the settings come from a constant table.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [loaded]);
 
+  if (!loaded && !isError) return null;
   return <Navigate to={`/daily/${layout}`} replace />;
 }
 
