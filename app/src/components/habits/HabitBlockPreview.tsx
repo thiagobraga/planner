@@ -1,12 +1,4 @@
-interface HabitBlockPreviewProps {
-  /** The dragged habit or group name. */
-  name: string;
-  /** Optional group icon occupying one 24px grid cell. */
-  icon?: string | null;
-  /** Sub-habits carried along, or habits carried by a dragged group. */
-  count: number;
-  kind: 'habit' | 'habit-group';
-}
+import type { HabitBlockPreviewProps } from '../../types/habits';
 
 /**
  * The dragged habit or group, drawn as its own row, for the drag overlay.

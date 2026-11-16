@@ -1,29 +1,11 @@
-import { useMemo, useState, type HTMLAttributes } from 'react';
-import type { BoardGroupBy } from '../../types/drag';
+import { useMemo, useState } from 'react';
 import { useI18n } from '../../i18n/I18nContext';
 import { NO_DRAG_ATTR } from '../dnd/sensors';
 import { ColorPickerPopover } from '../ui/ColorPickerPopover';
-import { ContextMenu, type ContextMenuItem } from '../ui/ContextMenu';
+import { ContextMenu } from '../ui/ContextMenu';
+import type { ContextMenuItem } from '../../types/contextMenu';
 import { InlineNameInput } from '../ui/InlineNameInput';
-import type { ApiStatus } from '../../types/api';
-
-interface BoardColumnHeaderProps {
-  columnId: string;
-  groupBy: BoardGroupBy;
-  title: string;
-  color?: string;
-  isCompletionStatus?: boolean;
-  canEdit?: boolean;
-  dragHandleProps?: HTMLAttributes<HTMLElement>;
-  setDragHandleRef?: (node: HTMLElement | null) => void;
-  onRename?: (name: string) => void;
-  onRecolor?: (color: string) => void;
-  onMarkCompletion?: () => void;
-  onDelete?: () => void;
-  status?: ApiStatus;
-  statuses?: ApiStatus[];
-  onUpdateRoute?: (patch: Partial<Pick<ApiStatus, 'nextStatusMode' | 'nextStatusId' | 'acceptStatusId' | 'rejectStatusId'>>) => void;
-}
+import type { BoardColumnHeaderProps } from '../../types/board';
 
 export function BoardColumnHeader({
   columnId,

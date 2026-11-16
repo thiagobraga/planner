@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
 import { TaskList } from '../TaskList';
 import { PlannerDragProvider } from '../../contexts/PlannerDragContext';
-import type { Task } from '../TaskItem';
+import type { Task } from '../../types/task';
 
 /**
  * Pressing a row must not rearrange anything.

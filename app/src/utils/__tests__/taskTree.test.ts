@@ -1,12 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import {
-  computeIndent,
-  getParentCandidate,
-  getDescendants,
-  applyIndent,
-  MAX_INDENT,
-  type TreeNode,
-} from '../taskTree';
+import { computeIndent, getParentCandidate, getDescendants, applyIndent, MAX_INDENT } from '../taskTree';
+import type { TreeNode } from '../../types/task';
 
 // Build a flat list from [id, indent] pairs.
 function list(...rows: Array<[string, number]>): TreeNode[] {

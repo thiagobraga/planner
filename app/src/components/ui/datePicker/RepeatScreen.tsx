@@ -3,17 +3,23 @@ import { ChevronDown, Repeat } from 'lucide-react';
 import { useI18n } from '../../../i18n/I18nContext';
 import type { TranslationKey } from '../../../i18n/catalogs';
 import type { RecurrenceRule } from '../../../types/task';
-import { fmtISO, weekdayInitials, type WeekStart } from '../../../utils/date';
+import { fmtISO, weekdayInitials } from '../../../utils/date';
 import { parseISODate } from '../../../utils/dateQuickOptions';
 import { isWeekdaysRule, recurrenceSummary } from '../../../utils/recurrenceSummary';
 import { Button } from '../Button';
 import { Radio } from '../Radio';
-import { Divider, ICON, ScreenHeader, SectionLabel, Segmented, bareInput, fieldShell } from './parts';
+import {
+  Divider,
+  ICON,
+  ScreenHeader,
+  SectionLabel,
+  Segmented,
+  bareInput,
+  fieldShell,
+} from './parts';
+import type { RepeatPreset, RepeatScreenProps, RepeatUnit } from '../../../types/ui';
 
-type Preset = 'none' | 'daily' | 'weekly' | 'weekdays' | 'custom';
-type Unit = RecurrenceRule['type'];
-
-const UNIT_LABELS: Record<Unit, TranslationKey> = {
+const UNIT_LABELS: Record<RepeatUnit, TranslationKey> = {
   daily: 'recurrence.days',
   weekly: 'recurrence.weeks',
   monthly: 'recurrence.months',
@@ -22,7 +28,7 @@ const UNIT_LABELS: Record<Unit, TranslationKey> = {
 
 const WEEKDAYS = [1, 2, 3, 4, 5];
 
-function presetOf(rule: RecurrenceRule | null, anchorDow: number): Preset {
+function presetOf(rule: RecurrenceRule | null, anchorDow: number): RepeatPreset {
   if (!rule) return 'none';
   const plain = rule.interval === 1 && rule.dayOfMonth === undefined && rule.month === undefined;
   if (plain && rule.type === 'daily') return 'daily';
@@ -31,24 +37,14 @@ function presetOf(rule: RecurrenceRule | null, anchorDow: number): Preset {
   return 'custom';
 }
 
-interface RepeatScreenProps {
-  rule: RecurrenceRule | null;
-  /** The task's date (YYYY-MM-DD), which names the weekday for "every week on ...". */
-  anchorDate: string | null;
-  weekStart: WeekStart;
-  onApply: (rule: RecurrenceRule | null) => void;
-  onBack: () => void;
-  onClose: () => void;
-}
-
 export function RepeatScreen({ rule, anchorDate, weekStart, onApply, onBack, onClose }: RepeatScreenProps) {
   const { t, locale } = useI18n();
   const anchor = anchorDate ? parseISODate(anchorDate) : new Date();
   const anchorDow = anchor.getDay();
 
-  const [preset, setPreset] = useState<Preset>(() => presetOf(rule, anchorDow));
+  const [preset, setPreset] = useState<RepeatPreset>(() => presetOf(rule, anchorDow));
   const [interval, setIntervalText] = useState(String(rule?.interval ?? 1));
-  const [unit, setUnit] = useState<Unit>(rule?.type ?? 'weekly');
+  const [unit, setUnit] = useState<RepeatUnit>(rule?.type ?? 'weekly');
   const [weekdays, setWeekdays] = useState<number[]>(rule?.weekdays ?? [anchorDow]);
   const [fromCompletion, setFromCompletion] = useState(rule?.fromCompletion ?? false);
   const [endsOn, setEndsOn] = useState<string | null>(rule?.until ?? null);
@@ -87,7 +83,7 @@ export function RepeatScreen({ rule, anchorDate, weekStart, onApply, onBack, onC
   const weekdaysPreset = recurrenceSummary({ type: 'weekly', interval: 1, weekdays: WEEKDAYS }, locale);
   const [weekdaysHead, weekdaysRange] = weekdaysPreset.split(' (');
 
-  const presets: Array<{ value: Preset; label: React.ReactNode }> = [
+  const presets: Array<{ value: RepeatPreset; label: React.ReactNode }> = [
     { value: 'none', label: t('recurrence.none') },
     { value: 'daily', label: recurrenceSummary({ type: 'daily', interval: 1 }, locale) },
     { value: 'weekly', label: weekPreset },
@@ -143,10 +139,10 @@ export function RepeatScreen({ rule, anchorDate, weekStart, onApply, onBack, onC
                 <select
                   aria-label={t('recurrence.unit')}
                   value={unit}
-                  onChange={(e) => setUnit(e.target.value as Unit)}
+                  onChange={(e) => setUnit(e.target.value as RepeatUnit)}
                   className={`${bareInput} cursor-pointer appearance-none pr-5`}
                 >
-                  {(Object.keys(UNIT_LABELS) as Unit[]).map((u) => (
+                  {(Object.keys(UNIT_LABELS) as RepeatUnit[]).map((u) => (
                     <option key={u} value={u}>{t(UNIT_LABELS[u])}</option>
                   ))}
                 </select>

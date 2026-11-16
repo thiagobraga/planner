@@ -1,21 +1,11 @@
 import { CalendarDays, Check, MoreHorizontal } from 'lucide-react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import type { ApiTask } from '../../types/api';
 import type { TaskDragData } from '../../types/drag';
 import { NO_DRAG_ATTR } from '../dnd/sensors';
 import { BoardCardChecklist } from './BoardCardChecklist';
 import { useI18n } from '../../i18n/I18nContext';
-
-interface BoardCardProps {
-  task: ApiTask;
-  subtasks: ApiTask[];
-  containerId?: string;
-  subtreeIds?: string[];
-  onToggle?: (taskId: string, completed: boolean) => void;
-  hideDueDate?: boolean;
-  onTaskContextMenu?: (taskId: string, position: { x: number; y: number }) => void;
-}
+import type { BoardCardProps } from '../../types/board';
 
 export function BoardCard({ task, subtasks, containerId = '', subtreeIds, onToggle, hideDueDate, onTaskContextMenu }: BoardCardProps) {
   const { t } = useI18n();

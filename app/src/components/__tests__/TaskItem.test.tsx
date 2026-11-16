@@ -3,9 +3,10 @@ import { SortableContext } from '@dnd-kit/sortable';
 import { getCaret, setCaret } from '../../utils/editableText';
 import { typeText } from '../../test/editableText';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { TaskItem, type Task } from '../TaskItem';
+import { TaskItem } from '../TaskItem';
 import { PlannerDragProvider } from '../../contexts/PlannerDragContext';
 import { useDebugStore } from '../../stores/debugStore';
+import type { Task } from '../../types/task';
 
 function renderTaskItem(task: Task, props: Partial<React.ComponentProps<typeof TaskItem>> = {}) {
   return render(

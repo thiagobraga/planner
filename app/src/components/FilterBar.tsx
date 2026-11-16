@@ -1,15 +1,9 @@
 import { useState, useCallback, useRef } from 'react';
 import { useI18n } from '../i18n/I18nContext';
 import type { TranslationKey } from '../i18n/catalogs';
+import type { FilterBarProps, Token, TokenType } from '../types/widgets';
 
 // Simple syntax highlighting token types
-type TokenType = 'keyword' | 'operator' | 'string' | 'error' | 'text';
-
-interface Token {
-  text: string;
-  type: TokenType;
-}
-
 const KEYWORDS = ['today', 'overdue', 'no date', 'p1', 'p2', 'p3', 'p4', 'assigned to: me'];
 const COLLECTION_RE = /^#\S+/;
 const LABEL_RE = /^@\S+/;
@@ -122,12 +116,6 @@ const tokenClassNames: Record<TokenType, string> = {
   error: 'text-syntax-error',
   text: 'text-ink',
 };
-
-interface FilterBarProps {
-  value?: string;
-  onChange?: (value: string) => void;
-  onApply?: (value: string) => void;
-}
 
 export function FilterBar({ value: externalValue, onChange, onApply }: FilterBarProps) {
   const { t } = useI18n();

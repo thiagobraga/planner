@@ -24,7 +24,8 @@ import { ViewMenu } from '../components/toolbar/ViewMenu';
 import { DateNav } from '../components/toolbar/DateNav';
 import { TaskRowSpecimen } from '../components/ui/TaskRowSpecimen';
 import { CustomSelect } from '../components/ui/CustomSelect';
-import { ContextMenu, ContextMenuItem } from '../components/ui/ContextMenu';
+import { ContextMenu } from '../components/ui/ContextMenu';
+import type { ContextMenuItem } from '../types/contextMenu';
 import { Briefcase, Calendar as CalendarIcon, Tag, ArrowUp, ArrowDown } from 'lucide-react';
 import { fetchPreferences } from '../api/client';
 import { BoardCard } from '../components/board/BoardCard';
@@ -605,8 +606,6 @@ export function StyleguidePage() {
             </TokenRow>
           </div>
         </Card>
-
-
 
         {/* Context Menu */}
         <Card title="Context Menu">

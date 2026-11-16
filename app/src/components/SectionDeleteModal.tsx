@@ -1,15 +1,7 @@
 import { useEffect } from 'react';
 import { Button } from './ui/Button';
 import { useI18n } from '../i18n/I18nContext';
-
-interface SectionDeleteModalProps {
-  isOpen: boolean;
-  sectionName: string;
-  taskCount: number;
-  onDeleteTasks: () => void;
-  onMoveToTopLevel: () => void;
-  onCancel: () => void;
-}
+import type { SectionDeleteModalProps } from '../types/collections';
 
 export function SectionDeleteModal({
   isOpen,
