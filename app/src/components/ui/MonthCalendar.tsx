@@ -23,7 +23,7 @@ export function MonthCalendar({ value, onSelect, weekStart, maxDate, density = '
 
   const cell = compact ? 'h-6 w-6 text-[11px]' : 'h-8 w-8 text-[13px]';
   const navButton = compact
-    ? 'h-6 w-6 rounded-[4px] border-none bg-transparent text-ink-light hover:bg-dot/30 hover:text-ink'
+    ? 'h-6 w-6 rounded-[4px] border-none bg-transparent text-ink-light hover:bg-border-subtle/30 hover:text-ink'
     : 'h-7 w-7 rounded-xs border border-border bg-(--planner-control-bg) text-ink-light hover:border-ink-lighter hover:text-ink';
 
   return (
@@ -89,7 +89,7 @@ export function MonthCalendar({ value, onSelect, weekStart, maxDate, density = '
                     ? 'border border-ink bg-ink font-semibold text-cream'
                     : isToday
                       ? 'border border-ink bg-transparent font-semibold text-ink'
-                      : `border border-transparent bg-transparent hover:bg-dot/40 hover:text-ink ${compact ? 'text-ink-light' : 'text-ink'}`
+                      : `border border-transparent bg-transparent hover:bg-border-subtle/40 hover:text-ink ${compact ? 'text-ink-light' : 'text-ink'}`
                 }`}
               >
                 {index + 1}

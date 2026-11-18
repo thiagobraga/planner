@@ -486,14 +486,14 @@ export function ColorPickerPopover({ position, value, onCommit, onClose }: Color
                 if (e.key === 'Escape') setDraft(null);
               }}
               spellCheck={false}
-              className="h-6 min-w-0 flex-1 border-0 border-b border-dot bg-transparent px-0 text-[12px] text-ink outline-none"
+              className="h-6 min-w-0 flex-1 border-0 border-b border-border-subtle bg-transparent px-0 text-[12px] text-ink outline-none"
             />
           ) : (
             <div className="color-picker__channels flex min-w-0 flex-1 items-center gap-2">
               {CHANNELS[format].map((key) => (
                 <label
                   key={key}
-                  className="color-picker__channel flex min-w-0 flex-1 items-center gap-1 border-b border-dot"
+                  className="color-picker__channel flex min-w-0 flex-1 items-center gap-1 border-b border-border-subtle"
                 >
                   <span aria-hidden="true" className="text-[9px] uppercase text-ink-light">
                     {key}

@@ -129,8 +129,8 @@ export function DateNav({ from, to, today, weekStart, onPrevious, onNext, onToda
                     onPick(iso);
                     setOpen(false);
                   }}
-                  className={`h-6 text-[13px] leading-6 text-ink transition-colors duration-[var(--motion-fast)] hover:bg-dot/35 ${
-                    inRange ? 'bg-dot/35' : ''
+                  className={`h-6 text-[13px] leading-6 text-ink transition-colors duration-[var(--motion-fast)] hover:bg-border-subtle/35 ${
+                    inRange ? 'bg-border-subtle/35' : ''
                   } ${iso === today ? 'font-semibold' : ''} ${inMonth ? '' : 'opacity-50'}`}
                 >
                   {date.getDate()}

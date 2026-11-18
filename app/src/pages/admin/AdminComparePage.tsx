@@ -89,7 +89,7 @@ function StatusCell({ value }: { value: CompareStatus }) {
     yes: 'bg-success/20 text-success',
     no: 'bg-danger/12 text-danger-text',
     partial: 'bg-warning/20 text-warning',
-    unknown: 'bg-dot/40 text-ink-light',
+    unknown: 'bg-border-subtle/40 text-ink-light',
   };
 
   const labels = {
@@ -120,8 +120,8 @@ function StatusCell({ value }: { value: CompareStatus }) {
 
 function CategoryRow({ title, colSpan }: { title: string; colSpan: number }) {
   return (
-    <tr className="bg-dot/30">
-      <th className="px-3 py-3 text-left text-[11px] uppercase tracking-widest text-ink-light font-semibold sticky top-0 z-10 bg-cream border-r border-dot" colSpan={colSpan}>
+    <tr className="bg-border-subtle/30">
+      <th className="px-3 py-3 text-left text-[11px] uppercase tracking-widest text-ink-light font-semibold sticky top-0 z-10 bg-cream border-r border-border-subtle" colSpan={colSpan}>
         {title}
       </th>
     </tr>
@@ -131,12 +131,12 @@ function CategoryRow({ title, colSpan }: { title: string; colSpan: number }) {
 function TableHeader() {
   return (
     <thead>
-      <tr className="border-b border-dot">
-        <th className="px-3 py-3 text-left text-[11px] uppercase tracking-widest text-ink-light font-semibold sticky left-0 z-20 bg-cream border-r border-dot w-64 min-w-64">
+      <tr className="border-b border-border-subtle">
+        <th className="px-3 py-3 text-left text-[11px] uppercase tracking-widest text-ink-light font-semibold sticky left-0 z-20 bg-cream border-r border-border-subtle w-64 min-w-64">
           Feature
         </th>
         {COLUMNS.map((col) => (
-          <th key={col.id} className="px-3 py-3 text-center text-[11px] uppercase tracking-widest text-ink-light font-semibold sticky top-0 z-10 bg-cream border-b border-dot">
+          <th key={col.id} className="px-3 py-3 text-center text-[11px] uppercase tracking-widest text-ink-light font-semibold sticky top-0 z-10 bg-cream border-b border-border-subtle">
             {col.header}
           </th>
         ))}
@@ -156,8 +156,8 @@ function TableBody({ featureLabels, categoryLabels }: { featureLabels: Record<st
     rows.push(
       <Fragment key={feature.key}>
         {showCategory && <CategoryRow title={categoryLabels[feature.category] || feature.category} colSpan={COLUMNS.length + 1} />}
-        <tr className="border-b border-dot/50 hover:bg-dot/20">
-          <td className="px-3 py-2 text-sm leading-6 text-ink sticky left-0 z-10 bg-cream border-r border-dot w-64 min-w-64">
+        <tr className="border-b border-border-subtle/50 hover:bg-border-subtle/20">
+          <td className="px-3 py-2 text-sm leading-6 text-ink sticky left-0 z-10 bg-cream border-r border-border-subtle w-64 min-w-64">
             {featureLabels[feature.key] || feature.key}
           </td>
           {COLUMNS.map((col) => (
@@ -174,7 +174,7 @@ function TableBody({ featureLabels, categoryLabels }: { featureLabels: Record<st
 function Legend() {
   const { t } = useI18n();
   return (
-    <div className="flex flex-wrap gap-4 mt-6 pt-4 border-t border-dot text-[12px] leading-6 text-ink-light">
+    <div className="flex flex-wrap gap-4 mt-6 pt-4 border-t border-border-subtle text-[12px] leading-6 text-ink-light">
       <span className="inline-flex items-center gap-1.5">
         <span className="w-6 h-6 rounded-[6px] bg-success/20 text-success inline-flex items-center justify-center text-[11px] font-medium">✓</span>
         {t('compare.legend.yes')}
@@ -188,7 +188,7 @@ function Legend() {
         {t('compare.legend.partial')}
       </span>
       <span className="inline-flex items-center gap-1.5">
-        <span className="w-6 h-6 rounded-[6px] bg-dot/40 text-ink-light inline-flex items-center justify-center text-[11px] font-medium">?</span>
+        <span className="w-6 h-6 rounded-[6px] bg-border-subtle/40 text-ink-light inline-flex items-center justify-center text-[11px] font-medium">?</span>
         {t('compare.legend.unknown')}
       </span>
     </div>
@@ -225,7 +225,7 @@ export function AdminComparePage() {
       <div className="h-6" />
 
       <Section title={t('admin.compareTableTitle')}>
-        <div className="overflow-x-auto border border-dot rounded-[8px]">
+        <div className="overflow-x-auto border border-border-subtle rounded-[8px]">
           <table className="w-full min-w-[1100px] border-collapse">
             <TableHeader />
             <TableBody featureLabels={featureLabels} categoryLabels={categoryLabels} />

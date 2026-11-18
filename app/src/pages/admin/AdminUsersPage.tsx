@@ -42,13 +42,13 @@ function UserRow({
   const isDisabled = user.disabledAt !== null;
 
   return (
-    <div className="admin-users-row grid items-center gap-3 border-b border-dot py-3 md:grid-cols-[minmax(0,2fr)_100px_96px_128px_1fr] grid-cols-1">
+    <div className="admin-users-row grid items-center gap-3 border-b border-border-subtle py-3 md:grid-cols-[minmax(0,2fr)_100px_96px_128px_1fr] grid-cols-1">
       <div className="min-w-0">
         <div className="flex items-center gap-2 min-w-0">
           <span className="truncate text-sm leading-6 text-ink">{user.email}</span>
           {user.role === 'admin' && (
             <span
-              className="inline-flex items-center gap-1 shrink-0 rounded-[8px] bg-dot px-2 text-[11px] leading-6 text-ink"
+              className="inline-flex items-center gap-1 shrink-0 rounded-[8px] bg-border-subtle px-2 text-[11px] leading-6 text-ink"
               title={t('admin.roleAdmin')}
             >
               <ShieldCheck size={12} strokeWidth={1.5} />
@@ -191,7 +191,7 @@ export function AdminUsersPage() {
         </p>
       ) : (
         <div className="flex flex-col">
-          <div className="hidden md:grid grid-cols-[minmax(0,2fr)_100px_96px_128px_1fr] gap-3 border-b border-dot pb-3 text-[11px] uppercase tracking-wide text-ink-light opacity-60">
+          <div className="hidden md:grid grid-cols-[minmax(0,2fr)_100px_96px_128px_1fr] gap-3 border-b border-border-subtle pb-3 text-[11px] uppercase tracking-wide text-ink-light opacity-60">
             <span>{t('admin.colUser')}</span>
             <span>{t('admin.colJoined')}</span>
             <span>{t('admin.colStatus')}</span>

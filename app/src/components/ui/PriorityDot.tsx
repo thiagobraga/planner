@@ -9,7 +9,7 @@ const DOT_COLOR: Record<Priority, string> = {
 };
 
 export function PriorityDot({ priority, showLabel = false, className = '' }: PriorityDotProps) {
-  const dot = priority ? DOT_COLOR[priority] : 'bg-dot';
+  const dot = priority ? DOT_COLOR[priority] : 'bg-border-subtle';
   return (
     <span className={`ui-priority-dot inline-flex items-center gap-1.5 whitespace-nowrap ${className}`}>
       <span className={`ui-priority-dot-circle w-2 h-2 rounded-full shrink-0 ${dot}`} />

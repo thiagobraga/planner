@@ -59,7 +59,7 @@ export function CollectionBreadcrumbTitle({
                     if (e.key === 'Enter') onCommitRename(crumb.id);
                     if (e.key === 'Escape') onCancelRename();
                   }}
-                  className="min-w-0 flex-1 border-0 border-b border-dot bg-transparent p-0 text-lg leading-6 font-semibold text-ink outline-none"
+                  className="min-w-0 flex-1 border-0 border-b border-border-subtle bg-transparent p-0 text-lg leading-6 font-semibold text-ink outline-none"
                 />
               ) : isCurrent ? (
                 <span className="truncate">{crumb.name}</span>
@@ -101,7 +101,7 @@ export function CollectionSubInput({
           if (e.key === 'Escape') onCancel();
         }}
         placeholder={t('page.collectionName')}
-        className="h-6 w-full min-w-0 border-0 border-b border-dot bg-transparent p-0 text-[13px] leading-6 text-ink outline-none"
+        className="h-6 w-full min-w-0 border-0 border-b border-border-subtle bg-transparent p-0 text-[13px] leading-6 text-ink outline-none"
       />
     </div>
   );
