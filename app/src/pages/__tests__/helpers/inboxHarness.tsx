@@ -1,9 +1,9 @@
-import { render, screen } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { MemoryRouter } from 'react-router';
+import { screen } from '@testing-library/react';
+import { QueryClient } from '@tanstack/react-query';
 import { beforeEach, afterEach, vi, type MockInstance } from 'vitest';
 import { InboxPage } from '../../InboxPage';
-import { baseInboxData, basePreferences, createdTask, sampleTasks, section } from './inboxFixtures';
+import { baseInboxData, basePreferences, section } from './inboxFixtures';
+import { createdTask, sampleTasks, renderWithProviders, createTestQueryClient } from '../../../test/render';
 
 type AnyMock = MockInstance;
 
@@ -70,21 +70,8 @@ export function inboxBeforeEach(refs: InboxMockRefs): void {
   });
 }
 
-export function renderPage(
-  client = new QueryClient({
-    defaultOptions: {
-      queries: { retry: false },
-      mutations: { retry: false },
-    },
-  }),
-) {
-  return render(
-    <QueryClientProvider client={client}>
-      <MemoryRouter>
-        <InboxPage />
-      </MemoryRouter>
-    </QueryClientProvider>,
-  );
+export function renderPage(client: QueryClient = createTestQueryClient()) {
+  return renderWithProviders(<InboxPage />, client);
 }
 
 export function inboxList() {
