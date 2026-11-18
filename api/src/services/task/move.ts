@@ -24,15 +24,17 @@ export async function moveTask(taskId: string, userId: string, input: MoveTaskIn
 
   // Authenticate before resolving anything else, so an unauthorized caller
   // cannot probe which task or collection ids exist by reading error shapes.
-  await getAccessibleTask(taskId, userId);
+  let task = await getAccessibleTask(taskId, userId);
 
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
 
     const subtree = await loadAndLockSubtree(client, taskId);
-    const task = await getAccessibleTask(taskId, userId, client);
-    if (options?.preserveParent) input = { ...input, parentTaskId: task.parent_task_id };
+    if (options?.preserveParent) {
+      task = await getAccessibleTask(taskId, userId, client);
+      input = { ...input, parentTaskId: task.parent_task_id };
+    }
     const dest = await resolveMoveDestination(client, task, userId, input, subtree);
     const rootIsCompleted = await applySubtreeMove(client, task, userId, input, dest);
     const reordered = await renumberMoveScope(client, task, input, dest, rootIsCompleted);
