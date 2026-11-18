@@ -45,6 +45,9 @@ fi
 
 [ -n "${changed//[[:space:]]/}" ] || { log "nothing to check"; exit 0; }
 
+bash "$REPO_ROOT/scripts/check-line-limits.sh" || exit 1
+bash "$REPO_ROOT/scripts/check-contracts.sh" || exit 1
+
 pkgs=()
 while IFS= read -r pkg; do
   [ -n "$pkg" ] && pkgs+=("$pkg")
