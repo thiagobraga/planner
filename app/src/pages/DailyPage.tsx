@@ -398,7 +398,7 @@ export function DailyPage({ layout }: { layout: ViewLayout }) {
       )}
 
       {indentError && (
-        <div role="alert" className="text-accent text-sm mt-6">
+        <div role="alert" className="text-danger-text text-sm mt-6">
           {t('task.moveFailed')}
         </div>
       )}

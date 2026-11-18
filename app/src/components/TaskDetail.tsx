@@ -11,17 +11,17 @@ const PRIORITIES = [
 
 // Tailwind classes for the selected-state border + background of each priority button.
 const priorityBtnSelectedClasses: Record<number, string> = {
-  1: 'border-accent bg-accent',
-  2: 'border-priority-2 bg-priority-2',
-  3: 'border-priority-3 bg-priority-3',
-  4: 'border-ink-light bg-ink-light',
+  1: 'border-danger bg-danger text-on-danger',
+  2: 'border-priority-2 bg-priority-2 text-on-warning',
+  3: 'border-priority-3 bg-priority-3 text-on-info',
+  4: 'border-ink bg-ink text-cream',
 };
 
 // Tailwind text-color class for the priority info label below the buttons.
 const priorityTextClasses: Record<number, string> = {
-  1: 'text-accent',
-  2: 'text-priority-2',
-  3: 'text-priority-3',
+  1: 'text-danger-text',
+  2: 'text-warning',
+  3: 'text-info',
   4: 'text-ink-light',
 };
 
@@ -309,7 +309,7 @@ export function TaskDetail({ task, onClose, onUpdate, onDelete }: TaskDetailProp
                 onClick={() => handlePriorityChange(p.value)}
                 aria-pressed={priority === p.value}
                 className={`py-[3px] px-2.5 rounded border text-xs cursor-pointer transition-all duration-[120ms] ${priority === p.value
-                    ? `${priorityBtnSelectedClasses[p.value]} text-white`
+                    ? priorityBtnSelectedClasses[p.value]
                     : 'border-dot bg-transparent text-ink'
                   }`}
               >
@@ -419,7 +419,7 @@ export function TaskDetail({ task, onClose, onUpdate, onDelete }: TaskDetailProp
         <button
           type="button"
           onClick={handleDeleteConfirm}
-          className={`py-1 px-3.5 bg-transparent border rounded text-xs cursor-pointer transition-all duration-[120ms] ${confirmDelete ? 'border-accent text-accent' : 'border-dot text-ink-light'}`}
+          className={`py-1 px-3.5 bg-transparent border rounded text-xs cursor-pointer transition-all duration-[120ms] ${confirmDelete ? 'border-danger text-danger-text' : 'border-dot text-ink-light'}`}
         >
           {confirmDelete ? t('task.confirmDelete') : t('common.delete')}
         </button>

@@ -857,7 +857,7 @@ export function SettingsPage() {
             </div>
           </div>
 
-          <aside className="hidden border-l border-black/10 bg-settings-aside p-4 font-journal text-on-aside md:block">
+          <aside className="hidden border-l border-border/10 bg-settings-aside p-4 font-journal text-on-aside md:block">
             <SettingsTabList
               activeSection={activeSection}
               compact={false}

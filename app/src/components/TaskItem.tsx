@@ -382,7 +382,7 @@ export const TaskItem = memo(function TaskItem({
 
             {task.deadlineDate && (
               <span
-                className="task-item-deadline h-6 inline-flex items-center gap-1 text-xs text-accent ml-1.5 whitespace-nowrap"
+                className="task-item-deadline h-6 inline-flex items-center gap-1 text-xs text-danger-text ml-1.5 whitespace-nowrap"
                 title={t('task.deadline')}
               >
                 <AlarmClock className="w-3 h-3" aria-hidden="true" />

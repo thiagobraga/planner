@@ -86,9 +86,9 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 
 function StatusCell({ value }: { value: CompareStatus }) {
   const styles = {
-    yes: 'bg-moss/20 text-moss',
-    no: 'bg-accent/12 text-accent',
-    partial: 'bg-priority-2/20 text-priority-2',
+    yes: 'bg-success/20 text-success',
+    no: 'bg-danger/12 text-danger-text',
+    partial: 'bg-warning/20 text-warning',
     unknown: 'bg-dot/40 text-ink-light',
   };
 
@@ -176,15 +176,15 @@ function Legend() {
   return (
     <div className="flex flex-wrap gap-4 mt-6 pt-4 border-t border-dot text-[12px] leading-6 text-ink-light">
       <span className="inline-flex items-center gap-1.5">
-        <span className="w-6 h-6 rounded-[6px] bg-moss/20 text-moss inline-flex items-center justify-center text-[11px] font-medium">✓</span>
+        <span className="w-6 h-6 rounded-[6px] bg-success/20 text-success inline-flex items-center justify-center text-[11px] font-medium">✓</span>
         {t('compare.legend.yes')}
       </span>
       <span className="inline-flex items-center gap-1.5">
-        <span className="w-6 h-6 rounded-[6px] bg-accent/12 text-accent inline-flex items-center justify-center text-[11px] font-medium">✗</span>
+        <span className="w-6 h-6 rounded-[6px] bg-danger/12 text-danger-text inline-flex items-center justify-center text-[11px] font-medium">✗</span>
         {t('compare.legend.no')}
       </span>
       <span className="inline-flex items-center gap-1.5">
-        <span className="w-6 h-6 rounded-[6px] bg-priority-2/20 text-priority-2 inline-flex items-center justify-center text-[11px] font-medium">~</span>
+        <span className="w-6 h-6 rounded-[6px] bg-warning/20 text-warning inline-flex items-center justify-center text-[11px] font-medium">~</span>
         {t('compare.legend.partial')}
       </span>
       <span className="inline-flex items-center gap-1.5">

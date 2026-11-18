@@ -403,7 +403,7 @@ export function CollectionsPage() {
       </div>
 
       {indentError && (
-        <div role="alert" className="text-accent text-sm mt-6">
+        <div role="alert" className="text-danger-text text-sm mt-6">
           {t('task.moveFailed')}
         </div>
       )}

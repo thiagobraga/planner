@@ -168,7 +168,7 @@ export function DateScreen({ draft, onChange, weekStart, onOpenTime, onOpenRepea
                     active ? 'bg-[var(--planner-overlay-hover-bg)] text-ink' : 'bg-transparent text-ink'
                   }`}
                 >
-                  <Icon {...ICON} className={key === 'today' ? 'text-accent' : 'text-ink-light'} />
+                  <Icon {...ICON} className={key === 'today' ? 'text-accent-text' : 'text-ink-light'} />
                   <span className="flex-1">{t(QUICK_LABELS[key])}</span>
                   <span className="text-[12px] tabular-nums text-ink-light">{formatShortDay(date, locale)}</span>
                 </button>
@@ -210,7 +210,7 @@ export function DateScreen({ draft, onChange, weekStart, onOpenTime, onOpenRepea
         <button
           type="button"
           onClick={onRemove}
-          className="date-picker-remove h-8 cursor-pointer rounded-xs border-none bg-transparent px-1 text-[13px] text-ink-light transition-colors duration-(--motion-fast) hover:text-accent"
+          className="date-picker-remove h-8 cursor-pointer rounded-xs border-none bg-transparent px-1 text-[13px] text-ink-light transition-colors duration-(--motion-fast) hover:text-accent-text"
         >
           {t('datePicker.removeDate')}
         </button>

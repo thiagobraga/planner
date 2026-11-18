@@ -114,7 +114,7 @@ export function WeekSelector({ weekAnchor, today, weekStart, onWeekChange, onTod
           role="dialog"
           aria-label={t('page.selectWeek')}
           className="week-selector-popover absolute left-0 top-full z-30 mt-1 w-72 border border-border bg-cream p-3"
-          style={{ boxShadow: '0 8px 32px rgba(44,44,44,0.15)' }}
+          style={{ boxShadow: 'var(--shadow-overlay)' }}
         >
           <div className="mb-3 flex items-center justify-between gap-2">
             <Button

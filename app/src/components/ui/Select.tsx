@@ -3,7 +3,7 @@ import type { SelectProps } from '../../types/ui';
 
 // Styled native <select>: same shell as Input with a trailing chevron.
 export function Select({ error = false, className = '', children, ...rest }: SelectProps) {
-  const borderClass = error ? 'border-accent' : 'border-border focus-within:border-ink';
+  const borderClass = error ? 'border-danger' : 'border-border focus-within:border-ink';
 
   return (
     <div

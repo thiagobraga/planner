@@ -3,10 +3,10 @@ import { ExternalLink } from 'lucide-react';
 import type { ChangelogBlock, ChangelogDocument, ChangelogInlineNode } from '../../types/changelog';
 
 const LINK_CLASS =
-  'group text-ink-light no-underline hover:text-accent focus-visible:outline-2 focus-visible:outline-ink focus-visible:outline-offset-2 rounded-[2px] transition-colors break-words';
+  'group text-ink-light no-underline hover:text-accent-text focus-visible:outline-2 focus-visible:outline-ink focus-visible:outline-offset-2 rounded-[2px] transition-colors break-words';
 
 const HEADING_LINK_CLASS =
-  'group inline-flex items-center gap-1.5 text-ink no-underline hover:text-accent focus-visible:outline-2 focus-visible:outline-ink focus-visible:outline-offset-2 rounded-[2px] transition-colors';
+  'group inline-flex items-center gap-1.5 text-ink no-underline hover:text-accent-text focus-visible:outline-2 focus-visible:outline-ink focus-visible:outline-offset-2 rounded-[2px] transition-colors';
 
 function isExternalHref(href: string): boolean {
   return href.startsWith('https://') || href.startsWith('http://');
@@ -82,12 +82,12 @@ function renderInlineNodes(nodes: ChangelogInlineNode[], linkClassName = LINK_CL
                 aria-hidden="true"
                 className={
                   linkClassName === HEADING_LINK_CLASS
-                    ? 'h-3.5 w-3.5 shrink-0 -translate-y-[0.5px] text-ink-light transition-colors group-hover:text-accent'
+                    ? 'h-3.5 w-3.5 shrink-0 -translate-y-[0.5px] text-ink-light transition-colors group-hover:text-accent-text'
                     : commitSha
-                      ? 'h-2.5 w-2.5 shrink-0 -translate-y-px text-ink-light transition-colors group-hover:text-accent'
+                      ? 'h-2.5 w-2.5 shrink-0 -translate-y-px text-ink-light transition-colors group-hover:text-accent-text'
                       : keepInlineTogether
-                        ? 'h-3 w-3 shrink-0 -translate-y-px text-ink-light transition-colors group-hover:text-accent'
-                        : 'ml-1 inline-block h-3 w-3 shrink-0 align-[-0.1em] text-ink-light transition-colors group-hover:text-accent'
+                        ? 'h-3 w-3 shrink-0 -translate-y-px text-ink-light transition-colors group-hover:text-accent-text'
+                        : 'ml-1 inline-block h-3 w-3 shrink-0 align-[-0.1em] text-ink-light transition-colors group-hover:text-accent-text'
                 }
               />
             )}
