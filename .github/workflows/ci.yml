@@ -106,7 +106,7 @@ jobs:
           files=$(gh api "repos/$REPO/pulls/$PR/files" --paginate --jq '.[].filename')
           flag() { if printf '%s\n' "$files" | grep -Eq "$1"; then echo true; else echo false; fi; }
           {
-            echo "workflows=$(flag '^\.github/|^\.hooks/|^scripts/(ci-changes|hooks)')"
+            echo "workflows=$(flag '^\.github/|^\.hooks/|^scripts/(ci-changes|hooks|db-|blue-green)')"
             echo "code=$(flag '^(api|app|site|\.docker)/|^compose.*\.yml$|^package(-lock)?\.json$')"
             echo "site=$(flag '^site/|^app/src/styles/theme\.css$|^\.docker/site/|^\.github/workflows/|^\.hooks/|^compose\.yml$|^vitest\.config\.ts$')"
           } >> "$GITHUB_OUTPUT"
