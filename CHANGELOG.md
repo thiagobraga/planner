@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.26.0](https://github.com/thiagobraga/planner/compare/v0.25.0...v0.26.0) (2026-11-18)
+
+
+### Added
+
+* **deploy:** add live database restore for rollback ([9746ce9](https://github.com/thiagobraga/planner/commit/9746ce933d0eebc950cb0642f41ebe54fb8d8ba9))
+* **deploy:** backup, restore check and rollback ([4bf6795](https://github.com/thiagobraga/planner/commit/4bf679570e995dfff94b76bf157a17365e280adc))
+
+
+### Fixed
+
+* **deploy:** protect backups and restore targets ([0783de4](https://github.com/thiagobraga/planner/commit/0783de445f081a99549eab2c87711b6533b25ed0))
+* **deploy:** retain fresh same-second dump ([4cf2148](https://github.com/thiagobraga/planner/commit/4cf2148a6f52915fc148fe67988ccdcc6758c78e))
+* **deploy:** verify checksums on GNU and BusyBox ([8d563f1](https://github.com/thiagobraga/planner/commit/8d563f1a329edb5c0f1a606958b9cbd3b256eb2b))
+
+
+### Changed
+
+* **daily:** return collection and section names with daily tasks ([ee79f69](https://github.com/thiagobraga/planner/commit/ee79f696c516287c779cca2517d11fa198a0363d))
+
 ## [0.25.0](https://github.com/thiagobraga/planner/compare/v0.24.3...v0.25.0) (2026-11-18)
 
 
