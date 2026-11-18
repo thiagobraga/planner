@@ -17,6 +17,7 @@ import type { BoardColumnDropData, DayDropData, NoDateDropData, SectionDropData 
 import { useI18n } from '../i18n/I18nContext';
 import type { TaskOrderScope } from '../types/drag';
 import { parseColumnId } from '../utils/boardColumns';
+import { shareTaskNestingScope } from '../utils/taskIndent';
 
 function listScope(task: Task, dayDate: string | undefined, sectionId: string | undefined,
   collectionId: string | undefined, dropData: TaskListProps['dropData']): TaskOrderScope {
@@ -113,9 +114,7 @@ export function TaskList({
   const activeTask = allRows.find((row) => row.id === activeDragId)?.task;
   const hoveredTask = rows[overIndex]?.task;
   const sameNestingScope = activeTask && hoveredTask &&
-    activeTask.collectionId === hoveredTask.collectionId &&
-    (activeTask.sectionId ?? null) === (hoveredTask.sectionId ?? null) &&
-    (activeTask.dueDate?.slice(0, 10) ?? null) === (hoveredTask.dueDate?.slice(0, 10) ?? null);
+    shareTaskNestingScope(activeTask, hoveredTask, dropData?.kind === 'day');
 
   // The dragged row doubles as the insertion indicator: dnd-kit already moves it
   // to the drop position, so showing it at the projected depth previews exactly
