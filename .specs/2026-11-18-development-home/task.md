@@ -34,9 +34,9 @@ What to build: `plan.md`. This file records how the run is executed, the slice q
 | M0.1 | Spec, archive finished specs, close #460 | docs/development-home | #461 | merged; #460 closed |
 | M0.3 | S-B backup, restore check, rollback | feat/db-backup-restore | #462 | merged |
 | M0.4 | S1 line check, contract check, test fixtures | chore/line-limits-fixtures | #465 | merged |
-| M0.5 | S-MCP parent and status tools | feat/mcp-parent-status | - | implemented; verification in progress |
-| R0 | Release and verify | - | - | queued |
-| M1.6 | S-H task hierarchy reliability | fix/task-hierarchy | - | queued |
+| M0.5 | S-MCP parent and status tools | feat/mcp-parent-status | #468 | merged `ee8c9d3d` |
+| R0 | Release and verify | - | #469 | v0.27.0 deployed and verified |
+| M1.6 | S-H task hierarchy reliability | fix/task-hierarchy | #470 | local lint, build, unit and Chrome tests passed; PR checks pending |
 | M1.7 | S2 CollectionsPage split | refactor/collections-page-split | - | queued |
 | M1.8 | S3 collections split view | feat/collections-split-view | - | queued |
 | M1.9 | S3b toolbar buttons, Window to Planner menu | style/toolbar-buttons | - | queued |
@@ -59,4 +59,4 @@ What to build: `plan.md`. This file records how the run is executed, the slice q
 
 | Release | Tag | Deploy run | Health | Rollback |
 | --- | --- | --- | --- | --- |
-| R0 | - | - | - | `CORS_ORIGIN=https://planner.thiagobraga.dev bash scripts/blue-green-deploy.sh "$(cat deploy/.previous-image)"` |
+| R0 | v0.27.0 | [44392997786](https://github.com/thiagobraga/planner/actions/runs/44392997786) | App and API 200, build `20261118T203858Z`, backup restore check passed | `CORS_ORIGIN=https://planner.thiagobraga.dev bash scripts/blue-green-deploy.sh "$(cat deploy/.previous-image)"` |
