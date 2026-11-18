@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.27.2](https://github.com/thiagobraga/planner/compare/v0.27.1...v0.27.2) (2026-11-18)
+
+
+### Fixed
+
+* **tasks:** allow nesting across due dates in collection lists ([a8f5bfa](https://github.com/thiagobraga/planner/commit/a8f5bfaf553938e1a73fe7b95b23e4028ace372e))
+
 ## [0.27.1](https://github.com/thiagobraga/planner/compare/v0.27.0...v0.27.1) (2026-11-18)
 
 
