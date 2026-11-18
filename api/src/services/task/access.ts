@@ -1,9 +1,10 @@
+import type { PoolClient } from 'pg';
 import pool from '../../db/pool.js';
 import { AppError } from '../../utils/AppError.js';
 import type { TaskRow } from '../../types/task.js';
 
-export async function getAccessibleTask(taskId: string, userId: string): Promise<TaskRow> {
-  const result = await pool.query(
+export async function getAccessibleTask(taskId: string, userId: string, db: PoolClient | typeof pool = pool): Promise<TaskRow> {
+  const result = await db.query(
     `SELECT t.* FROM tasks t
      WHERE t.id = $1
        AND (
