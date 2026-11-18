@@ -26,9 +26,18 @@ permissions:
   contents: read
 
 jobs:
+  approve_db_restore:
+    name: Approve database restore
+    if: github.ref == 'refs/heads/main' && inputs.mode == 'db-restore'
+    runs-on: ubuntu-24.04
+    environment: production-db-restore
+    steps:
+      - run: echo 'Database restore approved'
+
   rollback:
     name: 6a. Roll back production (${{ inputs.mode }})
-    if: github.ref == 'refs/heads/main'
+    needs: approve_db_restore
+    if: always() && github.ref == 'refs/heads/main' && (inputs.mode == 'app' || needs.approve_db_restore.result == 'success')
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     environment: production

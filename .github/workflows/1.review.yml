@@ -62,6 +62,8 @@ jobs:
           bash scripts/blue-green-deploy.test.sh
           bash scripts/db-backup.test.sh
           bash scripts/db-restore-check.test.sh
+          bash scripts/db-restore.test.sh
+          bash scripts/db-docker.test.sh
       - name: actionlint
         run: docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:1.7.12 -color
       - name: zizmor
