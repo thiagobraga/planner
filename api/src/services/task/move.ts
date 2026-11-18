@@ -1,4 +1,5 @@
 import pool from '../../db/pool.js';
+import { recordActivity } from '../activityService.js';
 import type { MoveTaskInput, TaskRow } from '../../types/task.js';
 import { getAccessibleTask } from './access.js';
 import { publishTaskEvent } from './events.js';
@@ -18,22 +19,42 @@ export { reorganizeTasks } from './reorganize.js';
  * kept the old depth, say - leaves the tree unrenderable, so the whole operation
  * is one transaction that rolls back intact.
  */
-export async function moveTask(taskId: string, userId: string, input: MoveTaskInput) {
+export async function moveTask(taskId: string, userId: string, input: MoveTaskInput, options?: { preserveParent: boolean }) {
   validateMoveInput(input);
 
   // Authenticate before resolving anything else, so an unauthorized caller
   // cannot probe which task or collection ids exist by reading error shapes.
-  const task = await getAccessibleTask(taskId, userId);
+  await getAccessibleTask(taskId, userId);
 
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
 
     const subtree = await loadAndLockSubtree(client, taskId);
+    const task = await getAccessibleTask(taskId, userId, client);
+    if (options?.preserveParent) input = { ...input, parentTaskId: task.parent_task_id };
     const dest = await resolveMoveDestination(client, task, userId, input, subtree);
     const rootIsCompleted = await applySubtreeMove(client, task, userId, input, dest);
     const reordered = await renumberMoveScope(client, task, input, dest, rootIsCompleted);
 
+    const fields = [
+      ...(input.parentTaskId !== task.parent_task_id ? ['parentTaskId'] : []),
+      ...(dest.crossesCollection ? ['collectionId'] : []),
+      ...(dest.destSectionId !== task.section_id ? ['sectionId'] : []),
+      ...(dest.crossesDate ? ['dueDate'] : []),
+      ...(dest.statusChanged ? ['statusId'] : []),
+      ...(dest.destPriority !== task.priority ? ['priority'] : []),
+    ];
+    if (fields.length > 0) {
+      await recordActivity(client, {
+        userId,
+        collectionId: dest.destCollectionId,
+        entityType: 'task',
+        entityId: taskId,
+        eventType: 'task_updated',
+        afterData: { title: task.title, fields },
+      });
+    }
     await client.query('COMMIT');
 
     const movedResult = await pool.query(

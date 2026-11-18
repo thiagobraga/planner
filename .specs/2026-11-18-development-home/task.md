@@ -30,11 +30,11 @@ What to build: `plan.md`. This file records how the run is executed, the slice q
 | # | Slice | Branch | PR | State |
 | --- | --- | --- | --- | --- |
 | M0.1 | Merge #433 theme color scales | feat/theme-color-scales | #433 | merged `c1ab013d` |
-| M0.1 | Update and merge #436 daily chip names | perf/daily-chip-names | #436 | in progress |
-| M0.1 | Spec, archive finished specs, close #460 | docs/development-home | - | in progress |
-| M0.3 | S-B backup, restore check, rollback | feat/db-backup-restore | - | queued |
-| M0.4 | S1 line check, contract check, test fixtures | chore/line-limits-fixtures | - | queued |
-| M0.5 | S-MCP parent and status tools | feat/mcp-parent-status | - | queued |
+| M0.1 | Update and merge #436 daily chip names | perf/daily-chip-names | #436 | merged |
+| M0.1 | Spec, archive finished specs, close #460 | docs/development-home | #461 | merged; #460 closed |
+| M0.3 | S-B backup, restore check, rollback | feat/db-backup-restore | #462 | merged |
+| M0.4 | S1 line check, contract check, test fixtures | chore/line-limits-fixtures | #465 | merged |
+| M0.5 | S-MCP parent and status tools | feat/mcp-parent-status | - | implemented; verification in progress |
 | R0 | Release and verify | - | - | queued |
 | M1.6 | S-H task hierarchy reliability | fix/task-hierarchy | - | queued |
 | M1.7 | S2 CollectionsPage split | refactor/collections-page-split | - | queued |
