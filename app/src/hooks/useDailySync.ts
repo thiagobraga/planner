@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, type Dispatch, type SetStateAction } fr
 import { useQueryClient } from '@tanstack/react-query';
 import { useSync } from './useSync';
 import { isEchoedMove, isStructuralMove } from '../utils/moveEcho';
-import { apiToTask, dateFromISO, dayLabel } from '../utils/dailySections';
+import { apiToTask, dateFromISO, dayLabel, withJoinedNames } from '../utils/dailySections';
 import type { ApiTask, Preferences } from '../types/api';
 import type { DaySection } from '../types/daily';
 
@@ -33,6 +33,11 @@ export function useDailySync(opts: {
           qc.invalidateQueries({ queryKey: ['collection'] });
           return;
         }
+        // Rows carry their collection and section names, so a rename or delete refetches them.
+        if (event.entityType === 'collection' || event.entityType === 'section') {
+          if (event.eventType !== 'created') refreshDaily();
+          return;
+        }
         if (event.entityType !== 'task') return;
         // Our own move, still reconciling: the optimistic state is already ahead.
         if (isEchoedMove(event)) return;
@@ -50,6 +55,7 @@ export function useDailySync(opts: {
         } else if (event.eventType === 'created' && event.payload) {
           const created = apiToTask(event.payload as ApiTask);
           if (!created.dueDate) return;
+          if (created.collectionName === undefined) refreshDaily();
           const key = created.dueDate > todayKey ? todayKey : created.dueDate;
           setSections((prev) => {
             if (prev.some((s) => s.tasks.some((t) => t.id === created.id))) return prev;
@@ -69,10 +75,16 @@ export function useDailySync(opts: {
           });
         } else if (event.payload) {
           const updated = apiToTask(event.payload as ApiTask);
+          // refreshDaily is debounced, so a repeated updater call stays harmless.
           setSections((prev) =>
             prev.map((s) => ({
               ...s,
-              tasks: s.tasks.map((t) => (t.id === event.entityId ? updated : t)),
+              tasks: s.tasks.map((t) => {
+                if (t.id !== event.entityId) return t;
+                const merged = withJoinedNames(updated, t);
+                if (merged.needsNames) refreshDaily();
+                return merged.task;
+              }),
             })),
           );
         }

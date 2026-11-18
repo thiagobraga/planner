@@ -41,6 +41,11 @@ export interface ApiTask {
   completedAt?: string | null;
   statusId?: string | null;
   labels?: LabelSummary[];
+  /** Joined by the Daily view only; create, update and sync payloads leave them out. */
+  collectionName?: string;
+  collectionColor?: string;
+  collectionIsInbox?: boolean;
+  sectionName?: string;
 }
 
 export interface LabelSummary {

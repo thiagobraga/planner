@@ -28,6 +28,11 @@ export interface ViewTaskRow extends TaskTimeRow {
   status_id: string | null;
   created_at: string;
   updated_at: string;
+  /** Joined by views that span collections (Daily), so rows can name their collection without a second request. */
+  collection_name?: string;
+  collection_color?: string;
+  collection_is_inbox?: boolean;
+  section_name?: string | null;
 }
 
 export interface TaskTimeFields {

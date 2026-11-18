@@ -56,6 +56,12 @@ export function formatTask(row: TaskRow) {
     statusId: row.status_id,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    ...(row.collection_name !== undefined && {
+      collectionName: row.collection_name,
+      collectionColor: row.collection_color,
+      collectionIsInbox: row.collection_is_inbox,
+    }),
+    ...(row.section_name != null && { sectionName: row.section_name }),
   };
 }
 
