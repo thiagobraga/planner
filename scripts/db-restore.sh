@@ -8,7 +8,7 @@ set -euo pipefail
 if [[ ${1:-} == --apply ]]; then
   dump=$2
   : "${PGDATABASE:?Set PGDATABASE}"
-  (cd "$(dirname "$dump")" && sha256sum --check --status "$(basename "$dump").sha256") ||
+  (cd "$(dirname "$dump")" && sha256sum -c -s "$(basename "$dump").sha256") ||
     { echo "Checksum mismatch: $dump" >&2; exit 1; }
   # One transaction: a failed restore leaves the live database as it was.
   pg_restore --clean --if-exists --no-owner --no-acl --single-transaction --exit-on-error \
@@ -35,29 +35,44 @@ flock -n 9 || { echo "A deployment is running" >&2; exit 1; }
 
 active=$(<"$ROOT_DIR/deploy/.active-color")
 [[ $active == blue || $active == green ]] || { echo "Invalid active color: $active" >&2; exit 1; }
-api="planner-$active-api"
+active_api="planner-$active-api"
 
 bash scripts/db-restore-check.sh --docker "$dump"
-safety=$(BACKUP_SHA=prerestore bash scripts/db-backup.sh --docker)
+safety=$(BACKUP_SHA=prerestore BACKUP_KEEP_DUMP="$dump" bash scripts/db-backup.sh --docker)
 echo "Safety backup before restore: $safety" >&2
 
+writers=()
+for api in planner-blue-api planner-green-api planner-prod-api; do
+  if [[ $(docker inspect -f '{{.State.Running}}' "$api" 2>/dev/null || true) == true ]]; then
+    writers+=("$api")
+  fi
+done
+for api in "${writers[@]}"; do
+  if [[ $api == "$active_api" ]]; then active_running=true; fi
+done
+[[ ${active_running:-false} == true ]] || { echo "Active API $active_api is not running" >&2; exit 1; }
+
+started=false
 # shellcheck disable=SC2329 # invoked by the EXIT trap
-restart_api() {
+restart_writers_on_exit() {
   local status=$?
   trap - EXIT
-  docker start "$api" > /dev/null || true
+  if [[ $started == false ]]; then
+    for api in "${writers[@]}"; do docker start "$api" > /dev/null || true; done
+  fi
   if (( status != 0 )); then
     echo "Restore failed; live data unchanged unless pg_restore committed. Safety backup: $safety" >&2
   fi
   exit "$status"
 }
-trap restart_api EXIT
+trap restart_writers_on_exit EXIT
 
-docker stop -t 15 "$api"
+for api in "${writers[@]}"; do docker stop -t 15 "$api" > /dev/null; done
 db_in_docker db-restore.sh --apply "$dump"
-docker start "$api" > /dev/null
+for api in "${writers[@]}"; do docker start "$api" > /dev/null; done
+started=true
 for _ in $(seq 1 30); do
-  if docker exec "$api" wget -qO- http://127.0.0.1:4000/api/v1/health > /dev/null 2>&1; then
+  if docker exec "$active_api" wget -qO- http://127.0.0.1:4000/api/v1/health > /dev/null 2>&1; then
     echo "Database restored from $1; API healthy" >&2
     exit 0
   fi

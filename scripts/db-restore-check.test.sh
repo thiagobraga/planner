@@ -6,11 +6,11 @@ SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 TEMP_ROOT=$(mktemp -d)
 export PGDATABASE=restore_test_src BACKUP_DIR="$TEMP_ROOT/backups" BACKUP_SHA=def456
 export RESTORE_DB=restore_test_scratch
-trap 'dropdb --maintenance-db=postgres --if-exists "$PGDATABASE" || true; rm -rf "$TEMP_ROOT"' EXIT
+trap 'dropdb --maintenance-db=postgres --if-exists "$PGDATABASE" || true; dropdb --maintenance-db=postgres --if-exists "$RESTORE_DB" || true; rm -rf "$TEMP_ROOT"' EXIT
 
 fail() { echo "FAIL: $*" >&2; exit 1; }
 scratch_exists() {
-  [[ $(psql -X -A -t -d postgres -c "SELECT count(*) FROM pg_database WHERE datname = '$RESTORE_DB'") == 1 ]]
+  [[ $(psql -X -A -t -d postgres -c "SELECT count(*) FROM pg_database WHERE datname LIKE '${RESTORE_DB}_%'") != 0 ]]
 }
 
 dropdb --maintenance-db=postgres --if-exists "$PGDATABASE"
@@ -29,10 +29,15 @@ dump=$(bash "$SCRIPT_DIR/db-backup.sh")
 # Writes after the dump must not leak into the comparison.
 psql -X -q -c 'INSERT INTO tasks (collection_id) VALUES (1)'
 
+# A pre-existing database with the configured prefix must survive the check.
+createdb --maintenance-db=postgres "$RESTORE_DB"
+psql -X -q -v ON_ERROR_STOP=1 -d "$RESTORE_DB" -c 'CREATE TABLE safety_marker (id INT)'
+
 # Dump, restore, compare, drop.
 bash "$SCRIPT_DIR/db-restore-check.sh" "$dump" 2> "$TEMP_ROOT/err" || fail "Restore check failed: $(<"$TEMP_ROOT/err")"
 grep -q 'Restore check passed' "$TEMP_ROOT/err" || fail "Missing pass message"
 scratch_exists && fail "Scratch database was not dropped"
+psql -X -q -v ON_ERROR_STOP=1 -d "$RESTORE_DB" -c 'SELECT * FROM safety_marker' > /dev/null || fail "Pre-existing database was replaced"
 [[ $(psql -X -A -t -c 'SELECT count(*) FROM tasks') == 8 ]] || fail "Live database changed"
 
 # Count mismatch fails and still drops the scratch database.

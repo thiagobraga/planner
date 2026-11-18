@@ -21,8 +21,8 @@ dump=$1
 RESTORE_DB=${RESTORE_DB:-planner_restore_check}
 : "${PGDATABASE:?Set PGDATABASE}"
 
-if [[ ! $RESTORE_DB =~ ^[a-z_][a-z0-9_]*$ ]]; then
-  echo "RESTORE_DB must be a plain lowercase identifier" >&2
+if [[ ! $RESTORE_DB =~ ^[a-z_][a-z0-9_]*$ || ${#RESTORE_DB} -gt 45 ]]; then
+  echo "RESTORE_DB must be a lowercase identifier of at most 45 characters" >&2
   exit 2
 fi
 if [[ $RESTORE_DB == "$PGDATABASE" ]]; then
@@ -33,7 +33,7 @@ for file in "$dump" "$dump.sha256" "$dump.json"; do
   [[ -f $file ]] || { echo "Missing $file" >&2; exit 1; }
 done
 
-if ! (cd "$(dirname "$dump")" && sha256sum --check --status "$(basename "$dump").sha256"); then
+if ! (cd "$(dirname "$dump")" && sha256sum -c -s "$(basename "$dump").sha256"); then
   echo "Checksum mismatch: $dump" >&2
   exit 1
 fi
@@ -41,16 +41,26 @@ fi
 json=$(<"$dump.json")
 field() { sed -n "s/.*\"$1\":\"\{0,1\}\([^\",}]*\).*/\1/p" <<< "$json"; }
 
-# --maintenance-db keeps the drop and create off the live database's connections.
+# --maintenance-db keeps database creation and removal off live connections.
 scratch() { "$1" --maintenance-db=postgres "${@:2}"; }
-cleanup() { scratch dropdb --if-exists "$RESTORE_DB" || echo "Could not drop $RESTORE_DB" >&2; }
+scratch_db="${RESTORE_DB}_$(printf '%04x%04x%04x%04x' "$RANDOM" "$RANDOM" "$RANDOM" "$RANDOM")"
+created=false
+cleanup() {
+  local status=$?
+  trap - EXIT
+  if [[ $created == true ]] && ! scratch dropdb "$scratch_db"; then
+    echo "Could not drop $scratch_db" >&2
+    status=1
+  fi
+  exit "$status"
+}
 trap cleanup EXIT
 
-scratch dropdb --if-exists "$RESTORE_DB"
-scratch createdb "$RESTORE_DB"
-pg_restore --exit-on-error --no-owner --no-acl --dbname="$RESTORE_DB" "$dump"
+scratch createdb "$scratch_db"
+created=true
+pg_restore --exit-on-error --no-owner --no-acl --dbname="$scratch_db" "$dump"
 
-actual=$(psql -X -A -t -v ON_ERROR_STOP=1 --dbname="$RESTORE_DB" -c "SELECT concat_ws('|',
+actual=$(psql -X -A -t -v ON_ERROR_STOP=1 --dbname="$scratch_db" -c "SELECT concat_ws('|',
   (SELECT max(filename) FROM schema_migrations), (SELECT count(*) FROM users),
   (SELECT count(*) FROM tasks), (SELECT count(*) FROM collections));")
 expected="$(field migration)|$(field users)|$(field tasks)|$(field collections)"

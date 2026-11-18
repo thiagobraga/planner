@@ -36,7 +36,14 @@ free_kb() {
   df -Pk "$BACKUP_DIR" | awk 'NR == 2 { print $4 }'
 }
 
-last_dump=$(find "$BACKUP_DIR" -maxdepth 1 -name '*.dump' -type f -printf '%T@ %p\n' | sort -rn | head -1 | cut -d' ' -f2-)
+dump_files_newest() {
+  local file
+  while IFS= read -r -d '' file; do stat -c '%Y %n' "$file"; done \
+    < <(find "$BACKUP_DIR" -maxdepth 1 -name '*.dump' -type f -print0) |
+    sort -rn | cut -d' ' -f2-
+}
+mapfile -t dumps < <(dump_files_newest)
+last_dump=${dumps[0]:-}
 if [[ -n $last_dump ]]; then
   last_kb=$(( ($(stat -c %s "$last_dump") + 1023) / 1024 ))
   available=$(free_kb)
@@ -49,6 +56,12 @@ fi
 name="$(date -u +%Y%m%dT%H%M%SZ)-$BACKUP_SHA"
 dump="$BACKUP_DIR/$name.dump"
 partial="$dump.partial"
+while [[ -e $dump || -e $partial ]]; do
+  sleep 1
+  name="$(date -u +%Y%m%dT%H%M%SZ)-$BACKUP_SHA"
+  dump="$BACKUP_DIR/$name.dump"
+  partial="$dump.partial"
+done
 cleanup() { rm -f "$partial" "$partial.json"; }
 trap cleanup EXIT
 
@@ -92,9 +105,12 @@ printf '%s  %s\n' "$checksum" "$name.dump" > "$dump.sha256"
 mv -f "$partial.json" "$dump.json"
 chmod 600 "$dump" "$dump.sha256" "$dump.json"
 
-find "$BACKUP_DIR" -maxdepth 1 -name '*.dump' -type f -printf '%T@ %p\n' | sort -rn |
-  tail -n "+$((BACKUP_RETENTION + 1))" | cut -d' ' -f2- |
-  while IFS= read -r old; do rm -f "$old" "$old.sha256" "$old.json"; done
+mapfile -t dumps < <(dump_files_newest)
+for ((i = BACKUP_RETENTION; i < ${#dumps[@]}; i++)); do
+  old=${dumps[i]}
+  [[ $old == "${BACKUP_KEEP_DUMP:-}" ]] && continue
+  rm -f "$old" "$old.sha256" "$old.json"
+done
 
 echo "Backup written: $name.dump ($size bytes)" >&2
 printf '%s\n' "$dump"

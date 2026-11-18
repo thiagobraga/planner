@@ -26,22 +26,27 @@ SQL
 # Dump with sidecars and owner-only mode.
 dump=$(bash "$SCRIPT_DIR/db-backup.sh")
 [[ -f $dump && $dump == "$BACKUP_DIR/"*-abc123.dump ]] || fail "Unexpected dump path: $dump"
+fast_dump=$(bash "$SCRIPT_DIR/db-backup.sh")
+[[ $fast_dump != "$dump" && -f $dump ]] || fail "Rapid backup overwrote the prior dump"
 [[ $(stat -c %a "$dump") == 600 ]] || fail "Dump is not mode 600"
-(cd "$BACKUP_DIR" && sha256sum --check --status "$(basename "$dump").sha256") || fail "Checksum sidecar does not match"
+(cd "$BACKUP_DIR" && sha256sum -c -s "$(basename "$dump").sha256") || fail "Checksum sidecar does not match"
 grep -q '"migration":"048_latest.sql"' "$dump.json" || fail "Migration not recorded"
 grep -q '"counts":{"users":3,"tasks":5,"collections":2}' "$dump.json" || fail "Counts not recorded: $(<"$dump.json")"
 pg_restore --list "$dump" > /dev/null || fail "Dump is not a custom-format archive"
 
 # Low disk: refuse when free space is under twice the last dump.
+before_count=$(find "$BACKUP_DIR" -name '*.dump' | wc -l)
 if DB_BACKUP_FREE_KB=0 bash "$SCRIPT_DIR/db-backup.sh" 2> "$TEMP_ROOT/err"; then fail "Low disk was accepted"; fi
 grep -q 'Refusing backup' "$TEMP_ROOT/err" || fail "Low disk refusal message missing"
-[[ $(find "$BACKUP_DIR" -name '*.dump' | wc -l) == 1 ]] || fail "Low disk refusal left a dump"
+[[ $(find "$BACKUP_DIR" -name '*.dump' | wc -l) == "$before_count" ]] || fail "Low disk refusal left a dump"
 
 # Retention keeps the newest N dumps and their sidecars.
 for _ in 1 2; do
   sleep 1
-  BACKUP_RETENTION=2 bash "$SCRIPT_DIR/db-backup.sh" > /dev/null
+  BACKUP_RETENTION=2 BACKUP_KEEP_DUMP="$dump" bash "$SCRIPT_DIR/db-backup.sh" > /dev/null
 done
+[[ -e $dump && -e $dump.json && -e $dump.sha256 ]] || fail "Selected restore dump was pruned"
+BACKUP_RETENTION=2 bash "$SCRIPT_DIR/db-backup.sh" > /dev/null
 [[ $(find "$BACKUP_DIR" -name '*.dump' | wc -l) == 2 ]] || fail "Retention did not prune old dumps"
 [[ ! -e $dump && ! -e $dump.json && ! -e $dump.sha256 ]] || fail "Pruned dump left sidecars"
 
