@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.25.0](https://github.com/thiagobraga/planner/compare/v0.24.3...v0.25.0) (2026-11-18)
+
+
+### Added
+
+* **theme:** add theme color scales and palette reference ([c1ab013](https://github.com/thiagobraga/planner/commit/c1ab013d8c774d9e0ed5e8314f0acc84e5ab2d04))
+
 ## [0.24.3](https://github.com/thiagobraga/planner/compare/v0.24.2...v0.24.3) (2026-11-18)
 
 
