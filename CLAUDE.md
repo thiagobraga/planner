@@ -106,6 +106,7 @@ Add to `/etc/hosts`: `planner.local`, `api.planner.local`, `db.planner.local`, `
 - `services/taskService.ts` - CRUD, completion, recurrence
 - `services/viewService.ts` - inbox and collection views
 - `services/dailyService.ts` - `getDailyView(userId, from, to)`: the one range query behind every Daily view and the MCP `get_today` / `get_upcoming` tools
+- `repositories/dailyRepository.ts` - PostgreSQL query for Daily tasks; validation and view assembly stay in `dailyService.ts`
 - `services/filterService.ts` - saved filter CRUD + evaluation via Peggy DSL parser
 - `services/collectionService.ts` - collection (project) CRUD
 - `services/habitService.ts` - habit tracking, completions, streaks
