@@ -5,12 +5,11 @@ import { describe, it, expect, vi } from 'vitest';
 import {
   basePreferences,
   baseInboxData,
-  sampleTasks,
-  createdTask,
   section,
   taskListMock,
   collectionBoardMock,
 } from './helpers/inboxFixtures';
+import { sampleTasks, createdTask } from '../../test/render';
 import { renderPage, inboxList, inboxBeforeEach } from './helpers/inboxHarness';
 import {
   fetchInboxTasks,

@@ -2,12 +2,12 @@ import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import {
   baseInboxData,
-  sampleTasks,
   collection,
   section,
   taskListMock,
   collectionBoardMock,
 } from './helpers/inboxFixtures';
+import { sampleTasks } from '../../test/render';
 import { renderPage, createInboxHarness, inboxBeforeEach } from './helpers/inboxHarness';
 import {
   fetchInboxTasks,
