@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CollectionsPage } from '../CollectionsPage';
@@ -39,20 +39,22 @@ vi.mock('../../components/board/CollectionBoard', () => ({
 
 const collectionId = '29eb35a4-7d34-4981-a67d-476d3cbddad8';
 
-function renderPage() {
+async function renderPage() {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
 
-  return render(
-    <QueryClientProvider client={client}>
-      <MemoryRouter initialEntries={[`/collection/${collectionId}`]}>
-        <Routes>
-          <Route path="/collection/:id" element={<CollectionsPage />} />
-        </Routes>
-      </MemoryRouter>
-    </QueryClientProvider>,
-  );
+  await act(async () => {
+    render(
+      <QueryClientProvider client={client}>
+        <MemoryRouter initialEntries={[`/collection/${collectionId}`]}>
+          <Routes>
+            <Route path="/collection/:id" element={<CollectionsPage />} />
+          </Routes>
+        </MemoryRouter>
+      </QueryClientProvider>,
+    );
+  });
 }
 
 describe('CollectionsPage kanban wiring', () => {
@@ -97,7 +99,7 @@ describe('CollectionsPage kanban wiring', () => {
 
   it('mounts the shared board with the saved layout, style and group', async () => {
     withMode({ layout: 'columns', style: 'cards', groupBy: 'priority' });
-    renderPage();
+    await renderPage();
 
     const board = await screen.findByTestId('collection-board');
     expect(board).toHaveAttribute('data-group-by', 'priority');
@@ -109,7 +111,7 @@ describe('CollectionsPage kanban wiring', () => {
 
   it('asks for completed tasks when the columns are grouped by status', async () => {
     withMode({ layout: 'columns', groupBy: 'status' });
-    renderPage();
+    await renderPage();
 
     expect(await screen.findByTestId('collection-board')).toHaveAttribute('data-presentation', 'kanban-list');
     expect(fetchCollectionView).toHaveBeenLastCalledWith(collectionId, { includeCompleted: true });
@@ -117,7 +119,7 @@ describe('CollectionsPage kanban wiring', () => {
 
   it('hides the grouping menu on List', async () => {
     withMode({ layout: 'list', groupBy: 'priority' });
-    renderPage();
+    await renderPage();
 
     await screen.findByRole('button', { name: 'View' });
     expect(screen.queryByRole('button', { name: /^Group:/ })).not.toBeInTheDocument();
@@ -147,7 +149,7 @@ describe('CollectionsPage kanban wiring', () => {
       boardViewModes: { [collectionId]: { view: 'list', groupBy: 'status' } },
     });
 
-    renderPage();
+    await renderPage();
 
     expect(await screen.findByTestId('task-list')).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'Backlog' })).not.toBeInTheDocument();
