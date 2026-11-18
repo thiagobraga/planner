@@ -1,5 +1,6 @@
+import type { Dispatch, KeyboardEvent, RefObject, SetStateAction } from 'react';
 import type { ApiCollection } from './api';
-import type { StoreSection, Task } from './task';
+import type { StoreSection, Task, TaskListCallbacks, TaskListProps } from './task';
 
 export interface FlatCollection {
   id: string;
@@ -128,6 +129,34 @@ export interface SectionContextMenuState {
 export interface SectionGroup {
   section: StoreSection | null;
   tasks: Task[];
+}
+
+export interface CollectionTaskListProps {
+  collectionId: string;
+  inputRef: RefObject<HTMLDivElement | null>;
+  taskListProps: TaskListCallbacks & Pick<TaskListProps, 'activeDragId' | 'editingId'>;
+  onTaskToggle: (taskId: string) => void;
+  topLevelGroup: SectionGroup;
+  input: {
+    input: string;
+    setInput: (value: string) => void;
+    sectionTaskInput: Record<string, string>;
+    setSectionTaskInput: Dispatch<SetStateAction<Record<string, string>>>;
+    handleAddAtEnd: (text: string) => void;
+    handleAddSectionTask: (sectionId: string, text: string) => void;
+    handleAddNoteKeyDown: (event: KeyboardEvent<HTMLDivElement>) => boolean;
+  };
+  sections: {
+    sectionGroups: SectionGroup[];
+    editingSectionId: string | null;
+    addingSection: StoreSection | undefined;
+    setEditingSectionId: (id: string) => void;
+    handleAddSection: () => void;
+    handleDeleteSection: (id: string) => void;
+    handleCommitSectionName: (id: string, name: string) => void;
+    handleCancelSectionEdit: (id: string) => void;
+    handleSectionRightClick: (id: string, position: { x: number; y: number }) => void;
+  };
 }
 
 export interface CollectionBreadcrumbTitleProps {

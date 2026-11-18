@@ -1,12 +1,7 @@
-import { Fragment, useState, useRef, useCallback, useEffect, useLayoutEffect, useMemo } from 'react';
-import { PlaceholderBullet } from '../components/ui/PlaceholderBullet';
+import { useState, useRef, useCallback, useEffect, useLayoutEffect, useMemo } from 'react';
 import { useParams } from 'react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import { TaskList } from '../components/TaskList';
-import { SectionHeader } from '../components/SectionHeader';
-import { InlineNameInput } from '../components/ui/InlineNameInput';
-import { EditableText } from '../components/ui/EditableText';
+import { CollectionTaskList } from '../components/collections/CollectionTaskList';
 import { CollectionBoard } from '../components/board/CollectionBoard';
 import { BoardPageToolbar } from '../components/board/BoardPageToolbar';
 import { MonthlyView } from '../components/monthly/MonthlyView';
@@ -214,6 +209,19 @@ export function CollectionsPage() {
     return items;
   }, [collections, contextMenu, invalidate, t]);
 
+  const taskListProps = {
+    activeDragId,
+    editingId,
+    onStartEdit: handleStartEdit,
+    onEditCommit: handleEditCommit,
+    onEditCancel: handleEditCancel,
+    onDelete: handleDelete,
+    onAddBelow: handleAddBelow,
+    onIndent: handleIndent,
+    onConvertType: handleConvertType,
+    onRightClick: handleRightClick,
+  };
+
   return (
     <div
       className="collection-detail-page relative w-full cursor-text"
@@ -260,18 +268,7 @@ export function CollectionsPage() {
             boardOrder={data.boardOrder}
             onToggle={(taskId) => handleToggle(taskId)}
             presentation={boardPreferences.view === 'kanban-list' ? 'kanban-list' : 'kanban'}
-            taskListProps={{
-              activeDragId,
-              editingId,
-              onStartEdit: handleStartEdit,
-              onEditCommit: handleEditCommit,
-              onEditCancel: handleEditCancel,
-              onDelete: handleDelete,
-              onAddBelow: handleAddBelow,
-              onIndent: handleIndent,
-              onConvertType: handleConvertType,
-              onRightClick: handleRightClick,
-            }}
+            taskListProps={taskListProps}
           />
         ) : boardPreferences.view === 'calendar' ? (
           <>
@@ -283,122 +280,22 @@ export function CollectionsPage() {
             />
           </>
         ) : (
-          <>
-            <div className="h-6" />
-
-            <TaskList
-              tasks={topLevelGroup.tasks}
-              containerId={`collection:${id}`}
-              activeDragId={activeDragId}
-              editingId={editingId}
-              onTaskToggle={handleToggle}
-              onStartEdit={handleStartEdit}
-              onEditCommit={handleEditCommit}
-              onEditCancel={handleEditCancel}
-              onDelete={handleDelete}
-              onAddBelow={handleAddBelow}
-              onIndent={handleIndent}
-              onConvertType={handleConvertType}
-              onRightClick={handleRightClick}
-            />
-
-            <div className="flex items-start min-h-6">
-              <PlaceholderBullet />
-              <EditableText
-                ref={inputRef}
-                value={input}
-                onValueChange={setInput}
-                onEnter={handleAddAtEnd}
-                onBlur={() => handleAddAtEnd(input)}
-                onKeyDown={handleAddNoteKeyDown}
-                placeholder={t('common.addTask')}
-                aria-label={t('common.addTask')}
-                className="task-input task-add-input flex-1 text-sm leading-6 text-ink bg-transparent border-none outline-none p-0"
-                spellCheck={false}
-              />
-            </div>
-
-            <SortableContext
-              items={sectionGroups.map((group) => group.section!.id)}
-              strategy={verticalListSortingStrategy}
-            >
-              {sectionGroups.map((group) => (
-                <Fragment key={group.section!.id}>
-                  <div className="h-6" />
-                  <SectionHeader
-                    section={group.section!}
-                    collectionId={id ?? ''}
-                    isEditing={editingSectionId === group.section!.id}
-                    onEdit={() => setEditingSectionId(group.section!.id)}
-                    onCommitName={(name) => handleCommitSectionName(group.section!.id, name)}
-                    onCancelEdit={() => handleCancelSectionEdit(group.section!.id)}
-                    onDelete={() => handleDeleteSection(group.section!.id)}
-                    onRightClick={(position) => handleSectionRightClick(group.section!.id, position)}
-                  />
-                  <TaskList
-                    tasks={group.tasks}
-                    containerId={`section:${group.section!.id}`}
-                    sectionId={group.section!.id}
-                    collectionId={id}
-                    activeDragId={activeDragId}
-                    editingId={editingId}
-                    onTaskToggle={handleToggle}
-                    onStartEdit={handleStartEdit}
-                    onEditCommit={handleEditCommit}
-                    onEditCancel={handleEditCancel}
-                    onDelete={handleDelete}
-                    onAddBelow={handleAddBelow}
-                    onIndent={handleIndent}
-                    onConvertType={handleConvertType}
-                    onRightClick={handleRightClick}
-                  />
-                  <div className="flex items-start min-h-6">
-                    <PlaceholderBullet />
-                    <EditableText
-                      value={sectionTaskInput[group.section!.id] ?? ''}
-                      onValueChange={(text) =>
-                        setSectionTaskInput((prev) => ({ ...prev, [group.section!.id]: text }))
-                      }
-                      onEnter={(text) => handleAddSectionTask(group.section!.id, text)}
-                      onBlur={() =>
-                        handleAddSectionTask(group.section!.id, sectionTaskInput[group.section!.id] ?? '')
-                      }
-                      placeholder={t('common.addTask')}
-                      aria-label={t('common.addTask')}
-                      className="task-input task-add-input flex-1 text-sm leading-6 text-ink bg-transparent border-none outline-none p-0"
-                      spellCheck={false}
-                    />
-                  </div>
-                </Fragment>
-              ))}
-            </SortableContext>
-
-            <div className="h-6" />
-
-            {addingSection ? (
-              <div className="flex h-6 w-full min-w-0 items-center pr-2">
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center text-ink-light opacity-35">+</span>
-                <InlineNameInput
-                  defaultValue=""
-                  placeholder={t('page.newSection')}
-                  className="uppercase tracking-widest text-[10px] font-semibold text-ink-light"
-                  onCommit={(name) => handleCommitSectionName(addingSection.id, name)}
-                  onCancel={() => handleCancelSectionEdit(addingSection.id)}
-                />
-              </div>
-            ) : (
-              <button
-                type="button"
-                onClick={handleAddSection}
-                className="group flex h-6 w-full min-w-0 items-center pr-2 text-ink-light opacity-0 transition-opacity hover:opacity-100 focus-visible:opacity-100"
-              >
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center">+</span>
-                <span className="min-w-0 flex-1 truncate text-left uppercase tracking-widest text-[10px] font-semibold">
-                  {t('page.newSection')}
-                </span>
-              </button>
-            )}
-          </>
+          <CollectionTaskList
+            collectionId={id}
+            inputRef={inputRef}
+            taskListProps={taskListProps}
+            onTaskToggle={handleToggle}
+            topLevelGroup={topLevelGroup}
+            input={{
+              input, setInput, sectionTaskInput, setSectionTaskInput,
+              handleAddAtEnd, handleAddSectionTask, handleAddNoteKeyDown,
+            }}
+            sections={{
+              sectionGroups, editingSectionId, addingSection, setEditingSectionId,
+              handleAddSection, handleDeleteSection, handleCommitSectionName,
+              handleCancelSectionEdit, handleSectionRightClick,
+            }}
+          />
         )}
       </div>
 
