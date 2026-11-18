@@ -45,6 +45,8 @@ Required `.env` vars: `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `CORS
 
 `compose.prod.yml` owns shared PostgreSQL, Redis, and the stable router on `127.0.0.1:8080`. `compose.prod.color.yml` owns per-color app, API, and migration projects on the shared external networks. GitHub Actions calls `scripts/blue-green-deploy.sh <sha>`; it verifies the inactive color and public router before stopping the old color. Runtime files in `deploy/` are ignored by Git. Roll back with `CORS_ORIGIN=https://planner.thiagobraga.dev bash scripts/blue-green-deploy.sh "$(cat deploy/.previous-image)"`. The first router bootstrap has a brief port-8080 handoff gap while host nginx remains unchanged. Keep production migrations backward-compatible.
 
+Every deploy runs `scripts/db-backup.sh --docker` (pg_dump with sha256 and row-count sidecars in `deploy/backups/`) and `scripts/db-restore-check.sh --docker` (restore into scratch `planner_restore_check`, compare, drop) before migrations; either failing aborts the deploy. `5. Backup` repeats both daily and posts only metadata. `6. Rollback` redeploys a previous image (`app`) or, data-losing, restores a named dump over the live database after a safety backup (`db-restore` via `scripts/db-restore.sh`).
+
 ### Git Hooks
 
 `core.hooksPath` is local git config and does not carry over automatically on fresh clones or new worktrees. Run `bash .hooks/setup-hooks.sh` before your first commit:
