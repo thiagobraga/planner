@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.27.1](https://github.com/thiagobraga/planner/compare/v0.27.0...v0.27.1) (2026-11-18)
+
+
+### Changed
+
+* **theme:** isolate --color-dot to the dot grid background ([a7e28d3](https://github.com/thiagobraga/planner/commit/a7e28d3da0dc3256172da04824dc54bcceaa5109))
+
 ## [0.27.0](https://github.com/thiagobraga/planner/compare/v0.26.0...v0.27.0) (2026-11-18)
 
 
