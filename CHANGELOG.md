@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.24.3](https://github.com/thiagobraga/planner/compare/v0.24.2...v0.24.3) (2026-11-18)
+
+
+### Changed
+
+* **daily:** move task query to repository ([83f5d14](https://github.com/thiagobraga/planner/commit/83f5d148d83593d93fed8d5f6cdb8ed22910b8f2))
+
 ## [0.24.2](https://github.com/thiagobraga/planner/compare/v0.24.1...v0.24.2) (2026-11-16)
 
 
