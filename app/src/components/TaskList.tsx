@@ -20,7 +20,7 @@ import { parseColumnId } from '../utils/boardColumns';
 import { shareTaskNestingScope } from '../utils/taskIndent';
 
 function listScope(task: Task, dayDate: string | undefined, sectionId: string | undefined,
-  collectionId: string | undefined, dropData: TaskListProps['dropData']): TaskOrderScope {
+  collectionId: string | undefined, dropData: TaskListProps['dropData'], groupNestingByDueDate: boolean): TaskOrderScope {
   const collection = collectionId ?? task.collectionId ?? '';
   if (dayDate) return { kind: 'day', dueDate: dayDate };
   if (dropData?.kind === 'day') return { kind: 'day', dueDate: dropData.date };
@@ -31,7 +31,7 @@ function listScope(task: Task, dayDate: string | undefined, sectionId: string | 
     if (column?.groupBy === 'section' && column.value) return { kind: 'section', sectionId: column.value as string };
   }
   if (sectionId) return { kind: 'section', sectionId };
-  if (dropData?.kind === 'no-date' && task.dueDate) return { kind: 'day', dueDate: task.dueDate.slice(0, 10) };
+  if (groupNestingByDueDate && task.dueDate) return { kind: 'day', dueDate: task.dueDate.slice(0, 10) };
   return { kind: 'collection', collectionId: collection };
 }
 
@@ -52,6 +52,7 @@ export function TaskList({
   containerId,
   dropId,
   dayDate,
+  groupNestingByDueDate = false,
   sectionId,
   collectionId,
   dropData: dropDataProp,
@@ -113,8 +114,9 @@ export function TaskList({
   const holdsActiveRow = !!activeDragId && rows.some((r) => r.id === activeDragId);
   const activeTask = allRows.find((row) => row.id === activeDragId)?.task;
   const hoveredTask = rows[overIndex]?.task;
+  const separateDueDays = groupNestingByDueDate || dropData?.kind === 'day' || dropData?.kind === 'no-date';
   const sameNestingScope = activeTask && hoveredTask &&
-    shareTaskNestingScope(activeTask, hoveredTask, dropData?.kind === 'day');
+    shareTaskNestingScope(activeTask, hoveredTask, separateDueDays);
 
   // The dragged row doubles as the insertion indicator: dnd-kit already moves it
   // to the drop position, so showing it at the projected depth previews exactly
@@ -221,9 +223,9 @@ export function TaskList({
               onEditCancel={onEditCancel}
               onDelete={onDelete}
               onAddBelow={onAddBelow}
-              onIndent={onIndent ? (id, direction) => onIndent(id, direction, visibleTasks, listScope(task, dayDate, sectionId, collectionId, dropData)) : undefined}
+              onIndent={onIndent ? (id, direction) => onIndent(id, direction, visibleTasks, listScope(task, dayDate, sectionId, collectionId, dropData, separateDueDays)) : undefined}
               onConvertType={onConvertType}
-              onRightClick={onRightClick ? (id, position) => onRightClick(id, position, visibleTasks, listScope(task, dayDate, sectionId, collectionId, dropData)) : undefined}
+              onRightClick={onRightClick ? (id, position) => onRightClick(id, position, visibleTasks, listScope(task, dayDate, sectionId, collectionId, dropData, separateDueDays)) : undefined}
             />
             {nestsOnHoveredRow && task.id === overId && (
               <div aria-hidden className="task-list-slot" style={{ marginLeft: projection.depth * INDENT_WIDTH }} />

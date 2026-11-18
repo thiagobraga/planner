@@ -129,6 +129,8 @@ export interface TaskListProps extends TaskListCallbacks {
    * collection lists, which are addressed by container id alone.
    */
   dayDate?: string;
+  /** Keep nesting within each due date when multiple days share a list. */
+  groupNestingByDueDate?: boolean;
   /**
    * Set on Collections/Inbox when grouping tasks by section. Creates a section
    * drop target so tasks can be moved into this section.

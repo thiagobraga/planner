@@ -1,4 +1,4 @@
-import { render } from '@testing-library/react';
+import { fireEvent, render } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { DailyList } from '../DailyList';
 import { I18nProvider } from '../../../i18n/I18nContext';
@@ -42,6 +42,21 @@ describe('DailyList', () => {
     });
     const order = Array.from(container.querySelectorAll('[data-day-date]')).map((el) => el.getAttribute('data-day-date'));
     expect(order).toEqual(['2026-10-11', '2026-10-12', '2026-10-13', 'migrate']);
+  });
+
+  it('uses each overdue row’s due day for task menu actions in Migrate', () => {
+    const overdue = section('2026-10-10');
+    const task = { ...overdue.tasks[0]!, dueDate: overdue.key, collectionId: 'c1' };
+    const onRightClick = vi.fn();
+    const { container } = renderList({
+      currentSections: [{ ...overdue, tasks: [task] }],
+      taskListProps: { onRightClick },
+    });
+    fireEvent.contextMenu(container.querySelector('[data-task-id="2026-10-10"]')!);
+
+    expect(onRightClick).toHaveBeenCalledWith(task.id, expect.anything(), [task], {
+      kind: 'day', dueDate: overdue.key,
+    });
   });
 
   it('shows only incomplete tasks in Migrate while keeping completed tasks in other days', () => {
