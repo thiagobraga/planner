@@ -49,6 +49,7 @@ write_upstreams() {
   {
     printf 'upstream app_active { server planner-%s-app:80; }\n' "$color"
     printf 'upstream api_active { server planner-%s-api:4000; }\n' "$color"
+    # shellcheck disable=SC2016 # nginx variables, not shell
     printf 'map $host $planner_active_color { default %s; }\n' "$color"
   } > "$tmp"
   chmod 644 "$tmp"
@@ -63,8 +64,8 @@ write_state() {
 }
 
 wait_for_health() {
-  local container=$1 url=$2 attempt
-  for attempt in $(seq 1 30); do
+  local container=$1 url=$2
+  for _ in $(seq 1 30); do
     if docker exec "$container" wget -qO- "$url" >/dev/null 2>&1; then
       return 0
     fi
@@ -75,8 +76,8 @@ wait_for_health() {
 }
 
 wait_for_container_health() {
-  local container=$1 attempt
-  for attempt in $(seq 1 30); do
+  local container=$1
+  for _ in $(seq 1 30); do
     if [[ $(docker inspect -f '{{.State.Health.Status}}' "$container" 2>/dev/null || true) == healthy ]]; then
       return 0
     fi
@@ -87,14 +88,14 @@ wait_for_container_health() {
 }
 
 verify_public() {
-  local color=$1 attempt headers errors
+  local color=$1 headers errors
   headers=$(mktemp)
   errors=$(mktemp)
-  for attempt in $(seq 1 10); do
+  for _ in $(seq 1 10); do
     if curl --fail --silent --show-error --max-time 5 --dump-header "$headers" --output /dev/null "$PUBLIC_URL/" 2>"$errors" &&
-       tr -d '\r' < "$headers" | grep -iqE "^X-Planner-Color:[[:space:]]*$color[[:space:]]*$" &&
+       tr -d '\r' < "$headers" | grep -iqE "^X-Planner-Color:[[:space:]]*${color}[[:space:]]*$" &&
        curl --fail --silent --show-error --max-time 5 --dump-header "$headers" --output /dev/null "$PUBLIC_URL/api/v1/health" 2>"$errors" &&
-       tr -d '\r' < "$headers" | grep -iqE "^X-Planner-Color:[[:space:]]*$color[[:space:]]*$"; then
+       tr -d '\r' < "$headers" | grep -iqE "^X-Planner-Color:[[:space:]]*${color}[[:space:]]*$"; then
       rm -f "$headers" "$errors"
       return 0
     fi
@@ -130,12 +131,16 @@ legacy=false
 if [[ -z $active ]] && is_running planner-prod-app; then legacy=true; fi
 legacy_stopped=false
 switch_started=false
+backup_path=''
 
 rollback() {
   local status=$?
   trap - EXIT
   if (( status != 0 )); then
     echo "Deployment failed; restoring previous traffic" >&2
+    if [[ -n $backup_path ]]; then
+      echo "Pre-deploy database backup: $backup_path (restore with the 6. Rollback workflow, mode db-restore)" >&2
+    fi
     if [[ $switch_started == true ]]; then
       if [[ -n $active ]]; then
         write_upstreams "$active"
@@ -169,6 +174,9 @@ shared_compose up -d --no-recreate postgres redis
 wait_for_container_health planner-prod-postgres
 wait_for_container_health planner-prod-redis
 color_compose "$next" pull api app
+# A dump that does not restore is no backup: both must pass before migrations run.
+backup_path=$(BACKUP_SHA=${IMAGE_TAG:0:12} bash scripts/db-backup.sh --docker)
+bash scripts/db-restore-check.sh --docker "$backup_path"
 color_compose "$next" up -d --no-deps --force-recreate migrate
 migration_exit=$(timeout 180 docker wait "planner-$next-migrate")
 if [[ $migration_exit != 0 ]]; then

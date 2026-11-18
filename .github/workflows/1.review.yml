@@ -29,6 +29,20 @@ jobs:
     if: inputs.workflows_changed
     runs-on: ubuntu-24.04
     timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: planner
+          POSTGRES_PASSWORD: planner-test
+          POSTGRES_DB: planner_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -41,6 +55,19 @@ jobs:
         run: |
           bash scripts/check-line-limits.test.sh
           bash scripts/check-contracts.test.sh
+      - name: Deploy, backup and restore check script tests
+        env:
+          PGHOST: localhost
+          PGPORT: 5432
+          PGUSER: planner
+          PGPASSWORD: planner-test
+          PGDATABASE: planner_test
+        run: |
+          bash scripts/blue-green-deploy.test.sh
+          bash scripts/db-backup.test.sh
+          bash scripts/db-restore-check.test.sh
+          bash scripts/db-restore.test.sh
+          bash scripts/db-docker.test.sh
       - name: actionlint
         run: docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:1.7.12 -color
       - name: zizmor

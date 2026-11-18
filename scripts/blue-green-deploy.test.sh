@@ -69,12 +69,22 @@ setup_case() {
   CASE_ROOT="$TEMP_ROOT/$1"
   mkdir -p "$CASE_ROOT/scripts" "$CASE_ROOT/deploy"
   cp "$SCRIPT_DIR/blue-green-deploy.sh" "$CASE_ROOT/scripts/"
+  # The real db scripts have their own tests against postgres; here they only record calls.
+  cat > "$CASE_ROOT/scripts/db-backup.sh" <<'STUB'
+printf 'db-backup %s\n' "$*" >> "$MOCK_LOG"
+[[ ${MOCK_FAIL_BACKUP:-0} != 1 ]] || exit 1
+echo "$CASE_ROOT/deploy/backups/20260101T000000Z-$BACKUP_SHA.dump"
+STUB
+  cat > "$CASE_ROOT/scripts/db-restore-check.sh" <<'STUB'
+printf 'db-restore-check %s\n' "$*" >> "$MOCK_LOG"
+[[ ${MOCK_FAIL_RESTORE_CHECK:-0} != 1 ]] || exit 1
+STUB
   touch "$CASE_ROOT/compose.prod.yml" "$CASE_ROOT/compose.prod.color.yml"
   printf 'server {}\n' > "$CASE_ROOT/deploy/10-router.conf"
   export MOCK_LOG="$CASE_ROOT/commands.log"
   export CASE_ROOT
   : > "$MOCK_LOG"
-  unset MOCK_LEGACY MOCK_FAIL_HEALTH MOCK_FAIL_PUBLIC MOCK_STALE_COLOR MOCK_FAIL_SHARED MOCK_FAIL_MIGRATION MOCK_SHARED_PROJECT MOCK_REQUIRE_NETWORKS PUBLIC_URL || true
+  unset MOCK_LEGACY MOCK_FAIL_HEALTH MOCK_FAIL_PUBLIC MOCK_STALE_COLOR MOCK_FAIL_SHARED MOCK_FAIL_MIGRATION MOCK_SHARED_PROJECT MOCK_REQUIRE_NETWORKS MOCK_FAIL_BACKUP MOCK_FAIL_RESTORE_CHECK PUBLIC_URL || true
 }
 
 run_deploy() {
@@ -104,6 +114,23 @@ app_start=$(grep -n 'up -d --no-deps app$' "$MOCK_LOG" | head -1 | cut -d: -f1)
 verify_line=$(grep -n 'curl .*api/v1/health' "$MOCK_LOG" | tail -1 | cut -d: -f1)
 stop_line=$(grep -n 'docker stop -t 15 planner-blue-app' "$MOCK_LOG" | head -1 | cut -d: -f1)
 (( verify_line < stop_line )) || fail "Old color stopped before public verification"
+assert_contains 'db-backup --docker' "$MOCK_LOG"
+assert_contains "db-restore-check --docker $CASE_ROOT/deploy/backups/20260101T000000Z-0123456789ab.dump" "$MOCK_LOG"
+check_line=$(grep -n '^db-restore-check' "$MOCK_LOG" | head -1 | cut -d: -f1)
+migrate_line=$(grep -n 'force-recreate migrate' "$MOCK_LOG" | head -1 | cut -d: -f1)
+(( check_line < migrate_line )) || fail "Migrations ran before the restore check"
+
+for failing in MOCK_FAIL_BACKUP MOCK_FAIL_RESTORE_CHECK; do
+  setup_case "abort_$failing"
+  echo blue > "$CASE_ROOT/deploy/.active-color"
+  printf 'upstream app_active { server planner-blue-app:80; }\n' > "$CASE_ROOT/deploy/00-upstreams.conf"
+  export "$failing=1"
+  if run_deploy; then fail "$failing was accepted"; fi
+  assert_not_contains 'force-recreate migrate' "$MOCK_LOG"
+  assert_not_contains 'nginx -s reload' "$MOCK_LOG"
+  [[ $(<"$CASE_ROOT/deploy/.active-color") == blue ]] || fail "$failing changed active color"
+done
+assert_contains 'Pre-deploy database backup:' "$CASE_ROOT/output.log"
 
 setup_case health_failure
 echo blue > "$CASE_ROOT/deploy/.active-color"
@@ -190,4 +217,4 @@ fi
 assert_contains 'Set PUBLIC_URL or CORS_ORIGIN' "$CASE_ROOT/output.log"
 [[ ! -s "$MOCK_LOG" ]] || fail "Deploy without a verification origin touched Docker"
 
-echo 'blue-green-deploy: 11 scenarios passed'
+echo 'blue-green-deploy: 13 scenarios passed'
