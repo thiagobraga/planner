@@ -46,4 +46,14 @@ echo '[{"filename":"site/package-lock.json","patch":"@@ -1 +1 @@\n-  \"react\": 
 echo '[{"filename":"app/src/styles/theme.css","patch":"@@ -1 +1 @@\n-a\n+b"}]' \
   | expect false "shared theme change"
 
+echo '[{"filename":".specs/2026-11-18-x/plan.md"},{"filename":"DESIGN.md"},{"filename":".vscode/settings.json"}]' \
+  | expect true "docs and editor files only"
+
+echo '[{"filename":".specs/x/plan.md"},{"filename":"api/src/index.ts"}]' \
+  | expect false "docs plus a source file"
+
+echo '[{"filename":".specs/x/run.sh"}]' | expect true "anything under .specs"
+
+echo '[{"filename":"app/public/notes.mdx"}]' | expect false "mdx is not markdown"
+
 echo "all passed"
