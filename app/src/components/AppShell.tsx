@@ -312,7 +312,7 @@ export function AppShell() {
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="app-shell-help-dialog-content border border-dot rounded-md py-6 px-8 min-w-[320px] shadow-overlay"
+            className="app-shell-help-dialog-content border border-border-subtle rounded-md py-6 px-8 min-w-[320px] shadow-overlay"
             style={{ backgroundColor: 'var(--planner-overlay-bg)' }}
           >
             <h2 className="app-shell-help-title text-base font-semibold text-ink mb-4">

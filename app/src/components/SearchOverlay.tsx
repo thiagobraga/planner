@@ -107,7 +107,7 @@ export function SearchOverlay({
                   onClose();
                 }
               }}
-              className={`px-5 h-12 cursor-pointer flex flex-col justify-center ${isActive ? 'bg-dot' : 'bg-transparent'}`}
+              className={`px-5 h-12 cursor-pointer flex flex-col justify-center ${isActive ? 'bg-border-subtle' : 'bg-transparent'}`}
             >
               <span className="text-sm text-ink leading-6">
                 {item.title}
@@ -132,9 +132,9 @@ export function SearchOverlay({
       onClick={(e) => e.target === e.currentTarget && onClose()}
       className="fixed inset-0 z-[100] bg-(--planner-backdrop) backdrop-blur-[2px] flex items-start justify-center pt-20"
     >
-      <div className="rounded-md border border-dot w-[560px] max-w-[calc(100vw-48px)] shadow-overlay overflow-hidden max-h-[60vh] flex flex-col" style={{ backgroundColor: 'var(--planner-overlay-bg)' }}>
+      <div className="rounded-md border border-border-subtle w-[560px] max-w-[calc(100vw-48px)] shadow-overlay overflow-hidden max-h-[60vh] flex flex-col" style={{ backgroundColor: 'var(--planner-overlay-bg)' }}>
         {/* Search input */}
-        <div className="px-5 py-3.5 border-b border-dot flex items-center gap-2.5">
+        <div className="px-5 py-3.5 border-b border-border-subtle flex items-center gap-2.5">
           <span className="text-base text-ink-light">⌕</span>
           <input
             ref={inputRef}
@@ -184,7 +184,7 @@ export function SearchOverlay({
 
         {/* Footer hint */}
         {flatResults.length > 0 && (
-          <div className="px-5 py-2 border-t border-dot text-[11px] text-ink-light flex gap-3">
+          <div className="px-5 py-2 border-t border-border-subtle text-[11px] text-ink-light flex gap-3">
             <span>{t('search.navigate')}</span>
             <span>{t('search.select')}</span>
             <span>{t('search.closeHint')}</span>

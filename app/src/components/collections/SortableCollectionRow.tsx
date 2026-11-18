@@ -60,7 +60,7 @@ export function SortableCollectionRow({
           opacity: isDragging ? 0.5 : 1,
         }}
         data-drop-target={isTaskTarget ? 'true' : undefined}
-        className={`collection-row flex items-center gap-1.75 h-6 pr-2 text-[13px] text-ink ${depthClass} ${isActive ? 'collection-row--active font-medium' : ''} ${isTaskTarget ? 'collection-row--drop-target rounded-xs bg-(--planner-hover) outline outline-dot' : ''}`}
+        className={`collection-row flex items-center gap-1.75 h-6 pr-2 text-[13px] text-ink ${depthClass} ${isActive ? 'collection-row--active font-medium' : ''} ${isTaskTarget ? 'collection-row--drop-target rounded-xs bg-(--planner-hover) outline outline-border-subtle' : ''}`}
         onContextMenu={(e) => {
           e.preventDefault();
           setContextPos({ x: e.clientX, y: e.clientY });
@@ -101,7 +101,7 @@ export function SortableCollectionRow({
               if (e.key === 'Enter') onCommitRename();
               if (e.key === 'Escape') onCancelRename();
             }}
-            className="flex-1 h-5 text-[13px] text-ink bg-transparent border-0 border-b border-dot outline-none"
+            className="flex-1 h-5 text-[13px] text-ink bg-transparent border-0 border-b border-border-subtle outline-none"
           />
         ) : (
           <>

@@ -214,7 +214,7 @@ export function RepeatScreen({ rule, anchorDate, weekStart, onApply, onBack, onC
         </>
       )}
 
-      <div className="mx-3 mb-3 flex min-h-8 items-center gap-3 rounded-xs bg-dot/30 px-3 py-1 text-[13px] text-ink" aria-live="polite">
+      <div className="mx-3 mb-3 flex min-h-8 items-center gap-3 rounded-xs bg-border-subtle/30 px-3 py-1 text-[13px] text-ink" aria-live="polite">
         <Repeat {...ICON} className="shrink-0 text-ink-light" />
         <span data-testid="recurrence-summary">{result ? recurrenceSummary(result, locale) : t('recurrence.none')}</span>
       </div>

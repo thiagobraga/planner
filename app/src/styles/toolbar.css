@@ -223,7 +223,7 @@
 @media (max-width: 640px) {
   .page-toolbar-mobile-slot:not(:empty) {
     display: block;
-    border-top: 1px solid var(--color-dot);
+    border-top: 1px solid var(--color-border-subtle);
     background: var(--planner-page-bg);
   }
   .page-toolbar--mobile {

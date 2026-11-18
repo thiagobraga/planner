@@ -93,7 +93,7 @@ export function TimeScreen({ draft, onChange, onBack, onCancel, onSave, onOpenRe
                 aria-pressed={active}
                 onClick={() => onChange({ durationMinutes: active ? null : minutes })}
                 className={`h-8 cursor-pointer rounded-xs border text-[13px] text-ink transition-colors duration-(--motion-fast) active:scale-[0.98] ${
-                  active ? 'border-ink bg-dot/40' : 'border-border bg-(--planner-control-bg) hover:border-ink-lighter'
+                  active ? 'border-ink bg-border-subtle/40' : 'border-border bg-(--planner-control-bg) hover:border-ink-lighter'
                 }`}
               >
                 {formatDurationLabel(minutes)}
@@ -165,7 +165,7 @@ export function TimeScreen({ draft, onChange, onBack, onCancel, onSave, onOpenRe
       <button
         type="button"
         onClick={onOpenRepeat}
-        className="mx-3 my-2 flex h-8 cursor-pointer items-center gap-3 rounded-xs border-none bg-transparent px-0 text-left text-[14px] text-ink transition-colors duration-(--motion-fast) hover:bg-dot/30"
+        className="mx-3 my-2 flex h-8 cursor-pointer items-center gap-3 rounded-xs border-none bg-transparent px-0 text-left text-[14px] text-ink transition-colors duration-(--motion-fast) hover:bg-border-subtle/30"
         style={{ width: 'calc(100% - 24px)' }}
       >
         <Repeat {...ICON} className="shrink-0 text-ink-light" />

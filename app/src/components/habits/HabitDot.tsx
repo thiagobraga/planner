@@ -19,7 +19,7 @@ export function HabitDot({ state, size = 8, interactive = false }: HabitDotProps
   }
 
   const base = 'habit-dot absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full';
-  const hover = interactive ? ' transition-colors group-hover:border-transparent group-hover:bg-dot/50' : '';
+  const hover = interactive ? ' transition-colors group-hover:border-transparent group-hover:bg-border-subtle/50' : '';
 
   if (state === 'full') {
     return (
@@ -39,7 +39,7 @@ export function HabitDot({ state, size = 8, interactive = false }: HabitDotProps
         style={{
           width: size,
           height: size,
-          borderColor: 'var(--color-dot)',
+          borderColor: 'var(--color-border-subtle)',
           background: 'linear-gradient(to top, var(--color-ink-lighter) 50%, transparent 50%)',
         }}
       />
@@ -50,7 +50,7 @@ export function HabitDot({ state, size = 8, interactive = false }: HabitDotProps
     <span
       aria-hidden="true"
       className={`${base} habit-dot-empty border${hover}`}
-      style={{ width: size, height: size, borderColor: 'var(--color-dot)' }}
+      style={{ width: size, height: size, borderColor: 'var(--color-border-subtle)' }}
     />
   );
 }

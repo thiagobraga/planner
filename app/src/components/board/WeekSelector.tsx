@@ -153,8 +153,8 @@ export function WeekSelector({ weekAnchor, today, weekStart, onWeekChange, onTod
                   aria-current={iso === todayKey ? 'date' : undefined}
                   data-in-week={inWeek ? 'true' : undefined}
                   onClick={() => pick(date)}
-                  className={`h-6 text-[13px] leading-6 text-ink transition-colors duration-[var(--motion-fast)] hover:bg-dot/35 ${
-                    inWeek ? 'bg-dot/35' : ''
+                  className={`h-6 text-[13px] leading-6 text-ink transition-colors duration-[var(--motion-fast)] hover:bg-border-subtle/35 ${
+                    inWeek ? 'bg-border-subtle/35' : ''
                   } ${iso === todayKey ? 'font-semibold' : ''}`}
                 >
                   {date.getDate()}

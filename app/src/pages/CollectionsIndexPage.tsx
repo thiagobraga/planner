@@ -75,7 +75,7 @@ function CollectionRow({ node, depth, ...props }: CollectionRowProps) {
               if (e.key === 'Escape') props.onCancelRename();
             }}
             onBlur={() => props.onSaveRename(node)}
-            className="col-start-2 col-span-1 min-w-0 h-6 text-sm leading-6 text-ink-light bg-transparent border-0 border-b border-dot outline-none px-0 focus:outline-none focus-visible:outline-none focus-visible:ring-0"
+            className="col-start-2 col-span-1 min-w-0 h-6 text-sm leading-6 text-ink-light bg-transparent border-0 border-b border-border-subtle outline-none px-0 focus:outline-none focus-visible:outline-none focus-visible:ring-0"
           />
         ) : (
           <span className="col-start-2 col-span-1 flex h-6 min-w-0 items-center truncate text-sm leading-none text-ink-light">{node.name}</span>
@@ -144,7 +144,7 @@ function CollectionRow({ node, depth, ...props }: CollectionRowProps) {
           className="grid h-6"
           style={{ gridTemplateColumns: `24px minmax(0, 1fr) 24px`, paddingLeft: `${(depth + 1) * 24}px` }}
         >
-          <span className="w-1.75 h-1.75 rounded-full justify-self-center self-center shrink-0 bg-dot" aria-hidden="true" />
+          <span className="w-1.75 h-1.75 rounded-full justify-self-center self-center shrink-0 bg-border-subtle" aria-hidden="true" />
           <input
             autoFocus
             type="text"
@@ -156,7 +156,7 @@ function CollectionRow({ node, depth, ...props }: CollectionRowProps) {
               if (e.key === 'Escape') props.onCancelNewSub();
             }}
             onBlur={() => props.onSaveNewSub(node.id)}
-            className="col-start-2 col-span-1 flex h-6 min-w-0 items-center text-sm leading-none text-ink-light bg-transparent border-0 border-b border-dot outline-none px-0 focus:outline-none focus-visible:outline-none focus-visible:ring-0"
+            className="col-start-2 col-span-1 flex h-6 min-w-0 items-center text-sm leading-none text-ink-light bg-transparent border-0 border-b border-border-subtle outline-none px-0 focus:outline-none focus-visible:outline-none focus-visible:ring-0"
           />
         </div>
       )}
@@ -291,7 +291,7 @@ export function CollectionsIndexPage() {
       <div className="flex flex-col">
         {addingRoot && (
           <div className="flex items-center h-12 px-4">
-            <span className="w-2.5 h-2.5 rounded-full mr-3 shrink-0 bg-dot" aria-hidden="true" />
+            <span className="w-2.5 h-2.5 rounded-full mr-3 shrink-0 bg-border-subtle" aria-hidden="true" />
             <input
               autoFocus
               type="text"
@@ -306,7 +306,7 @@ export function CollectionsIndexPage() {
                 }
               }}
               onBlur={handleSaveRoot}
-              className="flex-1 min-w-0 h-6 text-sm leading-6 text-ink bg-transparent border-0 border-b border-dot outline-none px-0 focus:outline-none focus-visible:outline-none focus-visible:ring-0"
+              className="flex-1 min-w-0 h-6 text-sm leading-6 text-ink bg-transparent border-0 border-b border-border-subtle outline-none px-0 focus:outline-none focus-visible:outline-none focus-visible:ring-0"
             />
           </div>
         )}

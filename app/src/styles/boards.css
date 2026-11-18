@@ -36,7 +36,7 @@
 }
 
 .board-column.is-over .board-column-cards {
-  background: color-mix(in srgb, var(--color-dot) 14%, transparent);
+  background: color-mix(in srgb, var(--color-border-subtle) 14%, transparent);
 }
 
 .board-column-header {
@@ -209,7 +209,7 @@
 }
 
 .board-card-checklist.is-over {
-  background: color-mix(in srgb, var(--color-dot) 18%, transparent);
+  background: color-mix(in srgb, var(--color-border-subtle) 18%, transparent);
 }
 
 .board-card-checklist-count,

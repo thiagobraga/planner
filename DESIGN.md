@@ -175,7 +175,7 @@ A short palette of warm, slightly aged neutrals with one brick-red anchor; every
 
 The same journal read by lamplight: warm coffee paper, cream ink, a lighter brick accent. It is selected in Settings > Appearance > Theme (`Dark`, or `Automatic` to follow the OS `prefers-color-scheme`) and applies only inside the logged-in app; login, register and password reset stay on Cream Paper.
 
-Tokens are redefined under `:root[data-theme="dark"]` in `app/src/styles/theme.css`; components keep using the same utilities (`bg-cream`, `text-ink`, `border-dot`), so inverted pairs like `bg-ink text-cream` flip on their own.
+Tokens are redefined under `:root[data-theme="dark"]` in `app/src/styles/theme.css`; components keep using the same utilities (`bg-cream`, `text-ink`, `border-border-subtle`), so inverted pairs like `bg-ink text-cream` flip on their own.
 
 | Token | Light | Dark | Role |
 | --- | --- | --- | --- |
@@ -184,7 +184,8 @@ Tokens are redefined under `:root[data-theme="dark"]` in `app/src/styles/theme.c
 | Ink `--color-ink` | `#44443d` | `#ede3d3` | Primary text |
 | Ink Light `--color-ink-light` | `#6f665a` | `#aea294` | Secondary text |
 | Ink Lighter `--color-ink-lighter` | `#a59b8d` | `#918274` | Decorative or disabled glyphs, never body copy |
-| Dot Grid `--color-dot` | `#d8d3cb` | `#3b3229` | Dot grid, dividers, chips |
+| Dot Grid `--color-dot` | `#e5e1d8` | `#292219` | Dot grid background only |
+| Subtle Border `--color-border-subtle` | `#d8d3cb` | `#3b3229` | Dividers, chips, subtle borders |
 | Border `--color-border` | `#e5e1d8` | `#463b31` | Hairlines |
 | Warm Brick Red `--color-accent` | `#c9483b` | `#d8705f` | Accent, lifted for contrast on dark paper |
 | Active nav `--planner-sidebar-active-bg` | tinted dot | `#3b3229` | Selected navigation item |

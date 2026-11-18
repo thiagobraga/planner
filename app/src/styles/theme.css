@@ -7,7 +7,8 @@
   --color-on-aside: var(--palette-neutral-100);
   --color-ink-light: var(--palette-neutral-600);
   --color-ink-lighter: var(--palette-neutral-500);
-  --color-dot: var(--palette-neutral-400);
+  --color-dot: var(--palette-neutral-300);
+  --color-border-subtle: var(--palette-neutral-400);
   --color-border: var(--palette-neutral-300);
   --color-accent: var(--palette-accent-600);
   --color-accent-light: var(--palette-accent-500);
@@ -81,7 +82,8 @@
   --color-on-aside: var(--palette-neutral-100);
   --color-ink-light: var(--palette-neutral-300);
   --color-ink-lighter: var(--palette-neutral-400);
-  --color-dot: var(--palette-neutral-800);
+  --color-dot: var(--palette-neutral-900);
+  --color-border-subtle: var(--palette-neutral-800);
   --color-border: var(--palette-neutral-700);
   --color-accent: var(--palette-accent-400);
   --color-accent-light: var(--palette-accent-300);
@@ -137,7 +139,8 @@
   --color-on-aside: var(--palette-neutral-50);
   --color-ink-light: var(--palette-neutral-600);
   --color-ink-lighter: var(--palette-neutral-600);
-  --color-dot: var(--palette-neutral-300);
+  --color-dot: var(--palette-neutral-200);
+  --color-border-subtle: var(--palette-neutral-300);
   --color-border: var(--palette-neutral-500);
   --color-accent: var(--palette-accent-700);
   --color-accent-light: var(--palette-accent-800);
@@ -190,7 +193,8 @@
   --color-on-aside: var(--palette-neutral-50);
   --color-ink-light: var(--palette-neutral-200);
   --color-ink-lighter: var(--palette-neutral-400);
-  --color-dot: var(--palette-neutral-600);
+  --color-dot: var(--palette-neutral-700);
+  --color-border-subtle: var(--palette-neutral-600);
   --color-border: var(--palette-neutral-400);
   --color-accent: var(--palette-accent-300);
   --color-accent-light: var(--palette-accent-400);

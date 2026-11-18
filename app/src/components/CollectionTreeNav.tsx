@@ -301,7 +301,7 @@ export function CollectionTreeNav() {
                     }
                   }}
                   placeholder={t('page.collectionName')}
-                  className="flex-1 min-w-0 h-6 text-[13px] leading-6 text-ink bg-transparent border-0 border-b border-dot outline-none px-0 focus:outline-none focus-visible:outline-none focus-visible:ring-0"
+                  className="flex-1 min-w-0 h-6 text-[13px] leading-6 text-ink bg-transparent border-0 border-b border-border-subtle outline-none px-0 focus:outline-none focus-visible:outline-none focus-visible:ring-0"
                 />
               </div>
             )}
@@ -321,7 +321,7 @@ export function CollectionTreeNav() {
               if (e.key === 'Escape') setAdding(false);
             }}
             placeholder={t('page.collectionName')}
-            className="w-full h-6 text-[13px] leading-6 text-ink bg-transparent border-0 border-b border-dot outline-none px-0 focus:outline-none focus-visible:outline-none focus-visible:ring-0"
+            className="w-full h-6 text-[13px] leading-6 text-ink bg-transparent border-0 border-b border-border-subtle outline-none px-0 focus:outline-none focus-visible:outline-none focus-visible:ring-0"
           />
         </div>
       )}
