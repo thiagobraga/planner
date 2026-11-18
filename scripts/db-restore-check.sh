@@ -33,7 +33,7 @@ for file in "$dump" "$dump.sha256" "$dump.json"; do
   [[ -f $file ]] || { echo "Missing $file" >&2; exit 1; }
 done
 
-if ! (cd "$(dirname "$dump")" && sha256sum -c -s "$(basename "$dump").sha256"); then
+if ! (cd "$(dirname "$dump")" && sha256sum -c "$(basename "$dump").sha256" > /dev/null 2>&1); then
   echo "Checksum mismatch: $dump" >&2
   exit 1
 fi

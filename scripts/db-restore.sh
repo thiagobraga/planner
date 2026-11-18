@@ -8,7 +8,7 @@ set -euo pipefail
 if [[ ${1:-} == --apply ]]; then
   dump=$2
   : "${PGDATABASE:?Set PGDATABASE}"
-  (cd "$(dirname "$dump")" && sha256sum -c -s "$(basename "$dump").sha256") ||
+  (cd "$(dirname "$dump")" && sha256sum -c "$(basename "$dump").sha256" > /dev/null 2>&1) ||
     { echo "Checksum mismatch: $dump" >&2; exit 1; }
   # One transaction: a failed restore leaves the live database as it was.
   pg_restore --clean --if-exists --no-owner --no-acl --single-transaction --exit-on-error \

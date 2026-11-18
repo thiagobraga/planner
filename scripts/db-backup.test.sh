@@ -29,7 +29,7 @@ dump=$(bash "$SCRIPT_DIR/db-backup.sh")
 fast_dump=$(bash "$SCRIPT_DIR/db-backup.sh")
 [[ $fast_dump != "$dump" && -f $dump ]] || fail "Rapid backup overwrote the prior dump"
 [[ $(stat -c %a "$dump") == 600 ]] || fail "Dump is not mode 600"
-(cd "$BACKUP_DIR" && sha256sum -c -s "$(basename "$dump").sha256") || fail "Checksum sidecar does not match"
+(cd "$BACKUP_DIR" && sha256sum -c "$(basename "$dump").sha256" > /dev/null 2>&1) || fail "Checksum sidecar does not match"
 grep -q '"migration":"048_latest.sql"' "$dump.json" || fail "Migration not recorded"
 grep -q '"counts":{"users":3,"tasks":5,"collections":2}' "$dump.json" || fail "Counts not recorded: $(<"$dump.json")"
 pg_restore --list "$dump" > /dev/null || fail "Dump is not a custom-format archive"
