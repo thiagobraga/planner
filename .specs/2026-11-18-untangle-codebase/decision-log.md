@@ -2,7 +2,7 @@
 
 Analysis only (skill `untangle-codebase`, steps 2-3). Extras chosen: Comments, Tests. Nothing was changed in code.
 
-Method: import graph per package (cycles, fan-in/out, orphan modules), git co-change (weak signal: history is squash-heavy), grep for special cases, and five read-only subagents per area (API task domain, API platform, app pages/components, app hooks/state, tests). Items marked **[verified]** were re-checked by hand against the code; the rest were traced by a subagent with file:line and not executed.
+Method: import graph per package (cycles, fan-in/out, orphan modules), git co-change over the full history (2012 commits, median 2 source files per non-merge commit), grep for special cases, and five read-only subagents per area (API task domain, API platform, app pages/components, app hooks/state, tests). Items marked **[verified]** were re-checked by hand against the code; the rest were traced by a subagent with file:line and not executed.
 
 Size: api 13.8k lines / 117 source files, app 33.1k lines / 284 source files, 291 test files.
 
@@ -36,6 +36,7 @@ The skill does not hunt bugs, but these fall out of the structural problems and 
 
 Inbox is a collection; it becomes `CollectionsPage` with the inbox id. Mutations, drag reconcile and sync events all patch the same React Query entries through one query-key module; pages stop copying server data into `useState`.
 
+- Git evidence: `InboxPage` and `CollectionsPage` changed together in 42 commits (70% of all `CollectionsPage` commits); all three list pages together in 31; `TaskItem.tsx` co-changes with each page (15, 11, 10 commits) because every page wires it by hand.
 - `InboxPage.tsx:39-79,161-490` re-implements `useCollectionTasks.ts` and `useCollectionSections.ts` line for line **[verified]**; Inbox JSX `:551-696` mirrors `CollectionsPage.tsx:255-400` and already drifted (`text-[14px]` vs `text-sm`).
 - Daily is a third copy (`useDailyTaskActions.ts`, `useDailyTaskCreate.ts`, `utils/dailyTaskMutations.ts`); delete-focus restore exists in two copies, not in Daily.
 - Three `apiToTask` mappers that disagree (`InboxPage.tsx:39`, `useCollectionTasks.ts:18`, `dailySections.ts:34`) - cause of B11; two `asJournalTask` copies (`BoardColumn.tsx:20`, `DailyBoardColumn.tsx:12`).
