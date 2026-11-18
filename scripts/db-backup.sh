@@ -108,7 +108,7 @@ chmod 600 "$dump" "$dump.sha256" "$dump.json"
 mapfile -t dumps < <(dump_files_newest)
 for ((i = BACKUP_RETENTION; i < ${#dumps[@]}; i++)); do
   old=${dumps[i]}
-  [[ $old == "${BACKUP_KEEP_DUMP:-}" ]] && continue
+  [[ $old == "$dump" || $old == "${BACKUP_KEEP_DUMP:-}" ]] && continue
   rm -f "$old" "$old.sha256" "$old.json"
 done
 

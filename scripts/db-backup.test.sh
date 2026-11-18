@@ -50,6 +50,18 @@ BACKUP_RETENTION=2 bash "$SCRIPT_DIR/db-backup.sh" > /dev/null
 [[ $(find "$BACKUP_DIR" -name '*.dump' | wc -l) == 2 ]] || fail "Retention did not prune old dumps"
 [[ ! -e $dump && ! -e $dump.json && ! -e $dump.sha256 ]] || fail "Pruned dump left sidecars"
 
+# A new dump survives retention even when two SHAs share one timestamp.
+mkdir -p "$TEMP_ROOT/bin"
+cat > "$TEMP_ROOT/bin/date" <<'DATE'
+#!/usr/bin/env bash
+if [[ $* == *'+%Y%m%dT%H%M%SZ'* ]]; then echo 20261118T170000Z; else exec /bin/date "$@"; fi
+DATE
+chmod +x "$TEMP_ROOT/bin/date"
+tie_dir="$TEMP_ROOT/tie"
+BACKUP_DIR="$tie_dir" BACKUP_RETENTION=1 BACKUP_SHA=zzz PATH="$TEMP_ROOT/bin:$PATH" bash "$SCRIPT_DIR/db-backup.sh" > /dev/null
+new_dump=$(BACKUP_DIR="$tie_dir" BACKUP_RETENTION=1 BACKUP_SHA=aaa PATH="$TEMP_ROOT/bin:$PATH" bash "$SCRIPT_DIR/db-backup.sh")
+[[ -f $new_dump ]] || fail "Newest same-second dump was pruned"
+
 # Bad input is rejected before touching the database.
 if BACKUP_SHA='x;rm' bash "$SCRIPT_DIR/db-backup.sh" 2> /dev/null; then fail "Unsafe BACKUP_SHA was accepted"; fi
 if BACKUP_RETENTION=0 bash "$SCRIPT_DIR/db-backup.sh" 2> /dev/null; then fail "Zero retention was accepted"; fi
