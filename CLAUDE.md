@@ -106,6 +106,7 @@ Add to `/etc/hosts`: `planner.local`, `api.planner.local`, `db.planner.local`, `
 - `services/taskService.ts` - CRUD, completion, recurrence
 - `services/viewService.ts` - inbox and collection views
 - `services/dailyService.ts` - `getDailyView(userId, from, to)`: the one range query behind every Daily view and the MCP `get_today` / `get_upcoming` tools
+- `repositories/dailyRepository.ts` - PostgreSQL query for Daily tasks; validation and view assembly stay in `dailyService.ts`
 - `services/filterService.ts` - saved filter CRUD + evaluation via Peggy DSL parser
 - `services/collectionService.ts` - collection (project) CRUD
 - `services/habitService.ts` - habit tracking, completions, streaks
@@ -160,7 +161,7 @@ All routes under `/api/v1/`. Route files: `auth`, `apiTokens`, `mcp`, `oauth`, `
 | `/daily` (default)                    | `DailyIndexRedirect`                   | Redirects to the last used layout (default `list`); `/` and `/today` redirect here |
 | `/daily/list\|columns`                | `DailyRoute` -> `DailyPage`            | The URL picks the layout; style and range come from preferences. Old `kanban\|cards\|monthly` links redirect |
 | `/inbox`                              | `InboxPage`                            | Unprocessed tasks                                                                |
-| `/habits`                             | `HabitsPage`                           | Habit streaks (12-week grid)                                                     |
+| `/habits`                             | `HabitsPage`                           | Habit timeline (one full week, picked in the page toolbar) and month calendar   |
 | `/collections`                        | `CollectionsIndexPage`                 | Collection/project list                                                          |
 | `/collection/:id`                     | `CollectionsPage`                      | Single collection                                                                |
 | `/settings/:section`                  | `SettingsPage`                         | Font, theme, preferences; `/settings` -> `/settings/general`                     |

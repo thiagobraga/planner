@@ -9,50 +9,14 @@ import {
   ApiError,
 } from '../api/client';
 import { usePlannerDragHandlers } from '../contexts/usePlannerDrag';
-import type { ApiSection, ApiStatus } from '../types/api';
-import type { BoardGroupBy } from '../types/drag';
-import type { BoardColumn as BoardColumnModel } from '../utils/boardColumns';
-import type { BoardColumnDragData, BoardColumnHeaderDropData } from '../types/drag';
-
-export interface BoardColumnDeleteOption {
-  value: string;
-  label: string;
-}
-
-export interface BoardColumnDeleteModalState {
-  isOpen: boolean;
-  title: string;
-  message: string;
-  reassignOptions: BoardColumnDeleteOption[];
-  selectedReassignToId: string | null;
-  errorMessage: string | null;
-  onChangeReassignToId: (value: string | null) => void;
-  onDelete: () => void;
-  onCancel: () => void;
-}
-
-interface DeleteDraft {
-  columnId: string;
-  title: string;
-  taskCount: number;
-}
-
-export interface UseBoardColumnDragOptions {
-  collectionId: string;
-  groupBy: BoardGroupBy;
-  columns: BoardColumnModel[];
-  setColumns: (updater: (prev: BoardColumnModel[]) => BoardColumnModel[]) => void;
-  statuses?: ApiStatus[];
-  sections?: ApiSection[];
-  onError?: () => void;
-  deleteMessage?: (groupBy: BoardGroupBy, taskCount: number) => string;
-}
-
-export interface UseBoardColumnDragResult {
-  deleteModal: BoardColumnDeleteModalState | null;
-  openDeleteColumn: (columnId: string) => void;
-  closeDeleteColumn: () => void;
-}
+import type {
+  BoardColumn as BoardColumnModel,
+  BoardColumnDeleteOption,
+  DeleteDraft,
+  UseBoardColumnDragOptions,
+  UseBoardColumnDragResult,
+} from '../types/board';
+import type { BoardColumnDragData, BoardColumnHeaderDropData, BoardGroupBy } from '../types/drag';
 
 function isMoveableColumn(column: BoardColumnModel): boolean {
   return column.value !== null;

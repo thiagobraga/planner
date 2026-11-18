@@ -2,9 +2,9 @@ import { render, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { useSectionDrag } from '../useSectionDrag';
 import { apiUpdateSection } from '../../api/client';
-import type { Section } from '../../stores/taskStore';
 import type { DragEndEvent } from '@dnd-kit/core';
 import type { SectionHeaderDragData } from '../../types/drag';
+import type { StoreSection } from '../../types/task';
 
 vi.mock('../../api/client', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../../api/client')>()),
@@ -27,21 +27,21 @@ vi.mock('../../contexts/usePlannerDrag', async (importOriginal) => {
 
 const COLLECTION = 'collection-1';
 
-const section = (id: string, orderValue: number): Section => ({
+const section = (id: string, orderValue: number): StoreSection => ({
   id,
   name: id,
   collectionId: COLLECTION,
   orderValue,
 });
 
-const sections: Section[] = [section('a', 0), section('b', 1000), section('c', 2000)];
+const sections: StoreSection[] = [section('a', 0), section('b', 1000), section('c', 2000)];
 
 function headerDrag(sectionId: string): SectionHeaderDragData {
   return { kind: 'section-header', sectionId, collectionId: COLLECTION };
 }
 
-function mount(initial: Section[], onError?: () => void) {
-  const emitted: Section[][] = [];
+function mount(initial: StoreSection[], onError?: () => void) {
+  const emitted: StoreSection[][] = [];
   function Harness() {
     useSectionDrag({
       sections: initial,

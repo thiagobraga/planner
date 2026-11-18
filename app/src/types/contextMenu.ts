@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { Dispatch, ReactNode, RefObject, SetStateAction } from 'react';
 
 export interface ContextMenuItem {
   type: 'item' | 'separator' | 'header';
@@ -22,4 +22,39 @@ export interface ContextMenuProps {
   caret?: boolean;
   /** Hangs the root panel from position.x leftward when 'end'; defaults to 'start'. */
   align?: 'start' | 'end';
+}
+
+export interface ContextMenuRootProps {
+  items: ContextMenuItem[];
+  position: { x: number; y: number };
+  onClose: () => void;
+  caret: boolean;
+  align: 'start' | 'end';
+}
+
+export interface MenuPanelProps {
+  items: ContextMenuItem[];
+  position: { x: number; y: number };
+  level: number;
+  activePath: number[];
+  setActivePath: Dispatch<SetStateAction<number[]>>;
+  onClose: () => void;
+  isRoot?: boolean;
+  caret?: boolean;
+  align?: 'start' | 'end';
+}
+
+export interface SubMenuWrapperProps {
+  parentItem: ContextMenuItem;
+  parentRef: RefObject<HTMLDivElement | null>;
+  itemIndex: number;
+  level: number;
+  activePath: number[];
+  setActivePath: Dispatch<SetStateAction<number[]>>;
+  onClose: () => void;
+}
+
+export interface InlinePanelProps {
+  position: { x: number; y: number };
+  children: ReactNode;
 }

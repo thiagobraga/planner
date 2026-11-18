@@ -1,11 +1,6 @@
-import type { Task } from './TaskItem';
+import type { TaskBlockPreviewProps } from '../types/task';
 import { priorityClasses } from './taskPriorityClasses';
 import { INDENT_WIDTH } from '../utils/taskProjection';
-
-interface TaskBlockPreviewProps {
-  /** The dragged row first, then its descendants in render order. */
-  rows: { task: Task; depth: number }[];
-}
 
 /**
  * The dragged rows, drawn as they appear in the list, for the drag overlay.

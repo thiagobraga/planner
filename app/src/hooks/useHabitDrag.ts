@@ -10,9 +10,8 @@ import {
   flattenHabitRows,
   projectHabitMove,
   applyHabitProjection,
-  type HabitProjection,
-  type HabitRow,
 } from '../utils/habitProjection';
+import type { HabitProjection, HabitRow, UseHabitDragOptions } from '../types/habits';
 import { buildHabitSections } from '../utils/habitTree';
 import { createIndentTracker } from '../utils/dragIndent';
 import { apiMoveHabit, apiMoveHabitGroup } from '../api/client';
@@ -26,17 +25,6 @@ import type {
 
 /** Gap-based ordering, matching what the server writes on a move. */
 const ORDER_GAP = 1000;
-
-interface UseHabitDragOptions {
-  habits: ApiHabit[];
-  groups: ApiHabitGroup[];
-  /** Apply an optimistic habit list, and restore a snapshot on failure. */
-  setHabits: (next: ApiHabit[]) => void;
-  /** Apply an optimistic group list, and restore a snapshot on failure. */
-  setGroups: (next: ApiHabitGroup[]) => void;
-  /** Called after a failed move so the page can refetch authoritative order. */
-  onError?: () => void;
-}
 
 /**
  * Turns a drag over the habits page into a structural move.

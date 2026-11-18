@@ -1,4 +1,4 @@
-import { useId, useRef, useEffect, memo, type ReactNode } from 'react';
+import { useId, useRef, useEffect, memo } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { AlarmClock, Repeat } from 'lucide-react';
@@ -8,8 +8,7 @@ import { useI18n } from '../i18n/I18nContext';
 import { useTaskSelectionStore } from '../stores/taskSelectionStore';
 import { usePlannerDrag } from '../contexts/usePlannerDrag';
 import { priorityClasses } from './taskPriorityClasses';
-import type { LabelSummary } from '../types/api';
-import type { RecurrenceRule } from '../types/task';
+import type { TaskItemProps } from '../types/task';
 import { recurrenceSummary } from '../utils/recurrenceSummary';
 import { formatDuration, formatTimeWindow } from '../utils/taskTime';
 import { getCaret, getText, setCaret } from '../utils/editableText';
@@ -18,76 +17,6 @@ import { DebugCard } from './DebugCard';
 import { useCheckboxStore } from '../stores/checkboxStore';
 import { Checkbox } from './ui/Checkbox';
 import { useDebugStore } from '../stores/debugStore';
-
-export interface Task {
-  id: string;
-  title: string;
-  description?: string;
-  priority: number;
-  collectionId?: string;
-  sectionId?: string;
-  statusId?: string | null;
-  parentTaskId?: string;
-  dueDate?: string;
-  /** HH:MM wall-clock time; `endTime` is derived by the API from the duration. */
-  dueTime?: string | null;
-  endTime?: string | null;
-  deadlineDate?: string | null;
-  deadlineTime?: string | null;
-  durationMinutes?: number | null;
-  recurrenceRule?: RecurrenceRule | null;
-  isCompleted: boolean;
-  orderValue: number;
-  labels?: LabelSummary[];
-  indent?: number;
-  type: 'task' | 'note' | 'event';
-  createdAt?: string;
-  collectionName?: string;
-  collectionColor?: string;
-  collectionIsInbox?: boolean;
-  sectionName?: string;
-  /** Set on Reorganize preview rows whose due date would change, for a highlight. */
-  moved?: boolean;
-}
-
-export interface TaskItemProps {
-  task: Task;
-  isEditing?: boolean;
-  dimmed?: boolean;
-  hideDueDate?: boolean;
-  dimNotes?: boolean;
-  /** The list this row renders in - a collection list, or one Daily date section. */
-  containerId?: string;
-  /** `[task.id, ...descendantIds]`, so a drop inside the dragged block is detectable. */
-  subtreeIds?: string[];
-  /**
-   * Depth this row would land at, set only on the row being dragged. It renders
-   * as the insertion indicator, so horizontal drag previews the nesting level
-   * before the drop rather than only after it.
-   */
-  projectedDepth?: number;
-  /**
-   * Depth within the list actually being rendered. Falls back to the task's
-   * stored tree depth when a caller does not flatten its own rows.
-   */
-  renderedDepth?: number;
-  /**
-   * The block has left this list: the drop is heading somewhere else. The row
-   * gives up its space rather than holding a slot the drop will not use.
-   */
-  departed?: boolean;
-  /** Rendered beside the title - used on Daily, where rows span collections. */
-  collectionBadge?: ReactNode;
-  onToggle?: (id: string) => void;
-  onStartEdit?: (id: string) => void;
-  onEditCommit?: (id: string, title: string) => void;
-  onEditCancel?: (id: string) => void;
-  onDelete?: (id: string) => void;
-  onAddBelow?: (id: string) => void;
-  onIndent?: (id: string, dir: 1 | -1) => void;
-  onConvertType?: (id: string, type: 'task' | 'note' | 'event') => void;
-  onRightClick?: (id: string, position: { x: number; y: number }) => void;
-}
 
 function formatDueDate(value: string, locale: 'en' | 'pt-BR'): string {
   const match = value.match(/^(\d{4})-(\d{2})-(\d{2})/);
@@ -453,7 +382,7 @@ export const TaskItem = memo(function TaskItem({
 
             {task.deadlineDate && (
               <span
-                className="task-item-deadline h-6 inline-flex items-center gap-1 text-xs text-accent ml-1.5 whitespace-nowrap"
+                className="task-item-deadline h-6 inline-flex items-center gap-1 text-xs text-danger-text ml-1.5 whitespace-nowrap"
                 title={t('task.deadline')}
               >
                 <AlarmClock className="w-3 h-3" aria-hidden="true" />

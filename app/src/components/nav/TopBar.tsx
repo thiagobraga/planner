@@ -32,6 +32,7 @@ export function TopBar({ onOpenSearch, onOpenShortcuts, updateAvailable = false 
   const closeMenu = useCallback(() => {
     setMenu(null);
     triggerRef.current?.focus();
+    triggerRef.current = null;
   }, []);
 
   useEffect(() => {
@@ -48,8 +49,8 @@ export function TopBar({ onOpenSearch, onOpenShortcuts, updateAvailable = false 
     const bar = (barRef.current ?? trigger).getBoundingClientRect();
     setMenu({ kind: 'menu', position: { x: rect.right, y: mobile ? bar.top : bar.bottom } });
   };
-  const openStyleMenu = (x: number, y: number) => {
-    triggerRef.current = barRef.current;
+  const openStyleMenu = (x: number, y: number, trigger: HTMLElement | null = null) => {
+    triggerRef.current = trigger;
     setMenu({ kind: 'style', position: { x, y } });
   };
   const menuRouteActive = MENU_ROUTES.test(pathname);
@@ -57,7 +58,6 @@ export function TopBar({ onOpenSearch, onOpenShortcuts, updateAvailable = false 
   return (
     <header
       ref={barRef}
-      tabIndex={-1}
       className="topbar"
       data-nav-style={navStyle}
       data-phone-labels={phoneLabels}
@@ -70,7 +70,10 @@ export function TopBar({ onOpenSearch, onOpenShortcuts, updateAvailable = false 
         if (event.key === 'ContextMenu' || (event.shiftKey && event.key === 'F10')) {
           event.preventDefault();
           const rect = event.currentTarget.getBoundingClientRect();
-          openStyleMenu(rect.left + 16, rect.bottom);
+          const active = document.activeElement instanceof HTMLElement && event.currentTarget.contains(document.activeElement)
+            ? document.activeElement
+            : null;
+          openStyleMenu(rect.left + 16, rect.bottom, active);
         }
       }}
     >

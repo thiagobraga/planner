@@ -1,5 +1,4 @@
 import { useMemo, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { Plus, Calendar, Trash2, Search, ListTodo, Kanban, EyeOff, FileClock } from 'lucide-react';
 import { PlannerIcon } from '../components/nav/navIcons';
 import { NAV_ITEMS } from '../components/nav/navItems';
@@ -24,12 +23,14 @@ import { ViewMenu } from '../components/toolbar/ViewMenu';
 import { DateNav } from '../components/toolbar/DateNav';
 import { TaskRowSpecimen } from '../components/ui/TaskRowSpecimen';
 import { CustomSelect } from '../components/ui/CustomSelect';
-import { ContextMenu, ContextMenuItem } from '../components/ui/ContextMenu';
+import { ContextMenu } from '../components/ui/ContextMenu';
+import type { ContextMenuItem } from '../types/contextMenu';
 import { Briefcase, Calendar as CalendarIcon, Tag, ArrowUp, ArrowDown } from 'lucide-react';
-import { fetchPreferences } from '../api/client';
+import { usePreferences } from '../hooks/usePreferences';
 import { BoardCard } from '../components/board/BoardCard';
 import { UpdateToastBanner } from '../components/UpdateToast';
 import { OfflineIndicatorBanner } from '../components/OfflineIndicator';
+import { ThemePalettes } from '../components/styleguide/ThemePalettes';
 
 // Card wrapper --------------------------------------------------------------
 function Card({
@@ -67,29 +68,8 @@ const MOTION = [
   { ms: '300ms', label: 'Smooth' },
 ];
 
-const PRIMARY_COLORS = [
-  { name: 'Ink', var: '--color-ink', hex: '#44443d', darkHex: '#ede3d3' },
-  { name: 'Ink Light', var: '--color-ink-light', hex: '#8b867e', darkHex: '#aea294' },
-  { name: 'Ink Lighter', var: '--color-ink-lighter', hex: '#c5c1ba', darkHex: '#6f6358' },
-  { name: 'Dot Grid', var: '--color-dot', hex: '#d8d3cb', darkHex: '#3b3229' },
-  { name: 'Border', var: '--color-border', hex: '#e5e1d8', darkHex: '#463b31' },
-  { name: 'Surface Cream', var: '--color-sidebar-bg', hex: '#ebe6de', darkHex: '#292219' },
-  { name: 'Cream Paper', var: '--color-cream', hex: '#f5f0e8', darkHex: '#292219' },
-];
-
-const SECONDARY_COLORS = [
-  { name: 'Warm Brick Red', var: '--color-accent', hex: '#c9483b', darkHex: '#d8705f' },
-  { name: 'Felt-Tip Red', var: '--color-accent-light', hex: '#e76052', darkHex: '#e88a79' },
-  { name: 'Orange', var: '--color-priority-2', hex: '#e39133', darkHex: '#e39133' },
-  { name: 'Soft Moss', var: '--color-moss', hex: '#8ca46a', darkHex: '#8ca46a' },
-  { name: 'Annotation Blue', var: '--color-priority-3', hex: '#4d8fd6', darkHex: '#4d8fd6' },
-];
-
 export function StyleguidePage() {
-  const { data: preferences } = useQuery({
-    queryKey: ['preferences'],
-    queryFn: fetchPreferences,
-  });
+  const { data: preferences } = usePreferences();
   const weekStart = preferences?.weekStart ?? 'sunday';
   const [dailyWeekAnchor, setDailyWeekAnchor] = useState(() => startOfDay(new Date()));
 
@@ -148,44 +128,7 @@ export function StyleguidePage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
         {/* Color Palette */}
         <Card title="Colors" span>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="lg:col-span-2">
-              <h3 className="text-[10px] text-ink-light uppercase tracking-widest font-semibold mt-6">Primary Palette</h3>
-              <div className="grid grid-cols-1 gap-6">
-                {PRIMARY_COLORS.map(({ var: varName, hex, darkHex }) => (
-                  <div key={varName} className="flex items-start gap-3">
-                    <span
-                      className="w-12 h-12 rounded-sm border border-border shrink-0"
-                      style={{ backgroundColor: `var(${varName})` }}
-                      title={varName}
-                    />
-                    <div className="flex flex-col">
-                      <span className="text-[10px] text-ink-light font-mono tracking-widest">{varName}</span>
-                      <span className="text-[10px] text-ink-light font-mono tracking-widest">{hex} · dark {darkHex}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div>
-              <h3 className="text-[10px] text-ink-light uppercase tracking-widest font-semibold">Secondary Palette</h3>
-              <div className="grid grid-cols-1 gap-6">
-                {SECONDARY_COLORS.map(({ var: varName, hex, darkHex }) => (
-                  <div key={varName} className="flex items-start gap-3">
-                    <span
-                      className="w-12 h-12 rounded-sm border border-border shrink-0"
-                      style={{ backgroundColor: `var(${varName})` }}
-                      title={varName}
-                    />
-                    <div className="flex flex-col">
-                      <span className="text-[10px] text-ink-light font-mono tracking-widest">{varName}</span>
-                      <span className="text-[10px] text-ink-light font-mono tracking-widest">{hex} · dark {darkHex}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
+          <ThemePalettes />
         </Card>
 
         {/* Buttons */}
@@ -605,8 +548,6 @@ export function StyleguidePage() {
             </TokenRow>
           </div>
         </Card>
-
-
 
         {/* Context Menu */}
         <Card title="Context Menu">

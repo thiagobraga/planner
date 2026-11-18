@@ -4,8 +4,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { DragEndEvent } from '@dnd-kit/core';
 import { ApiError, apiDeleteSection, apiDeleteStatus, apiUpdateSection, apiUpdateStatus } from '../../api/client';
 import type { BoardGroupBy } from '../../types/drag';
-import { useBoardColumnDrag, type UseBoardColumnDragResult } from '../useBoardColumnDrag';
-import type { BoardColumn as BoardColumnModel } from '../../utils/boardColumns';
+import { useBoardColumnDrag } from '../useBoardColumnDrag';
+import type { BoardColumn as BoardColumnModel, UseBoardColumnDragResult } from '../../types/board';
 
 vi.mock('../../api/client', async (importOriginal) => ({
   ...(await importOriginal<typeof import('../../api/client')>()),

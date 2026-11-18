@@ -1,7 +1,7 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { MonthlyView } from '../MonthlyView';
-import type { Task } from '../../TaskItem';
+import type { Task } from '../../../types/task';
 
 vi.mock('../MonthSelector', () => ({
   MonthSelector: ({

@@ -1,33 +1,5 @@
 import { create } from 'zustand';
-
-interface Task {
-  id: string;
-  title: string;
-  description?: string;
-  priority: number;
-  collectionId: string;
-  sectionId?: string;
-  parentTaskId?: string;
-  dueDate?: string;
-  recurrenceRule?: object | null;
-  isCompleted: boolean;
-  orderValue: number;
-}
-
-export interface Section {
-  id: string;
-  name: string;
-  collectionId: string;
-  orderValue: number;
-}
-
-interface TaskState {
-  tasks: Task[];
-  setTasks: (tasks: Task[]) => void;
-  addTask: (task: Task) => void;
-  updateTask: (id: string, updates: Partial<Task>) => void;
-  removeTask: (id: string) => void;
-}
+import type { TaskState } from '../types/task';
 
 export const useTaskStore = create<TaskState>((set) => ({
   tasks: [],

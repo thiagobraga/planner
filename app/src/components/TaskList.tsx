@@ -1,7 +1,8 @@
-import { useEffect, useMemo, type ReactNode } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useDroppable } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import { TaskItem, type Task, type TaskItemProps } from './TaskItem';
+import { TaskItem } from './TaskItem';
+import type { Task, TaskListProps } from '../types/task';
 import {
   buildSubtreeIndex,
   flattenTasks,
@@ -15,13 +16,7 @@ import { TaskBlockPreview } from './TaskBlockPreview';
 import type { BoardColumnDropData, DayDropData, NoDateDropData, SectionDropData } from '../types/drag';
 import { useI18n } from '../i18n/I18nContext';
 import type { TaskOrderScope } from '../types/drag';
-import type { TaskIndentHandler, TaskListContextMenuHandler } from '../types/taskIndent';
 import { parseColumnId } from '../utils/boardColumns';
-
-export type TaskListCallbacks = Pick<
-  TaskItemProps,
-  'onStartEdit' | 'onEditCommit' | 'onEditCancel' | 'onDelete' | 'onAddBelow' | 'onConvertType'
-> & { onIndent?: TaskIndentHandler; onRightClick?: TaskListContextMenuHandler };
 
 function listScope(task: Task, dayDate: string | undefined, sectionId: string | undefined,
   collectionId: string | undefined, dropData: TaskListProps['dropData']): TaskOrderScope {
@@ -37,36 +32,6 @@ function listScope(task: Task, dayDate: string | undefined, sectionId: string | 
   if (sectionId) return { kind: 'section', sectionId };
   if (dropData?.kind === 'no-date' && task.dueDate) return { kind: 'day', dueDate: task.dueDate.slice(0, 10) };
   return { kind: 'collection', collectionId: collection };
-}
-
-export interface TaskListProps extends TaskListCallbacks {
-  tasks: Task[];
-  editingId?: string;
-  dimNotes?: boolean;
-  hideDueDate?: boolean;
-  /** Stable id for this list, used as the drag container and droppable id. */
-  containerId: string;
-  /** A board list needs its own drop id because its column is also sortable. */
-  dropId?: string;
-  /**
-   * Set on Daily, where each rendered date is its own drop target. Omitted for
-   * collection lists, which are addressed by container id alone.
-   */
-  dayDate?: string;
-  /**
-   * Set on Collections/Inbox when grouping tasks by section. Creates a section
-   * drop target so tasks can be moved into this section.
-   */
-  sectionId?: string;
-  /** Required when sectionId is set; used to populate SectionDropData. */
-  collectionId?: string;
-  /** Supplies a grouped-board destination for an otherwise empty task list. */
-  dropData?: DayDropData | NoDateDropData | SectionDropData | BoardColumnDropData;
-  /** The task currently being dragged, so its descendants can be dimmed. */
-  activeDragId?: string | null;
-  /** Rendered next to a row's title - Daily uses it for the collection chip. */
-  renderBadge?: (task: Task) => ReactNode;
-  onTaskToggle?: (id: string) => void;
 }
 
 /**

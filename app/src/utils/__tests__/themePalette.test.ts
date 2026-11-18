@@ -10,6 +10,14 @@ function readStyles(path: string): string {
 }
 
 describe('application theme palette', () => {
+  it('pairs selected native options with the accessible accent foreground', () => {
+    const css = readStyles(resolve(import.meta.dirname, '../../index.css'));
+    const checked = css.match(/option:checked\s*\{([^}]+)\}/)?.[1];
+    expect(checked).toContain('background-color: var(--color-accent)');
+    expect(checked).toContain('color: var(--color-on-accent)');
+    expect(checked).not.toContain('--color-accent-light');
+  });
+
   it('preserves every palette and application theme declaration', () => {
     const css = readStyles(resolve(import.meta.dirname, '../../index.css')).replace(/\/\*[\s\S]*?\*\//g, '');
     const declarations: Record<string, Record<string, string>> = {};

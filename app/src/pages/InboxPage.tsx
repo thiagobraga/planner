@@ -10,16 +10,16 @@ import { CollectionBoard } from '../components/board/CollectionBoard';
 import { BoardPageToolbar } from '../components/board/BoardPageToolbar';
 import { MonthlyView } from '../components/monthly/MonthlyView';
 import { PageHeader } from '../components/PageHeader';
-import type { Task } from '../components/TaskItem';
-import type { Section } from '../stores/taskStore';
-import { fetchInboxTasks, fetchCollectionView, fetchPreferences, apiCreateTask, apiUpdateTask, apiToggleTask, apiDeleteTask, apiMoveTask, fetchCollections, apiCreateSection, apiUpdateSection, apiDeleteSection } from '../api/client';
+import { fetchInboxTasks, fetchCollectionView, apiCreateTask, apiUpdateTask, apiToggleTask, apiDeleteTask, apiMoveTask, fetchCollections, apiCreateSection, apiUpdateSection, apiDeleteSection } from '../api/client';
 import type { ApiTask } from '../types/api';
-import { ContextMenu, type ContextMenuItem } from '../components/ui/ContextMenu';
+import { ContextMenu } from '../components/ui/ContextMenu';
+import type { ContextMenuItem } from '../types/contextMenu';
 import { SectionDeleteModal } from '../components/SectionDeleteModal';
-import { flattenCollections } from '../components/CollectionTreeNav';
+import { flattenCollections } from '../utils/collectionTree';
 import { Folder, ArrowUp, ArrowDown, Trash2, Pencil } from 'lucide-react';
 import { useTaskDrag } from '../hooks/useTaskDrag';
 import { useSectionDrag } from '../hooks/useSectionDrag';
+import { usePreferences } from '../hooks/usePreferences';
 import { useBoardPreferences } from '../hooks/useBoardPreferences';
 import { nextOrderValue } from '../utils/order';
 import { extractNaturalDate } from '../utils/date';
@@ -32,7 +32,7 @@ import { isEchoedMove } from '../utils/moveEcho';
 import { useI18n } from '../i18n/I18nContext';
 import { applySchedule, scheduleFieldsFromApi, withTimeZones } from '../utils/taskTime';
 import { buildSetDateMenuItem } from '../components/taskDateMenuItem';
-import type { TaskSchedule } from '../types/task';
+import type { StoreSection, Task, TaskSchedule } from '../types/task';
 import { blurOnEscape } from '../utils/editableText';
 import { buildTaskMenuActions } from '../utils/taskMenuActions';
 
@@ -60,8 +60,8 @@ function apiToTask(t: ApiTask): Task {
 let tempCounter = 0;
 function tempId() { return `temp-${++tempCounter}`; }
 
-function buildSectionGroups(tasks: Task[], sections: Section[]) {
-  const groups: Array<{ section: Section | null; tasks: Task[] }> = [];
+function buildSectionGroups(tasks: Task[], sections: StoreSection[]) {
+  const groups: Array<{ section: StoreSection | null; tasks: Task[] }> = [];
 
   groups.push({
     section: null,
@@ -83,7 +83,7 @@ export function InboxPage() {
   const qc = useQueryClient();
   const cachedInbox = qc.getQueryData<Awaited<ReturnType<typeof fetchInboxTasks>>>(['inbox']);
   const [tasks, setTasks] = useState<Task[]>(() => cachedInbox?.tasks.map(apiToTask) ?? []);
-  const [sections, setSections] = useState<Section[]>(() => cachedInbox?.sections ?? []);
+  const [sections, setSections] = useState<StoreSection[]>(() => cachedInbox?.sections ?? []);
   const [input, setInput] = useState('');
   const [editingId, setEditingId] = useState<string | undefined>();
   const [editingSectionId, setEditingSectionId] = useState<string | null>(null);
@@ -103,10 +103,7 @@ export function InboxPage() {
     inputRef.current?.focus();
   }, []);
 
-  const { data: preferences } = useQuery({
-    queryKey: ['preferences'],
-    queryFn: fetchPreferences,
-  });
+  const { data: preferences } = usePreferences();
   // The board settings are keyed by the Inbox collection, known from the collection list before the view loads.
   const { data: allCollections } = useQuery({ queryKey: ['collections'], queryFn: fetchCollections });
   const [knownInboxId, setKnownInboxId] = useState(cachedInbox?.inboxCollectionId);
@@ -131,7 +128,6 @@ export function InboxPage() {
       setSections(data.sections);
     }
   }
-
 
   const invalidate = useCallback(() => qc.invalidateQueries({ queryKey: ['inbox'] }), [qc]);
 
@@ -699,7 +695,7 @@ export function InboxPage() {
         )}
       </div>
 
-      {indentError && <div role="alert" className="text-accent text-sm mt-6">{t('task.moveFailed')}</div>}
+      {indentError && <div role="alert" className="text-danger-text text-sm mt-6">{t('task.moveFailed')}</div>}
       {contextMenu && (
         <ContextMenu
           caret

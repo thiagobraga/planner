@@ -1,6 +1,6 @@
 import { vi } from 'vitest';
 import type { Preferences, ApiTask, ApiCollection, ApiSection, ApiStatus } from '../../types/api';
-import type { Task } from '../../components/TaskItem';
+import type { Task } from '../../../types/task';
 import type { TaskOrderScope } from '../../types/drag';
 
 export const basePreferences: Preferences = {

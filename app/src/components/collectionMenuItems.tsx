@@ -1,13 +1,7 @@
 import { Palette, Pencil, FolderPlus, Trash2 } from 'lucide-react';
-import type { ContextMenuItem } from './ui/ContextMenu';
+import type { ContextMenuItem } from '../types/contextMenu';
 import type { TranslationKey } from '../i18n/catalogs';
-
-export interface CollectionMenuHandlers {
-  onChangeColor: () => void;
-  onStartRename: () => void;
-  onAddSub: () => void;
-  onDelete: () => void;
-}
+import type { CollectionMenuHandlers } from '../types/collections';
 
 // The sidebar rows and the collection page breadcrumb offer the same actions;
 // building the array here keeps the two call sites from drifting apart.

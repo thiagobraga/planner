@@ -37,7 +37,7 @@ export function NavStyleField({ value, onChange, disabled, error }: NavStyleFiel
         ))}
       </div>
       <p id={`${id}-hint`} className="text-sm leading-6 text-ink-light">{t('nav.stylePhoneHint')}</p>
-      {error && <p role="alert" className="text-sm leading-6 text-accent">{t('nav.styleSaveError')}</p>}
+      {error && <p role="alert" className="text-sm leading-6 text-danger-text">{t('nav.styleSaveError')}</p>}
     </section>
   );
 }

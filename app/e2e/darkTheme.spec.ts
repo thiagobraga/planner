@@ -4,7 +4,7 @@ import { test } from './coverage-fixture';
 /** Covers the Settings theme picker: dark, automatic (OS scheme), persistence, and logged-out screens. */
 
 const DARK_PAGE_BG = 'rgb(41, 34, 25)';
-const DARK_OVERLAY_BG = 'rgb(47, 39, 30)';
+const DARK_OVERLAY_BG = 'rgb(41, 34, 25)';
 const BEIGE_PAGE_BG = 'rgb(245, 240, 232)';
 
 async function registerAndLogin(page: Page) {

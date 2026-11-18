@@ -1,8 +1,4 @@
-import type { InputHTMLAttributes, ReactNode } from 'react';
-
-export interface RadioProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'type'> {
-  label?: ReactNode;
-}
+import type { RadioProps } from '../../types/ui';
 
 // 16px circle, 1px border. Selected = ink ring with a small ink center dot.
 export function Radio({ label, className = '', checked, ...rest }: RadioProps) {

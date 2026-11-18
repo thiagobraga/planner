@@ -52,7 +52,7 @@ function StatusRow({ label, status }: { label: string; status: 'up' | 'down' }) 
       <span className="text-sm leading-6 text-ink-light">{label}</span>
       <span
         className={`inline-flex items-center rounded-[8px] px-2 text-[11px] leading-6 ${
-          status === 'up' ? 'bg-moss/20 text-moss' : 'bg-accent/12 text-accent'
+          status === 'up' ? 'bg-success/20 text-success' : 'bg-danger/12 text-danger-text'
         }`}
       >
         {status === 'up' ? t('admin.statusUp') : t('admin.statusDown')}
@@ -109,7 +109,7 @@ export function AdminDashboardPage() {
 
       <div className="h-6" />
 
-      {isError && <p className="text-sm leading-6 text-accent">{t('admin.loadFailed')}</p>}
+      {isError && <p className="text-sm leading-6 text-danger-text">{t('admin.loadFailed')}</p>}
       {isLoading && (
         <p className="text-sm leading-6 text-ink-light opacity-60">{t('common.loading')}</p>
       )}

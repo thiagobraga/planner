@@ -69,7 +69,7 @@ function UserRow({
 
       <span
         className={`inline-flex w-fit items-center rounded-[8px] px-2 text-[11px] leading-6 ${
-          isDisabled ? 'bg-accent/12 text-accent' : 'bg-moss/20 text-moss'
+          isDisabled ? 'bg-danger/12 text-danger-text' : 'bg-success/20 text-success'
         }`}
       >
         {isDisabled ? t('admin.statusDisabled') : t('admin.statusActive')}
@@ -178,10 +178,10 @@ export function AdminUsersPage() {
       <div className="h-6" />
 
       {usersQuery.isError && (
-        <p className="text-sm leading-6 text-accent">{t('admin.loadFailed')}</p>
+        <p className="text-sm leading-6 text-danger-text">{t('admin.loadFailed')}</p>
       )}
 
-      {actionError && <p className="text-sm leading-6 text-accent">{t('admin.actionFailed')}</p>}
+      {actionError && <p className="text-sm leading-6 text-danger-text">{t('admin.actionFailed')}</p>}
 
       {usersQuery.isPending ? (
         <p className="text-sm leading-6 text-ink-light opacity-60">{t('common.loading')}</p>

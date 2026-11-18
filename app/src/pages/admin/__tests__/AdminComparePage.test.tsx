@@ -6,6 +6,15 @@ import { AdminComparePage } from '../AdminComparePage';
 afterEach(() => window.localStorage.removeItem('planner_locale'));
 
 describe('AdminComparePage', () => {
+  it('uses readable warning text for partial status markers and their legend', () => {
+    window.localStorage.setItem('planner_locale', 'en');
+    render(<I18nProvider><AdminComparePage /></I18nProvider>);
+
+    const markers = screen.getAllByText('~', { exact: true });
+    expect(markers.length).toBeGreaterThan(1);
+    for (const marker of markers) expect(marker).toHaveClass('text-warning', 'bg-warning/20');
+  });
+
   it('renders feature rows with one status cell per app', () => {
     window.localStorage.setItem('planner_locale', 'en');
     render(<I18nProvider><AdminComparePage /></I18nProvider>);

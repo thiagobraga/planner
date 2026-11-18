@@ -3,6 +3,7 @@ import crypto from "node:crypto";
 import pool from "../../db/pool.js";
 import { AppError } from "../../utils/AppError.js";
 import { getDailyView } from "../dailyService.js";
+import { findDailyTasks } from "../../repositories/dailyRepository.js";
 
 const NOON_UTC = new Date("2026-10-07T12:00:00Z");
 
@@ -181,6 +182,23 @@ describe("getDailyView (real PostgreSQL)", () => {
     const renamed = await getDailyView(userId, "2026-10-07", "2026-10-07", NOON_UTC);
 
     expect(renamed.days[0].tasks[0]).toMatchObject({ collectionName: "money", sectionName: "Rent" });
+  });
+
+  it("retrieves overdue and in-range rows in daily order", async () => {
+    await addTask("overdue", "2026-10-06");
+    const later = await addTask("later", "2026-10-07", { orderValue: 20 });
+    await addTask("fallback", "2026-10-07", { orderValue: 5 });
+    await addTask("outside", "2026-10-09");
+    await pool.query(
+      "INSERT INTO task_order (user_id, task_id, scope_type, scope_id, position) VALUES ($1, $2, 'day', '2026-10-07', 2)",
+      [userId, later],
+    );
+
+    const rows = await findDailyTasks(userId, "2026-10-07", "2026-10-07", "2026-10-08", false, true);
+
+    expect(titles(rows)).toEqual(["overdue", "later", "fallback"]);
+    expect(Number(rows[1].effective_order_value)).toBe(2);
+    expect(Number(rows[2].effective_order_value)).toBe(5);
   });
 
   it("only sees the caller's tasks", async () => {

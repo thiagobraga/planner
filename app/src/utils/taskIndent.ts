@@ -1,7 +1,7 @@
-import type { Task } from '../components/TaskItem';
 import type { TaskOrderScope } from '../types/drag';
 import type { TaskIndentMove } from '../types/taskIndent';
 import { flattenTasks, getSubtreeBlock, MAX_DEPTH } from './taskProjection';
+import type { Task } from '../types/task';
 
 export function resolveTaskIndent(
   visibleTasks: Task[], id: string, direction: 1 | -1, scope: TaskOrderScope,

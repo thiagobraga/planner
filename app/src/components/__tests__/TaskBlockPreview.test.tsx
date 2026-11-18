@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
 import { TaskBlockPreview } from '../TaskBlockPreview';
-import type { Task } from '../TaskItem';
+import type { Task } from '../../types/task';
 
 function makeTask(overrides: Partial<Task> & { id: string; title: string }): Task {
   return {

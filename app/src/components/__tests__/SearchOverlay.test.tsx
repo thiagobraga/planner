@@ -1,7 +1,7 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { SearchOverlay } from '../SearchOverlay';
-import type { Task } from '../TaskItem';
+import type { Task } from '../../types/task';
 
 function makeTask(overrides: Partial<Task> = {}): Task {
   return {

@@ -1,12 +1,4 @@
-import type { InputHTMLAttributes, ReactNode } from 'react';
-
-export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
-  icon?: ReactNode;
-  trailing?: ReactNode;
-  error?: boolean;
-  helpText?: string;
-  errorText?: string;
-}
+import type { InputProps } from '../../types/ui';
 
 // 40px tall, 8px radius, 1px border, theme surface, leading icon 8px before value.
 export function Input({
@@ -18,7 +10,7 @@ export function Input({
   className = '',
   ...rest
 }: InputProps) {
-  const borderClass = error ? 'border-accent' : 'border-border focus-within:border-ink';
+  const borderClass = error ? 'border-danger' : 'border-border focus-within:border-ink';
   const message = error ? errorText : helpText;
 
   return (
@@ -42,7 +34,7 @@ export function Input({
         )}
       </div>
       {message && (
-        <p className={`ui-input-message mt-1 text-xs leading-5 ${error ? 'text-accent' : 'text-ink-light'}`}>
+        <p className={`ui-input-message mt-1 text-xs leading-5 ${error ? 'text-danger-text' : 'text-ink-light'}`}>
           {message}
         </p>
       )}
