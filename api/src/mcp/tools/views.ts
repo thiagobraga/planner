@@ -8,9 +8,10 @@ import { parseFilter } from "../../parsers/filterParser.js";
 import type { McpAuthContext } from "../../types/mcp.js";
 import { formatTaskList } from "../format.js";
 import { resolveCollection, todayFor, ToolInputError } from "../resolve.js";
-import { collectionNameMap, getUserTimezone, runTool } from "../toolkit.js";
+import { getUserTimezone, runTool } from "../toolkit.js";
 
 const READ_ONLY = { readOnlyHint: true, openWorldHint: false } as const;
+const NO_NAMES = new Map<string, string>();
 
 export function registerViewTools(server: McpServer, ctx: McpAuthContext): void {
   server.registerTool(
@@ -23,14 +24,15 @@ export function registerViewTools(server: McpServer, ctx: McpAuthContext): void 
     () =>
       runTool(async () => {
         const today = todayFor(await getUserTimezone(ctx.userId), ctx.now());
-        const [view, names] = await Promise.all([getDailyView(ctx.userId, today, today, ctx.now()), collectionNameMap(ctx.userId)]);
+        // Daily tasks carry their collection name, so no name map is needed.
+        const view = await getDailyView(ctx.userId, today, today, ctx.now());
         const due = view.days[0]!.tasks;
         return [
           `Today is ${view.today}.`,
           `Overdue (${view.overdue.length}):`,
-          formatTaskList(view.overdue, names, "Nothing overdue."),
+          formatTaskList(view.overdue, NO_NAMES, "Nothing overdue."),
           `Due today (${due.length}):`,
-          formatTaskList(due, names, "Nothing due today."),
+          formatTaskList(due, NO_NAMES, "Nothing due today."),
         ].join("\n");
       }),
   );
@@ -46,14 +48,11 @@ export function registerViewTools(server: McpServer, ctx: McpAuthContext): void 
     ({ days }) =>
       runTool(async () => {
         const today = todayFor(await getUserTimezone(ctx.userId), ctx.now());
-        const [view, names] = await Promise.all([
-          getDailyView(ctx.userId, today, addDaysISO(today, days - 1), ctx.now()),
-          collectionNameMap(ctx.userId),
-        ]);
+        const view = await getDailyView(ctx.userId, today, addDaysISO(today, days - 1), ctx.now());
         const sections = view.days
           .map((day) => ({ date: day.date, tasks: day.tasks.filter((t) => !t.isCompleted) }))
           .filter((day) => day.tasks.length > 0)
-          .map((day) => `${day.date}:\n${formatTaskList(day.tasks, names)}`);
+          .map((day) => `${day.date}:\n${formatTaskList(day.tasks, NO_NAMES)}`);
         return sections.length > 0 ? sections.join("\n") : `Nothing due in the next ${days} days.`;
       }),
   );
