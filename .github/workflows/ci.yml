@@ -15,15 +15,10 @@ on:
       - '.claudeignore'
       - '.vscode/**'
       - '.gitignore'
+  # No paths-ignore on PRs: the ruleset requires "CI gate", so it must always report.
+  # Docs-only PRs are skipped inside the `changes` job by scripts/ci-changes.sh.
   pull_request:
     branches: [main]
-    paths-ignore:
-      - '**.md'
-      - '.specs/**'
-      - '.claude/**'
-      - '.claudeignore'
-      - '.vscode/**'
-      - '.gitignore'
   schedule:
     - cron: '0 6 * * 1' # every Monday 06:00 UTC
   workflow_dispatch:
@@ -62,7 +57,7 @@ jobs:
           sparse-checkout-cone-mode: false
           persist-credentials: false
 
-      # skip=true when the change is only a release version bump (release PR, or its merge
+      # skip=true when the change is only a release version bump or docs (release PR, or its merge
       # into main whose parent already has a green CI run). Anything unproven runs everything.
       - id: skip
         env:
