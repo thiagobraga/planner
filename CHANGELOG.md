@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.27.0](https://github.com/thiagobraga/planner/compare/v0.26.0...v0.27.0) (2026-11-18)
+
+
+### Added
+
+* **mcp:** support task parent and status changes ([ee8c9d3](https://github.com/thiagobraga/planner/commit/ee8c9d3d874c87059d250ed88cfb1ada6fca81e0))
+* **mcp:** support task parent and status changes ([cd79de3](https://github.com/thiagobraga/planner/commit/cd79de3df43509a455e50cd1aa4d2dcc6072658e))
+
+
+### Fixed
+
+* **mcp:** scope locked task reread to status changes ([5097a4b](https://github.com/thiagobraga/planner/commit/5097a4be5ee392e163befdc9253ff9ae31d5eb1b))
+
 ## [0.26.0](https://github.com/thiagobraga/planner/compare/v0.25.0...v0.26.0) (2026-11-18)
 
 

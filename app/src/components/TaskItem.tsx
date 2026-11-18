@@ -361,7 +361,7 @@ export const TaskItem = memo(function TaskItem({
 
             {task.recurrenceRule && (
               <span className="task-item-repeat h-6 flex items-center ml-1.5 shrink-0">
-                <span className="inline-flex items-center gap-1.5 px-1 rounded-xs bg-dot/30 border border-dot/50 text-[11px] leading-4.5 text-ink/65 whitespace-nowrap">
+                <span className="inline-flex items-center gap-1.5 px-1 rounded-xs bg-border-subtle/30 border border-border-subtle/50 text-[11px] leading-4.5 text-ink/65 whitespace-nowrap">
                   <Repeat className="w-3 h-3" aria-hidden="true" />
                   {recurrenceSummary(task.recurrenceRule, locale)}
                 </span>

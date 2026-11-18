@@ -139,7 +139,7 @@ export function RowOptionsButton({ label, onOpen }: { label: string; onOpen: (x:
       type="button"
       aria-label={label}
       {...{ [NO_DRAG_ATTR]: '' }}
-      className="habit-timeline-row-options flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-[4px] text-ink-light opacity-0 transition-opacity duration-75 hover:bg-dot/30 hover:text-ink focus:opacity-100 group-hover:opacity-100"
+      className="habit-timeline-row-options flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-[4px] text-ink-light opacity-0 transition-opacity duration-75 hover:bg-border-subtle/30 hover:text-ink focus:opacity-100 group-hover:opacity-100"
       onClick={(event) => {
         const rect = event.currentTarget.getBoundingClientRect();
         onOpen(rect.left, rect.bottom + 4);

@@ -36,7 +36,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 function Tile({ label, value }: { label: string; value: string | number }) {
   return (
-    <div className="admin-tile border border-dot rounded-[8px] px-4 py-3">
+    <div className="admin-tile border border-border-subtle rounded-[8px] px-4 py-3">
       <div className="text-[11px] uppercase tracking-wide leading-6 text-ink-light opacity-60">
         {label}
       </div>
@@ -48,7 +48,7 @@ function Tile({ label, value }: { label: string; value: string | number }) {
 function StatusRow({ label, status }: { label: string; status: 'up' | 'down' }) {
   const { t } = useI18n();
   return (
-    <div className="flex items-center justify-between border-b border-dot py-3">
+    <div className="flex items-center justify-between border-b border-border-subtle py-3">
       <span className="text-sm leading-6 text-ink-light">{label}</span>
       <span
         className={`inline-flex items-center rounded-[8px] px-2 text-[11px] leading-6 ${

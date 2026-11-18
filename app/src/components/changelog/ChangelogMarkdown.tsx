@@ -54,7 +54,7 @@ function renderInlineNodes(nodes: ChangelogInlineNode[], linkClassName = LINK_CL
         );
       case 'code':
         return (
-          <code key={index} className="rounded-[4px] bg-dot/40 px-1 py-0 text-[13px] font-inherit text-ink">
+          <code key={index} className="rounded-[4px] bg-border-subtle/40 px-1 py-0 text-[13px] font-inherit text-ink">
             {node.value}
           </code>
         );

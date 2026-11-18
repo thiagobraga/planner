@@ -159,7 +159,7 @@ export const MonthSelector = ({
                 className={`month-strip-card relative flex h-12 min-w-0 flex-col items-center justify-center border text-center cursor-pointer transition-colors duration-(--motion-fast) ${isCurrentMonth ? 'month-strip-card--current' : ''} ${
                   isSelected
                     ? 'border-ink-light text-ink'
-                    : 'border-border/80 text-ink-light hover:border-dot hover:text-ink'
+                    : 'border-border/80 text-ink-light hover:border-border-subtle hover:text-ink'
                 }`}
                 style={isSelected
                   ? { backgroundColor: 'var(--planner-monthly-strip-selected)' }

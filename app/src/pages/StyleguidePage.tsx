@@ -477,8 +477,8 @@ export function StyleguidePage() {
                 {SPACING.map((s) => (
                   <div key={s} className="flex items-center gap-4">
                     <div className="flex items-center" style={{ gap: `${s}px` }}>
-                      <span className="block w-1.75 h-1.75 rounded-[2px] bg-dot" aria-hidden="true" />
-                      <span className="block w-1.75 h-1.75 rounded-[2px] bg-dot" aria-hidden="true" />
+                      <span className="block w-1.75 h-1.75 rounded-[2px] bg-border-subtle" aria-hidden="true" />
+                      <span className="block w-1.75 h-1.75 rounded-[2px] bg-border-subtle" aria-hidden="true" />
                     </div>
                     <span className="text-[9px] text-ink-light font-mono leading-none">{s}px</span>
                   </div>
@@ -490,7 +490,7 @@ export function StyleguidePage() {
               <div className="flex items-end gap-2">
                 {RADII.map((r) => (
                   <div key={r} className="flex flex-col items-center gap-1">
-                    <span className="w-7 h-7 border border-border bg-dot/40" style={{ borderRadius: r }} />
+                    <span className="w-7 h-7 border border-border bg-border-subtle/40" style={{ borderRadius: r }} />
                     <span className="text-[9px] text-ink-light font-mono">{r}</span>
                   </div>
                 ))}

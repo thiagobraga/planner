@@ -225,11 +225,11 @@ export function CustomSelect({
                 if (option.disabled) {
                   itemClass += `opacity-40 cursor-not-allowed text-ink-light [text-shadow:var(--planner-menu-disabled-shadow)] `;
                 } else if (isSelected) {
-                  itemClass += `bg-dot/60 text-ink `;
+                  itemClass += `bg-border-subtle/60 text-ink `;
                 } else if (isHighlighted) {
-                  itemClass += `bg-dot/40 text-ink `;
+                  itemClass += `bg-border-subtle/40 text-ink `;
                 } else {
-                  itemClass += `text-ink hover:bg-dot/40 `;
+                  itemClass += `text-ink hover:bg-border-subtle/40 `;
                 }
 
                 return (
@@ -279,11 +279,11 @@ export function CustomSelect({
                 if (option.disabled) {
                   itemClass += `opacity-40 cursor-not-allowed text-ink-light [text-shadow:var(--planner-menu-disabled-shadow)] `;
                 } else if (isSelected) {
-                  itemClass += `bg-dot/60 text-ink `;
+                  itemClass += `bg-border-subtle/60 text-ink `;
                 } else if (isHighlighted) {
-                  itemClass += `bg-dot/40 text-ink `;
+                  itemClass += `bg-border-subtle/40 text-ink `;
                 } else {
-                  itemClass += `text-ink hover:bg-dot/40 `;
+                  itemClass += `text-ink hover:bg-border-subtle/40 `;
                 }
 
                 return (

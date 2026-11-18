@@ -185,7 +185,7 @@ function selectedFrame(selected: boolean) {
 }
 
 function selectedBorder(selected: boolean) {
-  return selected ? 'border-ink-light' : 'border-border group-hover:border-dot';
+  return selected ? 'border-ink-light' : 'border-border group-hover:border-border-subtle';
 }
 
 function SelectionMark({ selected }: { selected: boolean }) {
@@ -530,7 +530,7 @@ export function SettingsPage() {
               <p className="px-1 pb-2 text-[10px] leading-5 tracking-[0.12em] uppercase text-ink-light font-medium">
                 {t('settings.title').toUpperCase()}
               </p>
-              <div className="rounded-[8px] border border-dot bg-[var(--planner-sidebar-bg)] p-3 shadow-subtle">
+              <div className="rounded-[8px] border border-border-subtle bg-[var(--planner-sidebar-bg)] p-3 shadow-subtle">
                 <SettingsTabList activeSection={activeSection} compact idPrefix="mobile" onChange={handleSectionChange} />
               </div>
             </div>
@@ -640,11 +640,11 @@ export function SettingsPage() {
 
                                     let itemClass = 'flex items-center h-9 px-2 rounded-[4px] text-sm cursor-pointer select-none ';
                                     if (isSelected) {
-                                      itemClass += 'bg-dot/60 text-ink ';
+                                      itemClass += 'bg-border-subtle/60 text-ink ';
                                     } else if (isHighlighted) {
-                                      itemClass += 'bg-dot/40 text-ink ';
+                                      itemClass += 'bg-border-subtle/40 text-ink ';
                                     } else {
-                                      itemClass += 'text-ink hover:bg-dot/40 ';
+                                      itemClass += 'text-ink hover:bg-border-subtle/40 ';
                                     }
 
                                     return (

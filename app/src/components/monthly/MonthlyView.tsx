@@ -84,7 +84,7 @@ export function MonthlyView({ tasks, onToggle, onTaskContextMenu, visibleMonth, 
             <div
               key={day.day}
               style={rowStyle}
-              className={`grid ${hasItems ? 'min-h-6' : 'h-6'} grid-cols-[24px_24px_minmax(0,1fr)] items-start border-b border-dotted border-dot/50 last:border-b-0 ${
+              className={`grid ${hasItems ? 'min-h-6' : 'h-6'} grid-cols-[24px_24px_minmax(0,1fr)] items-start border-b border-dotted border-border-subtle/50 last:border-b-0 ${
                 day.isFuture ? 'opacity-40' : ''
               }`}
             >

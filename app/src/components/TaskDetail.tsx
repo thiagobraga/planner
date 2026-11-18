@@ -143,11 +143,11 @@ export function TaskDetail({ task, onClose, onUpdate, onDelete }: TaskDetailProp
   return (
     <aside
       aria-label={t('task.detail')}
-      className="w-[360px] min-w-[320px] h-full border-l border-dot flex flex-col overflow-hidden"
+      className="w-[360px] min-w-[320px] h-full border-l border-border-subtle flex flex-col overflow-hidden"
       style={{ backgroundColor: 'var(--planner-overlay-bg)' }}
     >
       {/* Header */}
-      <div className="flex items-center justify-between px-5 py-4 border-b border-dot shrink-0">
+      <div className="flex items-center justify-between px-5 py-4 border-b border-border-subtle shrink-0">
         <span className="text-[11px] tracking-[0.08em] uppercase text-ink-light">
           {t('task.task')}
         </span>
@@ -171,7 +171,7 @@ export function TaskDetail({ task, onClose, onUpdate, onDelete }: TaskDetailProp
           onChange={(e) => setTitle(e.target.value)}
           onBlur={handleTitleBlur}
           aria-label={t('task.title')}
-          className="w-full text-lg leading-7 font-semibold text-ink bg-transparent border-0 border-b border-dot outline-none px-0 pt-0 pb-2 mb-5"
+          className="w-full text-lg leading-7 font-semibold text-ink bg-transparent border-0 border-b border-border-subtle outline-none px-0 pt-0 pb-2 mb-5"
         />
 
         {/* Description */}
@@ -186,7 +186,7 @@ export function TaskDetail({ task, onClose, onUpdate, onDelete }: TaskDetailProp
             rows={3}
             placeholder={t('task.descriptionPlaceholder')}
             aria-label={t('task.descriptionAria')}
-            className="w-full text-[13px] leading-5 text-ink bg-transparent border border-dot rounded outline-none p-2 resize-y"
+            className="w-full text-[13px] leading-5 text-ink bg-transparent border border-border-subtle rounded outline-none p-2 resize-y"
           />
         </div>
 
@@ -206,7 +206,7 @@ export function TaskDetail({ task, onClose, onUpdate, onDelete }: TaskDetailProp
             onBlur={handleDueDateBlur}
             placeholder={t('task.dueDatePlaceholder')}
             aria-label={t('task.dueDateAria')}
-            className="w-full text-[13px] leading-6 text-ink bg-transparent border border-dot rounded outline-none py-1 px-2"
+            className="w-full text-[13px] leading-6 text-ink bg-transparent border border-border-subtle rounded outline-none py-1 px-2"
           />
         </div>
 
@@ -223,7 +223,7 @@ export function TaskDetail({ task, onClose, onUpdate, onDelete }: TaskDetailProp
               disabled={!dueDate}
               onChange={(e) => setDueTime(e.target.value)}
               onBlur={() => commitField('dueTime', dueTime)}
-              className="w-full text-[13px] leading-6 text-ink bg-transparent border border-dot rounded outline-none py-1 px-2 disabled:opacity-40"
+              className="w-full text-[13px] leading-6 text-ink bg-transparent border border-border-subtle rounded outline-none py-1 px-2 disabled:opacity-40"
             />
           </div>
           <div>
@@ -238,7 +238,7 @@ export function TaskDetail({ task, onClose, onUpdate, onDelete }: TaskDetailProp
               value={duration}
               onChange={(e) => setDuration(e.target.value)}
               onBlur={handleDurationBlur}
-              className="w-full text-[13px] leading-6 text-ink bg-transparent border border-dot rounded outline-none py-1 px-2 disabled:opacity-40"
+              className="w-full text-[13px] leading-6 text-ink bg-transparent border border-border-subtle rounded outline-none py-1 px-2 disabled:opacity-40"
             />
           </div>
         </div>
@@ -255,7 +255,7 @@ export function TaskDetail({ task, onClose, onUpdate, onDelete }: TaskDetailProp
               value={deadlineDate}
               onChange={(e) => setDeadlineDate(e.target.value)}
               onBlur={() => commitField('deadlineDate', deadlineDate)}
-              className="w-full text-[13px] leading-6 text-ink bg-transparent border border-dot rounded outline-none py-1 px-2 disabled:opacity-40"
+              className="w-full text-[13px] leading-6 text-ink bg-transparent border border-border-subtle rounded outline-none py-1 px-2 disabled:opacity-40"
             />
           </div>
           <div>
@@ -269,7 +269,7 @@ export function TaskDetail({ task, onClose, onUpdate, onDelete }: TaskDetailProp
               disabled={!deadlineDate}
               onChange={(e) => setDeadlineTime(e.target.value)}
               onBlur={() => commitField('deadlineTime', deadlineTime)}
-              className="w-full text-[13px] leading-6 text-ink bg-transparent border border-dot rounded outline-none py-1 px-2 disabled:opacity-40"
+              className="w-full text-[13px] leading-6 text-ink bg-transparent border border-border-subtle rounded outline-none py-1 px-2 disabled:opacity-40"
             />
           </div>
         </div>
@@ -286,7 +286,7 @@ export function TaskDetail({ task, onClose, onUpdate, onDelete }: TaskDetailProp
             id="task-recurrence"
             value={(recurrenceRule as { type?: string } | null)?.type || 'none'}
             onChange={(e) => handleRecurrenceChange(e.target.value)}
-            className="w-full text-[13px] leading-6 text-ink bg-transparent border border-dot rounded outline-none py-1 px-2"
+            className="w-full text-[13px] leading-6 text-ink bg-transparent border border-border-subtle rounded outline-none py-1 px-2"
           >
             <option value="none">{t('common.none')}</option>
             <option value="daily">{t('task.daily')}</option>
@@ -310,7 +310,7 @@ export function TaskDetail({ task, onClose, onUpdate, onDelete }: TaskDetailProp
                 aria-pressed={priority === p.value}
                 className={`py-[3px] px-2.5 rounded border text-xs cursor-pointer transition-all duration-[120ms] ${priority === p.value
                     ? priorityBtnSelectedClasses[p.value]
-                    : 'border-dot bg-transparent text-ink'
+                    : 'border-border-subtle bg-transparent text-ink'
                   }`}
               >
                 {t(p.key).split(' ')[0]}
@@ -334,7 +334,7 @@ export function TaskDetail({ task, onClose, onUpdate, onDelete }: TaskDetailProp
           {subtasks.map((sub) => (
             <div
               key={sub.id}
-              className="flex items-center gap-2 py-1 border-b border-dot"
+              className="flex items-center gap-2 py-1 border-b border-border-subtle"
             >
               <input
                 type="checkbox"
@@ -362,12 +362,12 @@ export function TaskDetail({ task, onClose, onUpdate, onDelete }: TaskDetailProp
               onChange={(e) => setNewSubtask(e.target.value)}
               placeholder={t('task.addSubtask')}
               aria-label={t('task.newSubtask')}
-              className="flex-1 text-[13px] leading-6 text-ink bg-transparent border border-dashed border-dot rounded outline-none py-[2px] px-2"
+              className="flex-1 text-[13px] leading-6 text-ink bg-transparent border border-dashed border-border-subtle rounded outline-none py-[2px] px-2"
             />
             <button
               type="submit"
               disabled={!newSubtask.trim()}
-              className={`py-[2px] px-2.5 bg-transparent border border-dot rounded text-xs text-ink-light ${newSubtask.trim() ? 'cursor-pointer' : 'cursor-default'}`}
+              className={`py-[2px] px-2.5 bg-transparent border border-border-subtle rounded text-xs text-ink-light ${newSubtask.trim() ? 'cursor-pointer' : 'cursor-default'}`}
             >
               +
             </button>
@@ -383,7 +383,7 @@ export function TaskDetail({ task, onClose, onUpdate, onDelete }: TaskDetailProp
           {comments.map((c) => (
             <div
               key={c.id}
-              className="py-2 px-2.5 bg-dot/30 rounded mb-1.5"
+              className="py-2 px-2.5 bg-border-subtle/30 rounded mb-1.5"
             >
               <div className="text-[13px] text-ink leading-5">
                 {c.text}
@@ -401,12 +401,12 @@ export function TaskDetail({ task, onClose, onUpdate, onDelete }: TaskDetailProp
               placeholder={t('task.writeComment')}
               aria-label={t('task.newComment')}
               rows={2}
-              className="text-[13px] text-ink bg-transparent border border-dot rounded outline-none py-1.5 px-2 resize-y"
+              className="text-[13px] text-ink bg-transparent border border-border-subtle rounded outline-none py-1.5 px-2 resize-y"
             />
             <button
               type="submit"
               disabled={!newComment.trim()}
-              className={`self-end py-[3px] px-3 border-0 rounded text-xs ${newComment.trim() ? 'bg-ink text-cream cursor-pointer' : 'bg-dot text-ink-light cursor-default'}`}
+              className={`self-end py-[3px] px-3 border-0 rounded text-xs ${newComment.trim() ? 'bg-ink text-cream cursor-pointer' : 'bg-border-subtle text-ink-light cursor-default'}`}
             >
               {t('task.addComment')}
             </button>
@@ -415,11 +415,11 @@ export function TaskDetail({ task, onClose, onUpdate, onDelete }: TaskDetailProp
       </div>
 
       {/* Footer actions */}
-      <div className="border-t border-dot px-5 py-3 flex justify-end gap-2 shrink-0">
+      <div className="border-t border-border-subtle px-5 py-3 flex justify-end gap-2 shrink-0">
         <button
           type="button"
           onClick={handleDeleteConfirm}
-          className={`py-1 px-3.5 bg-transparent border rounded text-xs cursor-pointer transition-all duration-[120ms] ${confirmDelete ? 'border-danger text-danger-text' : 'border-dot text-ink-light'}`}
+          className={`py-1 px-3.5 bg-transparent border rounded text-xs cursor-pointer transition-all duration-[120ms] ${confirmDelete ? 'border-danger text-danger-text' : 'border-border-subtle text-ink-light'}`}
         >
           {confirmDelete ? t('task.confirmDelete') : t('common.delete')}
         </button>

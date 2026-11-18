@@ -18,7 +18,7 @@ export function TaskRowSpecimen({
   return (
     <div
       className={`flex items-center gap-2 h-10 px-2 rounded-[8px] transition-colors duration-[var(--motion-fast)] ${
-        selected ? 'bg-dot/50' : 'hover:bg-dot/30'
+        selected ? 'bg-border-subtle/50' : 'hover:bg-border-subtle/30'
       }`}
     >
       <Checkbox checked={completed} readOnly />

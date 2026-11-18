@@ -44,7 +44,7 @@ export function ColumnDeleteModal({
     >
       <div
         onClick={(event) => event.stopPropagation()}
-        className="mx-4 w-full max-w-[400px] rounded-md border border-dot px-8 py-6 shadow-overlay"
+        className="mx-4 w-full max-w-[400px] rounded-md border border-border-subtle px-8 py-6 shadow-overlay"
         style={{ backgroundColor: 'var(--planner-overlay-bg)' }}
       >
         <h2 id="column-delete-modal-title" className="mb-2 text-base font-semibold text-ink">

@@ -131,7 +131,7 @@ export function DateScreen({ draft, onChange, weekStart, onOpenTime, onOpenRepea
               <button
                 type="button"
                 onClick={applyTyped}
-                className="date-picker-preview mt-1 flex h-6 w-full cursor-pointer items-center gap-2 rounded-xs border-none bg-transparent px-2 text-left text-[12px] text-ink hover:bg-dot/30"
+                className="date-picker-preview mt-1 flex h-6 w-full cursor-pointer items-center gap-2 rounded-xs border-none bg-transparent px-2 text-left text-[12px] text-ink hover:bg-border-subtle/30"
               >
                 <span className="min-w-0 flex-1 truncate">
                   {[
