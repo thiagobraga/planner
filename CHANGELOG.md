@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.30.0](https://github.com/thiagobraga/planner/compare/v0.29.1...v0.30.0) (2026-11-19)
+
+
+### Added
+
+* **api:** store rich task documents with revisions ([a59019b](https://github.com/thiagobraga/planner/commit/a59019ba84d9128be92f925c5c616a77c0cd0d7e))
+
+
+### Fixed
+
+* **api:** refuse NUL characters in document text ([7ba8908](https://github.com/thiagobraga/planner/commit/7ba89087be9c00feadb695288e0e486ca273c555))
+
 ## [0.29.1](https://github.com/thiagobraga/planner/compare/v0.29.0...v0.29.1) (2026-11-19)
 
 
