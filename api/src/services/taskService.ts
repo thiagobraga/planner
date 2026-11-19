@@ -2,7 +2,7 @@ import { v4 as uuidv4 } from 'uuid';
 import pool from '../db/pool.js';
 import { AppError } from '../utils/AppError.js';
 import { attachLabels, verifyLabelOwnership } from './labelService.js';
-import { recordActivity } from './activityService.js';
+import { runMutation } from './mutationRunner.js';
 import type {
   CreateTaskInput,
   MoveTaskInput,
@@ -12,7 +12,7 @@ import type {
   UpdateTaskInput,
 } from '../types/task.js';
 import { getAccessibleTask } from './task/access.js';
-import { publishTaskDeleted, publishTaskEvent } from './task/events.js';
+import { taskDeletedEvent, taskEvent } from './task/events.js';
 import { formatTask } from './task/format.js';
 import {
   MAX_DEPTH,
@@ -136,52 +136,36 @@ export async function createTask(userId: string, input: CreateTaskInput) {
     input.durationMinutes ?? null,
   ];
 
-  let taskRow: TaskRow;
-  if (labelIds.length > 0) {
-    const client = await pool.connect();
-    try {
-      await client.query('BEGIN');
-      const result = await client.query(insertQuery, insertValues);
+  return runMutation(async (tx) => {
+    const result = await tx.client.query(insertQuery, insertValues);
+    if (labelIds.length > 0) {
       const placeholders = labelIds.map((_, i) => `($1, $${i + 2})`).join(', ');
-      await client.query(
+      await tx.client.query(
         `INSERT INTO task_labels (task_id, label_id) VALUES ${placeholders}`,
         [id, ...labelIds],
       );
-      await client.query('COMMIT');
-      taskRow = result.rows[0] as TaskRow;
-    } catch (err) {
-      await client.query('ROLLBACK');
-      throw err;
-    } finally {
-      client.release();
     }
-  } else {
-    const result = await pool.query(insertQuery, insertValues);
-    taskRow = result.rows[0] as TaskRow;
-  }
-
-  const [task] = await attachLabels([formatTask(taskRow)]);
-  await recordActivity(pool, {
-    userId,
-    collectionId: task.collectionId,
-    entityType: 'task',
-    entityId: task.id,
-    eventType: 'task_created',
-    afterData: { title: task.title },
+    // Read through the transaction: the label rows are not committed yet.
+    const [task] = await attachLabels([formatTask(result.rows[0] as TaskRow)], tx.client);
+    await tx.recordActivity({
+      userId,
+      collectionId: task.collectionId,
+      entityType: 'task',
+      entityId: task.id,
+      eventType: 'task_created',
+      afterData: { title: task.title },
+    });
+    tx.emit(taskEvent('created', userId, task));
+    return task;
   });
-  publishTaskEvent('created', userId, task);
-  return task;
 }
 
 export async function deleteTask(taskId: string, userId: string): Promise<{ success: true }> {
   const task = await getAccessibleTask(taskId, userId);
 
-  const client = await pool.connect();
-  try {
-    await client.query('BEGIN');
-
+  await runMutation(async (tx) => {
     // Collect all task IDs to delete (the task + all descendants via recursive CTE)
-    const descendantsResult = await client.query(
+    const descendantsResult = await tx.client.query(
       `WITH RECURSIVE subtree AS (
          SELECT id FROM tasks WHERE id = $1
          UNION ALL
@@ -195,13 +179,12 @@ export async function deleteTask(taskId: string, userId: string): Promise<{ succ
     const taskIds = descendantsResult.rows.map((r: { id: string }) => r.id);
 
     // Cancel all reminders for deleted tasks
-    await client.query(`DELETE FROM reminders WHERE task_id = ANY($1)`, [taskIds]);
+    await tx.client.query(`DELETE FROM reminders WHERE task_id = ANY($1)`, [taskIds]);
 
     // Delete all tasks (parent + subtasks)
-    await client.query(`DELETE FROM tasks WHERE id = ANY($1)`, [taskIds]);
+    await tx.client.query(`DELETE FROM tasks WHERE id = ANY($1)`, [taskIds]);
 
-    // Append activity event
-    await recordActivity(client, {
+    await tx.recordActivity({
       userId,
       collectionId: task.collection_id,
       entityType: 'task',
@@ -209,15 +192,8 @@ export async function deleteTask(taskId: string, userId: string): Promise<{ succ
       eventType: 'task_deleted',
       beforeData: { title: task.title },
     });
-
-    await client.query('COMMIT');
-    publishTaskDeleted(userId, taskId, task.collection_id);
-  } catch (err) {
-    await client.query('ROLLBACK');
-    throw err;
-  } finally {
-    client.release();
-  }
+    tx.emit(taskDeletedEvent(userId, taskId, task.collection_id));
+  });
 
   return { success: true };
 }
