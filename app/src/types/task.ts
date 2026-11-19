@@ -147,37 +147,9 @@ export interface TaskListProps extends TaskListCallbacks {
   onTaskToggle?: (id: string) => void;
 }
 
-export interface TaskComment {
-  id: string;
-  text: string;
-  createdAt: string;
-}
-
-export interface TaskDetailProps {
-  task: Task | null;
-  onClose: () => void;
-  onUpdate?: (id: string, updates: Partial<Task>) => void;
-  onDelete?: (id: string) => void;
-}
-
 export interface TaskBlockPreviewProps {
   /** The dragged row first, then its descendants in render order. */
   rows: { task: Task; depth: number }[];
-}
-
-/** Zustand store row: no labels, no render-only fields. */
-export interface StoreTask {
-  id: string;
-  title: string;
-  description?: string;
-  priority: number;
-  collectionId: string;
-  sectionId?: string;
-  parentTaskId?: string;
-  dueDate?: string;
-  recurrenceRule?: object | null;
-  isCompleted: boolean;
-  orderValue: number;
 }
 
 export interface StoreSection {
@@ -185,14 +157,6 @@ export interface StoreSection {
   name: string;
   collectionId: string;
   orderValue: number;
-}
-
-export interface TaskState {
-  tasks: StoreTask[];
-  setTasks: (tasks: StoreTask[]) => void;
-  addTask: (task: StoreTask) => void;
-  updateTask: (id: string, updates: Partial<StoreTask>) => void;
-  removeTask: (id: string) => void;
 }
 
 export interface TaskSelectionState {

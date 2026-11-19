@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { Button } from '../Button';
 import { Input } from '../Input';
@@ -6,7 +6,6 @@ import { Select } from '../Select';
 import { StatusPill } from '../StatusPill';
 import { PriorityDot } from '../PriorityDot';
 import { ContextMenu } from '../ContextMenu';
-import { TaskDetail } from '../../TaskDetail';
 import { CustomSelect } from '../CustomSelect';
 import { AuthFormError } from '../../AuthShell';
 
@@ -37,26 +36,5 @@ describe('semantic state colors', () => {
       { type: 'item', label: 'Delete', destructive: true, onClick: vi.fn() },
     ]} />);
     expect(screen.getByRole('menuitem', { name: 'Delete' })).toHaveClass('text-danger-text');
-  });
-
-  it('pairs selected priority fills with their theme-aware foregrounds', () => {
-    render(<TaskDetail onClose={vi.fn()} task={{
-      id: 'task-1', title: 'Prioritized task', priority: 1,
-      isCompleted: false, orderValue: 1, type: 'task',
-    }} />);
-
-    const expected = [
-      ['P1', 'bg-danger', 'text-on-danger'],
-      ['P2', 'bg-priority-2', 'text-on-warning'],
-      ['P3', 'bg-priority-3', 'text-on-info'],
-      ['P4', 'bg-ink', 'text-cream'],
-    ];
-    for (const [name, background, foreground] of expected) {
-      const button = screen.getByRole('button', { name, exact: true });
-      fireEvent.click(button);
-      expect(button).toHaveAttribute('aria-pressed', 'true');
-      expect(button).toHaveClass(background, foreground);
-      expect(button).not.toHaveClass('text-white');
-    }
   });
 });
