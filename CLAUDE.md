@@ -99,8 +99,8 @@ Add to `/etc/hosts`: `planner.local`, `api.planner.local`, `db.planner.local`, `
 - `middleware/requireScope.ts` - `enforceTokenScope` (read-only tokens cannot write), `requireSession` (keeps tokens and OAuth off `/api-tokens`, `/oauth` and `/admin`)
 - `middleware/errorHandler.ts` - `AppError` vs generic; returns `{ error: { code, message, details? } }`
 - `services/syncService.ts` - `publishEvent(event)` is the single broadcast entry point
-- `services/mutationRunner.ts` - `runMutation(tx => ...)`: one transaction for the write and `tx.recordActivity()`; `tx.emit()` events publish only after COMMIT, and a publish failure is logged while the write stands. Used by `createTask`, `deleteTask` and comment writes
-- `contracts/*.ts` (api and app) - byte-identical, type-only wire contracts (`SyncEvent`, comments), checked by `scripts/check-contracts.sh`
+- `services/mutationRunner.ts` - `runMutation(tx => ...)`: one transaction for the write and `tx.recordActivity()`; `tx.emit()` events publish only after COMMIT, and a publish failure is logged while the write stands. Used by `createTask`, `deleteTask`, comment writes and document saves
+- `contracts/*.ts` (api and app) - byte-identical, type-only wire contracts (`SyncEvent`, comments, task documents), checked by `scripts/check-contracts.sh`
 - `services/authService.ts` - register/login (Redis rate-limit: 10 attempts/15 min)
 - `services/sessionService.ts` - opaque session tokens (SHA-256 hashed), idle + absolute expiry
 - `services/apiTokenService.ts` - personal API tokens: create/list/validate/revoke, max 20 active per user
@@ -118,6 +118,7 @@ Add to `/etc/hosts`: `planner.local`, `api.planner.local`, `db.planner.local`, `
 - `services/labelService.ts` - label CRUD
 - `services/sectionService.ts` - section CRUD
 - `services/commentService.ts` - comment CRUD
+- `services/documentService.ts` - rich task documents (`task_documents`): read (stored, or a revision 0 seed from the plain description) and compare-and-swap save that re-derives `tasks.description` as plain text in the same transaction. `services/document/` holds the node/mark allowlist validator (`validate.ts`, `schema.ts`), the plain-text projection (`plainText.ts`) and SQL (`store.ts`, including the `DOCUMENT_EXISTS` guard on legacy description writes)
 - `services/reminderService.ts` - reminder CRUD
 - `services/searchService.ts` - full-text search
 - `services/activityService.ts` - activity feed; `recordActivity()` is the only writer to `activity_events` and stamps the acting token or OAuth grant (`actor_type`, `api_token_id` / `oauth_grant_id`, `actor_label`) from the request context
@@ -134,7 +135,7 @@ Add to `/etc/hosts`: `planner.local`, `api.planner.local`, `db.planner.local`, `
 - `mcp/` - MCP server for AI agents: `server.ts` builds a per-request `McpServer` (write tools only for write tokens), `tools/*` call services directly, `resolve.ts` maps names/natural dates to ids/ISO in the user's timezone, `format.ts` renders compact task lines ending in `id:<uuid>`
 - `routes/index.ts` - Aggregates all routes under `/api/v1/`
 
-All routes under `/api/v1/`. Route files: `auth`, `apiTokens`, `mcp`, `oauth`, `tasks`, `collections`, `labels`, `sections`, `views`, `filters`, `search`, `reminders`, `comments`, `preferences`, `activity`, `collaboration`, `daily`, `habits`, `habitGroups`, `statuses`, `savedColors`, `adminUsers`, `adminStats`.
+All routes under `/api/v1/`. Route files: `auth`, `apiTokens`, `mcp`, `oauth`, `tasks`, `collections`, `labels`, `sections`, `views`, `filters`, `search`, `reminders`, `comments`, `documents`, `preferences`, `activity`, `collaboration`, `daily`, `habits`, `habitGroups`, `statuses`, `savedColors`, `adminUsers`, `adminStats`.
 
 ### Frontend (`app/src/`)
 
@@ -187,7 +188,7 @@ api/src/services/syncService.ts      publishEvent() - real-time broadcast
 api/src/services/taskService.ts      Task CRUD + recurrence
 api/src/db/pool.ts                   PostgreSQL pool
 api/src/db/redis.ts                  Redis clients (pub/sub)
-api/src/db/migrations/               SQL migration files (001-048)
+api/src/db/migrations/               SQL migration files (001-053)
 api/src/parsers/filterParser.ts      Peggy filter DSL parser
 api/src/engines/recurrenceEngine.ts  Recurrence rule engine
 api/src/mcp/server.ts                MCP server (AI agent tools)
@@ -220,6 +221,8 @@ GET/POST          /tasks
 PATCH/DELETE      /tasks/:id
 POST              /tasks/:id/complete   POST /tasks/:id/reopen
 PATCH             /tasks/:id/reorder
+GET/PUT           /tasks/:id/document  (PUT { content, baseRevision }; 409 DOCUMENT_CONFLICT with details[0].current; 400 VALIDATION_ERROR with the offending path)
+                  PATCH /tasks/:id or MCP update_task notes on a task with a document -> 409 DOCUMENT_EXISTS
 
 GET               /daily/:from/:to  (YYYY-MM-DD, max 42 days; overdue + one entry per day)
 GET               /views/inbox     GET /views/collection/:id
@@ -263,7 +266,7 @@ Rooms: `user:{userId}` (all sessions) and `collection:{collectionId}` (collabora
 ## Database
 
 PostgreSQL 16. Pool max 20 connections. Migrations run at startup from `api/src/db/migrations/`.  
-Schema tables: `users`, `sessions`, `api_tokens`, `oauth_clients`, `oauth_authorization_requests`, `oauth_grants`, `oauth_codes`, `oauth_tokens`, `preferences`, `password_reset_tokens`, `collections`, `collaborators`, `project_invitations`, `sections`, `tasks`, `labels`, `task_labels`, `filters`, `comments`, `reminders`, `activity_events`, `habits`, `habit_completions`, `habit_groups`, `task_statuses`, `user_saved_colors`.
+Schema tables: `users`, `sessions`, `api_tokens`, `oauth_clients`, `oauth_authorization_requests`, `oauth_grants`, `oauth_codes`, `oauth_tokens`, `preferences`, `password_reset_tokens`, `collections`, `collaborators`, `project_invitations`, `sections`, `tasks`, `labels`, `task_labels`, `filters`, `comments`, `task_documents`, `reminders`, `activity_events`, `habits`, `habit_completions`, `habit_groups`, `task_statuses`, `user_saved_colors`.
 
 Redis: three clients from `db/redis.ts` - `redisClient` (general), `redisPubClient` (publish), `redisSubClient` (subscribe). Auth rate-limiting uses `redisClient`.
 

@@ -94,6 +94,9 @@ export function AppShell() {
       qc.invalidateQueries({ queryKey: ['collection'] });
     } else if (event.entityType === 'comment') {
       void invalidateCommentQueries(qc, event);
+    } else if (event.entityType === 'task' && event.eventType === 'updated') {
+      // A document save arrives as a task update; lists refresh in their pages.
+      void qc.invalidateQueries({ queryKey: ['document', event.entityId] });
     }
   }, [qc, agentNoticesOn, t]));
   const [quickAddOpen, setQuickAddOpen] = useState(false);

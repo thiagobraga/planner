@@ -68,7 +68,11 @@ if (!DISABLE_RATE_LIMITS_IN_DEV) {
   app.use(globalLimiter);
 }
 
-app.use(express.json({ limit: "100kb" }));
+// Task documents carry up to 256 KB of editor JSON; every other body stays small.
+const DOCUMENT_PATH = /^\/api\/v1\/tasks\/[^/]+\/document$/;
+const jsonBody = express.json({ limit: "100kb" });
+const documentBody = express.json({ limit: "320kb" });
+app.use((req, res, next) => (DOCUMENT_PATH.test(req.path) ? documentBody : jsonBody)(req, res, next));
 
 // OAuth for hosted MCP clients. Ahead of the app's CORS and /api/v1 chain: these
 // endpoints take form posts from other origins and set their own CORS policy.
@@ -98,7 +102,7 @@ app.use("/api/v1", (req, res, next) => {
 // CORS
 app.use((_req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", CORS_ORIGIN);
-  res.setHeader("Access-Control-Allow-Methods", "GET,POST,PATCH,DELETE,OPTIONS");
+  res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type,Authorization,X-XSRF-TOKEN,X-Socket-Id");
   res.setHeader("Access-Control-Allow-Credentials", "true");
   if (_req.method === "OPTIONS") {

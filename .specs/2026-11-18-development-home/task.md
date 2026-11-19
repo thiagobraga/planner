@@ -12,6 +12,7 @@ What to build: `plan.md`. This file records how the run is executed, the slice q
 - Shared contracts: no `shared/` package (Dockerfiles copy one package, `api/tsconfig.json` has `rootDir: "src"`). Instead, byte-identical type-only files at `api/src/contracts/*.ts` and `app/src/contracts/*.ts`, checked by `scripts/check-contracts.sh` in pre-push and `2a.quality.yml`.
 - No lazy chunk exists yet: the detail panel + editor becomes the first; measure main bundle before/after.
 - Search uses `ILIKE` on title/description; documents are searched through the derived plain-text `description`.
+- S5 is split: S5a (API/data, `task_documents`, `GET/PUT /tasks/:id/document`, `DOCUMENT_EXISTS` guard) ships before S5b (panel and editor). Account export/restore of documents and recurring-copy of documents are not in S5a; S5b or S8 owns them.
 - `TaskDetail.tsx` and `stores/taskStore.ts` have no production importers: delete in a separate `refactor` commit.
 - Collections view ignores remote `task`/`section` events (`CollectionsPage.tsx:67-76`). `CollectionTreeNav.tsx` has no importer.
 - Window ("Janela") control leaves every page toolbar and becomes "Largura total" in the Planner menu next to the global display toggles (`TopBarMenus.tsx:26-33`); `v f` keeps working. Shedding order: compact date, then Today.
@@ -43,8 +44,9 @@ What to build: `plan.md`. This file records how the run is executed, the slice q
 | M1.9 | S3b toolbar buttons, Window to Planner menu | style/toolbar-buttons | #476 | merged `cc92c5ee` |
 | R1 | Release and verify | - | - | v0.28.1 deployed and verified; v0.28.2 also deployed |
 | STOP 1 | R1 report, panel/card mock approval | - | - | approved |
-| M2.10 | S4 contracts, mutation runner, comment sync | refactor/mutation-runner | #480 | in progress |
-| M2.11 | S5 documents and detail panel (migration 053) | feat/task-documents | - | queued |
+| M2.10 | S4 contracts, mutation runner, comment sync | refactor/mutation-runner | #480 | merged `c0f02316` |
+| M2.11a | S5a task documents API and data (migration 053), no UI | feat/task-documents-api | #482 | in review |
+| M2.11b | S5b detail panel and Tiptap editor UI | feat/task-documents-panel | - | queued |
 | M3.12 | S6 embedded subtasks, five-row cards | feat/embedded-subtasks | - | queued |
 | M4.13 | S7 MCP document/comment/claim/batch | feat/mcp-documents | - | queued |
 | M4.14 | S8 Markdown import, dry run, undo | feat/markdown-import | - | queued |
