@@ -3,6 +3,7 @@ import { AppError } from '../../utils/AppError.js';
 import type { TaskRow, UpdateTaskInput } from '../../types/task.js';
 import { recordActivity } from '../activityService.js';
 import { attachLabels, verifyLabelOwnership } from '../labelService.js';
+import { assertDescriptionWritable } from '../document/store.js';
 import { getAccessibleTask } from './access.js';
 import { publishSourceCollectionChange, publishTaskEvent } from './events.js';
 import { formatTask } from './format.js';
@@ -25,6 +26,7 @@ export async function updateTask(taskId: string, userId: string, input: UpdateTa
 
   await verifyLabelOwnership(input.labelIds ?? [], userId);
   const task = await getAccessibleTask(taskId, userId);
+  if (input.description !== undefined) await assertDescriptionWritable(taskId);
   validateTimeNeedsDate(
     input,
     input.dueDate !== undefined ? input.dueDate : task.due_date,
