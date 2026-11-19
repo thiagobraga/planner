@@ -57,7 +57,7 @@ export function DailyToolbar({ view, todayKey, weekStart, onReorganize, onToday 
           onStyleChange={view.setStyle}
           range={view.range}
           onRangeChange={view.setRange}
-          extra={onReorganize && !sheet && ((close) => (
+          extra={onReorganize && !sheet ? (close) => (
             <MenuSection label={t('view.actions')}>
               <MenuItem
                 label={t('reorganize.button')}
@@ -68,7 +68,7 @@ export function DailyToolbar({ view, todayKey, weekStart, onReorganize, onToday 
                 }}
               />
             </MenuSection>
-          ))}
+          ) : undefined}
         />
         </div>
       )}
