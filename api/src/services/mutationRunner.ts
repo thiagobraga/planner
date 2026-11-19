@@ -37,12 +37,13 @@ export async function runMutation<T>(work: (tx: Mutation) => Promise<T>): Promis
     // A client whose ROLLBACK failed may still hold the transaction; drop it.
     client.release(broken);
   }
+  // Not awaited: node-redis queues commands while reconnecting, so awaiting
+  // would let a Redis stall hang the response for a write that is already
+  // committed. Issue order on the one pub connection keeps events in order.
   for (const event of events) {
-    try {
-      await publishEvent(event);
-    } catch (err) {
+    publishEvent(event).catch((err) => {
       console.error("[mutation] publish after commit failed; the write stands:", err);
-    }
+    });
   }
   return result;
 }

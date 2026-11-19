@@ -74,7 +74,7 @@ it("publishes events only after the write and its activity are committed", async
   const result = await createThroughRunner(taskId);
 
   expect(result).toBe(taskId);
-  expect(seenAtPublish).toEqual([{ task: 1, activity: ["task_created"] }]);
+  await expect.poll(() => seenAtPublish).toEqual([{ task: 1, activity: ["task_created"] }]);
   await expect.poll(() => events.filter((event) => event.entityId === taskId).map((event) => event.eventType))
     .toEqual(["created"]);
 });
@@ -98,7 +98,15 @@ it("keeps the committed write when publishing fails afterwards", async () => {
   await expect(createThroughRunner(taskId)).resolves.toBe(taskId);
 
   expect(await storedState(taskId)).toEqual({ task: 1, activity: ["task_created"] });
-  expect(log).toHaveBeenCalled();
+  await expect.poll(() => log.mock.calls.some(([message]) => String(message).startsWith("[mutation]"))).toBe(true);
+});
+
+it("does not hold the response while Redis is stalled", async () => {
+  const taskId = randomUUID();
+  vi.spyOn(redisPubClient, "publish").mockReturnValue(new Promise<number>(() => {}));
+
+  await expect(createThroughRunner(taskId)).resolves.toBe(taskId);
+  expect(await storedState(taskId)).toEqual({ task: 1, activity: ["task_created"] });
 });
 
 it("stamps events with the calling socket from the request context", async () => {
