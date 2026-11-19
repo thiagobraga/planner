@@ -1,0 +1,62 @@
+/* Panel containers. Loaded with the shell so the lazy chunk's fallback already
+   sits where the panel will. Internals live in detailPanel.css. */
+
+.app-shell-body {
+  display: flex;
+  min-height: 0;
+  flex: 1;
+}
+
+.detail-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--planner-page-bg);
+  color: var(--color-ink);
+}
+
+/* Docked: a pane beside the page, flat like the collections tree pane. */
+.detail-panel--dock {
+  flex: 0 0 480px;
+  width: 480px;
+  border-inline-start: 1px solid var(--color-border-subtle);
+}
+
+/* The page needs its width: the panel floats over it, still non-modal. */
+.detail-panel--overlay {
+  position: fixed;
+  inset-block: 0;
+  inset-inline-end: 0;
+  z-index: 60;
+  width: min(480px, 100vw);
+  border-inline-start: 1px solid var(--color-border-subtle);
+  background: var(--planner-overlay-bg);
+  box-shadow: var(--shadow-overlay);
+}
+
+.detail-sheet-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  background: rgb(44 44 44 / 0.3);
+}
+
+.detail-panel--sheet {
+  position: fixed;
+  inset-inline: 0;
+  inset-block: 56px 0;
+  z-index: 91;
+  border: 1px solid var(--color-border-subtle);
+  border-block-end: 0;
+  border-radius: 12px 12px 0 0;
+  background: var(--planner-overlay-bg);
+  box-shadow: var(--shadow-overlay);
+}
+
+.detail-panel-fallback {
+  margin: 0;
+  padding: 24px;
+  font-size: 14px;
+  font-style: italic;
+  color: var(--color-ink-light);
+}

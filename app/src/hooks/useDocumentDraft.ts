@@ -38,6 +38,11 @@ export function useDocumentDraft(taskId: string) {
   const stateRef = useRef(state);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const saving = useRef(false);
+  const saveRef = useRef<() => Promise<void>>(async () => undefined);
+  const schedule = useCallback(() => {
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = setTimeout(() => void saveRef.current(), AUTOSAVE_MS);
+  }, []);
 
   const update = useCallback((patch: Partial<DocumentDraftState>) => {
     stateRef.current = { ...stateRef.current, ...patch };
@@ -60,7 +65,7 @@ export function useDocumentDraft(taskId: string) {
       } else {
         draftMemory.set(taskId, { draft: stateRef.current.draft!, base: saved });
         update({ base: saved, status: 'dirty' });
-        timer.current = setTimeout(() => void save(), AUTOSAVE_MS);
+        schedule();
       }
     } catch (err) {
       const current = conflictCurrent(err);
@@ -69,7 +74,11 @@ export function useDocumentDraft(taskId: string) {
     } finally {
       saving.current = false;
     }
-  }, [qc, taskId, update]);
+  }, [qc, schedule, taskId, update]);
+
+  useEffect(() => {
+    saveRef.current = save;
+  }, [save]);
 
   useEffect(() => {
     const data = query.data;
@@ -92,9 +101,8 @@ export function useDocumentDraft(taskId: string) {
       return;
     }
     update({ draft: content, status: saving.current ? 'saving' : 'dirty' });
-    if (timer.current) clearTimeout(timer.current);
-    timer.current = setTimeout(() => void save(), AUTOSAVE_MS);
-  }, [save, taskId, update]);
+    schedule();
+  }, [schedule, taskId, update]);
 
   const reload = useCallback(() => {
     const current = stateRef.current.conflict;

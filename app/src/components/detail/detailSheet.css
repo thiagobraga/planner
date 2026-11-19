@@ -1,0 +1,76 @@
+/* Phone bottom sheet overrides and entry motion. */
+
+/* Phone sheet ------------------------------------------------------------- */
+
+.detail-panel--sheet .detail-header {
+  padding-inline: 16px;
+}
+
+.detail-panel--sheet .detail-body {
+  padding: 24px 16px;
+}
+
+.detail-panel--sheet .detail-close {
+  width: 44px;
+  height: 44px;
+  margin-inline-end: -10px;
+}
+
+.detail-panel--sheet .detail-mode {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  width: 100%;
+}
+
+.detail-panel--sheet .detail-mode button {
+  height: 36px;
+  font-size: 13px;
+}
+
+.detail-panel--sheet .detail-row {
+  min-height: 44px;
+}
+
+.detail-panel--sheet .detail-properties dl {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.detail-panel--sheet .detail-properties dt {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+.detail-panel--sheet .detail-status-pill {
+  padding: 0;
+  border: 0;
+}
+
+.detail-panel--sheet .detail-properties dd {
+  padding: 0 10px;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 12px;
+  font-size: 12px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .detail-panel--sheet {
+    animation: detail-sheet-in var(--motion-smooth, 300ms) ease-out;
+  }
+
+  .detail-panel--overlay {
+    animation: detail-overlay-in var(--motion-default, 200ms) ease-out;
+  }
+}
+
+@keyframes detail-sheet-in {
+  from { transform: translateY(24px); opacity: 0; }
+}
+
+@keyframes detail-overlay-in {
+  from { transform: translateX(24px); opacity: 0; }
+}

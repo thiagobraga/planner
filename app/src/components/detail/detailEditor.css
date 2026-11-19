@@ -1,0 +1,174 @@
+/* Rich description editor and its bubble menu. */
+
+/* Editor ------------------------------------------------------------------ */
+
+.detail-prose {
+  min-height: 72px;
+  border-radius: 4px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--color-ink);
+  overflow-wrap: anywhere;
+}
+
+/* A quiet ring: the caret already shows where typing goes. */
+.detail-prose:focus,
+.detail-prose:focus-visible {
+  outline: 1px solid var(--color-border-subtle);
+  outline-offset: 8px;
+}
+
+.detail-prose > * + * {
+  margin-top: 12px;
+}
+
+.detail-prose p {
+  margin: 0;
+}
+
+.detail-prose h1,
+.detail-prose h2,
+.detail-prose h3 {
+  margin: 24px 0 0;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.6;
+}
+
+.detail-prose h1 {
+  font-size: 17px;
+}
+
+.detail-prose > :first-child {
+  margin-top: 0;
+}
+
+.detail-prose ul,
+.detail-prose ol {
+  margin: 0;
+  padding-inline-start: 24px;
+}
+
+.detail-prose ul {
+  list-style: disc;
+}
+
+.detail-prose ol {
+  list-style: decimal;
+}
+
+.detail-prose blockquote {
+  margin: 0;
+  padding-inline-start: 12px;
+  border-inline-start: 2px solid var(--color-border-subtle);
+  color: var(--color-ink-light);
+}
+
+.detail-prose code {
+  padding: 0 4px;
+  border-radius: 3px;
+  background: var(--planner-sidebar-hover-bg, transparent);
+  font-size: 13px;
+}
+
+.detail-prose pre {
+  margin: 0;
+  padding: 12px;
+  overflow-x: auto;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 4px;
+}
+
+.detail-prose pre code {
+  padding: 0;
+  background: none;
+}
+
+.detail-prose a {
+  color: var(--color-accent-text);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.detail-prose hr {
+  border: 0;
+  border-top: 1px solid var(--color-border-subtle);
+}
+
+.detail-prose p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  color: var(--color-ink-light);
+  font-style: italic;
+  pointer-events: none;
+}
+
+.detail-bubble {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 6px;
+  background: var(--planner-overlay-bg);
+  box-shadow: var(--shadow-overlay);
+}
+
+.detail-bubble-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 4px;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--color-ink);
+  font: inherit;
+  cursor: pointer;
+}
+
+.detail-bubble-button:hover,
+.detail-bubble-button[aria-pressed='true'] {
+  background: var(--planner-sidebar-hover-bg);
+}
+
+.detail-bubble-button[aria-pressed='true'] {
+  font-weight: 600;
+}
+
+.detail-bubble-text {
+  font-size: 12px;
+}
+
+.detail-bubble-sep {
+  width: 1px;
+  height: 16px;
+  margin-inline: 2px;
+  background: var(--color-border-subtle);
+}
+
+.detail-bubble-link input {
+  width: 240px;
+  height: 28px;
+  padding: 0 8px;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--color-ink);
+  font: inherit;
+  font-size: 13px;
+}
+
+.detail-bubble-link input[aria-invalid='true'] {
+  border-color: var(--color-danger);
+}
+
+.detail-panel button:focus-visible,
+.detail-panel textarea:focus-visible,
+.detail-panel input:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
