@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router';
-import { MoreHorizontal } from 'lucide-react';
+import { ChevronRight, MoreHorizontal } from 'lucide-react';
 import { useI18n } from '../../i18n/I18nContext';
 import type { CollectionRowProps } from '../../types/collections';
 import { isDesktopCollections } from '../../utils/collectionsLayout';
@@ -22,6 +22,9 @@ export function CollectionRow({ node, depth, ...props }: CollectionRowProps) {
   const isMenuOpen = props.menuOpenId === node.id;
   const isRenaming = props.renamingId === node.id;
   const isAddingSub = props.addingSubFor === node.id;
+  const hasChildren = node.children.length > 0;
+  const isExpanded = !props.collapsedIds.has(node.id);
+  const childrenId = `collection-children-${node.id}`;
 
   const handleOpenMenu = (pos: { x: number; y: number }) => {
     setContextPos(pos);
@@ -32,7 +35,7 @@ export function CollectionRow({ node, depth, ...props }: CollectionRowProps) {
     <>
       <div
         className="collections-index-row grid h-6 cursor-pointer relative"
-        style={{ gridTemplateColumns: `24px minmax(0, 1fr) 24px`, paddingLeft: `${depth * 24}px` }}
+        style={{ gridTemplateColumns: `24px minmax(0, 1fr) auto`, paddingLeft: `${depth * 24}px` }}
         onContextMenu={(e) => {
           e.preventDefault();
           handleOpenMenu({ x: e.clientX, y: e.clientY });
@@ -102,7 +105,24 @@ export function CollectionRow({ node, depth, ...props }: CollectionRowProps) {
         )}
 
         {!isRenaming && (
-          <div className="col-start-3 col-span-1 flex h-6 items-center justify-self-end gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+          <div className="col-start-3 col-span-1 flex h-6 items-center justify-self-end shrink-0" onClick={(e) => e.stopPropagation()}>
+            {hasChildren && (
+              <button
+                type="button"
+                className="collections-index-row__toggle flex h-6 w-6 items-center justify-center p-0 text-ink-light hover:text-ink bg-transparent border-0 cursor-pointer"
+                aria-label={t(isExpanded ? 'page.collapseCollection' : 'page.expandCollection', { name: node.name })}
+                aria-expanded={isExpanded}
+                aria-controls={childrenId}
+                onClick={() => props.onToggleCollapsed(node.id)}
+              >
+                <ChevronRight
+                  aria-hidden="true"
+                  size={16}
+                  strokeWidth={1.5}
+                  className={`transition-transform duration-(--motion-fast) ${isExpanded ? 'rotate-90' : ''}`}
+                />
+              </button>
+            )}
             <button
               type="button"
               className="collections-index-row__actions-btn flex h-6 w-6 items-center justify-center p-0 text-ink-light hover:text-ink bg-transparent border-0 cursor-pointer"
@@ -181,9 +201,13 @@ export function CollectionRow({ node, depth, ...props }: CollectionRowProps) {
         </div>
       )}
 
-      {node.children.map((child) => (
-        <CollectionRow key={child.id} node={child} depth={depth + 1} {...props} />
-      ))}
+      {hasChildren && (
+        <div id={childrenId} role="group" aria-label={node.name} hidden={!isExpanded}>
+          {node.children.map((child) => (
+            <CollectionRow key={child.id} node={child} depth={depth + 1} {...props} />
+          ))}
+        </div>
+      )}
     </>
   );
 }

@@ -72,6 +72,8 @@ export interface CollectionRowProps {
   onSaveNewSub: (parentId: string) => void;
   onCancelNewSub: () => void;
   onColorCommit: (node: CollectionTreeNode, color: string) => void;
+  collapsedIds: ReadonlySet<string>;
+  onToggleCollapsed: (id: string) => void;
 }
 
 export interface SectionHeaderProps {
