@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.28.0](https://github.com/thiagobraga/planner/compare/v0.27.2...v0.28.0) (2026-11-19)
+
+
+### Added
+
+* **collections:** keep the tree alongside collection details ([b410d76](https://github.com/thiagobraga/planner/commit/b410d7693523f6a096f12e17349bf3330793d60e))
+* **collections:** keep the tree alongside collection details ([113b38b](https://github.com/thiagobraga/planner/commit/113b38bb45498d8bf8200fbec255f17951ffc796))
+
+
+### Fixed
+
+* **sync:** notify current collection members of source changes ([dbf553b](https://github.com/thiagobraga/planner/commit/dbf553bcf3c2f0ee3217ec8a9fc6c84e1491a57a))
+
 ## [0.27.2](https://github.com/thiagobraga/planner/compare/v0.27.1...v0.27.2) (2026-11-18)
 
 
