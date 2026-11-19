@@ -23,6 +23,19 @@ describe('updateDocumentThemeColor', () => {
 
     expect(document.querySelector('meta[name="theme-color"]')).toHaveAttribute('content', '#ebe6de');
   });
+
+  it('replaces and deduplicates meta tags when the color changes so PWA chrome repaints', () => {
+    document.head.innerHTML =
+      '<meta name="theme-color" content="#ebe6de"><meta name="theme-color" content="#ebe6de">';
+    const initial = document.querySelector('meta[name="theme-color"]');
+
+    updateDocumentThemeColor('white');
+
+    const metas = document.querySelectorAll('meta[name="theme-color"]');
+    expect(metas).toHaveLength(1);
+    expect(metas[0]).not.toBe(initial);
+    expect(metas[0]).toHaveAttribute('content', '#f1f1f1');
+  });
 });
 
 describe('dark theme', () => {

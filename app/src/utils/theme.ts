@@ -33,11 +33,12 @@ export function updateDocumentThemeColor(
   theme: ResolvedTheme,
   targetDocument: Document = document,
 ): void {
-  let meta = targetDocument.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
-  if (!meta) {
-    meta = targetDocument.createElement('meta');
-    meta.name = 'theme-color';
-    targetDocument.head.append(meta);
-  }
-  meta.content = THEME_COLORS[theme];
+  const color = THEME_COLORS[theme];
+  const existing = targetDocument.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]');
+  if (existing.length === 1 && existing[0].content === color) return;
+  existing.forEach((node) => node.remove());
+  const meta = targetDocument.createElement('meta');
+  meta.name = 'theme-color';
+  meta.content = color;
+  targetDocument.head.append(meta);
 }

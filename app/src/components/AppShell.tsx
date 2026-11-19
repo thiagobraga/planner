@@ -124,17 +124,19 @@ export function AppShell() {
     }
   }, [preferences?.locale, setLocale]);
 
-  // Layout effect so the palette is on <html> before the first paint; the
-  // cleanup hands logged-out screens back their default beige.
+  // Layout effect so the palette is on <html> before the first paint; only
+  // reset back to default beige on unmount so theme switches do not flash beige.
   useLayoutEffect(() => {
-    const root = document.documentElement;
-    root.dataset.theme = theme;
+    document.documentElement.dataset.theme = theme;
     updateDocumentThemeColor(theme);
+  }, [theme]);
+
+  useLayoutEffect(() => {
     return () => {
-      delete root.dataset.theme;
+      delete document.documentElement.dataset.theme;
       updateDocumentThemeColor('beige');
     };
-  }, [theme]);
+  }, []);
 
   useEffect(() => {
     if (!preferences?.background) return;
