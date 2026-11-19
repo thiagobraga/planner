@@ -177,6 +177,25 @@ describe('AppShell', () => {
     expect(mockInvalidateQueries).toHaveBeenCalledWith({ queryKey: ['comments', 'task-9'] });
   });
 
+  it("refreshes a task's document when another session updates the task", async () => {
+    render(<AppShell />);
+    const handler = vi.mocked(useSync).mock.lastCall?.[0];
+
+    await act(async () => {
+      handler?.({
+        id: 'e2',
+        entityType: 'task',
+        eventType: 'updated',
+        entityId: 'task-9',
+        userId: 'user-2',
+        collectionId: 'col-1',
+        emittedAt: '2026-11-19T00:00:00.000Z',
+      });
+    });
+
+    expect(mockInvalidateQueries).toHaveBeenCalledWith({ queryKey: ['document', 'task-9'] });
+  });
+
   it('pins the shell to the viewport so the mobile bottom bar stays visible', () => {
     const { container } = render(<AppShell />);
     const shell = container.querySelector('.app-shell');
