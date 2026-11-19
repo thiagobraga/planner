@@ -99,6 +99,8 @@ Add to `/etc/hosts`: `planner.local`, `api.planner.local`, `db.planner.local`, `
 - `middleware/requireScope.ts` - `enforceTokenScope` (read-only tokens cannot write), `requireSession` (keeps tokens and OAuth off `/api-tokens`, `/oauth` and `/admin`)
 - `middleware/errorHandler.ts` - `AppError` vs generic; returns `{ error: { code, message, details? } }`
 - `services/syncService.ts` - `publishEvent(event)` is the single broadcast entry point
+- `services/mutationRunner.ts` - `runMutation(tx => ...)`: one transaction for the write and `tx.recordActivity()`; `tx.emit()` events publish only after COMMIT, and a publish failure is logged while the write stands. Used by `createTask`, `deleteTask` and comment writes
+- `contracts/*.ts` (api and app) - byte-identical, type-only wire contracts (`SyncEvent`, comments), checked by `scripts/check-contracts.sh`
 - `services/authService.ts` - register/login (Redis rate-limit: 10 attempts/15 min)
 - `services/sessionService.ts` - opaque session tokens (SHA-256 hashed), idle + absolute expiry
 - `services/apiTokenService.ts` - personal API tokens: create/list/validate/revoke, max 20 active per user
