@@ -37,8 +37,8 @@ What to build: `plan.md`. This file records how the run is executed, the slice q
 | M0.5 | S-MCP parent and status tools | feat/mcp-parent-status | #468 | merged `ee8c9d3d` |
 | R0 | Release and verify | - | #469 | v0.27.0 deployed and verified |
 | M1.6 | S-H task hierarchy reliability | fix/task-hierarchy | #470 | merged `a8f5bfaf` |
-| M1.7 | S2 CollectionsPage split | refactor/collections-page-split | - | list extracted; verification in progress |
-| M1.8 | S3 collections split view | feat/collections-split-view | - | queued |
+| M1.7 | S2 CollectionsPage split | refactor/collections-page-split | #472 | merged `41b9c072` |
+| M1.8 | S3 collections split view | feat/collections-split-view | - | implementation and local verification in progress |
 | M1.9 | S3b toolbar buttons, Window to Planner menu | style/toolbar-buttons | - | queued |
 | STOP 1 | R1 report, panel/card mock approval | - | - | - |
 | M2.10 | S4 contracts, mutation runner, comment sync | refactor/mutation-runner | - | queued |

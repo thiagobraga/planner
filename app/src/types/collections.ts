@@ -55,6 +55,7 @@ export interface CollectionState {
 }
 
 export interface CollectionRowProps {
+  activeId?: string;
   node: CollectionTreeNode;
   depth: number;
   menuOpenId: string | null;

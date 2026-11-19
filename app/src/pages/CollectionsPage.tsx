@@ -11,7 +11,7 @@ import {
   CollectionBreadcrumbTitle,
   CollectionSubInput,
 } from '../components/collections/CollectionBreadcrumbs';
-import { fetchCollectionView, fetchCollections, apiUpdateTask, apiMoveTask } from '../api/client';
+import { fetchCollections, apiUpdateTask, apiMoveTask } from '../api/client';
 import { useTaskDrag } from '../hooks/useTaskDrag';
 import { useSectionDrag } from '../hooks/useSectionDrag';
 import { usePreferences } from '../hooks/usePreferences';
@@ -30,7 +30,9 @@ import { useI18n } from '../i18n/I18nContext';
 import { buildSetDateMenuItem } from '../components/taskDateMenuItem';
 import type { StoreSection, Task } from '../types/task';
 import { buildTaskMenuActions } from '../utils/taskMenuActions';
-import { useSync } from '../hooks/useSync';
+import { isCollectionUnavailable, useCollectionView } from '../hooks/useCollectionView';
+import { CollectionLoadState, CollectionNotFound } from '../components/collections/CollectionViewState';
+import { isDesktopCollections } from '../utils/collectionsLayout';
 
 export function CollectionsPage() {
   const { locale, t } = useI18n();
@@ -41,34 +43,15 @@ export function CollectionsPage() {
   const [contextMenu, setContextMenu] = useState<TaskIndentMenuContext | null>(null);
   const inputRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    inputRef.current?.focus();
-  }, [id]);
-
   const { data: preferences } = usePreferences();
   const boardPreferences = useBoardPreferences(id, preferences);
   const { includeCompleted } = boardPreferences;
-  // Same prefix as every ['collection', id] invalidation; the suffix keeps the two task sets apart.
-  const viewKey = useMemo(
-    () => (includeCompleted ? ['collection', id, 'with-completed'] : ['collection', id]),
-    [id, includeCompleted],
-  );
-  const { data } = useQuery({
-    queryKey: viewKey,
-    queryFn: () => fetchCollectionView(id, { includeCompleted }),
-    staleTime: 30_000,
-    enabled: !!id,
-  });
-  useSync(
-    useCallback(
-      (event) => {
-        if (event.entityType === 'status' && event.collectionId === id) {
-          qc.invalidateQueries({ queryKey: ['collection', id] });
-        }
-      },
-      [id, qc],
-    ),
-  );
+  const { data, error, isError, refetch, viewKey } = useCollectionView(id, includeCompleted);
+
+  const ready = !!data;
+  useEffect(() => {
+    if (ready && !isDesktopCollections()) inputRef.current?.focus();
+  }, [id, ready]);
 
   useLayoutEffect(() => {
     if (data?.tasks) {
@@ -221,6 +204,9 @@ export function CollectionsPage() {
     onConvertType: handleConvertType,
     onRightClick: handleRightClick,
   };
+
+  if (isCollectionUnavailable(error)) return <CollectionNotFound />;
+  if (!data) return <CollectionLoadState failed={isError} onRetry={() => void refetch()} />;
 
   return (
     <div
