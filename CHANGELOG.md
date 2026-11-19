@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.28.2](https://github.com/thiagobraga/planner/compare/v0.28.1...v0.28.2) (2026-11-19)
+
+
+### Fixed
+
+* **i18n:** move error boundary strings to their own catalog ([dad2d26](https://github.com/thiagobraga/planner/commit/dad2d26958f78dd12ab61cd39d6820f6ff9dc696))
+* **pwa:** recover from blank screen with error boundary and chunk reload ([f57a7ae](https://github.com/thiagobraga/planner/commit/f57a7ae0f17163a272749016a16fec5f4db594b2))
+* **pwa:** recover from blank screen with error boundary and chunk reload ([06ec855](https://github.com/thiagobraga/planner/commit/06ec85537769450087c5acc901a338e338cccc87))
+
 ## [0.28.1](https://github.com/thiagobraga/planner/compare/v0.28.0...v0.28.1) (2026-11-19)
 
 
