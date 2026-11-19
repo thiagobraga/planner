@@ -32,10 +32,10 @@ export function CollectionRow({ node, depth, ...props }: CollectionRowProps) {
   };
 
   return (
-    <>
+    <div className="collections-index-node">
       <div
         className="collections-index-row grid h-6 cursor-pointer relative"
-        style={{ gridTemplateColumns: `24px minmax(0, 1fr) auto`, paddingLeft: `${depth * 24}px` }}
+        style={{ gridTemplateColumns: `24px minmax(0, 1fr) auto`, marginInlineStart: `${depth * 24}px` }}
         onContextMenu={(e) => {
           e.preventDefault();
           handleOpenMenu({ x: e.clientX, y: e.clientY });
@@ -55,6 +55,27 @@ export function CollectionRow({ node, depth, ...props }: CollectionRowProps) {
         onTouchEnd={clearTouchTimer}
         onTouchCancel={clearTouchTimer}
       >
+        {!isRenaming && hasChildren && (
+          <button
+            type="button"
+            className="collections-index-row__toggle flex h-6 w-6 items-center justify-center p-0 text-ink-light hover:text-ink bg-transparent border-0 cursor-pointer"
+            aria-label={t(isExpanded ? 'page.collapseCollection' : 'page.expandCollection', { name: node.name })}
+            aria-expanded={isExpanded}
+            aria-controls={childrenId}
+            onClick={(e) => {
+              e.stopPropagation();
+              props.onToggleCollapsed(node.id);
+            }}
+          >
+            <ChevronRight
+              aria-hidden="true"
+              size={16}
+              strokeWidth={1.5}
+              className={`transition-transform duration-(--motion-fast) ${isExpanded ? 'rotate-90' : ''}`}
+            />
+          </button>
+        )}
+
         <span
           className="collections-index-dot w-1.75 h-1.75 rounded-full justify-self-center self-center translate-y-px shrink-0 filter-[saturate(0.55)]"
           style={{ backgroundColor: node.color }}
@@ -106,23 +127,6 @@ export function CollectionRow({ node, depth, ...props }: CollectionRowProps) {
 
         {!isRenaming && (
           <div className="col-start-3 col-span-1 flex h-6 items-center justify-self-end shrink-0" onClick={(e) => e.stopPropagation()}>
-            {hasChildren && (
-              <button
-                type="button"
-                className="collections-index-row__toggle flex h-6 w-6 items-center justify-center p-0 text-ink-light hover:text-ink bg-transparent border-0 cursor-pointer"
-                aria-label={t(isExpanded ? 'page.collapseCollection' : 'page.expandCollection', { name: node.name })}
-                aria-expanded={isExpanded}
-                aria-controls={childrenId}
-                onClick={() => props.onToggleCollapsed(node.id)}
-              >
-                <ChevronRight
-                  aria-hidden="true"
-                  size={16}
-                  strokeWidth={1.5}
-                  className={`transition-transform duration-(--motion-fast) ${isExpanded ? 'rotate-90' : ''}`}
-                />
-              </button>
-            )}
             <button
               type="button"
               className="collections-index-row__actions-btn flex h-6 w-6 items-center justify-center p-0 text-ink-light hover:text-ink bg-transparent border-0 cursor-pointer"
@@ -208,6 +212,6 @@ export function CollectionRow({ node, depth, ...props }: CollectionRowProps) {
           ))}
         </div>
       )}
-    </>
+    </div>
   );
 }
