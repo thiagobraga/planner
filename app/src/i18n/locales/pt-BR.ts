@@ -111,6 +111,8 @@ export const portugueseBrazilCatalog = {
   'search.closeHint': 'Esc fechar',
   'settings.title': 'Configurações',
   'settings.loading': 'Carregando...',
+  'error.boundary.title': 'Algo deu errado',
+  'error.boundary.reload': 'Recarregar',
   'settings.subtitle': 'Personalize sua experiência no BulletPlanner. As alterações são salvas automaticamente.',
   'settings.sections': 'Seções das configurações',
   'settings.general': 'Geral',

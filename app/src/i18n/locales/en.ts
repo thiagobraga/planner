@@ -109,6 +109,8 @@ export const englishCatalog = {
   'search.closeHint': 'Esc close',
   'settings.title': 'Settings',
   'settings.loading': 'Loading...',
+  'error.boundary.title': 'Something went wrong',
+  'error.boundary.reload': 'Reload',
   'settings.subtitle': 'Customize your BulletPlanner experience. Changes are saved automatically.',
   'settings.sections': 'Settings sections',
   'settings.general': 'General',
