@@ -85,7 +85,7 @@ export function DateNav({ from, to, today, weekStart, onPrevious, onNext, onToda
         aria-expanded={open}
         title={fullLabel}
         onClick={toggle}
-        className="date-nav-trigger !gap-1 font-semibold tracking-[0.04em] whitespace-nowrap"
+        className="date-nav-trigger !gap-1 tracking-[0.04em] whitespace-nowrap"
       >
         {label}
         <ChevronDown className="ml-1" size={12} strokeWidth={1.8} />

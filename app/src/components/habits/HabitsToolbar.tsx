@@ -1,5 +1,4 @@
 import { Calendar } from 'lucide-react';
-import { useFullWidth } from '../../hooks/useFullWidth';
 import { usePageShortcuts } from '../../hooks/usePageShortcuts';
 import { useI18n } from '../../i18n/I18nContext';
 import type { HabitsToolbarProps } from '../../types/habits';
@@ -17,7 +16,6 @@ import { DotsConnectedIcon } from './DotsConnectedIcon';
  */
 export function HabitsToolbar({ view, onViewChange, weekAnchor, today, weekStart, onWeekChange, onToday, onMonthShift }: HabitsToolbarProps) {
   const { t } = useI18n();
-  const { fullWidth, setFullWidth } = useFullWidth();
 
   const from = startOfWeek(weekAnchor, weekStart);
   const to = new Date(from);
@@ -36,8 +34,6 @@ export function HabitsToolbar({ view, onViewChange, weekAnchor, today, weekStart
 
   return (
     <PageToolbar
-      fullWidth={fullWidth}
-      onFullWidthChange={setFullWidth}
       nav={view === 'timeline'
         ? (density) => (
           <DateNav

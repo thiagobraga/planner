@@ -140,7 +140,7 @@ All routes under `/api/v1/`. Route files: `auth`, `apiTokens`, `mcp`, `oauth`, `
 - `utils/socket.ts` - Socket.IO singleton; authenticates with the session cookie (`withCredentials`)
 - `hooks/useDailyTasks.ts` - React Query hook for one Daily range (`['daily', from, to]`); `refresh()` debounces invalidation
 - `utils/viewRange.ts` - `resolveRange`, `shiftAnchor`, `coerceRange` for the Layout × Style × Range model (`types/view.ts`); `utils/dailyRange.ts` maps `/daily/<layout>` and redirects the old `kanban|cards|monthly` slugs
-- `components/toolbar/` - `PageToolbar` (title row on desktop, bar above the navbar on phones), `ViewMenu`, `WindowMenu`, `GroupByMenu`, `DateNav`; `hooks/useDailyView.ts` and `hooks/useBoardPreferences.ts` hold the per-page view state saved in preferences (`dailyView`, `boardViewModes`, `fullWidth`)
+- `components/toolbar/` - `PageToolbar` (title row on desktop, bar above the navbar on phones), `ViewMenu`, `GroupByMenu`, `DateNav`, all small secondary buttons; full width lives in the Planner menu (`TopBarMenus`); `hooks/useDailyView.ts` and `hooks/useBoardPreferences.ts` hold the per-page view state saved in preferences (`dailyView`, `boardViewModes`, `fullWidth`)
 - `hooks/usePageShortcuts.ts` + `stores/pageShortcutsStore.ts` - the page on screen answers the `view:*` shortcuts (`v l`, `v k`, `v s`, `v 1-6`, `v w`, `v m`, `v f`, `t`, `[`, `]`)
 - `hooks/useSync.ts` - subscribes to `"sync"` events; handler receives `SyncEvent`
 - `hooks/shortcuts.ts` - pure chord-aware keyboard matcher; `DEFAULT_BINDINGS` for `q /  ? Enter Delete Escape g+i g+t g+u`

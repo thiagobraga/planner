@@ -38,8 +38,9 @@ What to build: `plan.md`. This file records how the run is executed, the slice q
 | R0 | Release and verify | - | #469 | v0.27.0 deployed and verified |
 | M1.6 | S-H task hierarchy reliability | fix/task-hierarchy | #470 | merged `a8f5bfaf` |
 | M1.7 | S2 CollectionsPage split | refactor/collections-page-split | #472 | merged `41b9c072` |
-| M1.8 | S3 collections split view | feat/collections-split-view | - | implementation and local verification in progress |
-| M1.9 | S3b toolbar buttons, Window to Planner menu | style/toolbar-buttons | - | queued |
+| M1.8 | S3 collections split view | feat/collections-split-view | #474 | merged `b410d769` |
+| R1a | Release and verify | - | #475 | v0.28.0 deployed and verified |
+| M1.9 | S3b toolbar buttons, Window to Planner menu | style/toolbar-buttons | - | in progress |
 | STOP 1 | R1 report, panel/card mock approval | - | - | - |
 | M2.10 | S4 contracts, mutation runner, comment sync | refactor/mutation-runner | - | queued |
 | M2.11 | S5 documents and detail panel (migration 053) | feat/task-documents | - | queued |
@@ -50,9 +51,14 @@ What to build: `plan.md`. This file records how the run is executed, the slice q
 | STOP 2 | Report before Postgres upgrade | - | - | - |
 | M5.16 | Postgres 16 to 18 | chore/postgres-18 | - | needs user confirmation |
 
+## Tracking
+
+Slices are subtasks of the milestone cards M0-M5 in the Planner collection `bulletplanner.org` (`5a0f4e37-e825-49b0-8844-30e0acbc9510`). A slice card moves to Fazendo when its branch opens and is completed when its PR merges.
+
 ## Housekeeping done
 
 - Removed merged worktrees and stacks: `core-module-boundaries`, `daily-query-repository`, `dependabot-alerts`, `theme-color-scales`, orphan `planner-antigravity`.
+- Removed merged worktrees `collections-page-split`, `collections-split-view`, `task-hierarchy`, `mcp-parent-status` and their ad hoc test containers.
 - Archived finished specs to `.specs/completed/` and removed the stale root duplicate of `daily-ux-adjustments`.
 
 ## Releases
@@ -60,3 +66,4 @@ What to build: `plan.md`. This file records how the run is executed, the slice q
 | Release | Tag | Deploy run | Health | Rollback |
 | --- | --- | --- | --- | --- |
 | R0 | v0.27.0 | [44392997786](https://github.com/thiagobraga/planner/actions/runs/44392997786) | App and API 200, build `20261118T203858Z`, backup restore check passed | `CORS_ORIGIN=https://planner.thiagobraga.dev bash scripts/blue-green-deploy.sh "$(cat deploy/.previous-image)"` |
+| R1a | v0.28.0 | [44510474439](https://github.com/thiagobraga/planner/actions/runs/44510474439) | App 200, API health ok, release published after healthy deploy | same command |

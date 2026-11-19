@@ -96,8 +96,8 @@ test('menus toggle, dismiss, restore focus and navigate with the keyboard', asyn
   await expect(page.getByRole('menu')).toHaveCount(0);
   await expect(more).toBeFocused();
   await page.keyboard.press('Enter');
-  // Completed tasks and Notes come first, then Settings, then Help.
-  for (let i = 0; i < 3; i++) await page.keyboard.press('ArrowDown');
+  // Completed tasks, Notes and Full width come first, then Settings, then Help.
+  for (let i = 0; i < 4; i++) await page.keyboard.press('ArrowDown');
   await page.keyboard.press('Enter');
   await expect(page).toHaveURL(/\/help$/);
   await more.click();

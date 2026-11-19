@@ -8,8 +8,9 @@ vi.mock('../../utils/environment', () => ({ isProduction: vi.fn(() => false) }))
 
 const state = vi.hoisted(() => ({
   style: 'icon-left', mobile: false, admin: false, dragging: false,
-  mutate: vi.fn(), logout: vi.fn(), droppable: vi.fn(), visibility: vi.fn(), query: vi.fn(), hideCompleted: false,
+  mutate: vi.fn(), logout: vi.fn(), droppable: vi.fn(), visibility: vi.fn(), query: vi.fn(), hideCompleted: false, fullWidth: false, setFullWidth: vi.fn(),
 }));
+vi.mock('../../hooks/useFullWidth', () => ({ useFullWidth: () => ({ fullWidth: state.fullWidth, setFullWidth: state.setFullWidth }) }));
 vi.mock('../../hooks/usePreferences', () => ({ usePreferences: () => ({ data: { navStyle: state.style } }) }));
 vi.mock('../../hooks/useUpdatePreferences', () => ({ useUpdatePreferences: () => ({ mutate: state.mutate, isPending: false, isError: false }) }));
 vi.mock('../../contexts/AuthContext', () => ({ useAuth: () => ({
@@ -111,6 +112,24 @@ describe('TopBar', () => {
     fireEvent.click(screen.getByRole('menuitemradio', { name: 'Completed tasks' }));
     expect(state.visibility).toHaveBeenCalledWith({ key: 'hideCompletedTasks', value: false });
     state.hideCompleted = false;
+  });
+
+  it('toggles full width from the planner menu on desktop only', () => {
+    state.fullWidth = true;
+    const { unmount } = renderBar();
+    fireEvent.click(screen.getByRole('button', { name: 'Planner menu' }));
+    const item = screen.getByRole('menuitemradio', { name: /Full width/ });
+    expect(item).toHaveAttribute('aria-checked', 'true');
+    expect(item).toHaveTextContent('v f');
+    fireEvent.click(item);
+    expect(state.setFullWidth).toHaveBeenCalledWith(false);
+    state.fullWidth = false;
+    unmount();
+
+    state.mobile = true;
+    renderBar();
+    fireEvent.click(screen.getByRole('button', { name: 'Planner menu' }));
+    expect(screen.queryByRole('menuitemradio', { name: /Full width/ })).toBeNull();
   });
 
   it('opens one menu with name, version, identity, utilities and logout', () => {

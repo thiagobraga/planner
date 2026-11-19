@@ -33,14 +33,9 @@ export interface ViewMenuProps {
   /** Omit on pages without dates (Collections, Inbox). */
   range?: ViewRange;
   onRangeChange?: (range: ViewRange) => void;
-  /** Extra items at the end (Reorganize, or Window items when the row is tight). */
+  /** Extra items at the end, such as Reorganize. */
   extra?: (close: () => void) => ReactNode;
   sheet?: boolean;
-}
-
-export interface WindowMenuProps {
-  fullWidth: boolean;
-  onFullWidthChange: (value: boolean) => void;
 }
 
 export interface GroupByOption<T extends string> {
@@ -73,14 +68,12 @@ export interface DateNavProps {
   defaultOpen?: boolean;
 }
 
-/** How tight the title row is: 0 roomy, 1 compact date, 2 no Today button, 3 Window folded into View. */
-export type ToolbarDensity = 0 | 1 | 2 | 3;
+/** How tight the title row is: 0 roomy, 1 compact date, 2 no Today button. */
+export type ToolbarDensity = 0 | 1 | 2;
 
 export interface PageToolbarProps {
   /** Date navigation or the group-by menu. Receives the current density. */
   nav?: (density: ToolbarDensity, mobile: boolean) => ReactNode;
-  /** The View menu; `extra` holds Window items when they fold in. */
-  view: (options: { sheet: boolean; windowItems?: (close: () => void) => ReactNode }) => ReactNode;
-  fullWidth: boolean;
-  onFullWidthChange: (value: boolean) => void;
+  /** The View menu, as a bottom sheet on phones. */
+  view: (options: { sheet: boolean }) => ReactNode;
 }
