@@ -116,6 +116,8 @@ describe("validateDocument rejects", () => {
   it("malformed text nodes", () => {
     expect(rejection(doc(para(text("")))).path).toBe("content.content[0].content[0].text");
     expect(rejection(doc(para({ type: "text" }))).path).toBe("content.content[0].content[0].text");
+    // PostgreSQL text and jsonb cannot store NUL; refuse it here instead of failing on write.
+    expect(rejection(doc(para(text("a\u0000b")))).message).toMatch(/NUL/);
     expect(rejection(doc(para({ type: "text", text: "x", content: [] }))).message).toMatch(/content/);
     expect(rejection(doc(para(text("x", [{ type: "bold" }, { type: "bold" }])))).message).toMatch(/twice/);
   });

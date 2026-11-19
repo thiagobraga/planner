@@ -95,6 +95,7 @@ function checkNode(node: unknown, path: string, depth: number, parent: DocumentC
 
   if (node.type === "text") {
     if (typeof node.text !== "string" || node.text.length === 0) fail(`${path}.text`, "must be non-empty text");
+    if (node.text.includes("\0")) fail(`${path}.text`, "must not contain NUL");
   } else if (node.text !== undefined) {
     fail(`${path}.text`, "only text nodes carry text");
   }
