@@ -74,27 +74,9 @@ beforeEach(() => {
 // --- Property 8: Task title validation ---
 // **Validates: Requirements 4.1, 4.2, 5.1**
 
+// Accepted creates are covered against the real database in
+// taskService.create.sync.integration.test.ts; these cover rejections only.
 describe('Property 8: Task title validation', () => {
-  it('accepts titles of 1-500 characters', async () => {
-    await fc.assert(
-      fc.asyncProperty(
-        fc.string({ minLength: 1, maxLength: 500 }).filter((s) => s.length >= 1),
-        async (title) => {
-          // Mock: inbox lookup + collection access + insert
-          mockQuery
-            .mockResolvedValueOnce({ rows: [{ id: collectionId }] }) // inbox
-            .mockResolvedValueOnce({ rows: [{ id: collectionId }] }) // collection access
-            .mockResolvedValueOnce({ rows: [makeTaskRow({ title })] }) // insert
-            .mockResolvedValueOnce({ rows: [] }); // attachLabels
-
-          const result = await createTask(userId, { title });
-          expect(result.title).toBe(title);
-        },
-      ),
-      { numRuns: 100 },
-    );
-  });
-
   it('rejects empty titles (length 0)', async () => {
     await fc.assert(
       fc.asyncProperty(fc.constant(''), async (title) => {
@@ -136,22 +118,6 @@ describe('Property 8: Task title validation', () => {
 // **Validates: Requirements 4.6, 4.7**
 
 describe('Property 9: Task priority validation', () => {
-  it('accepts priorities 1-4', async () => {
-    await fc.assert(
-      fc.asyncProperty(fc.integer({ min: 1, max: 4 }), async (priority) => {
-        mockQuery
-          .mockResolvedValueOnce({ rows: [{ id: collectionId }] }) // inbox
-          .mockResolvedValueOnce({ rows: [{ id: collectionId }] }) // collection access
-          .mockResolvedValueOnce({ rows: [makeTaskRow({ priority })] }) // insert
-          .mockResolvedValueOnce({ rows: [] }); // attachLabels
-
-        const result = await createTask(userId, { title: 'Valid', priority });
-        expect(result.priority).toBe(priority);
-      }),
-      { numRuns: 100 },
-    );
-  });
-
   it('rejects priorities outside 1-4', async () => {
     await fc.assert(
       fc.asyncProperty(
@@ -196,35 +162,6 @@ describe('Property 9: Task priority validation', () => {
 });
 
 describe('Task type validation', () => {
-  it("accepts 'task', 'note' and 'event', defaulting to 'task' when omitted", async () => {
-    mockQuery
-      .mockResolvedValueOnce({ rows: [{ id: collectionId }] }) // inbox
-      .mockResolvedValueOnce({ rows: [{ id: collectionId }] }) // collection access
-      .mockResolvedValueOnce({ rows: [makeTaskRow({ type: 'task' })] }) // insert
-      .mockResolvedValueOnce({ rows: [] }); // attachLabels
-
-    const result = await createTask(userId, { title: 'Valid' });
-    expect(result.type).toBe('task');
-
-    mockQuery
-      .mockResolvedValueOnce({ rows: [{ id: collectionId }] })
-      .mockResolvedValueOnce({ rows: [{ id: collectionId }] })
-      .mockResolvedValueOnce({ rows: [makeTaskRow({ type: 'note' })] })
-      .mockResolvedValueOnce({ rows: [] }); // attachLabels
-
-    const note = await createTask(userId, { title: 'Valid', type: 'note' });
-    expect(note.type).toBe('note');
-
-    mockQuery
-      .mockResolvedValueOnce({ rows: [{ id: collectionId }] })
-      .mockResolvedValueOnce({ rows: [{ id: collectionId }] })
-      .mockResolvedValueOnce({ rows: [makeTaskRow({ type: 'event' })] })
-      .mockResolvedValueOnce({ rows: [] }); // attachLabels
-
-    const event = await createTask(userId, { title: 'Valid', type: 'event' });
-    expect(event.type).toBe('event');
-  });
-
   it("rejects any type value other than 'task', 'note', or 'event'", async () => {
     await fc.assert(
       fc.asyncProperty(
@@ -297,35 +234,6 @@ describe('Task type validation', () => {
     expect(insertCall[1][13]).toBe('event');
   });
 
-  it('round-trips all three types through create then a no-op update (fetch)', async () => {
-    await fc.assert(
-      fc.asyncProperty(fc.constantFrom('task', 'note', 'event'), async (type) => {
-        vi.clearAllMocks();
-        const taskId = `task-${type}`;
-
-        // create
-        mockQuery
-          .mockResolvedValueOnce({ rows: [{ id: collectionId }] }) // inbox
-          .mockResolvedValueOnce({ rows: [{ id: collectionId }] }) // collection access
-          .mockResolvedValueOnce({ rows: [makeTaskRow({ id: taskId, type })] }) // insert
-          .mockResolvedValueOnce({ rows: [] }); // attachLabels
-
-        const created = await createTask(userId, { title: 'Round trip', type });
-        expect(created.type).toBe(type);
-
-        // fetch: updateTask with no fields short-circuits to verifyTaskAccess +
-        // attachLabels(formatTask(...)) with no UPDATE query - the closest thing
-        // this service module has to a plain "get by id".
-        mockQuery
-          .mockResolvedValueOnce({ rows: [makeTaskRow({ id: taskId, type })] }) // verifyTaskAccess
-          .mockResolvedValueOnce({ rows: [] }); // attachLabels
-
-        const fetched = await updateTask(taskId, userId, {});
-        expect(fetched.type).toBe(type);
-      }),
-      { numRuns: 10 },
-    );
-  });
 });
 
 // --- Property 10: Subtask depth enforcement ---
@@ -347,30 +255,6 @@ describe('Property 10: Subtask depth enforcement', () => {
           const e = err as AppError;
           expect(e.code).toBe('MAX_DEPTH_EXCEEDED');
         }
-      }),
-      { numRuns: 100 },
-    );
-  });
-
-  it('accepts subtask creation when depth is 5 or less', async () => {
-    await fc.assert(
-      fc.asyncProperty(fc.integer({ min: 0, max: 4 }), async (parentDepth) => {
-        // Mock verifyTaskAccess for parent
-        mockQuery
-          .mockResolvedValueOnce({
-            rows: [makeTaskRow({ id: 'parent-1', depth: parentDepth, collection_id: collectionId })],
-          })
-          // collection access check
-          .mockResolvedValueOnce({ rows: [{ id: collectionId }] })
-          // insert returning
-          .mockResolvedValueOnce({
-            rows: [makeTaskRow({ depth: parentDepth + 1, parent_task_id: 'parent-1' })],
-          })
-          // attachLabels
-          .mockResolvedValueOnce({ rows: [] });
-
-        const result = await createTask(userId, { title: 'Child', parentTaskId: 'parent-1' });
-        expect(result.depth).toBe(parentDepth + 1);
       }),
       { numRuns: 100 },
     );

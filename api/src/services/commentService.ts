@@ -2,6 +2,10 @@ import { v4 as uuidv4 } from "uuid";
 import sanitizeHtml from "sanitize-html";
 import pool from "../db/pool.js";
 import { AppError } from "../utils/AppError.js";
+import { runMutation } from "./mutationRunner.js";
+import type { CommentSyncPayload, TaskCommentDto } from "../contracts/comment.js";
+import type { SyncEventType } from "../contracts/sync.js";
+import type { SyncEventInput } from "../types/mutation.js";
 
 interface CommentRow {
   id: string;
@@ -17,7 +21,7 @@ const SANITIZE_OPTIONS: sanitizeHtml.IOptions = {
   allowedAttributes: {},
 };
 
-function formatComment(row: CommentRow) {
+function formatComment(row: CommentRow): TaskCommentDto {
   return {
     id: row.id,
     taskId: row.task_id,
@@ -25,6 +29,26 @@ function formatComment(row: CommentRow) {
     body: row.body,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+  };
+}
+
+// Membership is resolved at dispatch so a removed collaborator stops hearing
+// about the task; the payload names the task only, never the body.
+function commentEvent(
+  eventType: SyncEventType,
+  userId: string,
+  comment: { id: string; taskId: string },
+  collectionId: string,
+): SyncEventInput {
+  const payload: CommentSyncPayload = { taskId: comment.taskId };
+  return {
+    entityType: "comment",
+    eventType,
+    entityId: comment.id,
+    userId,
+    collectionId,
+    payload,
+    audience: "current-collection-members",
   };
 }
 
@@ -82,17 +106,20 @@ export async function listComments(taskId: string, userId: string) {
 
 export async function createComment(taskId: string, userId: string, body: string) {
   const validated = validateBody(body);
-  await verifyTaskAccess(taskId, userId);
+  const task = await verifyTaskAccess(taskId, userId);
 
   const id = uuidv4();
-  const result = await pool.query(
-    `INSERT INTO comments (id, task_id, user_id, body)
-     VALUES ($1, $2, $3, $4)
-     RETURNING *`,
-    [id, taskId, userId, validated],
-  );
-
-  return formatComment(result.rows[0] as CommentRow);
+  return runMutation(async (tx) => {
+    const result = await tx.client.query(
+      `INSERT INTO comments (id, task_id, user_id, body)
+       VALUES ($1, $2, $3, $4)
+       RETURNING *`,
+      [id, taskId, userId, validated],
+    );
+    const comment = formatComment(result.rows[0] as CommentRow);
+    tx.emit(commentEvent("created", userId, comment, task.collection_id));
+    return comment;
+  });
 }
 
 export async function updateComment(commentId: string, userId: string, body: string) {
@@ -100,7 +127,7 @@ export async function updateComment(commentId: string, userId: string, body: str
   const comment = await loadComment(commentId);
 
   // Verify task access (collaborator/owner)
-  await verifyTaskAccess(comment.task_id, userId);
+  const task = await verifyTaskAccess(comment.task_id, userId);
 
   // Only the author can edit
   if (comment.user_id !== userId) {
@@ -111,12 +138,15 @@ export async function updateComment(commentId: string, userId: string, body: str
     });
   }
 
-  const result = await pool.query(
-    `UPDATE comments SET body = $1, updated_at = NOW() WHERE id = $2 RETURNING *`,
-    [validated, commentId],
-  );
-
-  return formatComment(result.rows[0] as CommentRow);
+  return runMutation(async (tx) => {
+    const result = await tx.client.query(
+      `UPDATE comments SET body = $1, updated_at = NOW() WHERE id = $2 RETURNING *`,
+      [validated, commentId],
+    );
+    const updated = formatComment(result.rows[0] as CommentRow);
+    tx.emit(commentEvent("updated", userId, updated, task.collection_id));
+    return updated;
+  });
 }
 
 export async function deleteComment(commentId: string, userId: string): Promise<{ success: true }> {
@@ -132,6 +162,9 @@ export async function deleteComment(commentId: string, userId: string): Promise<
     });
   }
 
-  await pool.query(`DELETE FROM comments WHERE id = $1`, [commentId]);
+  await runMutation(async (tx) => {
+    await tx.client.query(`DELETE FROM comments WHERE id = $1`, [commentId]);
+    tx.emit(commentEvent("deleted", userId, { id: commentId, taskId: comment.task_id }, task.collection_id));
+  });
   return { success: true };
 }

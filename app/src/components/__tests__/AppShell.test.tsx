@@ -5,6 +5,7 @@ import { AppShell } from '../AppShell';
 import { QuickAdd } from '../QuickAdd';
 import { apiCreateTask } from '../../api/client';
 import { updateDocumentThemeColor } from '../../utils/theme';
+import { useSync } from '../../hooks/useSync';
 
 const mockUseQuery = vi.hoisted(() => vi.fn());
 const mockInvalidateQueries = vi.hoisted(() => vi.fn());
@@ -154,6 +155,26 @@ describe('AppShell', () => {
   it('renders without crashing', () => {
     render(<AppShell />);
     expect(screen.getByTestId('outlet-content')).toBeInTheDocument();
+  });
+
+  it("refreshes a task's comment thread when another session comments on it", async () => {
+    render(<AppShell />);
+    const handler = vi.mocked(useSync).mock.lastCall?.[0];
+
+    await act(async () => {
+      handler?.({
+        id: 'e1',
+        entityType: 'comment',
+        eventType: 'created',
+        entityId: 'c1',
+        userId: 'user-2',
+        collectionId: 'col-1',
+        payload: { taskId: 'task-9' },
+        emittedAt: '2026-11-19T00:00:00.000Z',
+      });
+    });
+
+    expect(mockInvalidateQueries).toHaveBeenCalledWith({ queryKey: ['comments', 'task-9'] });
   });
 
   it('pins the shell to the viewport so the mobile bottom bar stays visible', () => {

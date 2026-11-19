@@ -40,9 +40,10 @@ What to build: `plan.md`. This file records how the run is executed, the slice q
 | M1.7 | S2 CollectionsPage split | refactor/collections-page-split | #472 | merged `41b9c072` |
 | M1.8 | S3 collections split view | feat/collections-split-view | #474 | merged `b410d769` |
 | R1a | Release and verify | - | #475 | v0.28.0 deployed and verified |
-| M1.9 | S3b toolbar buttons, Window to Planner menu | style/toolbar-buttons | - | in progress |
-| STOP 1 | R1 report, panel/card mock approval | - | - | - |
-| M2.10 | S4 contracts, mutation runner, comment sync | refactor/mutation-runner | - | queued |
+| M1.9 | S3b toolbar buttons, Window to Planner menu | style/toolbar-buttons | #476 | merged `cc92c5ee` |
+| R1 | Release and verify | - | - | v0.28.1 deployed and verified; v0.28.2 also deployed |
+| STOP 1 | R1 report, panel/card mock approval | - | - | approved |
+| M2.10 | S4 contracts, mutation runner, comment sync | refactor/mutation-runner | #480 | in progress |
 | M2.11 | S5 documents and detail panel (migration 053) | feat/task-documents | - | queued |
 | M3.12 | S6 embedded subtasks, five-row cards | feat/embedded-subtasks | - | queued |
 | M4.13 | S7 MCP document/comment/claim/batch | feat/mcp-documents | - | queued |
@@ -50,6 +51,13 @@ What to build: `plan.md`. This file records how the run is executed, the slice q
 | M4.15 | S9 pilot import and cutover | - | - | queued |
 | STOP 2 | Report before Postgres upgrade | - | - | - |
 | M5.16 | Postgres 16 to 18 | chore/postgres-18 | - | needs user confirmation |
+
+## Decisions from STOP 1
+
+- Progress default: a thin moss bar plus "N of M".
+- Task rows inside task content and in Only tasks: 28px min-height, 8px gap, 12px square checkbox.
+- Tasks use a square checkbox (3px radius) everywhere, card titles and the panel header included, centered on the title's first line.
+- Mocks: https://claude.ai/artifact/HY12ssBqGWYN4aC1wyQgky
 
 ## Tracking
 
@@ -67,3 +75,4 @@ Slices are subtasks of the milestone cards M0-M5 in the Planner collection `bull
 | --- | --- | --- | --- | --- |
 | R0 | v0.27.0 | [44392997786](https://github.com/thiagobraga/planner/actions/runs/44392997786) | App and API 200, build `20261118T203858Z`, backup restore check passed | `CORS_ORIGIN=https://planner.thiagobraga.dev bash scripts/blue-green-deploy.sh "$(cat deploy/.previous-image)"` |
 | R1a | v0.28.0 | [44510474439](https://github.com/thiagobraga/planner/actions/runs/44510474439) | App 200, API health ok, release published after healthy deploy | same command |
+| R1 | v0.28.1 | - | Toolbar shipped, deployed and verified; v0.28.2 also deployed | same command |

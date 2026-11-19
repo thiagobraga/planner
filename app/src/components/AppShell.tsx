@@ -14,6 +14,7 @@ import type { MatcherState } from '../hooks/shortcuts';
 import { matchSequence, createSequenceState } from '../hooks/keySequence';
 import type { SequenceState } from '../types/keySequence';
 import { useSync } from '../hooks/useSync';
+import { invalidateCommentQueries } from '../utils/commentSync';
 import { fetchPreferences, apiCreateTask } from '../api/client';
 import type { Preferences } from '../types/api';
 import { ensureFontLoaded, type FontOption } from '../utils/fontLoader';
@@ -91,6 +92,8 @@ export function AppShell() {
       }
       qc.invalidateQueries({ queryKey: ['inbox'] });
       qc.invalidateQueries({ queryKey: ['collection'] });
+    } else if (event.entityType === 'comment') {
+      void invalidateCommentQueries(qc, event);
     }
   }, [qc, agentNoticesOn, t]));
   const [quickAddOpen, setQuickAddOpen] = useState(false);

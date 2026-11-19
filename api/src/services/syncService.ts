@@ -6,6 +6,7 @@ import { CORS_ORIGIN } from "../config.js";
 import { validateSession, buildCookieName, needsTouch, touchSession } from "./sessionService.js";
 import { currentActor, currentSourceId } from "../middleware/requestContext.js";
 import { LATEST_VERSION } from "../utils/buildInfo.js";
+import type { SyncEvent } from "../contracts/sync.js";
 
 const SYNC_CHANNEL = "sync";
 // Older deploy colors must not forward events addressed to current members.
@@ -19,32 +20,7 @@ interface SocketData {
   rawToken?: string;
 }
 
-export type SyncEntityType = "task" | "collection" | "section" | "status" | "label" | "comment" | "reminder" | "preferences" | "habit" | "habit_completion" | "habit_group";
-export type SyncEventType = "created" | "updated" | "deleted" | "completed" | "uncompleted";
-
-export interface SyncEvent {
-  id: string;
-  entityType: SyncEntityType;
-  eventType: SyncEventType;
-  entityId: string;
-  userId: string;
-  collectionId?: string | null;
-  payload?: unknown;
-  /** Resolve membership at dispatch instead of relying on long-lived collection rooms. */
-  audience?: "current-collection-members";
-  emittedAt: string;
-  /**
-   * The socket whose request caused this event, when it named itself.
-   *
-   * A change is broadcast to every session of the user, the originating one
-   * included. That session has already applied the change optimistically, so
-   * acting on its own echo only costs it a refetch over state that is already
-   * correct - it uses this to tell its own work apart from everyone else's.
-   */
-  sourceId?: string;
-  /** Present when an API token made the change, so open tabs can say which agent did it. */
-  actor?: { type: "token" | "oauth"; label: string };
-}
+export type { SyncEntityType, SyncEvent, SyncEventType } from "../contracts/sync.js";
 
 function userRoom(userId: string): string {
   return `user:${userId}`;

@@ -63,51 +63,14 @@ beforeEach(() => {
 
 describe("taskService: labels", () => {
   describe("createTask", () => {
-    it("verifies label ownership then bulk-inserts task_labels in a transaction", async () => {
-      mockQuery
-        .mockResolvedValueOnce({ rows: [{ id: "l1" }, { id: "l2" }] }) // verifyLabelOwnership
-        .mockResolvedValueOnce({ rows: [{ id: collectionId }] }); // collection access
-
-      mockClientQuery
-        .mockResolvedValueOnce(undefined) // BEGIN
-        .mockResolvedValueOnce({ rows: [makeTaskRow()] }) // INSERT task
-        .mockResolvedValueOnce(undefined) // INSERT task_labels
-        .mockResolvedValueOnce(undefined); // COMMIT
-
-      mockQuery.mockResolvedValueOnce({ rows: [] }); // attachLabels
-
-      const task = await createTask(userId, {
-        title: "New Task",
-        collectionId,
-        labelIds: ["l1", "l2"],
-      });
-
-      expect(task.id).toBe(taskId);
-      expect(mockClientQuery).toHaveBeenCalledWith("BEGIN");
-      expect(mockClientQuery).toHaveBeenCalledWith(
-        expect.stringContaining("INSERT INTO task_labels"),
-        ["task-uuid", "l1", "l2"],
-      );
-      expect(mockClientQuery).toHaveBeenCalledWith("COMMIT");
-    });
-
+    // Successful creates run against the real database in
+    // taskService.create.sync.integration.test.ts.
     it("rejects with 400 when a labelId is foreign or missing", async () => {
       mockQuery.mockResolvedValueOnce({ rows: [{ id: "l1" }] }); // only one of two owned
 
       await expect(
         createTask(userId, { title: "New Task", collectionId, labelIds: ["l1", "not-mine"] }),
       ).rejects.toMatchObject({ code: "VALIDATION_ERROR", statusCode: 400 });
-
-      expect(mockConnect).not.toHaveBeenCalled();
-    });
-
-    it("takes the single-query fast path when no labels are given", async () => {
-      mockQuery
-        .mockResolvedValueOnce({ rows: [{ id: collectionId }] }) // collection access
-        .mockResolvedValueOnce({ rows: [makeTaskRow()] }) // INSERT
-        .mockResolvedValueOnce({ rows: [] }); // attachLabels
-
-      await createTask(userId, { title: "New Task", collectionId });
 
       expect(mockConnect).not.toHaveBeenCalled();
     });
