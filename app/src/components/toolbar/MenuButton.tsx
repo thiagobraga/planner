@@ -72,6 +72,10 @@ export function MenuButton({ label, ariaLabel, align = 'end', sheet = false, cla
         <span className="page-menu-trigger-label">{label}</span>
         <ChevronDown size={12} strokeWidth={1.8} aria-hidden="true" />
       </Button>
+      {open && sheet && createPortal(
+        <div className="page-menu-backdrop" data-testid="page-menu-backdrop" onClick={() => setOpen(false)} />,
+        document.body,
+      )}
       {open && createPortal(
         <div
           ref={panelRef}
