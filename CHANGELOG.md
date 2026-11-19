@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.29.0](https://github.com/thiagobraga/planner/compare/v0.28.2...v0.29.0) (2026-11-19)
+
+
+### Added
+
+* **api:** add scoped mutation runner ([259090e](https://github.com/thiagobraga/planner/commit/259090e613829c79c0bbd6bc03592e35b4e708ae))
+* **api:** publish comment sync events ([4d1b224](https://github.com/thiagobraga/planner/commit/4d1b224bb0437032a75e32b032e9225b690f8842))
+* **app:** refresh comment threads on comment sync events ([73617e2](https://github.com/thiagobraga/planner/commit/73617e2b0fe8bfe3ee8425747bdecba6b1d44d24))
+
+
+### Fixed
+
+* **api:** keep a stalled redis from holding committed mutations ([2808f58](https://github.com/thiagobraga/planner/commit/2808f58a78d743a2cb9a2fe98506c536756bbe89))
+* **collections:** follow the page column and quiet the tree pane ([96b005a](https://github.com/thiagobraga/planner/commit/96b005af8e927c507b0b9bc09f25545d837aecac))
+* **collections:** restore collapsing tree rows at every level ([9c41284](https://github.com/thiagobraga/planner/commit/9c41284662ff219f12f8c72cb5bd017d4f0307de))
+* **collections:** restore tree collapse and follow page width ([38c8cee](https://github.com/thiagobraga/planner/commit/38c8ceedcf186cbd2a2155458cfc086843ca9a43))
+
+
+### Changed
+
+* **api:** add scoped mutation runner and comment sync ([c0f0231](https://github.com/thiagobraga/planner/commit/c0f0231683ddf678a0d30751be7ecc4a4b616008))
+* **api:** run createTask and deleteTask through the mutation runner ([d671e64](https://github.com/thiagobraga/planner/commit/d671e6460e1d7713e2def5914da1a99b2c53cf61))
+* **contracts:** share sync and comment wire types ([0830b9d](https://github.com/thiagobraga/planner/commit/0830b9d335b8f269a8b7f5e3bf8f176005032c85))
+
 ## [0.28.2](https://github.com/thiagobraga/planner/compare/v0.28.1...v0.28.2) (2026-11-19)
 
 
