@@ -52,6 +52,8 @@ vi.mock('../QuickAdd', () => ({
   QuickAdd: vi.fn(() => null),
 }));
 
+vi.mock('../detail/TaskDetailHost', () => ({ TaskDetailHost: () => null }));
+
 vi.mock('../SearchOverlay', () => ({
   SearchOverlay: vi.fn(() => null),
 }));
