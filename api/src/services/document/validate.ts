@@ -1,5 +1,5 @@
 import { AppError } from "../../utils/AppError.js";
-import type { DocumentNode } from "../../contracts/document.js";
+import type { DocumentNode, DocumentPutRequest } from "../../contracts/document.js";
 import type { DocumentAttrSpec, DocumentContentKind, DocumentNodeGroup } from "../../types/document.js";
 import { MARK_SPECS, NODE_SPECS } from "./schema.js";
 
@@ -16,12 +16,12 @@ const ACCEPTS: Record<Exclude<DocumentContentKind, "none">, DocumentNodeGroup> =
   plainText: "inline",
 };
 
-function fail(path: string, message: string): never {
+function fail(path: string, message: string, field = "content"): never {
   throw new AppError({
     code: "VALIDATION_ERROR",
     message: "Document failed validation",
     statusCode: 400,
-    details: [{ field: "content", path, message }],
+    details: [{ field, path, message }],
   });
 }
 
@@ -131,4 +131,17 @@ export function validateDocument(content: unknown): DocumentNode {
   const bytes = Buffer.byteLength(serialized, "utf8");
   if (bytes > MAX_DOCUMENT_BYTES) fail("content", `document is ${bytes} bytes (max ${MAX_DOCUMENT_BYTES})`);
   return content as unknown as DocumentNode;
+}
+
+/** Parse a PUT body: a valid document plus the revision it was edited from. */
+export function parseDocumentPut(body: unknown): DocumentPutRequest {
+  if (!isObject(body)) fail("body", "must be an object with content and baseRevision", "body");
+  for (const key of Object.keys(body)) {
+    if (key !== "content" && key !== "baseRevision") fail(key, `unknown field "${key}"`, key);
+  }
+  const { baseRevision } = body;
+  if (typeof baseRevision !== "number" || !Number.isSafeInteger(baseRevision) || baseRevision < 0) {
+    fail("baseRevision", "must be the whole-number revision the edit started from (0 before the first save)", "baseRevision");
+  }
+  return { content: validateDocument(body.content), baseRevision };
 }
