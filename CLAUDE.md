@@ -152,12 +152,13 @@ All routes under `/api/v1/`. Route files: `auth`, `apiTokens`, `mcp`, `oauth`, `
 - `hooks/useBoard*.ts`, `useTaskDrag.ts`, `useSectionDrag.ts`, `useHabitDrag.ts` - board preferences and drag-and-drop
 - `api/client.ts` - Fetch wrapper; base `/api/v1`; auto-logout on 401
 - `api/queryClient.ts` - React Query config (staleTime 60s, 1 retry)
-- `stores/taskStore.ts` - Zustand store; `setTasks / addTask / updateTask / removeTask`
 - `stores/collectionStore.ts` - Zustand store for collections
 - `stores/authStore.ts` - Zustand store for auth state
 - `stores/taskSelectionStore.ts` - Zustand store for multi-task selection
 - `stores/debugStore.ts` - debug mode flag (persisted in localStorage); when on, `DebugCard` shows id, order and created date on task and habit rows
 - `stores/optimistic.ts` - optimistic helpers: `runOptimistic`, `applyOptimistic`, `revertOptimistic` (2s auto-revert)
+- `components/detail/` - the task detail panel. `TaskDetailHost` (in `AppShell`) reads `?task=<id>` through `hooks/useTaskDetailController.ts` and lazy-loads `TaskDetailPanel` with the Tiptap editor (the first lazy chunk). `stores/taskDetailStore.ts` is the imperative bridge (`openTaskDetails`, `scheduleOpenTaskDetails`, `closeTaskDetails`, origin focus, unsaved-draft guard); `utils/detailOpen.ts` decides which clicks and keys open it (plain click on a noninteractive row or card area, `o` on a focused row or card)
+- `hooks/useDocumentDraft.ts` - description save loop: 800ms debounced PUT on `baseRevision`, 409 keeps the draft with reload / keep mine, remote updates never replace a dirty draft, failed drafts stay in memory only; `utils/documentContent.ts` trims editor JSON to the server allowlist and renders the Markdown draft download
 
 ### Pages & Routes
 
@@ -221,6 +222,7 @@ GET/POST          /tasks
 PATCH/DELETE      /tasks/:id
 POST              /tasks/:id/complete   POST /tasks/:id/reopen
 PATCH             /tasks/:id/reorder
+GET               /tasks/:id  (task, ancestors root first, every descendant incl. completed; detail panel)
 GET/PUT           /tasks/:id/document  (PUT { content, baseRevision }; 409 DOCUMENT_CONFLICT with details[0].current; 400 VALIDATION_ERROR with the offending path)
                   PATCH /tasks/:id or MCP update_task notes on a task with a document -> 409 DOCUMENT_EXISTS
 
@@ -278,7 +280,7 @@ Three layers, each with a distinct role:
 | ---------------- | ------------------------------ | ------------------------------- |
 | Server cache     | React Query (`queryClient.ts`) | API data, staleTime 60s         |
 | Optimistic local | `stores/optimistic.ts`         | Mutations before server confirm |
-| Global client    | Zustand `taskStore.ts`         | Cross-component task list       |
+| Global client    | Zustand stores (`stores/`)     | Selection, detail panel, UI     |
 
 Pattern for mutations: `runOptimistic({ apply, revert })` → fire API call → on error, auto-revert after 2s.
 
