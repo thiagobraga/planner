@@ -43,7 +43,7 @@ What to build: `plan.md`. This file records how the run is executed, the slice q
 | M1.9 | S3b toolbar buttons, Window to Planner menu | style/toolbar-buttons | #476 | merged `cc92c5ee` |
 | R1 | Release and verify | - | - | v0.28.1 deployed and verified; v0.28.2 also deployed |
 | STOP 1 | R1 report, panel/card mock approval | - | - | approved |
-| M2.10 | S4 contracts, mutation runner, comment sync | refactor/mutation-runner | - | in progress |
+| M2.10 | S4 contracts, mutation runner, comment sync | refactor/mutation-runner | #480 | in progress |
 | M2.11 | S5 documents and detail panel (migration 053) | feat/task-documents | - | queued |
 | M3.12 | S6 embedded subtasks, five-row cards | feat/embedded-subtasks | - | queued |
 | M4.13 | S7 MCP document/comment/claim/batch | feat/mcp-documents | - | queued |
