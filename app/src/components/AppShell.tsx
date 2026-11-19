@@ -177,13 +177,15 @@ export function AppShell() {
         case 'help:open':
           setHelpOpen((v) => !v);
           break;
-        case 'dialog:close':
+        case 'dialog:close': {
           // The active overlay closes first; the detail panel only when nothing else did.
-          if (!consumed && !quickAddOpen && !searchOpen && !helpOpen) closeTaskDetails();
+          const hasOtherOverlay = Boolean(document.querySelector('[role="dialog"]:not(.detail-panel), [role="menu"]'));
+          if (!consumed && !quickAddOpen && !searchOpen && !helpOpen && !hasOtherOverlay) closeTaskDetails();
           setQuickAddOpen(false);
           setSearchOpen(false);
           setHelpOpen(false);
           break;
+        }
         case 'navigate:inbox':
           navigate('/inbox');
           break;

@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router';
-import { useTaskDetailStore } from '../stores/taskDetailStore';
+import { cancelPendingOpen, useTaskDetailStore } from '../stores/taskDetailStore';
 import { useMediaQuery, PHONE_QUERY } from './useMediaQuery';
 import type { DetailLayout } from '../types/detail';
 
@@ -18,26 +18,52 @@ export function useTaskDetailController(): string | null {
   const navigate = useNavigate();
   const location = useLocation();
   const locationRef = useRef(location);
+  const prevTaskIdRef = useRef<string | null>(null);
   const raw = params.get(DETAIL_PARAM);
   const taskId = raw && TASK_ID.test(raw) ? raw : null;
 
+  useEffect(() => {
+    cancelPendingOpen();
+  }, [location.pathname]);
+
   useLayoutEffect(() => {
     locationRef.current = location;
+    const wasOpen = prevTaskIdRef.current !== null;
+    prevTaskIdRef.current = taskId;
+    if (wasOpen && taskId === null) {
+      const origin = useTaskDetailStore.getState().origin;
+      useTaskDetailStore.setState({ taskId: null, origin: null });
+      if (origin?.isConnected) {
+        requestAnimationFrame(() => origin.focus({ preventScroll: true }));
+      }
+      return;
+    }
     useTaskDetailStore.setState({ taskId });
   }, [location, taskId]);
 
   useEffect(() => {
-    const historyFlag = () => Boolean((locationRef.current.state as Record<string, unknown> | null)?.[PUSHED]);
+    const currentState = () => (locationRef.current.state as Record<string, unknown> | null) ?? {};
+    const historyFlag = () => Boolean(currentState()[PUSHED]);
     const target = (id: string | null) => {
       const search = new URLSearchParams(locationRef.current.search);
       if (id) search.set(DETAIL_PARAM, id);
       else search.delete(DETAIL_PARAM);
       const query = search.toString();
-      return { pathname: locationRef.current.pathname, search: query ? `?${query}` : '' };
+      return {
+        pathname: locationRef.current.pathname,
+        search: query ? `?${query}` : '',
+        hash: locationRef.current.hash,
+      };
     };
     useTaskDetailStore.setState({
       navigator: {
-        open: (id, replace) => navigate(target(id), replace ? { replace: true, state: { [PUSHED]: historyFlag() } } : { state: { [PUSHED]: true } }),
+        open: (id, replace) =>
+          navigate(
+            target(id),
+            replace
+              ? { replace: true, state: { ...currentState(), [PUSHED]: historyFlag() } }
+              : { state: { ...currentState(), [PUSHED]: true } },
+          ),
         close: () => {
           if (historyFlag()) navigate(-1);
           else navigate(target(null), { replace: true });

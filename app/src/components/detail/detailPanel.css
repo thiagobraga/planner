@@ -93,12 +93,24 @@
 .detail-back {
   display: inline-flex;
   flex: 1;
+  min-width: 0;
   align-items: center;
   gap: 4px;
   max-width: none;
   min-height: 44px;
   font-size: 13px;
   color: var(--color-ink-light);
+}
+
+.detail-back svg {
+  flex: none;
+}
+
+.detail-back > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .detail-save-state {
@@ -157,7 +169,9 @@
 }
 
 .detail-title:focus-visible {
-  box-shadow: 0 1px 0 var(--color-ink-light);
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+  border-radius: 2px;
 }
 
 .detail-title.is-complete {

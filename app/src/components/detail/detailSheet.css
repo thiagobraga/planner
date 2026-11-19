@@ -7,7 +7,7 @@
 }
 
 .detail-panel--sheet .detail-body {
-  padding: 24px 16px;
+  padding: 24px 16px calc(24px + env(safe-area-inset-bottom, 0px));
 }
 
 .detail-panel--sheet .detail-close {
@@ -29,6 +29,15 @@
 
 .detail-panel--sheet .detail-row {
   min-height: 44px;
+}
+
+.detail-panel--sheet .detail-button {
+  min-height: 36px;
+  padding-inline: 12px;
+}
+
+.detail-panel--sheet .detail-text-button {
+  min-height: 36px;
 }
 
 .detail-panel--sheet .detail-properties dl {

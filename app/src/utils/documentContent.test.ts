@@ -1,15 +1,17 @@
 import { describe, expect, it } from 'vitest';
-import { hasUnsupportedNodes, toMarkdown, toServerContent } from './documentContent';
+import { hasUnsupportedNodes, isSafeHref, toMarkdown, toServerContent } from './documentContent';
 import type { DocumentNode } from '../contracts/document';
 
 const text = (value: string, marks?: DocumentNode['marks']): DocumentNode => ({ type: 'text', text: value, ...(marks ? { marks } : {}) });
 
 describe('toServerContent', () => {
-  it('keeps allowlisted attributes and drops the ones the server would reject', () => {
+  it('keeps allowlisted attributes and drops or normalizes ones the server would reject', () => {
     const doc: DocumentNode = {
       type: 'doc',
       content: [
         { type: 'heading', attrs: { level: 2, id: 'x' }, content: [text('Plan')] },
+        { type: 'codeBlock', attrs: { language: '' }, content: [text('const x = 1;')] },
+        { type: 'orderedList', attrs: { start: -5, type: 'invalid' }, content: [{ type: 'listItem', content: [{ type: 'paragraph', content: [text('item')] }] }] },
         { type: 'paragraph', attrs: { textAlign: null }, content: [text('site', [{ type: 'link', attrs: { href: 'https://a.dev', target: '_blank', rel: 'noopener', class: null, title: null } }])] },
       ],
     };
@@ -17,21 +19,27 @@ describe('toServerContent', () => {
       type: 'doc',
       content: [
         { type: 'heading', attrs: { level: 2 }, content: [text('Plan')] },
+        { type: 'codeBlock', content: [text('const x = 1;')] },
+        { type: 'orderedList', content: [{ type: 'listItem', content: [{ type: 'paragraph', content: [text('item')] }] }] },
         { type: 'paragraph', content: [text('site', [{ type: 'link', attrs: { href: 'https://a.dev', target: '_blank', rel: 'noopener', class: null } }])] },
       ],
     });
   });
 
-  it('turns a link with an unsafe protocol into plain text', () => {
+  it('turns a link with an unsafe protocol or control characters into plain text', () => {
+    expect(isSafeHref('javascript:alert(1)')).toBe(false);
+    expect(isSafeHref('https://a.dev/\u0000x')).toBe(false);
+    expect(isSafeHref(`https://a.dev/${'a'.repeat(2050)}`)).toBe(false);
     const doc: DocumentNode = { type: 'doc', content: [{ type: 'paragraph', content: [text('x', [{ type: 'link', attrs: { href: 'javascript:alert(1)' } }, { type: 'bold' }])] }] };
     expect(toServerContent(doc).content?.[0].content?.[0].marks).toEqual([{ type: 'bold' }]);
   });
 });
 
 describe('hasUnsupportedNodes', () => {
-  it('flags nodes this editor cannot render so it never silently drops them', () => {
+  it('flags nodes, heading levels or marks this editor cannot render so it never silently drops them', () => {
     expect(hasUnsupportedNodes({ type: 'doc', content: [{ type: 'paragraph' }] })).toBe(false);
     expect(hasUnsupportedNodes({ type: 'doc', content: [{ type: 'taskReference', attrs: { taskId: 'a', blockId: 'b' } }] })).toBe(true);
+    expect(hasUnsupportedNodes({ type: 'doc', content: [{ type: 'heading', attrs: { level: 4 } }] })).toBe(true);
   });
 });
 

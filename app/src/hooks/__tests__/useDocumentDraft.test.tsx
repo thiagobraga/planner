@@ -3,7 +3,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import type { ReactNode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createTestQueryClient } from '../../test/render';
-import { AUTOSAVE_MS, documentQueryKey, useDocumentDraft } from '../useDocumentDraft';
+import { AUTOSAVE_MS, clearDocumentDrafts, documentQueryKey, useDocumentDraft } from '../useDocumentDraft';
 import type { DocumentNode, TaskDocumentDto } from '../../contracts/document';
 
 vi.mock('../../utils/socket', () => ({ getSocketId: () => 'socket-1' }));
@@ -43,6 +43,7 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
+  clearDocumentDrafts();
   vi.unstubAllGlobals();
   vi.useRealTimers();
 });
@@ -148,5 +149,20 @@ describe('useDocumentDraft', () => {
     expect(again.result.current.view.content).toEqual(doc('Offline words'));
     await act(() => again.result.current.save());
     await waitFor(() => expect(again.result.current.state.status).toBe('saved'));
+  });
+
+  it('clears remembered drafts when clearDocumentDrafts is called on logout', async () => {
+    const first = mount();
+    await waitFor(() => expect(first.result.current.state.base?.revision).toBe(3));
+    failNext = true;
+    act(() => first.result.current.edit(doc('Private draft')));
+    await act(() => first.result.current.save());
+    first.unmount();
+
+    clearDocumentDrafts();
+
+    const wrapper = ({ children }: { children: ReactNode }) => <QueryClientProvider client={first.client}>{children}</QueryClientProvider>;
+    const afterLogout = renderHook(() => useDocumentDraft(first.taskId), { wrapper });
+    expect(afterLogout.result.current.state.draft).toBeNull();
   });
 });

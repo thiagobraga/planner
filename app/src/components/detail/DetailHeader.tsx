@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useRef, useState, type ReactNode } from 'react';
 import { ChevronLeft, X } from 'lucide-react';
 import { useI18n } from '../../i18n/I18nContext';
 import { closeTaskDetails, openTaskDetails } from '../../stores/taskDetailStore';
@@ -15,17 +15,24 @@ interface DetailHeaderProps {
   progress: { done: number; total: number };
   onRename: (title: string) => void;
   onToggle: () => void;
+  titleId?: string;
 }
 
-export function DetailHeader({ detail, layout, mode, onModeChange, saveState, progress, onRename, onToggle }: DetailHeaderProps) {
+export function DetailHeader({ detail, layout, mode, onModeChange, saveState, progress, onRename, onToggle, titleId }: DetailHeaderProps) {
   const { t } = useI18n();
   const { task, ancestors } = detail;
   // null while not editing, so a rename from elsewhere shows through.
   const [draftTitle, setDraftTitle] = useState<string | null>(null);
+  const skipCommitRef = useRef(false);
   const title = draftTitle ?? task.title;
   const parent = ancestors.at(-1);
 
   const commit = () => {
+    if (skipCommitRef.current) {
+      skipCommitRef.current = false;
+      setDraftTitle(null);
+      return;
+    }
     const next = title.trim();
     if (next && next !== task.title) onRename(next);
     setDraftTitle(null);
@@ -59,14 +66,17 @@ export function DetailHeader({ detail, layout, mode, onModeChange, saveState, pr
         {task.type === 'task' && (
           <TaskCheck checked={task.isCompleted} label={task.title} size="large" onToggle={onToggle} />
         )}
-        <h2 className="sr-only">{task.title}</h2>
+        <h2 id={titleId} className="sr-only">{task.title}</h2>
         <textarea
           className={`detail-title ${task.isCompleted ? 'is-complete' : ''}`}
           aria-label={t('detail.titleLabel')}
           rows={1}
           value={title}
           maxLength={500}
-          onChange={(event) => setDraftTitle(event.target.value.replace(/\n/g, ' '))}
+          onChange={(event) => {
+            skipCommitRef.current = false;
+            setDraftTitle(event.target.value.replace(/\n/g, ' '));
+          }}
           onBlur={commit}
           onKeyDown={(event) => {
             if (event.key === 'Enter') {
@@ -74,7 +84,9 @@ export function DetailHeader({ detail, layout, mode, onModeChange, saveState, pr
               event.currentTarget.blur();
             } else if (event.key === 'Escape') {
               event.preventDefault();
-              setDraftTitle(task.title);
+              event.stopPropagation();
+              skipCommitRef.current = true;
+              setDraftTitle(null);
               event.currentTarget.blur();
             }
           }}
@@ -92,7 +104,7 @@ export function DetailHeader({ detail, layout, mode, onModeChange, saveState, pr
               tabIndex={mode === value ? 0 : -1}
               onClick={() => onModeChange(value)}
               onKeyDown={(event) => {
-                if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+                if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key)) return;
                 event.preventDefault();
                 const next = value === 'full' ? 'tasks' : 'full';
                 onModeChange(next);

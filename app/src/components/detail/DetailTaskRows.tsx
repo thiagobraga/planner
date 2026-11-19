@@ -9,7 +9,7 @@ export function DetailTaskRows({ rows, onToggle }: { rows: SubtreeRow[]; onToggl
   return (
     <ul className="detail-rows">
       {rows.map(({ item, depth }) => (
-        <li key={item.id} className={`detail-row ${item.isCompleted ? 'is-complete' : ''}`} style={{ paddingInlineStart: `${depth * 24}px` }}>
+        <li key={item.id} className={`detail-row ${item.isCompleted ? 'is-complete' : ''}`} style={{ paddingInlineStart: `${Math.min(depth, 6) * 24}px` }}>
           {item.type === 'task' ? (
             <TaskCheck checked={item.isCompleted} label={item.title} size="small" onToggle={() => onToggle(item.id, !item.isCompleted)} />
           ) : (

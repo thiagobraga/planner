@@ -38,7 +38,13 @@ export function DocumentBubbleMenu({ editor }: { editor: Editor }) {
   };
 
   return (
-    <BubbleMenu editor={editor} className="detail-bubble" role="toolbar" aria-label={t('detail.formatting')}>
+    <BubbleMenu
+      editor={editor}
+      className="detail-bubble"
+      role="toolbar"
+      aria-label={t('detail.formatting')}
+      options={{ onHide: () => setLinking(false) }}
+    >
       {linking ? (
         <form className="detail-bubble-link" onSubmit={(event) => { event.preventDefault(); applyLink(); }}>
           <input
@@ -52,6 +58,7 @@ export function DocumentBubbleMenu({ editor }: { editor: Editor }) {
             onKeyDown={(event) => {
               if (event.key === 'Escape') {
                 event.preventDefault();
+                event.stopPropagation();
                 setLinking(false);
                 editor.commands.focus();
               }
@@ -60,19 +67,19 @@ export function DocumentBubbleMenu({ editor }: { editor: Editor }) {
         </form>
       ) : (
         <>
-          {button('b', `${t('detail.bold')} (${MOD}B)`, active.bold, () => chain().toggleBold().run(), <Bold size={14} />)}
-          {button('i', `${t('detail.italic')} (${MOD}I)`, active.italic, () => chain().toggleItalic().run(), <Italic size={14} />)}
-          {button('s', `${t('detail.strike')} (${MOD}Shift+S)`, active.strike, () => chain().toggleStrike().run(), <Strikethrough size={14} />)}
-          {button('c', `${t('detail.code')} (${MOD}E)`, active.code, () => chain().toggleCode().run(), <Code size={14} />)}
+          {button('b', `${t('detail.bold')} (${MOD}B)`, active.bold, () => chain().toggleBold().run(), <Bold size={14} aria-hidden="true" />)}
+          {button('i', `${t('detail.italic')} (${MOD}I)`, active.italic, () => chain().toggleItalic().run(), <Italic size={14} aria-hidden="true" />)}
+          {button('s', `${t('detail.strike')} (${MOD}Shift+S)`, active.strike, () => chain().toggleStrike().run(), <Strikethrough size={14} aria-hidden="true" />)}
+          {button('c', `${t('detail.code')} (${MOD}E)`, active.code, () => chain().toggleCode().run(), <Code size={14} aria-hidden="true" />)}
           {button('l', t('detail.link'), active.link, () => {
             setHref(String(editor.getAttributes('link').href ?? ''));
             setLinking(true);
-          }, <Link2 size={14} />)}
+          }, <Link2 size={14} aria-hidden="true" />)}
           <span className="detail-bubble-sep" aria-hidden="true" />
-          {([1, 2, 3] as const).map((level) => button(`h${level}`, `${t('detail.heading', { level })} (${MOD}Alt+${level})`, active[`h${level}`], () => chain().toggleHeading({ level }).run(), <span className="detail-bubble-text">H{level}</span>))}
-          {button('ul', `${t('detail.bulletList')} (${MOD}Shift+8)`, active.bullet, () => chain().toggleBulletList().run(), <List size={14} />)}
-          {button('ol', `${t('detail.orderedList')} (${MOD}Shift+7)`, active.ordered, () => chain().toggleOrderedList().run(), <ListOrdered size={14} />)}
-          {button('q', `${t('detail.quote')} (${MOD}Shift+B)`, active.quote, () => chain().toggleBlockquote().run(), <Quote size={14} />)}
+          {([1, 2, 3] as const).map((level) => button(`h${level}`, `${t('detail.heading', { level })} (${MOD}Alt+${level})`, active[`h${level}`], () => chain().toggleHeading({ level }).run(), <span className="detail-bubble-text" aria-hidden="true">H{level}</span>))}
+          {button('ul', `${t('detail.bulletList')} (${MOD}Shift+8)`, active.bullet, () => chain().toggleBulletList().run(), <List size={14} aria-hidden="true" />)}
+          {button('ol', `${t('detail.orderedList')} (${MOD}Shift+7)`, active.ordered, () => chain().toggleOrderedList().run(), <ListOrdered size={14} aria-hidden="true" />)}
+          {button('q', `${t('detail.quote')} (${MOD}Shift+B)`, active.quote, () => chain().toggleBlockquote().run(), <Quote size={14} aria-hidden="true" />)}
         </>
       )}
     </BubbleMenu>

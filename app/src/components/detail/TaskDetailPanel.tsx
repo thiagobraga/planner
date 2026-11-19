@@ -5,7 +5,7 @@ import { ApiError, apiRenameTask, apiSetTaskCompleted, fetchTaskDetail } from '.
 import { useI18n } from '../../i18n/I18nContext';
 import { useDocumentDraft } from '../../hooks/useDocumentDraft';
 import { closeTaskDetails, useTaskDetailStore } from '../../stores/taskDetailStore';
-import { getSocket } from '../../utils/socket';
+import { getSocket, getSocketId } from '../../utils/socket';
 import { flattenSubtree, leafProgress } from '../../utils/subtree';
 import { DetailFrame } from './DetailFrame';
 import { DetailHeader } from './DetailHeader';
@@ -33,8 +33,13 @@ function useDetailRefresh() {
   useEffect(() => {
     const socket = getSocket();
     const onSync = (event: SyncEvent) => {
-      if (event.entityType === 'task') void qc.invalidateQueries({ queryKey: ['task-detail'] });
-      else if (event.entityType === 'status') void qc.invalidateQueries({ queryKey: ['statuses'] });
+      if (event.entityType === 'task') {
+        const selfId = getSocketId();
+        if (selfId && event.sourceId === selfId && event.eventType === 'updated') return;
+        void qc.invalidateQueries({ queryKey: ['task-detail'] });
+      } else if (event.entityType === 'status') {
+        void qc.invalidateQueries({ queryKey: ['statuses'] });
+      }
     };
     socket.on('sync', onSync);
     return () => {
@@ -53,6 +58,7 @@ function DetailBody({ taskId, layout, mode, onModeChange }: { taskId: string; la
   });
   const draft = useDocumentDraft(taskId);
   const { status, draft: unsaved } = draft.state;
+  const draftReady = draft.view.key > 0 || unsaved !== null;
 
   useEffect(() => {
     const failed = unsaved !== null && (status === 'error' || status === 'conflict');
@@ -68,7 +74,7 @@ function DetailBody({ taskId, layout, mode, onModeChange }: { taskId: string; la
 
   const refresh = () => qc.invalidateQueries({ queryKey: ['task-detail'] });
   const toggle = (id: string, completed: boolean) => {
-    void apiSetTaskCompleted(id, completed).finally(refresh);
+    void apiSetTaskCompleted(id, completed).catch(() => {}).finally(refresh);
   };
 
   // A refetch that fails keeps the old data, which is how a deletion is told apart from a bad link.
@@ -99,8 +105,8 @@ function DetailBody({ taskId, layout, mode, onModeChange }: { taskId: string; la
         mode={mode}
         onModeChange={onModeChange}
         progress={progress}
-        saveState={<SaveStateLabel status={status} />}
-        onRename={(title) => void apiRenameTask(taskId, title).finally(refresh)}
+        saveState={<SaveStateLabel status={status} ready={draftReady} />}
+        onRename={(title) => void apiRenameTask(taskId, title).catch(() => {}).finally(refresh)}
         onToggle={() => toggle(taskId, !detail.task.isCompleted)}
       />
       <div className="detail-body">

@@ -127,7 +127,8 @@ export async function request<T>(path: string, init: RequestInit = {}): Promise<
   // Token and OAuth endpoints are excluded too: a queued create could never show
   // the one-time secret, and a queued revoke would leave a live credential believed dead.
   // Document saves need the real revision back, so offline they fail and the editor keeps the draft.
-  if (!path.startsWith('/auth/') && !path.startsWith('/api-tokens') && !path.startsWith('/oauth/') && !path.startsWith('/account') && !path.endsWith('/document') && WRITE_METHODS.includes(method) && !isOnline()) {
+  // Comments are excluded too because their path embeds the parent task id rather than a comment id.
+  if (!path.startsWith('/auth/') && !path.startsWith('/api-tokens') && !path.startsWith('/oauth/') && !path.startsWith('/account') && !/\/(?:document|comments)(?:\?|$)/.test(path) && WRITE_METHODS.includes(method) && !isOnline()) {
     // Create calls (POST with no id segment in the path) mint their id here,
     // once, so the same value is both stored on the queued record (as
     // `clientEntityId`, for later remapping - see offlineQueue.remapQueuedId)

@@ -8,26 +8,26 @@ import type { TaskDetailDto } from '../contracts/taskDetail';
 const PANEL_SOURCE = { 'X-Socket-Id': 'detail-panel' };
 
 export async function fetchTaskDetail(taskId: string): Promise<TaskDetailDto> {
-  return request<TaskDetailDto>(`/tasks/${taskId}`);
+  return request<TaskDetailDto>(`/tasks/${encodeURIComponent(taskId)}`);
 }
 
 export async function fetchTaskDocument(taskId: string): Promise<TaskDocumentDto> {
-  return request<TaskDocumentDto>(`/tasks/${taskId}/document`);
+  return request<TaskDocumentDto>(`/tasks/${encodeURIComponent(taskId)}/document`);
 }
 
 export async function apiSaveTaskDocument(taskId: string, content: DocumentNode, baseRevision: number): Promise<TaskDocumentDto> {
-  return request<TaskDocumentDto>(`/tasks/${taskId}/document`, {
+  return request<TaskDocumentDto>(`/tasks/${encodeURIComponent(taskId)}/document`, {
     method: 'PUT',
     body: JSON.stringify({ content, baseRevision }),
   });
 }
 
 export async function fetchTaskComments(taskId: string): Promise<TaskCommentDto[]> {
-  return request<TaskCommentDto[]>(`/tasks/${taskId}/comments`);
+  return request<TaskCommentDto[]>(`/tasks/${encodeURIComponent(taskId)}/comments`);
 }
 
 export async function apiCreateComment(taskId: string, body: string): Promise<TaskCommentDto> {
-  return request<TaskCommentDto>(`/tasks/${taskId}/comments`, {
+  return request<TaskCommentDto>(`/tasks/${encodeURIComponent(taskId)}/comments`, {
     method: 'POST',
     headers: PANEL_SOURCE,
     body: JSON.stringify({ body }),
@@ -35,9 +35,16 @@ export async function apiCreateComment(taskId: string, body: string): Promise<Ta
 }
 
 export async function apiRenameTask(taskId: string, title: string): Promise<void> {
-  await request<unknown>(`/tasks/${taskId}`, { method: 'PATCH', headers: PANEL_SOURCE, body: JSON.stringify({ title }) });
+  await request<unknown>(`/tasks/${encodeURIComponent(taskId)}`, {
+    method: 'PATCH',
+    headers: PANEL_SOURCE,
+    body: JSON.stringify({ title }),
+  });
 }
 
 export async function apiSetTaskCompleted(taskId: string, completed: boolean): Promise<void> {
-  await request<unknown>(`/tasks/${taskId}/${completed ? 'complete' : 'reopen'}`, { method: 'POST', headers: PANEL_SOURCE });
+  await request<unknown>(`/tasks/${encodeURIComponent(taskId)}/${completed ? 'complete' : 'reopen'}`, {
+    method: 'POST',
+    headers: PANEL_SOURCE,
+  });
 }

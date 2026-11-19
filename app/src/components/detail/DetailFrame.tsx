@@ -2,10 +2,16 @@ import { useEffect, useRef, type KeyboardEvent, type ReactNode } from 'react';
 import { closeTaskDetails, useTaskDetailStore } from '../../stores/taskDetailStore';
 import type { DetailLayout } from '../../types/detail';
 
-const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [contenteditable="true"], [tabindex]:not([tabindex="-1"])';
+const FOCUSABLE =
+  'a[href]:not([tabindex="-1"]), button:not([disabled]):not([tabindex="-1"]), input:not([disabled]):not([tabindex="-1"]), textarea:not([disabled]):not([tabindex="-1"]), select:not([disabled]):not([tabindex="-1"]), [contenteditable="true"]:not([tabindex="-1"]), [tabindex]:not([tabindex="-1"])';
 
-// Survives remounts so one keyboard open moves focus exactly once.
-let handledFocusRequest = 0;
+function isVisibleFocusable(el: HTMLElement): boolean {
+  if (el === document.activeElement) return true;
+  if (el.closest('[hidden], [aria-hidden="true"]')) return false;
+  const style = window.getComputedStyle?.(el);
+  if (style && (style.display === 'none' || style.visibility === 'hidden')) return false;
+  return true;
+}
 
 /**
  * Desktop: a non-modal aside, focus stays where the user clicked unless they
@@ -15,17 +21,18 @@ let handledFocusRequest = 0;
 export function DetailFrame({ layout, label, children }: { layout: DetailLayout; label: string; children: ReactNode }) {
   const ref = useRef<HTMLElement>(null);
   const focusRequest = useTaskDetailStore((s) => s.focusRequest);
+  const handledFocusRequestRef = useRef(0);
   const modal = layout === 'sheet';
 
   useEffect(() => {
-    if (!modal && focusRequest === handledFocusRequest) return;
-    handledFocusRequest = focusRequest;
+    if (!modal && focusRequest === handledFocusRequestRef.current) return;
+    handledFocusRequestRef.current = focusRequest;
     ref.current?.focus({ preventScroll: true });
   }, [focusRequest, modal]);
 
   const trapTab = (event: KeyboardEvent<HTMLElement>) => {
     if (!modal || event.key !== 'Tab' || !ref.current) return;
-    const items = [...ref.current.querySelectorAll<HTMLElement>(FOCUSABLE)].filter((el) => el.offsetParent !== null || el === document.activeElement);
+    const items = [...ref.current.querySelectorAll<HTMLElement>(FOCUSABLE)].filter(isVisibleFocusable);
     if (items.length === 0) return;
     const first = items[0];
     const last = items[items.length - 1];

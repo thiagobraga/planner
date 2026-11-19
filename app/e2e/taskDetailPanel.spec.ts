@@ -7,42 +7,56 @@ import type { TaskDocumentDto } from '../src/contracts/document';
 test.use({ storageState: STORAGE_STATE_PATH });
 
 const unique = (prefix: string) => `${prefix} ${crypto.randomUUID().slice(0, 6)}`;
-const today = () => new Date().toISOString().slice(0, 10);
+const today = () => {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, '0');
+  const d = String(now.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+};
 const panel = (page: Page) => page.getByRole('complementary', { name: 'Task details' });
 const editor = (page: Page) => panel(page).getByRole('textbox', { name: 'Description' });
 
 test('opens a Daily row in the docked panel, Escape closes it and focus returns to the row', async ({ api, page }) => {
   const task = await api.createTask({ title: unique('Daily detail'), dueDate: today() });
-  await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('/daily/list');
+  try {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/daily/list');
 
-  const row = page.locator(`[data-task-id="${task.id}"]`);
-  await row.getByText(task.title).click();
-  await expect(panel(page)).toBeVisible();
-  await expect(panel(page).getByRole('textbox', { name: 'Title' })).toHaveValue(task.title);
-  await expect(page).toHaveURL(new RegExp(`task=${task.id}`));
-  await expect(row).toBeVisible();
+    const row = page.locator(`[data-task-id="${task.id}"]`);
+    await row.getByText(task.title).click();
+    await expect(panel(page)).toBeVisible();
+    await expect(panel(page).getByRole('textbox', { name: 'Title' })).toHaveValue(task.title);
+    await expect(page).toHaveURL(new RegExp(`task=${task.id}`));
+    await expect(row).toBeVisible();
 
-  await page.keyboard.press('Escape');
-  await expect(panel(page)).toBeHidden();
-  await expect(row).toBeFocused();
-  await expect(page).not.toHaveURL(/task=/);
+    await page.keyboard.press('Escape');
+    await expect(panel(page)).toBeHidden();
+    await expect(row).toBeFocused();
+    await expect(page).not.toHaveURL(/task=/);
+  } finally {
+    await api.delete(`/tasks/${task.id}`).catch(() => {});
+  }
 });
 
 test('edits the description from an Inbox row and keeps it after a reload', async ({ api, page }) => {
   const task = await api.createTask({ title: unique('Inbox detail') });
-  await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto('/inbox');
+  try {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto('/inbox');
 
-  await page.locator(`[data-task-id="${task.id}"]`).getByText(task.title).click();
-  await editor(page).click();
-  await page.keyboard.type('Durable plan text');
-  await expect(panel(page).getByRole('status').filter({ hasText: 'Unsaved changes' })).toBeVisible();
-  await expect(panel(page).getByRole('status').filter({ hasText: 'Saved' })).toBeVisible();
-  await expect.poll(async () => (await api.get<TaskDocumentDto>(`/tasks/${task.id}/document`)).revision).toBe(1);
+    await page.locator(`[data-task-id="${task.id}"]`).getByText(task.title).click();
+    await editor(page).click();
+    await page.keyboard.type('Durable plan text');
+    await expect(panel(page).getByRole('status').filter({ hasText: 'Unsaved changes' })).toBeVisible();
+    await expect(panel(page).getByRole('status').filter({ hasText: 'Saved' })).toBeVisible();
+    await expect.poll(async () => (await api.get<TaskDocumentDto>(`/tasks/${task.id}/document`)).revision).toBe(1);
 
-  await page.reload();
-  await expect(editor(page)).toContainText('Durable plan text');
+    await page.reload();
+    await expect(editor(page)).toContainText('Durable plan text');
+  } finally {
+    await api.delete(`/tasks/${task.id}`).catch(() => {});
+  }
 });
 
 test('opens a collection board card without completing it', async ({ api, page }) => {
@@ -65,54 +79,64 @@ test('opens a collection board card without completing it', async ({ api, page }
     await expect(panel(page).getByRole('textbox', { name: 'Title' })).toHaveValue(parent.title);
     expect((await api.fetchCollectionView(collection.id)).tasks.find((entry) => entry.id === parent.id)?.isCompleted).toBe(false);
   } finally {
-    await api.deleteCollection(collection.id);
+    await api.deleteCollection(collection.id).catch(() => {});
   }
 });
 
 test('a save that meets a newer revision keeps the draft until the user keeps theirs', async ({ api, page }) => {
   const task = await api.createTask({ title: unique('Conflict') });
-  await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto(`/inbox?task=${task.id}`);
-  await expect(editor(page)).toBeVisible();
+  try {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto(`/inbox?task=${task.id}`);
+    await expect(editor(page)).toBeVisible();
 
-  // Another writer saves revision 1 while this page still builds on revision 0.
-  await editor(page).click();
-  await page.keyboard.type('Mine');
-  await page.evaluate(async (id) => {
-    const token = decodeURIComponent(document.cookie.split('; ').find((c) => c.includes('_csrf='))?.split('=')[1] ?? '').split(':')[0];
-    await fetch(`/api/v1/tasks/${id}/document`, {
-      method: 'PUT',
-      credentials: 'include',
-      headers: { 'Content-Type': 'application/json', 'X-XSRF-TOKEN': token },
-      body: JSON.stringify({ baseRevision: 0, content: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Theirs' }] }] } }),
-    });
-  }, task.id);
+    // Another writer saves revision 1 while this page holds an unsaved draft on revision 0.
+    await editor(page).click();
+    await page.keyboard.type('Mine');
+    const putOk = await page.evaluate(async (id) => {
+      const token = decodeURIComponent(document.cookie.split('; ').find((c) => c.includes('_csrf='))?.split('=')[1] ?? '').split(':')[0];
+      const res = await fetch(`/api/v1/tasks/${id}/document`, {
+        method: 'PUT',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json', 'X-XSRF-TOKEN': token },
+        body: JSON.stringify({ baseRevision: 0, content: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Theirs' }] }] } }),
+      });
+      return res.ok;
+    }, task.id);
+    expect(putOk).toBe(true);
 
-  await expect(panel(page).getByRole('alert').filter({ hasText: 'Updated elsewhere.' })).toBeVisible();
-  await expect(editor(page)).toContainText('Mine');
+    await expect(panel(page).getByRole('alert').filter({ hasText: 'Updated elsewhere.' })).toBeVisible();
+    await expect(editor(page)).toContainText('Mine');
 
-  await panel(page).getByRole('button', { name: 'Keep mine' }).click();
-  await expect(panel(page).getByRole('status').filter({ hasText: 'Saved' })).toBeVisible();
-  await expect.poll(async () => JSON.stringify((await api.get<TaskDocumentDto>(`/tasks/${task.id}/document`)).content)).toContain('Mine');
+    await panel(page).getByRole('button', { name: 'Keep mine' }).click();
+    await expect(panel(page).getByRole('status').filter({ hasText: 'Saved' })).toBeVisible();
+    await expect.poll(async () => JSON.stringify((await api.get<TaskDocumentDto>(`/tasks/${task.id}/document`)).content)).toContain('Mine');
+  } finally {
+    await api.delete(`/tasks/${task.id}`).catch(() => {});
+  }
 });
 
 test('becomes a modal bottom sheet at 390px and returns focus on close', async ({ api, page }) => {
   const task = await api.createTask({ title: unique('Phone detail') });
-  await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto('/inbox');
+  try {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/inbox');
 
-  const row = page.locator(`[data-task-id="${task.id}"]`);
-  await row.focus();
-  await page.keyboard.press('o');
-  const sheet = page.getByRole('dialog', { name: 'Task details' });
-  await expect(sheet).toBeVisible();
-  await expect(sheet).toHaveAttribute('aria-modal', 'true');
-  await expect(sheet.getByRole('radio', { name: 'Full content' })).toHaveAttribute('aria-checked', 'true');
+    const row = page.locator(`[data-task-id="${task.id}"]`);
+    await row.focus();
+    await page.keyboard.press('o');
+    const sheet = page.getByRole('dialog', { name: 'Task details' });
+    await expect(sheet).toBeVisible();
+    await expect(sheet).toHaveAttribute('aria-modal', 'true');
+    await expect(sheet.getByRole('radio', { name: 'Full content' })).toHaveAttribute('aria-checked', 'true');
 
-  for (let i = 0; i < 12; i += 1) await page.keyboard.press('Tab');
-  expect(await sheet.evaluate((el) => el.contains(document.activeElement))).toBe(true);
+    for (let i = 0; i < 12; i += 1) await page.keyboard.press('Tab');
+    expect(await sheet.evaluate((el) => el.contains(document.activeElement))).toBe(true);
 
-  await sheet.getByRole('button', { name: 'Close details' }).click();
-  await expect(sheet).toBeHidden();
-  await expect(row).toBeFocused();
+    await sheet.getByRole('button', { name: 'Close details' }).click();
+    await expect(sheet).toBeHidden();
+    await expect(row).toBeFocused();
+  } finally {
+    await api.delete(`/tasks/${task.id}`).catch(() => {});
+  }
 });

@@ -12,25 +12,35 @@ const STATUS_LABEL: Record<SaveStatus, TranslationKey> = {
   saved: 'detail.saved', dirty: 'detail.unsaved', saving: 'detail.saving', error: 'detail.saveFailed', conflict: 'detail.conflict',
 };
 
-export function SaveStateLabel({ status }: { status: SaveStatus }) {
+export function SaveStateLabel({ status, ready = true }: { status: SaveStatus; ready?: boolean }) {
   const { t } = useI18n();
-  return <span role="status" className={`detail-save-text is-${status}`}>{t(STATUS_LABEL[status])}</span>;
+  if (!ready && status === 'saved') return null;
+  const hasAlertBanner = status === 'error' || status === 'conflict';
+  return (
+    <span role={hasAlertBanner ? undefined : 'status'} className={`detail-save-text is-${status}`}>
+      {t(STATUS_LABEL[status])}
+    </span>
+  );
 }
 
 function downloadDraft(draft: Draft, title: string) {
-  const content = draft.state.draft ?? draft.view.content;
+  const content = draft.state.draft ?? draft.state.base?.content ?? draft.view.content;
   if (!content) return;
   const blob = new Blob([`# ${title}\n\n${toMarkdown(content)}`], { type: 'text/markdown' });
   const url = URL.createObjectURL(blob);
-  const link = Object.assign(document.createElement('a'), { href: url, download: `${title.replace(/[^\p{L}\p{N} _-]+/gu, '').trim() || 'draft'}.md` });
+  const link = Object.assign(document.createElement('a'), {
+    href: url,
+    download: `${title.replace(/[^\p{L}\p{N} _-]+/gu, '').trim() || 'draft'}.md`,
+  });
   link.click();
-  URL.revokeObjectURL(url);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 export function DetailDocument({ draft, title }: { draft: Draft; title: string }) {
   const { t } = useI18n();
   const labelId = useId();
   const { state, view, query } = draft;
+  const currentContent = state.draft ?? state.base?.content ?? view.content;
   const ready = view.key > 0 || state.draft !== null;
   const readOnly = Boolean(query.data && hasUnsupportedNodes(query.data.content));
 
@@ -42,6 +52,7 @@ export function DetailDocument({ draft, title }: { draft: Draft; title: string }
           <span>{t('detail.conflict')}</span>
           <button type="button" className="detail-button" onClick={draft.reload}>{t('detail.conflictReload')}</button>
           <button type="button" className="detail-button" onClick={draft.keepMine}>{t('detail.conflictKeep')}</button>
+          <button type="button" className="detail-button" onClick={() => downloadDraft(draft, title)}>{t('detail.downloadDraft')}</button>
         </div>
       )}
       {state.status === 'error' && (
@@ -57,8 +68,10 @@ export function DetailDocument({ draft, title }: { draft: Draft; title: string }
           <span>{t('detail.loadFailed')}</span>
           <button type="button" className="detail-button" onClick={() => void query.refetch()}>{t('detail.retry')}</button>
         </div>
+      ) : ready && readOnly && currentContent ? (
+        <pre className="detail-prose detail-prose--readonly" aria-labelledby={labelId}>{toMarkdown(currentContent).trim()}</pre>
       ) : ready ? (
-        <DocumentEditor version={view.key} content={view.content} readOnly={readOnly} labelledBy={labelId} onEdit={draft.edit} />
+        <DocumentEditor version={view.key} content={currentContent} readOnly={readOnly} labelledBy={labelId} onEdit={draft.edit} />
       ) : (
         <p className="detail-muted">{t('detail.loading')}</p>
       )}

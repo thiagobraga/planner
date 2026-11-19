@@ -45,6 +45,8 @@ export function BoardCard({ task, subtasks, containerId = '', subtreeIds, onTogg
         scheduleOpenTaskDetails(child?.dataset.subtaskId ?? task.id, event.currentTarget);
       }}
       onKeyDown={(event) => {
+        listeners?.onKeyDown?.(event);
+        if (event.defaultPrevented) return;
         if (isOpenDetailsKey(event)) {
           event.preventDefault();
           openTaskDetails(task.id, { origin: event.currentTarget, focusPanel: true });

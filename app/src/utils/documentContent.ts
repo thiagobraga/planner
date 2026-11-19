@@ -10,10 +10,16 @@ const MARK_ATTRS: Record<DocumentMark['type'], readonly string[]> = {
   bold: [], italic: [], strike: [], code: [], link: ['href', 'target', 'rel', 'class'],
 };
 
+const LANGUAGE_RE = /^[A-Za-z0-9_+#.-]{1,32}$/;
+const MAX_HREF_LENGTH = 2048;
+const ORDERED_TYPES = new Set(['1', 'a', 'A', 'i', 'I']);
+
 export const LINK_PROTOCOLS = ['http:', 'https:', 'mailto:'];
 
 export function isSafeHref(href: unknown): href is string {
-  if (typeof href !== 'string' || href.trim() !== href || href.length === 0) return false;
+  if (typeof href !== 'string' || href.length === 0 || href.length > MAX_HREF_LENGTH) return false;
+  // eslint-disable-next-line no-control-regex
+  if (/[\u0000-\u001f\u007f]/.test(href) || href.trim() !== href) return false;
   try {
     return LINK_PROTOCOLS.includes(new URL(href).protocol);
   } catch {
@@ -25,6 +31,31 @@ function pick(attrs: Record<string, unknown> | undefined, keys: readonly string[
   if (!attrs) return undefined;
   const kept = Object.fromEntries(keys.filter((key) => attrs[key] !== undefined).map((key) => [key, attrs[key]]));
   return Object.keys(kept).length > 0 ? kept : undefined;
+}
+
+function sanitizeNodeAttrs(type: string, raw: Record<string, unknown> | undefined): Record<string, unknown> | undefined {
+  const attrs = pick(raw, NODE_ATTRS[type] ?? []);
+  if (!attrs) return undefined;
+  if (type === 'codeBlock' && attrs.language !== undefined && attrs.language !== null) {
+    if (typeof attrs.language !== 'string' || !LANGUAGE_RE.test(attrs.language)) {
+      delete attrs.language;
+    }
+  }
+  if (type === 'orderedList') {
+    if (attrs.start !== undefined) {
+      const n = Number(attrs.start);
+      if (!Number.isInteger(n) || n < 0 || n > 1_000_000) delete attrs.start;
+      else attrs.start = n;
+    }
+    if (attrs.type !== undefined && attrs.type !== null && (typeof attrs.type !== 'string' || !ORDERED_TYPES.has(attrs.type))) {
+      delete attrs.type;
+    }
+  }
+  if (type === 'heading') {
+    const level = Number(attrs.level);
+    attrs.level = level === 1 || level === 2 || level === 3 ? level : 1;
+  }
+  return Object.keys(attrs).length > 0 ? attrs : undefined;
 }
 
 function cleanMarks(marks: DocumentMark[] | undefined): DocumentMark[] | undefined {
@@ -40,7 +71,7 @@ function cleanMarks(marks: DocumentMark[] | undefined): DocumentMark[] | undefin
 /** Editor JSON reduced to exactly what PUT /tasks/:id/document accepts. */
 export function toServerContent(node: DocumentNode): DocumentNode {
   const out: DocumentNode = { type: node.type };
-  const attrs = pick(node.attrs, NODE_ATTRS[node.type] ?? []);
+  const attrs = sanitizeNodeAttrs(node.type, node.attrs);
   if (attrs) out.attrs = attrs;
   if (node.text !== undefined) out.text = node.text;
   const marks = cleanMarks(node.marks);
@@ -50,7 +81,10 @@ export function toServerContent(node: DocumentNode): DocumentNode {
 }
 
 export function hasUnsupportedNodes(node: DocumentNode): boolean {
-  return !(node.type in NODE_ATTRS) || (node.content ?? []).some(hasUnsupportedNodes);
+  if (!(node.type in NODE_ATTRS)) return true;
+  if (node.type === 'heading' && ![1, 2, 3].includes(Number(node.attrs?.level))) return true;
+  if ((node.marks ?? []).some((mark) => !(mark.type in MARK_ATTRS))) return true;
+  return (node.content ?? []).some(hasUnsupportedNodes);
 }
 
 function inline(nodes: DocumentNode[] = []): string {

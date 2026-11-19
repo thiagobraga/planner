@@ -15,9 +15,12 @@ export function TaskDetailHost() {
   return (
     <Suspense
       fallback={(
-        <aside className={`detail-panel detail-panel--${layout}`} aria-label={t('detail.panel')} aria-busy="true">
-          <p className="detail-panel-fallback">{t('detail.loading')}</p>
-        </aside>
+        <>
+          {layout === 'sheet' && <div className="detail-sheet-scrim" aria-hidden="true" />}
+          <aside className={`detail-panel detail-panel--${layout}`} aria-label={t('detail.panel')} aria-busy="true">
+            <p className="detail-panel-fallback">{t('detail.loading')}</p>
+          </aside>
+        </>
       )}
     >
       <TaskDetailPanel taskId={taskId} layout={layout} />
