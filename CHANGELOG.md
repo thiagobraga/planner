@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.29.1](https://github.com/thiagobraga/planner/compare/v0.29.0...v0.29.1) (2026-11-19)
+
+
+### Fixed
+
+* **toolbar:** improve phone calendar, view sheet and reorganize button ([8ff3b39](https://github.com/thiagobraga/planner/commit/8ff3b39f55f1ff7b8050aa37081110b03a3c9757))
+* **toolbar:** omit desktop menu action on phones ([c565855](https://github.com/thiagobraga/planner/commit/c5658555c3c7fa45ab65b706c289b7b88bd6c8f1))
+
 ## [0.29.0](https://github.com/thiagobraga/planner/compare/v0.28.2...v0.29.0) (2026-11-19)
 
 
