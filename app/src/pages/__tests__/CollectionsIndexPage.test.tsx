@@ -249,7 +249,14 @@ describe('CollectionsLayout', () => {
         .getAllByRole('menuitem')
         .map((item) => item.textContent);
 
-      expect(labels).toEqual(['Change color…', 'Rename', 'Add sub-collection', 'Delete']);
+      expect(labels).toEqual([
+        'Change color…',
+        'Rename',
+        'Add sub-collection',
+        'Split vertically',
+        'Split horizontally',
+        'Delete',
+      ]);
     });
 
     it('opens the picker seeded with the row colour and recolors only that row', async () => {

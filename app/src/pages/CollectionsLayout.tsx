@@ -1,14 +1,16 @@
-import { useCallback, useLayoutEffect, useRef } from 'react';
+import { useCallback, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 import { Link, Navigate, Outlet, useMatch, useNavigate, useOutletContext, useParams } from 'react-router';
 import { ArrowLeft, Plus } from 'lucide-react';
 import { PageHeader } from '../components/PageHeader';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { CollectionRow } from '../components/collections/CollectionRow';
 import { Button } from '../components/ui/Button';
+import { CollectionSplitContext } from '../contexts/CollectionSplitContext';
 import { useCollectionsTree } from '../hooks/useCollectionsTree';
 import { useSync } from '../hooks/useSync';
 import { useI18n } from '../i18n/I18nContext';
 import { CollectionNotFound } from '../components/collections/CollectionViewState';
+import type { CollectionSplitDirection, CollectionSplitPane, CollectionTreeNode } from '../types/collections';
 import { CollectionsPage } from './CollectionsPage';
 import './collectionsLayout.css';
 
@@ -25,29 +27,106 @@ export function CollectionsLayout() {
   const navigate = useNavigate();
   const model = useCollectionsTree(activeId);
   const detailsRef = useRef<HTMLElement>(null);
+  const splitSeqRef = useRef(0);
+  const [split, setSplit] = useState<{ direction: CollectionSplitDirection; panes: CollectionSplitPane[] } | null>(null);
+
   useLayoutEffect(() => {
     if (detailsRef.current) detailsRef.current.scrollTop = 0;
   }, [activeId]);
 
   useSync(useCallback((event) => {
-    if (event.entityType === 'collection' && event.eventType === 'deleted' && event.entityId === activeId) {
-      navigate('/collections', { replace: true });
+    if (event.entityType === 'collection' && event.eventType === 'deleted') {
+      setSplit((prev) => {
+        if (!prev) return null;
+        const panes = prev.panes.filter((pane) => pane.collectionId !== event.entityId);
+        return panes.length > 0 ? { ...prev, panes } : null;
+      });
+      if (event.entityId === activeId) {
+        navigate('/collections', { replace: true });
+      }
     }
   }, [activeId, navigate]));
 
+  const handleSplit = useCallback((collectionId: string, direction: CollectionSplitDirection) => {
+    if (!activeId) {
+      navigate(`/collection/${collectionId}`);
+      return;
+    }
+    const nextPane: CollectionSplitPane = {
+      key: `${collectionId}-${++splitSeqRef.current}`,
+      collectionId,
+    };
+    setSplit((prev) => ({
+      direction,
+      panes: [...(prev?.panes ?? []), nextPane],
+    }));
+  }, [activeId, navigate]);
+
+  const handleClosePane = useCallback((paneKey: string) => {
+    setSplit((prev) => {
+      if (!prev) return null;
+      const panes = prev.panes.filter((pane) => pane.key !== paneKey);
+      return panes.length > 0 ? { ...prev, panes } : null;
+    });
+  }, []);
+
+  const handleClosePrimary = useCallback(() => {
+    setSplit((prev) => {
+      if (!prev || prev.panes.length === 0) return null;
+      const [first, ...rest] = prev.panes;
+      navigate(`/collection/${first.collectionId}`, { replace: true });
+      return rest.length > 0 ? { ...prev, panes: rest } : null;
+    });
+  }, [navigate]);
+
+  const hasSplitPanes = Boolean(activeId && COLLECTION_ID.test(activeId) && !model.archivedActive && split && split.panes.length > 0);
+  const splitStyle = hasSplitPanes
+    ? ({ '--split-count': 1 + split!.panes.length } as CSSProperties)
+    : undefined;
+
   return (
-    <div className="collections-layout" data-detail={Boolean(activeId)}>
-      <CollectionsTree {...model} />
-      <section ref={detailsRef} className="collections-detail-pane" aria-label={t('collections.details')}>
-        {activeId && (
-          <Link to="/collections" className="collections-back text-sm text-ink-light">
-            <ArrowLeft size={16} aria-hidden="true" />
-            {t('collections.back')}
-          </Link>
-        )}
-        {model.archivedActive ? <Navigate to="/collections" replace /> : <Outlet context={model.startAddRoot} />}
-      </section>
-    </div>
+    <CollectionSplitContext.Provider value={handleSplit}>
+      <div className="collections-layout" data-detail={Boolean(activeId)}>
+        <CollectionsTree
+          {...model}
+          onSplit={(node, direction) => handleSplit(node.id, direction)}
+        />
+        <section
+          ref={detailsRef}
+          className="collections-detail-pane"
+          data-split={hasSplitPanes ? split!.direction : undefined}
+          style={splitStyle}
+          aria-label={t('collections.details')}
+        >
+          {activeId && !hasSplitPanes && (
+            <Link to="/collections" className="collections-back text-sm text-ink-light">
+              <ArrowLeft size={16} aria-hidden="true" />
+              {t('collections.back')}
+            </Link>
+          )}
+          {model.archivedActive ? (
+            <Navigate to="/collections" replace />
+          ) : hasSplitPanes ? (
+            <>
+              <div className="collections-split-pane">
+                <CollectionsPage key={activeId} collectionId={activeId} onClosePane={handleClosePrimary} />
+              </div>
+              {split!.panes.map((pane) => (
+                <div key={pane.key} className="collections-split-pane">
+                  <CollectionsPage
+                    key={pane.key}
+                    collectionId={pane.collectionId}
+                    onClosePane={() => handleClosePane(pane.key)}
+                  />
+                </div>
+              ))}
+            </>
+          ) : (
+            <Outlet context={model.startAddRoot} />
+          )}
+        </section>
+      </div>
+    </CollectionSplitContext.Provider>
   );
 }
 
@@ -64,8 +143,10 @@ export function CollectionsLanding() {
 
 function CollectionsTree({
   collections, addingRoot, startAddRoot, handleSaveRoot, cancelEditing,
-  deleteTarget, confirmDelete, setDeleteTarget, rowProps,
-}: ReturnType<typeof useCollectionsTree>) {
+  deleteTarget, confirmDelete, setDeleteTarget, rowProps, onSplit,
+}: ReturnType<typeof useCollectionsTree> & {
+  onSplit: (node: CollectionTreeNode, direction: CollectionSplitDirection) => void;
+}) {
   const { t } = useI18n();
   return (
     <section className="collections-index-page collections-tree-pane w-full" aria-label={t('collections.tree')}>
@@ -90,8 +171,14 @@ function CollectionsTree({
 
       <div className="flex flex-col">
         {addingRoot && (
-          <div className="flex items-center h-12 px-4">
-            <span className="w-2.5 h-2.5 rounded-full mr-3 shrink-0 bg-border-subtle" aria-hidden="true" />
+          <div
+            className="collections-index-input-row grid h-6 items-center"
+            style={{ gridTemplateColumns: '24px minmax(0, 1fr)' }}
+          >
+            <span
+              className="w-1.75 h-1.75 rounded-full justify-self-center self-center translate-y-px shrink-0 bg-border-subtle"
+              aria-hidden="true"
+            />
             <input
               autoFocus
               type="text"
@@ -105,7 +192,7 @@ function CollectionsTree({
                 }
               }}
               onBlur={handleSaveRoot}
-              className="flex-1 min-w-0 h-6 text-sm leading-6 text-ink bg-transparent border-0 border-b border-border-subtle outline-none px-0 focus:outline-none focus-visible:outline-none focus-visible:ring-0"
+              className="collections-inline-input col-start-2 min-w-0 w-full h-6 text-sm leading-6 text-ink bg-transparent border-0 border-b border-border-subtle px-0 placeholder:text-ink-light/45"
             />
           </div>
         )}
@@ -121,6 +208,7 @@ function CollectionsTree({
               node={node}
               depth={0}
               {...rowProps}
+              onSplit={onSplit}
             />
           ))
         )}

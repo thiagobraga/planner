@@ -55,7 +55,7 @@ test('keeps the desktop tree and rename draft across navigation and history', as
     await tree.getByRole('link', { name: 'Split view 5' }).click({ position: { x: 8, y: 12 } });
     await expect(page.getByRole('menu')).toBeVisible();
     await expect(pane.getByRole('heading', { name: 'Split view 5' })).toBeVisible();
-    await pane.getByRole('heading', { name: 'Split view 5' }).click();
+    await pane.click({ position: { x: 260, y: 200 } });
     await expect(page.getByRole('menu')).toHaveCount(0);
 
     await page.setViewportSize({ width: 1280, height: 240 });

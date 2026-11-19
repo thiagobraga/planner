@@ -9,8 +9,10 @@ import { PageHeader } from '../components/PageHeader';
 import {
   CollectionBreadcrumbOverlays,
   CollectionBreadcrumbTitle,
+  CollectionHeaderActions,
   CollectionSubInput,
 } from '../components/collections/CollectionBreadcrumbs';
+import { useCollectionSplit } from '../contexts/CollectionSplitContext';
 import { fetchCollections, apiUpdateTask, apiMoveTask } from '../api/client';
 import { useTaskDrag } from '../hooks/useTaskDrag';
 import { useSectionDrag } from '../hooks/useSectionDrag';
@@ -34,9 +36,14 @@ import { isCollectionUnavailable, useCollectionView } from '../hooks/useCollecti
 import { CollectionLoadState, CollectionNotFound } from '../components/collections/CollectionViewState';
 import { isDesktopCollections } from '../utils/collectionsLayout';
 
-export function CollectionsPage() {
+export function CollectionsPage({
+  collectionId,
+  onClosePane,
+}: { collectionId?: string; onClosePane?: () => void } = {}) {
   const { locale, t } = useI18n();
-  const { id = '' } = useParams();
+  const params = useParams();
+  const id = collectionId ?? params.id ?? '';
+  const onSplit = useCollectionSplit();
   const qc = useQueryClient();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [sections, setSections] = useState<StoreSection[]>([]);
@@ -227,6 +234,9 @@ export function CollectionsPage() {
             onCommitRename={breadcrumbs.handleCrumbRename}
             onCancelRename={() => breadcrumbs.setRenamingCrumbId(null)}
             onOpenMenu={breadcrumbs.setCrumbMenu}
+            onOpenColorPicker={breadcrumbs.setCrumbColorPicker}
+            onOpenChildrenMenu={(position) => breadcrumbs.setChildrenMenu({ position })}
+            childrenMenuOpen={breadcrumbs.childrenMenu !== null}
           />
         }
         afterTitle={
@@ -238,7 +248,7 @@ export function CollectionsPage() {
             onCancel={breadcrumbs.handleCancelSub}
           />
         }
-        actions={<BoardPageToolbar board={boardPreferences} />}
+        actions={<CollectionHeaderActions toolbar={<BoardPageToolbar board={boardPreferences} />} onClosePane={onClosePane} />}
       />
 
       <div className={boardPreferences.view !== 'list' ? 'w-full' : undefined}>
@@ -369,6 +379,11 @@ export function CollectionsPage() {
 
       <CollectionBreadcrumbOverlays
         trail={breadcrumbs.trail}
+        currentCollectionId={id}
+        childCollections={breadcrumbs.childCollections}
+        childrenMenu={breadcrumbs.childrenMenu}
+        onCloseChildrenMenu={() => breadcrumbs.setChildrenMenu(null)}
+        onNavigateCollection={breadcrumbs.navigateToCollection}
         crumbMenu={breadcrumbs.crumbMenu}
         onCloseMenu={() => breadcrumbs.setCrumbMenu(null)}
         onOpenColorPicker={breadcrumbs.setCrumbColorPicker}
@@ -380,6 +395,7 @@ export function CollectionsPage() {
           breadcrumbs.setSubNewName('');
           breadcrumbs.setSubAddingParentId(collectionId);
         }}
+        onSplit={onSplit}
         onRequestDelete={breadcrumbs.setDeletingCollection}
         crumbColorPicker={breadcrumbs.crumbColorPicker}
         onCommitColor={breadcrumbs.handleCrumbColorCommit}
