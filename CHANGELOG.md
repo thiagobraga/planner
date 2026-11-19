@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.28.1](https://github.com/thiagobraga/planner/compare/v0.28.0...v0.28.1) (2026-11-19)
+
+
+### Style
+
+* **toolbar:** make menu triggers small buttons like today ([cc92c5e](https://github.com/thiagobraga/planner/commit/cc92c5eebd99470b27d81da0a537b14d8ee4d401))
+* **toolbar:** make menu triggers small buttons like today ([de20c5c](https://github.com/thiagobraga/planner/commit/de20c5cb02b3e286d4b204dcdc9f1f60775bd077))
+
 ## [0.28.0](https://github.com/thiagobraga/planner/compare/v0.27.2...v0.28.0) (2026-11-19)
 
 
