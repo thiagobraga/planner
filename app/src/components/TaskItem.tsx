@@ -17,20 +17,9 @@ import { DebugCard } from './DebugCard';
 import { useCheckboxStore } from '../stores/checkboxStore';
 import { Checkbox } from './ui/Checkbox';
 import { useDebugStore } from '../stores/debugStore';
-
-function formatDueDate(value: string, locale: 'en' | 'pt-BR'): string {
-  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (!match) return value;
-
-  const [, year, month, day] = match;
-  const date = new Date(Number(year), Number(month) - 1, Number(day));
-  const currentYear = new Date().getFullYear();
-  return date.toLocaleDateString(locale, {
-    month: 'short',
-    day: 'numeric',
-    ...(Number(year) !== currentYear ? { year: 'numeric' } : {}),
-  });
-}
+import { formatDueDate } from '../utils/formatDueDate';
+import { isOpenDetailsClick, isOpenDetailsKey } from '../utils/detailOpen';
+import { cancelPendingOpen, openTaskDetails, scheduleOpenTaskDetails } from '../stores/taskDetailStore';
 
 /**
  * Markdown-style prefixes that switch a row's type when typed at the start of
@@ -116,7 +105,10 @@ export const TaskItem = memo(function TaskItem({
 
   const handleRowKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (isEditing || e.target !== e.currentTarget) return;
-    if (e.key === 'Enter' && e.shiftKey) {
+    if (isOpenDetailsKey(e)) {
+      e.preventDefault();
+      openTaskDetails(task.id, { origin: e.currentTarget, focusPanel: true });
+    } else if (e.key === 'Enter' && e.shiftKey) {
       e.preventDefault();
       onStartEdit?.(task.id);
     } else if (e.key === 'Enter') {
@@ -224,6 +216,8 @@ export const TaskItem = memo(function TaskItem({
         if ((e.target as HTMLElement).closest(`[${NO_DRAG_ATTR}]`)) return;
         selectTask(task.id, e.ctrlKey || e.metaKey);
         e.currentTarget.focus();
+        if (e.detail > 1) cancelPendingOpen();
+        else if (isOpenDetailsClick(e)) scheduleOpenTaskDetails(task.id, e.currentTarget);
       }}
       onPointerUp={(e) => {
         // Activation is distance-based (see PRESS_ACTIVATION in dnd/sensors.ts),
@@ -249,7 +243,7 @@ export const TaskItem = memo(function TaskItem({
           e.currentTarget.focus();
         }
       }}
-      onDoubleClick={isEditing ? undefined : () => onStartEdit?.(task.id)}
+      onDoubleClick={isEditing ? undefined : () => { cancelPendingOpen(); onStartEdit?.(task.id); }}
       onContextMenu={(e) => {
         e.preventDefault();
         onRightClick?.(task.id, { x: e.clientX, y: e.clientY });

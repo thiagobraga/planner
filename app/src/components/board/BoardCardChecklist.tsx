@@ -35,7 +35,7 @@ function SortableChecklistRow({
   const isNote = task.type === 'note';
 
   return (
-    <label
+    <div
       ref={setNodeRef}
       {...attributes}
       {...listeners}
@@ -57,7 +57,7 @@ function SortableChecklistRow({
         </button>
       )}
       <span className={task.isCompleted ? 'line-through opacity-55' : ''}>{task.title}</span>
-    </label>
+    </div>
   );
 }
 

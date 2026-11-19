@@ -6,6 +6,8 @@ import { NO_DRAG_ATTR } from '../dnd/sensors';
 import { BoardCardChecklist } from './BoardCardChecklist';
 import { useI18n } from '../../i18n/I18nContext';
 import type { BoardCardProps } from '../../types/board';
+import { isOpenDetailsClick, isOpenDetailsKey } from '../../utils/detailOpen';
+import { openTaskDetails, scheduleOpenTaskDetails } from '../../stores/taskDetailStore';
 
 export function BoardCard({ task, subtasks, containerId = '', subtreeIds, onToggle, hideDueDate, onTaskContextMenu }: BoardCardProps) {
   const { t } = useI18n();
@@ -37,7 +39,17 @@ export function BoardCard({ task, subtasks, containerId = '', subtreeIds, onTogg
         event.preventDefault();
         onTaskContextMenu(task.id, { x: event.clientX, y: event.clientY });
       }}
+      onClick={(event) => {
+        if (!isOpenDetailsClick(event)) return;
+        const child = (event.target as HTMLElement).closest<HTMLElement>('[data-subtask-id]');
+        scheduleOpenTaskDetails(child?.dataset.subtaskId ?? task.id, event.currentTarget);
+      }}
       onKeyDown={(event) => {
+        if (isOpenDetailsKey(event)) {
+          event.preventDefault();
+          openTaskDetails(task.id, { origin: event.currentTarget, focusPanel: true });
+          return;
+        }
         if (!onTaskContextMenu || !(event.key === 'ContextMenu' || (event.shiftKey && event.key === 'F10'))) return;
         event.preventDefault();
         const rect = event.currentTarget.getBoundingClientRect();
