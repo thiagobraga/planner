@@ -92,7 +92,7 @@ export function WeekSelector({ weekAnchor, today, weekStart, onWeekChange, onTod
         aria-expanded={open}
         aria-label={rangeLabel}
         onClick={toggle}
-        className="week-selector-trigger !gap-1 font-semibold uppercase tracking-[0.08em]"
+        className="week-selector-trigger !gap-1 uppercase tracking-[0.08em]"
       >
         <span className="inline-block w-[3.25em] text-center">{rangeStart}</span>{' '}
         <span className="inline-block w-[2em] text-center normal-case">{rangeJoiner}</span>{' '}

@@ -3,10 +3,11 @@ import { createPortal } from 'react-dom';
 import { Check, ChevronDown } from 'lucide-react';
 import { useFloatingPosition } from '../../hooks/useFloatingPosition';
 import type { MenuButtonProps, MenuItemProps } from '../../types/toolbar';
+import { Button } from '../ui/Button';
 
 const FOCUSABLE = 'button:not([disabled])';
 
-/** A text trigger, like a desktop menu bar entry, that opens a dropdown panel or a bottom sheet. */
+/** A small toolbar button, styled like Today, that opens a dropdown panel or a bottom sheet. */
 export function MenuButton({ label, ariaLabel, align = 'end', sheet = false, className = '', children }: MenuButtonProps) {
   const [open, setOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -56,20 +57,21 @@ export function MenuButton({ label, ariaLabel, align = 'end', sheet = false, cla
 
   return (
     <>
-      <button
+      <Button
         ref={triggerRef}
         id={triggerId}
-        type="button"
+        variant="secondary"
+        size="xs"
         aria-haspopup="menu"
         aria-expanded={open}
         aria-controls={open ? panelId : undefined}
         aria-label={ariaLabel}
         onClick={() => setOpen((value) => !value)}
-        className={`page-menu-trigger ${open ? 'is-open' : ''} ${className}`}
+        className={`page-menu-trigger !gap-1 ${open ? 'is-open' : ''} ${className}`}
       >
         <span className="page-menu-trigger-label">{label}</span>
         <ChevronDown size={12} strokeWidth={1.8} aria-hidden="true" />
-      </button>
+      </Button>
       {open && createPortal(
         <div
           ref={panelRef}

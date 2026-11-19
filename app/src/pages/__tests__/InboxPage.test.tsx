@@ -111,7 +111,7 @@ describe('InboxPage', () => {
 
     const row = (await screen.findByText('Inbox')).closest('.page-header-row');
     expect(row).toContainElement(screen.getByRole('button', { name: 'View' }));
-    expect(row).toContainElement(screen.getByRole('button', { name: 'Window' }));
+    expect(screen.queryByRole('button', { name: 'Window' })).not.toBeInTheDocument();
     expect(screen.queryByRole('checkbox', { name: 'Notes' })).not.toBeInTheDocument();
   });
 

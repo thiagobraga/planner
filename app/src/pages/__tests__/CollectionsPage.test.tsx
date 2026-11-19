@@ -198,7 +198,7 @@ describe('CollectionsPage', () => {
     const title = await screen.findByText('Test Collection');
     const row = title.closest('.page-header-row');
     expect(row).toContainElement(screen.getByRole('button', { name: 'View' }));
-    expect(row).toContainElement(screen.getByRole('button', { name: 'Window' }));
+    expect(screen.queryByRole('button', { name: 'Window' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'More options' })).not.toBeInTheDocument();
   });
 

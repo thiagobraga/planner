@@ -1,5 +1,4 @@
 import { ArrowUpDown } from 'lucide-react';
-import { useFullWidth } from '../../hooks/useFullWidth';
 import { usePageShortcuts } from '../../hooks/usePageShortcuts';
 import type { ViewLayout } from '../../types/view';
 import { useI18n } from '../../i18n/I18nContext';
@@ -12,7 +11,6 @@ import type { DailyToolbarProps } from '../../types/daily';
 
 export function DailyToolbar({ view, todayKey, weekStart, onReorganize, onToday }: DailyToolbarProps) {
   const { t } = useI18n();
-  const { fullWidth, setFullWidth } = useFullWidth();
 
   usePageShortcuts((action) => {
     const [, kind, value] = action.split(':');
@@ -26,8 +24,6 @@ export function DailyToolbar({ view, todayKey, weekStart, onReorganize, onToday 
 
   return (
     <PageToolbar
-      fullWidth={fullWidth}
-      onFullWidthChange={setFullWidth}
       nav={(density) => (
         <DateNav
           from={view.from}
@@ -42,7 +38,7 @@ export function DailyToolbar({ view, todayKey, weekStart, onReorganize, onToday 
           hideToday={density >= 2}
         />
       )}
-      view={({ sheet, windowItems }) => (
+      view={({ sheet }) => (
         <ViewMenu
           sheet={sheet}
           layouts={DAILY_LAYOUTS}
@@ -52,23 +48,18 @@ export function DailyToolbar({ view, todayKey, weekStart, onReorganize, onToday 
           onStyleChange={view.setStyle}
           range={view.range}
           onRangeChange={view.setRange}
-          extra={(close) => (
-            <>
-              {onReorganize && (
-                <MenuSection label={t('view.actions')}>
-                  <MenuItem
-                    label={t('reorganize.button')}
-                    icon={<ArrowUpDown size={14} strokeWidth={1.6} />}
-                    onSelect={() => {
-                      onReorganize();
-                      close();
-                    }}
-                  />
-                </MenuSection>
-              )}
-              {windowItems?.(close)}
-            </>
-          )}
+          extra={onReorganize && ((close) => (
+            <MenuSection label={t('view.actions')}>
+              <MenuItem
+                label={t('reorganize.button')}
+                icon={<ArrowUpDown size={14} strokeWidth={1.6} />}
+                onSelect={() => {
+                  onReorganize();
+                  close();
+                }}
+              />
+            </MenuSection>
+          ))}
         />
       )}
     />
