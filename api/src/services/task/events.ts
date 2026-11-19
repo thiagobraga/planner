@@ -19,3 +19,15 @@ export function publishTaskEvent(
 export function publishTaskDeleted(userId: string, taskId: string, collectionId: string): void {
   emit({ entityType: 'task', eventType: 'deleted', entityId: taskId, userId, collectionId });
 }
+
+export function publishSourceCollectionChange(userId: string, taskId: string, collectionId: string): void {
+  emit({
+    entityType: 'task',
+    eventType: 'updated',
+    entityId: taskId,
+    userId,
+    collectionId,
+    audience: 'current-collection-members',
+    actor: undefined,
+  });
+}
