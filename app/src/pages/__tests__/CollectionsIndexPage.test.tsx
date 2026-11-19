@@ -188,12 +188,13 @@ describe('CollectionsLayout', () => {
     expect(await screen.findByText('CollectionDetail')).toBeInTheDocument();
   });
 
-  it('does not render chevron icons on collection rows', async () => {
+  it('renders a chevron only on collections with children', async () => {
     renderPage();
 
     await screen.findByText('Work');
     const chevrons = document.querySelectorAll('.collections-index-row svg.lucide-chevron-right');
-    expect(chevrons.length).toBe(0);
+    expect(chevrons.length).toBe(1);
+    expect(chevrons[0].closest('.collections-index-row')).toHaveTextContent('Work');
   });
 
   it('keeps collection rows on the 24px grid step', async () => {
