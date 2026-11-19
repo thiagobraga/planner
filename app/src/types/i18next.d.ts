@@ -1,5 +1,5 @@
 import 'i18next';
-import type { TranslationCatalog } from './i18n';
+import type { englishCatalog } from '../i18n/catalogs';
 
 declare module 'i18next' {
   interface CustomTypeOptions {
@@ -11,7 +11,7 @@ declare module 'i18next' {
     strictKeyChecks: true;
     strictInterpolationChecks: false;
     resources: {
-      translation: TranslationCatalog;
+      translation: Record<keyof typeof englishCatalog, string>;
     };
   }
 }

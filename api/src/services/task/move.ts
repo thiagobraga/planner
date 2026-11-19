@@ -2,7 +2,7 @@ import pool from '../../db/pool.js';
 import { recordActivity } from '../activityService.js';
 import type { MoveTaskInput, TaskRow } from '../../types/task.js';
 import { getAccessibleTask } from './access.js';
-import { publishTaskEvent } from './events.js';
+import { publishSourceCollectionChange, publishTaskEvent } from './events.js';
 import { formatTask, toMovedTaskSummary } from './format.js';
 import { loadAndLockSubtree, resolveMoveDestination } from './moveDestination.js';
 import { applySubtreeMove, renumberMoveScope } from './moveSubtree.js';
@@ -84,6 +84,8 @@ export async function moveTask(taskId: string, userId: string, input: MoveTaskIn
       ...root,
       affectedIds: [...dest.subtreeIds, ...reordered.map((t) => t.id)],
     });
+
+    if (dest.crossesCollection) publishSourceCollectionChange(userId, taskId, task.collection_id);
 
     return { moved, reordered };
   } catch (err) {

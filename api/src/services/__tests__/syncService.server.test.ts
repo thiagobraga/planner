@@ -88,11 +88,12 @@ describe("syncService: Socket.IO server", () => {
     expect(mockIO.on).toHaveBeenCalledWith("connection", expect.any(Function));
   });
 
-  it("subscribes to both the sync and version Redis channels", async () => {
+  it("subscribes to sync, current members and version Redis channels", async () => {
     const httpServer = {} as import("http").Server;
     await attachSyncServer(httpServer);
     const { redisSubClient } = await import("../../db/redis.js");
     expect(redisSubClient.subscribe).toHaveBeenCalledWith("sync", expect.any(Function));
+    expect(redisSubClient.subscribe).toHaveBeenCalledWith("sync:collection-members", expect.any(Function));
     expect(redisSubClient.subscribe).toHaveBeenCalledWith("version", expect.any(Function));
   });
 

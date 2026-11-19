@@ -139,6 +139,10 @@ The system explicitly rejects the visual idioms of its category: Todoist's satur
 - Flat by default; depth from tint, stroke, and the dot grid itself
 - 24px vertical rhythm; row heights, line heights, and label heights all snap to it
 
+## Collections split view
+
+At 768px and wider, Collections uses a fixed 264px tree pane with a flat sidebar tint and a 1px divider. The details pane uses the notebook background, is at least 480px wide, and scrolls independently of the tree. Show the selected link in semibold with the existing active tint. Below 768px, show either the tree or the collection, with a Back to collections link in the detail view.
+
 ## 2. Colors
 
 A short palette of warm, slightly aged neutrals with one brick-red anchor; everything tilts toward yellow-red hue. No greys, no blue-grey, no pure black or white.
