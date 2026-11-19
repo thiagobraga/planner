@@ -232,6 +232,35 @@
   --container-page: 100%;
 }
 
+/* Phone sheet: dim backdrop that closes on tap, compact content. */
+.page-menu-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 59;
+  background: rgba(68, 68, 61, 0.2);
+}
+.page-menu-sheet {
+  max-height: 60dvh;
+}
+.page-menu-sheet .page-menu-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 0 12px;
+}
+.page-menu-sheet .page-menu-presets .page-menu-item {
+  width: auto;
+  margin: 0;
+  padding: 0 12px;
+  border: 1px solid var(--color-border);
+}
+.page-menu-sheet .page-menu-presets .page-menu-item[aria-checked='true'] {
+  border-color: var(--color-ink);
+}
+.page-menu-sheet .page-menu-presets .page-menu-item-check {
+  display: none;
+}
+
 /* No keyboard on a phone sheet. */
 .page-menu-sheet .page-menu-item-shortcut {
   display: none;

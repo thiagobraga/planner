@@ -21,7 +21,7 @@ function addDays(date: Date, days: number): Date {
 }
 
 /** Today, previous, the shown range with a day picker, and next. */
-export function DateNav({ from, to, today, weekStart, onPrevious, onNext, onToday, onPick, compact = false, hideToday = false, defaultOpen = false }: DateNavProps) {
+export function DateNav({ from, to, today, weekStart, onPrevious, onNext, onToday, onPick, compact = false, hideToday = false, defaultOpen = false, openUp = false }: DateNavProps) {
   const { locale, t } = useI18n();
   const [open, setOpen] = useState(defaultOpen);
   const [viewMonth, setViewMonth] = useState(() => {
@@ -98,7 +98,9 @@ export function DateNav({ from, to, today, weekStart, onPrevious, onNext, onToda
         <div
           role="dialog"
           aria-label={t('page.selectWeek')}
-          className="date-nav-popover absolute left-0 top-full z-30 mt-1 w-72 border border-border bg-cream p-3"
+          className={`date-nav-popover absolute left-0 z-30 w-72 border border-border bg-cream p-3 ${
+            openUp ? 'bottom-full mb-1' : 'top-full mt-1'
+          }`}
           style={{ boxShadow: 'var(--shadow-overlay)' }}
         >
           <div className="mb-3 flex items-center justify-between gap-2">

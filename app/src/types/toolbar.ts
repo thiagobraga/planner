@@ -66,6 +66,8 @@ export interface DateNavProps {
   /** Today lives inside the date picker instead of its own button. */
   hideToday?: boolean;
   defaultOpen?: boolean;
+  /** Opens the calendar above the control (phone bar sits at the bottom). */
+  openUp?: boolean;
 }
 
 /** How tight the title row is: 0 roomy, 1 compact date, 2 no Today button. */

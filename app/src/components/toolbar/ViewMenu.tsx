@@ -90,15 +90,17 @@ export function ViewMenu({ layouts, layout, onLayoutChange, style, onStyleChange
           {range && onRangeChange && (
             <MenuSection label={t('view.range')}>
               {showsPresets ? (
-                rangesFor(layout).map((value) => (
-                  <MenuItem
-                    key={value}
-                    label={t(`view.range.${value as RangePreset}`)}
-                    shortcut={keys(rangeShortcut(value))}
-                    checked={range === value}
-                    onSelect={() => onRangeChange(value)}
-                  />
-                ))
+                <div className="page-menu-presets">
+                  {rangesFor(layout).map((value) => (
+                    <MenuItem
+                      key={value}
+                      label={t(`view.range.${value as RangePreset}`)}
+                      shortcut={keys(rangeShortcut(value))}
+                      checked={range === value}
+                      onSelect={() => onRangeChange(value)}
+                    />
+                  ))}
+                </div>
               ) : (
                 <>
                   <div className="page-menu-pill-row">
