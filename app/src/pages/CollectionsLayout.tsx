@@ -76,11 +76,11 @@ function CollectionsTree({
             <button
               type="button"
               onClick={startAddRoot}
-              className="p-1.5 -mr-1.5 text-ink-light hover:text-ink bg-transparent border-0 cursor-pointer rounded-full hover:bg-(--planner-sidebar-hover-bg) transition-colors"
+              className="flex h-6 w-6 items-center justify-center p-0 text-ink-light hover:text-ink bg-transparent border-0 cursor-pointer rounded-full hover:bg-(--planner-sidebar-hover-bg) transition-colors"
               title={t('page.addCollection')}
               aria-label={t('page.addCollection')}
             >
-              <Plus size={20} strokeWidth={1.5} />
+              <Plus size={16} strokeWidth={1.5} />
             </button>
           </div>
         }

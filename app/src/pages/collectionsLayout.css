@@ -31,6 +31,25 @@
   opacity: 1;
 }
 
+.collections-index-row__toggle {
+  position: absolute;
+  top: 0;
+  inset-inline-start: -24px;
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+.collections-index-node:hover > .collections-index-row > .collections-index-row__toggle,
+.collections-index-row__toggle:focus-visible {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .collections-index-row__toggle {
+    opacity: 1;
+  }
+}
+
 @media (width < 768px) {
   .collections-layout[data-detail='true'] .collections-tree-pane,
   .collections-layout[data-detail='false'] .collections-detail-pane {
@@ -53,7 +72,7 @@
     display: grid;
     height: 100%;
     min-height: 0;
-    grid-template-columns: 264px minmax(0, 1fr);
+    grid-template-columns: 192px minmax(0, 1fr);
   }
 
   .collections-tree-pane,
@@ -63,14 +82,13 @@
     padding-block: 24px;
   }
 
+  /* Bleed 24px into the main gutter so root toggles float outside the column without clipping */
   .collections-tree-pane {
-    padding-inline-end: 24px;
-    border-inline-end: 1px solid var(--color-border-subtle);
-    scrollbar-gutter: stable;
-  }
-
-  .collections-detail-pane {
+    width: auto;
+    margin-inline-start: -24px;
     padding-inline-start: 24px;
+    padding-inline-end: 24px;
+    scrollbar-gutter: stable;
   }
 
   @media (hover: hover) {

@@ -15,7 +15,9 @@ test('keeps the desktop tree and rename draft across navigation and history', as
     const tree = page.getByRole('region', { name: 'Collection tree' });
     const pane = page.getByRole('region', { name: 'Collection details' });
     await expect(pane.getByRole('heading', { name: 'Select a collection' })).toBeVisible();
-    await expect(tree).toHaveCSS('width', '264px');
+    const layoutBox = (await page.locator('.collections-layout').boundingBox())!;
+    const paneBox = (await pane.boundingBox())!;
+    expect(Math.abs(paneBox.x - layoutBox.x - 192)).toBeLessThan(1);
     await expect(tree.locator('a[aria-current="page"]')).toHaveCount(0);
     await tree.evaluate((el) => { el.dataset.testInstance = 'original'; });
     const first = tree.getByRole('link', { name: 'Split view 1' });
