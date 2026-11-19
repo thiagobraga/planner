@@ -7,3 +7,4 @@ export * from './integrations';
 export * from './labels';
 export * from './habits';
 export * from './admin';
+export * from './details';
