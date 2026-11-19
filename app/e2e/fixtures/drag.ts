@@ -55,6 +55,8 @@ async function revealByAutoScroll(page: Page, to: Locator, from: Point, end: Poi
  * multiple steps after a short settle.
  */
 export async function dragCard(page: Page, from: Locator, to: Locator): Promise<void> {
+  // A narrow board (the Collections details pane) can start with the card scrolled out of view.
+  await from.scrollIntoViewIfNeeded();
   const fromBox = await from.boundingBox();
   const toBox = await to.boundingBox();
 
