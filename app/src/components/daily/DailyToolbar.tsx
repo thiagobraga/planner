@@ -3,6 +3,7 @@ import { usePageShortcuts } from '../../hooks/usePageShortcuts';
 import type { ViewLayout } from '../../types/view';
 import { useI18n } from '../../i18n/I18nContext';
 import { DAILY_LAYOUTS } from '../../utils/dailyRange';
+import { Button } from '../ui/Button';
 import { DateNav } from '../toolbar/DateNav';
 import { MenuItem, MenuSection } from '../toolbar/MenuButton';
 import { PageToolbar } from '../toolbar/PageToolbar';
@@ -24,8 +25,9 @@ export function DailyToolbar({ view, todayKey, weekStart, onReorganize, onToday 
 
   return (
     <PageToolbar
-      nav={(density) => (
+      nav={(density, mobile) => (
         <DateNav
+          openUp={mobile}
           from={view.from}
           to={view.to}
           today={todayKey}
@@ -39,6 +41,13 @@ export function DailyToolbar({ view, todayKey, weekStart, onReorganize, onToday 
         />
       )}
       view={({ sheet }) => (
+        <div className="flex items-center gap-1">
+        {sheet && onReorganize && (
+          <Button variant="secondary" size="xs" className="!gap-1" onClick={onReorganize}>
+            <ArrowUpDown size={12} strokeWidth={1.8} aria-hidden="true" />
+            {t('reorganize.button')}
+          </Button>
+        )}
         <ViewMenu
           sheet={sheet}
           layouts={DAILY_LAYOUTS}
@@ -48,7 +57,7 @@ export function DailyToolbar({ view, todayKey, weekStart, onReorganize, onToday 
           onStyleChange={view.setStyle}
           range={view.range}
           onRangeChange={view.setRange}
-          extra={onReorganize && ((close) => (
+          extra={onReorganize && !sheet && ((close) => (
             <MenuSection label={t('view.actions')}>
               <MenuItem
                 label={t('reorganize.button')}
@@ -61,6 +70,7 @@ export function DailyToolbar({ view, todayKey, weekStart, onReorganize, onToday 
             </MenuSection>
           ))}
         />
+        </div>
       )}
     />
   );
