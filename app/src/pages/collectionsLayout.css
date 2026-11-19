@@ -39,48 +39,48 @@
 }
 
 @media (width >= 768px) {
+  /* The panes scroll on their own, so the shell only keeps its side padding and gutters */
   .main-content:has(> .page-container > .collections-layout) {
-    padding: 0;
+    padding-block: 0;
     overflow: hidden;
-    scrollbar-gutter: auto;
   }
 
   .page-container:has(> .collections-layout) {
     height: 100%;
-    max-width: none;
   }
 
   .collections-layout {
     display: grid;
     height: 100%;
     min-height: 0;
-    grid-template-columns: 264px minmax(480px, 1fr);
+    grid-template-columns: 264px minmax(0, 1fr);
   }
 
   .collections-tree-pane,
   .collections-detail-pane {
     min-height: 0;
     overflow: auto;
-    padding: 24px;
+    padding-block: 24px;
   }
 
   .collections-tree-pane {
-    background: var(--planner-sidebar-bg);
+    padding-inline-end: 24px;
     border-inline-end: 1px solid var(--color-border-subtle);
+    scrollbar-gutter: stable;
   }
 
-  .collections-tree-pane .sticky-page-header {
-    background-color: var(--planner-sidebar-bg);
+  .collections-detail-pane {
+    padding-inline-start: 24px;
   }
 
-  .collections-detail-pane > .collection-detail-page {
-    margin-inline: auto;
-    max-width: var(--container-page);
-  }
+  @media (hover: hover) {
+    .collections-tree-pane:not(:hover, :focus-within) {
+      scrollbar-color: transparent transparent;
 
-  .collections-detail-pane:has(.board-scroll) > .collection-detail-page,
-  .full-width .collections-detail-pane > .collection-detail-page {
-    max-width: none;
+      &::-webkit-scrollbar-thumb {
+        background-color: transparent;
+      }
+    }
   }
 
   .collections-back {

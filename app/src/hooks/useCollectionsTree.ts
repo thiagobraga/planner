@@ -1,9 +1,10 @@
-import { useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiCreateCollection, apiDeleteCollection, apiUpdateCollection, fetchCollections, PALETTE_COLORS } from '../api/client';
 import { buildCollectionTree } from '../stores/collectionStore';
 import { patchById, runOptimistic, upsertById } from '../stores/optimistic';
+import { loadCollapsedCollectionIds, saveCollapsedCollectionIds } from '../utils/collectionCollapseStorage';
 import type { ApiCollection } from '../types/api';
 import type { CollectionTreeNode } from '../types/collections';
 
@@ -28,6 +29,18 @@ export function useCollectionsTree(activeId?: string) {
   const [editingName, setEditingName] = useState('');
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<CollectionTreeNode | null>(null);
+  const [collapsedIds, setCollapsedIds] = useState<ReadonlySet<string>>(() => loadCollapsedCollectionIds());
+  useEffect(() => saveCollapsedCollectionIds(collapsedIds), [collapsedIds]);
+
+  const setCollapsed = (id: string, collapsed: boolean) => {
+    setCollapsedIds((prev) => {
+      if (prev.has(id) === collapsed) return prev;
+      const next = new Set(prev);
+      if (collapsed) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+  };
 
   const nextColor = () => PALETTE_COLORS[rawCollections.length % PALETTE_COLORS.length];
 
@@ -68,6 +81,7 @@ export function useCollectionsTree(activeId?: string) {
 
   const handleAddSub = (node: CollectionTreeNode) => {
     setAddingSubFor(node.id);
+    setCollapsed(node.id, false);
     setAddingRoot(false);
     setRenamingId(null);
     setEditingName('');
@@ -142,6 +156,8 @@ export function useCollectionsTree(activeId?: string) {
       onColorCommit: handleColorCommit,
       onSaveNewSub: handleSaveNewSub,
       onCancelNewSub: cancelEditing,
+      collapsedIds,
+      onToggleCollapsed: (id: string) => setCollapsed(id, !collapsedIds.has(id)),
     },
   };
 }

@@ -141,7 +141,7 @@ The system explicitly rejects the visual idioms of its category: Todoist's satur
 
 ## Collections split view
 
-At 768px and wider, Collections uses a fixed 264px tree pane with a flat sidebar tint and a 1px divider. The details pane uses the notebook background, is at least 480px wide, and scrolls independently of the tree. Show the selected link in semibold with the existing active tint. Below 768px, show either the tree or the collection, with a Back to collections link in the detail view.
+At 768px and wider, Collections splits the page column (720px, or 100% with Full width) into a fixed 264px tree pane and a flexible details pane; it never sets its own width. The tree has no fill: the page background shows through and a 1px divider separates it from the details. Its scrollbar stays hidden until the pointer is over the tree or focus is inside it, with a stable gutter so rows never shift; touch screens keep the native scrollbar. Both panes scroll independently. Show the selected link in semibold with the existing active tint. A collection with children shows a chevron toggle before the row actions (right when collapsed, down when expanded); collapsed collections are remembered per browser. Below 768px, show either the tree or the collection, with a Back to collections link in the detail view.
 
 ## 2. Colors
 
