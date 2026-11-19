@@ -23,7 +23,7 @@ export function CollectionHeaderActions({
   const { t } = useI18n();
   if (!onClosePane) return <>{toolbar}</>;
   return (
-    <div className="flex items-center gap-1">
+    <div className="flex shrink-0 items-center gap-1">
       {toolbar}
       <button
         type="button"
@@ -33,7 +33,7 @@ export function CollectionHeaderActions({
         }}
         aria-label={t('collections.closePane')}
         title={t('collections.closePane')}
-        className="collections-split-pane__close flex h-6 w-6 items-center justify-center rounded-full border-0 bg-transparent p-0 text-ink-light hover:bg-(--planner-sidebar-hover-bg) hover:text-ink cursor-pointer transition-colors"
+        className="collections-split-pane__close flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-0 bg-transparent p-0 text-ink-light hover:bg-(--planner-sidebar-hover-bg) hover:text-ink cursor-pointer transition-colors"
       >
         <X size={14} strokeWidth={1.5} />
       </button>
@@ -49,9 +49,11 @@ export function CollectionBreadcrumbTitle({
   onCommitRename,
   onCancelRename,
   onOpenMenu,
-  onOpenColorPicker,
-  onOpenChildrenMenu,
+  onToggleColorPicker,
+  colorPickerCollectionId,
+  onToggleChildrenMenu,
   childrenMenuOpen,
+  onNavigateAncestor,
 }: CollectionBreadcrumbTitleProps) {
   const { t } = useI18n();
 
@@ -59,12 +61,13 @@ export function CollectionBreadcrumbTitle({
     <>
       {trail.map((crumb, i) => {
         const isCurrent = i === trail.length - 1;
+        const isPickerOpen = colorPickerCollectionId === crumb.id;
         return (
           <Fragment key={crumb.id}>
             {i > 0 && (
               <ChevronRight
                 size={13}
-                className="collections-page-title-separator font-normal mx-1 text-ink-light opacity-50"
+                className="collections-page-title-separator shrink-0 font-normal mx-1 text-ink-light opacity-50"
                 aria-hidden="true"
               />
             )}
@@ -75,22 +78,30 @@ export function CollectionBreadcrumbTitle({
                 onOpenMenu({ collectionId: crumb.id, position: { x: e.clientX, y: e.clientY } });
               }}
             >
-              <span
-                aria-hidden="true"
+              <button
+                type="button"
+                aria-label={t('collections.changeColorNamed', { name: crumb.name })}
                 title={t('page.changeColor')}
-                className="collections-page-crumb-dot w-1.75 h-1.75 shrink-0 rounded-full cursor-pointer transition-transform hover:scale-125"
-                style={{ background: crumb.color }}
-                onMouseDown={(e) => e.stopPropagation()}
+                className="collections-page-crumb-dot flex h-6 w-6 -mx-1.5 shrink-0 items-center justify-center rounded-full border-0 bg-transparent p-0 cursor-pointer hover:bg-(--planner-sidebar-hover-bg) transition-colors"
+                onMouseDown={(e) => {
+                  if (isPickerOpen) e.stopPropagation();
+                }}
                 onClick={(e) => {
                   e.stopPropagation();
                   const rect = e.currentTarget.getBoundingClientRect();
-                  onOpenColorPicker({
+                  onToggleColorPicker({
                     collectionId: crumb.id,
                     color: crumb.color,
                     position: { x: rect.left, y: rect.bottom },
                   });
                 }}
-              />
+              >
+                <span
+                  aria-hidden="true"
+                  className="w-1.75 h-1.75 rounded-full filter-[saturate(0.55)]"
+                  style={{ background: crumb.color }}
+                />
+              </button>
               {renamingCrumbId === crumb.id ? (
                 <input
                   autoFocus
@@ -109,12 +120,26 @@ export function CollectionBreadcrumbTitle({
                   type="button"
                   aria-haspopup="menu"
                   aria-expanded={childrenMenuOpen}
-                  className="collections-page-crumb-trigger truncate bg-transparent border-0 p-0 font-inherit text-inherit cursor-pointer hover:opacity-80 transition-opacity"
+                  className="collections-page-crumb-trigger truncate bg-transparent border-0 p-0 text-inherit cursor-pointer hover:opacity-80 transition-opacity"
+                  onMouseDown={(e) => {
+                    if (childrenMenuOpen) e.stopPropagation();
+                  }}
                   onClick={(e) => {
                     e.stopPropagation();
                     const rect = e.currentTarget.getBoundingClientRect();
-                    onOpenChildrenMenu({ x: rect.left, y: rect.bottom });
+                    onToggleChildrenMenu({ x: rect.left, y: rect.bottom });
                   }}
+                >
+                  {crumb.name}
+                </button>
+              ) : onNavigateAncestor ? (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onNavigateAncestor(crumb.id);
+                  }}
+                  className="collections-page-crumb-trigger truncate bg-transparent border-0 p-0 text-ink-light transition-colors hover:text-ink cursor-pointer"
                 >
                   {crumb.name}
                 </button>
@@ -152,6 +177,7 @@ export function CollectionSubInput({
       />
       <input
         autoFocus
+        aria-label={t('page.collectionName')}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onBlur={onCommit}

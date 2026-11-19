@@ -63,12 +63,19 @@ export interface CollectionState {
   removeCollection: (id: string) => void;
 }
 
+export interface CollectionRowColorPickerTarget {
+  id: string;
+  position: { x: number; y: number };
+}
+
 export interface CollectionRowProps {
   activeId?: string;
   node: CollectionTreeNode;
   depth: number;
   menuOpenId: string | null;
   setMenuOpenId: (id: string | null) => void;
+  colorPickerTarget: CollectionRowColorPickerTarget | null;
+  onOpenColorPicker: (target: CollectionRowColorPickerTarget | null) => void;
   renamingId: string | null;
   addingSubFor: string | null;
   editingName: string;
@@ -180,9 +187,11 @@ export interface CollectionBreadcrumbTitleProps {
   onCommitRename: (collectionId: string) => void;
   onCancelRename: () => void;
   onOpenMenu: (state: CollectionCrumbMenuState) => void;
-  onOpenColorPicker: (state: CollectionCrumbColorPickerState) => void;
-  onOpenChildrenMenu: (position: { x: number; y: number }) => void;
+  onToggleColorPicker: (state: CollectionCrumbColorPickerState) => void;
+  colorPickerCollectionId: string | null;
+  onToggleChildrenMenu: (position: { x: number; y: number }) => void;
   childrenMenuOpen: boolean;
+  onNavigateAncestor?: (collectionId: string) => void;
 }
 
 export interface CollectionSubInputProps {

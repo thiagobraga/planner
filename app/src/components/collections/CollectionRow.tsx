@@ -11,7 +11,6 @@ import { buildCollectionMenuItems } from '../collectionMenuItems';
 export function CollectionRow({ node, depth, ...props }: CollectionRowProps) {
   const { t } = useI18n();
   const [contextPos, setContextPos] = useState<{ x: number; y: number } | null>(null);
-  const [colorPickerPos, setColorPickerPos] = useState<{ x: number; y: number } | null>(null);
   const touchTimerRef = useRef<NodeJS.Timeout | null>(null);
   const longPress = useRef(false);
   const clearTouchTimer = () => {
@@ -20,6 +19,7 @@ export function CollectionRow({ node, depth, ...props }: CollectionRowProps) {
   useEffect(() => clearTouchTimer, []);
 
   const isMenuOpen = props.menuOpenId === node.id;
+  const isColorPickerOpen = props.colorPickerTarget?.id === node.id;
   const isRenaming = props.renamingId === node.id;
   const isAddingSub = props.addingSubFor === node.id;
   const hasChildren = node.children.length > 0;
@@ -35,7 +35,7 @@ export function CollectionRow({ node, depth, ...props }: CollectionRowProps) {
     <div className="collections-index-node">
       <div
         className="collections-index-row grid h-6 cursor-pointer relative"
-        style={{ gridTemplateColumns: `24px minmax(0, 1fr) auto`, marginInlineStart: `${depth * 24}px` }}
+        style={{ gridTemplateColumns: '24px minmax(0, 1fr) auto', marginInlineStart: `${depth * 24}px` }}
         onContextMenu={(e) => {
           e.preventDefault();
           handleOpenMenu({ x: e.clientX, y: e.clientY });
@@ -71,25 +71,31 @@ export function CollectionRow({ node, depth, ...props }: CollectionRowProps) {
               aria-hidden="true"
               size={16}
               strokeWidth={1.5}
-              className={`transition-transform duration-(--motion-fast) ${isExpanded ? 'rotate-90' : ''}`}
+              className={`motion-safe:transition-transform motion-safe:duration-(--motion-fast) ${isExpanded ? 'rotate-90' : ''}`}
             />
           </button>
         )}
 
         <button
           type="button"
-          className="collections-index-dot group flex h-6 w-6 items-center justify-center p-0 bg-transparent border-0 cursor-pointer"
-          aria-label={t('page.changeColor')}
+          className="collections-index-dot flex h-6 w-6 items-center justify-center rounded-full p-0 bg-transparent border-0 cursor-pointer hover:bg-(--planner-sidebar-hover-bg) transition-colors"
+          aria-label={t('collections.changeColorNamed', { name: node.name })}
           title={t('page.changeColor')}
-          onMouseDown={(e) => e.stopPropagation()}
+          onMouseDown={(e) => {
+            if (isColorPickerOpen) e.stopPropagation();
+          }}
           onClick={(e) => {
             e.stopPropagation();
+            if (isColorPickerOpen) {
+              props.onOpenColorPicker(null);
+              return;
+            }
             const rect = e.currentTarget.getBoundingClientRect();
-            setColorPickerPos({ x: rect.left, y: rect.bottom });
+            props.onOpenColorPicker({ id: node.id, position: { x: rect.left, y: rect.bottom } });
           }}
         >
           <span
-            className="w-1.75 h-1.75 rounded-full translate-y-px shrink-0 filter-[saturate(0.55)] transition-transform group-hover:scale-125"
+            className="w-1.75 h-1.75 rounded-full translate-y-px shrink-0 filter-[saturate(0.55)]"
             style={{ backgroundColor: node.color }}
             aria-hidden="true"
           />
@@ -117,7 +123,7 @@ export function CollectionRow({ node, depth, ...props }: CollectionRowProps) {
           <Link
             to={`/collection/${node.id}`}
             aria-current={props.activeId === node.id ? 'page' : undefined}
-            className="collections-index-link col-start-2 min-w-0 truncate text-sm leading-6 text-ink-light"
+            className="collections-index-link min-w-0 truncate text-sm leading-6 text-ink-light"
             onMouseDown={(event) => {
               // Keep the tree's menu open when its neighbor link changes the detail pane.
               if (longPress.current || (props.menuOpenId && isDesktopCollections())) event.stopPropagation();
@@ -143,7 +149,9 @@ export function CollectionRow({ node, depth, ...props }: CollectionRowProps) {
             <button
               type="button"
               className="collections-index-row__actions-btn flex h-6 w-6 items-center justify-center p-0 text-ink-light hover:text-ink bg-transparent border-0 cursor-pointer"
-              aria-label={t('page.deleteNamed', { name: node.name })}
+              aria-label={t('collections.actionsNamed', { name: node.name })}
+              aria-haspopup="menu"
+              aria-expanded={isMenuOpen}
               onClick={(e) => {
                 const rect = e.currentTarget.getBoundingClientRect();
                 handleOpenMenu({ x: rect.left, y: rect.bottom });
@@ -164,8 +172,7 @@ export function CollectionRow({ node, depth, ...props }: CollectionRowProps) {
           }}
           items={buildCollectionMenuItems(t, {
             onChangeColor: () => {
-              setColorPickerPos(contextPos);
-              props.setMenuOpenId(null);
+              props.onOpenColorPicker({ id: node.id, position: contextPos });
               setContextPos(null);
             },
             onStartRename: () => {
@@ -201,19 +208,19 @@ export function CollectionRow({ node, depth, ...props }: CollectionRowProps) {
         />
       )}
 
-      {colorPickerPos && (
+      {isColorPickerOpen && props.colorPickerTarget && (
         <ColorPickerPopover
-          position={colorPickerPos}
+          position={props.colorPickerTarget.position}
           value={node.color}
           onCommit={(color) => props.onColorCommit(node, color)}
-          onClose={() => setColorPickerPos(null)}
+          onClose={() => props.onOpenColorPicker(null)}
         />
       )}
 
       {isAddingSub && (
         <div
           className="collections-index-input-row grid h-6 items-center"
-          style={{ gridTemplateColumns: `24px minmax(0, 1fr)`, marginInlineStart: `${(depth + 1) * 24}px` }}
+          style={{ gridTemplateColumns: '24px minmax(0, 1fr)', marginInlineStart: `${(depth + 1) * 24}px` }}
         >
           <span
             className="w-1.75 h-1.75 rounded-full justify-self-center self-center translate-y-px shrink-0 bg-border-subtle"
@@ -222,6 +229,7 @@ export function CollectionRow({ node, depth, ...props }: CollectionRowProps) {
           <input
             autoFocus
             type="text"
+            aria-label={t('page.collectionName')}
             placeholder={t('page.collectionName')}
             value={props.editingName}
             onChange={(e) => props.setEditingName(e.target.value)}

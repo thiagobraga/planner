@@ -76,6 +76,8 @@ export interface PlannerDragContextValue {
 }
 
 export const PlannerDragContext = createContext<PlannerDragContextValue | null>(null);
+/** Secondary split panes set this to false so they never overwrite or clear the primary pane's drag handlers. */
+export const PlannerDragEnabledContext = createContext(true);
 
 export function usePlannerDrag(): PlannerDragContextValue {
   const ctx = useContext(PlannerDragContext);
@@ -95,11 +97,13 @@ export function usePlannerDragHandlers(
   options: { enabled?: boolean } = {},
 ): void {
   const { registerHandlers } = usePlannerDrag();
+  const scopeEnabled = useContext(PlannerDragEnabledContext);
+  const enabled = scopeEnabled && options.enabled !== false;
   const ref = useRef(handlers);
   ref.current = handlers;
 
   useEffect(() => {
-    if (options.enabled === false) return;
+    if (!enabled) return;
     return registerHandlers(kind, {
       onDragStart: (e) => ref.current.onDragStart?.(e),
       onDragMove: (e) => ref.current.onDragMove?.(e),
@@ -107,5 +111,5 @@ export function usePlannerDragHandlers(
       onDragEnd: (e) => ref.current.onDragEnd?.(e),
       onDragCancel: () => ref.current.onDragCancel?.(),
     });
-  }, [kind, options.enabled, registerHandlers]);
+  }, [kind, enabled, registerHandlers]);
 }

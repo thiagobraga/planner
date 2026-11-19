@@ -10,6 +10,8 @@ export const collectionsEnglish = {
   'collections.splitVertically': 'Split vertically',
   'collections.splitHorizontally': 'Split horizontally',
   'collections.closePane': 'Close pane',
+  'collections.actionsNamed': 'Actions for {{name}}',
+  'collections.changeColorNamed': 'Change color for {{name}}',
 } as const;
 
 export const collectionsPortuguese = {
@@ -24,4 +26,6 @@ export const collectionsPortuguese = {
   'collections.splitVertically': 'Dividir verticalmente',
   'collections.splitHorizontally': 'Dividir horizontalmente',
   'collections.closePane': 'Fechar painel',
+  'collections.actionsNamed': 'Ações para {{name}}',
+  'collections.changeColorNamed': 'Alterar cor de {{name}}',
 } satisfies Record<keyof typeof collectionsEnglish, string>;

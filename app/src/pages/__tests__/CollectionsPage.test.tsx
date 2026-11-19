@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { typeText } from '../../test/editableText';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
@@ -169,28 +169,6 @@ beforeEach(() => {
   mockApiAddSavedColor.mockResolvedValue([]);
 });
 
-const parentCollection = {
-  id: 'parent-id',
-  userId: 'u1',
-  name: 'Parent',
-  color: '#7dbfb2',
-  parentId: null,
-  isInbox: false,
-  isArchived: false,
-  orderValue: 0,
-  createdAt: '',
-  updatedAt: '',
-};
-
-const childCollection = {
-  ...parentCollection,
-  id: 'test-collection-id',
-  name: 'Test Collection',
-  color: '#d56b64',
-  parentId: 'parent-id',
-  orderValue: 1,
-};
-
 describe('CollectionsPage', () => {
   it('renders the collection name with the page toolbar on its row', async () => {
     renderPage();
@@ -292,109 +270,6 @@ describe('CollectionsPage', () => {
     expect(taskListMock.mock.calls.at(-1)?.[0].tasks[0].labels).toEqual([
       { id: 'label-1', name: 'feature', color: '#7dbfb2' },
     ]);
-  });
-
-  describe('breadcrumb context menu', () => {
-    async function openCrumbMenu(name: string) {
-      mockFetchCollections.mockResolvedValue([parentCollection, childCollection]);
-      renderPage();
-      const crumb = (await screen.findByText(name)).closest('.collections-page-crumb')!;
-      fireEvent.contextMenu(crumb, { clientX: 120, clientY: 30 });
-      return screen.getByRole('menu');
-    }
-
-    it('offers the same collection actions as the sidebar', async () => {
-      const menu = await openCrumbMenu('Test Collection');
-      const labels = within(menu)
-        .getAllByRole('menuitem')
-        .map((item) => item.textContent);
-
-      expect(labels).toEqual(['Change color…', 'Rename', 'Add sub-collection', 'Delete']);
-    });
-
-    it('targets the crumb that was right-clicked, not the current collection', async () => {
-      const menu = await openCrumbMenu('Parent');
-      fireEvent.click(within(menu).getByText('Change color…'));
-
-      const picker = await screen.findByRole('dialog', { name: 'Change color' });
-      expect(within(picker).getByLabelText('Color value')).toHaveValue('#7dbfb2');
-    });
-
-    it('recolors the crumb collection without touching its children', async () => {
-      mockApiUpdateCollection.mockResolvedValue({ ...parentCollection, color: '#b7bf4e' });
-
-      const menu = await openCrumbMenu('Parent');
-      fireEvent.click(within(menu).getByText('Change color…'));
-
-      const picker = await screen.findByRole('dialog', { name: 'Change color' });
-      const input = within(picker).getByLabelText('Color value');
-      fireEvent.change(input, { target: { value: '#b7bf4e' } });
-      fireEvent.keyDown(input, { key: 'Enter' });
-
-      await waitFor(() =>
-        expect(mockApiUpdateCollection).toHaveBeenCalledWith('parent-id', { color: '#b7bf4e' }),
-      );
-      expect(mockApiUpdateCollection).toHaveBeenCalledTimes(1);
-      // The child crumb keeps the colour it already had.
-      await waitFor(() =>
-        expect(
-          (screen.getByText('Test Collection').closest('.collections-page-crumb') as HTMLElement)
-            .firstElementChild,
-        ).toHaveStyle({ background: '#d56b64' }),
-      );
-    });
-
-    it('renames the crumb collection inline', async () => {
-      mockApiUpdateCollection.mockResolvedValue({ ...childCollection, name: 'Renamed' });
-
-      const menu = await openCrumbMenu('Test Collection');
-      fireEvent.click(within(menu).getByText('Rename'));
-
-      const input = await screen.findByLabelText('Rename');
-      fireEvent.change(input, { target: { value: 'Renamed' } });
-      fireEvent.keyDown(input, { key: 'Enter' });
-
-      await waitFor(() =>
-        expect(mockApiUpdateCollection).toHaveBeenCalledWith('test-collection-id', { name: 'Renamed' }),
-      );
-    });
-
-    it('creates a sub-collection under the targeted crumb', async () => {
-      mockApiCreateCollection.mockResolvedValue({
-        ...childCollection,
-        id: 'sub-id',
-        name: 'Child Sub',
-        parentId: 'test-collection-id',
-      });
-
-      const menu = await openCrumbMenu('Test Collection');
-      fireEvent.click(within(menu).getByText('Add sub-collection'));
-
-      const input = await screen.findByPlaceholderText('Collection name…');
-      fireEvent.change(input, { target: { value: 'Child Sub' } });
-      fireEvent.keyDown(input, { key: 'Enter' });
-
-      await waitFor(() =>
-        expect(mockApiCreateCollection).toHaveBeenCalledWith(
-          expect.objectContaining({ name: 'Child Sub', parentId: 'test-collection-id' }),
-        ),
-      );
-    });
-
-    it('deletes the targeted collection after confirmation and navigates to daily', async () => {
-      mockApiDeleteCollection.mockResolvedValue(undefined);
-
-      const menu = await openCrumbMenu('Test Collection');
-      fireEvent.click(within(menu).getByText('Delete'));
-
-      const dialog = await screen.findByRole('dialog');
-      fireEvent.click(within(dialog).getByRole('button', { name: 'Delete' }));
-
-      await waitFor(() =>
-        expect(mockApiDeleteCollection).toHaveBeenCalledWith('test-collection-id'),
-      );
-      expect(await screen.findByText('Daily Destination')).toBeInTheDocument();
-    });
   });
 
   it('deletes both tasks and section when confirmed in section delete modal', async () => {

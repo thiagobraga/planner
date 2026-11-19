@@ -194,7 +194,7 @@ Tokens are redefined under `:root[data-theme="dark"]` in `app/src/styles/theme.c
 | Warm Brick Red `--color-accent` | `#c9483b` | `#d8705f` | Accent, lifted for contrast on dark paper |
 | Active nav `--planner-sidebar-active-bg` | tinted dot | `#3b3229` | Selected navigation item |
 | Overlay `--planner-overlay-bg` | Cream Paper | `#292219` | Dialogs and menus use the page's paper shade |
-| Browser chrome `theme-color` | `#ebe6de` | `#292219` | PWA title bar, matches the nav bar (`--color-sidebar-bg`) |
+| Browser chrome `theme-color` | `#ebe6de` | `#292219` | PWA title bar, matches `--color-sidebar-bg` on original themes and page surface on Nord (`#eceff4` / `#2e3440`) |
 
 ### Nord Themes
 

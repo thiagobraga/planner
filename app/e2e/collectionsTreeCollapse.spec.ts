@@ -4,9 +4,15 @@ import { expect, STORAGE_STATE_PATH, test } from './fixtures/api';
 test.use({ storageState: STORAGE_STATE_PATH });
 
 test('collapses and expands a parent and a nested child from the keyboard and pointer', async ({ page, api }) => {
-  const parent = await api.createCollection({ name: 'Collapse parent', color: '#c9483b' });
-  const sibling = await api.createCollection({ name: 'Collapse sibling', color: '#65788a' });
+  const suffix = Date.now().toString(36).slice(-4);
+  const parentName = `Collapse parent ${suffix}`;
+  const siblingName = `Collapse sibling ${suffix}`;
+  const createdIds: string[] = [];
   try {
+    const parent = await api.createCollection({ name: parentName, color: '#c9483b' });
+    createdIds.push(parent.id);
+    const sibling = await api.createCollection({ name: siblingName, color: '#65788a' });
+    createdIds.push(sibling.id);
     const child = await api.createCollection({ name: 'Collapse child', color: '#c9483b', parentId: parent.id });
     await api.createCollection({ name: 'Collapse grandchild', color: '#c9483b', parentId: child.id });
     await api.createCollection({ name: 'Sibling child', color: '#65788a', parentId: sibling.id });
@@ -14,12 +20,12 @@ test('collapses and expands a parent and a nested child from the keyboard and po
     await page.goto('/collections');
     const layout = page.locator('.collections-layout');
     const tree = page.getByRole('region', { name: 'Collection tree' });
-    const parentLink = tree.getByRole('link', { name: 'Collapse parent' });
+    const parentLink = tree.getByRole('link', { name: parentName });
     const childLink = tree.getByRole('link', { name: 'Collapse child' });
     const grandchildLink = tree.getByRole('link', { name: 'Collapse grandchild' });
-    const parentToggle = tree.getByRole('button', { name: 'Collapse Collapse parent' });
+    const parentToggle = tree.getByRole('button', { name: `Collapse ${parentName}` });
     const childToggle = tree.getByRole('button', { name: 'Collapse Collapse child' });
-    const siblingToggle = tree.getByRole('button', { name: 'Collapse Collapse sibling' });
+    const siblingToggle = tree.getByRole('button', { name: `Collapse ${siblingName}` });
     await expect(grandchildLink).toBeVisible();
 
     // Toggles float 24px to the left of the collection dot, invisible at rest.
@@ -55,13 +61,13 @@ test('collapses and expands a parent and a nested child from the keyboard and po
     await parentToggle.focus();
     await page.keyboard.press('Enter');
     await expect(childLink).toBeHidden();
-    await expect(tree.getByRole('button', { name: 'Expand Collapse parent' })).toHaveAttribute('aria-expanded', 'false');
+    await expect(tree.getByRole('button', { name: `Expand ${parentName}` })).toHaveAttribute('aria-expanded', 'false');
 
     await page.reload();
     await expect(parentLink).toBeVisible();
     await expect(childLink).toBeHidden();
 
-    await tree.getByRole('button', { name: 'Expand Collapse parent' }).click();
+    await tree.getByRole('button', { name: `Expand ${parentName}` }).click();
     await expect(childLink).toBeVisible();
     await expect(grandchildLink).toBeHidden();
     await tree.getByRole('button', { name: 'Expand Collapse child' }).press('Space');
@@ -74,8 +80,7 @@ test('collapses and expands a parent and a nested child from the keyboard and po
     expect(mobileToggleBox.x).toBeGreaterThanOrEqual(0);
     await page.screenshot({ path: 'dist/screenshots/collections-tree-hover-mobile.png' });
   } finally {
-    await api.deleteCollection(parent.id);
-    await api.deleteCollection(sibling.id);
+    for (const id of createdIds) await api.deleteCollection(id).catch(() => {});
   }
 });
 

@@ -8,7 +8,6 @@
 .collections-index-link {
   grid-column: 2 / 3;
   grid-row: 1;
-  border-radius: 4px;
 }
 
 .collections-index-link[aria-current='page'] {
@@ -29,43 +28,14 @@
 :root .collections-inline-input:focus-visible {
   outline: none;
   box-shadow: none;
-  border-bottom-color: var(--color-ink-light);
+  border-bottom-color: var(--color-ink);
 }
 
-.collections-detail-pane[data-split] {
-  display: grid;
-  height: 100%;
-  min-height: 0;
-  overflow: hidden;
-  padding-block: 0;
-}
-
-.collections-detail-pane[data-split='vertical'] {
-  grid-template-columns: repeat(var(--split-count, 2), minmax(0, 1fr));
-}
-
-.collections-detail-pane[data-split='horizontal'] {
-  grid-template-rows: repeat(var(--split-count, 2), minmax(0, 1fr));
-}
-
-.collections-split-pane {
-  min-width: 0;
-  min-height: 0;
-  overflow: auto;
-  padding-block: 24px;
-}
-
-.collections-detail-pane[data-split='vertical'] > .collections-split-pane + .collections-split-pane {
-  padding-inline-start: 24px;
-  border-inline-start: 1px solid var(--color-border-subtle);
-}
-
-.collections-detail-pane[data-split='vertical'] > .collections-split-pane:not(:last-child) {
-  padding-inline-end: 24px;
-}
-
-.collections-detail-pane[data-split='horizontal'] > .collections-split-pane + .collections-split-pane {
-  border-block-start: 1px solid var(--color-border-subtle);
+.collections-page-crumb-trigger:focus-visible,
+.collections-page-crumb a:focus-visible,
+.collections-page-crumb-dot:focus-visible {
+  border-radius: 4px;
+  outline-offset: -2px;
 }
 
 .collections-index-row:focus-within .collections-index-row__actions-btn {
@@ -81,13 +51,38 @@
 }
 
 .collections-index-node:hover > .collections-index-row > .collections-index-row__toggle,
+.collections-index-node:has(:focus-visible) > .collections-index-row > .collections-index-row__toggle,
 .collections-index-row__toggle:focus-visible {
   opacity: 1;
 }
 
-@media (hover: none) {
+@media (hover: none), (pointer: coarse) {
   .collections-index-row__toggle {
     opacity: 1;
+  }
+
+  .collections-index-row__actions-btn {
+    opacity: 0.5;
+  }
+}
+
+@media (pointer: coarse) {
+  .collections-page-crumb-dot,
+  .collections-split-pane__close {
+    position: relative;
+  }
+
+  .collections-page-crumb-dot::after,
+  .collections-split-pane__close::after {
+    content: '';
+    position: absolute;
+    inset: -10px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .collections-index-row__toggle {
+    transition: none;
   }
 }
 
@@ -95,6 +90,12 @@
   .collections-layout[data-detail='true'] .collections-tree-pane,
   .collections-layout[data-detail='false'] .collections-detail-pane {
     display: none;
+  }
+
+  /* Keep root collapse toggles inside the mobile safe inset rather than flush at x = 0. */
+  .collections-tree-pane {
+    width: 100%;
+    padding-inline-start: 16px;
   }
 }
 
@@ -130,6 +131,50 @@
     padding-inline-start: 24px;
     padding-inline-end: 24px;
     scrollbar-gutter: stable;
+  }
+
+  /* Extend sticky header backdrop across the 24px bleed gutter to mask scrolled toggles. */
+  .collections-tree-pane .sticky-page-header {
+    margin-inline-start: -24px;
+    padding-inline-start: 24px;
+    width: calc(100% + 24px);
+  }
+
+  .collections-detail-pane[data-split] {
+    display: grid;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+    padding-block: 0;
+  }
+
+  .collections-detail-pane[data-split='vertical'] {
+    grid-template-columns: repeat(var(--split-count, 2), minmax(240px, 1fr));
+    overflow-x: auto;
+  }
+
+  .collections-detail-pane[data-split='horizontal'] {
+    grid-template-rows: repeat(var(--split-count, 2), minmax(0, 1fr));
+  }
+
+  .collections-split-pane {
+    min-width: 0;
+    min-height: 0;
+    overflow: auto;
+    padding-block: 24px;
+  }
+
+  .collections-detail-pane[data-split='vertical'] > .collections-split-pane + .collections-split-pane {
+    padding-inline-start: 24px;
+    border-inline-start: 1px solid var(--color-border-subtle);
+  }
+
+  .collections-detail-pane[data-split='vertical'] > .collections-split-pane:not(:last-child) {
+    padding-inline-end: 24px;
+  }
+
+  .collections-detail-pane[data-split='horizontal'] > .collections-split-pane + .collections-split-pane {
+    border-block-start: 1px solid var(--color-border-subtle);
   }
 
   @media (hover: hover) {

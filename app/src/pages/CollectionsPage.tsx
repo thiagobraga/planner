@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect, useLayoutEffect, useMemo } from 'react';
+import { useState, useRef, useCallback, useEffect, useLayoutEffect } from 'react';
 import { useParams } from 'react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { CollectionTaskList } from '../components/collections/CollectionTaskList';
@@ -12,8 +12,9 @@ import {
   CollectionHeaderActions,
   CollectionSubInput,
 } from '../components/collections/CollectionBreadcrumbs';
-import { useCollectionSplit } from '../contexts/CollectionSplitContext';
-import { fetchCollections, apiUpdateTask, apiMoveTask } from '../api/client';
+import { CollectionContextMenus } from '../components/collections/CollectionContextMenus';
+import { useCollectionDeleted, useCollectionSplit } from '../contexts/CollectionSplitContext';
+import { fetchCollections } from '../api/client';
 import { useTaskDrag } from '../hooks/useTaskDrag';
 import { useSectionDrag } from '../hooks/useSectionDrag';
 import { usePreferences } from '../hooks/usePreferences';
@@ -21,29 +22,32 @@ import { useBoardPreferences } from '../hooks/useBoardPreferences';
 import { useCollectionBreadcrumbs } from '../hooks/useCollectionBreadcrumbs';
 import { useCollectionSections } from '../hooks/useCollectionSections';
 import { apiToTask, useCollectionTasks } from '../hooks/useCollectionTasks';
-import { buildIndentMenuItems } from '../components/taskIndentMenu';
 import type { TaskIndentMenuContext, TaskListContextMenuHandler } from '../types/taskIndent';
-import { ContextMenu } from '../components/ui/ContextMenu';
-import type { ContextMenuItem } from '../types/contextMenu';
 import { SectionDeleteModal } from '../components/SectionDeleteModal';
-import { flattenCollections } from '../utils/collectionTree';
-import { Folder, ArrowUp, ArrowDown, Trash2, Pencil } from 'lucide-react';
 import { useI18n } from '../i18n/I18nContext';
-import { buildSetDateMenuItem } from '../components/taskDateMenuItem';
 import type { StoreSection, Task } from '../types/task';
-import { buildTaskMenuActions } from '../utils/taskMenuActions';
 import { isCollectionUnavailable, useCollectionView } from '../hooks/useCollectionView';
 import { CollectionLoadState, CollectionNotFound } from '../components/collections/CollectionViewState';
 import { isDesktopCollections } from '../utils/collectionsLayout';
 
+const INTERACTIVE_TARGET = 'input, [contenteditable], button, a, select, [role="button"], [role="dialog"], [role="menu"], [role="slider"]';
+
 export function CollectionsPage({
   collectionId,
   onClosePane,
-}: { collectionId?: string; onClosePane?: () => void } = {}) {
+  isSecondaryPane = false,
+  onNavigateCollection,
+}: {
+  collectionId?: string;
+  onClosePane?: () => void;
+  isSecondaryPane?: boolean;
+  onNavigateCollection?: (targetId: string) => void;
+} = {}) {
   const { locale, t } = useI18n();
   const params = useParams();
   const id = collectionId ?? params.id ?? '';
   const onSplit = useCollectionSplit();
+  const onCollectionDeleted = useCollectionDeleted();
   const qc = useQueryClient();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [sections, setSections] = useState<StoreSection[]>([]);
@@ -57,19 +61,15 @@ export function CollectionsPage({
 
   const ready = !!data;
   useEffect(() => {
-    if (ready && !isDesktopCollections()) inputRef.current?.focus();
-  }, [id, ready]);
+    if (ready && !isSecondaryPane && !isDesktopCollections()) inputRef.current?.focus();
+  }, [id, ready, isSecondaryPane]);
 
   useLayoutEffect(() => {
-    if (data?.tasks) {
-      setTasks(data.tasks.map(apiToTask));
-    }
+    if (data?.tasks) setTasks(data.tasks.map(apiToTask));
   }, [data]);
 
   useLayoutEffect(() => {
-    if (data?.sections) {
-      setSections(data.sections);
-    }
+    if (data?.sections) setSections(data.sections);
   }, [data]);
 
   const invalidate = useCallback(
@@ -110,7 +110,7 @@ export function CollectionsPage({
   });
 
   const { activeDragId } = useTaskDrag({
-    enabled: boardPreferences.view === 'list',
+    enabled: !isSecondaryPane && boardPreferences.view === 'list',
     tasks,
     setTasks,
     scope: { kind: 'collection', collectionId: id },
@@ -155,7 +155,10 @@ export function CollectionsPage({
 
   const { data: collections = [] } = useQuery({ queryKey: ['collections'], queryFn: fetchCollections });
 
-  const breadcrumbs = useCollectionBreadcrumbs(id, collections, data?.collection);
+  const breadcrumbs = useCollectionBreadcrumbs(id, collections, data?.collection, {
+    onNavigateCollection,
+    onCollectionDeleted,
+  });
 
   const handleRightClick: TaskListContextMenuHandler = useCallback(
     (taskId, position, visibleTasks, scope) => {
@@ -164,40 +167,6 @@ export function CollectionsPage({
     },
     [setSelectedId],
   );
-
-  const projectSubmenuItems = useMemo<ContextMenuItem[]>(() => {
-    const items: ContextMenuItem[] = flattenCollections(collections).map((c) => ({
-      type: 'item',
-      label: c.name,
-      icon: (
-        <span
-          className="w-1.75 h-1.75 rounded-full inline-block filter-[saturate(0.55)]"
-          style={{ backgroundColor: c.color, marginLeft: c.depth * 12 }}
-        />
-      ),
-      onClick: () => {
-        if (contextMenu?.taskId) {
-          apiUpdateTask(contextMenu.taskId, { collectionId: c.id }).catch(() => invalidate());
-        }
-      },
-    }));
-
-    items.push({
-      type: 'item',
-      label: t('contextMenu.noCollection'),
-      icon: <span className="w-1.75 h-1.75 rounded-full inline-block bg-transparent border border-ink/20" />,
-      onClick: () => {
-        if (contextMenu?.taskId) {
-          const inbox = collections.find((c) => c.isInbox);
-          if (inbox) {
-            apiUpdateTask(contextMenu.taskId, { collectionId: inbox.id }).catch(() => invalidate());
-          }
-        }
-      },
-    });
-
-    return items;
-  }, [collections, contextMenu, invalidate, t]);
 
   const taskListProps = {
     activeDragId,
@@ -215,16 +184,19 @@ export function CollectionsPage({
   if (isCollectionUnavailable(error)) return <CollectionNotFound />;
   if (!data) return <CollectionLoadState failed={isError} onRetry={() => void refetch()} />;
 
+  const titleAriaLabel = breadcrumbs.trail.map((crumb) => crumb.name).join(' ') || undefined;
+
   return (
     <div
       className="collection-detail-page relative w-full cursor-text"
       onClick={(e) => {
-        if ((e.target as HTMLElement).closest('input, [contenteditable], button, [role="button"]')) return;
+        if ((e.target as HTMLElement).closest(INTERACTIVE_TARGET)) return;
         inputRef.current?.focus();
       }}
     >
       <PageHeader
         titleClassName="collections-page-title flex items-center gap-2"
+        titleAriaLabel={titleAriaLabel}
         title={
           <CollectionBreadcrumbTitle
             trail={breadcrumbs.trail}
@@ -234,9 +206,11 @@ export function CollectionsPage({
             onCommitRename={breadcrumbs.handleCrumbRename}
             onCancelRename={() => breadcrumbs.setRenamingCrumbId(null)}
             onOpenMenu={breadcrumbs.setCrumbMenu}
-            onOpenColorPicker={breadcrumbs.setCrumbColorPicker}
-            onOpenChildrenMenu={(position) => breadcrumbs.setChildrenMenu({ position })}
+            onToggleColorPicker={breadcrumbs.toggleCrumbColorPicker}
+            colorPickerCollectionId={breadcrumbs.crumbColorPicker?.collectionId ?? null}
+            onToggleChildrenMenu={breadcrumbs.toggleChildrenMenu}
             childrenMenuOpen={breadcrumbs.childrenMenu !== null}
+            onNavigateAncestor={onNavigateCollection}
           />
         }
         afterTitle={
@@ -248,7 +222,12 @@ export function CollectionsPage({
             onCancel={breadcrumbs.handleCancelSub}
           />
         }
-        actions={<CollectionHeaderActions toolbar={<BoardPageToolbar board={boardPreferences} />} onClosePane={onClosePane} />}
+        actions={
+          <CollectionHeaderActions
+            toolbar={<BoardPageToolbar board={boardPreferences} registerShortcuts={!isSecondaryPane} />}
+            onClosePane={onClosePane}
+          />
+        }
       />
 
       <div className={boardPreferences.view !== 'list' ? 'w-full' : undefined}>
@@ -300,82 +279,27 @@ export function CollectionsPage({
           {t('task.moveFailed')}
         </div>
       )}
-      {contextMenu && (
-        <ContextMenu
-          caret
-          position={contextMenu.position}
-          onClose={() => setContextMenu(null)}
-          items={[
-            ...buildTaskMenuActions({
-              task: tasks.find((task) => task.id === contextMenu.taskId),
-              statuses: data?.statuses ?? [],
-              completionStatusId: data?.completionStatusId ?? null,
-              t,
-              onToggle: () => handleToggle(contextMenu.taskId),
-              onMove: (statusId) => {
-                const task = tasks.find((candidate) => candidate.id === contextMenu.taskId);
-                if (!task || task.parentTaskId) return;
-                apiMoveTask(task.id, {
-                  parentTaskId: null,
-                  collectionId: id,
-                  statusId,
-                  scope: { kind: 'status', collectionId: id, statusId },
-                  position: Number.MAX_SAFE_INTEGER,
-                })
-                  .then(invalidate)
-                  .catch(invalidate);
-              },
-            }),
-            buildSetDateMenuItem(t, tasks.find((task) => task.id === contextMenu.taskId), handleSetSchedule),
-            { type: 'item', label: t('contextMenu.collection'), icon: <Folder size={14} />, submenu: projectSubmenuItems },
-            { type: 'separator' },
-            {
-              type: 'item',
-              label: t('contextMenu.addAbove'),
-              icon: <ArrowUp size={14} />,
-              onClick: () => handleAddAbove(contextMenu.taskId),
-            },
-            {
-              type: 'item',
-              label: t('contextMenu.addBelow'),
-              icon: <ArrowDown size={14} />,
-              onClick: () => handleAddBelow(contextMenu.taskId),
-            },
-            ...buildIndentMenuItems(t, contextMenu, handleIndent),
-            { type: 'separator' },
-            {
-              type: 'item',
-              label: t('common.delete'),
-              icon: <Trash2 size={14} />,
-              destructive: true,
-              onClick: () => handleDelete(contextMenu.taskId),
-            },
-          ]}
-        />
-      )}
 
-      {sectionContextMenu && (
-        <ContextMenu
-          position={sectionContextMenu.position}
-          onClose={() => setSectionContextMenu(null)}
-          items={[
-            {
-              type: 'item',
-              label: t('common.rename'),
-              icon: <Pencil size={14} />,
-              onClick: () => setEditingSectionId(sectionContextMenu.sectionId),
-            },
-            { type: 'separator' },
-            {
-              type: 'item',
-              label: t('common.delete'),
-              icon: <Trash2 size={14} />,
-              destructive: true,
-              onClick: () => handleDeleteSection(sectionContextMenu.sectionId),
-            },
-          ]}
-        />
-      )}
+      <CollectionContextMenus
+        collectionId={id}
+        collections={collections}
+        tasks={tasks}
+        statuses={data?.statuses ?? []}
+        completionStatusId={data?.completionStatusId ?? null}
+        contextMenu={contextMenu}
+        onCloseContextMenu={() => setContextMenu(null)}
+        sectionContextMenu={sectionContextMenu}
+        onCloseSectionContextMenu={() => setSectionContextMenu(null)}
+        onToggleTask={handleToggle}
+        onSetSchedule={handleSetSchedule}
+        onAddAbove={handleAddAbove}
+        onAddBelow={handleAddBelow}
+        onIndent={handleIndent}
+        onDeleteTask={handleDelete}
+        onEditSection={setEditingSectionId}
+        onDeleteSection={handleDeleteSection}
+        onInvalidate={invalidate}
+      />
 
       <CollectionBreadcrumbOverlays
         trail={breadcrumbs.trail}
@@ -387,13 +311,13 @@ export function CollectionsPage({
         crumbMenu={breadcrumbs.crumbMenu}
         onCloseMenu={() => breadcrumbs.setCrumbMenu(null)}
         onOpenColorPicker={breadcrumbs.setCrumbColorPicker}
-        onStartRename={(collectionId, currentName) => {
+        onStartRename={(targetId, currentName) => {
           breadcrumbs.setCrumbDraft(currentName);
-          breadcrumbs.setRenamingCrumbId(collectionId);
+          breadcrumbs.setRenamingCrumbId(targetId);
         }}
-        onStartAddSub={(collectionId) => {
+        onStartAddSub={(targetId) => {
           breadcrumbs.setSubNewName('');
-          breadcrumbs.setSubAddingParentId(collectionId);
+          breadcrumbs.setSubAddingParentId(targetId);
         }}
         onSplit={onSplit}
         onRequestDelete={breadcrumbs.setDeletingCollection}

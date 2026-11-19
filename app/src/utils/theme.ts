@@ -1,5 +1,7 @@
 import type { BackgroundPreference, ResolvedTheme } from '../types/theme';
 
+export const BACKGROUND_CACHE_KEY = 'planner_background';
+
 /** Browser and PWA colors use sidebar colors for the original themes and page colors for Nord. */
 export const THEME_COLORS: Record<ResolvedTheme, string> = {
   beige: '#ebe6de',
@@ -33,7 +35,9 @@ export function updateDocumentThemeColor(
   theme: ResolvedTheme,
   targetDocument: Document = document,
 ): void {
-  const color = THEME_COLORS[theme];
+  const color = Object.prototype.hasOwnProperty.call(THEME_COLORS, theme)
+    ? THEME_COLORS[theme]
+    : THEME_COLORS.beige;
   const existing = targetDocument.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]');
   if (existing.length === 1 && existing[0].content === color) return;
   existing.forEach((node) => node.remove());

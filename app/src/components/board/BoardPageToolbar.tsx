@@ -11,14 +11,20 @@ import { PageToolbar } from '../toolbar/PageToolbar';
 import { ViewMenu } from '../toolbar/ViewMenu';
 
 /** Toolbar for pages without dates (Collections, Inbox): grouping where navigation would be, then View. */
-export function BoardPageToolbar({ board }: { board: ReturnType<typeof useBoardPreferences> }) {
+export function BoardPageToolbar({
+  board,
+  registerShortcuts = true,
+}: {
+  board: ReturnType<typeof useBoardPreferences>;
+  registerShortcuts?: boolean;
+}) {
   const { t } = useI18n();
 
   usePageShortcuts((action) => {
     const [, kind, value] = action.split(':');
     if (kind === 'layout' && BOARD_LAYOUTS.includes(value as ViewLayout)) board.setLayout(value as ViewLayout);
     else if (kind === 'style') board.toggleStyle();
-  });
+  }, registerShortcuts);
   const options: GroupByOption<BoardGroupBy>[] = [
     { value: 'status', label: t('board.group.status'), icon: <CircleDot size={14} strokeWidth={1.6} /> },
     { value: 'section', label: t('board.group.section'), icon: <FolderOpen size={14} strokeWidth={1.6} /> },
