@@ -26,12 +26,27 @@ export function useCollectionBreadcrumbs(
   const qc = useQueryClient();
 
   const [crumbMenu, setCrumbMenu] = useState<CollectionCrumbMenuState | null>(null);
+  const [childrenMenu, setChildrenMenu] = useState<{ position: { x: number; y: number } } | null>(null);
   const [crumbColorPicker, setCrumbColorPicker] = useState<CollectionCrumbColorPickerState | null>(null);
   const [renamingCrumbId, setRenamingCrumbId] = useState<string | null>(null);
   const [crumbDraft, setCrumbDraft] = useState('');
   const [subAddingParentId, setSubAddingParentId] = useState<string | null>(null);
   const [subNewName, setSubNewName] = useState('');
   const [deletingCollection, setDeletingCollection] = useState<DeletingCollectionState | null>(null);
+
+  const childCollections = useMemo<CollectionCrumb[]>(
+    () =>
+      collections
+        .filter((c) => c.parentId === id && !c.isArchived && !c.isInbox)
+        .sort((a, b) => a.orderValue - b.orderValue)
+        .map((c) => ({ id: c.id, name: c.name, color: c.color })),
+    [collections, id],
+  );
+
+  const navigateToCollection = useCallback(
+    (targetId: string) => navigate(`/collection/${targetId}`),
+    [navigate],
+  );
 
   // A sub-collection reads as a breadcrumb of its ancestors, so its place in the
   // tree is visible from the page itself. Falls back to the view payload when the
@@ -120,6 +135,10 @@ export function useCollectionBreadcrumbs(
 
   return {
     trail,
+    childCollections,
+    childrenMenu,
+    setChildrenMenu,
+    navigateToCollection,
     crumbMenu,
     setCrumbMenu,
     crumbColorPicker,
