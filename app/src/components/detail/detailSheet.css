@@ -83,3 +83,9 @@
 @keyframes detail-overlay-in {
   from { transform: translateX(24px); opacity: 0; }
 }
+
+.detail-panel--sheet .detail-text-button,
+.detail-panel--sheet .detail-button,
+.detail-panel--sheet .detail-breadcrumb button {
+  min-height: 44px;
+}
