@@ -441,6 +441,7 @@ export const portugueseBrazilCatalog = {
   'board.addColumn': 'Adicionar coluna',
   'board.completeTask': 'Concluir tarefa',
   'board.reopenTask': 'Reabrir tarefa',
+  'board.progressCount': '{{done}} de {{total}}',
   'board.moreOptions': 'Mais opções para {{title}}',
   'board.renameColumn': 'Renomear coluna',
   'board.columnColor': 'Cor da coluna',
