@@ -190,7 +190,7 @@ api/src/services/syncService.ts      publishEvent() - real-time broadcast
 api/src/services/taskService.ts      Task CRUD + recurrence
 api/src/db/pool.ts                   PostgreSQL pool
 api/src/db/redis.ts                  Redis clients (pub/sub)
-api/src/db/migrations/               SQL migration files (001-054)
+api/src/db/migrations/               SQL migration files (001-055)
 api/src/parsers/filterParser.ts      Peggy filter DSL parser
 api/src/engines/recurrenceEngine.ts  Recurrence rule engine
 api/src/mcp/server.ts                MCP server (AI agent tools)

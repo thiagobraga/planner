@@ -18,9 +18,18 @@ export interface TaskDetailItem {
   depth: number;
 }
 
+/** An agent's active claim on a task; the credential id stays server side. */
+export interface TaskDetailClaim {
+  label: string;
+  actorType: 'token' | 'oauth' | 'session';
+  claimedAt: string;
+  expiresAt: string;
+}
+
 /** GET /tasks/:id: the entry, its ancestors root first, and every descendant in order. */
 export interface TaskDetailDto {
   task: TaskDetailItem;
   ancestors: Array<{ id: string; title: string }>;
   descendants: TaskDetailItem[];
+  claim: TaskDetailClaim | null;
 }

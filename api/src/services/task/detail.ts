@@ -2,6 +2,7 @@ import pool from '../../db/pool.js';
 import type { TaskDetailDto, TaskDetailItem } from '../../contracts/taskDetail.js';
 import type { TaskRow } from '../../types/task.js';
 import { getAccessibleTask } from './access.js';
+import { readTaskClaim } from './claim.js';
 
 // Guards both walks against a corrupt parent cycle; real nesting is far shallower.
 const MAX_HOPS = 16;
@@ -81,10 +82,11 @@ export async function getTaskDetail(taskId: string, userId: string): Promise<Tas
     [row.id, row.collection_id, MAX_HOPS],
   );
 
-  const [ancestors, descendants] = await Promise.all([ancestorsPromise, descendantsPromise]);
+  const [ancestors, descendants, claim] = await Promise.all([ancestorsPromise, descendantsPromise, readTaskClaim(row.id)]);
   return {
     task: formatDetailItem(row),
     ancestors: ancestors.rows,
     descendants: descendants.rows.map(formatDetailItem),
+    claim: claim && { label: claim.label, actorType: claim.actorType, claimedAt: claim.claimedAt, expiresAt: claim.expiresAt },
   };
 }
