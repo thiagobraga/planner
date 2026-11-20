@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.38.4](https://github.com/thiagobraga/planner/compare/v0.38.3...v0.38.4) (2026-11-20)
+
+
+### Fixed
+
+* **tasks:** move subtasks with their parent when its date changes ([9a97db8](https://github.com/thiagobraga/planner/commit/9a97db8af0f997c96822644a1aee42ed076cb6d6))
+
+
+### Changed
+
+* **board:** one view request and no status seed per board load ([c0d1f86](https://github.com/thiagobraga/planner/commit/c0d1f86f62ca28591e84a478b467d462635f7486))
+
 ## [0.38.3](https://github.com/thiagobraga/planner/compare/v0.38.2...v0.38.3) (2026-11-20)
 
 
