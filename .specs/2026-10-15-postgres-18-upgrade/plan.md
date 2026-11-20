@@ -1,70 +1,35 @@
-# Postgres 16 to 18 Upgrade
+# PostgreSQL 16 to 18 upgrade
 
-## What
+Planner moves to PostgreSQL 18 across dev, CI and production. The production cutover preserves existing data and pauses API writes during the final backup and restore.
 
-Move Planner's database from PostgreSQL 16 to PostgreSQL 18 everywhere: local dev, CI and production. No app behavior changes. Nobody should lose data, and the API should be down for a few minutes at most during the production cutover.
+## Local development
 
-## Why
+Compose starts a PostgreSQL 18 cluster using the new `pgdata18` volume mounted at `/var/lib/postgresql`. Prior named volumes remain available. Developers can keep their local data by following the dump and restore instructions in README.md.
 
-- PostgreSQL 16 is supported until Nov 2028, 18 until Nov 2030. Doing one major hop now is cheaper than doing it under pressure later.
-- 16, 17 and 18 all ship the same `gosu 1.19 (go1.24.6)` today, so this does **not** clear the gosu Trivy alerts (those need an upstream image rebuild). It is independent housekeeping.
+## Production
 
-## What changes for me
+Production stays on PostgreSQL 16 until the operator runs `bash scripts/postgres-upgrade.sh` during a maintenance window. The release itself does not recreate the live PostgreSQL container.
 
-### As the developer (local dev)
+The upgrade verifies a PostgreSQL 16 backup by restoring into a scratch database on PostgreSQL 18 while the API is still serving. The script then pauses API writers, takes and verifies a final dump, restores it to the new volume, and compares every application table's row count. It starts the API after the replacement database passes verification and checks public API health.
 
-- `docker compose up -d` starts Postgres 18.
-- The PG18 image stores data in a new place (`/var/lib/postgresql/<major>/docker`), so the old dev volume is **not** reused. Postgres 18 refuses to start on an old-layout volume instead of silently creating an empty database.
-- Local dev data is disposable. After pulling, run `docker compose down -v && docker compose up -d` to get a fresh 18 database (migrations recreate the schema). If I want to keep local data, there is a documented dump and restore snippet.
-- Each worktree has its own `planner-<slug>_pgdata` volume, so this is needed once per worktree. Stale volumes can be pruned.
+A failure before writers resume rolls back to the PostgreSQL 16 volume. Once writers can connect to PostgreSQL 18, the new database is authoritative. The old volume and final dump are retained for at least 14 days. Deploys use the persisted cutover marker and fail if it disagrees with the existing container.
 
-### As the production operator
+Use logical dump and restore for the small production database. Evaluate a separate approach if the database grows beyond 1 GiB or rehearsal exceeds the available window. The production preflight measured 11,844,631 bytes.
 
-- One command, run on the server: `bash scripts/postgres-upgrade.sh`.
-- It takes a verified backup, stops the API for the maintenance window, moves the data into a fresh PG18 cluster, checks row counts match, and starts the API again.
-- The old PG16 volume is kept untouched as the rollback path for 14 days.
-- Regular blue/green deploys keep working as before.
+## CI
 
-### In CI
+API, E2E, and recovery tests use PostgreSQL 18. A disposable Docker rehearsal upgrades a PostgreSQL 16 fixture, verifies PostgreSQL 18 backups and restores, and injects a failure to prove the old volume can resume service. The scheduled production backup and approval-gated production restore workflows remain available.
 
-- Unit and integration jobs run against `postgres:18-alpine`, so all 48 migrations are proven on PG18 before anything ships.
-
-## Approach: dump and restore (not `pg_upgrade`)
-
-The database is small and single-tenant, so a logical dump and restore is the simplest safe path:
-
-- No binary-compatibility tooling in an Alpine image (two Postgres versions side by side).
-- Works around the PG18 default change to data checksums (`pg_upgrade` needs both clusters to match).
-- A fresh cluster, so no leftover state, and the restore is easy to rehearse beforehand.
-- The old volume stays intact, so rollback is trivial.
-
-Trade-off: downtime scales with database size. If the dump turns out to take more than a few minutes, fall back to `pg_upgrade --link` (see Open Questions).
-
-## Out of scope
-
-- Using PG18 features (`uuidv7()`, async I/O tuning, etc.).
-- Fixing the gosu CVEs, replacing `uuid_generate_v4()` or the CI Redis 7 versus prod Redis 8 drift.
-- Setting up scheduled production backups (the upgrade script takes a one-off backup only). Worth a follow-up spec.
-
-## Open Questions
-
-1. Is a maintenance window of a few minutes acceptable for production (API returns 502, the app shell stays up)? Default: yes.
-2. How big is the production database? If more than about 1 GB, switch to `pg_upgrade --link`. Default: assume small and measure with `pg_database_size` during pre-flight.
-3. Are old local dev volumes fine to wipe? Default: yes.
-
-## Relevant Files
-
-- `compose.yml` - dev Postgres image tag and volume mount
-- `compose.prod.yml` - prod Postgres image tag, new `pgdata18` volume, mount path
-- `.github/workflows/2a.quality.yml` - two `postgres:16-alpine` service containers
-- `scripts/postgres-upgrade.sh` [new] - production cutover with backup, verify and rollback
-- `scripts/postgres-upgrade.test.sh` [new] - mocked-docker test, same pattern as `blue-green-deploy.test.sh`
-- `scripts/blue-green-deploy.sh` - unchanged, but its `up -d --no-recreate postgres` is why the cutover needs a separate script
-- `CLAUDE.md` (GEMINI.md/AGENTS.md symlinks) - "PostgreSQL 16" text
-- `.claude/agents/db-migrator.md`, `.codex/agents/db-migrator.toml` - "PostgreSQL 16" text
-- `README.md` - upgrade and rollback notes for dev and prod
+Container scanning already covers the production PostgreSQL 18 Alpine tag. The major-version cutover does not close existing findings for that image. Track image findings against scan results.
 
 ## Rollout checkpoint
 
-- Production source confirmed at PostgreSQL 16.15. The manual backup `20261120T224328Z-manualpg18.dump` is on the server under `deploy/backups/postgres18/`. Its checksum and scratch restore passed before implementation.
-- Use a single draft PR for the Compose, recovery and CI changes. Schedule the production cutover separately after an isolated rehearsal passes.
+The manual backup `20261120T224328Z-manualpg18.dump` from production PostgreSQL 16.15 is stored on the server under `deploy/backups/postgres18/`. Its checksum and scratch restore passed before implementation. PR #506 was a temporary PG16 pin. The production override in this upgrade preserves the running major until the approved cutover.
+
+## Relevant files
+
+- `compose.yml`, `compose.prod.yml`, `compose.prod.pg16.yml`
+- `scripts/postgres-upgrade.sh`, `scripts/postgres-upgrade.test.sh`, `scripts/prod-postgres.sh`
+- `scripts/blue-green-deploy.sh`, `scripts/blue-green-deploy.test.sh`
+- `.github/workflows/1.review.yml`, `.github/workflows/2a.quality.yml`, `.github/workflows/ci.yml`
+- `README.md`, `CLAUDE.md`, `.claude/agents/db-migrator.md`

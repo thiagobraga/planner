@@ -116,6 +116,21 @@ Set `DOCKER_USER` before the first site build to match your host UID/GID. A fres
 
 Build the standalone nginx image with `docker build -f .docker/site/Dockerfile --target production -t planner-site .`. Override its destination with `--build-arg VITE_APP_URL=https://your-planner.example.com`. The site image is prepared for independent hosting; the existing production deployment continues to deploy the app and API.
 
+### Local PostgreSQL 18 upgrade
+
+Docker Compose starts PostgreSQL 18 on a new `pgdata18` volume. Existing `pgdata` volumes stay available. For local data you want to keep, run the first two commands with the PostgreSQL 16 stack still running, then update the checkout:
+
+```bash
+install -d -m 700 backups
+(umask 077 && docker compose exec -T postgres sh -ec 'pg_dump -Fc -U "$POSTGRES_USER" "$POSTGRES_DB"' > backups/dev-pg16.dump)
+docker compose stop api
+docker compose up -d --wait postgres
+docker compose exec -T postgres sh -ec 'pg_restore --exit-on-error --single-transaction --no-owner -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < backups/dev-pg16.dump
+docker compose up -d
+```
+
+For a fresh dev database, run `docker compose up -d` after updating. The API applies migrations on startup.
+
 ### Production deployment
 
 Production uses `compose.prod.yml` for the shared PostgreSQL, Redis, and nginx router services. `compose.prod.color.yml` starts the app, API, and one-shot migration in separate blue and green Compose projects. The router stays on `127.0.0.1:8080` while the deploy script prepares the inactive color, checks it, switches nginx, and verifies both public app and API responses before stopping the old color.
@@ -130,6 +145,20 @@ bash scripts/blue-green-deploy.sh "$(cat deploy/.previous-image)"
 ```
 
 The first rollout from the legacy single-app stack briefly releases port 8080 before the router can bind it, so a short 502 window is unavoidable on that bootstrap with the host nginx configuration unchanged. Later rollouts keep the router bound. Migrations must remain backward-compatible because the old API serves while the new color migrates and starts. A failed switch restores the old router target before the old color is stopped. Do not use `docker compose down -v` for deployment or rollback.
+
+### Production PostgreSQL 18 cutover
+
+Schedule a maintenance window. Deploys use the PostgreSQL 16 Compose override until the cutover records `deploy/.postgres-18-ready`. Preserve that file with the other deploy state. The PostgreSQL 18 service requires a prepared data volume.
+
+Run from the production checkout after the upgrade PR is deployed:
+
+```bash
+CORS_ORIGIN=https://planner.thiagobraga.dev bash scripts/postgres-upgrade.sh
+```
+
+The script locks deployments, backs up PostgreSQL 16 and rehearses recovery on PostgreSQL 18 before stopping API writers. It takes a second backup with writers stopped, loads the new volume, checks table counts, and verifies API health after switching. Backups and their verification sidecars stay on the server under `deploy/backups/postgres18/`.
+
+A failure before writers resume triggers rollback to the retained PostgreSQL 16 volume. If the script reports that PostgreSQL 18 is selected, preserve it and investigate API health there. Switching back to the PostgreSQL 16 volume at that point would discard any writes made on PostgreSQL 18. If a process is interrupted and the DB container disagrees with the deploy marker, inspect the active DB and confirm where the last writes landed before resuming deployment. Keep the old volume and final dump for at least 14 days.
 
 ## Project Structure
 
