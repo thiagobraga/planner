@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.38.6](https://github.com/thiagobraga/planner/compare/v0.38.5...v0.38.6) (2026-11-20)
+
+
+### Fixed
+
+* **collections:** list subcollections in the title menu in sidebar order ([8409a3a](https://github.com/thiagobraga/planner/commit/8409a3aca5485d3d6f5ed6bda6fb54b36b7cd8f3))
+
+
+### Changed
+
+* **habits:** refetch once per burst of remote habit changes ([e426de5](https://github.com/thiagobraga/planner/commit/e426de5b1039b2a05545aa45a3d1ece624d113d2))
+* **sync:** refetch collection and inbox views once per burst of changes ([19f1e11](https://github.com/thiagobraga/planner/commit/19f1e11e7a0cb7b4bea6432d766b1573b26d9dc6))
+
 ## [0.38.5](https://github.com/thiagobraga/planner/compare/v0.38.4...v0.38.5) (2026-11-20)
 
 
