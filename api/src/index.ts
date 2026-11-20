@@ -69,7 +69,7 @@ if (!DISABLE_RATE_LIMITS_IN_DEV) {
 }
 
 // Task documents carry up to 256 KB of editor JSON; every other body stays small.
-const DOCUMENT_PATH = /^\/api\/v1\/tasks\/[^/]+\/document$/;
+const DOCUMENT_PATH = /^\/api\/v1\/tasks\/[^/]+\/document\/?$/;
 const jsonBody = express.json({ limit: "100kb" });
 const documentBody = express.json({ limit: "320kb" });
 app.use((req, res, next) => (DOCUMENT_PATH.test(req.path) ? documentBody : jsonBody)(req, res, next));
@@ -78,7 +78,7 @@ app.use((req, res, next) => (DOCUMENT_PATH.test(req.path) ? documentBody : jsonB
 // endpoints take form posts from other origins and set their own CORS policy.
 app.use(oauthRouter());
 
-// Reject non-JSON Content-Type on unsafe methods — prevents CSRF form-encoded bypass
+// Reject non-JSON Content-Type on unsafe methods - prevents CSRF form-encoded bypass
 app.use("/api/v1", (req, res, next) => {
   if (req.path.startsWith("/auth")) {
     next();
@@ -115,7 +115,7 @@ app.use((_req, res, next) => {
 // Binds the calling socket to the request so events can name their origin
 app.use("/api/v1", requestContext);
 
-// Liveness probe — must stay ahead of authMiddleware so container healthchecks
+// Liveness probe - must stay ahead of authMiddleware so container healthchecks
 // and the host reverse proxy can reach it without credentials
 app.get("/api/v1/health", (_req, res) => {
   res.json({ status: "ok" });
@@ -127,7 +127,7 @@ app.get("/api/v1/version", (_req, res) => {
   res.json({ current: BUILD_VERSION, latest: LATEST_VERSION });
 });
 
-// Auth routes (mounted before CSRF — login/register don't need tokens)
+// Auth routes (mounted before CSRF - login/register don't need tokens)
 // Each auth route handles its own IP + account-based rate limiting via rateLimitService
 app.use("/api/v1/auth", authRoutes);
 
@@ -146,7 +146,7 @@ app.use("/api/v1", async (req, res, next) => {
 // Read-only API tokens cannot write, whatever the route
 app.use("/api/v1", enforceTokenScope);
 
-// Global CSRF protection — safe methods set the cookie, unsafe methods validate
+// Global CSRF protection - safe methods set the cookie, unsafe methods validate
 app.use("/api/v1", csrfProtection);
 
 // Cache-Control for all API responses

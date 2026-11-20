@@ -80,9 +80,32 @@ describe("task document routes through the real app (real PostgreSQL + Redis)", 
     expect((await request(app).get(documentUrl()).set("Authorization", stranger)).status).toBe(404);
     expect((await request(app).put(documentUrl()).set("Authorization", stranger).send({ content: doc("x"), baseRevision: 0 })).status).toBe(404);
     const owner = await bearer(ownerId);
-    const bad = await request(app).get(documentUrl("not-a-uuid")).set("Authorization", owner);
-    expect(bad.status).toBe(404);
-    expect(bad.body.error.code).toBe("NOT_FOUND");
+    const badGet = await request(app).get(documentUrl("not-a-uuid")).set("Authorization", owner);
+    expect(badGet.status).toBe(404);
+    expect(badGet.body.error.code).toBe("NOT_FOUND");
+    const badPut = await request(app).put(documentUrl("not-a-uuid")).set("Authorization", owner).send({ content: doc("x"), baseRevision: 0 });
+    expect(badPut.status).toBe(404);
+    expect(badPut.body.error.code).toBe("NOT_FOUND");
+    const missingId = crypto.randomUUID();
+    expect((await request(app).get(documentUrl(missingId)).set("Authorization", owner)).status).toBe(404);
+    expect((await request(app).put(documentUrl(missingId)).set("Authorization", owner).send({ content: doc("x"), baseRevision: 0 })).status).toBe(404);
+  });
+
+  it("stamps API token actor attribution on activity_events when saving a document", async () => {
+    const auth = await bearer(ownerId);
+    const saved = await request(app).put(documentUrl()).set("Authorization", auth).send({ content: doc("From token"), baseRevision: 0 });
+    expect(saved.status).toBe(200);
+    const activity = await pool.query(
+      "SELECT actor_type, actor_label, after_data FROM activity_events WHERE entity_id = $1 AND after_data->>'revision' = '1'",
+      [taskId],
+    );
+    expect(activity.rows).toEqual([
+      {
+        actor_type: "token",
+        actor_label: "Agent",
+        after_data: { title: "Plan", fields: ["document"], revision: 1 },
+      },
+    ]);
   });
 
   it("requires CSRF for cookie sessions", async () => {
@@ -123,10 +146,12 @@ describe("task document routes through the real app (real PostgreSQL + Redis)", 
       const auth = await bearer(ownerId);
       await request(app).put(documentUrl()).set("Authorization", auth).send({ content: doc("Rich"), baseRevision: 0 });
 
-      const blocked = await request(app).patch(`${API}/tasks/${taskId}`).set("Authorization", auth).send({ title: "Renamed", description: "Plain" });
-      expect(blocked.status).toBe(409);
-      expect(blocked.body.error).toMatchObject({ code: "DOCUMENT_EXISTS", details: [{ revision: 1 }] });
-      expect(blocked.body.error.message).toContain(`/tasks/${taskId}/document`);
+      for (const description of ["Plain", "", null]) {
+        const blocked = await request(app).patch(`${API}/tasks/${taskId}`).set("Authorization", auth).send({ title: "Renamed", description });
+        expect(blocked.status).toBe(409);
+        expect(blocked.body.error).toMatchObject({ code: "DOCUMENT_EXISTS", details: [{ revision: 1 }] });
+        expect(blocked.body.error.message).toContain(`/tasks/${taskId}/document`);
+      }
       const row = await pool.query("SELECT title, description FROM tasks WHERE id = $1", [taskId]);
       expect(row.rows[0]).toEqual({ title: "Plan", description: "Rich" });
 

@@ -50,8 +50,11 @@ describe("MCP update_task notes on tasks with a document (real PostgreSQL + Redi
   });
 
   afterEach(async () => {
-    await client.close();
-    await pool.query("DELETE FROM users WHERE id = $1", [userId]);
+    try {
+      await client?.close();
+    } finally {
+      await pool.query("DELETE FROM users WHERE id = $1", [userId]);
+    }
   });
 
   it("still replaces notes on a task without a document", async () => {
@@ -66,7 +69,7 @@ describe("MCP update_task notes on tasks with a document (real PostgreSQL + Redi
       baseRevision: 0,
     });
 
-    for (const notes of ["Plain", null]) {
+    for (const notes of ["Plain", "", null]) {
       const result = await call("update_task", { id: taskId, title: "Renamed", notes });
       expect(result.isError).toBe(true);
       expect(result.text).toMatch(/^DOCUMENT_EXISTS: .*revision 1/);

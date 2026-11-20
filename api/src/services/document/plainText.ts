@@ -37,10 +37,12 @@ function listText(list: DocumentNode, titles: Map<string, string>, indent: strin
     const head = (first ? inlineText(first) : "").replace(/\n/g, `\n${indent}  `);
     const lines = [`${indent}- ${head}`];
     for (const block of rest) {
-      const nested = block.type === "bulletList" || block.type === "orderedList"
-        ? listText(block, titles, `${indent}  `)
-        : prefixLines(blockText(block, titles) ?? "", `${indent}  `);
-      lines.push(nested);
+      if (block.type === "bulletList" || block.type === "orderedList") {
+        lines.push(listText(block, titles, `${indent}  `));
+      } else {
+        const text = blockText(block, titles);
+        if (text !== null) lines.push(prefixLines(text, `${indent}  `));
+      }
     }
     return lines.join("\n");
   }).join("\n");

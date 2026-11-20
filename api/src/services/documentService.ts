@@ -50,7 +50,7 @@ export async function putTaskDocument(taskId: string, userId: string, body: unkn
   const { content, baseRevision } = parseDocumentPut(body);
 
   return runMutation(async (tx) => {
-    const task = await getAccessibleTask(taskId, userId, tx.client);
+    const task = await getAccessibleTask(taskId, userId, tx.client, { forUpdate: true });
     const row = baseRevision === 0
       ? await insertFirstRevision(tx.client, taskId, content, userId)
       : await updateFromRevision(tx.client, taskId, content, baseRevision, userId);

@@ -49,6 +49,18 @@ describe("053_task_documents", () => {
       ).rejects.toMatchObject({ code: "23505" });
       await client.query("ROLLBACK TO SAVEPOINT dup");
 
+      await client.query("SAVEPOINT rev_check");
+      await expect(
+        client.query(`UPDATE task_documents SET revision = 0 WHERE task_id = $1`, [taskId]),
+      ).rejects.toMatchObject({ code: "23514" });
+      await client.query("ROLLBACK TO SAVEPOINT rev_check");
+
+      await client.query("SAVEPOINT schema_check");
+      await expect(
+        client.query(`UPDATE task_documents SET schema_version = 0 WHERE task_id = $1`, [taskId]),
+      ).rejects.toMatchObject({ code: "23514" });
+      await client.query("ROLLBACK TO SAVEPOINT schema_check");
+
       await client.query("DELETE FROM users WHERE id = $1", [userId]);
       const kept = await client.query("SELECT updated_by FROM task_documents");
       expect(kept.rows).toEqual([{ updated_by: null }]);

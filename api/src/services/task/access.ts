@@ -3,16 +3,24 @@ import pool from '../../db/pool.js';
 import { AppError } from '../../utils/AppError.js';
 import type { TaskRow } from '../../types/task.js';
 
-export async function getAccessibleTask(taskId: string, userId: string, db: PoolClient | typeof pool = pool): Promise<TaskRow> {
+export async function getAccessibleTask(
+  taskId: string,
+  userId: string,
+  db: PoolClient | typeof pool = pool,
+  options?: { forUpdate?: boolean },
+): Promise<TaskRow> {
+  const lockClause = options?.forUpdate ? ' FOR UPDATE OF t' : '';
   const result = await db.query(
     `SELECT t.* FROM tasks t
+     INNER JOIN collections c ON c.id = t.collection_id
      WHERE t.id = $1
        AND (
-         t.user_id = $2
-         OR t.collection_id IN (
-           SELECT collection_id FROM collaborators WHERE user_id = $2
+         c.user_id = $2
+         OR EXISTS (
+           SELECT 1 FROM collaborators col
+           WHERE col.collection_id = t.collection_id AND col.user_id = $2
          )
-       )`,
+       )${lockClause}`,
     [taskId, userId],
   );
 

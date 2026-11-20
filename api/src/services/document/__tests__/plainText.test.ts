@@ -75,6 +75,23 @@ describe("documentToPlainText", () => {
     expect(documentToPlainText(content, new Map([[REF, "Write tests"]]))).toBe("Before\n\nWrite tests\n\nAfter");
     expect(documentToPlainText(content)).toBe("Before\n\nAfter");
   });
+
+  it("indents multiline list item heads, renders empty code blocks, and omits unresolved task references inside list items", () => {
+    const content = doc(
+      {
+        type: "bulletList",
+        content: [
+          item(
+            para(text("line 1"), { type: "hardBreak" }, text("line 2")),
+            { type: "taskReference", attrs: { taskId: REF, blockId: "b1" } },
+          ),
+        ],
+      },
+      { type: "codeBlock", attrs: { language: null } },
+    );
+    expect(documentToPlainText(content)).toBe("- line 1\n  line 2\n\n");
+    expect(documentToPlainText(content, new Map([[REF, "Linked step"]]))).toBe("- line 1\n  line 2\n  Linked step\n\n");
+  });
 });
 
 describe("referencedTaskIds", () => {
