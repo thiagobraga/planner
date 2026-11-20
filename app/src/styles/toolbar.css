@@ -227,9 +227,14 @@
   }
 }
 
-/* Full width: the page column and the top bar row span the window. */
+/* Full width: the page column and the top bar row span the window. The reserved
+   scrollbar gutter would push the page title right of the logo, so drop it here. */
 .app-shell.full-width {
   --container-page: 100%;
+}
+
+.app-shell.full-width .main-content {
+  scrollbar-gutter: auto;
 }
 
 /* Phone sheet: dim backdrop that closes on tap, compact content. */
