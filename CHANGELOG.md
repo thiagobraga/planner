@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.38.0](https://github.com/thiagobraga/planner/compare/v0.37.3...v0.38.0) (2026-11-20)
+
+
+### Added
+
+* **comments:** record which token or app wrote a comment ([ca975dc](https://github.com/thiagobraga/planner/commit/ca975dce4e8fbd49e488b0d2ce682bcc93f8989c))
+* **detail:** show agent claim, comment author and comment links ([37e9713](https://github.com/thiagobraga/planner/commit/37e971327c51366d89b907993d36920e1f9f1766))
+* **detail:** show agent claim, comment author and links ([2a99d97](https://github.com/thiagobraga/planner/commit/2a99d978c80dd53ba530b588b402be2712c51efd))
+* **tasks:** return the active agent claim with task details ([a01abc7](https://github.com/thiagobraga/planner/commit/a01abc7ec664e7694125d3454133ad8cb549cc22))
+
 ## [0.37.3](https://github.com/thiagobraga/planner/compare/v0.37.2...v0.37.3) (2026-11-20)
 
 
