@@ -72,7 +72,13 @@ if (!DISABLE_RATE_LIMITS_IN_DEV) {
 const DOCUMENT_PATH = /^\/api\/v1\/tasks\/[^/]+\/document\/?$/;
 const jsonBody = express.json({ limit: "100kb" });
 const documentBody = express.json({ limit: "320kb" });
-app.use((req, res, next) => (DOCUMENT_PATH.test(req.path) ? documentBody : jsonBody)(req, res, next));
+// Imports carry whole spec files (plan.md and task.md, up to 200k characters each).
+const IMPORT_PATH = /^\/api\/v1\/imports\/markdown(\/preview)?\/?$/;
+const importBody = express.json({ limit: "1mb" });
+app.use((req, res, next) => {
+  const parser = DOCUMENT_PATH.test(req.path) ? documentBody : IMPORT_PATH.test(req.path) ? importBody : jsonBody;
+  parser(req, res, next);
+});
 
 // OAuth for hosted MCP clients. Ahead of the app's CORS and /api/v1 chain: these
 // endpoints take form posts from other origins and set their own CORS policy.
