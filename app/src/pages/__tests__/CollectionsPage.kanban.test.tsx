@@ -60,6 +60,7 @@ async function renderPage() {
 describe('CollectionsPage kanban wiring', () => {
   beforeEach(() => {
     window.localStorage.clear();
+    vi.mocked(fetchCollectionView).mockClear();
     vi.mocked(fetchCollectionView).mockResolvedValue({
       collection: { id: collectionId, name: 'Kanban Lab', color: '#c98079', isInbox: false },
       collectionId,
@@ -115,6 +116,8 @@ describe('CollectionsPage kanban wiring', () => {
 
     expect(await screen.findByTestId('collection-board')).toHaveAttribute('data-presentation', 'kanban-list');
     expect(fetchCollectionView).toHaveBeenLastCalledWith(collectionId, { includeCompleted: true });
+    // Fetching before preferences load would ask once without completed tasks, then again with them.
+    expect(fetchCollectionView).toHaveBeenCalledTimes(1);
   });
 
   it('hides the grouping menu on List', async () => {

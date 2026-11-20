@@ -9,7 +9,8 @@ export function isCollectionUnavailable(error: unknown): boolean {
   return error instanceof ApiError && (error.status === 403 || error.status === 404);
 }
 
-export function useCollectionView(id: string, includeCompleted: boolean) {
+/** `ready` holds the fetch until the inputs are known, so one load is one request. */
+export function useCollectionView(id: string, includeCompleted: boolean, ready = true) {
   const viewKey = useMemo(
     () => (includeCompleted ? ['collection', id, 'with-completed'] : ['collection', id]),
     [id, includeCompleted],
@@ -18,7 +19,7 @@ export function useCollectionView(id: string, includeCompleted: boolean) {
     queryKey: viewKey,
     queryFn: () => fetchCollectionView(id, { includeCompleted }),
     staleTime: 30_000,
-    enabled: !!id,
+    enabled: !!id && ready,
     retry: (count, error) => !isCollectionUnavailable(error) && count < 1,
   });
 

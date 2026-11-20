@@ -17,6 +17,11 @@ const UPDATE_FIELDS: (keyof UpdateTaskInput)[] = [
   'durationMinutes', 'recurrenceRule', 'labelIds', 'type',
 ];
 
+function dateKey(value: string | Date | null | undefined): string | null {
+  if (value === null || value === undefined) return null;
+  return value instanceof Date ? value.toISOString().slice(0, 10) : value.slice(0, 10);
+}
+
 export async function updateTask(taskId: string, userId: string, input: UpdateTaskInput) {
   validateTaskScalarFields({
     title: input.title,
@@ -194,7 +199,10 @@ export async function updateTask(taskId: string, userId: string, input: UpdateTa
   // When reparenting shifts the task's own depth, the entire descendant subtree
   // must shift by the same delta so relative nesting is preserved (Phase 6 rule 5).
   const shiftsDescendants = reparentDelta !== undefined && reparentDelta !== 0;
-  const needsTransaction = shiftsDescendants || input.labelIds !== undefined || input.description !== undefined;
+  // Subtasks follow their parent to its new day, as they do when it is dragged,
+  // so a rescheduled parent never leaves its children behind as loose rows.
+  const reschedulesDescendants = input.dueDate !== undefined && dateKey(input.dueDate) !== dateKey(task.due_date);
+  const needsTransaction = shiftsDescendants || reschedulesDescendants || input.labelIds !== undefined || input.description !== undefined;
 
   let taskRow: TaskRow;
   if (needsTransaction) {
@@ -217,6 +225,19 @@ export async function updateTask(taskId: string, userId: string, input: UpdateTa
            UPDATE tasks SET depth = depth + $2, updated_at = NOW()
            WHERE id IN (SELECT id FROM descendants)`,
           [taskId, reparentDelta],
+        );
+      }
+      if (reschedulesDescendants) {
+        await client.query(
+          `WITH RECURSIVE descendants AS (
+             SELECT id FROM tasks WHERE parent_task_id = $1
+             UNION ALL
+             SELECT t.id FROM tasks t
+             INNER JOIN descendants d ON t.parent_task_id = d.id
+           )
+           UPDATE tasks SET due_date = $2, updated_at = NOW()
+           WHERE id IN (SELECT id FROM descendants)`,
+          [taskId, input.dueDate],
         );
       }
       if (input.labelIds !== undefined) {

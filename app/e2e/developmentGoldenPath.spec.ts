@@ -62,6 +62,7 @@ test('a note and a parent plan with six subtasks among paragraphs', async ({ api
       await composer.fill(`Step ${step}`);
       await composer.press('Enter');
       await expect(editor(page).getByRole('button', { name: `Open Step ${step}` })).toBeVisible();
+      await expect(editor(page)).toBeFocused();
     }
     await expect(panel(page).getByRole('status').filter({ hasText: 'Saved' })).toBeVisible();
     await expect.poll(async () => {
