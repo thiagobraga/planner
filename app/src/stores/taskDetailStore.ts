@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { OpenDetailsOptions, TaskDetailState } from '../types/detail';
+import type { DetailMode, OpenDetailsOptions, TaskDetailState } from '../types/detail';
 
 /**
  * Imperative bridge to the one detail controller in AppShell. The URL
@@ -12,8 +12,13 @@ export const useTaskDetailStore = create<TaskDetailState>(() => ({
   navigator: null,
   origin: null,
   focusRequest: 0,
+  mode: 'full',
   leaveGuard: null,
 }));
+
+export function setDetailMode(mode: DetailMode): void {
+  useTaskDetailStore.setState({ mode });
+}
 
 // Long enough for a second click to arrive, so a double-click renames the
 // row instead of reflowing the page under the pointer by docking the panel.
@@ -34,6 +39,7 @@ export function openTaskDetails(taskId: string, options: OpenDetailsOptions = {}
   cancelPendingOpen();
   const state = useTaskDetailStore.getState();
   if (!state.navigator) return;
+  if (options.mode) setDetailMode(options.mode);
   if (state.taskId === taskId) {
     if (options.focusPanel) useTaskDetailStore.setState({ focusRequest: state.focusRequest + 1 });
     return;

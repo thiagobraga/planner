@@ -1,10 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { X } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ApiError, apiRenameTask, apiSetTaskCompleted, fetchTaskDetail } from '../../api/client';
 import { useI18n } from '../../i18n/I18nContext';
 import { useDocumentDraft } from '../../hooks/useDocumentDraft';
-import { closeTaskDetails, useTaskDetailStore } from '../../stores/taskDetailStore';
+import { closeTaskDetails, setDetailMode, useTaskDetailStore } from '../../stores/taskDetailStore';
 import { getSocket, getSocketId } from '../../utils/socket';
 import { flattenSubtree, leafProgress } from '../../utils/subtree';
 import { DetailFrame } from './DetailFrame';
@@ -143,11 +143,11 @@ function CloseOnly() {
 
 export default function TaskDetailPanel({ taskId, layout }: { taskId: string; layout: DetailLayout }) {
   const { t } = useI18n();
-  const [mode, setMode] = useState<DetailMode>('full');
+  const mode = useTaskDetailStore((state) => state.mode);
   useDetailRefresh();
   return (
     <DetailFrame layout={layout} label={t('detail.panel')}>
-      <DetailBody key={taskId} taskId={taskId} layout={layout} mode={mode} onModeChange={setMode} />
+      <DetailBody key={taskId} taskId={taskId} layout={layout} mode={mode} onModeChange={setDetailMode} />
     </DetailFrame>
   );
 }

@@ -1,9 +1,23 @@
 import type { DocumentNode, TaskDocumentDto } from '../contracts/document';
 import type { TaskDetailItem } from '../contracts/taskDetail';
 
-export interface SubtreeRow {
-  item: TaskDetailItem;
+/** What the subtree helpers read, so detail items and board tasks share them. */
+export interface SubtreeItem {
+  id: string;
+  parentTaskId?: string | null;
+  type: 'task' | 'note' | 'event';
+  isCompleted: boolean;
+  orderValue: number;
+}
+
+export interface SubtreeRow<T extends SubtreeItem = TaskDetailItem> {
+  item: T;
   depth: number;
+}
+
+export interface LeafProgress {
+  done: number;
+  total: number;
 }
 
 export type DetailMode = 'full' | 'tasks';
@@ -14,6 +28,8 @@ export type DetailLayout = 'dock' | 'overlay' | 'sheet';
 export interface OpenDetailsOptions {
   /** Where focus goes back to on close; defaults to the active element. */
   origin?: HTMLElement | null;
+  /** Switch the panel to this mode while opening; omitted keeps the current one. */
+  mode?: DetailMode;
   /** Move focus into the panel (keyboard opens); a pointer open leaves it on the row. */
   focusPanel?: boolean;
 }
@@ -28,6 +44,7 @@ export interface TaskDetailState {
   navigator: DetailNavigator | null;
   origin: HTMLElement | null;
   focusRequest: number;
+  mode: DetailMode;
   /** Set by the open document; returns false when the user keeps the draft. */
   leaveGuard: (() => boolean) | null;
 }
