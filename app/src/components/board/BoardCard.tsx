@@ -8,6 +8,7 @@ import { useI18n } from '../../i18n/I18nContext';
 import type { BoardCardProps } from '../../types/board';
 import { isOpenDetailsClick, isOpenDetailsKey } from '../../utils/detailOpen';
 import { cancelPendingOpen, openTaskDetails, scheduleOpenTaskDetails, useTaskDetailStore } from '../../stores/taskDetailStore';
+import { isNativeContextMenu } from '../../utils/contextMenu';
 
 export function BoardCard({ task, subtasks, containerId = '', subtreeIds, progress, childCounts, onToggle, hideDueDate, onTaskContextMenu }: BoardCardProps) {
   const { t } = useI18n();
@@ -36,6 +37,7 @@ export function BoardCard({ task, subtasks, containerId = '', subtreeIds, progre
       data-card-id={task.id}
       style={{ transform: CSS.Transform.toString(transform), transition }}
       onContextMenu={(event) => {
+        if (isNativeContextMenu(event)) return;
         if (!onTaskContextMenu) return;
         event.preventDefault();
         cancelPendingOpen();

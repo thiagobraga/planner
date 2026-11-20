@@ -8,6 +8,8 @@ export interface TaskCommentDto {
   body: string;
   createdAt: string;
   updatedAt: string | null;
+  /** Label of the API token or OAuth app that wrote it; null for browser sessions. */
+  actorLabel: string | null;
 }
 
 /**

@@ -84,10 +84,20 @@ export function DocumentEditor({ version, content, readOnly, labelledBy, onEdit,
   };
   composeRef.current = openComposer;
 
+  // The caret lands in a paragraph after the block: left on the block itself, the next keystroke would replace it.
   const insertBlock = (taskId: string) => {
-    const at = Math.min(composeAt ?? 0, editor?.state.doc.content.size ?? 0);
-    editor?.chain().focus().insertContentAt(at, { type: 'taskReference', attrs: { taskId, blockId: globalThis.crypto.randomUUID() } }).run();
     setComposeAt(null);
+    if (!editor) return;
+    const at = Math.min(composeAt ?? 0, editor.state.doc.content.size);
+    const block = { type: 'taskReference', attrs: { taskId, blockId: globalThis.crypto.randomUUID() } };
+    const next = editor.state.doc.resolve(at).nodeAfter;
+    const reuse = next?.type.name === 'paragraph' && next.content.size === 0;
+    editor
+      .chain()
+      .focus()
+      .insertContentAt(at, reuse ? block : [block, { type: 'paragraph' }])
+      .setTextSelection(at + 2)
+      .run();
   };
 
   return (

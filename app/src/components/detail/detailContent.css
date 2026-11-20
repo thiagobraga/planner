@@ -149,10 +149,26 @@
   list-style: none;
 }
 
-.detail-comments time {
-  display: block;
+.detail-comment-meta {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
   font-size: 12px;
   color: var(--color-ink-light);
+}
+
+.detail-comment-actor {
+  font-style: italic;
+}
+
+.detail-comments a {
+  color: var(--color-accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.detail-claim {
+  font-style: italic;
 }
 
 .detail-comments p {

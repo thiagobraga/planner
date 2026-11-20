@@ -121,6 +121,11 @@ function conflictError(raw: string): AppError {
 
 export async function getTaskClaim(taskId: string, userId: string, now = new Date()): Promise<TaskClaim | null> {
   await getAccessibleTask(taskId, userId);
+  return readTaskClaim(taskId, now);
+}
+
+/** The live claim on a task the caller already proved access to. */
+export async function readTaskClaim(taskId: string, now = new Date()): Promise<TaskClaim | null> {
   const raw = await redisClient.get(claimKey(taskId));
   if (!raw) return null;
   const parsed = JSON.parse(raw) as StoredClaim;

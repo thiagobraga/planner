@@ -6,6 +6,7 @@ import { InlineNameInput } from './ui/InlineNameInput';
 import { NO_DRAG_ATTR } from './dnd/sensors';
 import { useI18n } from '../i18n/I18nContext';
 import type { SectionHeaderProps } from '../types/collections';
+import { isNativeContextMenu } from '../utils/contextMenu';
 
 export function SectionHeader({
   section,
@@ -35,6 +36,7 @@ export function SectionHeader({
       className="group flex h-6 min-w-0 items-center pr-2"
       aria-label={section.name}
       onContextMenu={(e) => {
+        if (isNativeContextMenu(e)) return;
         if (!onRightClick) return;
         e.preventDefault();
         onRightClick({ x: e.clientX, y: e.clientY });

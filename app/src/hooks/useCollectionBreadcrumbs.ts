@@ -148,7 +148,7 @@ export function useCollectionBreadcrumbs(
         apply: (prev) => patchById(prev, collectionId, { color }),
         call: () => apiUpdateCollection(collectionId, { color }),
         onApply: (next) => qc.setQueryData<ApiCollection[]>(['collections'], next),
-        onRevert: (snapshot) => qc.setQueryData<ApiCollection[]>(['collections'], snapshot),
+        onRevert: (revert) => qc.setQueryData<ApiCollection[]>(['collections'], (prev) => revert(prev ?? [])),
         onSuccess: (updated) => setCollectionsCache((prev) => upsertById(prev, updated)),
       }).catch(() => qc.invalidateQueries({ queryKey: ['collections'] }));
     },

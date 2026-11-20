@@ -1,5 +1,5 @@
 // Pure helpers for optimistic mutations against an array of entities.
-// Each operation captures a snapshot for revert and a "commit" step on success.
+// Each operation keeps the before and after states so a failure undoes only its own change.
 
 import type { OptimisticOp, RunOptimisticOptions } from '../types/stores';
 
@@ -9,11 +9,34 @@ export function applyOptimistic<T extends { id: string }>(
 ): { next: T[]; op: OptimisticOp<T> } {
   const snapshot = state;
   const next = apply(state);
-  return { next, op: { apply, snapshot } };
+  return { next, op: { apply, snapshot, next } };
 }
 
-export function revertOptimistic<T extends { id: string }>(op: OptimisticOp<T>): T[] {
-  return op.snapshot;
+// By value: a query cache may hold copies of the entities it was given.
+function sameEntity<T extends { id: string }>(a: T, b: T): boolean {
+  const keys = Object.keys(a) as Array<keyof T>;
+  return keys.length === Object.keys(b).length && keys.every((key) => Object.is(a[key], b[key]));
+}
+
+/**
+ * Undo one operation on the current state. An entity goes back to its snapshot
+ * only while it still looks the way this operation left it, so a newer edit,
+ * or one to another entity, survives the rollback.
+ */
+export function revertOptimistic<T extends { id: string }>(op: OptimisticOp<T>, current: T[]): T[] {
+  const before = new Map(op.snapshot.map((item) => [item.id, item]));
+  const after = new Map(op.next.map((item) => [item.id, item]));
+  const result: T[] = [];
+  for (const item of current) {
+    const applied = after.get(item.id);
+    if (!applied || !sameEntity(item, applied)) result.push(item);
+    else if (before.has(item.id)) result.push(before.get(item.id)!);
+  }
+  op.snapshot.forEach((item, index) => {
+    if (after.has(item.id) || result.some((entry) => entry.id === item.id)) return;
+    result.splice(Math.min(index, result.length), 0, item);
+  });
+  return result;
 }
 
 // Replace a task in-place by id (or append if not found)
@@ -33,22 +56,19 @@ export function patchById<T extends { id: string }>(state: T[], id: string, patc
   return state.map((s) => (s.id === id ? { ...s, ...patch } : s));
 }
 
-// Runner: apply optimistic, await the API call, revert on failure within a budget.
+// Runner: apply optimistically, then keep or undo by the call's real outcome.
+// No timer: a slow request that succeeds must never be shown as failed.
 export async function runOptimistic<T extends { id: string }, R>(opts: RunOptimisticOptions<T, R>): Promise<R> {
-  const { state, apply, call, onApply, onRevert, onSuccess, revertTimeoutMs = 2000 } = opts;
+  const { state, apply, call, onApply, onRevert, onSuccess } = opts;
   const { next, op } = applyOptimistic(state, apply);
   onApply?.(next);
 
-  const timeoutPromise = new Promise<R>((_, reject) => {
-    setTimeout(() => reject(new Error("OPTIMISTIC_TIMEOUT")), revertTimeoutMs);
-  });
-
   try {
-    const result = await Promise.race([call(), timeoutPromise]);
+    const result = await call();
     onSuccess?.(result);
     return result;
   } catch (err) {
-    onRevert?.(revertOptimistic(op));
+    onRevert?.((current) => revertOptimistic(op, current));
     throw err;
   }
 }

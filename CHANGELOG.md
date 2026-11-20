@@ -1,5 +1,43 @@
 # Changelog
 
+## [0.38.3](https://github.com/thiagobraga/planner/compare/v0.38.2...v0.38.3) (2026-11-20)
+
+
+### Fixed
+
+* **app:** let shift right click open the browser menu everywhere ([6468a90](https://github.com/thiagobraga/planner/commit/6468a900f71f2e4a740e941db78576c684a4c860))
+
+
+### Style
+
+* **board:** set card titles to weight 500 ([52dd103](https://github.com/thiagobraga/planner/commit/52dd103f5d95bee4e1b27ae1e324343236787481))
+* **board:** set card titles to weight 500 ([e449e5a](https://github.com/thiagobraga/planner/commit/e449e5a3f27129a6bf407f2780221f3046a66315))
+
+## [0.38.2](https://github.com/thiagobraga/planner/compare/v0.38.1...v0.38.2) (2026-11-20)
+
+
+### Fixed
+
+* **detail:** keep inserted subtask blocks and refresh lists behind the panel ([c20e4d5](https://github.com/thiagobraga/planner/commit/c20e4d50b2a7e9599eac96d328ef6e46bc1a39b6))
+
+## [0.38.1](https://github.com/thiagobraga/planner/compare/v0.38.0...v0.38.1) (2026-11-20)
+
+
+### Fixed
+
+* **optimistic:** roll back only on real failure and keep newer edits ([f091d4e](https://github.com/thiagobraga/planner/commit/f091d4e146861944309643068e21df6d14404336))
+* **optimistic:** roll back only on real failure and keep newer edits ([7339814](https://github.com/thiagobraga/planner/commit/7339814212925631a5a6092bd54d6af9fa667f03))
+
+## [0.38.0](https://github.com/thiagobraga/planner/compare/v0.37.3...v0.38.0) (2026-11-20)
+
+
+### Added
+
+* **comments:** record which token or app wrote a comment ([ca975dc](https://github.com/thiagobraga/planner/commit/ca975dce4e8fbd49e488b0d2ce682bcc93f8989c))
+* **detail:** show agent claim, comment author and comment links ([37e9713](https://github.com/thiagobraga/planner/commit/37e971327c51366d89b907993d36920e1f9f1766))
+* **detail:** show agent claim, comment author and links ([2a99d97](https://github.com/thiagobraga/planner/commit/2a99d978c80dd53ba530b588b402be2712c51efd))
+* **tasks:** return the active agent claim with task details ([a01abc7](https://github.com/thiagobraga/planner/commit/a01abc7ec664e7694125d3454133ad8cb549cc22))
+
 ## [0.37.3](https://github.com/thiagobraga/planner/compare/v0.37.2...v0.37.3) (2026-11-20)
 
 
