@@ -121,6 +121,15 @@ describe('toolbar triggers', () => {
     expect(screen.getByRole('button', { name: '11/13 to 11/15/2026' })).not.toHaveClass('font-semibold');
   });
 
+  it('closes the range picker on a press outside, even one whose mousedown is cancelled', () => {
+    render(<><div data-testid="row" onPointerDown={(event) => event.preventDefault()} /><DateNav {...dateNav} /></>);
+    const trigger = screen.getByRole('button', { name: '11/13 to 11/15/2026' });
+    fireEvent.click(trigger);
+    expect(trigger).toHaveAttribute('aria-expanded', 'true');
+    fireEvent.pointerDown(screen.getByTestId('row'), { button: 2 });
+    expect(trigger).toHaveAttribute('aria-expanded', 'false');
+  });
+
   it('leaves full width to the Planner menu', () => {
     render(<PageToolbar view={() => <span>view</span>} />);
     expect(screen.queryByRole('button', { name: 'Window' })).toBeNull();

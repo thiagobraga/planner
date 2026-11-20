@@ -58,8 +58,8 @@ export function CustomSelect({
       }
     }
 
-    document.addEventListener('mousedown', handleMouseDown);
-    return () => document.removeEventListener('mousedown', handleMouseDown);
+    document.addEventListener('pointerdown', handleMouseDown, true);
+    return () => document.removeEventListener('pointerdown', handleMouseDown, true);
   }, [isOpen, alwaysOpen]);
 
   // Scroll highlighted item into view
