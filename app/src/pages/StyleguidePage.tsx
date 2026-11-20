@@ -23,7 +23,7 @@ import { ViewMenu } from '../components/toolbar/ViewMenu';
 import { DateNav } from '../components/toolbar/DateNav';
 import { TaskRowSpecimen } from '../components/ui/TaskRowSpecimen';
 import { CustomSelect } from '../components/ui/CustomSelect';
-import { ContextMenu } from '../components/ui/ContextMenu';
+import { ContextMenuDemo } from '../components/styleguide/ContextMenuDemo';
 import type { ContextMenuItem } from '../types/contextMenu';
 import { Briefcase, Calendar as CalendarIcon, Tag, ArrowUp, ArrowDown } from 'lucide-react';
 import { usePreferences } from '../hooks/usePreferences';
@@ -87,8 +87,6 @@ export function StyleguidePage() {
   // CustomSelect state
   const [customSelectValue, setCustomSelectValue] = useState('2');
 
-  // ContextMenu state
-  const [contextMenuPos, setContextMenuPos] = useState<{ x: number; y: number } | null>(null);
 
   const contextMenuItems: ContextMenuItem[] = useMemo(() => [
     { type: 'item', label: 'Date', disabled: true, icon: <CalendarIcon size={14} /> },
@@ -555,22 +553,7 @@ export function StyleguidePage() {
             <p className="text-[13px] text-ink-light leading-5">
               Right-click the area below to test the context menu, or view the static specimens.
             </p>
-            <div
-              className="h-32 border-2 border-dashed border-border rounded-md flex items-center justify-center bg-[#d4cfc7]/20 text-ink-light text-sm select-none"
-              onContextMenu={(e) => {
-                e.preventDefault();
-                setContextMenuPos({ x: e.clientX, y: e.clientY });
-              }}
-            >
-              Right-click me
-            </div>
-            {contextMenuPos && (
-              <ContextMenu
-                items={contextMenuItems}
-                position={contextMenuPos}
-                onClose={() => setContextMenuPos(null)}
-              />
-            )}
+            <ContextMenuDemo items={contextMenuItems} />
           </div>
         </Card>
       </div>
