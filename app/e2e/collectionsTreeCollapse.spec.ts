@@ -109,12 +109,20 @@ test('the split view follows the page column and the tree stays flat and quiet',
 
     await expect(tree).toHaveCSS('background-color', 'rgba(0, 0, 0, 0)');
     await expect(tree).toHaveCSS('scrollbar-gutter', 'stable');
+    await expect(tree).toHaveCSS('scrollbar-width', 'auto');
+    await expect(tree).toHaveCSS('scrollbar-color', 'auto');
+    const thumbColor = () => tree.evaluate((el) => getComputedStyle(el, '::-webkit-scrollbar-thumb').backgroundColor);
+    const transparent = 'rgba(0, 0, 0, 0)';
     await page.mouse.move(1270, 490);
-    await expect(tree).toHaveCSS('scrollbar-color', 'rgba(0, 0, 0, 0) rgba(0, 0, 0, 0)');
+    await expect.poll(thumbColor).toBe(transparent);
     await tree.hover();
-    await expect(tree).not.toHaveCSS('scrollbar-color', 'rgba(0, 0, 0, 0) rgba(0, 0, 0, 0)');
+    await expect.poll(thumbColor).not.toBe(transparent);
     await page.mouse.wheel(0, 200);
     await expect.poll(() => tree.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
+    await page.mouse.move(1270, 490);
+    await expect.poll(thumbColor).toBe(transparent);
+    await tree.getByRole('link', { name: 'Column 1', exact: true }).focus();
+    await expect.poll(thumbColor).not.toBe(transparent);
 
     await api.patch('/preferences', { fullWidth: true });
     await page.reload();

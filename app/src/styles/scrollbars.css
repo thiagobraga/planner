@@ -14,7 +14,7 @@
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background-color: var(--planner-scrollbar-thumb);
+  background-color: var(--scrollbar-thumb-color, var(--planner-scrollbar-thumb));
   background-clip: padding-box;
   border: calc((var(--scrollbar-size, 10px) - 6px) / 2) solid transparent;
   border-radius: 999px;
@@ -36,8 +36,15 @@
 }
 
 @media (hover: hover) {
-  :not(:hover, :focus-within)::-webkit-scrollbar-thumb {
-    background-color: transparent;
+  @supports selector(::-webkit-scrollbar) {
+    /* Resolve hover and focus on the scroller, not the scrollbar pseudo-element. */
+    * {
+      --scrollbar-thumb-color: transparent;
+    }
+    :hover,
+    :focus-within {
+      --scrollbar-thumb-color: var(--planner-scrollbar-thumb);
+    }
   }
 
   @supports not selector(::-webkit-scrollbar) {
