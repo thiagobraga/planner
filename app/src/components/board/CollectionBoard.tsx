@@ -40,7 +40,8 @@ export function CollectionBoard(props: CollectionBoardProps) {
   );
 
   useEffect(() => {
-    if (props.groupBy !== 'status' || seedRequested.current) return;
+    // Seeding is a no-op once statuses exist; posting anyway costs a write and a view refetch on every load.
+    if (props.groupBy !== 'status' || props.statuses.length > 0 || seedRequested.current) return;
     seedRequested.current = true;
     apiSeedStatuses(props.collectionId)
       .then(() => queryClient.invalidateQueries({ queryKey: props.queryKey }))
