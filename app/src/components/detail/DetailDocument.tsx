@@ -1,7 +1,9 @@
 import { useId } from 'react';
+import type { TaskReferenceContextValue } from '../../types/detail';
 import { useI18n } from '../../i18n/I18nContext';
 import { hasUnsupportedNodes, toMarkdown } from '../../utils/documentContent';
 import { DocumentEditor } from './DocumentEditor';
+import { TaskReferenceContext } from './TaskReferenceContext';
 import type { useDocumentDraft } from '../../hooks/useDocumentDraft';
 import type { SaveStatus } from '../../types/detail';
 import type { TranslationKey } from '../../i18n/catalogs';
@@ -23,10 +25,10 @@ export function SaveStateLabel({ status, ready = true }: { status: SaveStatus; r
   );
 }
 
-function downloadDraft(draft: Draft, title: string) {
+function downloadDraft(draft: Draft, title: string, titles: ReadonlyMap<string, string>) {
   const content = draft.state.draft ?? draft.state.base?.content ?? draft.view.content;
   if (!content) return;
-  const blob = new Blob([`# ${title}\n\n${toMarkdown(content)}`], { type: 'text/markdown' });
+  const blob = new Blob([`# ${title}\n\n${toMarkdown(content, titles)}`], { type: 'text/markdown' });
   const url = URL.createObjectURL(blob);
   const link = Object.assign(document.createElement('a'), {
     href: url,
@@ -36,13 +38,21 @@ function downloadDraft(draft: Draft, title: string) {
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
-export function DetailDocument({ draft, title }: { draft: Draft; title: string }) {
+interface DetailDocumentProps {
+  draft: Draft;
+  title: string;
+  references: TaskReferenceContextValue;
+  onCreateTask: (title: string) => Promise<string>;
+}
+
+export function DetailDocument({ draft, title, references, onCreateTask }: DetailDocumentProps) {
   const { t } = useI18n();
   const labelId = useId();
   const { state, view, query } = draft;
   const currentContent = state.draft ?? state.base?.content ?? view.content;
   const ready = view.key > 0 || state.draft !== null;
   const readOnly = Boolean(query.data && hasUnsupportedNodes(query.data.content));
+  const titles = new Map([...references.items.values()].map((entry) => [entry.id, entry.title]));
 
   return (
     <section className="detail-section detail-document" aria-labelledby={labelId}>
@@ -52,14 +62,14 @@ export function DetailDocument({ draft, title }: { draft: Draft; title: string }
           <span>{t('detail.conflict')}</span>
           <button type="button" className="detail-button" onClick={draft.reload}>{t('detail.conflictReload')}</button>
           <button type="button" className="detail-button" onClick={draft.keepMine}>{t('detail.conflictKeep')}</button>
-          <button type="button" className="detail-button" onClick={() => downloadDraft(draft, title)}>{t('detail.downloadDraft')}</button>
+          <button type="button" className="detail-button" onClick={() => downloadDraft(draft, title, titles)}>{t('detail.downloadDraft')}</button>
         </div>
       )}
       {state.status === 'error' && (
         <div className="detail-notice" role="alert">
           <span>{t('detail.saveFailed')}</span>
           <button type="button" className="detail-button" onClick={() => void draft.save()}>{t('detail.saveRetry')}</button>
-          <button type="button" className="detail-button" onClick={() => downloadDraft(draft, title)}>{t('detail.downloadDraft')}</button>
+          <button type="button" className="detail-button" onClick={() => downloadDraft(draft, title, titles)}>{t('detail.downloadDraft')}</button>
         </div>
       )}
       {readOnly && <p className="detail-muted">{t('detail.readOnly')}</p>}
@@ -69,9 +79,11 @@ export function DetailDocument({ draft, title }: { draft: Draft; title: string }
           <button type="button" className="detail-button" onClick={() => void query.refetch()}>{t('detail.retry')}</button>
         </div>
       ) : ready && readOnly && currentContent ? (
-        <pre className="detail-prose detail-prose--readonly" aria-labelledby={labelId}>{toMarkdown(currentContent).trim()}</pre>
+        <pre className="detail-prose detail-prose--readonly" aria-labelledby={labelId}>{toMarkdown(currentContent, titles).trim()}</pre>
       ) : ready ? (
-        <DocumentEditor version={view.key} content={currentContent} readOnly={readOnly} labelledBy={labelId} onEdit={draft.edit} />
+        <TaskReferenceContext.Provider value={references}>
+          <DocumentEditor version={view.key} content={currentContent} readOnly={readOnly} labelledBy={labelId} onEdit={draft.edit} onCreateTask={onCreateTask} />
+        </TaskReferenceContext.Provider>
       ) : (
         <p className="detail-muted">{t('detail.loading')}</p>
       )}

@@ -7,10 +7,11 @@ import { BoardCardChecklist } from './BoardCardChecklist';
 import { useI18n } from '../../i18n/I18nContext';
 import type { BoardCardProps } from '../../types/board';
 import { isOpenDetailsClick, isOpenDetailsKey } from '../../utils/detailOpen';
-import { cancelPendingOpen, openTaskDetails, scheduleOpenTaskDetails } from '../../stores/taskDetailStore';
+import { cancelPendingOpen, openTaskDetails, scheduleOpenTaskDetails, useTaskDetailStore } from '../../stores/taskDetailStore';
 
-export function BoardCard({ task, subtasks, containerId = '', subtreeIds, onToggle, hideDueDate, onTaskContextMenu }: BoardCardProps) {
+export function BoardCard({ task, subtasks, containerId = '', subtreeIds, progress, childCounts, onToggle, hideDueDate, onTaskContextMenu }: BoardCardProps) {
   const { t } = useI18n();
+  const selected = useTaskDetailStore((state) => state.taskId === task.id);
   const dragData: TaskDragData = {
     kind: 'task',
     taskId: task.id,
@@ -31,7 +32,7 @@ export function BoardCard({ task, subtasks, containerId = '', subtreeIds, onTogg
       ref={setNodeRef}
       {...attributes}
       {...listeners}
-      className={`board-card ${isDragging ? 'is-dragging' : ''}`}
+      className={`board-card ${isDragging ? 'is-dragging' : ''} ${selected ? 'is-selected' : ''}`}
       data-card-id={task.id}
       style={{ transform: CSS.Transform.toString(transform), transition }}
       onContextMenu={(event) => {
@@ -98,7 +99,7 @@ export function BoardCard({ task, subtasks, containerId = '', subtreeIds, onTogg
 
       {task.description && <p className="board-card-description">{task.description}</p>}
 
-      <BoardCardChecklist parentTask={task} tasks={subtasks} onToggle={onToggle} />
+      <BoardCardChecklist parentTask={task} tasks={subtasks} progress={progress} childCounts={childCounts} onToggle={onToggle} />
 
       {((task.dueDate && !hideDueDate) || task.completedAt) && (
         <footer className="board-card-date">

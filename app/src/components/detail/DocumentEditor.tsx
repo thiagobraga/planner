@@ -1,10 +1,13 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { Placeholder } from '@tiptap/extensions';
+import { ListChecks } from 'lucide-react';
 import { useI18n } from '../../i18n/I18nContext';
 import { isSafeHref } from '../../utils/documentContent';
 import { DocumentBubbleMenu } from './DocumentBubbleMenu';
+import { DocumentTaskComposer } from './DocumentTaskComposer';
+import { TaskReference } from './taskReferenceNode';
 import type { DocumentNode } from '../../contracts/document';
 
 interface DocumentEditorProps {
@@ -14,12 +17,16 @@ interface DocumentEditorProps {
   readOnly: boolean;
   labelledBy: string;
   onEdit: (content: DocumentNode) => void;
+  /** Creates a real child task for a new block and resolves to its id. */
+  onCreateTask: (title: string) => Promise<string>;
 }
 
 /** StarterKit narrowed to the server allowlist: no underline, headings 1-3, http/https/mailto links. */
-export function DocumentEditor({ version, content, readOnly, labelledBy, onEdit }: DocumentEditorProps) {
+export function DocumentEditor({ version, content, readOnly, labelledBy, onEdit, onCreateTask }: DocumentEditorProps) {
   const { t } = useI18n();
   const onEditRef = useRef(onEdit);
+  const composeRef = useRef<() => void>(() => {});
+  const [composeAt, setComposeAt] = useState<number | null>(null);
   useEffect(() => {
     onEditRef.current = onEdit;
   }, [onEdit]);
@@ -41,12 +48,19 @@ export function DocumentEditor({ version, content, readOnly, labelledBy, onEdit 
         },
       }),
       Placeholder.configure({ placeholder: t('detail.descriptionPlaceholder') }),
+      TaskReference,
     ],
     content: content ?? undefined,
     editable: !readOnly,
     shouldRerenderOnTransaction: false,
     editorProps: {
       attributes: { class: 'detail-prose', 'aria-labelledby': labelledBy, 'aria-multiline': 'true', role: 'textbox' },
+      handleKeyDown: (_view, event) => {
+        if (!(event.metaKey || event.ctrlKey) || !event.shiftKey || event.key.toLowerCase() !== 't') return false;
+        event.preventDefault();
+        composeRef.current();
+        return true;
+      },
     },
     onUpdate: ({ editor: current }) => onEditRef.current(current.getJSON() as DocumentNode),
   });
@@ -62,10 +76,31 @@ export function DocumentEditor({ version, content, readOnly, labelledBy, onEdit 
     editor?.setEditable(!readOnly, false);
   }, [editor, readOnly]);
 
+  // The block goes after the paragraph or list the caret is in, never inside it.
+  const openComposer = () => {
+    if (!editor || readOnly) return;
+    const { $to } = editor.state.selection;
+    setComposeAt($to.depth >= 1 ? $to.after(1) : editor.state.doc.content.size);
+  };
+  composeRef.current = openComposer;
+
+  const insertBlock = (taskId: string) => {
+    const at = Math.min(composeAt ?? 0, editor?.state.doc.content.size ?? 0);
+    editor?.chain().focus().insertContentAt(at, { type: 'taskReference', attrs: { taskId, blockId: globalThis.crypto.randomUUID() } }).run();
+    setComposeAt(null);
+  };
+
   return (
     <div className="detail-editor">
       {editor && !readOnly && <DocumentBubbleMenu editor={editor} />}
       <EditorContent editor={editor} />
+      {composeAt !== null && <DocumentTaskComposer onCreate={onCreateTask} onInserted={insertBlock} onCancel={() => { setComposeAt(null); editor?.commands.focus(); }} />}
+      {editor && !readOnly && composeAt === null && (
+        <button type="button" className="detail-text-button detail-add-task" aria-keyshortcuts="Control+Shift+T Meta+Shift+T" onClick={openComposer}>
+          <ListChecks size={14} aria-hidden="true" />
+          {t('detail.addTask')}
+        </button>
+      )}
     </div>
   );
 }
