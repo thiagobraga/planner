@@ -2,15 +2,15 @@
 
 ## Context
 
-Development currently spans ideas in BulletPlanner, specifications in `.specs/`, and GitHub issues/PRs. Each can become a competing backlog, making priorities and progress hard to trust. The goal is not to reproduce all of Notion before using Planner: it is to make writing, deciding, and following development work possible in one calm place.
+Development work lives in three places: BulletPlanner ideas, `.specs/` files, and GitHub issues/PRs. Each becomes a competing backlog, so priorities and progress are hard to trust. The goal is not to rebuild Notion before using Planner. It is to write, decide, and follow development work in one calm place.
 
-User decisions: **development home first**. The latest refinement supersedes the earlier note-per-plan model: **a development plan is a real parent task/card; its rich description holds the plan text and embedded real subtasks**. Standalone notes remain available, including capture in Daily and Inbox. Clicking a task or note opens one shared right-side detail panel. Execution order, slice queue, milestones, and corrections found while verifying live in `task.md`; open questions in `questions.md`. Where `task.md` corrects a line number or decision below (shared contracts as mirrored files, Window control moving to the Planner menu, migration 053), `task.md` wins.
+Decisions: **development home first**. A development plan is a real parent task/card whose rich description holds the plan text and embedded real subtasks. Standalone notes stay available, including capture in Daily and Inbox. Clicking a task or note opens one shared right-side detail panel. Where this plan and the verified facts below differ, the verified facts win.
 
 ## Primary goal
 
-Capture tasks and notes in Daily or Inbox, organize development work as Kanban parent tasks, and open any item to write or read its complete plan. Embedded subtasks, card previews, task-only detail view, progress, and agent updates all operate on the same task records.
+Capture tasks and notes in Daily or Inbox, organize development work as Kanban parent tasks, and open any item to write or read its full plan. Embedded subtasks, card previews, the task-only view, progress, and agent updates all operate on the same task records.
 
-**First usable release:** collections split view (tree left, selected collection right), task/note detail sidebar, rich descriptions, parent cards with five-subtask previews, full-content/task-only views, live progress, agent tools, and a verified pilot import. No prerequisite to complete guest mode, add a separate Notes workspace, or redesign all settings.
+**First usable release:** collections split view (tree left, selected collection right), task/note detail panel, rich descriptions, parent cards with five-subtask previews, full-content and task-only views, live progress, agent tools, and a verified pilot import. Not required: guest mode, a separate Notes workspace, or a settings redesign.
 
 ## Ownership and working rules
 
@@ -18,285 +18,332 @@ Capture tasks and notes in Daily or Inbox, organize development work as Kanban p
 | ------------------------------------------------ | ------------------------------------- | ---------------------------------------------- |
 | Ideas, decisions, plans, priorities, work status | BulletPlanner                         | Read-only exports when needed                  |
 | Code, tests, contracts tied to a revision        | Git                                   | Linked from notes/tasks                        |
-| Review, CI, merge, releases                      | GitHub                                | Links and human/agent updates in Planner       |
+| Review, CI, merge, releases                      | GitHub                                | Links and updates in Planner                   |
 | External bug reports                             | GitHub issue thread                   | One linked Planner task when accepted for work |
-| Architecture/design rules                        | `CLAUDE.md`, `DESIGN.md`, source docs | Referenced, not migrated as live task lists    |
+| Architecture/design rules                        | `CLAUDE.md`, `DESIGN.md`, source docs | Referenced, not migrated as task lists         |
 
-- One collection for ongoing product development, not a new collection per agent session. One parent task/card per initiative; its description owns the plan, its descendants own actionable work, and comments hold progress/evidence. Standalone notes are for writing that does not represent completable work. https://planner.thiagobraga.dev/collection/5a0f4e37-e825-49b0-8844-30e0acbc9510 dev > bulletplanner.org
-- Suggested board states: Backlog, Ready, Doing, Review, Done. Use existing statuses rather than a second agent-status system. Keep one main initiative Doing; treat safety fixes as explicit exceptions.
-- A PR being opened is not completion. Move work to Review; completion needs its acceptance criteria and applicable merge/deploy verification.
-- Link GitHub work first. Do not build bidirectional synchronization or duplicate every GitHub event.
-- After cutover, agents read/update the canonical parent task, document, and subtasks. A local snapshot includes parent task ID, document revision, source link, and export time; it is never silently written back.
-- If Planner is unavailable, a snapshot permits reading only. Report progress as unsynced; reconcile explicitly on reconnect rather than inventing another canonical backlog.
+- One ongoing development collection (`bulletplanner.org`, `5a0f4e37-e825-49b0-8844-30e0acbc9510`), not one per agent session. One parent task per initiative: its description owns the plan, descendants own actionable work, comments hold progress and evidence. Standalone notes are for writing that is not completable work.
+- Board states: Backlog, Ready, Doing, Review, Done. Use existing statuses, not a second agent-status system. One main initiative in Doing; safety fixes are explicit exceptions.
+- An open PR is not completion. Move work to Review; completion needs its acceptance criteria and applicable merge/deploy checks.
+- Link GitHub work; no bidirectional sync and no duplication of GitHub events.
+- After cutover, agents read and update the canonical parent task, document, and subtasks. A local snapshot records task ID, document revision, source link, and export time, and is never silently written back. If Planner is unavailable, snapshots are read-only; reconcile explicitly on reconnect and never create another backlog.
 
 ## Engineering constraints and PR #460 alignment
 
-PR #460 (`docs(specs): add untangle-codebase analysis`), reviewed at commit `f24f1b0d663d54991ed9b30096aeea3045f0dc68`, contains analysis and a skill, not implemented fixes. References below are to `.specs/2026-11-18-untangle-codebase/decision-log.md` on that PR. Recheck findings against the implementation branch; neither merge the PR nor run its whole-codebase refactor skill as part of this plan.
+PR #460 (`docs(specs): add untangle-codebase analysis`, commit `f24f1b0d`) holds analysis and a skill, not fixes. Its findings are rechecked against the implementation branch. Do not merge it or run its whole-codebase refactor skill.
 
-- **Strict file limit: under 420 lines, maximum 419.** Applies to every new or modified handwritten source, test, and documentation file in this work. Aim for 200-300 lines. Check counts before and after edits. Generated files, lockfiles, snapshots, and immutable historical migrations are excluded; new handwritten migrations stay small.
-- Split touched oversized files by responsibility before adding behavior. In particular, the observed `taskService.ts` (484 lines), `CollectionsPage.tsx` (520 lines), and any larger board/controller files cannot grow. Do not reformat/minify code to pass the limit or make a single oversized test file.
-- Small files must also be reviewable: one concern per module, explicit inputs/outputs, no hidden global coordination, circular imports, giant controllers, or barrels that hide coupling. Types stay in dedicated type/contract files, never inferred by importing UI components or services.
-- Separate behavior-preserving extraction from feature changes into small commits/PR slices. Each slice has its tests and acceptance criteria; no repository-wide cleanup prerequisite. Preserve coverage during extraction and remove dead code/tests only after verifying callers and replacement behavior coverage.
-- **Tests first for every behavior change.** Add and run a failing regression/acceptance test, implement, run it green, then refactor. The PR's suggestion to do test cleanup last does not defer new tests or justify deleting the safety net first.
+- **File limit: 419 lines maximum** for every new or modified handwritten source, test, and doc file. Aim for 200-300. Generated files, lockfiles, snapshots, and historical migrations are exempt; new migrations stay small. Check counts before and after edits.
+- Split oversized touched files by responsibility before adding behavior: `taskService.ts` (~484 lines), `CollectionsPage.tsx` (~520), and larger board/controller files. No reformatting or minifying to pass the limit, and no single oversized test file.
+- One concern per module, explicit inputs and outputs, no hidden global coordination, no circular imports, no giant controllers, no barrels that hide coupling. Types live in dedicated type/contract files.
+- Separate behavior-preserving extraction from feature changes. Remove dead code and tests only after confirming callers and replacement coverage.
+- **Tests first for every behavior change**: failing regression or acceptance test, implement, green, then refactor. Test cleanup does not come first and does not justify deleting the safety net.
 
-| PR finding | Applied boundary in this plan | Scope guard |
+| PR finding | Applied boundary | Scope guard |
 | --- | --- | --- |
-| F1, lines 35-53: divergent task caches, mappers, sync, optimistic writes | One task mapping/query-key module and task mutation/reconciliation layer for embedded task blocks, the detail panel, and existing task surfaces. React Query owns server data; document drafts and UI selection remain separate. No fourth task cache. | Extract and adopt the touched paths incrementally. Do not require merging all list pages before delivering notes. |
-| F2, lines 55-66: inconsistent transaction/activity/sync ownership | A small transaction runner owns commit/rollback, activity in the transaction, and event dispatch after commit. Domain modules supply operations; actor context comes from a plain context module, not middleware imports. | Apply to note/task/embed/batch/claim/comment paths used here, not every service in one PR. |
-| F3, lines 68-77: divergent structural changes and route-only validation | Shared service validation and one structural task-move path for REST, MCP, and imports. Reuse collaborator access checks, hierarchy rules, and task formatting. | Never implement reparenting or collection moves again inside note/MCP tools. |
-| F10, lines 123-129: duplicated contracts | One dependency-free shared contract source for `SyncEvent` and new document/reference wire types, consumed by both packages. Verify both build/test/Docker contexts include it. | Do not move unrelated password, palette, or credential contracts in this feature. |
-| F6/F7, lines 94-107: shortcut collisions and unordered preferences | Editor keys respect focus and `defaultPrevented`; progress display uses the revisioned document. Reuse the existing preferences path for actual global preferences. | No separate preference writer, localStorage fallback, or whole settings/command-registry rewrite. |
-| F4/F8, lines 79-83 and 109-117: dates and revoked access | Keep imported date-only values as ISO days; test against real PostgreSQL and non-UTC zones. Verify revoked collaborators stop receiving note/task socket payloads before shipping shared notes. | Fix demonstrated blockers in focused slices; credential consolidation, rate limits, and full date cleanup stay separate. |
-| Sections 2 and 4, lines 145-186: dead surfaces and weak tests | Use live routes/components; real DB/Redis fixtures, real application middleware, shared frontend builders, observable behavior assertions. | Do not revive `TaskDetail`, `taskStore`, or copy a sync handler into its own test. No blanket deletion based only on the report. |
+| F1: divergent task caches, mappers, sync, optimistic writes | One task mapping/query-key module and mutation/reconciliation layer. React Query owns server data; drafts and selection stay separate. No fourth task cache. | Adopt incrementally on touched paths. Do not merge all list pages before notes ship. |
+| F2: inconsistent transaction/activity/sync ownership | Small transaction runner: commit/rollback, activity inside the transaction, events published after commit. Actor context from a plain context module, not middleware imports. | Apply to note/task/embed/batch/claim/comment paths here, not every service at once. |
+| F3: structural changes and route-only validation | Shared service validation and one structural move path for REST, MCP, and imports. | Never implement reparenting or collection moves inside note or MCP tools. |
+| F10: duplicated contracts | One dependency-free shared contract source for `SyncEvent` and new document/reference types. | Do not move unrelated password, palette, or credential contracts. |
+| F6/F7: shortcut collisions, unordered preferences | Editor keys respect focus and `defaultPrevented`. Global preferences use the existing preferences path. | No separate preference writer, localStorage fallback, or settings/command-registry rewrite. |
+| F4/F8: dates, revoked access | Imported dates stay ISO days; test on real PostgreSQL and non-UTC zones. Revoked collaborators must stop receiving note/task socket payloads before shared notes ship. | Fix demonstrated blockers in focused slices; credential consolidation and rate limits stay separate. |
+| Sections 2 and 4: dead surfaces, weak tests | Test live routes and components with real DB/Redis fixtures, real middleware, shared builders, observable behavior. | Do not revive `TaskDetail`/`taskStore` or copy a sync handler into its own test. No blanket deletion based only on the report. |
 
-## Verified starting point and limits
+## Verified starting point
 
-- `api/src/types/task.ts:19` already includes `parent_task_id`; `CreateTaskInput` has `parentTaskId` and `type: 'task' | 'note' | 'event'` at lines 42-58. Reuse these identities, not the obsolete proposed `parent_id` schema.
-- Nesting exists up to depth 5: `api/src/services/task/validation.ts:4`, `app/src/utils/taskTree.ts:12`. Preserve existing hierarchy and behavior, including established completion semantics.
-- `api/src/services/taskService.ts` is now 484 lines; focused access, move, validation, events, and completion modules already exist. The agent spec's 1975-line service observation is obsolete.
-- Tasks and notes are one `tasks` table distinguished by `type` (`api/src/types/task.ts:58`); `description` is a plain text field today and `BoardCard.tsx:82` renders it whole. Attach one optional rich document to either kind rather than adding a second note entity or a Notes workspace.
-- Plain click on `TaskItem.tsx:222` currently only selects the row; double-click starts rename (`:252`). `BoardCard.tsx:28` has no open action, and `BoardCardChecklist.tsx` renders every child with no cap. These are the exact behaviors Phase 1 and 2 change, so characterize them with tests first.
-- No Tiptap/Lexical/ProseMirror/Markdown editor dependency found in `app/package.json`.
-- `TaskDetail.tsx:28` contains a textarea and local-only comments/subtasks. Its only discovered component consumers are tests; do not wire the feature into this apparently unused panel. Use active collection/list/board paths.
-- Current MCP registration is in `api/src/mcp/server.ts:21`; write tools are scope-gated. `api/src/mcp/tools/collections.ts:9` only lists collections/labels. Existing `notes` tool parameters refer to task descriptions, not standalone documents.
-- Reuse `recordActivity()` (`api/src/services/activityService.ts:44`) and `publishEvent()`/`buildEvent()` (`api/src/services/syncService.ts:105,120`) behind the scoped mutation pipeline. Current task wrappers (`api/src/services/task/events.ts:6`) fire and forget; do not copy that pattern into new modules.
-- Current `commentService.ts` has no activity/event calls; adding an MCP comment tool alone would not meet live human-visible progress requirements. Include that service path in the transaction/activity/sync work.
-- `useCollectionTasks.ts:51` still takes page-local task arrays/setters. `stores/optimistic.ts` is not the unified cache/mutation layer proposed by F1; do not treat those refactors as already available.
-- `api/src/test/fixtures.ts` from the PR is a proposed fixture module, currently absent. `api/src/index.ts:235` already exports the real app; reuse it when safe, extracting a small app factory only if startup side effects prevent isolated integration tests.
-- Live GitHub check found existing performance PRs #436 (ready), #437 and #438 (draft). Do not recreate their work or infer completion from spec checkboxes.
-- Settings spec says prototype awaits approval. The user's statement that it is designed does not establish approval.
-- The production collection's contents and live production readiness were not inspected. Inventory and deduplication against that collection remain required before import.
+- `parent_task_id` exists (`api/src/types/task.ts:19`); `CreateTaskInput` has `parentTaskId` and `type: 'task' | 'note' | 'event'` (`:42-58`). Reuse these; the obsolete proposed `parent_id` schema is dropped.
+- Nesting exists to depth 5 (`api/src/services/task/validation.ts:4`, `app/src/utils/taskTree.ts:12`). Preserve hierarchy and completion semantics.
+- Focused task modules already exist (`access`, `move`, `validation`, `events`, `completion`). The agent spec's 1975-line service observation is obsolete.
+- Tasks and notes share the `tasks` table, distinguished by `type`. `description` is plain text, rendered whole by `BoardCard.tsx:82` (clamped to 2 lines via `boards.css:189-197`). Attach one optional rich document to either kind; no second note entity.
+- `TaskItem.tsx:222`: plain click only selects; double-click renames (`:252`). `BoardCard.tsx:28` has no open action. `BoardCardChecklist.tsx` renders every child with no cap. Characterize these with tests before changing them.
+- No Tiptap, Lexical, or ProseMirror dependency in `app/package.json`.
+- `TaskDetail.tsx:28` (textarea, local-only comments/subtasks) and `stores/taskStore.ts` have no production importers. Do not wire into them. `CollectionTreeNav.tsx` has no importer.
+- MCP registration: `api/src/mcp/server.ts:21-31`, write gate `:28`. `api/src/mcp/tools/collections.ts:9` only lists collections and labels. The existing `notes` tool refers to task descriptions, not standalone documents.
+- Reuse `recordActivity()` (`api/src/services/activityService.ts:44`) and `publishEvent()`/`buildEvent()` (`syncService.ts:105,120`) inside the new mutation runner. Existing wrappers in `services/task/events.ts:6` fire and forget; do not copy that.
+- `commentService.ts` has no activity or sync calls, though `'comment'` is a `SyncEntityType`. Include it in the transaction/activity/sync work.
+- `useCollectionTasks.ts:51` takes page-local arrays and setters. `stores/optimistic.ts` is not the unified cache proposed by F1.
+- No lazy chunk exists; the detail panel and editor become the first. Measure main bundle before and after.
+- Search uses `ILIKE` on title/description; documents are searched through the derived plain-text `description`.
+- Next migration number is **053**. `api/src/db/migrate.ts` runs each file in its own transaction, forward only. Prod migrates the next color before the switch and the rollback trap never reverts the DB, so every migration is additive and the old color must run on the new schema.
+- No `shared/` package (Dockerfiles copy one package; `api/tsconfig.json` has `rootDir: "src"`). Instead, byte-identical type-only files at `api/src/contracts/*.ts` and `app/src/contracts/*.ts`, checked by `scripts/check-contracts.sh` in pre-push and `2a.quality.yml`.
+- `api/src/index.ts:235` exports the real app; reuse it, extracting an app factory only if startup side effects block isolated tests. `api/src/test/fixtures.ts` from the PR does not exist yet.
+- Existing performance PRs #436 (ready), #437, #438 (draft). Do not recreate them or infer completion from spec checkboxes.
+- Collections view ignores some remote `task`/`section` events (`CollectionsPage.tsx:67-76`).
+- Production collection contents and readiness are not inspected yet. Inventory and dedupe before import.
 
 ## Product behavior
 
 ### Capture anywhere, organize when ready
 
-- Daily and Inbox continue to accept quick tasks and notes. Writing never requires creating a plan, moving to a dedicated Notes page, or choosing a collection first. Existing date/Inbox placement rules remain intact.
-- Ordinary tasks stay lightweight. Any task can grow into a plan by adding a rich description and subtasks. Standalone notes use the same editor and detail panel, without completion controls or required dates.
-- A migrated initiative is a normal parent task in the development collection. `plan.md` becomes its description, not a separate note linked to a substitute plan card.
+- Daily and Inbox accept quick tasks and notes. Writing never requires a plan, a Notes page, or a collection. Existing date and Inbox rules stay.
+- Any task can grow into a plan by adding a rich description and subtasks. Standalone notes use the same editor and panel, without completion controls or required dates.
+- A migrated initiative is a normal parent task. `plan.md` becomes its description, not a separate note.
 
 ### One right-side detail panel
 
-- Plain click/tap on a noninteractive task row or card opens that item's details on the right without completing it or leaving the current Daily, Inbox, or collection view. Clicking a subtask title opens that subtask, with a parent breadcrumb to return.
-- Completion control only completes/reopens; menus, links, date controls, text selection, and drag gestures never also open details. Ctrl/Cmd-click retains multi-select without opening the panel. Do not trigger opening from drag-end pointer events.
-- Preserve fast inline creation and explicit inline rename (Shift+Enter/context action). Plain click no longer means selection-only; preserve double-click rename without losing drafts or stealing editor focus. Provide an accessible Open details action rather than repurposing the existing Enter-to-add-below keyboard behavior silently.
-- Desktop: one nonmodal, docked right panel, initially about 480px wide, with the board still usable. Inside the collections split view it is the third pane (tree, content, panel) from about 1280px and an overlay sheet below that. Sticky header holds title, close, parent breadcrumb when relevant, and completion for tasks only. Below: compact properties, description/subtasks, then comments/activity. Use existing date/status/label controls; secondary metadata stays collapsed until needed.
-- Narrow screens, including 390px: the same detail content becomes a full-width sheet, not a squeezed desktop sidebar. Preserve background position; closing returns focus to the originating item. Desktop focus is not trapped; the mobile sheet has dialog focus containment. Escape closes the active overlay first and respects unsaved changes.
-- Use one detail controller in the app shell, keyed by item ID, not a panel per page or separate task/note implementations. The controller stores selection/open state, not another task-data cache. Loading, missing, deleted, and permission-denied states are explicit.
-- Panel shows **Full content** by default and an **Only tasks** toggle. Full content keeps prose, headings, code, links, and embedded tasks in their exact text locations. Only tasks hides prose and presents the full canonical descendant tree for tasks; notes show their linked tasks. The toggle changes presentation only, never the saved document, hierarchy, or completion.
-- Tasks created outside the description still appear in Only tasks and in a compact “Other subtasks” section in Full content. Nothing disappears because it lacks an editor block. Switching modes or items preserves unsaved drafts, caret/scroll where practical, and asks before discarding failed saves.
+- Plain click or tap on a noninteractive row or card opens details on the right without completing the item or leaving the view. Clicking a subtask title opens that subtask, with a parent breadcrumb.
+- Completion controls only complete or reopen. Menus, links, date controls, text selection, and drag never open details; drag-end pointer events never open. Ctrl/Cmd-click keeps multi-select without opening.
+- Keep fast inline creation and explicit inline rename (Shift+Enter or context action) and double-click rename, without losing drafts or stealing editor focus. Add an accessible Open details action instead of silently repurposing Enter.
+- Desktop: one nonmodal docked panel, about 480px wide; the board stays usable. In the collections split view it is a third pane from about 1280px, and an overlay sheet below. Sticky header: title, close, parent breadcrumb when relevant, completion for tasks only. Body: compact properties, description and subtasks, then comments and activity. Use existing date, status, and label controls; secondary metadata stays collapsed.
+- 390px and narrow: a full-width sheet, not a squeezed sidebar. Closing returns focus to the originating item. The mobile sheet contains focus; desktop does not trap it. Escape closes the top overlay first and respects unsaved changes.
+- One detail controller in the app shell, keyed by item ID. It stores open state and selection, not a task cache. Loading, missing, deleted, and permission-denied states are explicit.
+- **Full content** is the default; an **Only tasks** toggle switches presentation. Full content keeps prose, headings, code, links, and embedded tasks in place. Only tasks shows the full canonical descendant tree for tasks, and a note's linked tasks. The toggle never changes the saved document, hierarchy, or completion.
+- Tasks created outside the description still appear in Only tasks and in a compact "Other subtasks" section in Full content. Switching modes or items keeps unsaved drafts and asks before discarding failed saves.
 
 ### Rich descriptions with real subtasks
 
-- Tasks and notes share a versioned rich document body. Formatting appears through selection controls and a small insert menu, with keyboard equivalents. Preserve journal styling and 24px rhythm; no database-builder controls or separate editor for each item kind.
-- Creating a task block inside a task description creates a real child through `parentTaskId`, in the same collection, and inserts its stable task reference at the caret. Nested checklist structure maps to actual parent/child relationships, within the existing depth limit. Headings and ordinary bullet lists do not become tasks.
-- An embedded block stores block ID and task ID, not independent copies of title/completion. Text editing, checkbox updates, card previews, and agents all use canonical tasks.
-- Adding an existing task as a subtask explicitly reparents through the existing structural move service after showing the change. A reference alone never silently moves someone else's work. Reject cycles, self-links, cross-collection attachments, and depth overflow.
-- Standalone note task blocks are references, not ownership: a new task created there belongs to the same collection but is not a child of a non-completable note. Reference-only links do not inflate another plan's subtask progress.
-- Moving a block within prose changes placement, not parentage or board order. Removing a block unlinks it, leaving the child visible under Other subtasks/Only tasks. Deleting a task is a distinct confirmed action. Reparenting elsewhere makes its old embedded block a reference-only link; it leaves the former parent's preview/progress.
-- Deleting a note preserves referenced tasks. Deleting a parent task must explicitly disclose the existing descendant cascade and affected count; no description edit or note conversion may trigger it. Completing a parent retains existing cascade behavior with clear UI; completing the last subtask does not automatically close the parent or skip Review.
-- Markdown checkbox conversion runs during explicit import or insertion, not by repeatedly parsing prose on save. Preserve actual nested work; do not duplicate it into a second checklist data store.
-- Visible saving/saved/error states. Concurrent writes use document revisions; a remote update cannot overwrite a dirty draft. Account content is not persisted to localStorage. Failed saves retain the in-memory draft and offer explicit download; warn before leaving, without claiming crash-proof offline persistence.
+- Tasks and notes share one versioned rich body. Formatting uses selection controls and a small insert menu, with keyboard equivalents. Keep journal styling and 24px rhythm. No database-builder controls.
+- Creating a task block inside a description creates a real child through `parentTaskId` in the same collection, and inserts its stable reference at the caret. Nested checklists map to real parent/child relationships within the depth limit. Headings and ordinary bullets are not tasks.
+- An embedded block stores block ID and task ID, never copies of title or completion. Text, checkboxes, card previews, and agents all act on canonical tasks.
+- Attaching an existing task as a subtask is an explicit reparent through the existing move service, shown before applying. A reference never silently moves someone else's work. Reject cycles, self-links, cross-collection attachments, and depth overflow.
+- In a note, a task block is a reference, not ownership. A task created there belongs to the same collection but is not a child of the note. References do not count toward another plan's progress.
+- Moving a block changes placement, not parentage or board order. Removing a block unlinks it; the child stays visible under Other subtasks and Only tasks. Deleting a task is a separate confirmed action. Reparenting elsewhere turns the old block into a reference-only link that leaves the former parent's preview and progress.
+- Deleting a note keeps referenced tasks. Deleting a parent task must disclose the existing descendant cascade and count. No description edit or note conversion may trigger it. Completing a parent keeps existing cascade behavior with clear UI. Completing the last subtask does not auto-close the parent or skip Review.
+- Markdown checkbox conversion runs at explicit import or insertion, never by reparsing prose on each save. Nested work is not duplicated into a second checklist store.
+- Show saving, saved, and error states. Writes use document revisions; a remote update never overwrites a dirty draft. Account content is never persisted to localStorage. A failed save keeps the in-memory draft and offers a download, and the UI warns before leaving. Do not claim offline crash-proof persistence.
 
 ### Compact parent cards and progress
 
-- A parent card shows its title, compact metadata, a short plain-text description excerpt, progress, and at most **five direct subtasks** in canonical order. Child counts indicate deeper nesting; the full hierarchy is available in details. The five-row cap is a preview limit, not a data or nesting limit.
-- More than five children adds **Show all N subtasks**, opening that parent's panel in Only tasks mode rather than expanding a tall Kanban card. Exactly five shows no overflow link. Clicking a child checkbox affects only that child; clicking its title opens the child's details without bubbling to the parent.
-- Existing board drag/drop and full subtree IDs remain intact when some rows are hidden. Preview slicing must not truncate moves, progress, export, or API data. Keep existing completed-item visibility behavior and make counts unambiguous.
-- Progress counts unique actionable leaf descendants, excluding the parent, notes/events, and reference-only links. An empty plan shows “No subtasks,” not 100%. Count, percentage, bar, and ring share the same accessible numbers; presentation choice is stored on the document, not in task status.
-- No separate note-filtered board is needed for this release. Normal parent-task cards are the development board; notes retain their existing type behavior.
+- A parent card shows title, compact metadata, a short plain-text excerpt, progress, and at most **five direct subtasks** in canonical order. Child counts show deeper nesting. The five-row cap is a display limit, not a data or nesting limit.
+- More than five children: **Show all N subtasks** opens the parent's panel in Only tasks. Exactly five shows no link. Child checkbox affects only that child; child title opens that child without bubbling to the parent.
+- Drag/drop and the full subtree stay intact when rows are hidden. Preview slicing never truncates moves, progress, export, or API data. Keep existing completed-item visibility and make counts unambiguous.
+- Progress counts unique actionable leaf descendants, excluding the parent, notes and events, and reference-only links. Empty plan shows "No subtasks", not 100%. The count, thin moss bar, and "N of M" label share one accessible source. The presentation choice is stored on the document, not in task status.
+- Visual decisions (STOP 1): progress shows a thin moss bar plus "N of M". Task rows in task content and Only tasks: 28px min-height, 8px gap, 12px square checkbox. Tasks use a square checkbox (3px radius) everywhere, including card titles and the panel header, centered on the title's first line.
+- No note-filtered board this release. Parent-task cards are the development board; notes keep their current behavior.
 
-## Phase 0: Reconcile scope and establish safe foundations
+## Phase 0: Reconcile scope and safe foundations
 
-**How this serves the primary goal:** Prevent rebuilding shipped features or migrating stale plans into a new source of confusion.
+Prevents rebuilding shipped features or migrating stale plans.
 
-- [ ] Read current source, all five named specs, their task files where present, affected callers, and current worktree/PR status before editing. Preserve uncommitted main-tree work.
-- [ ] Reconcile PR #460 findings with the branch and coordinate overlapping refactors. Take only the boundaries listed above; adopt an already-landed implementation instead of creating a parallel helper.
-- [ ] Record the under-420-line rule in the approved feature spec and project `CLAUDE.md` during implementation. Add a small changed-file line-count check to the existing validation entry point, including tests for 419/420 lines, terminal newlines, and explicit generated-file exemptions. Baseline untouched oversized files rather than splitting the entire repo.
-- [ ] Establish shared test builders and real DB/Redis fixture lifecycle before extraction. Reuse existing integration setup; add missing focused fixtures without replacing working suites wholesale.
-- [ ] Deliver foundation slices separately: (a) characterize/extract oversized touched modules, (b) shared wire contracts and transaction/activity/event ownership, (c) shared task mapping/query keys and reconciliation for touched surfaces. Each slice passes its regression tests before feature work builds on it.
-- [ ] Inspect the target collection using an authorized connection or user-provided export. Do not scrape credentials or create a token automatically. Compare existing ideas/tasks with spec candidates.
-- [ ] Map each initiative to one canonical parent task/document and existing PR/task links. Mark requirements as implemented, pending, uncertain, or superseded based on evidence; do not turn every unchecked historical box into new work.
-- [ ] Isolate each slice under `.worktrees/<slice-slug>` on a semantic branch cut from fresh `main`, with its own dependencies and stack (`COMPOSE_PROJECT_NAME`, subdomain, hooks setup per `CLAUDE.md`). Follow project draft-PR, certificate, test, and review workflow when execution is authorized.
-- [ ] Bootstrap `.specs/<execution-date>-development-home/plan.md` and `task.md` only after plan approval. Keep the current repo convention until a verified migration supports replacing it.
-- [ ] Verify available migration numbers and actual note, account export/delete, authorization, search, and board behavior. Never reuse the agent spec's hard-coded migration number.
-- [ ] Confirm panel design against `DESIGN.md` (flat tint and 1px border, Lora, 24px rhythm, accent at most 10%, inline panel before any modal). Before building, show the user a desktop and 390px mock of the panel and a six-subtask card for approval; add the approved panel to `DESIGN.md` and the styleguide only after that. Ask before deviating from the design system.
-- [ ] Use Tiptap's open-source editor, not a custom contenteditable implementation or hosted document service. Pin compatible packages after checking current docs and licenses.
+- [ ] Read current source, the five referenced specs, affected callers, and worktree/PR status before editing. Preserve uncommitted main-tree work.
+- [ ] Reconcile PR #460 findings with the branch; take only the boundaries above. Adopt any landed implementation instead of a parallel helper.
+- [x] Record the 419-line rule in the feature spec and project `CLAUDE.md`. Add a changed-file line-count check to the existing validation entry point, with tests at 419/420 lines, terminal newlines, and explicit generated-file exemptions. Baseline untouched oversized files; do not split the whole repo.
+- [x] Build shared test builders and real DB/Redis fixtures before extraction. Reuse existing integration setup.
+- [~] Ship foundations as separate slices: (a) characterize and extract touched oversized modules, (b) shared contracts and transaction/activity/event ownership, (c) shared task mapping, query keys, and reconciliation. Each passes regression tests before feature work builds on it.
+- [ ] Inspect the target collection through an authorized connection or user export. Do not scrape credentials or create tokens automatically. Compare existing items with spec candidates.
+- [ ] Map each initiative to one canonical parent task and its existing PR/task links. Mark requirements implemented, pending, uncertain, or superseded from evidence. Do not turn every historical checkbox into new work.
+- [~] Work each slice in `.worktrees/<slug>` on a semantic branch from fresh `main`, with its own deps and stack (`COMPOSE_PROJECT_NAME`, subdomain, hooks per `CLAUDE.md`), draft PR, and certificate step.
+- [ ] Verify migration numbers and actual note, export/delete, authorization, search, and board behavior. Never reuse the agent spec's hard-coded migration number.
+- [ ] Confirm panel design against `DESIGN.md` (flat tint and 1px border, Lora, 24px rhythm, accent at most 10%, inline panel before any modal). Mocks approved at STOP 1 (see Decisions); add them to `DESIGN.md` and the styleguide.
+- [ ] Use the open-source Tiptap editor (`useEditor`, `EditorContent`, `StarterKit`; `Node.create`, `addNodeView`, `ReactNodeViewRenderer`, `NodeViewWrapper`; `editor.getJSON()` for output). Pin compatible versions after checking docs and licenses. No custom contenteditable or hosted document service.
 
-**Allowed patterns/docs:** `useEditor`, `EditorContent`, and `StarterKit` from https://tiptap.dev/docs/editor/getting-started/install/react; `Node.create`, `addNodeView`, `ReactNodeViewRenderer`, `NodeViewWrapper` from https://tiptap.dev/docs/editor/extensions/custom-extensions/node-views/react; `editor.getJSON()` and restoring JSON content from https://tiptap.dev/docs/guides/output-json-html. These docs were fetched during planning. Follow existing MCP `registerTool`/`runTool` patterns; no new model provider or agent runtime is needed.
-
-**Verify:** source-of-truth mapping, isolated baseline checks, explicit inventory of what remains unknown. No production writes in this phase.
+**Verify:** source-of-truth mapping, isolated baseline checks, list of unknowns. No production writes.
 
 ## Phase 1A: Collections split view (ships first)
 
-**How this serves the primary goal:** Move between initiatives in the development collection with one click while the tree stays in place, so the plan board and detail panel always have a stable home.
+Lets the user move between initiatives in one click while the tree stays put, giving the plan board and panel a stable home.
 
-Today `/collections` (`CollectionsIndexPage.tsx`, 361 lines) lists the tree and each row calls `navigate('/collection/:id')` (`:39`), replacing the whole page. `/collection/:id` is a separate route (`App.tsx:69-70`, `CollectionsPage.tsx`, 520 lines).
+Today `/collections` (`CollectionsIndexPage.tsx`, 361 lines) lists the tree, and each row calls `navigate('/collection/:id')` (`:39`), replacing the page. `/collection/:id` (`App.tsx:69-70`, `CollectionsPage.tsx`, 520 lines) is separate.
 
-- [ ] **Behavior.** `/collections` opens as it does today: the "Coleções" tree on the left with the same rows, colors, rename, create, delete, and row menus. The right side shows a quiet empty state with a New collection action; no collection is auto-selected. Clicking a row loads that collection on the right (title breadcrumb, View menu, quick add, list/columns exactly as the page renders today) and pushes `/collection/:id`, so back/forward move the selection. The selected row is marked `aria-current="page"` and bold, as in the reference screenshot.
-- [ ] **Nothing remounts on selection.** Tree scroll position, open menus, an in-progress rename, and expansion state survive clicking another collection. Rows are real links: Ctrl/Cmd/middle-click open a new tab, a plain click on the selected row does nothing. Deep links to `/collection/:id`, search results, breadcrumbs (`CollectionBreadcrumbs.tsx:68`), and the top-bar highlight (`TopBarItem.tsx:13`) render the same split view.
-- [ ] **Layout.** Tree pane fixed at 264px (11 baseline units), content flexible with a 480px minimum, flat tint and 1px border, no new shadows. With the detail panel open (Phase 1): three panes from about 1280px; below that the panel opens as an overlay sheet over the content and the tree stays. Below 768px keep today's single-pane flow: `/collections` is the full-width list, `/collection/:id` is full-width content with a way back to the list. Mobile behavior must not change.
-- [ ] **Structure.** Add a `CollectionsLayout` route element that renders the tree pane and an `<Outlet />` for both routes. Extract the tree from `CollectionsIndexPage.tsx` into focused modules (rows, row actions/menu, create/rename/delete handlers, tree hook) reusing `buildCollectionTree` and the `['collections']` query; no second collections cache. Before adding the layout, split `CollectionsPage.tsx` (over the limit) into hooks and components in behavior-preserving commits covered by characterization tests. Key the content by collection id so local state (inputs, editing row, section drafts) resets on selection and stale tasks never flash. Do not revive the unused `CollectionTreeNav.tsx`; remove it only in a separate commit after confirming no importer.
-- [ ] **Edge states in the right pane, tree always visible.** Unknown id or no access shows "Collection not found" without leaking names. Deleting or archiving the open collection returns to the empty state (today's `navigate('/collections')` at `CollectionsIndexPage.tsx:265`). Rename and recolor update tree and header from the same query. Remote task, section, and collection changes refresh the open collection (existing gap: `CollectionsPage.tsx:67-75` ignores some remote events), so cover that with a test.
-- [ ] **Accessibility.** Tree rows stay keyboard-focusable; focus stays on the clicked row after the right pane loads; the right pane is a labelled region with a heading; loading is announced politely. No focus theft from rename inputs or the quick-add field.
-- [ ] **Tests first, each file under 420 lines.** Characterize existing index rows (rename, create, delete, menus, colors) and the collection page before moving code. Then: route matrix (`/collections`, `/collection/:id`, unknown id), selection and `aria-current`, no remount (tree scroll offset and an open rename input persist across a click), back/forward, deep link, 390px single-pane, delete open collection, API-side change appears live. Existing `topBarNav`, `collectionsPageSubtitle`, `kanbanListAddTask`, and section-column e2e specs must keep passing.
-- [ ] **Out of scope here:** collapsible or resizable tree, favorites in the tree, new drag targets, tree keyboard arrow navigation.
+- [x] **Behavior.** `/collections` looks as today: "Coleções" tree on the left with the same rows, colors, rename, create, delete, and menus. The right pane shows an empty state with a New collection action; nothing auto-selects. A row click loads the collection on the right (breadcrumb, View menu, quick add, list or columns as today) and pushes `/collection/:id`, so back and forward move the selection. Selected row: `aria-current="page"`, bold.
+- [x] **No remount on selection.** Tree scroll, open menus, in-progress rename, and expansion survive. Rows are real links: Ctrl/Cmd/middle-click opens a new tab; plain click on the selected row does nothing. Deep links, search results, breadcrumbs (`CollectionBreadcrumbs.tsx:68`), and the top-bar highlight (`TopBarItem.tsx:13`) render the same split view.
+- [x] **Layout.** Tree pane fixed at 264px (11 baseline units); content flexible, 480px minimum; flat tint, 1px border, no shadows. With the panel open: three panes from about 1280px, overlay sheet below. Below 768px keep today's single-pane flow (`/collections` full-width list; `/collection/:id` full-width with a way back). Mobile must not change.
+- [x] **Structure.** Add a `CollectionsLayout` route element rendering the tree pane and an `<Outlet />`. Extract the tree from `CollectionsIndexPage.tsx` into focused modules (rows, row menu, create/rename/delete handlers, tree hook) reusing `buildCollectionTree` and `['collections']`; no second cache. Split `CollectionsPage.tsx` first in behavior-preserving commits under characterization tests. Key content by collection ID so local state resets on selection. Do not revive `CollectionTreeNav.tsx`; delete it in a separate commit.
+- [x] **Edge states.** Unknown ID or no access: "Collection not found", no name leak. Deleting or archiving the open collection returns to the empty state (`CollectionsIndexPage.tsx:265`). Rename and recolor update tree and header from one query. Remote task, section, and collection changes refresh the open collection.
+- [x] **Accessibility.** Tree rows keyboard-focusable; focus stays on the clicked row; the right pane is a labelled region with a heading; loading is announced politely; no focus theft from rename or quick add.
+- [ ] **Out of scope:** collapsible or resizable tree, favorites in the tree, new drag targets, arrow-key tree navigation.
 
-**References:** `app/src/App.tsx:57-70`, `app/src/pages/{CollectionsIndexPage,CollectionsPage}.tsx`, `app/src/components/collections/CollectionBreadcrumbs.tsx`, `app/src/components/nav/TopBarItem.tsx`, `app/src/hooks/{useCollectionBreadcrumbs,useCollectionTasks,useCollectionSections}.ts`, `app/e2e/{topBarNav,collectionsPageSubtitle,kanbanListAddTask}.spec.ts`.
+**Verify:** reference layout at desktop; six collection clicks never remount the tree; narrow view unchanged; one collection fetch per selection. Tests: characterize rows and page first; then route matrix, `aria-current`, no-remount (scroll and open rename survive), back/forward, deep link, 390px, delete open collection, live API change. Existing `topBarNav`, `collectionsPageSubtitle`, `kanbanListAddTask` e2e specs must pass.
 
-**Verify:** the reference screenshot layout reproduces at desktop; clicking through six collections never remounts the tree; narrow view is unchanged; no new request storms (one collection view fetch per selection).
+## Phase 1B: Toolbar buttons look the same (UI slice)
 
-## Phase 1B: Toolbar buttons look the same (small UI slice)
+The toolbar sits above every board and the panel; one control family keeps it scannable.
 
-**How this serves the primary goal:** The toolbar sits above every plan board and the detail panel; consistent controls keep it calm and scannable as the view menus gain more use.
+Today `Hoje`, previous, next, and the range picker are secondary xs `Button`s (`DateNav.tsx:74-95`, 20px high, 11px). `Visualizar`, `Janela`, and `Group: X` are borderless 14px text triggers (`MenuButton.tsx:68`, `.page-menu-trigger` in `styles/toolbar.css:31`). Range pickers render bold (`DateNav.tsx:88`, `WeekSelector.tsx:95`).
 
-Today the toolbar mixes three looks: `Hoje`, previous, next and the range picker are `Button` secondary/xs (`DateNav.tsx:74-95`, 20px high, 11px text, bordered), while `Visualizar`, `Janela` and `Group: X` are borderless 14px text triggers (`MenuButton.tsx:68`, `.page-menu-trigger` in `styles/toolbar.css:31`). The range pickers also render bold (`DateNav.tsx:88` on Daily, `WeekSelector.tsx:95` on Habits).
+- [x] **Menu triggers become small buttons.** `Visualizar`, `Janela`, and `Group: X` (via `MenuButton`, used by `ViewMenu`, `WindowMenu`, `GroupByMenu`) match `Hoje`: height, padding, radius, border, hover/active/focus, 11px text, 12px chevron. Reuse `Button` if it can carry the ref and ARIA wiring; otherwise export its class tokens from `ui/Button.tsx`. Keep `aria-haspopup`, `aria-expanded`, `aria-controls`, the open state, and keyboard behavior.
+- [x] **Every page-toolbar select matches.** Inventory triggers in `.page-toolbar` and the phone bar (Daily, Habits, Inbox, Collections, Group by). Menu panels and items do not change. `CustomSelect` in settings is out of scope.
+- [x] **No bold range pickers.** Remove `font-semibold` from `DateNav.tsx:88` and `WeekSelector.tsx:95`. Keep tracking, uppercase, and fixed widths; keep the today marker in the popovers (`DateNav.tsx:134`, `WeekSelector.tsx:158`). Confirm widths fit at desktop and 390px.
+- [x] **Fit and touch.** Shedding order: compact date, then Today, then Window folds into View. On phones keep a 44px hit area via `@media (pointer: coarse)` without changing the look. Check 1280, 1024, 768, and 390px for wrap or overflow.
+- [x] **Docs.** Update `DESIGN.md:333` (View and Window are small secondary buttons matching Today) and the Styleguide. Delete `.page-menu-trigger*` rules after confirming no other user.
+- [x] **Tests first.** `toolbar.test.tsx`: every trigger has shared button styling and ARIA state; no range trigger has bold weight; menus open, close, and navigate by keyboard. Keep `.date-nav-trigger` working for the `weekSelector`, `dailyAccessibility`, and `habitsToolbar` specs. Before/after screenshots at desktop and 390px in `app/dist/screenshots/`.
 
-- [ ] **Menu triggers become small buttons.** `Visualizar`, `Janela`, and `Group: X` (all go through `MenuButton`, used by `ViewMenu`, `WindowMenu`, `GroupByMenu`) render with the same secondary xs button styling as `Hoje`: same height, padding, radius, border, hover/active/focus, 11px text, and the existing 12px chevron. One definition: reuse the `Button` component for the trigger if it can carry the ref and ARIA wiring `MenuButton` needs, otherwise export its class tokens from `ui/Button.tsx` and use them in both places. Keep `aria-haspopup`, `aria-expanded`, `aria-controls`, the open state (`is-open` look), and keyboard behavior unchanged.
-- [ ] **Same layout for every select-like control in the page toolbar.** Inventory all triggers inside `.page-toolbar` and the phone bar (Daily, Habits, Inbox, Collections, Group by); each matches `Hoje`. Panels, sheets, items, and shortcut hints inside the open menus do not change. Settings selects (`CustomSelect`) are out of scope.
-- [ ] **No bold on range pickers.** Remove `font-semibold` from the trigger in `DateNav.tsx:88` and `WeekSelector.tsx:95`; keep their tracking, uppercase, fixed-width spans, and the bold marker for today's day inside the calendar popovers (`DateNav.tsx:134`, `WeekSelector.tsx:158`), which signals state, not style. Confirm the fixed widths still fit after the weight change at desktop and 390px.
-- [ ] **Row fit and touch.** The row keeps its shedding order (compact date, then Today, then Window folds into View). Buttons are 20px high, so on phones keep a 44px touch target by enlarging the hit area (`@media (pointer: coarse)`) without changing the look. Check the row at 1280, 1024, 768, and 390px for wrapping or overflow.
-- [ ] **Design docs.** The change is requested explicitly, so update `DESIGN.md:333` (View and Window are small secondary buttons matching Today, not desktop-style text menus) and the Styleguide page; delete the now unused `.page-menu-trigger*` rules after confirming no other user.
-- [ ] **Tests first.** Update `toolbar.test.tsx` to assert by role and name that every toolbar trigger exposes the shared button styling and keeps its ARIA state, that no range trigger computes a bold weight, and that menus still open, close, and navigate by keyboard. Keep e2e selectors `.date-nav-trigger` (used by `weekSelector`, `dailyAccessibility`, `habitsToolbar` specs) working. Capture before/after screenshots at desktop and 390px under `app/dist/screenshots/`.
-
-**Verify:** all toolbar controls read as one family; no bold range label; menus behave as before; no layout regression on any page that uses `PageToolbar`.
+**Verify:** one control family; no bold range label; menus unchanged; no layout regression on `PageToolbar` pages.
 
 ## Phase 1: Shared detail panel and durable rich descriptions
 
-**How this serves the primary goal:** Open any task or note from the current view and give its full plan a durable writing surface.
+Lets the user open any task or note from the current view and write its full plan.
 
-- [ ] Write failing open/close, gesture-isolation, persistence, permission, conflict, and editor tests first. Characterize existing row selection, inline editing, keyboard shortcuts, and card drag behavior before changing click handling.
-- [ ] Add a document table keyed to existing task/note entry IDs, not restricted to `type='note'`: versioned JSON, schema version, revision, and timestamps. Keep title, collection, parent, dates, and status on existing entries. One authoritative document body per entry.
-- [ ] Create focused document read/write services and thin routes, with collection authorization, compare-and-swap revision checks, safe URL/node validation, and bounded size/depth. New wire types belong in the shared contracts layer.
-- [ ] Seed existing plain descriptions losslessly on first rich edit; title remains separate. Once a document exists, `description` becomes a derived plain-text summary/export representation, not an independently editable second source. Guard legacy REST/MCP description writes against silently replacing rich content; return a clear revision-aware editing requirement. Test this boundary explicitly.
-- [ ] Record activity through the scoped transaction runner and publish only after commit. Use transaction results for the committed response. Publication failure cannot masquerade as rollback or make retries duplicate writes. Central reconciliation refreshes item/document queries without replacing dirty drafts.
-- [ ] Add one lazy-loaded detail panel host/controller at `AppShell`, with open-item wiring from Daily/Inbox/Collections rows, board cards, and subtask rows. Reuse shared query state. Keep rich editor code out of the initial Daily bundle.
-- [ ] Build focused panel header, properties, document section, and comments/activity components. Do not reactivate the unused `TaskDetail` with local-only subtasks/comments. Reuse useful controls through live components and actual services instead.
-- [ ] Implement desktop dock/mobile sheet, focus restoration, close/escape handling, parent breadcrumb, loading/deleted/denied states, and dirty-draft protection when switching items. Provide an accessible Open details action and preserve explicit inline editing/multi-select.
-- [ ] Include task and note document bodies in authorized search and account export/restore/delete. Export lossless JSON plus readable Markdown. Audit task/note type conversion and parent deletion so documents/descendants cannot disappear through an incidental editor action.
+- [x] Write failing tests first: open/close, gesture isolation, persistence, permissions, conflicts, editor. Characterize row selection, inline editing, shortcuts, and card drag before changing click handling.
+- [x] Add a document table keyed to existing task/note IDs, not limited to `type='note'`: versioned JSON, schema version, revision, timestamps. Title, collection, parent, dates, and status stay on the task. One authoritative body per entry.
+- [x] Focused document read/write services and thin routes: collection authorization, compare-and-swap revision checks, safe URL and node validation, bounded size and depth. Wire types go in the shared contracts.
+- [x] Seed existing plain descriptions losslessly on first rich edit; title stays separate. Once a document exists, `description` is a derived plain-text summary, not a second editable source. Legacy REST/MCP description writes must not silently replace rich content; return a clear revision-aware error. Test this boundary.
+- [x] Record activity through the transaction runner and publish after commit. Return the committed result. A publish failure must not look like a rollback or make retries duplicate writes. Central reconciliation refreshes queries without replacing dirty drafts.
+- [~] One lazy-loaded panel host and controller in `AppShell`, opened from Daily, Inbox, collection rows, board cards, and subtask rows. Rich editor code stays out of the initial Daily bundle.
+- [~] Focused header, properties, document, and comments/activity components. Do not revive `TaskDetail`.
+- [~] Desktop dock and mobile sheet; focus restoration; close and Escape; parent breadcrumb; loading, deleted, and denied states; dirty-draft protection on item switch. Keep inline editing and multi-select.
+- [ ] Include document bodies in authorized search and account export, restore, and delete. Export lossless JSON and readable Markdown. Audit task/note type conversion and parent deletion so an incidental edit cannot remove documents or descendants.
 
-**References:** `app/src/components/{AppShell,TaskItem,TaskList}.tsx`, `app/src/components/board/{BoardCard,BoardCardChecklist}.tsx`, `app/src/types/{task,board}.ts`, `app/src/hooks/useSync.ts`, `api/src/routes/index.ts`, `api/src/services/task/access.ts`, and the Tiptap docs above.
+**Verify:** both kinds in Daily and Inbox; click opens without completion; checkbox, menu, and drag do not open; keyboard, multi-select, and inline rename still work; full descriptions survive create, edit, reload, and export; two-tab conflicts keep drafts; mobile close returns to the row; unauthorized data never appears.
 
-**Verify:** capture both kinds in Daily and Inbox; click opens without completion; checkbox/menu/drag does not open; keyboard/multi-select/inline rename still work; create/edit/reload/export full descriptions; two-tab conflicts preserve drafts; mobile close returns to the original row; unauthorized data never appears.
+## Phase 2: Embedded subtasks, five-row cards, task-only view
 
-## Phase 2: Embedded subtasks, five-row cards, and task-only view
+Makes each Kanban plan one consistent subtree across prose, card preview, and details.
 
-**How this serves the primary goal:** Make each Kanban plan a real parent task with one consistent subtree in prose, card preview, and full details.
+- [ ] `taskReference` editor node and a reference index derived from validated content. Parentage stays only in `parentTaskId`; text placement is not a second hierarchy.
+- [ ] Atomic create-and-embed: a task owner creates a child; a note owner creates a standalone reference. Task, reference, and document revision commit together under an idempotent operation ID.
+- [ ] Extract transaction-capable task creation before extending `taskService.ts`. Reuse validation, access, move, activity, and event boundaries. Attaching an existing child uses the explicit structural operation; reject cycles, depth overflow, and collection mismatch.
+- [ ] Resolve references and the full descendant tree in bounded batch queries. Share mapping, cache, and reconciliation with list and board surfaces; no copied arrays, per-block fetches, or `taskStore`.
+- [ ] Full content and Only tasks are projections of the same data. Non-embedded descendants appear as Other subtasks. Toggling keeps drafts and hierarchy; completion and open-child actions work in both.
+- [ ] Split `BoardCardChecklist` into preview and row components. Show the first five direct children, plus Show all N opening the parent's Only tasks view. Drag/drop and progress use the full subtree.
+- [ ] Bounded plain-text excerpt for the card. One pure unique-leaf progress function and one presentation component for the thin moss bar and "N of M" label.
+- [ ] Protect unlink, task deletion, note deletion, parent cascade confirmation, reparented references, and copy/paste identity. Cross-collection moves reject unresolved references or reconcile them inside the same authorized operation.
+- [x] Replace timeout-driven rollback on adopted paths with outcome-aware rollback that cannot overwrite newer successful edits. Never treat synthetic offline responses as committed revisions. Test delayed success, true failure, concurrent writes, and reconnect.
 
-- [ ] Add a `taskReference` editor node and a reference index derived from validated document content. Task parentage remains exclusively in `parentTaskId`; text placement is not a parallel hierarchy.
-- [ ] Add an atomic create-and-embed operation: for a task owner create its child; for a note owner create a standalone task reference. Persist the new task, reference, and document revision together with an idempotent client operation ID.
-- [ ] Extract transaction-capable task creation before extending oversized `taskService.ts`; reuse service validation, access, structural move, activity, and event boundaries. Attaching an existing child requires an explicit structural operation; prevent cycles/depth overflow and collection mismatches.
-- [ ] Resolve embedded references and the full descendant tree in bounded batch queries. Share task mapping/cache/reconciliation with list and board surfaces, with no copied task arrays, per-block fetches, or unused `taskStore` dependency.
-- [ ] Implement Full content/Only tasks as projections of the same data. Show nonembedded descendants as Other subtasks; keep drafts when toggling, retain hierarchy, and allow completion/open-child actions from either projection.
-- [ ] Refactor `BoardCardChecklist` into focused preview and row components. Display the first five direct children and Show all N for overflow; wire overflow to the parent's task-only panel. Keep the complete subtree for drag/drop and progress regardless of rendered rows.
-- [ ] Produce a bounded plain-text description excerpt for the card instead of rendering the entire rich description. Use one pure unique-leaf progress calculation and a small presentation component for count/percentage/bar/ring.
-- [ ] Protect block unlink, task deletion, note deletion, parent cascade confirmation, reparented references, and copy/paste identity. Cross-collection moves must reject unresolved document references or explicitly reconcile them within the same authorized operation, never leak data.
-- [ ] Replace timeout-driven rollback in adopted paths with outcome-aware rollback that cannot overwrite newer successful edits. Do not accept synthetic offline transport responses as committed document revisions. Test delayed success, true failure, concurrent writes, and reconnect/refetch.
-
-**References:** `api/src/services/taskService.ts`, `api/src/services/task/{move,completion,validation}.ts`, `app/src/utils/taskTree.ts`, `app/src/components/board/{BoardCard,BoardCardChecklist}.tsx`, `app/src/components/dnd/`, and `app/e2e/specs/board/subtask-reparent.spec.ts`.
-
-**Verify:** zero/five/six children; hidden children remain counted/moved; overflow opens all work; Full content/task-only switching loses nothing; parent/child clicks target the correct item; updates from panel/board/agent converge; block removal preserves subtasks; note deletion differs safely from parent-task deletion; failed/retried creation is atomic.
+**Verify:** zero, five, and six children; hidden children still counted and moved; Show all reaches everything; Full content and Only tasks lose nothing; parent and child clicks hit the right item; panel, board, and agent updates converge; unlink keeps subtasks; note deletion differs from parent deletion; failed or retried creation is atomic.
 
 ## Phase 3: Agent workflow and pilot migration
 
-**How this serves the primary goal:** Let agents use the same plans people see, and retire duplicate tracking for a small verified set.
+Lets agents use the plans people see, and retires duplicate tracking for a small verified set.
 
-- [ ] Add MCP read tools for full task/note document content/revision, task detail/descendants, comments, and activity; write tools for document block edits, child creation, statuses, and comments. REST, MCP, and imports invoke the same service validation/access/mutation path. Add comment activity/sync in the service, not the adapter. Structural edits use the canonical move path. Text-only task description writes cannot bypass document revision protection.
-- [ ] Document edits address stable block IDs and an expected revision. Agents must not replace rich content fetched before a person's newer edits. Agent-created subtasks immediately appear in the parent's card and Only tasks view, whether or not placed in prose.
-- [ ] Add bounded, transaction-safe, idempotent batch task creation using the same internal helpers as Phase 2. Server stores request identity and payload hash; same key with changed payload is a conflict, not an overwrite.
-- [ ] Add atomic claim/release for parallel agent work. Derive actor identity from authenticated token/grant context, not a caller-supplied label. Claims have expiry and explicit recovery; a crashed agent cannot block a task permanently. Claims are coordination, not extra access rights.
-- [ ] Show actor, claim, comments, and result links through active UI surfaces. Extend existing Integrations setup without waiting for the full settings redesign.
-- [ ] Document the client workflow: read the parent task's plan, choose/claim a Ready subtask, update status, comment evidence/PR link, release claim, move to Review. Do not mirror private todo lists through fragile hooks or create a collection per session.
-- [ ] Build a bounded Markdown import with dry-run preview. One spec folder becomes one normal parent task/card, with `plan.md` in its rich description. When `task.md` also exists, retain its text under a named section in the same description. Preserve headings, code, links, prose, and original bytes for recovery; unsupported constructs produce warnings, not silent loss.
-- [ ] Convert selected checklist items into actual descendants and embed references at their original positions. Preserve `[x]` and `[~]` through mapped completion/status, hierarchy, and document order; headings/ordinary lists stay prose. Deduplicate overlapping plan/task checklists through reviewed mappings, not title guesses. Flag nesting beyond the existing depth limit, including the new plan parent, for review.
-- [ ] Persist an import manifest keyed by user, repository/source path, source hash, and stable item mapping. Exact retries return prior results; changed input requires a preview/reconciliation, not another blind import or overwrite.
-- [ ] Pilot the agent-tool and guest-mode specs after deduplicating against existing collection items. Reconcile the agent spec's obsolete hierarchy/service assumptions before creating actionable tasks. Import launch and settings plans only after pilot verification.
-- [ ] Before any real import, produce the dry-run report (destination, parent cards/subtasks/documents to create or link, sensitive content warnings, expected counts). In an interactive run, show it for confirmation; in the unattended run, the assertion gate in the run protocol replaces the confirmation. Keep originals untouched. Verify backups/restoration before declaring production plans authoritative.
-- [ ] Every real import writes a manifest and ships an undo that removes exactly what that manifest created, only where an item is still unmodified; modified items are reported, never deleted.
-- [ ] Cut over each pilot individually after content/status/reference comparison and export round-trip pass. Mark its original as superseded with the canonical link/revision; retain it in Git history. Do not delete `.specs` wholesale.
-- [ ] Update `CLAUDE.md` workflow only after cutover: Planner for plans/progress; repository for implementation artifacts and generated snapshots. Edit the real file, not its symlinks.
+- [ ] MCP read tools for document content and revision, task detail and descendants, comments, activity. Write tools for block edits, child creation, statuses, comments. REST, MCP, and imports share one validation, access, and mutation path. Comment activity and sync live in the service, not the adapter. Structural edits use the canonical move path. Text-only description writes cannot bypass document revision protection.
+- [ ] Document edits address stable block IDs and an expected revision; agents never replace content fetched before a newer human edit. Agent-created subtasks appear in the parent's card and Only tasks view, placed in prose or not.
+- [ ] Bounded, transaction-safe, idempotent batch creation using Phase 2 helpers. The server stores request identity and payload hash; same key with changed payload is a conflict, never an overwrite.
+- [ ] Atomic claim and release for parallel agents. Actor identity comes from the authenticated token or grant, never a caller label. Claims expire with explicit recovery, so a crashed agent cannot lock a task. Claims coordinate work; they grant no access.
+- [x] Show actor, claim, comments, and result links in active UI. Extend the existing Integrations setup without waiting for the settings redesign.
+- [x] Document the client workflow: read the parent plan, claim a Ready subtask, set status, comment evidence and PR link, release the claim, move to Review. No mirrored private todo lists, no collection per session.
+- [ ] Bounded Markdown import with dry-run preview. One spec folder becomes one parent card, with `plan.md` as its rich description. If `task.md` exists, keep its text under a named section in the same description. Preserve headings, code, links, prose, and original bytes. Unsupported constructs produce warnings, never silent loss.
+- [ ] Convert selected checklist items to real descendants, embedded at their original positions. Preserve `[x]` and `[~]` through mapped completion and status. Headings and ordinary lists stay prose. Dedupe overlapping checklists through reviewed mappings, not title guesses. Flag nesting beyond the depth limit for review.
+- [ ] Import manifest keyed by user, source path, source hash, and item mapping. Exact retries return prior results; changed input needs a preview and reconciliation, never a blind import or overwrite.
+- [ ] Pilot the agent-tool and guest-mode specs after deduplicating against existing items. Reconcile the agent spec's obsolete hierarchy and service assumptions first. Import launch and settings plans only after the pilot verifies.
+- [ ] Before any real import, produce a dry-run report: destination, cards, subtasks, and documents to create or link, sensitive-content warnings, expected counts. Interactive runs show it for confirmation; the unattended run uses the assertion gate below. Originals stay untouched. Verify backups and restores before treating production plans as authoritative.
+- [ ] Every real import writes a manifest and ships an undo that removes exactly what the manifest created, only where an item is unmodified. Modified items are reported, never deleted.
+- [ ] Cut over each pilot after content, status, reference, and export round-trip comparison. Mark the original superseded with the canonical link and revision; keep it in Git history. Never delete `.specs` wholesale.
+- [ ] After cutover only: update `CLAUDE.md` so Planner holds plans and progress, and the repo holds implementation artifacts and generated snapshots. Edit the real file, not its symlinks.
 
-**References:** `api/src/mcp/server.ts:21`, `api/src/mcp/tools/tasks.ts:54`, `api/src/mcp/toolkit.ts`, `api/src/services/commentService.ts:74,83`, `api/src/services/activityService.ts:70`, `api/src/mcp/__tests__/server.integration.test.ts:64,209`, and `app/src/components/settings/ConnectAgentPanel.tsx`.
+**Verify:** a real authorized MCP client reads a plan, creates a task once despite retries, claims it, comments progress, and updates the browser live. Two claimants yield one winner. Stale note edits conflict. Read-only credentials cannot write. Revoked credentials fail. Repeated imports create nothing new and never overwrite user edits.
 
-**Verify:** a real authorized MCP client reads a plan, creates a task once despite retries, claims it, comments progress, and updates the browser live; two claimants yield one winner; stale note edits conflict; read-only credentials cannot write; revoked credentials fail; repeated import creates nothing new and never overwrites user edits.
+## Test contract
 
-## Test contract for every implementation slice
-
-Write tests alongside each slice, not as a final testing project. Keep each test file under 420 lines; split by behavior rather than introducing one comprehensive feature suite.
+Tests ship with each slice, not as a final project. Each test file stays under 419 lines, split by behavior.
 
 | Layer | Required coverage | Boundary |
 | --- | --- | --- |
-| Pure unit tests | Document schema, reference extraction, unique-leaf progress, import checkbox/status mapping, deterministic export, shared task mapper, changed-file size check | Small typed fixtures and deterministic clocks; assert outputs, not internal call order. |
-| Service integration | Document revision conflicts, legacy description-write guard, parent/child attach cycles and depth, atomic create-and-embed, batch rollback/idempotency, claim races/expiry, comment attribution, move invariants, cross-account/collaborator permissions | Real PostgreSQL and Redis with isolated data and cleanup; no scripted SQL replies or mock DB/Redis success paths. |
-| Mutation delivery | Activity rolls back with writes; failed transactions emit nothing; successful operations emit the intended events; post-commit read/publish failure never masquerades as rollback | Exercise the real runner/services; narrow deliberate outage injection is allowed. Assert stored data and observed socket/pubsub behavior, not copied handler logic. |
-| REST and MCP | Equivalent validation, scopes, auth/CSRF, revision errors, invalid parents/sections, revoked credentials, actor propagation | Real app middleware and real MCP client. Do not force `req.userId`, build a fake app, or test only that routes call services. |
-| Frontend behavior | Row/card/child open targets; checkbox/menu/drag isolation; multi-select/rename; 0/5/6-child previews; Full content/Only tasks preserves draft and hierarchy; save/conflict recovery; delayed-write protection; panel/list/board sync | Shared provider/router/React Query harness and task builders; mock only transport/socket boundaries where needed, not child components or the logic under test. |
-| Playwright | Capture tasks/notes in Daily and Inbox; open/close desktop panel and mobile sheet; import a parent card with prose/subtasks; Show all opens task-only mode; agent changes appear live; two-user isolation and live revocation | Real running stack; roles/names first, stable test IDs only when needed. Use controlled clocks and condition-based waits, not sleeps or weekday skips. |
+| Pure unit | Document schema, reference extraction, unique-leaf progress, checkbox and status mapping, deterministic export, shared task mapper, line-count check | Typed fixtures and deterministic clocks; assert outputs, not call order. |
+| Service integration | Revision conflicts, legacy description guard, attach cycles and depth, atomic create-and-embed, batch rollback and idempotency, claim races and expiry, comment attribution, move invariants, cross-account and collaborator permissions | Real PostgreSQL and Redis, isolated data, cleanup. No scripted SQL replies or mock DB/Redis success paths. |
+| Mutation delivery | Activity rolls back with writes; failed transactions emit nothing; successful ones emit the intended events; post-commit publish failure is not a rollback | Real runner and services; narrow outage injection allowed. Assert stored data and observed socket or pubsub behavior, not copied handler logic. |
+| REST and MCP | Equivalent validation, scopes, auth and CSRF, revision errors, invalid parents and sections, revoked credentials, actor propagation | Real app middleware and a real MCP client. No forced `req.userId`, fake app, or route-calls-service-only tests. |
+| Frontend | Row, card, and child open targets; checkbox, menu, drag isolation; multi-select and rename; 0/5/6-child previews; mode switch keeps draft and hierarchy; save and conflict recovery; delayed-write protection; panel, list, board sync | Shared provider, router, React Query harness, and task builders. Mock only transport and socket boundaries. |
+| Playwright | Capture tasks and notes in Daily and Inbox; desktop panel and mobile sheet; import a parent with prose and subtasks; Show all opens task-only; agent changes appear live; two-user isolation and live revocation | Real stack; role and name selectors; condition-based waits, no sleeps. |
 
-Preserve existing tests during structural extraction. Replace SQL-string assertions, class-order checks, tautological tests, and tests of copied handlers only within touched scope, after meaningful replacement coverage is green. Await all async work; no unhandled promises or `act()` warnings. Each PR states tests actually run, failures, and unverified behavior.
+Preserve existing tests during extraction. Replace SQL-string assertions, class-order checks, tautological tests, and tests of copied handlers only within touched scope, after replacement coverage is green. Await all async work; no unhandled promises or `act()` warnings. Each PR states tests run, failures, and unverified behavior.
 
-## Unattended run and deploy protocol
+## Execution protocol
 
-You said you will let this run in one shot, including deploying. That authorizes the actions below and nothing beyond them. How production deploys today (`.github/workflows`): merge to `main` runs CI (`2a` quality, `2b` security); `3.release.yml` opens a release-please PR; merging that PR creates the tag and calls `4.deploy.yml`, which builds, scans, and runs `scripts/blue-green-deploy.sh` over SSH in the `production` environment (migrate job, health checks, automatic rollback trap, previous image kept in `deploy/.previous-image`). `main` has no branch protection, so these gates are the safety net.
+You said this runs in one shot, including deploys. That authorizes only what is listed here. Production path (`.github/workflows`): merge to `main` runs CI (`2a` quality, `2b` security); `3.release.yml` opens a release-please PR; merging it creates the tag and runs `4.deploy.yml` (build, scan, `scripts/blue-green-deploy.sh` over SSH in `production`: migrate job, health checks, automatic rollback trap, previous image in `deploy/.previous-image`). `main` has no branch protection, so these gates are the safety net.
 
-**Authorized:** worktrees and semantic branches; small Conventional Commits with the `Co-Authored-By` trailer; pushing own branches; draft then ready PRs; merging this plan's own PRs after green CI; merging the release-please PR; watching the deploy run and the public health check. **Not authorized:** merging or editing others' PRs (#433, #435-#438, #460) or rebasing onto unmerged ones; force-push; `--no-verify`; changing branch rules, secrets, workflows' permissions, or infrastructure; deleting or rewriting production data; touching uncommitted work in the main checkout (all work stays in worktrees, never stash or checkout there).
+**Authorized:** worktrees and semantic branches; small Conventional Commits with the `Co-Authored-By` trailer; pushing own branches; draft then ready PRs; merging this plan's own PRs after green CI; merging the release-please PR; watching the deploy and public health check. **Not authorized:** merging or editing others' PRs (#433, #435-#438, #460) or rebasing onto unmerged ones; force-push; `--no-verify`; changing branch rules, secrets, workflow permissions, or infrastructure; deleting or rewriting production data; touching uncommitted work in the main checkout (work stays in worktrees; never stash or checkout there).
 
-**Slice order, each from fresh `main`, one PR, one concern:** (1) changed-file line-count check and shared fixtures; (2) `CollectionsPage` split; (3) Phase 1A split view; (3b) Phase 1B toolbar buttons; (4) shared contracts and mutation runner; (5) documents and detail panel; (6) embedded subtasks, five-row cards, task-only view; (7) agent tools, claims, comment activity; (8) import/export with undo; (9) pilot import and cutover. Slices 1-3 and any UI-only slice need no migration.
+**Gate before every merge:** failing test first, then green; lint, type check, both builds; line-count check; desktop and 390px browser check with screenshots in `app/dist/screenshots/`; all PR checks green. Fix root causes. Never weaken or skip a test.
 
-**Gate for every slice before merge:** failing test first, then green; lint, type check, both builds; changed-file check (all handwritten files at most 419 lines); local stack browser check at desktop and 390px with screenshots saved under `app/dist/screenshots/`; PR checks all green. Fix root causes; never weaken or skip a test to pass.
+**Deploy rules.** Merging to `main` does not deploy; the release PR does. Deploy after slices 3 and 3b together (UI only, one release). Deploy each schema slice alone so a rollback maps to one change. Migrations are additive and backward-compatible (new tables or nullable columns; no renames or drops). Before any deploy with a migration, take a `pg_dump` and test-restore it into a scratch database (off-server backups are not automatic). If that cannot run unattended, merge the slice, hold its release PR, and stop. After each deploy confirm the public router returns 200 for the app and `/api/v1/health`, the version matches, and note the rollback command. Never retry a failed deploy blindly: let the script roll back, record logs, stop.
 
-**Deploy rules.** Merging to `main` does not deploy; the release PR does. Deploy after slices 3 and 3b (UI only, one release). Deploy each schema slice on its own so a rollback maps to one change. Migrations must be additive and backward-compatible (new tables or nullable columns, no renames or drops), because the previous color keeps running during the switch. Your go-live spec lists automatic off-server backups as not done, so before any deploy that includes a migration take a `pg_dump` snapshot and test-restore it into a scratch database; if that cannot be done unattended, merge the slice but hold its release PR and stop. After each deploy confirm the public router returns 200 for the app and `/api/v1/health`, the deployed version matches, and note the rollback command. A failed deploy is not retried blindly: let the script roll back, record the logs, and stop.
+**Production import gate.** Import only through the app's API, using a token the user created in Settings > Integrations and placed in the environment. Never create or scrape a token. Proceed only when the dry-run counts match exactly, there are zero ambiguous matches, sources are read-only, and manifest and undo are verified on a scratch database first. Otherwise skip those items, keep the report, and continue elsewhere.
 
-**Production import gate.** Import into the real development collection only through the app's API with a token you created in Settings > Integrations and placed in the environment; never create or scrape one. Proceed only when the dry-run report matches the expected counts exactly, there are zero ambiguous matches, every source is read-only, and the manifest and undo are verified on a scratch database first. Otherwise skip those items, leave the report, and continue with other work.
+**Stop and report (do not push through):** same CI failure after two root-cause attempts; a test that would need weakening; high or critical security finding in new code; non-additive migration; failed or unverifiable backup; production health failure; any action not listed as authorized; low disk or broken local stack. Unblocked work continues.
 
-**Stop and report (do not push through):** same CI failure after two root-cause attempts; a test that would need weakening; a high or critical security finding in new code; a non-additive migration; a failed or unverifiable backup; any production health failure; an action not listed as authorized; low disk or a broken local stack. Everything not blocked continues.
+**Run log:** the Execution log section below, updated per slice (branch, PR, commit, CI, deploy run, screenshots, unverified items, stop reason). Final summary: shipped, deployed, held, unverified. Never claim a check passed that was not run.
 
-**Run log.** Keep `.specs/<execution-date>-development-home/task.md` current per slice (branch, PR, commit, CI result, deploy run, screenshots, unverified items, stop reason). Final summary: shipped, deployed, held, and exactly what remains unverified. Never claim a check passed that was not run.
+## Phase 4: Daily-use validation and cutover readiness
 
-## Phase 4: Validate daily use and cutover readiness
+Proves the app reduces tracking work before migrating more or adding features. Unit, integration, and gate checks are covered above; this phase adds:
 
-**How this serves the primary goal:** Prove the app reduces tracking work before migrating everything or expanding features.
-
-- [ ] Run focused unit tests, real PostgreSQL/Redis integrations, lint, type checks, builds, and Playwright tests in the isolated stack. Follow red-green-refactor for each behavior, with awaited asynchronous assertions.
-- [ ] Run the changed-file size check: all new/modified handwritten files, including test helpers/suites, are at most 419 lines. Review module boundaries and import cycles too; line count alone is not proof of good structure. Build both packages and their Docker contexts against shared contracts.
-- [ ] Run the shared task behavior suite against affected Daily, Inbox, Collections, note, and board surfaces. Verify real refetch/reconciliation after remote task/section/status/label changes and ensure an editor keystroke never also triggers a global page shortcut.
-- [ ] Browser golden path: capture a task and note in Daily/Inbox; open each in details; write a parent plan with at least six subtasks among paragraphs; verify five-row card preview; Show all opens the complete task-only tree; switch back without losing prose; receive an agent update; export/reload and inspect another tab.
-- [ ] Test edge cases: checkbox/menu/drag must not open; subtask title must not open its parent; inline rename/multi-select and keyboard shortcuts remain usable; desktop/mobile focus restoration; failed save while closing/switching; stale revision; deleted/moved task; parent cascade confirmation; revoked access; empty plan; duplicate references; import failure/retry; `[~]`; unsafe URLs/HTML; long documents.
-- [ ] Capture desktop and 390px screenshots under the worktree's `app/dist/screenshots/` and link them. Check keyboard navigation, focus, mobile typing, console errors, and unchanged Daily/list/board behavior.
-- [ ] Verify a representative large spec without per-task request fan-out or Daily bundle regression. Measure before/after rather than declaring performance acceptable from build success.
-- [ ] Dogfood one real development block from plan through PR review. Success: no manual duplicate status updates, no lost writing, human-readable agent activity, and a clear Ready task next.
-- [ ] Expand migration only after that gate. Keep the stack available for review; no automatic teardown or blanket production migration.
+- [ ] Shared task suite across Daily, Inbox, Collections, notes, and boards. Remote task, section, status, and label changes reconcile without refetch storms. Editor keystrokes never trigger global page shortcuts.
+- [ ] Browser golden path: capture a task and a note in Daily and Inbox; open each in details; write a parent plan with at least six subtasks among paragraphs; check the five-row preview; Show all opens the task-only tree; switch back without losing prose; receive an agent update; export, reload, and check another tab.
+- [ ] Edge cases: subtask title does not open its parent; inline rename, multi-select, and shortcuts still work; focus restoration on desktop and mobile; failed save while closing or switching; stale revision; deleted or moved task; parent cascade confirmation; revoked access; empty plan; duplicate references; import failure and retry; `[~]`; unsafe URLs and HTML; long documents.
+- [ ] Desktop and 390px screenshots under `app/dist/screenshots/`, linked. Check keyboard, focus, mobile typing, console errors, and unchanged Daily, list, and board behavior.
+- [~] Representative large spec loads without per-task request fan-out or Daily bundle regression. Measure before and after; build success is not proof. 2026-11-20 on `f293b6f1`, guest-mode spec (76 tasks): board 9 requests in 2585 ms, none per task; panel open 2 requests (task, document) in 886 ms. Open: duplicate initial calls (`auth/me`, `version`, `views/collection/:id` twice each) and the Daily bundle comparison.
+- [ ] Dogfood one real development block from plan through PR review. Success: no duplicate status updates, no lost writing, readable agent activity, a clear Ready task next.
+- [ ] Expand migration only after this gate. Keep stacks available for review; no automatic teardown or blanket production migration.
 
 ## Relationship to the five existing initiatives
 
-| Initiative          | Treatment                                                                                                                                                                                                                                                                                                                            |
-| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Agent task tool     | Revise and absorb the needed subset in Phase 3. Existing nesting/service split are reused; plugin distribution across every client is later.                                                                                                                                                                                         |
-| Go-live performance | Finish/review existing #436-438 separately; avoid conflicting editor bundling changes. Not a prerequisite for the detail panel, but coordinate chip-name and bundle changes with it and measure the lazy editor cost.                                                                                                                                                                           |
-| Settings redesign   | Preserve Penpot design and its approval gate. Only minimal integration controls belong in this work.                                                                                                                                                                                                                                 |
-| Guest mode          | Next acquisition milestone after the development-home pilot. Keep its browser-only/no-anonymous-server-writes guarantees. Align document schema/export/import contracts, but do not implement two storage backends in this release. Rich descriptions and the detail panel require updating its plain-text rendering assumption when they enter guest scope. |
-| Go-live             | Independent safety and launch checklist. Backups with tested restore, security fixes, and recoverability gate canonical data storage/public access. Pricing, marketing, billing, and infrastructure migration do not belong in this feature.                                                                                         |
+| Initiative          | Treatment |
+| ------------------- | --------- |
+| Agent task tool     | Revise and absorb the needed subset in Phase 3. Reuse existing nesting and service split; plugin distribution across clients comes later. |
+| Go-live performance | Finish and review #436-438 separately. Avoid conflicting editor bundling; coordinate chip-name and bundle changes; measure the lazy editor cost. |
+| Settings redesign   | Preserve the Penpot design and its approval gate. Only minimal integration controls here. |
+| Guest mode          | Next milestone after the pilot. Keep browser-only, no-anonymous-server-writes guarantees. Align document schema, export, and import contracts; no second storage backend this release. Rich descriptions and the panel must update its plain-text rendering assumption when they enter guest scope. |
+| Go-live             | Separate safety and launch checklist. Tested backups, security fixes, and recoverability gate canonical storage and public access. Pricing, marketing, billing, and infrastructure migration are out of scope here. |
 
 ## Relevant files
 
-Existing integration points:
+- Task model and services: `api/src/types/{task,activity}.ts`, `api/src/services/{taskService,collectionService,commentService,activityService,syncService,searchService}.ts`, `api/src/services/task/{access,validation,events,completion,move,moveDestination,format}.ts`, `api/src/routes/{index,tasks}.ts`, `api/src/db/migrations/`, `api/src/middleware/requestContext.ts`, `api/src/services/collaborationService.ts`, `api/src/utils/taskValidation.ts`
+- MCP: `api/src/mcp/server.ts`, `api/src/mcp/tools/{tasks,collections}.ts`, `api/src/mcp/toolkit.ts`, `api/src/mcp/__tests__/server.integration.test.ts`
+- Frontend pages and components: `app/src/App.tsx`, `app/src/pages/{CollectionsPage,CollectionsIndexPage}.tsx`, `app/src/components/{AppShell,TaskItem,TaskList}.tsx`, `app/src/components/board/{BoardCard,BoardCardChecklist,CollectionBoard,WeekSelector}.tsx`, `app/src/components/toolbar/{MenuButton,DateNav,ViewMenu,WindowMenu,GroupByMenu}.tsx`, `app/src/components/ui/Button.tsx`, `app/src/components/settings/ConnectAgentPanel.tsx`, `app/src/styles/toolbar.css`
+- Frontend state and API: `app/src/api/{client,transport}.ts`, `app/src/hooks/{useSync,useCollectionTasks,useDailySync}.ts`, `app/src/stores/optimistic.ts`, `app/src/utils/{taskTree,dailySections}.ts`, `app/src/types/`
+- Tests and CI: `app/e2e/specs/board/subtask-reparent.spec.ts`, `app/e2e/{topBarNav,collectionsPageSubtitle,kanbanListAddTask}.spec.ts`, `.github/workflows/{3.release,4.deploy}.yml`, `scripts/blue-green-deploy.sh`
+- Docs updated only when contracts or ownership change: `CLAUDE.md`, `DESIGN.md`, the five referenced spec directories
 
-- `api/src/types/task.ts`, `api/src/types/activity.ts`, `api/src/services/taskService.ts`, `api/src/services/task/{access,validation,events,completion,move}.ts`
-- `api/src/services/{collectionService,commentService,activityService,syncService,searchService}.ts`, `api/src/routes/{index,tasks}.ts`, `api/src/db/migrations/`
-- `api/src/mcp/server.ts`, `api/src/mcp/tools/{tasks,collections}.ts`, `api/src/mcp/toolkit.ts`, `api/src/mcp/__tests__/server.integration.test.ts`
-- `app/package.json` and lockfile, `app/src/App.tsx`, `app/src/pages/{CollectionsPage,CollectionsIndexPage}.tsx`, `.github/workflows/{3.release,4.deploy}.yml`, `scripts/blue-green-deploy.sh`, `app/src/components/{TaskItem,TaskList}.tsx`, `app/src/components/board/{BoardCard,CollectionBoard,WeekSelector}.tsx`, `app/src/components/toolbar/{MenuButton,DateNav,ViewMenu,WindowMenu,GroupByMenu}.tsx`, `app/src/components/ui/Button.tsx`, `app/src/styles/toolbar.css`
-- `app/src/api/client.ts`, `app/src/hooks/{useSync,useCollectionTasks}.ts`, `app/src/stores/optimistic.ts`, `app/src/types/`, existing account data export UI/services, and i18n files
-- `app/src/components/settings/ConnectAgentPanel.tsx`, `app/e2e/specs/board/subtask-reparent.spec.ts`, relevant component/service tests
-- `CLAUDE.md`, `DESIGN.md`, and the five referenced spec directories, updated only when their contracts or ownership change
+New modules (proposed, not claims that these exist; reuse equivalents if the untangle work lands first): `api/src/contracts/` and `app/src/contracts/` (wire types), `api/src/context/` (actor context), `api/src/services/mutation/` (transaction runner), `app/src/api/queryKeys.ts`, `app/src/utils/taskMapper.ts`, task mutation and reconciliation hooks, document schema and routes, detail controller and host, panel sections, editor setup, task-reference node, task-only tree, card preview and row, progress calculation, document and comment MCP tools, batch and claim services, import parser, preview, apply, and export. Shared fixtures under `api/src/test/` and `app/src/test/`. Each has focused tests.
 
-New focused modules: document contracts/schema, document/reference migrations, thin document routes and read/write services, shared detail controller/host, detail header/properties/comments sections, editor setup, task-reference node, task-only tree, document API/hooks, card subtask preview/row, pure progress calculation/display, document/comment MCP tools, task batch/claim services, and import parser/preview/apply/export modules. Each has focused tests; every handwritten file stays under 420 lines. No separate Notes page is required.
-
-Additional PR #460 integration points: `api/src/middleware/requestContext.ts` (extract the context store without changing middleware behavior), `api/src/services/task/{move,moveDestination,format}.ts`, `api/src/utils/taskValidation.ts`, `api/src/services/collaborationService.ts`, `app/src/api/transport.ts`, `app/src/utils/dailySections.ts`, `app/src/hooks/useDailySync.ts`, `app/src/components/AppShell.tsx`, and existing test setup/build configuration. Inspect exact callers before touching them.
-
-Proposed focused foundation modules: `shared/contracts/` (wire types only), `api/src/context/` (actor/source context), `api/src/services/mutation/` (transaction orchestration), `app/src/api/queryKeys.ts`, `app/src/utils/taskMapper.ts`, task mutation/reconciliation hooks, and reusable fixtures under `api/src/test/` and `app/src/test/`. Reuse equivalent modules if the untangle work lands first; do not create duplicate owners. Names are proposed, not claims that these APIs exist.
-
-**Review slices:** extraction/characterization; contracts and mutation delivery; shared task reconciliation; note persistence; editor; embedded tasks; progress; MCP/claims/comments; import/export; confirmed pilot cutover. Keep these independently reviewable and tested. Split a slice further when it mixes unrelated concerns; do not submit one full-feature megadiff.
+Review slices (each independently reviewable): extraction; contracts and mutation delivery; task reconciliation; note persistence; editor; embedded tasks; progress; MCP, claims, comments; import and export; confirmed pilot cutover. Do not submit one full-feature megadiff.
 
 ## Explicitly not in the first release
 
-Notion-style arbitrary databases, formulas, attachments, simultaneous collaborative text editing/CRDTs, a dedicated Notes workspace or note-filtered board, a built-in AI chat or agent runner, automated GitHub synchronization, universal agent plugins, complete settings redesign, guest storage implementation, billing, and production infrastructure migration. None is a prerequisite for managing development through parent-task cards with rich plans.
+Notion-style databases, formulas, attachments, simultaneous collaborative editing or CRDTs, a dedicated Notes workspace or note board, a built-in AI chat or agent runner, automated GitHub sync, universal agent plugins, a complete settings redesign, guest storage, billing, and production infrastructure migration. None is a prerequisite for managing development through parent-task cards with rich plans.
+
+## Open questions
+
+1. Postgres 16 to 18 maintenance window (STOP 2).
+
+## Execution log
+
+### Slice queue
+
+| # | Slice | Branch | PR | State |
+| --- | --- | --- | --- | --- |
+| M0.1 | Theme color scales | feat/theme-color-scales | #433 | merged `c1ab013d` |
+| M0.1 | Daily chip names | perf/daily-chip-names | #436 | merged |
+| M0.1 | Spec, archive finished specs, close #460 | docs/development-home | #461 | merged; #460 closed |
+| M0.3 | S-B backup, restore check, rollback | feat/db-backup-restore | #462 | merged |
+| M0.4 | S1 line check, contract check, fixtures | chore/line-limits-fixtures | #465 | merged |
+| M0.5 | S-MCP parent and status tools | feat/mcp-parent-status | #468 | merged `ee8c9d3d` |
+| R0 | Release and verify | - | #469 | v0.27.0 deployed and verified |
+| M1.6 | S-H task hierarchy reliability | fix/task-hierarchy | #470 | merged `a8f5bfaf` |
+| M1.7 | S2 CollectionsPage split | refactor/collections-page-split | #472 | merged `41b9c072` |
+| M1.8 | S3 collections split view | feat/collections-split-view | #474 | merged `b410d769` |
+| R1a | Release and verify | - | #475 | v0.28.0 deployed and verified |
+| M1.9 | S3b toolbar buttons, Window to Planner menu | style/toolbar-buttons | #476 | merged `cc92c5ee` |
+| R1 | Release and verify | - | - | v0.28.1 and v0.28.2 deployed and verified |
+| STOP 1 | R1 report, panel and card mock approval | - | - | approved |
+| M2.10 | S4 contracts, mutation runner, comment sync | refactor/mutation-runner | #480 | merged `c0f02316` |
+| M2.11a | S5a task documents API and data (migration 053), no UI | feat/task-documents-api | #482 | merged `a59019ba` |
+| M2.11b | S5b detail panel and Tiptap editor UI | feat/task-detail-panel | #489 | merged `47005d36`; review fixes #491 |
+| M3.12 | S6 embedded subtasks, five-row cards | feat/embedded-subtasks | #494 | merged `c24ac845` |
+| M4.13 | S7 MCP document, comment, claim, batch | feat/mcp-documents | #495 | merged `35f575e3` |
+| M4.14 | S8 Markdown import, dry run, undo | feat/markdown-import | #499 | merged `15ed4926`; status filing #503 |
+| - | Document export, delete safety, inbox split | feat/export-documents, test/document-safety, refactor/inbox-page-split | #502, #507, #509 | merged |
+| R4 | Release and verify | - | #510 | v0.37.3 deployed, app and API health 200 |
+| M4.16 | Panel claim, comment actor and links | feat/panel-agent-claim | #511 | merged |
+| M3.17 | Outcome-aware optimistic rollback | fix/optimistic-outcome-rollback | #514 | auto-merge armed |
+| M4.18 | Agent workflow docs in README | docs/agent-workflow | - | this PR |
+| - | Subtle hover scrollbars | style/subtle-scrollbars | #513 | needs visual check by user (scrollbars cannot be captured here) |
+| M4.15 | S9 pilot import and cutover | - | - | blocked: production import needs a user-created API token in the environment; rehearsal on scratch stack passed |
+| STOP 2 | Report before Postgres upgrade | - | #506 (draft) | blocked: user picks maintenance window |
+| M5.16 | Postgres 16 to 18 | chore/postgres-18 | - | blocked: user confirmation; dump/restore only (PG18 checksums block pg_upgrade), mount `/var/lib/postgresql`, dedicated cutover script (deploy uses `--no-recreate`) |
+
+Slice split: S5a (API and data, `task_documents`, `GET/PUT /tasks/:id/document`, `DOCUMENT_EXISTS` guard) ships before S5b (panel and editor). Account export of documents and recurring-copy of documents belong to S5b or S8.
+
+### Decisions from STOP 1
+
+- Progress: thin moss bar plus "N of M" (body: Compact parent cards and progress).
+- Task row and checkbox sizing: body, Compact parent cards and progress.
+- Mocks (desktop, 390px panel, six-subtask card): https://claude.ai/artifact/HY12ssBqGWYN4aC1wyQgky
+
+### Tracking
+
+Slices are subtasks of milestone cards M0-M5 in `bulletplanner.org`. A slice card moves to Fazendo when its branch opens and completes when its PR merges.
+
+### Housekeeping done
+
+- Removed merged worktrees and stacks: `core-module-boundaries`, `daily-query-repository`, `dependabot-alerts`, `theme-color-scales`, orphan `planner-antigravity`, `collections-page-split`, `collections-split-view`, `task-hierarchy`, `mcp-parent-status`, plus their ad hoc test containers.
+- Archived finished specs to `.specs/completed/`; removed the stale root duplicate of `daily-ux-adjustments`.
+
+### Releases
+
+| Release | Tag | Deploy run | Health | Rollback |
+| --- | --- | --- | --- | --- |
+| R0 | v0.27.0 | [44392997786](https://github.com/thiagobraga/planner/actions/runs/44392997786) | App and API 200, build `20261118T203858Z`, backup restore check passed | `CORS_ORIGIN=https://planner.thiagobraga.dev bash scripts/blue-green-deploy.sh "$(cat deploy/.previous-image)"` |
+| R1a | v0.28.0 | [44510474439](https://github.com/thiagobraga/planner/actions/runs/44510474439) | App 200, API health ok, release published after healthy deploy | same command |
+| R1 | v0.28.1 | - | Toolbar shipped, deployed and verified; v0.28.2 also deployed | same command |
+| R4 | v0.37.3 | - | App and API health 200 after deploy; S5b through S8 and delete-safety fixes shipped | same command |
