@@ -54,10 +54,11 @@ export function CollectionsPage({
   const [contextMenu, setContextMenu] = useState<TaskIndentMenuContext | null>(null);
   const inputRef = useRef<HTMLDivElement>(null);
 
-  const { data: preferences } = usePreferences();
+  const { data: preferences, isPending: preferencesPending } = usePreferences();
   const boardPreferences = useBoardPreferences(id, preferences);
   const { includeCompleted } = boardPreferences;
-  const { data, error, isError, refetch, viewKey } = useCollectionView(id, includeCompleted);
+  // includeCompleted depends on preferences; fetching earlier would load the view twice.
+  const { data, error, isError, refetch, viewKey } = useCollectionView(id, includeCompleted, !preferencesPending);
 
   const ready = !!data;
   useEffect(() => {
