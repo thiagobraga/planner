@@ -4,7 +4,7 @@ import type { DocumentMark, DocumentNode } from '../contracts/document';
 // server does not accept (a link's title, alignment), so they are dropped here.
 const NODE_ATTRS: Record<string, readonly string[]> = {
   doc: [], paragraph: [], heading: ['level'], bulletList: [], orderedList: ['start', 'type'], listItem: [],
-  blockquote: [], codeBlock: ['language'], horizontalRule: [], text: [], hardBreak: [],
+  blockquote: [], codeBlock: ['language'], horizontalRule: [], text: [], hardBreak: [], taskReference: ['taskId', 'blockId'],
 };
 const MARK_ATTRS: Record<DocumentMark['type'], readonly string[]> = {
   bold: [], italic: [], strike: [], code: [], link: ['href', 'target', 'rel', 'class'],
@@ -102,12 +102,13 @@ function inline(nodes: DocumentNode[] = []): string {
   }).join('');
 }
 
-function block(node: DocumentNode, prefix = ''): string {
+function block(node: DocumentNode, prefix = '', titles?: ReadonlyMap<string, string>): string {
   const children = node.content ?? [];
   switch (node.type) {
     case 'heading': return `${'#'.repeat(Number(node.attrs?.level ?? 1))} ${inline(children)}`;
     case 'paragraph': return inline(children);
-    case 'blockquote': return children.map((child) => block(child)).join('\n\n').split('\n').map((line) => `> ${line}`).join('\n');
+    case 'blockquote': return children.map((child) => block(child, '', titles)).join('\n\n').split('\n').map((line) => `> ${line}`).join('\n');
+    case 'taskReference': return `- [ ] ${titles?.get(String(node.attrs?.taskId)) ?? ''}`.trimEnd();
     case 'codeBlock': return `\`\`\`${String(node.attrs?.language ?? '')}\n${inline(children)}\n\`\`\``;
     case 'horizontalRule': return '---';
     case 'bulletList':
@@ -115,7 +116,7 @@ function block(node: DocumentNode, prefix = ''): string {
       const start = Number(node.attrs?.start ?? 1);
       return children.map((item, index) => {
         const marker = node.type === 'bulletList' ? '- ' : `${start + index}. `;
-        const body = (item.content ?? []).map((child) => block(child, `${prefix}  `)).join('\n');
+        const body = (item.content ?? []).map((child) => block(child, `${prefix}  `, titles)).join('\n');
         return `${prefix}${marker}${body}`;
       }).join('\n');
     }
@@ -124,6 +125,17 @@ function block(node: DocumentNode, prefix = ''): string {
 }
 
 /** A readable copy of a draft for the "Download draft" escape hatch. */
-export function toMarkdown(doc: DocumentNode): string {
-  return `${(doc.content ?? []).map((node) => block(node)).join('\n\n')}\n`;
+export function toMarkdown(doc: DocumentNode, titles?: ReadonlyMap<string, string>): string {
+  return `${(doc.content ?? []).map((node) => block(node, '', titles)).join('\n\n')}\n`;
+}
+
+/** Every task id embedded in the text, once each. */
+export function referencedTaskIds(doc: DocumentNode): Set<string> {
+  const ids = new Set<string>();
+  const visit = (node: DocumentNode) => {
+    if (node.type === 'taskReference' && typeof node.attrs?.taskId === 'string') ids.add(node.attrs.taskId);
+    node.content?.forEach(visit);
+  };
+  visit(doc);
+  return ids;
 }

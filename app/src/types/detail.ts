@@ -15,6 +15,13 @@ export interface SubtreeRow<T extends SubtreeItem = TaskDetailItem> {
   depth: number;
 }
 
+/** What an embedded task block reads: the canonical subtree items and the two actions it can take. */
+export interface TaskReferenceContextValue {
+  items: ReadonlyMap<string, TaskDetailItem>;
+  onToggle: (taskId: string, completed: boolean) => void;
+  onOpen: (taskId: string) => void;
+}
+
 export interface LeafProgress {
   done: number;
   total: number;

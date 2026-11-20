@@ -38,7 +38,8 @@ describe('toServerContent', () => {
 describe('hasUnsupportedNodes', () => {
   it('flags nodes, heading levels or marks this editor cannot render so it never silently drops them', () => {
     expect(hasUnsupportedNodes({ type: 'doc', content: [{ type: 'paragraph' }] })).toBe(false);
-    expect(hasUnsupportedNodes({ type: 'doc', content: [{ type: 'taskReference', attrs: { taskId: 'a', blockId: 'b' } }] })).toBe(true);
+    expect(hasUnsupportedNodes({ type: 'doc', content: [{ type: 'taskReference', attrs: { taskId: 'a', blockId: 'b' } }] })).toBe(false);
+    expect(hasUnsupportedNodes({ type: 'doc', content: [{ type: 'callout' }] })).toBe(true);
     expect(hasUnsupportedNodes({ type: 'doc', content: [{ type: 'heading', attrs: { level: 4 } }] })).toBe(true);
   });
 });

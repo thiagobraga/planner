@@ -1,11 +1,12 @@
 import { useEffect } from 'react';
 import { X } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { ApiError, apiRenameTask, apiSetTaskCompleted, fetchTaskDetail } from '../../api/client';
+import { ApiError, apiCreateTask, apiRenameTask, apiSetTaskCompleted, fetchTaskDetail } from '../../api/client';
 import { useI18n } from '../../i18n/I18nContext';
 import { useDocumentDraft } from '../../hooks/useDocumentDraft';
-import { closeTaskDetails, setDetailMode, useTaskDetailStore } from '../../stores/taskDetailStore';
+import { closeTaskDetails, openTaskDetails, setDetailMode, useTaskDetailStore } from '../../stores/taskDetailStore';
 import { getSocket, getSocketId } from '../../utils/socket';
+import { referencedTaskIds } from '../../utils/documentContent';
 import { flattenSubtree, leafProgress } from '../../utils/subtree';
 import { DetailFrame } from './DetailFrame';
 import { DetailHeader } from './DetailHeader';
@@ -96,6 +97,18 @@ function DetailBody({ taskId, layout, mode, onModeChange }: { taskId: string; la
   const detail = query.data;
   const rows = flattenSubtree(detail.task.id, detail.descendants);
   const progress = leafProgress(detail.task.id, detail.descendants);
+  const embedded = referencedTaskIds(unsaved ?? draft.state.base?.content ?? draft.view.content ?? { type: 'doc' });
+  const otherRows = rows.filter((row) => !embedded.has(row.item.id));
+  const references = {
+    items: new Map(detail.descendants.map((entry) => [entry.id, entry])),
+    onToggle: toggle,
+    onOpen: (id: string) => openTaskDetails(id, { focusPanel: true }),
+  };
+  const createTask = async (title: string) => {
+    const created = await apiCreateTask({ title, collectionId: detail.task.collectionId, parentTaskId: taskId });
+    await refresh();
+    return created.id;
+  };
 
   return (
     <>
@@ -117,11 +130,11 @@ function DetailBody({ taskId, layout, mode, onModeChange }: { taskId: string; la
         ) : (
           <>
             <DetailProperties task={detail.task} progress={progress} />
-            <DetailDocument draft={draft} title={detail.task.title} />
-            {rows.length > 0 && (
+            <DetailDocument draft={draft} title={detail.task.title} references={references} onCreateTask={createTask} />
+            {otherRows.length > 0 && (
               <section className="detail-section" aria-labelledby="detail-other-subtasks">
                 <h3 id="detail-other-subtasks" className="detail-section-label">{t('detail.otherSubtasks')}</h3>
-                <DetailTaskRows rows={rows} onToggle={toggle} />
+                <DetailTaskRows rows={otherRows} onToggle={toggle} />
               </section>
             )}
             <DetailActivity taskId={taskId} />
