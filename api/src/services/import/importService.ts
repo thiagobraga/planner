@@ -101,18 +101,20 @@ export async function applyMarkdownImport(userId: string, body: unknown): Promis
     );
     const doneStatus = statuses.rows.find((row) => row.completion)?.id ?? null;
     const doingStatus = statuses.rows.find((row) => !row.completion && DOING_NAME.test(row.name))?.id ?? null;
+    // Filed like the board files status-less tasks, so a first board open has nothing to backfill.
+    const openStatus = statuses.rows.find((row) => !row.completion)?.id ?? null;
     const warnings = [...built.warnings];
     if (countTasks(built.tasks, "doing") > 0 && !doingStatus) warnings.push("No in-progress status in this collection; [~] items were left open");
 
     const created: TaskRow[] = [];
-    const root = await insertTask(tx, userId, input, { title: input.title, parentId: input.parentTaskId, depth: rootDepth, done: false, statusId: null });
+    const root = await insertTask(tx, userId, input, { title: input.title, parentId: input.parentTaskId, depth: rootDepth, done: false, statusId: openStatus });
     created.push(root);
     const ids = new Map<string, string>();
     const insertTree = async (tasks: ParsedTask[], parentId: string, depth: number) => {
       for (const task of tasks) {
         const row = await insertTask(tx, userId, input, {
           title: task.title, parentId, depth, done: task.state === "done",
-          statusId: task.state === "done" ? doneStatus : task.state === "doing" ? doingStatus : null,
+          statusId: task.state === "done" ? doneStatus : task.state === "doing" ? (doingStatus ?? openStatus) : openStatus,
         });
         created.push(row);
         ids.set(task.key, row.id);
