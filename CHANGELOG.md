@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.37.1](https://github.com/thiagobraga/planner/compare/v0.37.0...v0.37.1) (2026-11-20)
+
+
+### Fixed
+
+* **import:** file imported tasks in a status column ([30a1482](https://github.com/thiagobraga/planner/commit/30a1482b138e82bf8e0aee2ad3375bcec69fd62c))
+
 ## [0.37.0](https://github.com/thiagobraga/planner/compare/v0.36.0...v0.37.0) (2026-11-20)
 
 
