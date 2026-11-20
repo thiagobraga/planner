@@ -47,7 +47,7 @@ function extractIdFromPath(path: string): string | undefined {
 }
 
 // Builds a same-shape stand-in for the REST response while offline, so
-// callers (and `runOptimistic()`'s 2000ms budget) get something to work with
+// callers (and `runOptimistic()`) get something to work with
 // immediately instead of waiting on a network call that will never resolve.
 // The queued mutation itself carries the real request; once it replays
 // successfully the normal publishEvent() -> Redis -> Socket.IO -> useSync
