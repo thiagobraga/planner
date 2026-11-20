@@ -1,30 +1,12 @@
 import { useState, useCallback, useRef } from 'react';
-import type { ApiTask } from '../types/api';
+import type { ApiTask, ReorganizeMove } from '../types/api';
 import { apiReorganizeTasks } from '../api/client';
-import type { ReorganizeMove } from '../types/api';
-
-type ReorganizeState = 'idle' | 'preview' | 'persisting';
-
-export interface Section {
-  date: string;
-  label: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  tasks: any[];
-}
-
-interface ReorganizePreview {
-  moves: ReorganizeMove[];
-  sections: Section[];
-}
-
-export interface UseReorganizeReturn {
-  showButton: boolean;
-  state: ReorganizeState;
-  startPreview: () => void;
-  confirmReorganize: () => Promise<void>;
-  cancelReorganize: () => void;
-  previewSections: Section[] | null;
-}
+import type {
+  ReorganizePreview,
+  ReorganizeState,
+  Section,
+  UseReorganizeReturn,
+} from '../types/hooks';
 
 // Generate YYYY-MM-DD from date
 function formatDate(date: Date): string {

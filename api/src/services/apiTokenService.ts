@@ -10,6 +10,7 @@ import {
   type ApiToken,
   type ApiTokenContext,
   type ApiTokenScope,
+  type ApiTokenRow,
   type CreateApiTokenInput,
   type CreatedApiToken,
 } from "../types/apiToken.js";
@@ -20,16 +21,6 @@ export const PERSONAL_TOKEN_PREFIX = "plnr_";
 const DISPLAY_PREFIX_LENGTH = PERSONAL_TOKEN_PREFIX.length + 8;
 const MAX_ACTIVE_TOKENS = 20;
 const MAX_NAME_LENGTH = 100;
-
-interface ApiTokenRow {
-  id: string;
-  name: string;
-  token_prefix: string;
-  scopes: ApiTokenScope[];
-  created_at: Date;
-  last_used_at: Date | null;
-  expires_at: Date | null;
-}
 
 function toApiToken(row: ApiTokenRow): ApiToken {
   return {

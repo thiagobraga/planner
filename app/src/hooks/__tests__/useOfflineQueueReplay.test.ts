@@ -1,6 +1,6 @@
 import { renderHook } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
-import type { QueuedMutation } from '../../utils/offlineQueue';
+import type { QueuedMutation } from '../../types/utils';
 
 const TEST_USER = 'user-test-1';
 

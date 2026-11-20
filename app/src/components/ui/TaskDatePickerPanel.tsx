@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import type { RecurrenceRule, TaskSchedule } from '../../types/task';
-import { fmtISO, type WeekStart } from '../../utils/date';
+import { fmtISO } from '../../utils/date';
+import type { WeekStart } from '../../types/utils';
 import { usePreferences } from '../../hooks/usePreferences';
 import { DateScreen } from './datePicker/DateScreen';
 import { TimeScreen } from './datePicker/TimeScreen';

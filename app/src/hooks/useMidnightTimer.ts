@@ -1,7 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { getMsUntilMidnight } from '../utils/date';
-
-export type MidnightCallback = () => void;
+import type { MidnightCallback } from '../types/hooks';
 
 export function useMidnightTimer(onMidnight: MidnightCallback, timeZone?: string): void {
   const callbackRef = useRef(onMidnight);

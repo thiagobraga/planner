@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
 import { HabitDot } from './HabitDot';
 import { HabitMonthGrid } from './HabitMonthGrid';
-import { fmtISO, startOfDay, type WeekStart } from '../../utils/date';
+import { fmtISO, startOfDay } from '../../utils/date';
+import type { WeekStart } from '../../types/utils';
 import { buildHabitTree, dayState, habitsToToggle, parentToggleTarget } from '../../utils/habitTree';
 import type { ApiHabit } from '../../types/api';
 

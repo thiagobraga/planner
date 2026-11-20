@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildColumnId } from '../../utils/boardColumns';
-import { applyBoardMoveLocally, resolveBoardMove } from '../useBoardDrag';
+import { applyBoardMoveLocally, resolveBoardMove } from '../../utils/boardMove';
 import type { ApiSection, ApiStatus, ApiTask, BoardOrder } from '../../types/api';
 import type { TaskDragData } from '../../types/drag';
 

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { evaluateFilter, type EvalTask, type EvalContext } from '../filterEvaluator.js';
-import type { FilterExpr } from '../../parsers/filterParser.js';
+import { evaluateFilter } from '../filterEvaluator.js';
+import type { EvalTask, EvalContext, FilterExpr } from '../../types/filters.js';
 
 function task(overrides: Partial<EvalTask> = {}): EvalTask {
   return {

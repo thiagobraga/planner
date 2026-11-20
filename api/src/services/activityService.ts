@@ -2,24 +2,7 @@ import type { Pool, PoolClient } from "pg";
 import pool from "../db/pool.js";
 import { AppError } from "../utils/AppError.js";
 import { currentActor } from "../middleware/requestContext.js";
-import type { ActivityEntry, ActivityRecord, ActorType, ListActivityOptions } from "../types/activity.js";
-
-interface ActivityRow {
-  id: string;
-  user_id: string;
-  collection_id: string | null;
-  entity_type: string;
-  entity_id: string;
-  event_type: string;
-  before_data: unknown | null;
-  after_data: unknown | null;
-  created_at: string;
-  actor_type: ActorType;
-  api_token_id: string | null;
-  oauth_grant_id: string | null;
-  actor_label: string | null;
-  title: string | null;
-}
+import type { ActivityEntry, ActivityRecord, ActivityRow, ListActivityOptions } from "../types/activity.js";
 
 function formatActivity(row: ActivityRow): ActivityEntry {
   return {

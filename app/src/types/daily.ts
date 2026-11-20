@@ -2,8 +2,8 @@ import type { KeyboardEvent, ReactNode, RefObject } from 'react';
 import type { Task, TaskListCallbacks, TaskSchedule } from './task';
 import type { ApiCollection, ApiStatus, ApiTask } from './api';
 import type { useDailyView } from '../hooks/useDailyView';
-import type { WeekStart } from '../utils/date';
-import type { ViewLayout } from './view';
+import type { WeekStart } from './utils';
+import type { DailyViewSettings, ViewLayout } from './view';
 import type { TaskIndentHandler, TaskIndentMenuContext } from './taskIndent';
 
 /** The view segment of /daily/<view>. */
@@ -60,6 +60,31 @@ export interface DailyToolbarProps {
   /** Reorganize is offered only when there is something to move. */
   onReorganize?: () => void;
   onToday: () => void;
+}
+
+export interface ListDaysInput {
+  sections: DaySection[];
+  from: string;
+  to: string;
+  todayKey: string;
+  hideEmptyDays: boolean;
+  /** A Reorganize preview hides the days before today. */
+  preview: boolean;
+  locale: 'en' | 'pt-BR';
+  dateFormat: string;
+}
+
+export interface ListDays {
+  /** Days of the range before today, empty ones included. */
+  past: DaySection[];
+  /** Days of the range after today. */
+  future: DaySection[];
+  /** Every day of a range that does not include today; null when it does. */
+  browsed: DaySection[] | null;
+}
+
+export interface LegacyDailyView extends Partial<DailyViewSettings> {
+  layout: ViewLayout;
 }
 
 export interface DailyReorganizeConfirmProps {

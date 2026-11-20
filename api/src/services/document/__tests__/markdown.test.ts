@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { documentToMarkdown } from "../markdown.js";
+import type { DocumentMark } from "../../../contracts/document.js";
 
-const t = (text: string, marks?: { type: string; attrs?: Record<string, unknown> }[]) => (marks ? { type: "text", text, marks } : { type: "text", text });
+const t = (text: string, marks?: DocumentMark[]) => (marks ? { type: "text", text, marks } : { type: "text", text });
 const p = (...content: ReturnType<typeof t>[]) => ({ type: "paragraph", content });
 
 describe("documentToMarkdown", () => {

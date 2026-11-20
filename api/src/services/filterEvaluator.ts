@@ -1,21 +1,4 @@
-import type { FilterExpr } from '../parsers/filterParser.js';
-
-export interface EvalTask {
-  id: string;
-  title: string;
-  description?: string | null;
-  collectionName: string;
-  labelNames: string[];
-  priority: 1 | 2 | 3 | 4;
-  dueDate?: string | null;
-  assigneeUser?: string | null;
-  isCompleted: boolean;
-}
-
-export interface EvalContext {
-  today: string;
-  currentUser: string;
-}
+import type { EvalContext, EvalTask, FilterExpr } from '../types/filters.js';
 
 function matches(expr: FilterExpr, task: EvalTask, ctx: EvalContext): boolean {
   switch (expr.type) {
