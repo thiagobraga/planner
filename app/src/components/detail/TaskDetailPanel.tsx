@@ -73,7 +73,10 @@ function DetailBody({ taskId, layout, mode, onModeChange }: { taskId: string; la
     };
   }, [status, unsaved, t]);
 
-  const refresh = () => qc.invalidateQueries({ queryKey: ['task-detail'] });
+  // Lists behind the panel skip this tab's own sync echo, so a change made here must refresh them too.
+  const refresh = () => Promise.all(
+    [['task-detail'], ['collection'], ['inbox'], ['daily']].map((queryKey) => qc.invalidateQueries({ queryKey })),
+  );
   const toggle = (id: string, completed: boolean) => {
     void apiSetTaskCompleted(id, completed).catch(() => {}).finally(refresh);
   };
