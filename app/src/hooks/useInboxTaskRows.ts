@@ -8,6 +8,8 @@ import { resolveTaskIndent } from '../utils/taskIndent';
 import { persistTaskIndent } from '../utils/persistTaskIndent';
 import { applySchedule, scheduleFieldsFromApi, withTimeZones } from '../utils/taskTime';
 import type { InboxTaskRowsOptions } from '../types/inbox';
+import { confirmTaskDelete, holdsWork } from '../utils/deleteGuard';
+import { useI18n } from '../i18n/I18nContext';
 
 export function apiToTask(t: ApiTask): Task {
   return {
@@ -35,6 +37,7 @@ export function tempId() { return `temp-${++tempCounter}`; }
 /** Row-level task actions for the Inbox list: add above/below, rename, convert, schedule, delete, indent, toggle. */
 export function useInboxTaskRows({
   tasks, tasksRef, setTasks, setEditingId, setSelectedId, setIndentError, invalidate, locale, hideCompletedTasks, includeCompleted }: InboxTaskRowsOptions) {
+  const { t } = useI18n();
   const calculateMidpointOrder = (taskList: Task[], index: number, type: 'above' | 'below') => {
     const current = taskList[index].orderValue;
     if (type === 'below') {
@@ -98,6 +101,8 @@ export function useInboxTaskRows({
     const trimmed = title.trim();
     setEditingId(undefined);
     if (!trimmed) {
+      // Clearing a title never takes subtasks or notes with it; the rename is dropped instead.
+      if (holdsWork(tasksRef.current.find((t) => t.id === id), tasksRef.current)) return;
       setTasks((prev) => prev.filter((t) => t.id !== id));
       if (!id.startsWith('temp-')) apiDeleteTask(id).catch(() => invalidate());
       return;
@@ -130,7 +135,7 @@ export function useInboxTaskRows({
     } else {
       apiUpdateTask(id, { title: trimmed }).catch(() => invalidate());
     }
-  }, [tasks, invalidate, locale, setEditingId, setTasks]);
+  }, [tasks, invalidate, locale, setEditingId, setTasks, tasksRef]);
 
   const handleConvertType = useCallback((taskId: string, type: 'task' | 'note' | 'event') => {
     setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, type } : t)));
@@ -154,6 +159,7 @@ export function useInboxTaskRows({
   }, [setTasks, invalidate]);
 
   const handleDelete = useCallback((id: string) => {
+    if (!confirmTaskDelete(tasksRef.current.find((t) => t.id === id), tasksRef.current, t)) return;
     setTasks((prev) => {
       const idx = prev.findIndex((t) => t.id === id);
       const next = prev.filter((t) => t.id !== id);
@@ -167,7 +173,7 @@ export function useInboxTaskRows({
     });
     setEditingId(undefined);
     if (!id.startsWith('temp-')) apiDeleteTask(id).catch(() => invalidate());
-  }, [invalidate, setEditingId, setTasks]);
+  }, [invalidate, setEditingId, setTasks, t, tasksRef]);
 
   const handleIndent: TaskIndentHandler = useCallback((id, dir, visibleTasks, scope) => {
     const move = resolveTaskIndent(visibleTasks, id, dir, scope);
