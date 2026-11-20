@@ -186,7 +186,12 @@ describe('TaskDetailPanel', () => {
     expect(within(panel).getByText('1 of 2 done')).toBeInTheDocument();
     expect(within(panel).getByRole('progressbar')).toHaveAttribute('aria-valuenow', '1');
     const rows = within(panel).getAllByRole('listitem');
-    expect(rows.map((row) => row.textContent)).toEqual(['Write tests', 'Unit level', 'Ship it', '-Context note']);
+    expect(rows.map((row) => row.textContent)).toEqual([
+      'Write tests0 of 1',
+      'Unit levelnot in description',
+      'Ship itnot in description',
+      '-Context notenot in description',
+    ]);
     expect(rows[1]).toHaveStyle({ paddingInlineStart: '24px' });
     expect(within(rows[2]).getByRole('checkbox')).toHaveAttribute('aria-checked', 'true');
     expect(screen.queryByRole('textbox', { name: 'Description' })).not.toBeInTheDocument();
@@ -213,6 +218,19 @@ describe('TaskDetailPanel', () => {
 
     fireEvent.click(within(editor).getByRole('checkbox', { name: 'Complete: Linked in prose' }));
     await waitFor(() => expect(postCalls.some((call) => call.url === `/tasks/${LINKED}/complete`)).toBe(true));
+  });
+
+  it('nests an embedded task\'s own subtasks under its row and keeps them out of Other subtasks', async () => {
+    details[EMBED].descendants = [...details[EMBED].descendants, item('g1', 'Nested step', LINKED, { orderValue: 1 })];
+    renderAt(EMBED);
+    const panel = await loadedPanel();
+    const editor = await screen.findByRole('textbox', { name: 'Description' });
+    const nested = await within(editor).findByRole('button', { name: 'Open Nested step' });
+    expect(nested.closest('.detail-row')).toHaveStyle({ paddingInlineStart: '24px' });
+    expect(within(editor).getByText('0 of 1')).toBeInTheDocument();
+    const others = within(panel).getByRole('region', { name: 'Other subtasks' });
+    expect(within(others).queryByText('Nested step')).not.toBeInTheDocument();
+    expect(within(others).getByText('Loose subtask')).toBeInTheDocument();
   });
 
   it('creates a real child task from the editor and inserts its block at the caret', async () => {
