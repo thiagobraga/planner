@@ -30,6 +30,7 @@ import { apiToTask, useInboxTaskRows } from '../hooks/useInboxTaskRows';
 import { useInboxAdd } from '../hooks/useInboxAdd';
 import { useInboxSections } from '../hooks/useInboxSections';
 import { useCollectionSubmenu } from '../hooks/useCollectionSubmenu';
+import { useCoalescedInvalidate } from '../hooks/useCoalescedInvalidate';
 
 
 function buildSectionGroups(tasks: Task[], sections: StoreSection[]) {
@@ -99,6 +100,7 @@ export function InboxPage() {
   }
 
   const invalidate = useCallback(() => qc.invalidateQueries({ queryKey: ['inbox'] }), [qc]);
+  const refreshSoon = useCoalescedInvalidate(['inbox']);
 
   // Moves are addressed to the real Inbox collection, which the view resolves
   // for us rather than the client having to look it up.
@@ -123,8 +125,8 @@ export function InboxPage() {
     // Refetching mid-move would overwrite the optimistic state with the order the
     // server held before the request this session is still waiting on.
     if (isEchoedMove(event)) return;
-    invalidate();
-  }, [invalidate, qc]));
+    refreshSoon();
+  }, [refreshSoon, qc]));
 
   const { handleAddAtEnd, handleAddSectionTask, handleAddNoteKeyDown } = useInboxAdd({
     input, setInput, setSectionTaskInput, setTasks, setEditingId, invalidate, locale });

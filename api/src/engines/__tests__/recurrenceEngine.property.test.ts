@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
 import { computeNextOccurrence } from '../recurrenceEngine.js';
-import type { DueDate, RecurrenceRule } from '../recurrenceEngine.js';
+import type { RecurrenceDueDate as DueDate, RecurrenceRule } from '../../types/recurrence.js';
 
 const arbValidDate = fc.date({ min: new Date('2000-01-01'), max: new Date('2099-12-31'), noInvalidDate: true })
   .map(d => {

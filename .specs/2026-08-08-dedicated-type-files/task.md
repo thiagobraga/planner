@@ -110,34 +110,33 @@ Naming rule: rename narrower shape with domain prefix (`ViewTaskRow`,
 
 ## Milestone 6 — hooks/contexts/misc
 
-- [ ] `types/hooks.ts` additions: `ShortcutContext`, `SingleBinding`,
+- [x] `types/hooks.ts` additions: `ShortcutContext`, `SingleBinding`,
       `ChordBinding`, `Binding`, `KeyEvent`, `MatcherState`;
       `Position`, `Placement`, `Align`, `FloatingOptions`,
       `FloatingResult`; `MidnightCallback`; `VersionResponse`;
-      `UseBoardDragOptions`, `ResolvedBoardMove`, `BoardSnapshot`;
+      `UseBoardDragOptions`, `ResolvedBoardMove`, `BoardMoveSnapshot`;
       `BoardColumnDeleteOption`, `DeleteDraft`; `ReorganizeState`,
       `ReorganizePreview`, `UseReorganizeReturn`
-- [ ] Create `app/src/types/sync.ts`: `SyncEvent` (useSync)
-- [ ] Create `app/src/types/utils.ts`: `Rgb`, `Hsv`, `Hsl`, `ParsedColor`,
+- [x] Create `app/src/types/sync.ts`: `SyncEvent` (useSync)
+- [x] Create `app/src/types/utils.ts`: `Rgb`, `Hsv`, `Hsl`, `ParsedColor`,
       `ColorFormat`; `WeekStart`, `WeekDay`, `MonthDay`, `ParsedDate`;
       `FontOption`; `PhraseSection`; `QueuedMutationMethod`,
       `QueuedMutation`; `MovePayload`, `EchoableEvent`; `Ordered`;
       `DayColumnId`, `DayColumn`; `DateQuickOptionKey/Option`;
-      `BoardColumnId`, `BoardColumn`, `StatusListTask/Group`;
       `AgentTranslate`; `RecurrenceLocale`
-- [ ] Create `app/src/types/i18n.ts`: `HelpSection`, `HelpContent`;
+- [x] Create `app/src/types/i18n.ts`: `HelpSection`, `HelpContent`;
       `I18nContextValue`. Leave `Locale` in `catalogs.ts`
-- [ ] Add to `types/drag.ts`: `DragHandlers`, `DragOverlayInfo`,
+- [x] Add to `types/drag.ts`: `DragHandlers`, `DragOverlayInfo`,
       `PlannerDragContextValue`
-- [ ] Update importers and tests; confirm `TaskOrderScope`/`BoardGroupBy`
+- [x] Update importers and tests; confirm `TaskOrderScope`/`BoardGroupBy`
       referenced from `drag.ts` only
-- [ ] Verify: `docker compose exec app npm run build && npm run lint`
-- [ ] Commit: `refactor(app): extract hook, util, sync and drag-context types`
+- [x] Verify: `docker compose exec app npm run build && npm run lint`
+- [x] Commit: `refactor(app): extract hook, util, sync and drag-context types`
 
 ## Milestone 7 — api types
 
-- [ ] `api/src/types/recurrence.ts`: already done - verify only
-- [ ] `api/src/types/parsers.ts` (new): unified `PeggyParser`,
+- [x] `api/src/types/recurrence.ts`: move engine-specific due date and remove type re-exports
+- [x] `api/src/types/parsers.ts` (new): unified `PeggyParser`,
       `ParserOptions`; update both parsers
 - [ ] Extend `api/src/types/task.ts`: add `TaskRow`, `SubtreeRow`,
       `MovedTaskSummary`, `CreateTaskInput`, `UpdateTaskInput`,
@@ -146,24 +145,24 @@ Naming rule: rename narrower shape with domain prefix (`ViewTaskRow`,
       `Habit`, `HabitGroup`, `HabitEntityType`, `CreateHabitInput`,
       `UpdateHabitInput`, `CompletionResult`, `UpdateHabitGroupInput`,
       `MoveHabitInput/Result`, `MoveHabitGroupInput/Result`
-- [ ] Create `api/src/types/collections.ts`: `CollectionRow`,
+- [x] Create `api/src/types/collections.ts`: `CollectionRow`,
       `Create/UpdateCollectionInput`; `SectionRow`,
       `Create/UpdateSectionInput`; `InvitationRow`, `CollaboratorRow`;
       `LabelRow`, `Label`, `Create/UpdateLabelInput`
 - [ ] Extend `api/src/types/daily.ts`: add `ViewTaskRow`,
       `ViewPreferencesRow`, `ViewStatusRow`, `BoardOrderRow`
-- [ ] Create `api/src/types/filters.ts`: `FilterExpr`, `FilterParseError`,
+- [x] Create `api/src/types/filters.ts`: `FilterExpr`, `FilterParseError`,
       `FilterRow`, `Create/UpdateFilterInput`, `EvalTask`, `EvalContext`
-- [ ] Create `api/src/types/sync.ts`: `SocketData`, `SyncEntityType`,
+- [x] Create `api/src/types/sync.ts`: `SocketData`, `SyncEntityType`,
       `SyncEventType`, `SyncEvent`
-- [ ] Create `api/src/types/auth.ts`: `UserRole`, `UserData`,
+- [x] Create `api/src/types/auth.ts`: `UserRole`, `UserData`,
       `RegisterInput`; `SessionContext`, `SessionRow`,
       `SessionCookieOptions`
-- [ ] Create `api/src/types/admin.ts`: `AdminUser`, `AdminUserRow`,
+- [x] Create `api/src/types/admin.ts`: `AdminUser`, `AdminUserRow`,
       `ListUsersResult`; `AdminCounts`, `AdminHealth`, `AdminAuthStats`
-- [ ] Extend `api/src/types/activity.ts`: add `ActivityRow`,
+- [x] Extend `api/src/types/activity.ts`: add `ActivityRow`,
       `SearchableEntity`, `SearchResults`, `CommentRow`, `ReminderRow`
-- [ ] Extend `api/src/types/apiToken.ts`: add `ApiTokenRow`
+- [x] Extend `api/src/types/apiToken.ts`: add `ApiTokenRow`
 - [ ] Create `api/src/types/misc.ts`: `PreferencesRow` (preferencesService),
       `BoardGroupBy`, `BoardViewMode`, `BoardViewModes`,
       `UpdatePreferencesInput`; `RateLimitResult`, `MemEntry`;

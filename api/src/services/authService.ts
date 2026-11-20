@@ -9,27 +9,12 @@ import { validatePassword, hashPassword, verifyArgon2id } from './passwordServic
 import { createSession } from './sessionService.js';
 import { sendPasswordResetEmail } from './emailService.js';
 import { CORS_ORIGIN } from '../config.js';
+import type { RegisterInput, UserData } from '../types/auth.js';
 import {
   checkLoginRate,
   incrementLoginAttempts,
   clearLoginRate,
 } from './rateLimitService.js';
-
-export type UserRole = 'user' | 'admin';
-
-export interface UserData {
-  id: string;
-  email: string;
-  displayName: string | null;
-  role: UserRole;
-}
-
-export interface RegisterInput {
-  email: string;
-  password: string;
-  displayName?: string;
-  timeZone?: string;
-}
 
 export async function register(input: RegisterInput): Promise<UserData> {
   const errors: ValidationError[] = [];

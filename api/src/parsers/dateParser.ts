@@ -3,21 +3,12 @@ import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import peggy from 'peggy';
 import type { DueDate } from '../types/recurrence.js';
-
-export type { DueDate, RecurrenceRule } from '../types/recurrence.js';
-
-interface ParserOptions {
-  now?: Date;
-  /** 'pt-BR' reads slashed dates day-first (17/10); anything else month-first. */
-  locale?: string;
-}
+import type { ParserOptions, PeggyParser } from '../types/parsers.js';
 
 // Accents are optional in Portuguese input ("amanhã" or "amanha"), so the grammar only knows the bare letters.
 function stripAccents(input: string): string {
   return input.normalize('NFD').replace(/[̀-ͯ]/g, '');
 }
-
-type PeggyParser = { parse: (input: string, options?: Record<string, unknown>) => unknown };
 
 let cachedParser: PeggyParser | null = null;
 

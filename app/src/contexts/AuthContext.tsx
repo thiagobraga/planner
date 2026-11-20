@@ -10,14 +10,7 @@ import { BACKGROUND_CACHE_KEY } from '../utils/theme';
 import { clearDocumentDrafts } from '../hooks/useDocumentDraft';
 import { useI18n } from '../i18n/I18nContext';
 import { setUnauthorizedHandler } from '../utils/authEvents';
-
-interface AuthContextValue {
-  user: AuthUser | null;
-  isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, displayName?: string) => Promise<void>;
-  logout: () => void;
-}
+import type { AuthContextValue } from '../types/hooks';
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 

@@ -8,33 +8,15 @@
 // The handler is driven by feeding keydown events through `handleKey`. Active
 // chords time out after CHORD_WINDOW_MS.
 
+import type {
+  Binding,
+  ChordBinding,
+  KeyEvent,
+  MatcherState,
+  SingleBinding,
+} from '../types/hooks';
+
 export const CHORD_WINDOW_MS = 1000;
-
-export type ShortcutContext = 'global' | 'always';
-
-export interface SingleBinding {
-  key: string;
-  context?: ShortcutContext;
-  action: string;
-}
-
-export interface ChordBinding {
-  keys: [string, string]; // length-2 chord (sufficient for the spec)
-  context?: ShortcutContext;
-  action: string;
-}
-
-export type Binding = SingleBinding | ChordBinding;
-
-export interface KeyEvent {
-  key: string;
-  isTextInputFocused: boolean;
-  timestamp: number;
-}
-
-export interface MatcherState {
-  pendingChord: { firstKey: string; firstAt: number } | null;
-}
 
 export function createMatcherState(): MatcherState {
   return { pendingChord: null };

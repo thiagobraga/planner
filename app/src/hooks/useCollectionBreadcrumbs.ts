@@ -15,7 +15,7 @@ import type {
   DeletingCollectionState,
 } from '../types/collections';
 import { runOptimistic, patchById, upsertById } from '../stores/optimistic';
-import { getHierarchicalColor } from '../utils/collectionTree';
+import { childCollectionsOf, getHierarchicalColor } from '../utils/collectionTree';
 
 export function useCollectionBreadcrumbs(
   id: string,
@@ -94,10 +94,7 @@ export function useCollectionBreadcrumbs(
 
   const childCollections = useMemo<CollectionCrumb[]>(
     () =>
-      collections
-        .filter((c) => c.parentId === id && !c.isArchived && !c.isInbox)
-        .sort((a, b) => a.orderValue - b.orderValue)
-        .map((c) => ({ id: c.id, name: c.name, color: c.color })),
+      childCollectionsOf(collections, id).map((c) => ({ id: c.id, name: c.name, color: c.color })),
     [collections, id],
   );
 

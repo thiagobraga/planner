@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState, useEffect, useCallback } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useReorganize, type Section as ReorganizeSection } from '../hooks/useReorganize';
+import { useReorganize } from '../hooks/useReorganize';
+import type { Section as ReorganizeSection } from '../types/hooks';
 import { PageHeader } from '../components/PageHeader';
 import { CollectionChip } from '../components/ui/Chip';
 import { DailyWeekBoard } from '../components/board/DailyWeekBoard';
@@ -30,7 +31,6 @@ import type { DaySection } from '../types/daily';
 import type { ViewLayout } from '../types/view';
 import type { Task } from '../types/task';
 import { isNativeContextMenu } from '../utils/contextMenu';
-
 export function DailyPage({ layout }: { layout: ViewLayout }) {
   const { locale, t } = useI18n();
   const qc = useQueryClient();

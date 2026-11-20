@@ -1,9 +1,7 @@
+import type { Ordered } from '../types/utils';
+
 /** The gap the server leaves between adjacent rows, so inserts rarely renumber. */
 export const ORDER_STEP = 1000;
-
-interface Ordered {
-  orderValue: number;
-}
 
 /**
  * The order value for a row appended to the end of `rows`.

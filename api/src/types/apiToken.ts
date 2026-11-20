@@ -1,5 +1,15 @@
 export type ApiTokenScope = "read" | "write";
 
+export interface ApiTokenRow {
+  id: string;
+  name: string;
+  token_prefix: string;
+  scopes: ApiTokenScope[];
+  created_at: Date;
+  last_used_at: Date | null;
+  expires_at: Date | null;
+}
+
 export const API_TOKEN_SCOPES: readonly ApiTokenScope[] = ["read", "write"];
 
 export const API_TOKEN_EXPIRY_DAYS = [30, 90, 365] as const;
