@@ -18,6 +18,7 @@ const UNSUPPORTED = '55555555-5555-4555-8555-555555555555';
 const EMBED = '66666666-6666-4666-8666-666666666666';
 const LINKED = '77777777-7777-4777-8777-777777777777';
 const LOOSE = '88888888-8888-4888-8888-888888888888';
+const CLAIMED = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 
 const item = (id: string, title: string, parentTaskId: string | null, extra: Partial<TaskDetailItem> = {}): TaskDetailItem => ({
   id, title, parentTaskId, collectionId: 'col', sectionId: null, type: 'task', isCompleted: false, statusId: null,
@@ -27,7 +28,7 @@ const item = (id: string, title: string, parentTaskId: string | null, extra: Par
 const details: Record<string, TaskDetailDto> = {
   [ROOT]: {
     task: item(ROOT, 'Plan the slice', null),
-    ancestors: [],
+    ancestors: [], claim: null,
     descendants: [
       item(CHILD, 'Write tests', ROOT, { orderValue: 1 }),
       item('c2', 'Ship it', ROOT, { orderValue: 2, isCompleted: true }),
@@ -35,12 +36,16 @@ const details: Record<string, TaskDetailDto> = {
       item('n1', 'Context note', ROOT, { orderValue: 3, type: 'note' }),
     ],
   },
-  [CHILD]: { task: item(CHILD, 'Write tests', ROOT), ancestors: [{ id: ROOT, title: 'Plan the slice' }], descendants: [item('c3', 'Unit level', CHILD)] },
-  [EMPTY]: { task: item(EMPTY, 'Lonely task', null), ancestors: [], descendants: [] },
-  [UNSUPPORTED]: { task: item(UNSUPPORTED, 'Future doc', null), ancestors: [], descendants: [] },
+  [CHILD]: { task: item(CHILD, 'Write tests', ROOT), ancestors: [{ id: ROOT, title: 'Plan the slice' }], claim: null, descendants: [item('c3', 'Unit level', CHILD)] },
+  [CLAIMED]: {
+    task: item(CLAIMED, 'Agent work', null), ancestors: [], descendants: [],
+    claim: { label: 'Agent Alpha', actorType: 'token', claimedAt: '2026-11-20T12:00:00Z', expiresAt: '2099-01-01T12:30:00Z' },
+  },
+  [EMPTY]: { task: item(EMPTY, 'Lonely task', null), ancestors: [], claim: null, descendants: [] },
+  [UNSUPPORTED]: { task: item(UNSUPPORTED, 'Future doc', null), ancestors: [], claim: null, descendants: [] },
   [EMBED]: {
     task: item(EMBED, 'Embedded plan', null),
-    ancestors: [],
+    ancestors: [], claim: null,
     descendants: [item(LINKED, 'Linked in prose', EMBED, { orderValue: 1 }), item(LOOSE, 'Loose subtask', EMBED, { orderValue: 2 })],
   },
 };
@@ -114,7 +119,13 @@ beforeEach(() => {
       }
       return respond(200, { taskId: id, content: { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Initial notes' }] }] }, schemaVersion: 1, revision: 0, updatedAt: null, updatedBy: null });
     }
-    if (path.endsWith('/comments')) return respond(200, []);
+    if (path.endsWith('/comments')) {
+      if (id !== CLAIMED) return respond(200, []);
+      return respond(200, [
+        { id: 'k1', taskId: id, userId: 'u1', body: 'PR opened: https://github.com/o/r/pull/1', createdAt: '2026-11-20T12:05:00Z', updatedAt: null, actorLabel: 'Agent Alpha' },
+        { id: 'k2', taskId: id, userId: 'u1', body: 'Thanks', createdAt: '2026-11-20T12:06:00Z', updatedAt: null, actorLabel: null },
+      ]);
+    }
     if (path.startsWith('/collections')) return respond(200, []);
     if (path.includes('/statuses')) return respond(200, []);
     if (path.startsWith('/tasks/') && details[id]) return respond(200, details[id]);
@@ -259,6 +270,18 @@ describe('TaskDetailPanel', () => {
     fireEvent.click(within(crumbs).getByRole('button', { name: 'Plan the slice' }));
     await waitFor(() => expect(within(panel).getByRole('textbox', { name: 'Title' })).toHaveValue('Plan the slice'));
     await screen.findByRole('textbox', { name: 'Description' });
+  });
+
+  it('shows the agent holding a claim, who wrote each comment and links in comments', async () => {
+    renderAt(CLAIMED);
+    const panel = await loadedPanel();
+    expect(await within(panel).findByText('Claimed by Agent Alpha')).toBeInTheDocument();
+    const link = await within(panel).findByRole('link', { name: 'https://github.com/o/r/pull/1' });
+    expect(link).toHaveAttribute('href', 'https://github.com/o/r/pull/1');
+    expect(link).toHaveAttribute('rel', 'noopener noreferrer');
+    const items = within(panel).getAllByRole('listitem').filter((li) => li.closest('.detail-comments'));
+    expect(within(items[0]).getByText('Agent Alpha')).toBeInTheDocument();
+    expect(within(items[1]).queryByText('Agent Alpha')).not.toBeInTheDocument();
   });
 
   it('says No subtasks rather than a percentage for an empty plan', async () => {

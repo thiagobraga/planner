@@ -4,6 +4,19 @@ import { apiCreateComment, fetchTaskComments } from '../../api/client';
 import { commentsQueryKey } from '../../utils/commentSync';
 import { useI18n } from '../../i18n/I18nContext';
 
+const URL_PATTERN = /(https?:\/\/[^\s<>"']+[^\s<>"'.,;:!?)\]])/g;
+
+/** Plain text with http(s) URLs as links; everything else stays text, so nothing is parsed as markup. */
+function CommentBody({ body }: { body: string }) {
+  return (
+    <p>
+      {body.split(URL_PATTERN).map((part, index) =>
+        index % 2 === 1 ? <a key={index} href={part} target="_blank" rel="noopener noreferrer">{part}</a> : part,
+      )}
+    </p>
+  );
+}
+
 export function DetailActivity({ taskId }: { taskId: string }) {
   const { t, locale } = useI18n();
   const qc = useQueryClient();
@@ -39,10 +52,13 @@ export function DetailActivity({ taskId }: { taskId: string }) {
         <ol className="detail-comments">
           {comments.map((comment) => (
             <li key={comment.id}>
-              <time dateTime={comment.createdAt}>
-                {new Date(comment.createdAt).toLocaleString(locale, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-              </time>
-              <p>{comment.body}</p>
+              <div className="detail-comment-meta">
+                <time dateTime={comment.createdAt}>
+                  {new Date(comment.createdAt).toLocaleString(locale, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                </time>
+                {comment.actorLabel && <span className="detail-comment-actor">{comment.actorLabel}</span>}
+              </div>
+              <CommentBody body={comment.body} />
             </li>
           ))}
         </ol>

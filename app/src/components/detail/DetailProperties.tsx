@@ -3,13 +3,13 @@ import { useQuery } from '@tanstack/react-query';
 import { fetchCollections, fetchStatuses } from '../../api/client';
 import { useI18n } from '../../i18n/I18nContext';
 import { formatDueDate } from '../../utils/formatDueDate';
-import type { TaskDetailItem } from '../../contracts/taskDetail';
+import type { TaskDetailClaim, TaskDetailItem } from '../../contracts/taskDetail';
 import type { TranslationKey } from '../../i18n/catalogs';
 
 const TYPE_LABEL: Record<TaskDetailItem['type'], TranslationKey> = { task: 'detail.typeTask', note: 'detail.typeNote', event: 'detail.typeEvent' };
 
 /** Status, collection and progress up front; the rest waits behind "More properties". */
-export function DetailProperties({ task, progress }: { task: TaskDetailItem; progress: { done: number; total: number } }) {
+export function DetailProperties({ task, progress, claim }: { task: TaskDetailItem; progress: { done: number; total: number }; claim: TaskDetailClaim | null }) {
   const { t, locale } = useI18n();
   const [expanded, setExpanded] = useState(false);
   const moreId = useId();
@@ -36,6 +36,17 @@ export function DetailProperties({ task, progress }: { task: TaskDetailItem; pro
           ? <span className="detail-muted">{t('detail.noSubtasks')}</span>
           : t('detail.progressValue', { done: progress.done, total: progress.total, percent })}
         </dd>
+        {claim && (
+          <>
+            <dt>{t('detail.claim')}</dt>
+            <dd>
+              <span className="detail-claim">{t('detail.claimedBy', { label: claim.label })}</span>{' '}
+              <span className="detail-muted">
+                {t('detail.claimUntil', { time: new Date(claim.expiresAt).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' }) })}
+              </span>
+            </dd>
+          </>
+        )}
       </dl>
       {expanded && (
         <dl id={moreId}>
