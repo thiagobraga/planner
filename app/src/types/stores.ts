@@ -3,8 +3,10 @@
 export interface OptimisticOp<T extends { id: string }> {
   // Apply the optimistic change to the working set.
   apply: (state: T[]) => T[];
-  // Snapshot used by revert if the API call fails.
+  // State before the change; revert restores entities from it.
   snapshot: T[];
+  // State right after the change; revert leaves alone anything that no longer matches it.
+  next: T[];
 }
 
 export interface RunOptimisticOptions<T extends { id: string }, R> {
@@ -13,10 +15,8 @@ export interface RunOptimisticOptions<T extends { id: string }, R> {
   call: () => Promise<R>;
   // Called with the next state after applying optimistically.
   onApply?: (next: T[]) => void;
-  // Called with the snapshot when revert is triggered (failure path).
-  onRevert?: (snapshot: T[]) => void;
+  // Called once the API call fails, with a function that undoes this change on the current state.
+  onRevert?: (revert: (current: T[]) => T[]) => void;
   // Called with the API result on success.
   onSuccess?: (result: R) => void;
-  // Max ms to wait for the API call before treating it as failed (default 2000).
-  revertTimeoutMs?: number;
 }

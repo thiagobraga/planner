@@ -132,7 +132,7 @@ export function useCollectionsTree(
       apply: (prev) => patchById(prev, node.id, { color }),
       call: () => apiUpdateCollection(node.id, { color }),
       onApply: (next) => qc.setQueryData<ApiCollection[]>(['collections'], next),
-      onRevert: (snapshot) => qc.setQueryData<ApiCollection[]>(['collections'], snapshot),
+      onRevert: (revert) => qc.setQueryData<ApiCollection[]>(['collections'], (prev) => revert(prev ?? [])),
       onSuccess: (updated) =>
         qc.setQueryData<ApiCollection[]>(['collections'], (prev) => upsertById(prev ?? [], updated)),
     }).catch(() => qc.invalidateQueries({ queryKey: ['collections'] }));

@@ -150,7 +150,7 @@ export function CollectionTreeNav() {
       apply: (prev) => patchById(prev, id, { color }),
       call: () => apiUpdateCollection(id, { color }),
       onApply: (next) => qc.setQueryData<ApiCollection[]>(['collections'], next),
-      onRevert: (snapshot) => qc.setQueryData<ApiCollection[]>(['collections'], snapshot),
+      onRevert: (revert) => qc.setQueryData<ApiCollection[]>(['collections'], (prev) => revert(prev ?? [])),
       onSuccess: (updated) => setCollectionsCache((prev) => upsertById(prev, updated)),
     }).catch(() => qc.invalidateQueries({ queryKey: ['collections'] }));
   };
