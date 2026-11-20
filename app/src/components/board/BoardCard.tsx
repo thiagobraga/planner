@@ -66,7 +66,7 @@ export function BoardCard({ task, subtasks, containerId = '', subtreeIds, onTogg
           aria-label={task.isCompleted ? t('board.reopenTask') : t('board.completeTask')}
           onClick={() => onToggle?.(task.id, !task.isCompleted)}
         >
-          {task.isCompleted && <Check size={12} strokeWidth={2} />}
+          {task.isCompleted && <Check size={9} strokeWidth={3} />}
         </button>
         <h3 className={task.isCompleted ? 'line-through opacity-60' : ''}>{task.title}</h3>
         {onTaskContextMenu && <button

@@ -105,7 +105,7 @@
 .board-card {
   position: relative;
   display: grid;
-  gap: 0;
+  gap: 8px;
   min-height: 48px;
   padding: 12px;
   border: 0;
@@ -121,8 +121,8 @@
 
 .board-card-topline {
   display: grid;
-  grid-template-columns: 18px minmax(0, 1fr) 24px;
-  gap: 6px;
+  grid-template-columns: 12px minmax(0, 1fr) 24px;
+  gap: 8px;
   align-items: start;
 }
 
@@ -140,26 +140,40 @@
 
 .board-card-topline h3 {
   overflow-wrap: anywhere;
-  font-size: 13px;
-  font-weight: 500;
-  line-height: 24px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
 }
 
+/* 12px box centered on the 20px title line; the pseudo element keeps a 24px hit area. */
 .board-card-check {
+  position: relative;
   display: grid;
-  width: 16px;
-  height: 16px;
+  width: 12px;
+  height: 12px;
   margin-top: 4px;
+  padding: 0;
   place-items: center;
-  border: 1px solid var(--color-ink-lighter);
-  border-radius: 2px;
+  box-sizing: border-box;
+  border: 1px solid var(--color-ink-light);
+  border-radius: 3px;
   background: transparent;
-  color: var(--color-on-accent);
+  color: var(--color-cream);
+  cursor: pointer;
+}
+
+.board-card-check::before {
+  content: '';
+  position: absolute;
+  inset: 50% auto auto 50%;
+  width: 24px;
+  height: 24px;
+  transform: translate(-50%, -50%);
 }
 
 .board-card-check.is-complete {
-  border-color: var(--color-accent);
-  background: var(--color-accent);
+  border-color: var(--color-ink);
+  background: var(--color-ink);
 }
 
 .board-card-labels {
@@ -190,16 +204,38 @@
   display: -webkit-box;
   overflow: hidden;
   color: var(--color-ink-light);
-  font-size: 11px;
-  line-height: 24px;
+  font-size: 12px;
+  line-height: 1.5;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
 }
 
 .board-card-checklist {
   display: grid;
-  gap: 6px;
-  padding-top: 6px;
+  gap: 0;
+}
+
+.board-card-progress {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-block-end: 8px;
+  font-size: 11px;
+  color: var(--color-ink-light);
+}
+
+.board-card-progress-bar {
+  flex: 1;
+  height: 4px;
+  overflow: hidden;
+  border-radius: 2px;
+  background: var(--color-border-subtle);
+}
+
+.board-card-progress-bar > span {
+  display: block;
+  height: 100%;
+  background: var(--color-moss);
 }
 
 .board-card-checklist.is-empty {
@@ -221,10 +257,11 @@
 
 .board-card-checklist-row {
   display: grid;
-  grid-template-columns: 16px minmax(0, 1fr);
-  gap: 6px;
+  grid-template-columns: 12px minmax(0, 1fr);
+  gap: 8px;
   align-items: start;
-  font-size: 11px;
+  min-height: 24px;
+  font-size: 12px;
   line-height: 24px;
 }
 
@@ -233,14 +270,13 @@
 }
 
 .board-card-checklist-row .board-card-check {
-  margin-top: 2px;
+  margin-top: 6px;
 }
 
 .board-card-checklist-dash {
   display: grid;
-  width: 16px;
-  height: 16px;
-  margin-top: 2px;
+  width: 12px;
+  height: 24px;
   place-items: center;
   color: var(--color-ink-lighter);
 }
