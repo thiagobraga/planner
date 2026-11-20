@@ -63,3 +63,8 @@ Trade-off: downtime scales with database size. If the dump turns out to take mor
 - `CLAUDE.md` (GEMINI.md/AGENTS.md symlinks) - "PostgreSQL 16" text
 - `.claude/agents/db-migrator.md`, `.codex/agents/db-migrator.toml` - "PostgreSQL 16" text
 - `README.md` - upgrade and rollback notes for dev and prod
+
+## Rollout checkpoint
+
+- Production source confirmed at PostgreSQL 16.15. The manual backup `20261120T224328Z-manualpg18.dump` is on the server under `deploy/backups/postgres18/`. Its checksum and scratch restore passed before implementation.
+- Use a single draft PR for the Compose, recovery and CI changes. Schedule the production cutover separately after an isolated rehearsal passes.
