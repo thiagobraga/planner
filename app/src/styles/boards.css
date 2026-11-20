@@ -1,4 +1,5 @@
 @import "./boardCards.css";
+@import "./boardFill.css";
 
 .board-scroll {
   width: 100%;
