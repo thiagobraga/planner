@@ -5,10 +5,11 @@ import { openBoard } from './specs/board/helpers';
 import type { TaskDocumentDto } from '../src/contracts/document';
 
 /**
- * Development-home golden path: a note captured in Inbox opens in details, a
- * parent plan gets six real subtasks written between paragraphs, the card
- * previews five of them, Show all opens Only tasks, and an agent's change
- * reaches the open board live.
+ * Development-home golden path: a task captured in Daily and a note in Inbox
+ * open in details; a parent plan gets six real subtasks written between
+ * paragraphs; the card previews five, Show all opens Only tasks and switching
+ * back keeps the prose; the export, a second tab and an agent's live change
+ * all see the same plan.
  */
 
 test.use({ storageState: STORAGE_STATE_PATH });
@@ -24,7 +25,17 @@ test('a note and a parent plan with six subtasks among paragraphs', async ({ api
 
   const note = await api.post<{ id: string; title: string }>('/tasks', { title: unique('Context note'), type: 'note' });
   const collection = await api.createCollection({ name: unique('golden'), color: '#adb9c1' });
+  const captured = unique('Daily capture');
   try {
+    await page.goto('/daily/list');
+    await page.locator('body').press('q');
+    const quickAdd = page.getByRole('textbox', { name: 'Task title', exact: true });
+    await quickAdd.fill(`${captured} today`);
+    await quickAdd.press('Enter');
+    await page.getByText(captured, { exact: true }).click();
+    await expect(panel(page).getByRole('textbox', { name: 'Title' })).toHaveValue(captured);
+    await closePanel(page);
+
     await page.goto('/inbox');
     await page.locator(`[data-task-id="${note.id}"]`).getByText(note.title).click();
     await expect(panel(page).getByRole('textbox', { name: 'Title' })).toHaveValue(note.title);
@@ -40,7 +51,10 @@ test('a note and a parent plan with six subtasks among paragraphs', async ({ api
     await expect(panel(page).getByRole('textbox', { name: 'Title' })).toHaveValue(parent.title);
 
     // Keyboard only, like someone writing: text, Ctrl+Shift+T, title, Enter, keep typing.
+    // q and / are global shortcuts; inside the editor they must stay text.
     await editor(page).click();
+    await page.keyboard.type('Ask q / later. ');
+    await expect(page.getByRole('textbox', { name: 'Task title', exact: true })).toHaveCount(0);
     for (let step = 1; step <= 6; step++) {
       await page.keyboard.type(`Paragraph before step ${step}`);
       await page.keyboard.press('Control+Shift+T');
@@ -67,7 +81,20 @@ test('a note and a parent plan with six subtasks among paragraphs', async ({ api
     for (let step = 1; step <= 6; step++) {
       await expect(panel(page).getByRole('button', { name: `Open Step ${step}` })).toBeVisible();
     }
+    await panel(page).getByRole('radio', { name: 'Full content' }).click();
+    await expect(editor(page)).toContainText('Paragraph before step 6');
+    await expect(editor(page)).toContainText('Ask q / later.');
     await closePanel(page);
+
+    const exported = await api.get<{ documents: Array<{ taskId: string; markdown: string }> }>('/account/export');
+    const plan = exported.documents.find((doc) => doc.taskId === parent.id);
+    expect(plan?.markdown).toContain('Paragraph before step 3');
+    expect(plan?.markdown).toContain('Step 3');
+
+    const other = await page.context().newPage();
+    await other.goto(`/collection/${collection.id}?task=${parent.id}`);
+    await expect(other.getByRole('complementary', { name: 'Task details' }).getByRole('textbox', { name: 'Description' })).toContainText('Paragraph before step 6');
+    await other.close();
 
     const view = await api.fetchCollectionView(collection.id);
     const first = view.tasks.find((entry) => entry.title === 'Step 1')!;
@@ -85,5 +112,25 @@ test('a note and a parent plan with six subtasks among paragraphs', async ({ api
   } finally {
     await api.deleteCollection(collection.id).catch(() => {});
     await api.delete(`/tasks/${note.id}`).catch(() => {});
+    const found = await api.get<{ tasks: Array<{ id: string }> }>(`/search?q=${encodeURIComponent(captured)}`).catch(() => ({ tasks: [] }));
+    for (const task of found.tasks) await api.delete(`/tasks/${task.id}`).catch(() => {});
+  }
+});
+
+test('a subtask row on a card opens that subtask, not its parent', async ({ api, page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const collection = await api.createCollection({ name: unique('edge'), color: '#adb9c1' });
+  try {
+    await api.seedStatuses(collection.id);
+    const parent = await api.createTask({ title: unique('Parent'), collectionId: collection.id });
+    const child = await api.createTask({ title: 'Only the child', collectionId: collection.id, parentTaskId: parent.id });
+    await openBoard(page, collection.id);
+
+    await page.locator(`[data-card-id="${parent.id}"]`).getByText('Only the child', { exact: true }).click();
+    await expect(panel(page).getByRole('textbox', { name: 'Title' })).toHaveValue('Only the child');
+    await expect(page).toHaveURL(new RegExp(`task=${child.id}`));
+    expect((await api.fetchCollectionView(collection.id)).tasks.find((entry) => entry.id === child.id)?.isCompleted).toBe(false);
+  } finally {
+    await api.deleteCollection(collection.id).catch(() => {});
   }
 });
