@@ -22,7 +22,7 @@ test('task row shortcuts and menu persist structural indentation', async ({ api,
     await expect(page.getByRole('menuitem', { name: 'Unindent', exact: true })).toHaveAttribute('aria-disabled', 'true');
     await page.keyboard.press('Escape');
 
-    await row.click();
+    await row.focus();
     await expect(row).toBeFocused();
     await page.keyboard.press('Tab');
     await expect.poll(async () => (await parentOf())?.parentTaskId).toBe(parent.id);
@@ -30,10 +30,10 @@ test('task row shortcuts and menu persist structural indentation', async ({ api,
     await page.reload();
     await expect(row).toHaveCSS('padding-left', '24px');
 
-    await row.click();
+    await row.focus();
     await page.keyboard.press(']');
     await expect.poll(async () => (await parentOf())?.parentTaskId ?? null).toBeNull();
-    await row.click();
+    await row.focus();
     await page.keyboard.press('[');
     await expect.poll(async () => (await parentOf())?.parentTaskId).toBe(parent.id);
 

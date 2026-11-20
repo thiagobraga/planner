@@ -110,18 +110,23 @@ export const TaskItem = memo(function TaskItem({
       openTaskDetails(task.id, { origin: e.currentTarget, focusPanel: true });
     } else if (e.key === 'Enter' && e.shiftKey) {
       e.preventDefault();
+      cancelPendingOpen();
       onStartEdit?.(task.id);
     } else if (e.key === 'Enter') {
       e.preventDefault();
+      cancelPendingOpen();
       onAddBelow?.(task.id);
     } else if (e.key === 'Tab' || (e.key === '[' && !e.ctrlKey && !e.metaKey && !e.altKey) || (e.key === ']' && !e.ctrlKey && !e.metaKey && !e.altKey)) {
       e.preventDefault();
+      cancelPendingOpen();
       onIndent?.(task.id, e.key === ']' || (e.key === 'Tab' && e.shiftKey) ? -1 : 1);
     } else if (e.key === 'Delete' || (e.key === 'Backspace' && !e.shiftKey)) {
       e.preventDefault();
+      cancelPendingOpen();
       onDelete?.(task.id);
     } else if (e.key === ' ') {
       e.preventDefault();
+      cancelPendingOpen();
       onToggle?.(task.id);
     }
   };
@@ -246,6 +251,7 @@ export const TaskItem = memo(function TaskItem({
       onDoubleClick={isEditing ? undefined : () => { cancelPendingOpen(); onStartEdit?.(task.id); }}
       onContextMenu={(e) => {
         e.preventDefault();
+        cancelPendingOpen();
         onRightClick?.(task.id, { x: e.clientX, y: e.clientY });
       }}
       onTouchStart={(e) => {
@@ -253,6 +259,7 @@ export const TaskItem = memo(function TaskItem({
         if (!touch) return;
         const pos = { x: touch.clientX, y: touch.clientY };
         touchTimerRef.current = setTimeout(() => {
+          cancelPendingOpen();
           onRightClick?.(task.id, pos);
         }, 400);
       }}

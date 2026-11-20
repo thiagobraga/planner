@@ -66,4 +66,14 @@ describe('BoardCard: opening details', () => {
     fireEvent.keyDown(card, { key: 'o' });
     expect(open).toHaveBeenCalledWith('card-1', false);
   });
+
+  it('cancels a pending click open when the context menu opens', () => {
+    const { onTaskContextMenu } = renderCard();
+    const card = screen.getByText('Ship board').closest('article')!;
+    fireEvent.click(screen.getByText('Ship board'));
+    fireEvent.contextMenu(card);
+    settle();
+    expect(onTaskContextMenu).toHaveBeenCalled();
+    expect(open).not.toHaveBeenCalled();
+  });
 });

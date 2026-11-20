@@ -7,7 +7,7 @@ import { BoardCardChecklist } from './BoardCardChecklist';
 import { useI18n } from '../../i18n/I18nContext';
 import type { BoardCardProps } from '../../types/board';
 import { isOpenDetailsClick, isOpenDetailsKey } from '../../utils/detailOpen';
-import { openTaskDetails, scheduleOpenTaskDetails } from '../../stores/taskDetailStore';
+import { cancelPendingOpen, openTaskDetails, scheduleOpenTaskDetails } from '../../stores/taskDetailStore';
 
 export function BoardCard({ task, subtasks, containerId = '', subtreeIds, onToggle, hideDueDate, onTaskContextMenu }: BoardCardProps) {
   const { t } = useI18n();
@@ -37,6 +37,7 @@ export function BoardCard({ task, subtasks, containerId = '', subtreeIds, onTogg
       onContextMenu={(event) => {
         if (!onTaskContextMenu) return;
         event.preventDefault();
+        cancelPendingOpen();
         onTaskContextMenu(task.id, { x: event.clientX, y: event.clientY });
       }}
       onClick={(event) => {
@@ -54,6 +55,7 @@ export function BoardCard({ task, subtasks, containerId = '', subtreeIds, onTogg
         }
         if (!onTaskContextMenu || !(event.key === 'ContextMenu' || (event.shiftKey && event.key === 'F10'))) return;
         event.preventDefault();
+        cancelPendingOpen();
         const rect = event.currentTarget.getBoundingClientRect();
         onTaskContextMenu(task.id, { x: rect.left + 16, y: rect.top + 16 });
       }}
@@ -76,6 +78,7 @@ export function BoardCard({ task, subtasks, containerId = '', subtreeIds, onTogg
           aria-label={t('board.moreOptions', { title: task.title })}
           onClick={(event) => {
             event.stopPropagation();
+            cancelPendingOpen();
             const rect = event.currentTarget.getBoundingClientRect();
             onTaskContextMenu(task.id, { x: rect.right, y: rect.bottom });
           }}
