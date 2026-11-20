@@ -119,4 +119,41 @@ describe("comment rules", () => {
     await expect(deleteComment(byOwner.id, owner.userId)).resolves.toEqual({ success: true });
     await expect(updateComment(byOwner.id, owner.userId, "gone")).rejects.toMatchObject({ statusCode: 404 });
   });
+
+  it("records activity events when comments are created, updated and deleted", async () => {
+    const comment = await createComment(taskId, collaborator.userId, "Initial update");
+    await updateComment(comment.id, collaborator.userId, "Revised update");
+    await deleteComment(comment.id, owner.userId);
+
+    const rows = await pool.query<{ event_type: string; user_id: string; entity_id: string; after_data: unknown; before_data: unknown }>(
+      `SELECT event_type, user_id, entity_id, after_data, before_data
+       FROM activity_events
+       WHERE entity_id = $1 AND event_type LIKE 'comment_%'
+       ORDER BY created_at ASC`,
+      [taskId],
+    );
+    expect(rows.rows).toEqual([
+      {
+        event_type: "comment_created",
+        user_id: collaborator.userId,
+        entity_id: taskId,
+        after_data: { title: "Shared task", commentId: comment.id },
+        before_data: null,
+      },
+      {
+        event_type: "comment_updated",
+        user_id: collaborator.userId,
+        entity_id: taskId,
+        after_data: { title: "Shared task", commentId: comment.id },
+        before_data: null,
+      },
+      {
+        event_type: "comment_deleted",
+        user_id: owner.userId,
+        entity_id: taskId,
+        after_data: null,
+        before_data: { title: "Shared task", commentId: comment.id },
+      },
+    ]);
+  });
 });
