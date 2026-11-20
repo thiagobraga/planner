@@ -2,6 +2,7 @@ import { v4 as uuidv4 } from "uuid";
 import sanitizeHtml from "sanitize-html";
 import pool from "../db/pool.js";
 import { AppError } from "../utils/AppError.js";
+import { currentActor } from "../middleware/requestContext.js";
 import { runMutation } from "./mutationRunner.js";
 import type { CommentSyncPayload, TaskCommentDto } from "../contracts/comment.js";
 import type { SyncEventType } from "../contracts/sync.js";
@@ -14,6 +15,7 @@ interface CommentRow {
   body: string;
   created_at: string;
   updated_at: string | null;
+  actor_label: string | null;
 }
 
 const SANITIZE_OPTIONS: sanitizeHtml.IOptions = {
@@ -29,6 +31,7 @@ function formatComment(row: CommentRow): TaskCommentDto {
     body: row.body,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    actorLabel: row.actor_label ?? null,
   };
 }
 
@@ -111,10 +114,10 @@ export async function createComment(taskId: string, userId: string, body: string
   const id = uuidv4();
   return runMutation(async (tx) => {
     const result = await tx.client.query(
-      `INSERT INTO comments (id, task_id, user_id, body)
-       VALUES ($1, $2, $3, $4)
+      `INSERT INTO comments (id, task_id, user_id, body, actor_label)
+       VALUES ($1, $2, $3, $4, $5)
        RETURNING *`,
-      [id, taskId, userId, validated],
+      [id, taskId, userId, validated, currentActor()?.label ?? null],
     );
     const comment = formatComment(result.rows[0] as CommentRow);
     await tx.recordActivity({
