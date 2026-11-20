@@ -1,5 +1,6 @@
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { QueryClient } from '@tanstack/react-query';
 import { renderWithProviders } from '../../../test/render';
 import { TaskDetailHost } from '../TaskDetailHost';
 import { clearDocumentDrafts } from '../../../hooks/useDocumentDraft';
@@ -256,6 +257,39 @@ describe('TaskDetailPanel', () => {
     await waitFor(() => expect(postCalls.find((call) => call.url === '/tasks')?.body).toMatchObject({ title: 'Brand new step', parentTaskId: EMBED, collectionId: 'col' }));
     const editor = screen.getByRole('textbox', { name: 'Description' });
     expect(await within(editor).findByRole('button', { name: 'Open Brand new step' })).toBeInTheDocument();
+  });
+
+  it('refreshes the lists behind the panel after creating a subtask, since they skip this tab\'s own sync echo', async () => {
+    const invalidate = vi.spyOn(QueryClient.prototype, 'invalidateQueries');
+    renderAt(EMBED);
+    const panel = await loadedPanel();
+    await screen.findByRole('textbox', { name: 'Description' });
+    fireEvent.click(within(panel).getByRole('button', { name: 'Add task to text' }));
+    const input = await within(panel).findByRole('textbox', { name: 'New task title' });
+    fireEvent.change(input, { target: { value: 'Listed step' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+
+    await waitFor(() => {
+      const keys = invalidate.mock.calls.map(([filters]) => JSON.stringify(filters?.queryKey));
+      expect(keys).toEqual(expect.arrayContaining(['["collection"]', '["inbox"]', '["daily"]']));
+    });
+    invalidate.mockRestore();
+  });
+
+  it('leaves the caret in a paragraph after an inserted task so the next keystroke cannot replace it', async () => {
+    renderAt(EMBED);
+    const panel = await loadedPanel();
+    const editor = await screen.findByRole('textbox', { name: 'Description' });
+    fireEvent.click(within(panel).getByRole('button', { name: 'Add task to text' }));
+    const input = await within(panel).findByRole('textbox', { name: 'New task title' });
+    fireEvent.change(input, { target: { value: 'Caret step' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+
+    const button = await within(editor).findByRole('button', { name: 'Open Caret step' });
+    const block = [...editor.children].find((child) => child.contains(button))!;
+    const next = block.nextElementSibling;
+    expect(next?.tagName).toBe('P');
+    await waitFor(() => expect(next?.contains(window.getSelection()?.anchorNode ?? null)).toBe(true));
   });
 
   it('opens a subtask with a breadcrumb back to its parent', async () => {
