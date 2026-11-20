@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.37.2](https://github.com/thiagobraga/planner/compare/v0.37.1...v0.37.2) (2026-11-20)
+
+
+### Fixed
+
+* **tasks:** never delete subtasks or notes as a side effect ([3e80478](https://github.com/thiagobraga/planner/commit/3e804789bb15ad11463b116a400ed2c6bf79cb83))
+* **tasks:** never delete subtasks or notes as a side effect ([0aecd47](https://github.com/thiagobraga/planner/commit/0aecd47098c688a2241fc16020257ec943692850))
+
 ## [0.37.1](https://github.com/thiagobraga/planner/compare/v0.37.0...v0.37.1) (2026-11-20)
 
 
