@@ -40,15 +40,17 @@ export function CollectionBoard(props: CollectionBoardProps) {
   );
 
   useEffect(() => {
-    // Seeding is a no-op once statuses exist; posting anyway costs a write and a view refetch on every load.
-    if (props.groupBy !== 'status' || props.statuses.length > 0 || seedRequested.current) return;
+    // The seed creates default statuses and files status-less tasks; once both are done it is a
+    // no-op, and posting anyway costs a write and a view refetch on every load.
+    const filed = props.statuses.length > 0 && props.tasks.every((task) => task.statusId);
+    if (props.groupBy !== 'status' || filed || seedRequested.current) return;
     seedRequested.current = true;
     apiSeedStatuses(props.collectionId)
       .then(() => queryClient.invalidateQueries({ queryKey: props.queryKey }))
       .catch(() => {
         seedRequested.current = false;
       });
-  }, [props.collectionId, props.groupBy, props.queryKey, props.statuses.length, queryClient]);
+  }, [props.collectionId, props.groupBy, props.queryKey, props.statuses.length, props.tasks, queryClient]);
 
   const projectedColumns = useMemo(() => buildColumns({
     groupBy: props.groupBy,
