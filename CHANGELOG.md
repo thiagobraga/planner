@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.38.1](https://github.com/thiagobraga/planner/compare/v0.38.0...v0.38.1) (2026-11-20)
+
+
+### Fixed
+
+* **optimistic:** roll back only on real failure and keep newer edits ([f091d4e](https://github.com/thiagobraga/planner/commit/f091d4e146861944309643068e21df6d14404336))
+* **optimistic:** roll back only on real failure and keep newer edits ([7339814](https://github.com/thiagobraga/planner/commit/7339814212925631a5a6092bd54d6af9fa667f03))
+
 ## [0.38.0](https://github.com/thiagobraga/planner/compare/v0.37.3...v0.38.0) (2026-11-20)
 
 
