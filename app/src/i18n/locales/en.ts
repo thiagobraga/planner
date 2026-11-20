@@ -439,7 +439,6 @@ export const englishCatalog = {
   'board.addColumn': 'Add column',
   'board.completeTask': 'Complete task',
   'board.reopenTask': 'Reopen task',
-  'board.progressCount': '{{done}} of {{total}}',
   'board.moreOptions': 'More options for {{title}}',
   'board.renameColumn': 'Rename column',
   'board.columnColor': 'Column color',

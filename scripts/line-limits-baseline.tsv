@@ -11,4 +11,3 @@ app/src/pages/HabitsPage.tsx	463	2906bff8fd5bbc2412bfd0c6a56a1631629de34a8feba3e
 app/src/pages/InboxPage.tsx	755	8b9a0f21838145b1d307786323f83d0b0f70f2f6e28dca520a27ea291a1c5c8b
 app/src/pages/SettingsPage.tsx	873	571e2d1149474b78afcb7c1ebe93897834b3ccddbff0a3cfb018b50356643252
 app/src/pages/StyleguidePage.tsx	597	e1d6eadee22d17258a7b15f154809c5d60dd388de3873c424a8d5846dc92b997
-app/src/styles/boards.css	550	59bc82ca864986513a3260cb2aee3f6ccb4a571b984339fc3939c3f045d048ef
