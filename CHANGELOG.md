@@ -1,5 +1,38 @@
 # Changelog
 
+## [0.38.6](https://github.com/thiagobraga/planner/compare/v0.38.5...v0.38.6) (2026-11-20)
+
+
+### Fixed
+
+* **collections:** list subcollections in the title menu in sidebar order ([8409a3a](https://github.com/thiagobraga/planner/commit/8409a3aca5485d3d6f5ed6bda6fb54b36b7cd8f3))
+
+
+### Changed
+
+* **habits:** refetch once per burst of remote habit changes ([e426de5](https://github.com/thiagobraga/planner/commit/e426de5b1039b2a05545aa45a3d1ece624d113d2))
+* **sync:** refetch collection and inbox views once per burst of changes ([19f1e11](https://github.com/thiagobraga/planner/commit/19f1e11e7a0cb7b4bea6432d766b1573b26d9dc6))
+
+## [0.38.5](https://github.com/thiagobraga/planner/compare/v0.38.4...v0.38.5) (2026-11-20)
+
+
+### Fixed
+
+* **detail:** return focus to the editor at once after adding a subtask ([6cbc780](https://github.com/thiagobraga/planner/commit/6cbc780477d6d5ea241eb3e8fae4d4741eddaade))
+* **detail:** return focus to the editor at once after adding a subtask ([d66c694](https://github.com/thiagobraga/planner/commit/d66c694f5147c501fa68da4f767f9a2b15bf7c98))
+
+## [0.38.4](https://github.com/thiagobraga/planner/compare/v0.38.3...v0.38.4) (2026-11-20)
+
+
+### Fixed
+
+* **tasks:** move subtasks with their parent when its date changes ([9a97db8](https://github.com/thiagobraga/planner/commit/9a97db8af0f997c96822644a1aee42ed076cb6d6))
+
+
+### Changed
+
+* **board:** one view request and no status seed per board load ([c0d1f86](https://github.com/thiagobraga/planner/commit/c0d1f86f62ca28591e84a478b467d462635f7486))
+
 ## [0.38.3](https://github.com/thiagobraga/planner/compare/v0.38.2...v0.38.3) (2026-11-20)
 
 
