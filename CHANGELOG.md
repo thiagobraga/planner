@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.31.1](https://github.com/thiagobraga/planner/compare/v0.31.0...v0.31.1) (2026-11-20)
+
+
+### Fixed
+
+* **api:** harden task document access, concurrency and validation ([2dfde0d](https://github.com/thiagobraga/planner/commit/2dfde0d8b012fda4b06cd7631daf6272d587569b))
+* **api:** harden task document access, concurrency and validation ([3e8be4a](https://github.com/thiagobraga/planner/commit/3e8be4a81d5e9f17931f42613241242cb46bc282))
+
 ## [0.31.0](https://github.com/thiagobraga/planner/compare/v0.30.0...v0.31.0) (2026-11-20)
 
 
