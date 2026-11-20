@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.38.7](https://github.com/thiagobraga/planner/compare/v0.38.6...v0.38.7) (2026-11-20)
+
+
+### Fixed
+
+* **app:** reveal scrollbar thumbs on hover and focus ([7963a59](https://github.com/thiagobraga/planner/commit/7963a59ed29346b1b411f2d0123c55c0300d109e))
+
+
+### Style
+
+* **app:** show subtle scrollbars only on hover ([60ddec6](https://github.com/thiagobraga/planner/commit/60ddec643086067cd630d7981fa8bba66580adfe))
+
 ## [0.38.6](https://github.com/thiagobraga/planner/compare/v0.38.5...v0.38.6) (2026-11-20)
 
 
