@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.34.0](https://github.com/thiagobraga/planner/compare/v0.33.0...v0.34.0) (2026-11-20)
+
+
+### Added
+
+* **mcp:** add document, comment, claim and batch task tools (S7) ([35f575e](https://github.com/thiagobraga/planner/commit/35f575e35d977dc1bd9d4990f6f4f687e61130fe))
+
 ## [0.33.0](https://github.com/thiagobraga/planner/compare/v0.32.0...v0.33.0) (2026-11-20)
 
 
