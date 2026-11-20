@@ -65,6 +65,16 @@ export function getHierarchicalColor(
   return family[depth % family.length];
 }
 
+/** Sidebar order: position first, then name, so equal positions never fall back to fetch order. */
+export function compareCollections(a: ApiCollection, b: ApiCollection): number {
+  return a.orderValue - b.orderValue || a.name.localeCompare(b.name);
+}
+
+/** Visible children of one collection, in the same order as the sidebar tree. */
+export function childCollectionsOf(collections: ApiCollection[], parentId: string): ApiCollection[] {
+  return collections.filter((c) => c.parentId === parentId && !c.isArchived && !c.isInbox).sort(compareCollections);
+}
+
 // Flatten the visible (non-inbox, non-archived) collections into a depth-annotated,
 // order-sorted list suitable for a single sortable list with indentation.
 export function flattenCollections(collections: ApiCollection[]): FlatCollection[] {
@@ -77,7 +87,7 @@ export function flattenCollections(collections: ApiCollection[]): FlatCollection
     childrenOf.set(key, list);
   }
   for (const list of childrenOf.values()) {
-    list.sort((a, b) => a.orderValue - b.orderValue || a.name.localeCompare(b.name));
+    list.sort(compareCollections);
   }
   const out: FlatCollection[] = [];
   const walk = (parentId: string | null, depth: number) => {
