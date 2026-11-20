@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.37.3](https://github.com/thiagobraga/planner/compare/v0.37.2...v0.37.3) (2026-11-20)
+
+
+### Fixed
+
+* **inbox:** never delete subtasks or notes as a side effect ([adac005](https://github.com/thiagobraga/planner/commit/adac00517365684ed5a7e88487a603c96eca11ea))
+* **inbox:** split InboxPage and guard deletes of subtasks and notes ([4e9df15](https://github.com/thiagobraga/planner/commit/4e9df158a067bf2f743bee302fe0c4a5ef2ab294))
+
+
+### Changed
+
+* **inbox:** move task, capture and section handlers into hooks ([3aaa6b1](https://github.com/thiagobraga/planner/commit/3aaa6b171071449a7ea0de76ae70c02e3666c184))
+
 ## [0.37.2](https://github.com/thiagobraga/planner/compare/v0.37.1...v0.37.2) (2026-11-20)
 
 
