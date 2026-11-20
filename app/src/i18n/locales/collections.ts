@@ -13,6 +13,7 @@ export const collectionsEnglish = {
   'collections.actionsNamed': 'Actions for {{name}}',
   'collections.changeColorNamed': 'Change color for {{name}}',
   'board.progressCount': '{{done}} of {{total}}',
+  'board.showAll': 'Show all {{count}} subtasks',
 } as const;
 
 export const collectionsPortuguese = {
@@ -30,4 +31,5 @@ export const collectionsPortuguese = {
   'collections.actionsNamed': 'Ações para {{name}}',
   'collections.changeColorNamed': 'Alterar cor de {{name}}',
   'board.progressCount': '{{done}} de {{total}}',
+  'board.showAll': 'Mostrar as {{count}} subtarefas',
 } satisfies Record<keyof typeof collectionsEnglish, string>;

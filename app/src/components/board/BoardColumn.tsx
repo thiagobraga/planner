@@ -15,6 +15,7 @@ import { BoardColumnHeader } from './BoardColumnHeader';
 import { TaskAddInput } from '../TaskAddInput';
 import { useI18n } from '../../i18n/I18nContext';
 import type { Task } from '../../types/task';
+import { countChildren, leafProgress } from '../../utils/subtree';
 import type { BoardColumnProps } from '../../types/board';
 
 function asJournalTask(task: ApiTask): Task {
@@ -59,6 +60,7 @@ export function BoardColumn({
 }: BoardColumnProps) {
   const { t } = useI18n();
   const subtreeIndex = useMemo(() => buildSubtreeIndex(flattenTasks(allTasks)), [allTasks]);
+  const childCounts = useMemo(() => countChildren(allTasks), [allTasks]);
   const journalTasks = useMemo(() => columnTaskTree(column.tasks, allTasks), [allTasks, column.tasks]);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState('');
@@ -179,6 +181,8 @@ export function BoardColumn({
               subtasks={allTasks.filter((candidate) => candidate.parentTaskId === task.id)}
               containerId={column.id}
               subtreeIds={subtreeIndex.get(task.id)}
+              progress={leafProgress(task.id, allTasks)}
+              childCounts={childCounts}
               onToggle={onToggle}
               onTaskContextMenu={taskListProps?.onRightClick}
             />

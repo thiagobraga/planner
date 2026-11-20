@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { flattenSubtree, leafProgress } from './subtree';
+import { countChildren, flattenSubtree, leafProgress } from './subtree';
 import type { TaskDetailItem } from '../contracts/taskDetail';
 
 const item = (id: string, parentTaskId: string | null, extra: Partial<TaskDetailItem> = {}): TaskDetailItem => ({
@@ -42,5 +42,14 @@ describe('leafProgress', () => {
       item('leaf3', 'root', { isCompleted: true }),
     ];
     expect(leafProgress('root', items)).toEqual({ done: 2, total: 4 });
+  });
+});
+
+describe('countChildren', () => {
+  it('counts direct children once per parent, ignoring duplicates and roots', () => {
+    const counts = countChildren([item('a', null), item('b', 'a'), item('c', 'a'), item('c', 'a'), item('d', 'b')]);
+    expect(counts.get('a')).toBe(2);
+    expect(counts.get('b')).toBe(1);
+    expect(counts.has('c')).toBe(false);
   });
 });

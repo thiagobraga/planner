@@ -8,12 +8,16 @@ import type { TaskDetailDto, TaskDetailItem } from '../../../contracts/taskDetai
 
 vi.mock('../../../utils/socket', () => ({ getSocketId: () => 'socket-1', getSocket: () => ({ on: vi.fn(), off: vi.fn() }) }));
 vi.mock('../../../utils/authEvents', () => ({ notifyUnauthorized: () => {} }));
+vi.mock('../../../utils/offlineQueue', async (importOriginal) => ({ ...(await importOriginal<typeof import('../../../utils/offlineQueue')>()), isOnline: () => true }));
 
 const ROOT = '11111111-1111-4111-8111-111111111111';
 const CHILD = '22222222-2222-4222-8222-222222222222';
 const EMPTY = '33333333-3333-4333-8333-333333333333';
 const MISSING = '44444444-4444-4444-8444-444444444444';
 const UNSUPPORTED = '55555555-5555-4555-8555-555555555555';
+const EMBED = '66666666-6666-4666-8666-666666666666';
+const LINKED = '77777777-7777-4777-8777-777777777777';
+const LOOSE = '88888888-8888-4888-8888-888888888888';
 
 const item = (id: string, title: string, parentTaskId: string | null, extra: Partial<TaskDetailItem> = {}): TaskDetailItem => ({
   id, title, parentTaskId, collectionId: 'col', sectionId: null, type: 'task', isCompleted: false, statusId: null,
@@ -34,9 +38,15 @@ const details: Record<string, TaskDetailDto> = {
   [CHILD]: { task: item(CHILD, 'Write tests', ROOT), ancestors: [{ id: ROOT, title: 'Plan the slice' }], descendants: [item('c3', 'Unit level', CHILD)] },
   [EMPTY]: { task: item(EMPTY, 'Lonely task', null), ancestors: [], descendants: [] },
   [UNSUPPORTED]: { task: item(UNSUPPORTED, 'Future doc', null), ancestors: [], descendants: [] },
+  [EMBED]: {
+    task: item(EMBED, 'Embedded plan', null),
+    ancestors: [],
+    descendants: [item(LINKED, 'Linked in prose', EMBED, { orderValue: 1 }), item(LOOSE, 'Loose subtask', EMBED, { orderValue: 2 })],
+  },
 };
 
 let patchCalls: Array<{ url: string; body: unknown }> = [];
+let postCalls: Array<{ url: string; body: unknown }> = [];
 
 function respond(status: number, body: unknown) {
   return Promise.resolve({ ok: status < 400, status, json: async () => body });
@@ -52,6 +62,8 @@ function setPhone(phone: boolean) {
 beforeEach(() => {
   setPhone(false);
   patchCalls = [];
+  postCalls = [];
+  details[EMBED].descendants = details[EMBED].descendants.slice(0, 2);
   clearDocumentDrafts();
   vi.stubGlobal('fetch', vi.fn((url: string, init?: RequestInit) => {
     const path = String(url).replace(/^.*\/api\/v1/, '');
@@ -60,7 +72,30 @@ beforeEach(() => {
       patchCalls.push({ url: path, body: init.body ? JSON.parse(String(init.body)) : null });
       return respond(200, {});
     }
+    if (init?.method === 'POST') {
+      const body = init.body ? JSON.parse(String(init.body)) : null;
+      postCalls.push({ url: path, body });
+      if (path === '/tasks') {
+        const created = item('99999999-9999-4999-8999-999999999999', body.title, body.parentTaskId, { orderValue: 3 });
+        details[EMBED].descendants = [...details[EMBED].descendants, created];
+        return respond(201, { ...created, userId: 'u1' });
+      }
+      return respond(200, {});
+    }
     if (path.endsWith('/document')) {
+      if (id === EMBED) {
+        return respond(200, {
+          taskId: id,
+          content: {
+            type: 'doc',
+            content: [
+              { type: 'paragraph', content: [{ type: 'text', text: 'Plan intro' }] },
+              { type: 'taskReference', attrs: { taskId: LINKED, blockId: 'b1' } },
+            ],
+          },
+          schemaVersion: 1, revision: 1, updatedAt: null, updatedBy: null,
+        });
+      }
       if (id === UNSUPPORTED) {
         return respond(200, {
           taskId: id,
@@ -68,7 +103,7 @@ beforeEach(() => {
             type: 'doc',
             content: [
               { type: 'paragraph', content: [{ type: 'text', text: 'Visible fallback text' }] },
-              { type: 'taskReference', attrs: { taskId: ROOT, blockId: 'b1' } },
+              { type: 'callout', content: [{ type: 'text', text: 'Future block' }] },
             ],
           },
           schemaVersion: 1,
@@ -164,7 +199,34 @@ describe('TaskDetailPanel', () => {
     renderAt(UNSUPPORTED);
     const panel = await loadedPanel();
     expect(await within(panel).findByText(/read only/i)).toBeInTheDocument();
-    expect(within(panel).getByText('Visible fallback text')).toBeInTheDocument();
+    expect(within(panel).getByText(/Visible fallback text/)).toBeInTheDocument();
+  });
+
+  it('renders an embedded task as a live row in the text and keeps only unlinked subtasks under Other subtasks', async () => {
+    renderAt(EMBED);
+    const panel = await loadedPanel();
+    const editor = await screen.findByRole('textbox', { name: 'Description' });
+    expect(await within(editor).findByRole('button', { name: 'Open Linked in prose' })).toBeInTheDocument();
+    const others = within(panel).getByRole('region', { name: 'Other subtasks' });
+    expect(within(others).getByText('Loose subtask')).toBeInTheDocument();
+    expect(within(others).queryByText('Linked in prose')).not.toBeInTheDocument();
+
+    fireEvent.click(within(editor).getByRole('checkbox', { name: 'Complete: Linked in prose' }));
+    await waitFor(() => expect(postCalls.some((call) => call.url === `/tasks/${LINKED}/complete`)).toBe(true));
+  });
+
+  it('creates a real child task from the editor and inserts its block at the caret', async () => {
+    renderAt(EMBED);
+    const panel = await loadedPanel();
+    await screen.findByRole('textbox', { name: 'Description' });
+    fireEvent.click(within(panel).getByRole('button', { name: 'Add task to text' }));
+    const input = await within(panel).findByRole('textbox', { name: 'New task title' });
+    fireEvent.change(input, { target: { value: 'Brand new step' } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+
+    await waitFor(() => expect(postCalls.find((call) => call.url === '/tasks')?.body).toMatchObject({ title: 'Brand new step', parentTaskId: EMBED, collectionId: 'col' }));
+    const editor = screen.getByRole('textbox', { name: 'Description' });
+    expect(await within(editor).findByRole('button', { name: 'Open Brand new step' })).toBeInTheDocument();
   });
 
   it('opens a subtask with a breadcrumb back to its parent', async () => {
