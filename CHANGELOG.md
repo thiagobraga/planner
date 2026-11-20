@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.38.2](https://github.com/thiagobraga/planner/compare/v0.38.1...v0.38.2) (2026-11-20)
+
+
+### Fixed
+
+* **detail:** keep inserted subtask blocks and refresh lists behind the panel ([c20e4d5](https://github.com/thiagobraga/planner/commit/c20e4d50b2a7e9599eac96d328ef6e46bc1a39b6))
+
 ## [0.38.1](https://github.com/thiagobraga/planner/compare/v0.38.0...v0.38.1) (2026-11-20)
 
 
