@@ -31,9 +31,21 @@ export interface CollectionTreeRowProps {
 
 export type CollectionSplitDirection = 'vertical' | 'horizontal';
 
-export interface CollectionSplitPane {
-  key: string;
+/** The second pane of a split view; the first is the collection in the URL. */
+export interface CollectionSplit {
+  direction: CollectionSplitDirection;
   collectionId: string;
+}
+
+/** Collections view kept in memory only, so a page reload starts clean. */
+export interface CollectionsViewState {
+  activeId: string | null;
+  split: CollectionSplit | null;
+  remember: (activeId: string) => void;
+  setSplit: (split: CollectionSplit | null) => void;
+  /** Drops a deleted collection from the remembered selection and split. */
+  forget: (collectionId: string) => void;
+  reset: () => void;
 }
 
 export interface CollectionMenuHandlers {

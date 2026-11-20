@@ -4,6 +4,7 @@ import { MemoryRouter, Route, Routes } from 'react-router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CollectionsDetailRoute, CollectionsLanding, CollectionsLayout } from '../CollectionsLayout';
 import { PlannerDragProvider } from '../../contexts/PlannerDragContext';
+import { useCollectionsViewStore } from '../../stores/collectionsViewStore';
 import {
   apiAddSavedColor,
   apiUpdateCollection,
@@ -74,6 +75,7 @@ function renderApp(initialPath = `/collection/${WORK_ID}`) {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  useCollectionsViewStore.getState().reset();
   vi.mocked(fetchCollections).mockResolvedValue(collections);
   vi.mocked(fetchPreferences).mockResolvedValue(preferences);
   vi.mocked(fetchSavedColors).mockResolvedValue([]);
@@ -107,7 +109,50 @@ describe('collections interactions', () => {
     expect(within(picker).getByLabelText('Color value')).toHaveValue('#65788a');
   });
 
-  it('splits the detail pane vertically and horizontally from the row context menu and closes panes', async () => {
+  it('limits vertical and horizontal splits to two panes, replacing the second pane on subsequent splits', async () => {
+    renderApp(`/collection/${WORK_ID}`);
+    const detail = screen.getByRole('region', { name: 'Collection details' });
+    await within(detail).findByRole('heading', { name: 'Work' });
+
+    const treeRows = screen.getByRole('region', { name: 'Collection tree' }).querySelectorAll('.collections-index-row');
+    const designRow = treeRows[1];
+    const homeRow = treeRows[2];
+
+    fireEvent.contextMenu(homeRow, { clientX: 120, clientY: 120 });
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Split vertically' }));
+
+    expect(detail).toHaveAttribute('data-split', 'vertical');
+    expect(detail.querySelectorAll('.collections-split-pane')).toHaveLength(2);
+    expect(await within(detail).findByRole('heading', { name: 'Home' })).toBeVisible();
+    expect(within(detail).getByRole('heading', { name: 'Work' })).toBeVisible();
+
+    fireEvent.contextMenu(designRow, { clientX: 120, clientY: 120 });
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Split vertically' }));
+
+    expect(detail).toHaveAttribute('data-split', 'vertical');
+    expect(detail.querySelectorAll('.collections-split-pane')).toHaveLength(2);
+    expect(await within(detail).findByRole('heading', { name: /Design/ })).toBeVisible();
+    expect(within(detail).queryByRole('heading', { name: 'Home' })).not.toBeInTheDocument();
+    expect(within(detail).getByRole('heading', { name: 'Work' })).toBeVisible();
+
+    fireEvent.contextMenu(homeRow, { clientX: 120, clientY: 120 });
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Split horizontally' }));
+
+    expect(detail).toHaveAttribute('data-split', 'horizontal');
+    expect(detail.querySelectorAll('.collections-split-pane')).toHaveLength(2);
+    expect(await within(detail).findByRole('heading', { name: 'Home' })).toBeVisible();
+    expect(within(detail).queryByRole('heading', { name: /Design/ })).not.toBeInTheDocument();
+
+    const closeButtons = within(detail).getAllByRole('button', { name: 'Close pane' });
+    expect(closeButtons).toHaveLength(2);
+    fireEvent.click(closeButtons[1]);
+
+    await waitFor(() => expect(detail).not.toHaveAttribute('data-split'));
+    expect(within(detail).getByRole('heading', { name: 'Work' })).toBeVisible();
+    expect(within(detail).queryByRole('heading', { name: 'Home' })).not.toBeInTheDocument();
+  });
+
+  it('promotes the second pane when closing the primary split pane', async () => {
     renderApp(`/collection/${WORK_ID}`);
     const detail = screen.getByRole('region', { name: 'Collection details' });
     await within(detail).findByRole('heading', { name: 'Work' });
@@ -116,20 +161,13 @@ describe('collections interactions', () => {
     fireEvent.contextMenu(homeRow, { clientX: 120, clientY: 120 });
     fireEvent.click(screen.getByRole('menuitem', { name: 'Split vertically' }));
 
-    expect(detail).toHaveAttribute('data-split', 'vertical');
     expect(await within(detail).findByRole('heading', { name: 'Home' })).toBeVisible();
-    expect(within(detail).getByRole('heading', { name: 'Work' })).toBeVisible();
-
-    fireEvent.contextMenu(homeRow, { clientX: 120, clientY: 120 });
-    fireEvent.click(screen.getByRole('menuitem', { name: 'Split horizontally' }));
-    expect(detail).toHaveAttribute('data-split', 'horizontal');
-
     const closeButtons = within(detail).getAllByRole('button', { name: 'Close pane' });
-    fireEvent.click(closeButtons[closeButtons.length - 1]);
-    fireEvent.click(within(detail).getAllByRole('button', { name: 'Close pane' })[1]);
+    fireEvent.click(closeButtons[0]);
 
     await waitFor(() => expect(detail).not.toHaveAttribute('data-split'));
-    expect(within(detail).getByRole('heading', { name: 'Work' })).toBeVisible();
+    expect(await within(detail).findByRole('heading', { name: 'Home' })).toBeVisible();
+    expect(within(detail).queryByRole('heading', { name: 'Work' })).not.toBeInTheDocument();
   });
 
   it('opens a children and add-sub-collection menu when clicking the collection name on the detail page', async () => {
@@ -163,5 +201,47 @@ describe('collections interactions', () => {
     const subInput = screen.getByPlaceholderText('Collection name…');
     expect(subInput).toHaveClass('collections-inline-input');
     expect(subInput.parentElement).toHaveClass('h-6');
+  });
+
+  it('shows an empty details pane on the landing route', async () => {
+    renderApp('/collections');
+    await screen.findByText('Work');
+    expect(screen.queryByText('Select a collection')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'New collection' })).not.toBeInTheDocument();
+  });
+
+  it('remembers the selected collection until the page reloads', async () => {
+    const first = renderApp(`/collection/${WORK_ID}`);
+    await within(screen.getByRole('region', { name: 'Collection details' })).findByRole('heading', { name: 'Work' });
+    first.unmount();
+
+    renderApp('/collections');
+    const detail = screen.getByRole('region', { name: 'Collection details' });
+    expect(await within(detail).findByRole('heading', { name: 'Work' })).toBeVisible();
+  });
+
+  it('remembers the split view with its selected collection', async () => {
+    const first = renderApp(`/collection/${WORK_ID}`);
+    const detail = screen.getByRole('region', { name: 'Collection details' });
+    await within(detail).findByRole('heading', { name: 'Work' });
+    const homeRow = screen.getByRole('region', { name: 'Collection tree' }).querySelectorAll('.collections-index-row')[2];
+    fireEvent.contextMenu(homeRow, { clientX: 120, clientY: 120 });
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Split horizontally' }));
+    await within(detail).findByRole('heading', { name: 'Home' });
+    first.unmount();
+
+    renderApp('/collections');
+    const restored = screen.getByRole('region', { name: 'Collection details' });
+    await waitFor(() => expect(restored).toHaveAttribute('data-split', 'horizontal'));
+    expect(await within(restored).findByRole('heading', { name: 'Home' })).toBeVisible();
+    expect(within(restored).getByRole('heading', { name: 'Work' })).toBeVisible();
+  });
+
+  it('forgets a remembered collection once it is deleted', async () => {
+    useCollectionsViewStore.getState().remember(WORK_ID);
+    useCollectionsViewStore.getState().forget(WORK_ID);
+    renderApp('/collections');
+    await screen.findByText('Work');
+    expect(screen.getByRole('region', { name: 'Collection details' }).querySelector('h1,h2')).toBeNull();
   });
 });

@@ -14,7 +14,7 @@ test('keeps the desktop tree and rename draft across navigation and history', as
     await page.goto('/collections');
     const tree = page.getByRole('region', { name: 'Collection tree' });
     const pane = page.getByRole('region', { name: 'Collection details' });
-    await expect(pane.getByRole('heading', { name: 'Select a collection' })).toBeVisible();
+    await expect(pane.getByRole('heading')).toHaveCount(0);
     const layoutBox = (await page.locator('.collections-layout').boundingBox())!;
     const paneBox = (await pane.boundingBox())!;
     expect(Math.abs(paneBox.x - layoutBox.x - 192)).toBeLessThan(1);
@@ -112,7 +112,7 @@ test('updates the selected view when API clients change tasks, sections or the c
     await expect(pane.getByRole('heading', { name: 'Renamed collection' })).toBeVisible();
     await api.post(`/collections/${collection.id}/archive`);
     await expect(page).toHaveURL(/\/collections$/);
-    await expect(pane.getByRole('heading', { name: 'Select a collection' })).toBeVisible();
+    await expect(pane.getByRole('heading')).toHaveCount(0);
   } finally {
     await api.deleteCollection(collection.id);
   }
@@ -129,7 +129,7 @@ test('deleting the open collection returns to the landing pane', async ({ page, 
     deleted = true;
     await expect(page).toHaveURL(/\/collections$/);
     await expect(tree.getByRole('link', { name: collection.name })).toHaveCount(0);
-    await expect(page.getByRole('heading', { name: 'Select a collection' })).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Collection details' }).getByRole('heading')).toHaveCount(0);
   } finally {
     if (!deleted) await api.deleteCollection(collection.id);
   }

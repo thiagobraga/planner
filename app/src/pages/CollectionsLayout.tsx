@@ -1,16 +1,16 @@
-import { useCallback, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
-import { Link, Navigate, Outlet, useMatch, useNavigate, useOutletContext, useParams } from 'react-router';
+import { useCallback, useEffect, useLayoutEffect, useRef } from 'react';
+import { Link, Navigate, Outlet, useMatch, useNavigate, useParams } from 'react-router';
 import { ArrowLeft, Plus } from 'lucide-react';
 import { PageHeader } from '../components/PageHeader';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { CollectionRow } from '../components/collections/CollectionRow';
-import { Button } from '../components/ui/Button';
 import { CollectionSplitContext } from '../contexts/CollectionSplitContext';
 import { useCollectionsTree } from '../hooks/useCollectionsTree';
+import { useCollectionsViewStore } from '../stores/collectionsViewStore';
 import { useSync } from '../hooks/useSync';
 import { useI18n } from '../i18n/I18nContext';
 import { CollectionNotFound } from '../components/collections/CollectionViewState';
-import type { CollectionSplitDirection, CollectionSplitPane, CollectionTreeNode } from '../types/collections';
+import type { CollectionSplitDirection, CollectionTreeNode } from '../types/collections';
 import { CollectionsPage } from './CollectionsPage';
 import './collectionsLayout.css';
 
@@ -27,20 +27,29 @@ export function CollectionsLayout() {
   const navigate = useNavigate();
   const model = useCollectionsTree(activeId);
   const detailsRef = useRef<HTMLElement>(null);
-  const splitSeqRef = useRef(0);
-  const [split, setSplit] = useState<{ direction: CollectionSplitDirection; panes: CollectionSplitPane[] } | null>(null);
+  const split = useCollectionsViewStore((state) => state.split);
+  const setSplit = useCollectionsViewStore((state) => state.setSplit);
+  const restoredRef = useRef(false);
 
   useLayoutEffect(() => {
     if (detailsRef.current) detailsRef.current.scrollTop = 0;
   }, [activeId]);
 
+  // Coming back to Collections reopens the last selection (kept in memory, lost on reload).
+  useEffect(() => {
+    if (restoredRef.current) return;
+    restoredRef.current = true;
+    const remembered = useCollectionsViewStore.getState().activeId;
+    if (!activeId && remembered) navigate(`/collection/${remembered}`, { replace: true });
+  }, [activeId, navigate]);
+
+  useEffect(() => {
+    if (activeId && COLLECTION_ID.test(activeId) && !model.archivedActive) useCollectionsViewStore.getState().remember(activeId);
+  }, [activeId, model.archivedActive]);
+
   useSync(useCallback((event) => {
     if (event.entityType === 'collection' && event.eventType === 'deleted') {
-      setSplit((prev) => {
-        if (!prev) return null;
-        const panes = prev.panes.filter((pane) => pane.collectionId !== event.entityId);
-        return panes.length > 0 ? { ...prev, panes } : null;
-      });
+      useCollectionsViewStore.getState().forget(event.entityId);
       if (event.entityId === activeId) {
         navigate('/collections', { replace: true });
       }
@@ -52,37 +61,20 @@ export function CollectionsLayout() {
       navigate(`/collection/${collectionId}`);
       return;
     }
-    const nextPane: CollectionSplitPane = {
-      key: `${collectionId}-${++splitSeqRef.current}`,
-      collectionId,
-    };
-    setSplit((prev) => ({
-      direction,
-      panes: [...(prev?.panes ?? []), nextPane],
-    }));
-  }, [activeId, navigate]);
+    setSplit({ direction, collectionId });
+  }, [activeId, navigate, setSplit]);
 
-  const handleClosePane = useCallback((paneKey: string) => {
-    setSplit((prev) => {
-      if (!prev) return null;
-      const panes = prev.panes.filter((pane) => pane.key !== paneKey);
-      return panes.length > 0 ? { ...prev, panes } : null;
-    });
-  }, []);
+  const handleCloseSecondary = useCallback(() => {
+    setSplit(null);
+  }, [setSplit]);
 
   const handleClosePrimary = useCallback(() => {
-    setSplit((prev) => {
-      if (!prev || prev.panes.length === 0) return null;
-      const [first, ...rest] = prev.panes;
-      navigate(`/collection/${first.collectionId}`, { replace: true });
-      return rest.length > 0 ? { ...prev, panes: rest } : null;
-    });
-  }, [navigate]);
+    if (!split) return;
+    navigate(`/collection/${split.collectionId}`, { replace: true });
+    setSplit(null);
+  }, [navigate, setSplit, split]);
 
-  const hasSplitPanes = Boolean(activeId && COLLECTION_ID.test(activeId) && !model.archivedActive && split && split.panes.length > 0);
-  const splitStyle = hasSplitPanes
-    ? ({ '--split-count': 1 + split!.panes.length } as CSSProperties)
-    : undefined;
+  const hasSplitPane = Boolean(activeId && COLLECTION_ID.test(activeId) && !model.archivedActive && split);
 
   return (
     <CollectionSplitContext.Provider value={handleSplit}>
@@ -94,11 +86,10 @@ export function CollectionsLayout() {
         <section
           ref={detailsRef}
           className="collections-detail-pane"
-          data-split={hasSplitPanes ? split!.direction : undefined}
-          style={splitStyle}
+          data-split={hasSplitPane ? split!.direction : undefined}
           aria-label={t('collections.details')}
         >
-          {activeId && !hasSplitPanes && (
+          {activeId && !hasSplitPane && (
             <Link to="/collections" className="collections-back text-sm text-ink-light">
               <ArrowLeft size={16} aria-hidden="true" />
               {t('collections.back')}
@@ -106,23 +97,21 @@ export function CollectionsLayout() {
           )}
           {model.archivedActive ? (
             <Navigate to="/collections" replace />
-          ) : hasSplitPanes ? (
+          ) : hasSplitPane ? (
             <>
               <div className="collections-split-pane">
                 <CollectionsPage key={activeId} collectionId={activeId} onClosePane={handleClosePrimary} />
               </div>
-              {split!.panes.map((pane) => (
-                <div key={pane.key} className="collections-split-pane">
-                  <CollectionsPage
-                    key={pane.key}
-                    collectionId={pane.collectionId}
-                    onClosePane={() => handleClosePane(pane.key)}
-                  />
-                </div>
-              ))}
+              <div className="collections-split-pane">
+                <CollectionsPage
+                  key={split!.collectionId}
+                  collectionId={split!.collectionId}
+                  onClosePane={handleCloseSecondary}
+                />
+              </div>
             </>
           ) : (
-            <Outlet context={model.startAddRoot} />
+            <Outlet />
           )}
         </section>
       </div>
@@ -130,15 +119,9 @@ export function CollectionsLayout() {
   );
 }
 
+/** Nothing selected: the details pane stays empty. */
 export function CollectionsLanding() {
-  const { t } = useI18n();
-  const startAddRoot = useOutletContext<() => void>();
-  return (
-    <div className="collections-landing">
-      <h2 className="m-0 font-semibold text-ink">{t('collections.select')}</h2>
-      <Button variant="secondary" onClick={startAddRoot}>{t('collections.new')}</Button>
-    </div>
-  );
+  return null;
 }
 
 function CollectionsTree({
