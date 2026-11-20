@@ -114,17 +114,17 @@ PR #460 (`docs(specs): add untangle-codebase analysis`, commit `f24f1b0d`) holds
 
 Prevents rebuilding shipped features or migrating stale plans.
 
-- [ ] Read current source, the five referenced specs, affected callers, and worktree/PR status before editing. Preserve uncommitted main-tree work.
-- [ ] Reconcile PR #460 findings with the branch; take only the boundaries above. Adopt any landed implementation instead of a parallel helper.
+- [x] Read current source, the five referenced specs, affected callers, and worktree/PR status before editing. Preserve uncommitted main-tree work.
+- [x] Reconcile PR #460 findings with the branch; take only the boundaries above. Adopt any landed implementation instead of a parallel helper.
 - [x] Record the 419-line rule in the feature spec and project `CLAUDE.md`. Add a changed-file line-count check to the existing validation entry point, with tests at 419/420 lines, terminal newlines, and explicit generated-file exemptions. Baseline untouched oversized files; do not split the whole repo.
 - [x] Build shared test builders and real DB/Redis fixtures before extraction. Reuse existing integration setup.
-- [~] Ship foundations as separate slices: (a) characterize and extract touched oversized modules, (b) shared contracts and transaction/activity/event ownership, (c) shared task mapping, query keys, and reconciliation. Each passes regression tests before feature work builds on it.
-- [ ] Inspect the target collection through an authorized connection or user export. Do not scrape credentials or create tokens automatically. Compare existing items with spec candidates.
-- [ ] Map each initiative to one canonical parent task and its existing PR/task links. Mark requirements implemented, pending, uncertain, or superseded from evidence. Do not turn every historical checkbox into new work.
-- [~] Work each slice in `.worktrees/<slug>` on a semantic branch from fresh `main`, with its own deps and stack (`COMPOSE_PROJECT_NAME`, subdomain, hooks per `CLAUDE.md`), draft PR, and certificate step.
-- [ ] Verify migration numbers and actual note, export/delete, authorization, search, and board behavior. Never reuse the agent spec's hard-coded migration number.
-- [ ] Confirm panel design against `DESIGN.md` (flat tint and 1px border, Lora, 24px rhythm, accent at most 10%, inline panel before any modal). Mocks approved at STOP 1 (see Decisions); add them to `DESIGN.md` and the styleguide.
-- [ ] Use the open-source Tiptap editor (`useEditor`, `EditorContent`, `StarterKit`; `Node.create`, `addNodeView`, `ReactNodeViewRenderer`, `NodeViewWrapper`; `editor.getJSON()` for output). Pin compatible versions after checking docs and licenses. No custom contenteditable or hosted document service.
+- [x] Ship foundations as separate slices: (a) characterize and extract touched oversized modules, (b) shared contracts and transaction/activity/event ownership, (c) shared task mapping, query keys, and reconciliation. Each passes regression tests before feature work builds on it.
+- [x] Inspect the target collection through an authorized connection or user export. Do not scrape credentials or create tokens automatically. Compare existing items with spec candidates. Done 2026-11-20 through the user's authorized MCP connection: open cards are M4 (agents and import), M5 (Postgres 16 to 18), S9 (pilot import and cutover) and STOP 2; M0 to M3 are complete.
+- [x] Map each initiative to one canonical parent task and its existing PR/task links. Mark requirements implemented, pending, uncertain, or superseded from evidence. Do not turn every historical checkbox into new work. Done: one card per milestone, slices as subtasks (see Tracking).
+- [x] Work each slice in `.worktrees/<slug>` on a semantic branch from fresh `main`, with its own deps and stack (`COMPOSE_PROJECT_NAME`, subdomain, hooks per `CLAUDE.md`), draft PR, and certificate step.
+- [x] Verify migration numbers and actual note, export/delete, authorization, search, and board behavior. Never reuse the agent spec's hard-coded migration number. Done (053-055 in sequence).
+- [x] Confirm panel design against `DESIGN.md` (flat tint and 1px border, Lora, 24px rhythm, accent at most 10%, inline panel before any modal). Mocks approved at STOP 1 (see Decisions); add them to `DESIGN.md` and the styleguide. Done (STOP 1 mocks, #489).
+- [x] Use the open-source Tiptap editor (`useEditor`, `EditorContent`, `StarterKit`; `Node.create`, `addNodeView`, `ReactNodeViewRenderer`, `NodeViewWrapper`; `editor.getJSON()` for output). Pin compatible versions after checking docs and licenses. No custom contenteditable or hosted document service. Done (#489).
 
 **Verify:** source-of-truth mapping, isolated baseline checks, list of unknowns. No production writes.
 
@@ -140,7 +140,7 @@ Today `/collections` (`CollectionsIndexPage.tsx`, 361 lines) lists the tree, and
 - [x] **Structure.** Add a `CollectionsLayout` route element rendering the tree pane and an `<Outlet />`. Extract the tree from `CollectionsIndexPage.tsx` into focused modules (rows, row menu, create/rename/delete handlers, tree hook) reusing `buildCollectionTree` and `['collections']`; no second cache. Split `CollectionsPage.tsx` first in behavior-preserving commits under characterization tests. Key content by collection ID so local state resets on selection. Do not revive `CollectionTreeNav.tsx`; delete it in a separate commit.
 - [x] **Edge states.** Unknown ID or no access: "Collection not found", no name leak. Deleting or archiving the open collection returns to the empty state (`CollectionsIndexPage.tsx:265`). Rename and recolor update tree and header from one query. Remote task, section, and collection changes refresh the open collection.
 - [x] **Accessibility.** Tree rows keyboard-focusable; focus stays on the clicked row; the right pane is a labelled region with a heading; loading is announced politely; no focus theft from rename or quick add.
-- [ ] **Out of scope:** collapsible or resizable tree, favorites in the tree, new drag targets, arrow-key tree navigation.
+- **Out of scope:** collapsible or resizable tree, favorites in the tree, new drag targets, arrow-key tree navigation.
 
 **Verify:** reference layout at desktop; six collection clicks never remount the tree; narrow view unchanged; one collection fetch per selection. Tests: characterize rows and page first; then route matrix, `aria-current`, no-remount (scroll and open rename survive), back/forward, deep link, 390px, delete open collection, live API change. Existing `topBarNav`, `collectionsPageSubtitle`, `kanbanListAddTask` e2e specs must pass.
 
@@ -168,10 +168,10 @@ Lets the user open any task or note from the current view and write its full pla
 - [x] Focused document read/write services and thin routes: collection authorization, compare-and-swap revision checks, safe URL and node validation, bounded size and depth. Wire types go in the shared contracts.
 - [x] Seed existing plain descriptions losslessly on first rich edit; title stays separate. Once a document exists, `description` is a derived plain-text summary, not a second editable source. Legacy REST/MCP description writes must not silently replace rich content; return a clear revision-aware error. Test this boundary.
 - [x] Record activity through the transaction runner and publish after commit. Return the committed result. A publish failure must not look like a rollback or make retries duplicate writes. Central reconciliation refreshes queries without replacing dirty drafts.
-- [~] One lazy-loaded panel host and controller in `AppShell`, opened from Daily, Inbox, collection rows, board cards, and subtask rows. Rich editor code stays out of the initial Daily bundle.
-- [~] Focused header, properties, document, and comments/activity components. Do not revive `TaskDetail`.
-- [~] Desktop dock and mobile sheet; focus restoration; close and Escape; parent breadcrumb; loading, deleted, and denied states; dirty-draft protection on item switch. Keep inline editing and multi-select.
-- [ ] Include document bodies in authorized search and account export, restore, and delete. Export lossless JSON and readable Markdown. Audit task/note type conversion and parent deletion so an incidental edit cannot remove documents or descendants.
+- [x] One lazy-loaded panel host and controller in `AppShell`, opened from Daily, Inbox, collection rows, board cards, and subtask rows. Rich editor code stays out of the initial Daily bundle. Done (#489).
+- [x] Focused header, properties, document, and comments/activity components. Do not revive `TaskDetail`. Done (#489, #511).
+- [x] Desktop dock and mobile sheet; focus restoration; close and Escape; parent breadcrumb; loading, deleted, and denied states; dirty-draft protection on item switch. Keep inline editing and multi-select. Done (#489, #517).
+- [x] Include document bodies in authorized search and account export, restore, and delete. Export lossless JSON and readable Markdown. Audit task/note type conversion and parent deletion so an incidental edit cannot remove documents or descendants. Done (#502 export; search reads the derived description; #507 type conversion and parent deletion).
 
 **Verify:** both kinds in Daily and Inbox; click opens without completion; checkbox, menu, and drag do not open; keyboard, multi-select, and inline rename still work; full descriptions survive create, edit, reload, and export; two-tab conflicts keep drafts; mobile close returns to the row; unauthorized data never appears.
 
@@ -179,14 +179,14 @@ Lets the user open any task or note from the current view and write its full pla
 
 Makes each Kanban plan one consistent subtree across prose, card preview, and details.
 
-- [ ] `taskReference` editor node and a reference index derived from validated content. Parentage stays only in `parentTaskId`; text placement is not a second hierarchy.
-- [ ] Atomic create-and-embed: a task owner creates a child; a note owner creates a standalone reference. Task, reference, and document revision commit together under an idempotent operation ID.
-- [ ] Extract transaction-capable task creation before extending `taskService.ts`. Reuse validation, access, move, activity, and event boundaries. Attaching an existing child uses the explicit structural operation; reject cycles, depth overflow, and collection mismatch.
-- [ ] Resolve references and the full descendant tree in bounded batch queries. Share mapping, cache, and reconciliation with list and board surfaces; no copied arrays, per-block fetches, or `taskStore`.
-- [ ] Full content and Only tasks are projections of the same data. Non-embedded descendants appear as Other subtasks. Toggling keeps drafts and hierarchy; completion and open-child actions work in both.
-- [ ] Split `BoardCardChecklist` into preview and row components. Show the first five direct children, plus Show all N opening the parent's Only tasks view. Drag/drop and progress use the full subtree.
-- [ ] Bounded plain-text excerpt for the card. One pure unique-leaf progress function and one presentation component for the thin moss bar and "N of M" label.
-- [ ] Protect unlink, task deletion, note deletion, parent cascade confirmation, reparented references, and copy/paste identity. Cross-collection moves reject unresolved references or reconcile them inside the same authorized operation.
+- [x] `taskReference` editor node and a reference index derived from validated content. Parentage stays only in `parentTaskId`; text placement is not a second hierarchy. Done (#494).
+- [x] Atomic create-and-embed: a task owner creates a child; a note owner creates a standalone reference. Task, reference, and document revision commit together under an idempotent operation ID. Done (#494, #495).
+- [x] Extract transaction-capable task creation before extending `taskService.ts`. Reuse validation, access, move, activity, and event boundaries. Attaching an existing child uses the explicit structural operation; reject cycles, depth overflow, and collection mismatch. Done (#494).
+- [x] Resolve references and the full descendant tree in bounded batch queries. Share mapping, cache, and reconciliation with list and board surfaces; no copied arrays, per-block fetches, or `taskStore`. Done (#494).
+- [x] Full content and Only tasks are projections of the same data. Non-embedded descendants appear as Other subtasks. Toggling keeps drafts and hierarchy; completion and open-child actions work in both. Done (#494).
+- [x] Split `BoardCardChecklist` into preview and row components. Show the first five direct children, plus Show all N opening the parent's Only tasks view. Drag/drop and progress use the full subtree. Done (#494).
+- [x] Bounded plain-text excerpt for the card. One pure unique-leaf progress function and one presentation component for the thin moss bar and "N of M" label. Done (#494).
+- [x] Protect unlink, task deletion, note deletion, parent cascade confirmation, reparented references, and copy/paste identity. Cross-collection moves reject unresolved references or reconcile them inside the same authorized operation. Done (#494, #507, #509).
 - [x] Replace timeout-driven rollback on adopted paths with outcome-aware rollback that cannot overwrite newer successful edits. Never treat synthetic offline responses as committed revisions. Test delayed success, true failure, concurrent writes, and reconnect.
 
 **Verify:** zero, five, and six children; hidden children still counted and moved; Show all reaches everything; Full content and Only tasks lose nothing; parent and child clicks hit the right item; panel, board, and agent updates converge; unlink keeps subtasks; note deletion differs from parent deletion; failed or retried creation is atomic.
@@ -195,18 +195,18 @@ Makes each Kanban plan one consistent subtree across prose, card preview, and de
 
 Lets agents use the plans people see, and retires duplicate tracking for a small verified set.
 
-- [ ] MCP read tools for document content and revision, task detail and descendants, comments, activity. Write tools for block edits, child creation, statuses, comments. REST, MCP, and imports share one validation, access, and mutation path. Comment activity and sync live in the service, not the adapter. Structural edits use the canonical move path. Text-only description writes cannot bypass document revision protection.
-- [ ] Document edits address stable block IDs and an expected revision; agents never replace content fetched before a newer human edit. Agent-created subtasks appear in the parent's card and Only tasks view, placed in prose or not.
-- [ ] Bounded, transaction-safe, idempotent batch creation using Phase 2 helpers. The server stores request identity and payload hash; same key with changed payload is a conflict, never an overwrite.
-- [ ] Atomic claim and release for parallel agents. Actor identity comes from the authenticated token or grant, never a caller label. Claims expire with explicit recovery, so a crashed agent cannot lock a task. Claims coordinate work; they grant no access.
+- [x] MCP read tools for document content and revision, task detail and descendants, comments, activity. Write tools for block edits, child creation, statuses, comments. REST, MCP, and imports share one validation, access, and mutation path. Comment activity and sync live in the service, not the adapter. Structural edits use the canonical move path. Text-only description writes cannot bypass document revision protection. Done (#495).
+- [x] Document edits address stable block IDs and an expected revision; agents never replace content fetched before a newer human edit. Agent-created subtasks appear in the parent's card and Only tasks view, placed in prose or not. Done (#495).
+- [x] Bounded, transaction-safe, idempotent batch creation using Phase 2 helpers. The server stores request identity and payload hash; same key with changed payload is a conflict, never an overwrite. Done (#495).
+- [x] Atomic claim and release for parallel agents. Actor identity comes from the authenticated token or grant, never a caller label. Claims expire with explicit recovery, so a crashed agent cannot lock a task. Claims coordinate work; they grant no access. Done (#495).
 - [x] Show actor, claim, comments, and result links in active UI. Extend the existing Integrations setup without waiting for the settings redesign.
 - [x] Document the client workflow: read the parent plan, claim a Ready subtask, set status, comment evidence and PR link, release the claim, move to Review. No mirrored private todo lists, no collection per session.
-- [ ] Bounded Markdown import with dry-run preview. One spec folder becomes one parent card, with `plan.md` as its rich description. If `task.md` exists, keep its text under a named section in the same description. Preserve headings, code, links, prose, and original bytes. Unsupported constructs produce warnings, never silent loss.
-- [ ] Convert selected checklist items to real descendants, embedded at their original positions. Preserve `[x]` and `[~]` through mapped completion and status. Headings and ordinary lists stay prose. Dedupe overlapping checklists through reviewed mappings, not title guesses. Flag nesting beyond the depth limit for review.
-- [ ] Import manifest keyed by user, source path, source hash, and item mapping. Exact retries return prior results; changed input needs a preview and reconciliation, never a blind import or overwrite.
+- [x] Bounded Markdown import with dry-run preview. One spec folder becomes one parent card, with `plan.md` as its rich description. If `task.md` exists, keep its text under a named section in the same description. Preserve headings, code, links, prose, and original bytes. Unsupported constructs produce warnings, never silent loss. Done (#499).
+- [x] Convert selected checklist items to real descendants, embedded at their original positions. Preserve `[x]` and `[~]` through mapped completion and status. Headings and ordinary lists stay prose. Dedupe overlapping checklists through reviewed mappings, not title guesses. Flag nesting beyond the depth limit for review. Done (#499, #503).
+- [x] Import manifest keyed by user, source path, source hash, and item mapping. Exact retries return prior results; changed input needs a preview and reconciliation, never a blind import or overwrite. Done (#499).
 - [ ] Pilot the agent-tool and guest-mode specs after deduplicating against existing items. Reconcile the agent spec's obsolete hierarchy and service assumptions first. Import launch and settings plans only after the pilot verifies.
-- [ ] Before any real import, produce a dry-run report: destination, cards, subtasks, and documents to create or link, sensitive-content warnings, expected counts. Interactive runs show it for confirmation; the unattended run uses the assertion gate below. Originals stay untouched. Verify backups and restores before treating production plans as authoritative.
-- [ ] Every real import writes a manifest and ships an undo that removes exactly what the manifest created, only where an item is unmodified. Modified items are reported, never deleted.
+- [x] Before any real import, produce a dry-run report: destination, cards, subtasks, and documents to create or link, sensitive-content warnings, expected counts. Interactive runs show it for confirmation; the unattended run uses the assertion gate below. Originals stay untouched. Verify backups and restores before treating production plans as authoritative. Done (#499).
+- [x] Every real import writes a manifest and ships an undo that removes exactly what the manifest created, only where an item is unmodified. Modified items are reported, never deleted. Done (#499).
 - [ ] Cut over each pilot after content, status, reference, and export round-trip comparison. Mark the original superseded with the canonical link and revision; keep it in Git history. Never delete `.specs` wholesale.
 - [ ] After cutover only: update `CLAUDE.md` so Planner holds plans and progress, and the repo holds implementation artifacts and generated snapshots. Edit the real file, not its symlinks.
 
@@ -317,8 +317,11 @@ Notion-style databases, formulas, attachments, simultaneous collaborative editin
 | M4.16 | Panel claim, comment actor and links | feat/panel-agent-claim | #511 | merged |
 | M3.17 | Outcome-aware optimistic rollback | fix/optimistic-outcome-rollback | #514 | merged |
 | M4.18 | Agent workflow docs in README | docs/agent-workflow | #515 | merged |
-| M5.19 | Golden path E2E, two panel fixes | test/development-golden-path | #517 | auto-merge armed |
-| M5.20 | Golden path export, second tab, subtask row | test/golden-path-export | - | this PR |
+| M5.19 | Golden path E2E, two panel fixes | test/development-golden-path | #517 | merged |
+| M5.20 | Golden path export, second tab, subtask row | test/golden-path-export | #518 | merged |
+| - | Shift + right click opens the browser menu everywhere | fix/shift-context-menu | #520 | merged |
+| M5.21 | One view request, no status seed per board load | perf/skip-status-seed | #521 | auto-merge armed |
+| - | Card title weight 500 | style/card-title-weight | #522 | auto-merge armed |
 | - | Subtle hover scrollbars | style/subtle-scrollbars | #513 | needs visual check by user (scrollbars cannot be captured here) |
 | M4.15 | S9 pilot import and cutover | - | - | blocked: production import needs a user-created API token in the environment; rehearsal on scratch stack passed |
 | STOP 2 | Report before Postgres upgrade | - | #506 (draft) | blocked: user picks maintenance window |
