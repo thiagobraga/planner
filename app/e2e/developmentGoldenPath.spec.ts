@@ -116,3 +116,21 @@ test('a note and a parent plan with six subtasks among paragraphs', async ({ api
     for (const task of found.tasks) await api.delete(`/tasks/${task.id}`).catch(() => {});
   }
 });
+
+test('a subtask row on a card opens that subtask, not its parent', async ({ api, page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
+  const collection = await api.createCollection({ name: unique('edge'), color: '#adb9c1' });
+  try {
+    await api.seedStatuses(collection.id);
+    const parent = await api.createTask({ title: unique('Parent'), collectionId: collection.id });
+    const child = await api.createTask({ title: 'Only the child', collectionId: collection.id, parentTaskId: parent.id });
+    await openBoard(page, collection.id);
+
+    await page.locator(`[data-card-id="${parent.id}"]`).getByText('Only the child', { exact: true }).click();
+    await expect(panel(page).getByRole('textbox', { name: 'Title' })).toHaveValue('Only the child');
+    await expect(page).toHaveURL(new RegExp(`task=${child.id}`));
+    expect((await api.fetchCollectionView(collection.id)).tasks.find((entry) => entry.id === child.id)?.isCompleted).toBe(false);
+  } finally {
+    await api.deleteCollection(collection.id).catch(() => {});
+  }
+});
