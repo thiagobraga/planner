@@ -6,6 +6,7 @@ import type { ApiTask } from '../../types/api';
 import type { CardSubtasksDropData, TaskDragData } from '../../types/drag';
 import { NO_DRAG_ATTR } from '../dnd/sensors';
 import type { BoardCardChecklistProps } from '../../types/board';
+import { useI18n } from '../../i18n/I18nContext';
 
 function SortableChecklistRow({
   task,
@@ -35,7 +36,7 @@ function SortableChecklistRow({
   const isNote = task.type === 'note';
 
   return (
-    <label
+    <div
       ref={setNodeRef}
       {...attributes}
       {...listeners}
@@ -53,16 +54,19 @@ function SortableChecklistRow({
           aria-label={task.isCompleted ? 'Reopen task' : 'Complete task'}
           onClick={() => onToggle?.(task.id, !task.isCompleted)}
         >
-          {task.isCompleted && <Check size={10} strokeWidth={2} />}
+          {task.isCompleted && <Check size={9} strokeWidth={3} />}
         </button>
       )}
       <span className={task.isCompleted ? 'line-through opacity-55' : ''}>{task.title}</span>
-    </label>
+    </div>
   );
 }
 
 export function BoardCardChecklist({ parentTask, tasks, onToggle }: BoardCardChecklistProps) {
+  const { t } = useI18n();
   const completed = tasks.filter((task) => task.isCompleted).length;
+  const actionable = tasks.filter((task) => task.type !== 'note');
+  const done = actionable.filter((task) => task.isCompleted).length;
   const dropData: CardSubtasksDropData = {
     kind: 'card-subtasks',
     taskId: parentTask.id,
@@ -80,6 +84,21 @@ export function BoardCardChecklist({ parentTask, tasks, onToggle }: BoardCardChe
       aria-label={`${completed}/${tasks.length}`}
       data-testid={`card-subtasks-${parentTask.id}`}
     >
+      {actionable.length > 0 && (
+        <div className="board-card-progress">
+          <div
+            className="board-card-progress-bar"
+            role="progressbar"
+            aria-label={t('detail.progress')}
+            aria-valuemin={0}
+            aria-valuemax={actionable.length}
+            aria-valuenow={done}
+          >
+            <span style={{ width: `${Math.round((100 * done) / actionable.length)}%` }} />
+          </div>
+          <span>{t('board.progressCount', { done, total: actionable.length })}</span>
+        </div>
+      )}
       <SortableContext items={tasks.map((task) => task.id)} strategy={verticalListSortingStrategy}>
         {tasks.map((task) => (
           <SortableChecklistRow

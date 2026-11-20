@@ -1,0 +1,375 @@
+/* Detail panel internals (lazy chunk). Containers live in detailShell.css. */
+
+.detail-panel {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  outline: none;
+}
+
+.detail-panel:focus,
+.detail-panel:focus-visible {
+  outline: none;
+}
+
+.detail-sheet-handle {
+  display: block;
+  flex: none;
+  width: 40px;
+  height: 4px;
+  margin: 8px auto 0;
+  border-radius: 2px;
+  background: var(--color-border-subtle);
+}
+
+/* Header ------------------------------------------------------------------ */
+
+.detail-header {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: grid;
+  gap: 12px;
+  padding: 12px 24px;
+  border-block-end: 1px solid var(--color-border-subtle);
+  background: inherit;
+}
+
+.detail-panel--sheet .detail-header {
+  background: var(--planner-overlay-bg);
+}
+
+.detail-header-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 24px;
+}
+
+.detail-header-top--bare {
+  margin-block-end: 24px;
+}
+
+.detail-breadcrumb {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  align-items: center;
+  min-width: 0;
+  font-size: 12px;
+  line-height: 24px;
+  color: var(--color-ink-light);
+}
+
+.detail-breadcrumb-item {
+  display: inline-flex;
+  min-width: 0;
+  align-items: center;
+}
+
+.detail-breadcrumb button,
+.detail-back {
+  overflow: hidden;
+  max-width: 220px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.detail-breadcrumb button:hover,
+.detail-back:hover {
+  color: var(--color-ink);
+  text-decoration: underline;
+}
+
+.detail-breadcrumb-sep {
+  padding-inline: 6px;
+}
+
+.detail-back {
+  display: inline-flex;
+  flex: 1;
+  min-width: 0;
+  align-items: center;
+  gap: 4px;
+  max-width: none;
+  min-height: 44px;
+  font-size: 13px;
+  color: var(--color-ink-light);
+}
+
+.detail-back svg {
+  flex: none;
+}
+
+.detail-back > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.detail-save-state {
+  flex: none;
+  font-size: 12px;
+  font-style: italic;
+  color: var(--color-ink-light);
+}
+
+.detail-save-text.is-error,
+.detail-save-text.is-conflict,
+.detail-error-text {
+  color: var(--color-danger-text);
+}
+
+.detail-close {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: var(--color-ink-light);
+  cursor: pointer;
+}
+
+.detail-close:hover {
+  background: var(--planner-sidebar-hover-bg);
+  color: var(--color-ink);
+}
+
+.detail-title-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.detail-title {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-ink);
+  font: inherit;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.35;
+  resize: none;
+  field-sizing: content;
+  outline: none;
+}
+
+.detail-title:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+.detail-title.is-complete {
+  color: var(--color-ink-light);
+  text-decoration: line-through;
+}
+
+.detail-mode-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.detail-mode {
+  display: inline-flex;
+  overflow: hidden;
+  border: 1px solid var(--color-ink);
+  border-radius: 4px;
+}
+
+.detail-mode button {
+  height: 20px;
+  padding: 0 8px;
+  border: 0;
+  background: transparent;
+  color: var(--color-ink);
+  font: inherit;
+  font-size: 11px;
+  line-height: 20px;
+  cursor: pointer;
+}
+
+.detail-mode button + button {
+  border-inline-start: 1px solid var(--color-ink);
+}
+
+.detail-mode button[aria-checked='true'] {
+  background: var(--color-ink);
+  color: var(--color-cream);
+}
+
+.detail-progress {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.detail-progress-text {
+  font-size: 12px;
+  color: var(--color-ink-light);
+}
+
+.detail-progress-bar {
+  display: inline-block;
+  overflow: hidden;
+  width: 96px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--color-border-subtle);
+}
+
+.detail-progress-bar > span {
+  display: block;
+  height: 100%;
+  background: var(--color-moss);
+}
+
+/* Body -------------------------------------------------------------------- */
+
+.detail-body {
+  display: grid;
+  gap: 24px;
+  padding: 24px;
+}
+
+.detail-section {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+.detail-section-label {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-ink-light);
+}
+
+.detail-muted {
+  color: var(--color-ink-light);
+  font-style: italic;
+}
+
+.detail-empty {
+  margin: 0;
+  font-size: 14px;
+}
+
+.detail-properties dl {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  gap: 4px 12px;
+  margin: 0 0 4px;
+  font-size: 13px;
+  line-height: 24px;
+}
+
+.detail-properties dt {
+  color: var(--color-ink-light);
+}
+
+.detail-properties dd {
+  margin: 0;
+  min-width: 0;
+  color: var(--color-ink);
+}
+
+.detail-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 8px;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 10px;
+  font-size: 12px;
+  line-height: 20px;
+}
+
+.detail-status-pill > span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.detail-text-button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-ink-light);
+  font: inherit;
+  font-size: 12px;
+  line-height: 24px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.detail-text-button:hover {
+  color: var(--color-ink);
+}
+
+.detail-button {
+  min-height: 24px;
+  padding: 0 8px;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--color-ink);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.detail-button:hover:not(:disabled) {
+  border-color: var(--color-ink-light);
+}
+
+.detail-button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.detail-notice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 4px;
+  background: var(--planner-sidebar-hover-bg, transparent);
+  font-size: 13px;
+}
+
+.detail-notice > span {
+  flex: 1;
+  min-width: 120px;
+}
+
+.detail-state {
+  padding: 12px 24px 24px;
+}
+
+.detail-state-text {
+  margin: 0 0 12px;
+  font-size: 14px;
+  color: var(--color-ink-light);
+}

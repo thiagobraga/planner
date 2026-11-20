@@ -1,0 +1,165 @@
+/* Detail panel checkbox, subtask rows and comments. */
+
+/* Checkbox ---------------------------------------------------------------- */
+
+.detail-check {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--color-cream);
+  cursor: pointer;
+}
+
+/* Invisible hit area: 24px on desktop, 44px on touch. */
+.detail-check::before {
+  content: '';
+  position: absolute;
+  inset: 50% auto auto 50%;
+  width: 24px;
+  height: 24px;
+  transform: translate(-50%, -50%);
+}
+
+@media (pointer: coarse) {
+  .detail-check::before {
+    width: 44px;
+    height: 44px;
+  }
+}
+
+.detail-check-box {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-ink);
+  border-radius: 3px;
+  background: var(--planner-control-bg, transparent);
+}
+
+.detail-check[aria-checked='true'] .detail-check-box {
+  background: var(--color-ink);
+}
+
+.detail-check--large .detail-check-box {
+  width: 16px;
+  height: 16px;
+}
+
+/* Centered on the first line of a 20px x 1.35 title. */
+.detail-check--large {
+  height: 27px;
+}
+
+.detail-check--small .detail-check-box {
+  width: 12px;
+  height: 12px;
+}
+
+.detail-check:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+/* Task rows --------------------------------------------------------------- */
+
+.detail-rows {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.detail-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 28px;
+}
+
+.detail-row-marker {
+  display: inline-flex;
+  width: 12px;
+  justify-content: center;
+  color: var(--color-ink-light);
+  font-size: 12px;
+}
+
+.detail-row-title {
+  flex: 1;
+  min-width: 0;
+  padding: 2px 0;
+  border: 0;
+  background: none;
+  color: var(--color-ink);
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+  text-align: start;
+  cursor: pointer;
+}
+
+.detail-row-title:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.detail-row.is-complete .detail-row-title {
+  color: var(--color-ink-light);
+  text-decoration: line-through;
+}
+
+/* Comments ---------------------------------------------------------------- */
+
+.detail-comments {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.detail-comments time {
+  display: block;
+  font-size: 12px;
+  color: var(--color-ink-light);
+}
+
+.detail-comments p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.detail-comment-form {
+  display: grid;
+  gap: 8px;
+}
+
+.detail-comment-form textarea {
+  width: 100%;
+  min-height: 48px;
+  padding: 8px;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 4px;
+  background: var(--planner-control-bg, transparent);
+  color: var(--color-ink);
+  font: inherit;
+  font-size: 14px;
+  resize: vertical;
+}
+
+.detail-comment-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+  font-size: 12px;
+}

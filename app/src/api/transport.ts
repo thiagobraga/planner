@@ -126,7 +126,9 @@ export async function request<T>(path: string, init: RequestInit = {}): Promise<
   // synthetic session. Everything else that mutates app data is deferred.
   // Token and OAuth endpoints are excluded too: a queued create could never show
   // the one-time secret, and a queued revoke would leave a live credential believed dead.
-  if (!path.startsWith('/auth/') && !path.startsWith('/api-tokens') && !path.startsWith('/oauth/') && !path.startsWith('/account') && WRITE_METHODS.includes(method) && !isOnline()) {
+  // Document saves need the real revision back, so offline they fail and the editor keeps the draft.
+  // Comments are excluded too because their path embeds the parent task id rather than a comment id.
+  if (!path.startsWith('/auth/') && !path.startsWith('/api-tokens') && !path.startsWith('/oauth/') && !path.startsWith('/account') && !/\/(?:document|comments)(?:\?|$)/.test(path) && WRITE_METHODS.includes(method) && !isOnline()) {
     // Create calls (POST with no id segment in the path) mint their id here,
     // once, so the same value is both stored on the queued record (as
     // `clientEntityId`, for later remapping - see offlineQueue.remapQueuedId)
@@ -156,8 +158,10 @@ export async function request<T>(path: string, init: RequestInit = {}): Promise<
   // Lets the events this request causes come back naming this session, so the
   // page can tell its own work apart from another session's and skip refetching
   // over state it has already applied.
+  // A caller that names its own source (the detail panel) wants the echo back,
+  // so the page under it refreshes as it would for another session's change.
   const socketId = getSocketId();
-  if (socketId) {
+  if (socketId && !headers['X-Socket-Id']) {
     headers['X-Socket-Id'] = socketId;
   }
 

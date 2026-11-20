@@ -28,6 +28,8 @@ import { useTaskSelectionStore } from '../stores/taskSelectionStore';
 import { useDebugStore } from '../stores/debugStore';
 import { AgentNotice } from './AgentNotice';
 import { describeAgentChange } from '../utils/agentNotice';
+import { TaskDetailHost } from './detail/TaskDetailHost';
+import { closeTaskDetails } from '../stores/taskDetailStore';
 
 const DEBUG_SEQUENCE = 'wasd';
 const BACKGROUND_PREFERENCES: readonly BackgroundPreference[] = ['beige', 'white', 'dark', 'nord-light', 'nord-dark', 'system'];
@@ -163,7 +165,7 @@ export function AppShell() {
   }, []);
 
   const handleAction = useCallback(
-    (action: string | null) => {
+    (action: string | null, consumed = false) => {
       if (!action) return;
       switch (action) {
         case 'quickAdd:open':
@@ -175,11 +177,15 @@ export function AppShell() {
         case 'help:open':
           setHelpOpen((v) => !v);
           break;
-        case 'dialog:close':
+        case 'dialog:close': {
+          // The active overlay closes first; the detail panel only when nothing else did.
+          const hasOtherOverlay = Boolean(document.querySelector('[role="dialog"]:not(.detail-panel), [role="menu"]'));
+          if (!consumed && !quickAddOpen && !searchOpen && !helpOpen && !hasOtherOverlay) closeTaskDetails();
           setQuickAddOpen(false);
           setSearchOpen(false);
           setHelpOpen(false);
           break;
+        }
         case 'navigate:inbox':
           navigate('/inbox');
           break;
@@ -199,11 +205,12 @@ export function AppShell() {
           if (action.startsWith('view:')) runPageShortcut(action);
       }
     },
-    [navigate, toggleFullWidth],
+    [navigate, toggleFullWidth, quickAddOpen, searchOpen, helpOpen],
   );
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
+      const consumed = e.defaultPrevented;
       const event = {
         key: e.key,
         isTextInputFocused: isTextInputFocused(),
@@ -213,7 +220,7 @@ export function AppShell() {
       matcherStateRef.current = nextState;
       if (action) {
         e.preventDefault();
-        handleAction(action);
+        handleAction(action, consumed);
       }
     };
     window.addEventListener('keydown', handler);
@@ -261,8 +268,9 @@ export function AppShell() {
             updateAvailable={updateAvailable}
           />
 
+          <div className="app-shell-body">
           <main
-            className="app-shell-main-content main-content min-h-0 flex-1 overflow-y-auto p-6"
+            className="app-shell-main-content main-content min-h-0 min-w-0 flex-1 overflow-y-auto p-6"
             style={{
               backgroundColor: 'var(--planner-page-bg)',
               backgroundImage: preferences?.showDots === false ? 'none' : 'radial-gradient(circle, var(--color-dot) 1px, transparent 1px)',
@@ -275,6 +283,8 @@ export function AppShell() {
               <Outlet />
             </div>
           </main>
+          <TaskDetailHost />
+          </div>
 
           <div id={MOBILE_TOOLBAR_SLOT_ID} className="page-toolbar-mobile-slot" />
 
@@ -348,6 +358,7 @@ export function AppShell() {
                   ['[', t('view.previous')],
                   [']', t('view.next')],
                   ['Enter', t('shell.editSelected')],
+                  ['o', t('detail.open')],
                   ['Delete', t('shell.deleteSelected')],
                   ['Esc', t('shell.closeDialog')],
                 ].map(([key, desc]) => (

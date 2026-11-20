@@ -42,3 +42,29 @@ describe('BoardCard', () => {
     expect(onToggle).toHaveBeenCalledWith('task-1', true);
   });
 });
+
+describe('BoardCard progress', () => {
+  const sub = (id: string, patch: Record<string, unknown> = {}) =>
+    ({ id, title: id, priority: 4, collectionId: 'collection-1', parentTaskId: 'task-1', isCompleted: false, orderValue: 0, type: 'task', ...patch }) as never;
+  const renderCard = (subtasks: never[]) => render(
+    <PlannerDragProvider>
+      <BoardCard
+        task={{ id: 'task-1', title: 'Ship board', priority: 1, collectionId: 'collection-1', isCompleted: false, orderValue: 0, type: 'task' }}
+        subtasks={subtasks}
+      />
+    </PlannerDragProvider>,
+  );
+
+  it('shows a bar and "N of M" counting only direct tasks, not notes', () => {
+    renderCard([sub('a', { isCompleted: true }), sub('b'), sub('c'), sub('n', { type: 'note' })]);
+    expect(screen.getByText('1 of 3')).toBeInTheDocument();
+    const bar = screen.getByRole('progressbar');
+    expect(bar).toHaveAttribute('aria-valuenow', '1');
+    expect(bar).toHaveAttribute('aria-valuemax', '3');
+  });
+
+  it('shows no progress without actionable subtasks', () => {
+    renderCard([sub('n', { type: 'note' })]);
+    expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+  });
+});

@@ -45,8 +45,8 @@ What to build: `plan.md`. This file records how the run is executed, the slice q
 | R1 | Release and verify | - | - | v0.28.1 deployed and verified; v0.28.2 also deployed |
 | STOP 1 | R1 report, panel/card mock approval | - | - | approved |
 | M2.10 | S4 contracts, mutation runner, comment sync | refactor/mutation-runner | #480 | merged `c0f02316` |
-| M2.11a | S5a task documents API and data (migration 053), no UI | feat/task-documents-api | #482 | in review |
-| M2.11b | S5b detail panel and Tiptap editor UI | feat/task-documents-panel | - | queued |
+| M2.11a | S5a task documents API and data (migration 053), no UI | feat/task-documents-api | #482 | merged `a59019ba` |
+| M2.11b | S5b detail panel and Tiptap editor UI | feat/task-detail-panel | #489 | in progress |
 | M3.12 | S6 embedded subtasks, five-row cards | feat/embedded-subtasks | - | queued |
 | M4.13 | S7 MCP document/comment/claim/batch | feat/mcp-documents | - | queued |
 | M4.14 | S8 Markdown import, dry run, undo | feat/markdown-import | - | queued |
