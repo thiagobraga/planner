@@ -19,6 +19,7 @@ mkdir -p "$DEPLOY_DIR"
 exec 9>"$DEPLOY_DIR/.deploy.lock"
 flock -n 9 || fail "Another deployment is running"
 
+export PG_CONTAINER=planner-prod-postgres
 # shellcheck source=scripts/db-docker.sh
 source scripts/db-docker.sh
 # shellcheck source=scripts/prod-postgres.sh

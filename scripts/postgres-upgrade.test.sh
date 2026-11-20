@@ -183,7 +183,7 @@ grep -Fq 'Checksum mismatch' "$CASE_ROOT/upgrade.log" || fail "Wrong rejection f
 assert_state 16
 "$REAL_DOCKER" volume rm "${PROJECT}_pgdata18" >/dev/null
 
-run_upgrade || fail "PG16 to PG18 cutover"
+PG_CONTAINER=ignored-inherited-value run_upgrade || fail "PG16 to PG18 cutover"
 assert_state 18
 [[ -f $CASE_ROOT/deploy/.postgres-18-ready ]] || fail "Missing PG18 readiness marker"
 [[ $(sql -c "SELECT to_regclass('tasks_fulltext_idx')") == tasks_fulltext_idx ]] || fail "Full-text index missing"
