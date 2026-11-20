@@ -2,7 +2,7 @@ import { SortableContext, horizontalListSortingStrategy } from '@dnd-kit/sortabl
 import { AddColumnButton } from './AddColumnButton';
 import { BoardColumn } from './BoardColumn';
 import { usePlannerDrag } from '../../contexts/usePlannerDrag';
-import { useEffect } from 'react';
+import { useEffect, type CSSProperties } from 'react';
 import type { BoardViewProps } from '../../types/board';
 
 export function BoardView({
@@ -32,7 +32,7 @@ export function BoardView({
   return (
     <div className="board-scroll" data-testid="board-view">
       <SortableContext items={columns.map((column) => column.id)} strategy={horizontalListSortingStrategy}>
-        <div className="board-grid">
+        <div className="board-grid board-grid--fill" style={{ '--board-columns': columns.length } as CSSProperties}>
           {columns.map((column) => (
             <BoardColumn
               key={column.id}

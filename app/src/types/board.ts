@@ -90,6 +90,8 @@ export interface BoardColumnHeaderProps {
   columnId: string;
   groupBy: BoardGroupBy;
   title: string;
+  /** Top-level cards in the column, shown after the name. */
+  count?: number;
   color?: string;
   isCompletionStatus?: boolean;
   canEdit?: boolean;

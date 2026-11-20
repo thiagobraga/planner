@@ -49,3 +49,29 @@ export function countChildren<T extends SubtreeItem>(items: T[]): Map<string, nu
   }
   return counts;
 }
+
+/** The subtree under rootId minus every branch that starts at an id in `skip`. */
+export function subtreeWithout<T extends SubtreeItem>(rootId: string, items: T[], skip: ReadonlySet<string>): SubtreeRow<T>[] {
+  const rows: SubtreeRow<T>[] = [];
+  let skipBelow = Infinity;
+  for (const row of flattenSubtree(rootId, items)) {
+    if (row.depth <= skipBelow) skipBelow = Infinity;
+    if (skipBelow !== Infinity) continue;
+    if (skip.has(row.item.id)) {
+      skipBelow = row.depth;
+      continue;
+    }
+    rows.push(row);
+  }
+  return rows;
+}
+
+/** Ids shown inside embedded blocks: each embedded task and its whole subtree. */
+export function embeddedCoverage<T extends SubtreeItem>(embedded: ReadonlySet<string>, items: T[]): Set<string> {
+  const covered = new Set<string>();
+  for (const id of embedded) {
+    covered.add(id);
+    for (const row of flattenSubtree(id, items)) covered.add(row.item.id);
+  }
+  return covered;
+}

@@ -11,6 +11,7 @@ export function BoardColumnHeader({
   columnId,
   groupBy,
   title,
+  count,
   color,
   isCompletionStatus,
   canEdit = true,
@@ -104,6 +105,7 @@ export function BoardColumnHeader({
       ) : (
         <h2 onDoubleClick={() => canEdit && setRenaming(true)}>{title}</h2>
       )}
+      {count !== undefined && !renaming && <span className="board-column-count">{count}</span>}
       {canEdit && (
         <button
           type="button"

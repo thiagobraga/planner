@@ -18,6 +18,8 @@ export interface SubtreeRow<T extends SubtreeItem = TaskDetailItem> {
 /** What an embedded task block reads: the canonical subtree items and the two actions it can take. */
 export interface TaskReferenceContextValue {
   items: ReadonlyMap<string, TaskDetailItem>;
+  /** Tasks with their own block in the text; their subtrees are not repeated under another block. */
+  embedded: ReadonlySet<string>;
   onToggle: (taskId: string, completed: boolean) => void;
   onOpen: (taskId: string) => void;
 }

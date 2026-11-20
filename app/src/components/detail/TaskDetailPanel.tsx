@@ -7,7 +7,7 @@ import { useDocumentDraft } from '../../hooks/useDocumentDraft';
 import { closeTaskDetails, openTaskDetails, setDetailMode, useTaskDetailStore } from '../../stores/taskDetailStore';
 import { getSocket, getSocketId } from '../../utils/socket';
 import { referencedTaskIds } from '../../utils/documentContent';
-import { flattenSubtree, leafProgress } from '../../utils/subtree';
+import { embeddedCoverage, flattenSubtree, leafProgress } from '../../utils/subtree';
 import { DetailFrame } from './DetailFrame';
 import { DetailHeader } from './DetailHeader';
 import { DetailProperties } from './DetailProperties';
@@ -98,9 +98,11 @@ function DetailBody({ taskId, layout, mode, onModeChange }: { taskId: string; la
   const rows = flattenSubtree(detail.task.id, detail.descendants);
   const progress = leafProgress(detail.task.id, detail.descendants);
   const embedded = referencedTaskIds(unsaved ?? draft.state.base?.content ?? draft.view.content ?? { type: 'doc' });
-  const otherRows = rows.filter((row) => !embedded.has(row.item.id));
+  const covered = embeddedCoverage(embedded, detail.descendants);
+  const otherRows = rows.filter((row) => !covered.has(row.item.id));
   const references = {
     items: new Map(detail.descendants.map((entry) => [entry.id, entry])),
+    embedded,
     onToggle: toggle,
     onOpen: (id: string) => openTaskDetails(id, { focusPanel: true }),
   };
@@ -125,14 +127,14 @@ function DetailBody({ taskId, layout, mode, onModeChange }: { taskId: string; la
       <div className="detail-body">
         {mode === 'tasks' ? (
           <section className="detail-section" aria-label={t('detail.subtasks')}>
-            {rows.length === 0 ? <p className="detail-muted detail-empty">{t('detail.noSubtasks')}</p> : <DetailTaskRows rows={rows} onToggle={toggle} />}
+            {rows.length === 0 ? <p className="detail-muted detail-empty">{t('detail.noSubtasks')}</p> : <DetailTaskRows rows={rows} onToggle={toggle} outsideText={new Set(otherRows.map((row) => row.item.id))} />}
           </section>
         ) : (
           <>
             <DetailProperties task={detail.task} progress={progress} />
             <DetailDocument draft={draft} title={detail.task.title} references={references} onCreateTask={createTask} />
             {otherRows.length > 0 && (
-              <section className="detail-section" aria-labelledby="detail-other-subtasks">
+              <section className="detail-section detail-section--compact" aria-labelledby="detail-other-subtasks">
                 <h3 id="detail-other-subtasks" className="detail-section-label">{t('detail.otherSubtasks')}</h3>
                 <DetailTaskRows rows={otherRows} onToggle={toggle} />
               </section>

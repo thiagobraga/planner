@@ -147,6 +147,7 @@ export function BoardColumn({
         columnId={column.id}
         groupBy={groupBy}
         title={column.title}
+        count={column.tasks.length}
         color={column.color}
         isCompletionStatus={column.isCompletionStatus}
         canEdit={canEdit}
