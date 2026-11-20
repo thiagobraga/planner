@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.36.0](https://github.com/thiagobraga/planner/compare/v0.35.0...v0.36.0) (2026-11-20)
+
+
+### Added
+
+* **import:** markdown spec import with dry run, manifest and undo ([15ed492](https://github.com/thiagobraga/planner/commit/15ed4926153ccf6fc744c0a5e1388451872f8f21))
+
 ## [0.35.0](https://github.com/thiagobraga/planner/compare/v0.34.0...v0.35.0) (2026-11-20)
 
 
