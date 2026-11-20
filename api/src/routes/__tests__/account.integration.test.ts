@@ -69,6 +69,7 @@ async function createSeededUser(label: string): Promise<string> {
     "INSERT INTO reminders (id, task_id, user_id, remind_at) VALUES ($1, $2, $3, NOW() + INTERVAL '1 hour')",
     [reminderId, taskId, id],
   );
+  await pool.query("INSERT INTO task_documents (task_id, content, updated_by) VALUES ($1, $2, $3)", [taskId, JSON.stringify(exportDoc(taskId)), id]);
   await createPersonalToken(id, { name: "test-token", scopes: ["read", "write"], expiresInDays: 30 });
 
   return id;
@@ -85,6 +86,17 @@ async function sessionDelete(path: string) {
     .set("Cookie", [sessionCookie, csrfCookie])
     .set("X-XSRF-TOKEN", csrfToken)
     .send({});
+}
+
+function exportDoc(taskId: string) {
+  return {
+    type: "doc",
+    content: [
+      { type: "heading", attrs: { level: 2 }, content: [{ type: "text", text: "Goal" }] },
+      { type: "paragraph", content: [{ type: "text", text: "Ship " }, { type: "text", text: "it", marks: [{ type: "bold" }] }, { type: "text", text: "." }] },
+      { type: "taskReference", attrs: { taskId, blockId: "b1" } },
+    ],
+  };
 }
 
 describe("Account export and deletion routes (real PostgreSQL + Redis)", () => {
@@ -162,6 +174,10 @@ describe("Account export and deletion routes (real PostgreSQL + Redis)", () => {
     expect(res.body.comments).toHaveLength(1);
     expect(res.body.comments[0].body).toBe("Comment primary");
     expect(res.body.reminders).toHaveLength(1);
+    expect(res.body.documents).toHaveLength(1);
+    const [document] = res.body.documents;
+    expect(document).toMatchObject({ taskId: res.body.tasks[0].id, revision: 1, schemaVersion: 1, content: exportDoc(res.body.tasks[0].id) });
+    expect(document.markdown).toBe("## Goal\n\nShip **it**.\n\n- [ ] Task for primary\n");
   });
 
   it("DELETE /account cascades deletion across all tables, clears cookies, and invalidates session", async () => {

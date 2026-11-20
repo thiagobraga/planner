@@ -215,7 +215,9 @@ describe("exportUserData", () => {
             created_at: NOW,
           },
         ],
-      });
+      })
+      // 12. documents
+      .mockResolvedValueOnce({ rows: [] });
 
     const exported = await exportUserData("u1");
 
