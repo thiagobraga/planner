@@ -132,6 +132,14 @@ describe("Markdown import", () => {
     expect((await taskRows()).map((row) => row.title)).toContain("Mine");
   });
 
+  it("files every task in a status so opening the board does not touch them and undo stays complete", async () => {
+    const result = await applyMarkdownImport(owner.userId, input());
+    const unfiled = await pool.query("SELECT title FROM tasks WHERE collection_id = $1 AND status_id IS NULL", [owner.collectionId]);
+    expect(unfiled.rows).toEqual([]);
+    const undo = await undoMarkdownImport(owner.userId, result.manifestId);
+    expect(undo.kept).toEqual([]);
+  });
+
   it("never imports into or undoes from someone else's collection", async () => {
     await expect(applyMarkdownImport(stranger.userId, input())).rejects.toMatchObject({ statusCode: 404 });
     const result = await applyMarkdownImport(owner.userId, input());
