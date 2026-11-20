@@ -1,19 +1,6 @@
 import pool from "../db/pool.js";
 import { AppError } from "../utils/AppError.js";
-
-export interface SearchableEntity {
-  id: string;
-  type: "task" | "collection" | "label";
-  text: string;
-  updatedAt: string;
-  description?: string | null;
-}
-
-export interface SearchResults {
-  tasks: SearchableEntity[];
-  collections: SearchableEntity[];
-  labels: SearchableEntity[];
-}
+import type { SearchResults } from "../types/activity.js";
 
 const MAX_PER_TYPE = 50;
 const MIN_QUERY_LENGTH = 2;

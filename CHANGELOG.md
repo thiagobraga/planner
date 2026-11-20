@@ -1,5 +1,38 @@
 # Changelog
 
+## [0.38.7](https://github.com/thiagobraga/planner/compare/v0.38.6...v0.38.7) (2026-11-20)
+
+
+### Fixed
+
+* **app:** reveal scrollbar thumbs on hover and focus ([7963a59](https://github.com/thiagobraga/planner/commit/7963a59ed29346b1b411f2d0123c55c0300d109e))
+
+
+### Style
+
+* **app:** show subtle scrollbars only on hover ([60ddec6](https://github.com/thiagobraga/planner/commit/60ddec643086067cd630d7981fa8bba66580adfe))
+
+## [0.38.6](https://github.com/thiagobraga/planner/compare/v0.38.5...v0.38.6) (2026-11-20)
+
+
+### Fixed
+
+* **collections:** list subcollections in the title menu in sidebar order ([8409a3a](https://github.com/thiagobraga/planner/commit/8409a3aca5485d3d6f5ed6bda6fb54b36b7cd8f3))
+
+
+### Changed
+
+* **habits:** refetch once per burst of remote habit changes ([e426de5](https://github.com/thiagobraga/planner/commit/e426de5b1039b2a05545aa45a3d1ece624d113d2))
+* **sync:** refetch collection and inbox views once per burst of changes ([19f1e11](https://github.com/thiagobraga/planner/commit/19f1e11e7a0cb7b4bea6432d766b1573b26d9dc6))
+
+## [0.38.5](https://github.com/thiagobraga/planner/compare/v0.38.4...v0.38.5) (2026-11-20)
+
+
+### Fixed
+
+* **detail:** return focus to the editor at once after adding a subtask ([6cbc780](https://github.com/thiagobraga/planner/commit/6cbc780477d6d5ea241eb3e8fae4d4741eddaade))
+* **detail:** return focus to the editor at once after adding a subtask ([d66c694](https://github.com/thiagobraga/planner/commit/d66c694f5147c501fa68da4f767f9a2b15bf7c98))
+
 ## [0.38.4](https://github.com/thiagobraga/planner/compare/v0.38.3...v0.38.4) (2026-11-20)
 
 

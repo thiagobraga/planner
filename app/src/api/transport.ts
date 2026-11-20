@@ -1,4 +1,5 @@
-import { isOnline, enqueueMutation, type QueuedMutationMethod } from '../utils/offlineQueue';
+import { isOnline, enqueueMutation } from '../utils/offlineQueue';
+import type { QueuedMutationMethod } from '../types/utils';
 import { getSocketId } from '../utils/socket';
 import { notifyUnauthorized } from '../utils/authEvents';
 import type { ValidationDetail } from '../types/api';

@@ -2,6 +2,7 @@
 @import "./styles/theme.css";
 @import "./styles/boards.css";
 @import "./styles/toolbar.css";
+@import "./styles/scrollbars.css";
 
 @theme {
   --dot-grid: 24px;
@@ -159,33 +160,6 @@ kbd {
 button,
 [role="button"] {
   cursor: pointer;
-}
-
-/* Thin, quiet scrollbars for app scroll surfaces */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: var(--planner-scrollbar-thumb) transparent;
-
-  &::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-  }
-  &::-webkit-scrollbar-track {
-    background: transparent;
-  }
-  &::-webkit-scrollbar-thumb {
-    background-color: var(--planner-scrollbar-thumb);
-    border-radius: 999px;
-
-    &:hover {
-      background-color: var(--planner-scrollbar-thumb-hover);
-    }
-  }
-  &::-webkit-scrollbar-button {
-    display: none;
-    width: 0;
-    height: 0;
-  }
 }
 
 /* both-edges keeps the page column centered under the topbar row */

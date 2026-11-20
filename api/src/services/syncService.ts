@@ -6,6 +6,7 @@ import { CORS_ORIGIN } from "../config.js";
 import { validateSession, buildCookieName, needsTouch, touchSession } from "./sessionService.js";
 import { currentActor, currentSourceId } from "../middleware/requestContext.js";
 import { LATEST_VERSION } from "../utils/buildInfo.js";
+import type { SocketData } from "../types/sync.js";
 import type { SyncEvent } from "../contracts/sync.js";
 
 const SYNC_CHANNEL = "sync";
@@ -13,12 +14,6 @@ const SYNC_CHANNEL = "sync";
 const COLLECTION_MEMBERS_CHANNEL = "sync:collection-members";
 const VERSION_CHANNEL = "version";
 const SESSION_REVALIDATION_INTERVAL_MS = 60_000;
-
-interface SocketData {
-  userId: string;
-  sessionId: number;
-  rawToken?: string;
-}
 
 export type { SyncEntityType, SyncEvent, SyncEventType } from "../contracts/sync.js";
 

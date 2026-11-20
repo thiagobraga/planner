@@ -1,7 +1,6 @@
 import type { RecurrenceRule } from '../types/task';
+import type { RecurrenceLocale } from '../types/utils';
 import { parseISODate } from './dateQuickOptions';
-
-type Locale = 'en' | 'pt-BR';
 
 const EN_DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const EN_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -66,7 +65,7 @@ function portugueseBase(rule: RecurrenceRule): string {
 }
 
 /** One readable sentence for a rule, e.g. "A cada 2 semanas, aos sábados". */
-export function recurrenceSummary(rule: RecurrenceRule, locale: Locale): string {
+export function recurrenceSummary(rule: RecurrenceRule, locale: RecurrenceLocale): string {
   const pt = locale === 'pt-BR';
   const parts = [pt ? portugueseBase(rule) : englishBase(rule)];
   if (rule.fromCompletion) parts.push(pt ? 'após a conclusão' : 'after completion');

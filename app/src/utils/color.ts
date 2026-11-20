@@ -4,30 +4,7 @@
 // alpha of `0`, `1`, `0.x` or `.x` - so formatting rounds to integers and
 // clamps alpha to two decimals.
 
-export interface Rgb {
-  r: number;
-  g: number;
-  b: number;
-}
-
-export interface Hsv {
-  h: number;
-  s: number;
-  v: number;
-}
-
-export interface Hsl {
-  h: number;
-  s: number;
-  l: number;
-}
-
-export interface ParsedColor {
-  rgb: Rgb;
-  alpha: number;
-}
-
-export type ColorFormat = 'hex' | 'rgb' | 'hsl';
+import type { ColorFormat, Hsl, Hsv, ParsedColor, Rgb } from '../types/utils';
 
 export const COLOR_FORMATS: readonly ColorFormat[] = ['hex', 'rgb', 'hsl'];
 

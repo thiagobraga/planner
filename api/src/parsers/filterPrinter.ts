@@ -1,4 +1,4 @@
-import type { FilterExpr } from './filterParser.js';
+import type { FilterExpr } from '../types/filters.js';
 
 // Precedence: text/atom > not > and > or
 function precedence(e: FilterExpr): number {

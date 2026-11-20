@@ -1,43 +1,9 @@
 import pool from "../db/pool.js";
 import { redisClient } from "../db/redis.js";
+import type { AdminAuthStats, AdminCounts, AdminHealth } from "../types/admin.js";
 
 const REDIS_PING_TIMEOUT_MS = 1000;
 const RATE_LIMIT_SCAN_COUNT = 500;
-
-export interface AdminCounts {
-  users: number;
-  activeUsers: number;
-  disabledUsers: number;
-  admins: number;
-  tasks: number;
-  completedTasks: number;
-  collections: number;
-  habits: number;
-}
-
-export interface AdminHealth {
-  database: {
-    status: "up" | "down";
-    totalConnections: number;
-    idleConnections: number;
-    waitingRequests: number;
-  };
-  redis: { status: "up" | "down" };
-  process: {
-    uptimeSeconds: number;
-    memoryRssBytes: number;
-    nodeVersion: string;
-  };
-}
-
-export interface AdminAuthStats {
-  activeSessions: number;
-  sessionsLastDay: number;
-  usersOnlineLastHour: number;
-  throttledAccounts: number;
-  throttledIps: number;
-  failedLoginAttempts: number;
-}
 
 export async function getCounts(): Promise<AdminCounts> {
   const result = await pool.query(

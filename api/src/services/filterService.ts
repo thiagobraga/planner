@@ -1,17 +1,9 @@
 import { v4 as uuidv4 } from "uuid";
 import pool from "../db/pool.js";
 import { AppError } from "../utils/AppError.js";
-import { parseFilter, type FilterParseError } from "../parsers/filterParser.js";
-import { evaluateFilter, type EvalTask, type EvalContext } from "./filterEvaluator.js";
-
-interface FilterRow {
-  id: string;
-  user_id: string;
-  name: string;
-  query: string;
-  created_at: string;
-  updated_at: string;
-}
+import { parseFilter } from "../parsers/filterParser.js";
+import { evaluateFilter } from "./filterEvaluator.js";
+import type { CreateFilterInput, EvalContext, EvalTask, FilterParseError, FilterRow, UpdateFilterInput } from "../types/filters.js";
 
 function formatFilter(row: FilterRow) {
   return {
@@ -61,11 +53,6 @@ function validateQuery(query: unknown): string {
   return query;
 }
 
-export interface CreateFilterInput {
-  name: string;
-  query: string;
-}
-
 export async function createFilter(userId: string, input: CreateFilterInput) {
   const name = validateName(input.name);
   const query = validateQuery(input.query);
@@ -79,11 +66,6 @@ export async function createFilter(userId: string, input: CreateFilterInput) {
   );
 
   return formatFilter(result.rows[0] as FilterRow);
-}
-
-export interface UpdateFilterInput {
-  name?: string;
-  query?: string;
 }
 
 export async function updateFilter(filterId: string, userId: string, input: UpdateFilterInput) {

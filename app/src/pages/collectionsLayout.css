@@ -131,8 +131,19 @@
     width: auto;
     margin-inline-start: -24px;
     padding-inline-start: 24px;
-    padding-inline-end: 24px;
+    /* The scrollbar is the 24px gap to the board, with its thumb centered in it. */
+    padding-inline-end: 0;
     scrollbar-gutter: stable;
+    --scrollbar-size: 24px;
+  }
+
+  /* Tracks start below the sticky page header, where the scrolling content begins. */
+  .collections-tree-pane,
+  .collections-detail-pane,
+  .collections-split-pane {
+    &::-webkit-scrollbar-track:vertical {
+      margin-block-start: 48px;
+    }
   }
 
   /* Extend sticky header backdrop across the 24px bleed gutter to mask scrolled toggles. */
@@ -177,16 +188,6 @@
 
   .collections-detail-pane[data-split='horizontal'] > .collections-split-pane + .collections-split-pane {
     border-block-start: 1px solid var(--color-border-subtle);
-  }
-
-  @media (hover: hover) {
-    .collections-tree-pane:not(:hover, :focus-within) {
-      scrollbar-color: transparent transparent;
-
-      &::-webkit-scrollbar-thumb {
-        background-color: transparent;
-      }
-    }
   }
 
   .collections-back {

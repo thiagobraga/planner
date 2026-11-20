@@ -5,6 +5,23 @@ export type Locale = 'en' | 'pt-BR';
 export type TranslationKey = ParseKeys<'translation'>;
 export type TranslationCatalog = Record<keyof typeof englishCatalog, string>;
 
+export interface HelpSection {
+  id: string;
+  title: string;
+  paragraphs?: string[];
+  items?: string[];
+}
+
+export interface HelpContent {
+  title: string;
+  subtitle: string;
+  onThisPage: string;
+  then: string;
+  sections: HelpSection[];
+  shortcutsTitle: string;
+  shortcuts: Array<{ keys: string[]; label: string }>;
+}
+
 export interface I18nContextValue {
   locale: Locale;
   setLocale: (locale: string | null | undefined) => void;
