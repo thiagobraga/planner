@@ -62,7 +62,7 @@ function SortableChecklistRow({
           {task.isCompleted && <Check size={9} strokeWidth={3} />}
         </button>
       )}
-      <span className={task.isCompleted ? 'line-through opacity-55' : ''}>{task.title}</span>
+      <span className={`board-card-checklist-title ${task.isCompleted ? 'line-through opacity-55' : ''}`} title={task.title}>{task.title}</span>
       {childCount > 0 && <span className="board-card-checklist-meta">{childCount}</span>}
     </div>
   );
