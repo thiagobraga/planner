@@ -69,11 +69,16 @@ describe("Planner MCP server (real PostgreSQL + Redis)", () => {
     const writeNames = (await writer.listTools()).tools.map((t) => t.name).sort();
 
     expect(readNames).toEqual([
-      "filter_tasks", "get_collection", "get_inbox", "get_today", "get_upcoming",
-      "list_collections", "list_habits", "list_labels", "list_statuses", "search",
+      "filter_tasks", "get_collection", "get_inbox", "get_task", "get_task_document", "get_today", "get_upcoming",
+      "list_activity", "list_collections", "list_habits", "list_labels", "list_statuses", "list_task_comments", "search",
     ]);
     expect(writeNames).toEqual(
-      [...readNames, "complete_task", "create_task", "delete_task", "log_habit", "move_task", "reopen_task", "reschedule_tasks", "update_task"].sort(),
+      [
+        ...readNames,
+        "add_comment", "claim_task", "complete_task", "create_task", "create_tasks_batch",
+        "delete_task", "log_habit", "move_task", "release_task", "reopen_task",
+        "reschedule_tasks", "save_task_document", "update_task",
+      ].sort(),
     );
 
     const deleteTool = (await writer.listTools()).tools.find((t) => t.name === "delete_task")!;

@@ -46,3 +46,11 @@ export function setActor(actor: RequestActor): void {
 export function currentActor(): RequestActor | undefined {
   return storage.getStore()?.actor;
 }
+
+/** Run a callback with an explicit request actor bound in AsyncLocalStorage. */
+export function withActor<T>(actor: RequestActor | undefined, fn: () => Promise<T>): Promise<T> {
+  if (!actor) return fn();
+  const existing = storage.getStore();
+  if (existing?.actor) return fn();
+  return storage.run({ sourceId: existing?.sourceId, actor }, fn);
+}

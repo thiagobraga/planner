@@ -1,3 +1,4 @@
+import type { RequestActor } from "./activity.js";
 import type { ApiTokenScope } from "./apiToken.js";
 import type { RecurrenceRule } from "./recurrence.js";
 
@@ -6,6 +7,8 @@ export interface McpAuthContext {
   scopes: ApiTokenScope[];
   /** Injectable clock so tests can pin "today". */
   now: () => Date;
+  /** Optional explicit actor when invoked outside an Express request context. */
+  actor?: RequestActor;
 }
 
 /** The subset of a task row the MCP formatter reads; every view service returns at least this. */

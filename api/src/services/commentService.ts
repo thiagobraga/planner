@@ -64,9 +64,9 @@ function validateBody(body: unknown): string {
   return sanitizeHtml(body, SANITIZE_OPTIONS);
 }
 
-async function verifyTaskAccess(taskId: string, userId: string): Promise<{ user_id: string; collection_id: string }> {
+async function verifyTaskAccess(taskId: string, userId: string): Promise<{ user_id: string; collection_id: string; title: string }> {
   const result = await pool.query(
-    `SELECT t.user_id, t.collection_id FROM tasks t
+    `SELECT t.user_id, t.collection_id, t.title FROM tasks t
      WHERE t.id = $1
        AND (t.user_id = $2 OR t.collection_id IN (SELECT collection_id FROM collaborators WHERE user_id = $2))`,
     [taskId, userId],
@@ -80,7 +80,7 @@ async function verifyTaskAccess(taskId: string, userId: string): Promise<{ user_
     });
   }
 
-  return result.rows[0] as { user_id: string; collection_id: string };
+  return result.rows[0] as { user_id: string; collection_id: string; title: string };
 }
 
 async function loadComment(commentId: string): Promise<CommentRow> {
@@ -117,6 +117,14 @@ export async function createComment(taskId: string, userId: string, body: string
       [id, taskId, userId, validated],
     );
     const comment = formatComment(result.rows[0] as CommentRow);
+    await tx.recordActivity({
+      userId,
+      collectionId: task.collection_id,
+      entityType: "task",
+      entityId: taskId,
+      eventType: "comment_created",
+      afterData: { title: task.title, commentId: comment.id },
+    });
     tx.emit(commentEvent("created", userId, comment, task.collection_id));
     return comment;
   });
@@ -144,6 +152,14 @@ export async function updateComment(commentId: string, userId: string, body: str
       [validated, commentId],
     );
     const updated = formatComment(result.rows[0] as CommentRow);
+    await tx.recordActivity({
+      userId,
+      collectionId: task.collection_id,
+      entityType: "task",
+      entityId: comment.task_id,
+      eventType: "comment_updated",
+      afterData: { title: task.title, commentId: updated.id },
+    });
     tx.emit(commentEvent("updated", userId, updated, task.collection_id));
     return updated;
   });
@@ -164,6 +180,14 @@ export async function deleteComment(commentId: string, userId: string): Promise<
 
   await runMutation(async (tx) => {
     await tx.client.query(`DELETE FROM comments WHERE id = $1`, [commentId]);
+    await tx.recordActivity({
+      userId,
+      collectionId: task.collection_id,
+      entityType: "task",
+      entityId: comment.task_id,
+      eventType: "comment_deleted",
+      beforeData: { title: task.title, commentId },
+    });
     tx.emit(commentEvent("deleted", userId, { id: commentId, taskId: comment.task_id }, task.collection_id));
   });
   return { success: true };

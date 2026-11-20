@@ -115,4 +115,30 @@ describe('TaskItem: opening details', () => {
     fireEvent.keyDown(row(), { key: 'Enter' });
     expect(onAddBelow).toHaveBeenCalledWith('t1');
   });
+
+  it('cancels a pending click open when a row shortcut runs first', () => {
+    const onIndent = vi.fn();
+    renderRow({ onIndent });
+    fireEvent.click(row());
+    fireEvent.keyDown(row(), { key: 'Tab' });
+    settle();
+    expect(onIndent).toHaveBeenCalledWith('t1', 1);
+    expect(open).not.toHaveBeenCalled();
+
+    fireEvent.click(row());
+    fireEvent.keyDown(row(), { key: ']' });
+    settle();
+    expect(onIndent).toHaveBeenCalledWith('t1', -1);
+    expect(open).not.toHaveBeenCalled();
+  });
+
+  it('cancels a pending click open when the context menu opens', () => {
+    const onRightClick = vi.fn();
+    renderRow({ onRightClick });
+    fireEvent.click(row());
+    fireEvent.contextMenu(row());
+    settle();
+    expect(onRightClick).toHaveBeenCalled();
+    expect(open).not.toHaveBeenCalled();
+  });
 });
