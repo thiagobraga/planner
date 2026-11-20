@@ -1,11 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useSync } from '../hooks/useSync';
+import { useQuery } from '@tanstack/react-query';
+import { useHabitsCache } from '../hooks/useHabitsCache';
 import { HabitTimeline } from '../components/habits/HabitTimeline';
 import type { HabitEditTarget, HabitNode } from '../types/habits';
 import { HabitCalendar } from '../components/habits/HabitCalendar';
 import { useHabitDrag } from '../hooks/useHabitDrag';
-import { isEchoedMove } from '../utils/moveEcho';
 import { HabitsToolbar } from '../components/habits/HabitsToolbar';
 import { PageHeader } from '../components/PageHeader';
 import { fmtISOInTimeZone } from '../utils/date';
@@ -52,7 +51,6 @@ function isTemp(id: string) {
 
 export function HabitsPage() {
   const { t } = useI18n();
-  const queryClient = useQueryClient();
   const { data: preferences } = usePreferences();
   const weekStart = preferences?.weekStart ?? 'sunday';
 
@@ -86,53 +84,7 @@ export function HabitsPage() {
   const groups = useMemo(() => habitsData?.groups ?? [], [habitsData]);
   const groupsLoaded = habitsLoaded;
 
-  const setHabits = useCallback(
-    (updater: (prev: ApiHabit[]) => ApiHabit[]) => {
-      queryClient.setQueryData(
-        ['habits'],
-        (prev: { habits: ApiHabit[]; groups: ApiHabitGroup[] } | undefined) => ({
-          ...prev,
-          habits: updater(prev?.habits ?? []),
-        }),
-      );
-    },
-    [queryClient],
-  );
-
-  const setGroups = useCallback(
-    (updater: (prev: ApiHabitGroup[]) => ApiHabitGroup[]) => {
-      queryClient.setQueryData(
-        ['habits'],
-        (prev: { habits: ApiHabit[]; groups: ApiHabitGroup[] } | undefined) => ({
-          ...prev,
-          groups: updater(prev?.groups ?? []),
-        }),
-      );
-    },
-    [queryClient],
-  );
-
-  const invalidate = useCallback(() => {
-    queryClient.invalidateQueries({ queryKey: ['habits'] });
-  }, [queryClient]);
-
-  useSync(
-    useCallback(
-      (event) => {
-        if (
-          event.entityType !== 'habit' &&
-          event.entityType !== 'habit_completion' &&
-          event.entityType !== 'habit_group'
-        ) {
-          return;
-        }
-        // Our own habit or group move, still reconciling.
-        if (isEchoedMove(event)) return;
-        invalidate();
-      },
-      [invalidate],
-    ),
-  );
+  const { setHabits, setGroups, invalidate } = useHabitsCache();
 
   const sections = useMemo(() => buildHabitSections(habits, groups), [habits, groups]);
 
