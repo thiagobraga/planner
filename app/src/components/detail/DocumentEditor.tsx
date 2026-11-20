@@ -94,10 +94,11 @@ export function DocumentEditor({ version, content, readOnly, labelledBy, onEdit,
     const reuse = next?.type.name === 'paragraph' && next.content.size === 0;
     editor
       .chain()
-      .focus()
       .insertContentAt(at, reuse ? block : [block, { type: 'paragraph' }])
       .setTextSelection(at + 2)
       .run();
+    // Synchronous: Tiptap's focus() waits a frame, and keys typed meanwhile would land on the page.
+    editor.view.focus();
   };
 
   return (

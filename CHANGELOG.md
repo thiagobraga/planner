@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.38.4](https://github.com/thiagobraga/planner/compare/v0.38.3...v0.38.4) (2026-11-20)
+
+
+### Fixed
+
+* **tasks:** move subtasks with their parent when its date changes ([9a97db8](https://github.com/thiagobraga/planner/commit/9a97db8af0f997c96822644a1aee42ed076cb6d6))
+
+
+### Changed
+
+* **board:** one view request and no status seed per board load ([c0d1f86](https://github.com/thiagobraga/planner/commit/c0d1f86f62ca28591e84a478b467d462635f7486))
+
+## [0.38.3](https://github.com/thiagobraga/planner/compare/v0.38.2...v0.38.3) (2026-11-20)
+
+
+### Fixed
+
+* **app:** let shift right click open the browser menu everywhere ([6468a90](https://github.com/thiagobraga/planner/commit/6468a900f71f2e4a740e941db78576c684a4c860))
+
+
+### Style
+
+* **board:** set card titles to weight 500 ([52dd103](https://github.com/thiagobraga/planner/commit/52dd103f5d95bee4e1b27ae1e324343236787481))
+* **board:** set card titles to weight 500 ([e449e5a](https://github.com/thiagobraga/planner/commit/e449e5a3f27129a6bf407f2780221f3046a66315))
+
 ## [0.38.2](https://github.com/thiagobraga/planner/compare/v0.38.1...v0.38.2) (2026-11-20)
 
 
