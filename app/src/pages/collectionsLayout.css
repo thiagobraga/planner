@@ -104,6 +104,8 @@
   .main-content:has(> .page-container > .collections-layout) {
     padding-block: 0;
     overflow: hidden;
+    /* Nothing scrolls here, so no reserved gutters: the tree heading lines up with the brand. */
+    scrollbar-gutter: auto;
   }
 
   .page-container:has(> .collections-layout) {
