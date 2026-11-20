@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useQueryClient } from '@tanstack/react-query';
 import {
@@ -21,17 +21,96 @@ export function useCollectionBreadcrumbs(
   id: string,
   collections: ApiCollection[],
   fallbackCollection?: { id: string; name: string; color: string },
+  options?: {
+    onNavigateCollection?: (targetId: string) => void;
+    onCollectionDeleted?: (targetId: string) => void;
+  },
 ) {
   const navigate = useNavigate();
   const qc = useQueryClient();
 
-  const [crumbMenu, setCrumbMenu] = useState<CollectionCrumbMenuState | null>(null);
-  const [crumbColorPicker, setCrumbColorPicker] = useState<CollectionCrumbColorPickerState | null>(null);
-  const [renamingCrumbId, setRenamingCrumbId] = useState<string | null>(null);
+  const [crumbMenu, setCrumbMenuState] = useState<CollectionCrumbMenuState | null>(null);
+  const [childrenMenu, setChildrenMenuState] = useState<{ position: { x: number; y: number } } | null>(null);
+  const [crumbColorPicker, setCrumbColorPickerState] = useState<CollectionCrumbColorPickerState | null>(null);
+  const [renamingCrumbId, setRenamingCrumbIdState] = useState<string | null>(null);
   const [crumbDraft, setCrumbDraft] = useState('');
-  const [subAddingParentId, setSubAddingParentId] = useState<string | null>(null);
+  const [subAddingParentId, setSubAddingParentIdState] = useState<string | null>(null);
   const [subNewName, setSubNewName] = useState('');
   const [deletingCollection, setDeletingCollection] = useState<DeletingCollectionState | null>(null);
+  const renameSettledRef = useRef(false);
+  const subSettledRef = useRef(false);
+
+  const setCrumbMenu = useCallback((next: CollectionCrumbMenuState | null) => {
+    setCrumbMenuState(next);
+    if (next) {
+      setChildrenMenuState(null);
+      setCrumbColorPickerState(null);
+    }
+  }, []);
+
+  const setChildrenMenu = useCallback((next: { position: { x: number; y: number } } | null) => {
+    setChildrenMenuState(next);
+    if (next) {
+      setCrumbMenuState(null);
+      setCrumbColorPickerState(null);
+    }
+  }, []);
+
+  const toggleChildrenMenu = useCallback((position: { x: number; y: number }) => {
+    setChildrenMenuState((prev) => {
+      if (prev) return null;
+      setCrumbMenuState(null);
+      setCrumbColorPickerState(null);
+      return { position };
+    });
+  }, []);
+
+  const setCrumbColorPicker = useCallback((next: CollectionCrumbColorPickerState | null) => {
+    setCrumbColorPickerState(next);
+    if (next) {
+      setCrumbMenuState(null);
+      setChildrenMenuState(null);
+    }
+  }, []);
+
+  const toggleCrumbColorPicker = useCallback((next: CollectionCrumbColorPickerState) => {
+    setCrumbColorPickerState((prev) => {
+      if (prev?.collectionId === next.collectionId) return null;
+      setCrumbMenuState(null);
+      setChildrenMenuState(null);
+      return next;
+    });
+  }, []);
+
+  const setRenamingCrumbId = useCallback((next: string | null) => {
+    renameSettledRef.current = next === null;
+    setRenamingCrumbIdState(next);
+  }, []);
+
+  const setSubAddingParentId = useCallback((next: string | null) => {
+    subSettledRef.current = next === null;
+    setSubAddingParentIdState(next);
+  }, []);
+
+  const childCollections = useMemo<CollectionCrumb[]>(
+    () =>
+      collections
+        .filter((c) => c.parentId === id && !c.isArchived && !c.isInbox)
+        .sort((a, b) => a.orderValue - b.orderValue)
+        .map((c) => ({ id: c.id, name: c.name, color: c.color })),
+    [collections, id],
+  );
+
+  const customNavigate = options?.onNavigateCollection;
+  const onCollectionDeleted = options?.onCollectionDeleted;
+
+  const navigateToCollection = useCallback(
+    (targetId: string) => {
+      if (customNavigate) customNavigate(targetId);
+      else navigate(`/collection/${targetId}`);
+    },
+    [customNavigate, navigate],
+  );
 
   // A sub-collection reads as a breadcrumb of its ancestors, so its place in the
   // tree is visible from the page itself. Falls back to the view payload when the
@@ -78,9 +157,10 @@ export function useCollectionBreadcrumbs(
 
   const handleCrumbRename = useCallback(
     (collectionId: string) => {
+      if (renameSettledRef.current || renamingCrumbId !== collectionId) return;
+      renameSettledRef.current = true;
       const trimmed = crumbDraft.trim();
-      if (renamingCrumbId !== collectionId) return;
-      setRenamingCrumbId(null);
+      setRenamingCrumbIdState(null);
       if (!trimmed) return;
       setCollectionsCache((prev) => patchById(prev, collectionId, { name: trimmed }));
       apiUpdateCollection(collectionId, { name: trimmed }).catch(() =>
@@ -91,10 +171,11 @@ export function useCollectionBreadcrumbs(
   );
 
   const handleCrumbCommitSub = useCallback(() => {
-    if (!subAddingParentId) return;
+    if (subSettledRef.current || !subAddingParentId) return;
+    subSettledRef.current = true;
     const parentId = subAddingParentId;
     const trimmed = subNewName.trim();
-    setSubAddingParentId(null);
+    setSubAddingParentIdState(null);
     setSubNewName('');
     if (!trimmed) return;
     const color = getHierarchicalColor('temp-id', parentId, collections);
@@ -104,7 +185,8 @@ export function useCollectionBreadcrumbs(
   }, [collections, qc, setCollectionsCache, subAddingParentId, subNewName]);
 
   const handleCancelSub = useCallback(() => {
-    setSubAddingParentId(null);
+    subSettledRef.current = true;
+    setSubAddingParentIdState(null);
     setSubNewName('');
   }, []);
 
@@ -114,16 +196,25 @@ export function useCollectionBreadcrumbs(
     setDeletingCollection(null);
     setCollectionsCache((prev) => prev.filter((c) => c.id !== target));
     apiDeleteCollection(target)
-      .then(() => navigate('/daily'))
+      .then(() => {
+        if (onCollectionDeleted) onCollectionDeleted(target);
+        else navigate('/daily');
+      })
       .catch(() => qc.invalidateQueries({ queryKey: ['collections'] }));
-  }, [deletingCollection, navigate, qc, setCollectionsCache]);
+  }, [deletingCollection, navigate, onCollectionDeleted, qc, setCollectionsCache]);
 
   return {
     trail,
+    childCollections,
+    childrenMenu,
+    setChildrenMenu,
+    toggleChildrenMenu,
+    navigateToCollection,
     crumbMenu,
     setCrumbMenu,
     crumbColorPicker,
     setCrumbColorPicker,
+    toggleCrumbColorPicker,
     renamingCrumbId,
     setRenamingCrumbId,
     crumbDraft,

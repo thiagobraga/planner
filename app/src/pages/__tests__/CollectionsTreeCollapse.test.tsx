@@ -63,6 +63,26 @@ describe('collections tree collapse', () => {
     expect(screen.queryByRole('button', { name: /(Collapse|Expand) (Icons|Home)/ })).toBeNull();
   });
 
+  it('places the floating toggle directly on each row inside a node wrapping its children', async () => {
+    renderTree();
+    await screen.findByText('Icons');
+
+    const workToggle = toggle('Collapse', 'Work');
+    const workRow = workToggle.parentElement!;
+    expect(workRow).toHaveClass('collections-index-row');
+    expect(workRow.parentElement).toHaveClass('collections-index-node');
+    expect(workRow.parentElement).toContainElement(screen.getByText('Design'));
+    expect(workRow.parentElement).toContainElement(screen.getByText('Icons'));
+    expect(workRow.parentElement).not.toContainElement(screen.getByText('Home'));
+
+    const designToggle = toggle('Collapse', 'Design');
+    const designRow = designToggle.parentElement!;
+    expect(designRow).toHaveClass('collections-index-row');
+    expect(designRow.parentElement).toHaveClass('collections-index-node');
+    expect(designRow.parentElement).toContainElement(screen.getByText('Icons'));
+    expect(designRow.style.marginInlineStart).toBe('24px');
+  });
+
   it('collapses and expands a parent and a nested child', async () => {
     renderTree();
     await screen.findByText('Icons');

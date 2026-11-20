@@ -270,5 +270,18 @@ describe('AppShell', () => {
 
       expect(localStorage.getItem('planner_background')).toBe('white');
     });
+
+    it('switches themes without flashing beige in between', () => {
+      mockUseQuery.mockReturnValue({ data: { ...defaultPreferences, background: 'dark' } });
+      const { rerender } = render(<AppShell />);
+      vi.mocked(updateDocumentThemeColor).mockClear();
+
+      mockUseQuery.mockReturnValue({ data: { ...defaultPreferences, background: 'nord-dark' } });
+      rerender(<AppShell />);
+
+      expect(updateDocumentThemeColor).toHaveBeenCalledTimes(1);
+      expect(updateDocumentThemeColor).toHaveBeenCalledWith('nord-dark');
+      expect(document.documentElement).toHaveAttribute('data-theme', 'nord-dark');
+    });
   });
 });

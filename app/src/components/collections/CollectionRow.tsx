@@ -11,7 +11,6 @@ import { buildCollectionMenuItems } from '../collectionMenuItems';
 export function CollectionRow({ node, depth, ...props }: CollectionRowProps) {
   const { t } = useI18n();
   const [contextPos, setContextPos] = useState<{ x: number; y: number } | null>(null);
-  const [colorPickerPos, setColorPickerPos] = useState<{ x: number; y: number } | null>(null);
   const touchTimerRef = useRef<NodeJS.Timeout | null>(null);
   const longPress = useRef(false);
   const clearTouchTimer = () => {
@@ -20,6 +19,7 @@ export function CollectionRow({ node, depth, ...props }: CollectionRowProps) {
   useEffect(() => clearTouchTimer, []);
 
   const isMenuOpen = props.menuOpenId === node.id;
+  const isColorPickerOpen = props.colorPickerTarget?.id === node.id;
   const isRenaming = props.renamingId === node.id;
   const isAddingSub = props.addingSubFor === node.id;
   const hasChildren = node.children.length > 0;
@@ -32,10 +32,10 @@ export function CollectionRow({ node, depth, ...props }: CollectionRowProps) {
   };
 
   return (
-    <>
+    <div className="collections-index-node">
       <div
         className="collections-index-row grid h-6 cursor-pointer relative"
-        style={{ gridTemplateColumns: `24px minmax(0, 1fr) auto`, paddingLeft: `${depth * 24}px` }}
+        style={{ gridTemplateColumns: '24px minmax(0, 1fr) auto', marginInlineStart: `${depth * 24}px` }}
         onContextMenu={(e) => {
           e.preventDefault();
           handleOpenMenu({ x: e.clientX, y: e.clientY });
@@ -55,11 +55,51 @@ export function CollectionRow({ node, depth, ...props }: CollectionRowProps) {
         onTouchEnd={clearTouchTimer}
         onTouchCancel={clearTouchTimer}
       >
-        <span
-          className="collections-index-dot w-1.75 h-1.75 rounded-full justify-self-center self-center translate-y-px shrink-0 filter-[saturate(0.55)]"
-          style={{ backgroundColor: node.color }}
-          aria-hidden="true"
-        />
+        {!isRenaming && hasChildren && (
+          <button
+            type="button"
+            className="collections-index-row__toggle flex h-6 w-6 items-center justify-center p-0 text-ink-light hover:text-ink bg-transparent border-0 cursor-pointer"
+            aria-label={t(isExpanded ? 'page.collapseCollection' : 'page.expandCollection', { name: node.name })}
+            aria-expanded={isExpanded}
+            aria-controls={childrenId}
+            onClick={(e) => {
+              e.stopPropagation();
+              props.onToggleCollapsed(node.id);
+            }}
+          >
+            <ChevronRight
+              aria-hidden="true"
+              size={16}
+              strokeWidth={1.5}
+              className={`motion-safe:transition-transform motion-safe:duration-(--motion-fast) ${isExpanded ? 'rotate-90' : ''}`}
+            />
+          </button>
+        )}
+
+        <button
+          type="button"
+          className="collections-index-dot flex h-6 w-6 items-center justify-center rounded-full p-0 bg-transparent border-0 cursor-pointer hover:bg-(--planner-sidebar-hover-bg) transition-colors"
+          aria-label={t('collections.changeColorNamed', { name: node.name })}
+          title={t('page.changeColor')}
+          onMouseDown={(e) => {
+            if (isColorPickerOpen) e.stopPropagation();
+          }}
+          onClick={(e) => {
+            e.stopPropagation();
+            if (isColorPickerOpen) {
+              props.onOpenColorPicker(null);
+              return;
+            }
+            const rect = e.currentTarget.getBoundingClientRect();
+            props.onOpenColorPicker({ id: node.id, position: { x: rect.left, y: rect.bottom } });
+          }}
+        >
+          <span
+            className="w-1.75 h-1.75 rounded-full translate-y-px shrink-0 filter-[saturate(0.55)]"
+            style={{ backgroundColor: node.color }}
+            aria-hidden="true"
+          />
+        </button>
 
         {isRenaming ? (
           <input
@@ -77,13 +117,13 @@ export function CollectionRow({ node, depth, ...props }: CollectionRowProps) {
               if (isDesktopCollections() && event.relatedTarget?.closest('.collections-index-link')) return;
               props.onSaveRename(node);
             }}
-            className="col-start-2 col-span-1 min-w-0 h-6 text-sm leading-6 text-ink-light bg-transparent border-0 border-b border-border-subtle outline-none px-0 focus:outline-none focus-visible:outline-none focus-visible:ring-0"
+            className="collections-inline-input col-start-2 col-span-2 min-w-0 h-6 text-sm leading-6 text-ink bg-transparent border-0 border-b border-border-subtle px-0"
           />
         ) : (
           <Link
             to={`/collection/${node.id}`}
             aria-current={props.activeId === node.id ? 'page' : undefined}
-            className="collections-index-link col-start-2 min-w-0 truncate text-sm leading-6 text-ink-light"
+            className="collections-index-link min-w-0 truncate text-sm leading-6 text-ink-light"
             onMouseDown={(event) => {
               // Keep the tree's menu open when its neighbor link changes the detail pane.
               if (longPress.current || (props.menuOpenId && isDesktopCollections())) event.stopPropagation();
@@ -106,27 +146,12 @@ export function CollectionRow({ node, depth, ...props }: CollectionRowProps) {
 
         {!isRenaming && (
           <div className="col-start-3 col-span-1 flex h-6 items-center justify-self-end shrink-0" onClick={(e) => e.stopPropagation()}>
-            {hasChildren && (
-              <button
-                type="button"
-                className="collections-index-row__toggle flex h-6 w-6 items-center justify-center p-0 text-ink-light hover:text-ink bg-transparent border-0 cursor-pointer"
-                aria-label={t(isExpanded ? 'page.collapseCollection' : 'page.expandCollection', { name: node.name })}
-                aria-expanded={isExpanded}
-                aria-controls={childrenId}
-                onClick={() => props.onToggleCollapsed(node.id)}
-              >
-                <ChevronRight
-                  aria-hidden="true"
-                  size={16}
-                  strokeWidth={1.5}
-                  className={`transition-transform duration-(--motion-fast) ${isExpanded ? 'rotate-90' : ''}`}
-                />
-              </button>
-            )}
             <button
               type="button"
               className="collections-index-row__actions-btn flex h-6 w-6 items-center justify-center p-0 text-ink-light hover:text-ink bg-transparent border-0 cursor-pointer"
-              aria-label={t('page.deleteNamed', { name: node.name })}
+              aria-label={t('collections.actionsNamed', { name: node.name })}
+              aria-haspopup="menu"
+              aria-expanded={isMenuOpen}
               onClick={(e) => {
                 const rect = e.currentTarget.getBoundingClientRect();
                 handleOpenMenu({ x: rect.left, y: rect.bottom });
@@ -147,8 +172,7 @@ export function CollectionRow({ node, depth, ...props }: CollectionRowProps) {
           }}
           items={buildCollectionMenuItems(t, {
             onChangeColor: () => {
-              setColorPickerPos(contextPos);
-              props.setMenuOpenId(null);
+              props.onOpenColorPicker({ id: node.id, position: contextPos });
               setContextPos(null);
             },
             onStartRename: () => {
@@ -161,6 +185,20 @@ export function CollectionRow({ node, depth, ...props }: CollectionRowProps) {
               props.setMenuOpenId(null);
               setContextPos(null);
             },
+            ...(props.onSplit
+              ? {
+                  onSplitVertically: () => {
+                    props.onSplit!(node, 'vertical');
+                    props.setMenuOpenId(null);
+                    setContextPos(null);
+                  },
+                  onSplitHorizontally: () => {
+                    props.onSplit!(node, 'horizontal');
+                    props.setMenuOpenId(null);
+                    setContextPos(null);
+                  },
+                }
+              : {}),
             onDelete: () => {
               props.onDelete(node);
               props.setMenuOpenId(null);
@@ -170,24 +208,28 @@ export function CollectionRow({ node, depth, ...props }: CollectionRowProps) {
         />
       )}
 
-      {colorPickerPos && (
+      {isColorPickerOpen && props.colorPickerTarget && (
         <ColorPickerPopover
-          position={colorPickerPos}
+          position={props.colorPickerTarget.position}
           value={node.color}
           onCommit={(color) => props.onColorCommit(node, color)}
-          onClose={() => setColorPickerPos(null)}
+          onClose={() => props.onOpenColorPicker(null)}
         />
       )}
 
       {isAddingSub && (
         <div
-          className="grid h-6"
-          style={{ gridTemplateColumns: `24px minmax(0, 1fr) 24px`, paddingLeft: `${(depth + 1) * 24}px` }}
+          className="collections-index-input-row grid h-6 items-center"
+          style={{ gridTemplateColumns: '24px minmax(0, 1fr)', marginInlineStart: `${(depth + 1) * 24}px` }}
         >
-          <span className="w-1.75 h-1.75 rounded-full justify-self-center self-center shrink-0 bg-border-subtle" aria-hidden="true" />
+          <span
+            className="w-1.75 h-1.75 rounded-full justify-self-center self-center translate-y-px shrink-0 bg-border-subtle"
+            aria-hidden="true"
+          />
           <input
             autoFocus
             type="text"
+            aria-label={t('page.collectionName')}
             placeholder={t('page.collectionName')}
             value={props.editingName}
             onChange={(e) => props.setEditingName(e.target.value)}
@@ -196,7 +238,7 @@ export function CollectionRow({ node, depth, ...props }: CollectionRowProps) {
               if (e.key === 'Escape') props.onCancelNewSub();
             }}
             onBlur={() => props.onSaveNewSub(node.id)}
-            className="col-start-2 col-span-1 flex h-6 min-w-0 items-center text-sm leading-none text-ink-light bg-transparent border-0 border-b border-border-subtle outline-none px-0 focus:outline-none focus-visible:outline-none focus-visible:ring-0"
+            className="collections-inline-input col-start-2 min-w-0 w-full h-6 text-sm leading-6 text-ink bg-transparent border-0 border-b border-border-subtle px-0 placeholder:text-ink-light/45"
           />
         </div>
       )}
@@ -208,6 +250,6 @@ export function CollectionRow({ node, depth, ...props }: CollectionRowProps) {
           ))}
         </div>
       )}
-    </>
+    </div>
   );
 }

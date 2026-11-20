@@ -29,10 +29,19 @@ export interface CollectionTreeRowProps {
   onColorCommit: (color: string) => void;
 }
 
+export type CollectionSplitDirection = 'vertical' | 'horizontal';
+
+export interface CollectionSplitPane {
+  key: string;
+  collectionId: string;
+}
+
 export interface CollectionMenuHandlers {
   onChangeColor: () => void;
   onStartRename: () => void;
   onAddSub: () => void;
+  onSplitVertically?: () => void;
+  onSplitHorizontally?: () => void;
   onDelete: () => void;
 }
 
@@ -54,12 +63,19 @@ export interface CollectionState {
   removeCollection: (id: string) => void;
 }
 
+export interface CollectionRowColorPickerTarget {
+  id: string;
+  position: { x: number; y: number };
+}
+
 export interface CollectionRowProps {
   activeId?: string;
   node: CollectionTreeNode;
   depth: number;
   menuOpenId: string | null;
   setMenuOpenId: (id: string | null) => void;
+  colorPickerTarget: CollectionRowColorPickerTarget | null;
+  onOpenColorPicker: (target: CollectionRowColorPickerTarget | null) => void;
   renamingId: string | null;
   addingSubFor: string | null;
   editingName: string;
@@ -72,6 +88,7 @@ export interface CollectionRowProps {
   onSaveNewSub: (parentId: string) => void;
   onCancelNewSub: () => void;
   onColorCommit: (node: CollectionTreeNode, color: string) => void;
+  onSplit?: (node: CollectionTreeNode, direction: CollectionSplitDirection) => void;
   collapsedIds: ReadonlySet<string>;
   onToggleCollapsed: (id: string) => void;
 }
@@ -170,6 +187,11 @@ export interface CollectionBreadcrumbTitleProps {
   onCommitRename: (collectionId: string) => void;
   onCancelRename: () => void;
   onOpenMenu: (state: CollectionCrumbMenuState) => void;
+  onToggleColorPicker: (state: CollectionCrumbColorPickerState) => void;
+  colorPickerCollectionId: string | null;
+  onToggleChildrenMenu: (position: { x: number; y: number }) => void;
+  childrenMenuOpen: boolean;
+  onNavigateAncestor?: (collectionId: string) => void;
 }
 
 export interface CollectionSubInputProps {
@@ -182,11 +204,17 @@ export interface CollectionSubInputProps {
 
 export interface CollectionBreadcrumbOverlaysProps {
   trail: CollectionCrumb[];
+  currentCollectionId: string;
+  childCollections: CollectionCrumb[];
+  childrenMenu: { position: { x: number; y: number } } | null;
+  onCloseChildrenMenu: () => void;
+  onNavigateCollection: (collectionId: string) => void;
   crumbMenu: CollectionCrumbMenuState | null;
   onCloseMenu: () => void;
   onOpenColorPicker: (state: CollectionCrumbColorPickerState) => void;
   onStartRename: (collectionId: string, currentName: string) => void;
   onStartAddSub: (collectionId: string) => void;
+  onSplit?: (collectionId: string, direction: CollectionSplitDirection) => void;
   onRequestDelete: (target: DeletingCollectionState) => void;
   crumbColorPicker: CollectionCrumbColorPickerState | null;
   onCommitColor: (collectionId: string, color: string) => void;

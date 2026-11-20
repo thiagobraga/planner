@@ -18,7 +18,7 @@ import { invalidateCommentQueries } from '../utils/commentSync';
 import { fetchPreferences, apiCreateTask } from '../api/client';
 import type { Preferences } from '../types/api';
 import { ensureFontLoaded, type FontOption } from '../utils/fontLoader';
-import { updateDocumentThemeColor } from '../utils/theme';
+import { BACKGROUND_CACHE_KEY, updateDocumentThemeColor } from '../utils/theme';
 import { useResolvedTheme } from '../hooks/useResolvedTheme';
 import type { BackgroundPreference } from '../types/theme';
 import { PlannerDragProvider } from '../contexts/PlannerDragContext';
@@ -30,7 +30,6 @@ import { AgentNotice } from './AgentNotice';
 import { describeAgentChange } from '../utils/agentNotice';
 
 const DEBUG_SEQUENCE = 'wasd';
-const BACKGROUND_CACHE_KEY = 'planner_background';
 const BACKGROUND_PREFERENCES: readonly BackgroundPreference[] = ['beige', 'white', 'dark', 'nord-light', 'nord-dark', 'system'];
 
 /** Last saved background, so a reload paints the right palette before preferences load. */
@@ -124,17 +123,19 @@ export function AppShell() {
     }
   }, [preferences?.locale, setLocale]);
 
-  // Layout effect so the palette is on <html> before the first paint; the
-  // cleanup hands logged-out screens back their default beige.
+  // Layout effect so the palette is on <html> before the first paint; only
+  // reset back to default beige on unmount so theme switches do not flash beige.
   useLayoutEffect(() => {
-    const root = document.documentElement;
-    root.dataset.theme = theme;
+    document.documentElement.dataset.theme = theme;
     updateDocumentThemeColor(theme);
+  }, [theme]);
+
+  useLayoutEffect(() => {
     return () => {
-      delete root.dataset.theme;
+      delete document.documentElement.dataset.theme;
       updateDocumentThemeColor('beige');
     };
-  }, [theme]);
+  }, []);
 
   useEffect(() => {
     if (!preferences?.background) return;

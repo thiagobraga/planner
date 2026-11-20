@@ -6,6 +6,7 @@ import { queryClient } from '../api/queryClient';
 import { connectSocket, disconnectSocket } from '../utils/socket';
 import { useOfflineQueueReplay } from '../hooks/useOfflineQueueReplay';
 import { clearUserMutations } from '../utils/offlineQueue';
+import { BACKGROUND_CACHE_KEY } from '../utils/theme';
 import { useI18n } from '../i18n/I18nContext';
 import { setUnauthorizedHandler } from '../utils/authEvents';
 
@@ -100,6 +101,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsAuthenticated(false);
     setCurrentUserId(null);
     queryClient.clear();
+    try {
+      localStorage.removeItem(BACKGROUND_CACHE_KEY);
+    } catch {
+      // Ignore storage access errors (private browsing).
+    }
     clearUserMutations(uid).catch(() => {});
   }, []);
 

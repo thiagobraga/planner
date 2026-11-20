@@ -141,7 +141,7 @@ The system explicitly rejects the visual idioms of its category: Todoist's satur
 
 ## Collections split view
 
-At 768px and wider, Collections splits the page column (720px, or 100% with Full width) into a fixed 264px tree pane and a flexible details pane; it never sets its own width. The tree has no fill: the page background shows through and a 1px divider separates it from the details. Its scrollbar stays hidden until the pointer is over the tree or focus is inside it, with a stable gutter so rows never shift; touch screens keep the native scrollbar. Both panes scroll independently. Show the selected link in semibold with the existing active tint. A collection with children shows a chevron toggle before the row actions (right when collapsed, down when expanded); collapsed collections are remembered per browser. Below 768px, show either the tree or the collection, with a Back to collections link in the detail view.
+At 768px and wider, Collections splits the page column (720px, or 100% with Full width) into a fixed 192px tree pane and a flexible details pane; it never sets its own width. The tree has no fill and no dividing border: the page background shows through seamlessly into the details pane. Its scrollbar stays hidden until the pointer is over the tree or focus is inside it, with a stable gutter so rows never shift; touch screens keep the native scrollbar. Both panes scroll independently. Show the selected link in semibold with the existing active tint. A collection with children has a collapse/expand chevron toggle (right when collapsed, down when expanded) floating outside the row layout 24px to the left of its color dot; it stays invisible at rest and appears when hovering that collection or any of its children (or on keyboard focus-visible; always visible on touch screens), and collapsed collections are remembered per browser. Clicking any collection color dot opens the color picker directly; right-clicking a collection also offers Split vertically and Split horizontally to open additional collection panes alongside the current one with a close button per pane. Clicking the active collection title on the detail page opens a compact menu listing its child collections and Add sub-collection. Below 768px, show either the tree or the collection, with a Back to collections link in the detail view.
 
 ## 2. Colors
 
@@ -194,7 +194,7 @@ Tokens are redefined under `:root[data-theme="dark"]` in `app/src/styles/theme.c
 | Warm Brick Red `--color-accent` | `#c9483b` | `#d8705f` | Accent, lifted for contrast on dark paper |
 | Active nav `--planner-sidebar-active-bg` | tinted dot | `#3b3229` | Selected navigation item |
 | Overlay `--planner-overlay-bg` | Cream Paper | `#292219` | Dialogs and menus use the page's paper shade |
-| Browser chrome `theme-color` | `#ebe6de` | `#292219` | PWA title bar, matches the nav bar (`--color-sidebar-bg`) |
+| Browser chrome `theme-color` | `#ebe6de` | `#292219` | PWA title bar, matches `--color-sidebar-bg` on original themes and page surface on Nord (`#eceff4` / `#2e3440`) |
 
 ### Nord Themes
 
