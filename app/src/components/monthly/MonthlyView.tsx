@@ -3,6 +3,7 @@ import { MonthSelector } from './MonthSelector';
 import { useI18n } from '../../i18n/I18nContext';
 import type { Task } from '../../types/task';
 import type { MonthlyViewProps } from '../../types/widgets';
+import { isNativeContextMenu } from '../../utils/contextMenu';
 
 function dateKey(year: number, month: number, day: number): string {
   return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
@@ -149,7 +150,11 @@ function MonthlyTaskEntry({ task, onToggle, onTaskContextMenu }: { task: Task; o
   return (
     <div
       className={`flex items-center min-h-6 ${isCompleted ? 'line-through opacity-50' : ''}`}
-      onContextMenu={(event) => { if (onTaskContextMenu) { event.preventDefault(); onTaskContextMenu(task.id, { x: event.clientX, y: event.clientY }); } }}
+      onContextMenu={(event) => {
+        if (isNativeContextMenu(event) || !onTaskContextMenu) return;
+        event.preventDefault();
+        onTaskContextMenu(task.id, { x: event.clientX, y: event.clientY });
+      }}
     >
       {type === 'note' ? (
         <span

@@ -7,6 +7,7 @@ import { isDesktopCollections } from '../../utils/collectionsLayout';
 import { ContextMenu } from '../ui/ContextMenu';
 import { ColorPickerPopover } from '../ui/ColorPickerPopover';
 import { buildCollectionMenuItems } from '../collectionMenuItems';
+import { isNativeContextMenu } from '../../utils/contextMenu';
 
 export function CollectionRow({ node, depth, ...props }: CollectionRowProps) {
   const { t } = useI18n();
@@ -37,6 +38,7 @@ export function CollectionRow({ node, depth, ...props }: CollectionRowProps) {
         className="collections-index-row grid h-6 cursor-pointer relative"
         style={{ gridTemplateColumns: '24px minmax(0, 1fr) auto', marginInlineStart: `${depth * 24}px` }}
         onContextMenu={(e) => {
+          if (isNativeContextMenu(e)) return;
           e.preventDefault();
           handleOpenMenu({ x: e.clientX, y: e.clientY });
         }}

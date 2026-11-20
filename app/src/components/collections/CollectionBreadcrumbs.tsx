@@ -12,6 +12,7 @@ import type {
   CollectionBreadcrumbTitleProps,
   CollectionSubInputProps,
 } from '../../types/collections';
+import { isNativeContextMenu } from '../../utils/contextMenu';
 
 export function CollectionHeaderActions({
   toolbar,
@@ -74,6 +75,7 @@ export function CollectionBreadcrumbTitle({
             <span
               className="collections-page-crumb flex min-w-0 items-center gap-2"
               onContextMenu={(e) => {
+                if (isNativeContextMenu(e)) return;
                 e.preventDefault();
                 onOpenMenu({ collectionId: crumb.id, position: { x: e.clientX, y: e.clientY } });
               }}
