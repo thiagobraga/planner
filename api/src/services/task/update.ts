@@ -194,13 +194,17 @@ export async function updateTask(taskId: string, userId: string, input: UpdateTa
   // When reparenting shifts the task's own depth, the entire descendant subtree
   // must shift by the same delta so relative nesting is preserved (Phase 6 rule 5).
   const shiftsDescendants = reparentDelta !== undefined && reparentDelta !== 0;
-  const needsTransaction = shiftsDescendants || input.labelIds !== undefined;
+  const needsTransaction = shiftsDescendants || input.labelIds !== undefined || input.description !== undefined;
 
   let taskRow: TaskRow;
   if (needsTransaction) {
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
+      if (input.description !== undefined) {
+        await client.query('SELECT id FROM tasks WHERE id = $1 FOR UPDATE', [taskId]);
+        await assertDescriptionWritable(taskId, client);
+      }
       const result = await client.query(query, values);
       if (shiftsDescendants) {
         await client.query(

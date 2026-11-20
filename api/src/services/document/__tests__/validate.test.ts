@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { validateDocument, MAX_DOCUMENT_BYTES, MAX_DOCUMENT_DEPTH, MAX_DOCUMENT_NODES } from "../validate.js";
+import { parseDocumentPut, validateDocument, MAX_DOCUMENT_BYTES, MAX_DOCUMENT_DEPTH, MAX_DOCUMENT_NODES } from "../validate.js";
 import { AppError } from "../../../utils/AppError.js";
 
 const TASK_ID = "6f1d2c3b-4a5e-4f60-8a7b-9c0d1e2f3a4b";
@@ -133,5 +133,32 @@ describe("validateDocument rejects", () => {
     const cyclic: Record<string, unknown> = { type: "doc", content: [] };
     (cyclic.content as unknown[]).push(cyclic);
     expect(rejection(cyclic).path).toBe("content");
+  });
+
+  it("prototype property names, non-plain objects, and structural edge cases", () => {
+    for (const protoKey of ["toString", "constructor", "valueOf"]) {
+      expect(rejection(doc({ type: protoKey })).path).toBe("content.content[0]");
+      expect(rejection(doc(para(text("x", [{ type: protoKey }])))).path).toBe("content.content[0].content[0].marks[0]");
+      expect(rejection(doc({ type: "heading", attrs: { level: 1, [protoKey]: "x" }, content: [text("h")] })).path)
+        .toBe(`content.content[0].attrs.${protoKey}`);
+    }
+    expect(rejection(new Date()).path).toBe("content");
+    expect(rejection(doc({ type: "heading", attrs: new Date(), content: [text("h")] })).path).toBe("content.content[0].attrs");
+    expect(rejection(doc({ type: "bulletList", content: [{ type: "listItem", content: [{ type: "bulletList", content: [{ type: "listItem", content: [para(text("x"))] }] }] }] })).path)
+      .toBe("content.content[0].content[0].content[0]");
+    expect(rejection(doc({ ...para(text("x")), marks: [{ type: "bold" }] })).path).toBe("content.content[0].marks");
+    expect(rejection(doc(para(text("x", [{ type: "bold", extra: 1 }])))).path).toBe("content.content[0].content[0].marks[0]");
+    expect(rejection(doc({ ...para(), text: "x" })).path).toBe("content.content[0].text");
+  });
+});
+
+describe("parseDocumentPut", () => {
+  it("rejects non-plain bodies and unknown top-level fields", () => {
+    expect(() => parseDocumentPut(new Date())).toThrowError(AppError);
+    expect(() => parseDocumentPut({ content: doc(), baseRevision: 0, extra: true })).toThrowError(AppError);
+    expect(parseDocumentPut({ content: doc(para(text("ok"))), baseRevision: 0 })).toEqual({
+      content: doc(para(text("ok"))),
+      baseRevision: 0,
+    });
   });
 });

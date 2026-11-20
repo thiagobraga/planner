@@ -9,6 +9,7 @@ import { useSync } from '../../hooks/useSync';
 
 const mockUseQuery = vi.hoisted(() => vi.fn());
 const mockInvalidateQueries = vi.hoisted(() => vi.fn());
+const mockRemoveQueries = vi.hoisted(() => vi.fn());
 
 vi.mock('react-router', () => ({
   Outlet: vi.fn(() => <div data-testid="outlet-content">Outlet content</div>),
@@ -20,6 +21,7 @@ vi.mock('@tanstack/react-query', () => ({
   useQuery: mockUseQuery,
   useQueryClient: vi.fn(() => ({
     invalidateQueries: mockInvalidateQueries,
+    removeQueries: mockRemoveQueries,
     setQueryData: vi.fn(),
   })),
   QueryClient: vi.fn(),
@@ -194,6 +196,25 @@ describe('AppShell', () => {
     });
 
     expect(mockInvalidateQueries).toHaveBeenCalledWith({ queryKey: ['document', 'task-9'] });
+  });
+
+  it("drops a task's cached document when the task is deleted", async () => {
+    render(<AppShell />);
+    const handler = vi.mocked(useSync).mock.lastCall?.[0];
+
+    await act(async () => {
+      handler?.({
+        id: 'e3',
+        entityType: 'task',
+        eventType: 'deleted',
+        entityId: 'task-9',
+        userId: 'user-2',
+        collectionId: 'col-1',
+        emittedAt: '2026-11-19T00:00:00.000Z',
+      });
+    });
+
+    expect(mockRemoveQueries).toHaveBeenCalledWith({ queryKey: ['document', 'task-9'] });
   });
 
   it('pins the shell to the viewport so the mobile bottom bar stays visible', () => {

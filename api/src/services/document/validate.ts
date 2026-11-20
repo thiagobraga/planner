@@ -26,7 +26,9 @@ function fail(path: string, message: string, field = "content"): never {
 }
 
 function isObject(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
+  const proto = Object.getPrototypeOf(value);
+  return proto === Object.prototype || proto === null;
 }
 
 function checkAttrs(attrs: unknown, specs: Record<string, DocumentAttrSpec>, path: string): void {
@@ -96,7 +98,6 @@ function checkNode(node: unknown, path: string, depth: number, parent: DocumentC
   if (node.type === "text") {
     if (typeof node.text !== "string" || node.text.length === 0) fail(`${path}.text`, "must be non-empty text");
     if (node.text.includes("\u0000")) fail(`${path}.text`, "must not contain NUL characters");
-    if (node.text.includes("\0")) fail(`${path}.text`, "must not contain NUL");
   } else if (node.text !== undefined) {
     fail(`${path}.text`, "only text nodes carry text");
   }

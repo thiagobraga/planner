@@ -5,6 +5,7 @@ import { createTestUserWithCollection } from "../../test/fixtures.js";
 import type { SyncEvent } from "../syncService.js";
 import type { AppError } from "../../utils/AppError.js";
 import { getTaskDocument, putTaskDocument } from "../documentService.js";
+import { updateTask } from "../task/update.js";
 
 type Fixture = Awaited<ReturnType<typeof createTestUserWithCollection>>;
 
@@ -49,7 +50,7 @@ beforeAll(async () => {
   await subscriber.connect();
   await subscriber.subscribe("sync", (message) => {
     const event = JSON.parse(message) as SyncEvent;
-    if (event.entityType === "task") events.push(event);
+    if (event.entityType === "task" && event.entityId === taskId) events.push(event);
   });
 });
 
@@ -221,5 +222,39 @@ describe("save boundaries", () => {
 
     await putTaskDocument(taskId, owner.userId, { content, baseRevision: 0 });
     expect((await stored()).description).toBe("Steps\n\nSibling step");
+  });
+
+  it("authorizes by collection membership so the owner can edit collaborator-created tasks and removed collaborators cannot", async () => {
+    const collabTaskRes = await pool.query<{ id: string }>(
+      "INSERT INTO tasks (user_id, collection_id, title, description, order_value) VALUES ($1, $2, 'Collab task', 'Seed', 0) RETURNING id",
+      [collaborator.userId, owner.collectionId],
+    );
+    const collabTaskId = collabTaskRes.rows[0].id;
+
+    // Collection owner can read and write a task created by a collaborator
+    await expect(getTaskDocument(collabTaskId, owner.userId)).resolves.toMatchObject({ revision: 0 });
+    await expect(putTaskDocument(collabTaskId, owner.userId, { content: doc("Owner edit"), baseRevision: 0 }))
+      .resolves.toMatchObject({ revision: 1 });
+
+    // Once removed from collaborators, the creator loses access to the task in the owner's collection
+    await pool.query("DELETE FROM collaborators WHERE collection_id = $1 AND user_id = $2", [owner.collectionId, collaborator.userId]);
+    await expect(getTaskDocument(collabTaskId, collaborator.userId)).rejects.toMatchObject({ code: "NOT_FOUND", statusCode: 404 });
+    await expect(putTaskDocument(collabTaskId, collaborator.userId, { content: doc("Ex-collab"), baseRevision: 1 }))
+      .rejects.toMatchObject({ code: "NOT_FOUND", statusCode: 404 });
+  });
+
+  it("serializes concurrent updateTask description writes and putTaskDocument so description and document never diverge", async () => {
+    const [docRes, patchRes] = await Promise.allSettled([
+      putTaskDocument(taskId, owner.userId, { content: doc("Rich winner"), baseRevision: 0 }),
+      updateTask(taskId, owner.userId, { description: "Plain contender" }),
+    ]);
+
+    expect(docRes.status).toBe("fulfilled");
+    if (patchRes.status === "rejected") {
+      expect(patchRes.reason).toMatchObject({ code: "DOCUMENT_EXISTS", statusCode: 409 });
+    }
+    const state = await stored();
+    expect(state.document).toEqual({ revision: "1", updated_by: owner.userId });
+    expect(state.description).toBe("Rich winner");
   });
 });
