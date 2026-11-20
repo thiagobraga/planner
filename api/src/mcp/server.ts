@@ -6,6 +6,7 @@ import { registerCollectionTools } from "./tools/collections.js";
 import { registerHabitReadTools, registerHabitWriteTools } from "./tools/habits.js";
 import { registerTaskTools } from "./tools/tasks.js";
 import { registerDocumentReadTools, registerDocumentWriteTools } from "./tools/documents.js";
+import { registerImportTools } from "./tools/imports.js";
 
 const INSTRUCTIONS = [
   "Planner is the user's task manager (a bullet journal).",
@@ -32,6 +33,7 @@ export function buildMcpServer(ctx: McpAuthContext): McpServer {
     registerTaskTools(server, ctx);
     registerHabitWriteTools(server, ctx);
     registerDocumentWriteTools(server, ctx);
+    registerImportTools(server, ctx);
   }
 
   return server;

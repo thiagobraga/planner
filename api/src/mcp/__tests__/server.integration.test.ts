@@ -76,8 +76,8 @@ describe("Planner MCP server (real PostgreSQL + Redis)", () => {
       [
         ...readNames,
         "add_comment", "claim_task", "complete_task", "create_task", "create_tasks_batch",
-        "delete_task", "log_habit", "move_task", "release_task", "reopen_task",
-        "reschedule_tasks", "save_task_document", "update_task",
+        "delete_task", "import_markdown", "log_habit", "move_task", "release_task", "reopen_task",
+        "reschedule_tasks", "save_task_document", "undo_import", "update_task",
       ].sort(),
     );
 
