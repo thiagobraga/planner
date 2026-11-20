@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.38.5](https://github.com/thiagobraga/planner/compare/v0.38.4...v0.38.5) (2026-11-20)
+
+
+### Fixed
+
+* **detail:** return focus to the editor at once after adding a subtask ([6cbc780](https://github.com/thiagobraga/planner/commit/6cbc780477d6d5ea241eb3e8fae4d4741eddaade))
+* **detail:** return focus to the editor at once after adding a subtask ([d66c694](https://github.com/thiagobraga/planner/commit/d66c694f5147c501fa68da4f767f9a2b15bf7c98))
+
 ## [0.38.4](https://github.com/thiagobraga/planner/compare/v0.38.3...v0.38.4) (2026-11-20)
 
 
