@@ -1,21 +1,5 @@
-import type { Locale } from './I18nContext';
-
-interface HelpSection {
-  id: string;
-  title: string;
-  paragraphs?: string[];
-  items?: string[];
-}
-
-interface HelpContent {
-  title: string;
-  subtitle: string;
-  onThisPage: string;
-  then: string;
-  sections: HelpSection[];
-  shortcutsTitle: string;
-  shortcuts: Array<{ keys: string[]; label: string }>;
-}
+import type { Locale } from '../types/i18n';
+import type { HelpContent } from '../types/i18n';
 
 const english: HelpContent = {
   title: 'Help',

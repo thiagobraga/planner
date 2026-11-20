@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import type { ApiHabitGroup } from './api';
 import type { HabitEditTarget, HabitNode, HabitSections } from './habits';
-import type { WeekStart } from '../utils/date';
+import type { WeekStart } from './utils';
 
 // Every row is one 24px band. Labels and day cells render from this same list so
 // the two columns cannot drift out of alignment.

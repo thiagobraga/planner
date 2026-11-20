@@ -1,27 +1,9 @@
 import { getSyncStatus } from './socket';
+import type { QueuedMutation, QueuedMutationMethod } from '../types/utils';
 
 const DB_NAME = 'planner-offline-queue';
 const STORE_NAME = 'mutations';
 const INDEX_NAME = 'ownerUserId';
-
-export type QueuedMutationMethod = 'POST' | 'PATCH' | 'PUT' | 'DELETE';
-
-export interface QueuedMutation {
-  id: string;
-  method: QueuedMutationMethod;
-  path: string;
-  body: string;
-  createdAt: number;
-  ownerUserId: string;
-  /**
-   * For a create-type mutation (POST with no id segment in its path), the
-   * client-minted id synthesized as the optimistic response's `id` (see
-   * `client.ts`'s `buildSyntheticResponse`). Once this mutation replays
-   * successfully and the real server id is known, `remapQueuedId` uses this
-   * to rewrite any not-yet-replayed queued mutation that referenced it.
-   */
-  clientEntityId?: string;
-}
 
 let dbPromise: Promise<IDBDatabase> | null = null;
 

@@ -5,6 +5,14 @@
 // means. Everything a handler needs to compute a move lives on the payload -
 // handlers never reach back into component state to find it.
 
+import type {
+  DragEndEvent,
+  DragMoveEvent,
+  DragOverEvent,
+  DragStartEvent,
+} from '@dnd-kit/core';
+import type { ReactNode } from 'react';
+
 /** Discriminator for anything that can be picked up. */
 export type DragKind = 'task' | 'habit' | 'habit-group' | 'collection' | 'section-header' | 'board-column';
 
@@ -238,4 +246,69 @@ export function isCollectionDrag(data: DragData | undefined): data is Collection
 /** A root habit is the only habit that can carry children or hold a group. */
 export function isRootHabit(data: HabitDragData): data is RootHabitDragData {
   return data.parentId === null;
+}
+
+export interface DragHandlers {
+  onDragStart?: (event: DragStartEvent) => void;
+  onDragMove?: (event: DragMoveEvent) => void;
+  onDragOver?: (event: DragOverEvent) => void;
+  onDragEnd?: (event: DragEndEvent) => void;
+  onDragCancel?: () => void;
+}
+
+/** What the floating overlay shows while a drag is in flight. */
+export interface DragOverlayInfo {
+  title: string;
+  /** Descendants carried along, so the overlay can say "+3". */
+  descendantCount: number;
+}
+
+export interface PlannerDragContextValue {
+  activeDrag: DragData | null;
+  overlay: DragOverlayInfo | null;
+  setOverlay: (info: DragOverlayInfo | null) => void;
+  /**
+   * The rows being dragged, rendered by whichever list owns them.
+   *
+   * The provider cannot build this itself - it knows a drag is in flight but
+   * nothing about what a task row looks like - so the owning list hands it up.
+   * Falls back to a title chip when no list has claimed the drag.
+   */
+  overlayNode: ReactNode | null;
+  setOverlayNode: (node: ReactNode | null) => void;
+  /**
+   * False until the pointer actually travels. Lets a list hold its layout
+   * completely still on pickup: pressing a row must not reflow anything until
+   * the user has expressed movement.
+   */
+  hasMoved: boolean;
+  /**
+   * Horizontal drag distance, quantised to whole indent steps.
+   *
+   * Quantised rather than raw so lists re-render only when the projected
+   * nesting level actually changes, instead of on every pointer move.
+   */
+  indentSteps: number;
+  /**
+   * The same nesting intent as `indentSteps`, readable synchronously.
+   *
+   * The preview renders from `indentSteps` (React state) while a drop commits
+   * from a ref read inside `onDragEnd`. When those came from two separately
+   * instantiated `IndentTracker`s - one here, one in `useTaskDrag` - they were
+   * two pieces of mutable state with no shared source of truth, and they
+   * disagreed: the list previewed a row nesting under its sibling while the
+   * committed move sent `parentTaskId: null`. Reading both from this one
+   * tracker makes that divergence structurally impossible rather than merely
+   * unlikely.
+   *
+   * A function rather than a value so callers get the live offset at the moment
+   * they ask, not whatever was current when the context value was memoised.
+   */
+  indentOffset: () => number;
+  /** The droppable currently under the pointer, for positioning the indicator. */
+  overId: string | null;
+  /** Speak a message through the shared live region. */
+  announce: (message: string) => void;
+  registerHandlers: (kind: DragKind, handlers: DragHandlers) => () => void;
+  setAutoScrollAxis: (axis: 'horizontal' | 'vertical') => void;
 }

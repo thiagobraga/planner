@@ -1,4 +1,4 @@
-export type FontOption = 'lora' | 'playpen' | 'hubballi';
+import type { FontOption } from '../types/utils';
 
 export const FONT_SMALL_CAPS: Record<FontOption, boolean> = {
   lora: false,

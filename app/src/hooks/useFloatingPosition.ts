@@ -1,27 +1,5 @@
 import { RefObject, useLayoutEffect, useState } from 'react';
-
-type Position = { x: number; y: number };
-type Placement = 'below' | 'above' | 'right' | 'left';
-type Align = 'start' | 'end';
-
-interface FloatingOptions {
-  /** If provided, positions exactly at this coordinate (e.g. context menu) */
-  position?: Position;
-  /** Primary placement for anchor-based positioning */
-  placement?: Placement;
-  /** Alignment for anchor-based positioning */
-  align?: Align;
-  /** Minimum distance from viewport edges */
-  padding?: number;
-  /** Submenu offset if placing to the right/left */
-  offset?: number;
-}
-
-interface FloatingResult {
-  top: number;
-  left: number;
-  placement: Placement;
-}
+import type { FloatingOptions, FloatingResult } from '../types/hooks';
 
 export function useFloatingPosition(
   triggerRef: RefObject<HTMLElement | null> | null,

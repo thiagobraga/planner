@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
 import { parseDueDate } from '../dateParser.js';
 import { printDueDate } from '../datePrinter.js';
-import type { DueDate } from '../dateParser.js';
+import type { DueDate } from '../../types/recurrence.js';
 
 // Generators restricted to forms expressible by the parser grammar
 // (per Requirements 13.1-13.7 for inputs the parser supports).

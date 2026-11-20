@@ -2,21 +2,12 @@ import { v4 as uuidv4 } from "uuid";
 import sanitizeHtml from "sanitize-html";
 import pool from "../db/pool.js";
 import { AppError } from "../utils/AppError.js";
+import type { CommentRow } from "../types/activity.js";
 import { currentActor } from "../middleware/requestContext.js";
 import { runMutation } from "./mutationRunner.js";
 import type { CommentSyncPayload, TaskCommentDto } from "../contracts/comment.js";
 import type { SyncEventType } from "../contracts/sync.js";
 import type { SyncEventInput } from "../types/mutation.js";
-
-interface CommentRow {
-  id: string;
-  task_id: string;
-  user_id: string;
-  body: string;
-  created_at: string;
-  updated_at: string | null;
-  actor_label: string | null;
-}
 
 const SANITIZE_OPTIONS: sanitizeHtml.IOptions = {
   allowedTags: [],

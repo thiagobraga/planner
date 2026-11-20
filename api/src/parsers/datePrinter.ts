@@ -1,4 +1,4 @@
-import type { DueDate, RecurrenceRule } from './dateParser.js';
+import type { DueDate, RecurrenceRule } from '../types/recurrence.js';
 
 const WEEKDAY_NAMES = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
 

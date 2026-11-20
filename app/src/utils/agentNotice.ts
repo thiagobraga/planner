@@ -1,10 +1,8 @@
-import type { SyncEvent } from '../hooks/useSync';
-import type { TranslationKey } from '../i18n/catalogs';
-
-type Translate = (key: TranslationKey, values?: Record<string, string | number>) => string;
+import type { SyncEvent } from '../contracts/sync';
+import type { AgentTranslate } from '../types/utils';
 
 /** One line describing what an agent just did, or null for events that are not the agent's. */
-export function describeAgentChange(event: SyncEvent, t: Translate): string | null {
+export function describeAgentChange(event: SyncEvent, t: AgentTranslate): string | null {
   if (!event.actor || event.entityType !== 'task') return null;
 
   const agent = event.actor.label;

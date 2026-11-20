@@ -14,11 +14,8 @@ import {
 import { useI18n } from '../../../i18n/I18nContext';
 import type { TranslationKey } from '../../../i18n/catalogs';
 import { apiParseDate } from '../../../api/client';
-import {
-  dateQuickOptions,
-  formatShortDay,
-  type DateQuickOptionKey,
-} from '../../../utils/dateQuickOptions';
+import { dateQuickOptions, formatShortDay } from '../../../utils/dateQuickOptions';
+import type { DateQuickOptionKey } from '../../../types/utils';
 import { recurrenceSummary } from '../../../utils/recurrenceSummary';
 import { formatDurationLabel } from './durations';
 import { Button } from '../Button';

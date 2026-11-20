@@ -1,7 +1,8 @@
 import { useEffect } from 'react';
 import { Navigate, useParams } from 'react-router';
 import { DailyPage } from './DailyPage';
-import { DEFAULT_DAILY_SLUG, legacyDailySlug, slugToLayout, type LegacyDailyView } from '../utils/dailyRange';
+import { DEFAULT_DAILY_SLUG, legacyDailySlug, slugToLayout } from '../utils/dailyRange';
+import type { LegacyDailyView } from '../types/daily';
 import { DEFAULT_DAILY_VIEW } from '../hooks/useDailyView';
 import { usePatchPreferences } from '../hooks/usePatchPreferences';
 import { usePreferences } from '../hooks/usePreferences';
