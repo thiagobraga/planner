@@ -157,7 +157,7 @@ All routes under `/api/v1/`. Route files: `auth`, `apiTokens`, `mcp`, `oauth`, `
 - `stores/authStore.ts` - Zustand store for auth state
 - `stores/taskSelectionStore.ts` - Zustand store for multi-task selection
 - `stores/debugStore.ts` - debug mode flag (persisted in localStorage); when on, `DebugCard` shows id, order and created date on task and habit rows
-- `stores/optimistic.ts` - optimistic helpers: `runOptimistic`, `applyOptimistic`, `revertOptimistic` (2s auto-revert)
+- `stores/optimistic.ts` - optimistic helpers: `runOptimistic`, `applyOptimistic`, `revertOptimistic` (undoes only its own change, on real failure; no timer)
 - `components/detail/` - the task detail panel. `TaskDetailHost` (in `AppShell`) reads `?task=<id>` through `hooks/useTaskDetailController.ts` and lazy-loads `TaskDetailPanel` with the Tiptap editor (the first lazy chunk). `stores/taskDetailStore.ts` is the imperative bridge (`openTaskDetails`, `scheduleOpenTaskDetails`, `closeTaskDetails`, origin focus, unsaved-draft guard); `utils/detailOpen.ts` decides which clicks and keys open it (plain click on a noninteractive row or card area, `o` on a focused row or card)
 - `hooks/useDocumentDraft.ts` - description save loop: 800ms debounced PUT on `baseRevision`, 409 keeps the draft with reload / keep mine, remote updates never replace a dirty draft, failed drafts stay in memory only; `utils/documentContent.ts` trims editor JSON to the server allowlist and renders the Markdown draft download
 
@@ -284,7 +284,7 @@ Three layers, each with a distinct role:
 | Optimistic local | `stores/optimistic.ts`         | Mutations before server confirm |
 | Global client    | Zustand stores (`stores/`)     | Selection, detail panel, UI     |
 
-Pattern for mutations: `runOptimistic({ apply, revert })` → fire API call → on error, auto-revert after 2s.
+Pattern for mutations: `runOptimistic({ apply, onRevert })` → fire API call → on a real failure, revert only the entities that still match the optimistic change; slow successes are never rolled back.
 
 ## Design System
 
