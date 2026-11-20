@@ -17,6 +17,8 @@ import { resolveTaskIndent } from '../utils/taskIndent';
 import { persistTaskIndent } from '../utils/persistTaskIndent';
 import { applySchedule, withTimeZones } from '../utils/taskTime';
 import { apiToTask } from '../utils/dailySections';
+import { confirmTaskDelete, holdsWork } from '../utils/deleteGuard';
+import { useI18n } from '../i18n/I18nContext';
 import {
   patchDailyTask,
   removeDailyTask,
@@ -35,6 +37,7 @@ export function useDailyTaskActions(opts: {
   refreshDaily: () => void;
 }) {
   const { locale, todayKey, dateFormat, prefs, sections, setSections, setAllTasks, refreshDaily } = opts;
+  const { t } = useI18n();
 
   const [editingId, setEditingId] = useState<string>();
   const [, setSelectedId] = useState<string>();
@@ -103,6 +106,8 @@ export function useDailyTaskActions(opts: {
       const currentIndent = currentTask?.indent ?? 0;
       setEditingId(undefined);
       if (!trimmed) {
+        // Clearing a title never takes subtasks or notes with it; the rename is dropped instead.
+        if (holdsWork(currentTask, sectionsRef.current.flatMap((s) => s.tasks))) return;
         updateSections((prev) => removeDailyTask(prev, id));
         if (!id.startsWith('temp-')) apiDeleteTask(id).catch(() => refreshDaily());
         return;
@@ -169,11 +174,13 @@ export function useDailyTaskActions(opts: {
 
   const handleDelete = useCallback(
     (id: string) => {
+      const all = sectionsRef.current.flatMap((s) => s.tasks);
+      if (!confirmTaskDelete(all.find((task) => task.id === id), all, t)) return;
       updateSections((prev) => removeDailyTask(prev, id));
       setEditingId(undefined);
       if (!id.startsWith('temp-')) apiDeleteTask(id).catch(() => refreshDaily());
     },
-    [refreshDaily, updateSections],
+    [refreshDaily, updateSections, t],
   );
 
   const handleConvertType = useCallback(

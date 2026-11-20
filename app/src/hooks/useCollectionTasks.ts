@@ -9,6 +9,8 @@ import { resolveTaskIndent } from '../utils/taskIndent';
 import { persistTaskIndent } from '../utils/persistTaskIndent';
 import { applySchedule, scheduleFieldsFromApi, withTimeZones } from '../utils/taskTime';
 import { blurOnEscape } from '../utils/editableText';
+import { confirmTaskDelete, holdsWork } from '../utils/deleteGuard';
+import { useI18n } from '../i18n/I18nContext';
 
 let tempCounter = 0;
 function tempId() {
@@ -58,6 +60,7 @@ export function useCollectionTasks(opts: {
   invalidate: () => Promise<void>;
 }) {
   const { id, locale, tasks, setTasks, hideCompletedTasks, includeCompleted, invalidate } = opts;
+  const { t } = useI18n();
 
   const [input, setInput] = useState('');
   const [editingId, setEditingId] = useState<string | undefined>();
@@ -214,6 +217,8 @@ export function useCollectionTasks(opts: {
       const trimmed = title.trim();
       setEditingId(undefined);
       if (!trimmed) {
+        // Clearing a title never takes subtasks or notes with it; the rename is dropped instead.
+        if (holdsWork(tasks.find((task) => task.id === taskId), tasks)) return;
         setTasks((prev) => prev.filter((t) => t.id !== taskId));
         if (!taskId.startsWith('temp-')) apiDeleteTask(taskId).catch(() => invalidate());
         return;
@@ -284,6 +289,7 @@ export function useCollectionTasks(opts: {
 
   const handleDelete = useCallback(
     (taskId: string) => {
+      if (!confirmTaskDelete(tasks.find((task) => task.id === taskId), tasks, t)) return;
       setTasks((prev) => {
         const idx = prev.findIndex((t) => t.id === taskId);
         const next = prev.filter((t) => t.id !== taskId);
@@ -298,7 +304,7 @@ export function useCollectionTasks(opts: {
       setEditingId(undefined);
       if (!taskId.startsWith('temp-')) apiDeleteTask(taskId).catch(() => invalidate());
     },
-    [invalidate, setTasks],
+    [invalidate, setTasks, tasks, t],
   );
 
   const handleIndent: TaskIndentHandler = useCallback(

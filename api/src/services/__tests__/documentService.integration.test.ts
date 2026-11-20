@@ -257,4 +257,21 @@ describe("save boundaries", () => {
     expect(state.document).toEqual({ revision: "1", updated_by: owner.userId });
     expect(state.description).toBe("Rich winner");
   });
+
+  it("keeps the document and every descendant when a task becomes a note and back, or is renamed", async () => {
+    await putTaskDocument(taskId, owner.userId, { content: doc("Durable plan"), baseRevision: 0 });
+    const child = await pool.query<{ id: string }>(
+      "INSERT INTO tasks (user_id, collection_id, parent_task_id, title, depth, order_value) VALUES ($1, $2, $3, 'Child', 1, 0) RETURNING id",
+      [owner.userId, owner.collectionId, taskId],
+    );
+
+    await updateTask(taskId, owner.userId, { type: "note" });
+    await updateTask(taskId, owner.userId, { title: "Renamed" });
+    await updateTask(taskId, owner.userId, { type: "task" });
+
+    const { document } = await getTaskDocument(taskId, owner.userId).then((dto) => ({ document: dto }));
+    expect(document).toMatchObject({ revision: 1, content: doc("Durable plan") });
+    const kept = await pool.query("SELECT id FROM tasks WHERE id = $1", [child.rows[0].id]);
+    expect(kept.rows).toHaveLength(1);
+  });
 });
