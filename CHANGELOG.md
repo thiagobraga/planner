@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.33.0](https://github.com/thiagobraga/planner/compare/v0.32.0...v0.33.0) (2026-11-20)
+
+
+### Added
+
+* **board:** compact parent cards and embedded task blocks (S6) ([c24ac84](https://github.com/thiagobraga/planner/commit/c24ac84530e5ba720ccc223de3fd545a7e7c2814))
+* **board:** compact parent cards with a five-row preview ([4a481c2](https://github.com/thiagobraga/planner/commit/4a481c27b20e79213347f0dba3add726395cbb38))
+* **detail:** embed real task blocks in the description ([074e64e](https://github.com/thiagobraga/planner/commit/074e64e137505d21b511121e9e904430c6e6b727))
+
+
+### Changed
+
+* **detail:** keep the panel mode in the store and share subtree helpers ([83f1788](https://github.com/thiagobraga/planner/commit/83f178820be951da2f4941bbe756c66b90f88b35))
+
 ## [0.32.0](https://github.com/thiagobraga/planner/compare/v0.31.1...v0.32.0) (2026-11-20)
 
 
