@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.38.8](https://github.com/thiagobraga/planner/compare/v0.38.7...v0.38.8) (2026-11-20)
+
+
+### Fixed
+
+* resolve main conflicts and restore ci checks ([e880367](https://github.com/thiagobraga/planner/commit/e880367343d33bc1e62591927feda6bc5dfca6ca))
+
+
+### Changed
+
+* extract hook and api types ([ba0ebcc](https://github.com/thiagobraga/planner/commit/ba0ebcc225fe69db1b057d0b293379b44cf590f6))
+
 ## [0.38.7](https://github.com/thiagobraga/planner/compare/v0.38.6...v0.38.7) (2026-11-20)
 
 
