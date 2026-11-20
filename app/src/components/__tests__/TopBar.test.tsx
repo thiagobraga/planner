@@ -70,6 +70,23 @@ describe('TopBar', () => {
     expect(screen.getByRole('link', { name: 'Inbox' })).not.toHaveAttribute('aria-current');
   });
 
+  it('releases navigation focus after a pointer click', () => {
+    renderBar('/inbox');
+    const daily = screen.getByRole('link', { name: 'Daily' });
+    daily.focus();
+    fireEvent.click(daily, { detail: 1 });
+    expect(daily).not.toHaveFocus();
+    expect(screen.getByTestId('location-probe')).toHaveTextContent('/daily');
+  });
+
+  it('preserves navigation focus for keyboard activation', () => {
+    renderBar('/inbox');
+    const daily = screen.getByRole('link', { name: 'Daily' });
+    daily.focus();
+    fireEvent.click(daily, { detail: 0 });
+    expect(daily).toHaveFocus();
+  });
+
   it('marks Collections active inside a collection', () => {
     renderBar('/collection/example');
     expect(screen.getByRole('link', { name: 'Collections' })).toHaveAttribute('aria-current', 'page');
