@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.35.0](https://github.com/thiagobraga/planner/compare/v0.34.0...v0.35.0) (2026-11-20)
+
+
+### Added
+
+* **detail:** nest an embedded task's subtasks under its block ([cc63dfd](https://github.com/thiagobraga/planner/commit/cc63dfdd41c6e38e46aaa86382e2bf01ab016876))
+
+
+### Fixed
+
+* **collections:** line the tree heading up with the brand in full width ([1dae073](https://github.com/thiagobraga/planner/commit/1dae073331b7b33ae21f93a786fdf3f581f3d17b))
+
+
+### Style
+
+* **board:** card tint, quiet border and one-line preview rows ([3b707df](https://github.com/thiagobraga/planner/commit/3b707dffbbfbb70cfc20d13c28354d4cfe2f7de3))
+* **board:** fill the collection pane and count cards per column ([8b5c8f8](https://github.com/thiagobraga/planner/commit/8b5c8f87a455c095c07aa14032145d2321f21356))
+* **collections:** match the collection page to the approved design ([eb5784b](https://github.com/thiagobraga/planner/commit/eb5784b7f6919117ffee65d2c146354b58210b11))
+* **detail:** match the panel to the approved mock ([2961728](https://github.com/thiagobraga/planner/commit/29617284d361b3d083c58bbda93eabe66a0e4a99))
+
 ## [0.34.0](https://github.com/thiagobraga/planner/compare/v0.33.0...v0.34.0) (2026-11-20)
 
 
