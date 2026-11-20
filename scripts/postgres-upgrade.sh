@@ -50,7 +50,10 @@ if (( bytes > 1073741824 )) && [[ $force != true ]]; then
   fail "Database exceeds 1 GiB. Evaluate pg_upgrade or use --force after measuring downtime."
 fi
 export BACKUP_DIR=${BACKUP_DIR:-$DEPLOY_DIR/backups/postgres18}
-mkdir -m 700 -p "$BACKUP_DIR"
+(
+  umask 077
+  mkdir -p "$BACKUP_DIR"
+)
 available=$(df -Pk "$BACKUP_DIR" | awk 'NR == 2 { print $4 }')
 docker_root=$(docker info --format '{{.DockerRootDir}}')
 docker_available=$(df -Pk "$docker_root" | awk 'NR == 2 { print $4 }')
