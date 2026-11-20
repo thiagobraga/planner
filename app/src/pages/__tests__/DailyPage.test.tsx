@@ -176,7 +176,7 @@ describe('DailyPage', () => {
 
     expect(header).toBeInTheDocument();
     const row = header!.querySelector('.page-header-row') as HTMLElement;
-    for (const name of ['Today', 'Previous', 'Next', 'View', 'Window']) {
+    for (const name of ['Today', 'Previous', 'Next', 'View']) {
       expect(row).toContainElement(screen.getByRole('button', { name }));
     }
     expect(screen.queryByRole('button', { name: 'More options' })).not.toBeInTheDocument();

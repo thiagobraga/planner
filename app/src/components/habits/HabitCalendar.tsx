@@ -189,7 +189,7 @@ function CalendarSectionDrop({
     <div
       ref={setNodeRef}
       data-drop-target={isOver ? 'true' : undefined}
-      className={`habit-calendar-section min-h-6 ${isOver ? 'habit-calendar-section--drop-target rounded-[6px] outline outline-1 outline-dot' : ''}`}
+      className={`habit-calendar-section min-h-6 ${isOver ? 'habit-calendar-section--drop-target rounded-[6px] outline outline-1 outline-border-subtle' : ''}`}
     >
       {children}
     </div>

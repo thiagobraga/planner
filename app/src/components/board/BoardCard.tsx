@@ -6,9 +6,13 @@ import { NO_DRAG_ATTR } from '../dnd/sensors';
 import { BoardCardChecklist } from './BoardCardChecklist';
 import { useI18n } from '../../i18n/I18nContext';
 import type { BoardCardProps } from '../../types/board';
+import { isOpenDetailsClick, isOpenDetailsKey } from '../../utils/detailOpen';
+import { cancelPendingOpen, openTaskDetails, scheduleOpenTaskDetails, useTaskDetailStore } from '../../stores/taskDetailStore';
+import { isNativeContextMenu } from '../../utils/contextMenu';
 
-export function BoardCard({ task, subtasks, containerId = '', subtreeIds, onToggle, hideDueDate, onTaskContextMenu }: BoardCardProps) {
+export function BoardCard({ task, subtasks, containerId = '', subtreeIds, progress, childCounts, onToggle, hideDueDate, onTaskContextMenu }: BoardCardProps) {
   const { t } = useI18n();
+  const selected = useTaskDetailStore((state) => state.taskId === task.id);
   const dragData: TaskDragData = {
     kind: 'task',
     taskId: task.id,
@@ -29,17 +33,32 @@ export function BoardCard({ task, subtasks, containerId = '', subtreeIds, onTogg
       ref={setNodeRef}
       {...attributes}
       {...listeners}
-      className={`board-card ${isDragging ? 'is-dragging' : ''}`}
+      className={`board-card ${isDragging ? 'is-dragging' : ''} ${selected ? 'is-selected' : ''}`}
       data-card-id={task.id}
       style={{ transform: CSS.Transform.toString(transform), transition }}
       onContextMenu={(event) => {
+        if (isNativeContextMenu(event)) return;
         if (!onTaskContextMenu) return;
         event.preventDefault();
+        cancelPendingOpen();
         onTaskContextMenu(task.id, { x: event.clientX, y: event.clientY });
       }}
+      onClick={(event) => {
+        if (!isOpenDetailsClick(event)) return;
+        const child = (event.target as HTMLElement).closest<HTMLElement>('[data-subtask-id]');
+        scheduleOpenTaskDetails(child?.dataset.subtaskId ?? task.id, event.currentTarget);
+      }}
       onKeyDown={(event) => {
+        listeners?.onKeyDown?.(event);
+        if (event.defaultPrevented) return;
+        if (isOpenDetailsKey(event)) {
+          event.preventDefault();
+          openTaskDetails(task.id, { origin: event.currentTarget, focusPanel: true });
+          return;
+        }
         if (!onTaskContextMenu || !(event.key === 'ContextMenu' || (event.shiftKey && event.key === 'F10'))) return;
         event.preventDefault();
+        cancelPendingOpen();
         const rect = event.currentTarget.getBoundingClientRect();
         onTaskContextMenu(task.id, { x: rect.left + 16, y: rect.top + 16 });
       }}
@@ -52,7 +71,7 @@ export function BoardCard({ task, subtasks, containerId = '', subtreeIds, onTogg
           aria-label={task.isCompleted ? t('board.reopenTask') : t('board.completeTask')}
           onClick={() => onToggle?.(task.id, !task.isCompleted)}
         >
-          {task.isCompleted && <Check size={12} strokeWidth={2} />}
+          {task.isCompleted && <Check size={9} strokeWidth={3} />}
         </button>
         <h3 className={task.isCompleted ? 'line-through opacity-60' : ''}>{task.title}</h3>
         {onTaskContextMenu && <button
@@ -62,6 +81,7 @@ export function BoardCard({ task, subtasks, containerId = '', subtreeIds, onTogg
           aria-label={t('board.moreOptions', { title: task.title })}
           onClick={(event) => {
             event.stopPropagation();
+            cancelPendingOpen();
             const rect = event.currentTarget.getBoundingClientRect();
             onTaskContextMenu(task.id, { x: rect.right, y: rect.bottom });
           }}
@@ -81,7 +101,7 @@ export function BoardCard({ task, subtasks, containerId = '', subtreeIds, onTogg
 
       {task.description && <p className="board-card-description">{task.description}</p>}
 
-      <BoardCardChecklist parentTask={task} tasks={subtasks} onToggle={onToggle} />
+      <BoardCardChecklist parentTask={task} tasks={subtasks} progress={progress} childCounts={childCounts} onToggle={onToggle} />
 
       {((task.dueDate && !hideDueDate) || task.completedAt) && (
         <footer className="board-card-date">

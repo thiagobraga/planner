@@ -96,8 +96,8 @@ test('menus toggle, dismiss, restore focus and navigate with the keyboard', asyn
   await expect(page.getByRole('menu')).toHaveCount(0);
   await expect(more).toBeFocused();
   await page.keyboard.press('Enter');
-  // Completed tasks and Notes come first, then Settings, then Help.
-  for (let i = 0; i < 3; i++) await page.keyboard.press('ArrowDown');
+  // Completed tasks, Notes and Full width come first, then Settings, then Help.
+  for (let i = 0; i < 4; i++) await page.keyboard.press('ArrowDown');
   await page.keyboard.press('Enter');
   await expect(page).toHaveURL(/\/help$/);
   await more.click();
@@ -330,4 +330,41 @@ test('daily calendar icon keeps identical size and position across active and in
     expect(Math.abs(activeBox.x - inactiveBox.x), `${viewport.width} x`).toBe(0);
     expect(Math.abs(activeBox.y - inactiveBox.y), `${viewport.width} y`).toBe(0);
   }
+});
+
+test('dismissing the topbar style menu does not leave a focus border on the topbar header', async ({ page, api }) => {
+  await api.patch('/preferences', { navStyle: 'icon-top', background: 'white' });
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.goto('/collections');
+  const bar = page.locator('.topbar');
+  await expect(bar).toBeVisible();
+
+  // Right-click empty topbar space and dismiss with Escape: the header must never show an outline.
+  await bar.click({ button: 'right', position: { x: 40, y: 20 } });
+  await expect(page.getByRole('menu')).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('menu')).toHaveCount(0);
+  await expect(bar).not.toBeFocused();
+  await expect(bar).toHaveCSS('outline-style', 'none');
+
+  await mkdir('dist/screenshots', { recursive: true });
+  await page.screenshot({ path: 'dist/screenshots/topbar-no-focus-border-desktop.png' });
+
+  // Keyboard context menu on a nav tab restores focus to that tab instead of the header.
+  const collections = page.getByRole('link', { name: 'Collections', exact: true });
+  await collections.focus();
+  await page.keyboard.press('Shift+F10');
+  await expect(page.getByRole('menu')).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(collections).toBeFocused();
+  await expect(bar).toHaveCSS('outline-style', 'none');
+
+  // Verify the same on phone viewport.
+  await page.setViewportSize({ width: 390, height: 844 });
+  await bar.click({ button: 'right', position: { x: 4, y: 4 } });
+  await expect(page.getByRole('menu')).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(bar).not.toBeFocused();
+  await expect(bar).toHaveCSS('outline-style', 'none');
+  await page.screenshot({ path: 'dist/screenshots/topbar-no-focus-border-390.png' });
 });

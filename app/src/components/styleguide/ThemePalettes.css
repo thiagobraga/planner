@@ -1,0 +1,62 @@
+.theme-palettes {
+  display: grid;
+  gap: 24px;
+  margin-top: 24px;
+  min-width: 0;
+}
+
+.theme-palette {
+  scroll-margin-top: 72px;
+  padding: 24px;
+  border: 1px solid;
+  border-radius: var(--radius-sm);
+  min-width: 0;
+}
+
+.theme-palette-family {
+  margin-top: 24px;
+}
+
+.theme-palette-shades {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(72px, 1fr));
+  gap: 24px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.theme-palette-shades li {
+  min-width: 0;
+}
+
+.theme-palette-swatch {
+  display: block;
+  height: 48px;
+  border: 1px solid;
+  border-radius: var(--radius-xs);
+}
+
+.theme-palette-usage {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+  column-gap: 24px;
+  margin: 24px 0 0;
+  font-size: 12px;
+  line-height: 24px;
+}
+
+.theme-palette-usage div {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0 24px;
+}
+
+.theme-palette-usage dt {
+  overflow-wrap: anywhere;
+}
+
+.theme-palette-usage dd {
+  margin: 0;
+}

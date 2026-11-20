@@ -110,7 +110,7 @@ function validateFilter(input: string): TranslationKey | null {
 
 // Syntax-highlight colors for query tokens; each theme defines its own so they stay legible.
 const tokenClassNames: Record<TokenType, string> = {
-  keyword: 'text-accent',
+  keyword: 'text-accent-text',
   operator: 'text-syntax-operator',
   string: 'text-syntax-string',
   error: 'text-syntax-error',
@@ -152,7 +152,7 @@ export function FilterBar({ value: externalValue, onChange, onApply }: FilterBar
   return (
     <div className="relative flex flex-col gap-1">
       <div
-        className={`flex items-center gap-2 py-1.5 px-3 border rounded bg-[var(--planner-control-bg)] transition-[border-color] duration-[120ms] ${errorKey ? 'border-accent' : isFocused ? 'border-ink' : 'border-dot'}`}
+        className={`flex items-center gap-2 py-1.5 px-3 border rounded bg-[var(--planner-control-bg)] transition-[border-color] duration-[120ms] ${errorKey ? 'border-danger' : isFocused ? 'border-ink' : 'border-border-subtle'}`}
       >
         {/* Filter icon */}
         <span className="text-xs text-ink-light shrink-0">⊟</span>
@@ -202,7 +202,7 @@ export function FilterBar({ value: externalValue, onChange, onApply }: FilterBar
         <div
           id="filter-error"
           role="alert"
-          className="text-[11px] text-accent pl-3 leading-4"
+          className="text-[11px] text-danger-text pl-3 leading-4"
         >
           {t(errorKey)}
         </div>

@@ -3,13 +3,18 @@ import sanitizeHtml from "sanitize-html";
 import pool from "../db/pool.js";
 import { AppError } from "../utils/AppError.js";
 import type { CommentRow } from "../types/activity.js";
+import { currentActor } from "../middleware/requestContext.js";
+import { runMutation } from "./mutationRunner.js";
+import type { CommentSyncPayload, TaskCommentDto } from "../contracts/comment.js";
+import type { SyncEventType } from "../contracts/sync.js";
+import type { SyncEventInput } from "../types/mutation.js";
 
 const SANITIZE_OPTIONS: sanitizeHtml.IOptions = {
   allowedTags: [],
   allowedAttributes: {},
 };
 
-function formatComment(row: CommentRow) {
+function formatComment(row: CommentRow): TaskCommentDto {
   return {
     id: row.id,
     taskId: row.task_id,
@@ -17,6 +22,27 @@ function formatComment(row: CommentRow) {
     body: row.body,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    actorLabel: row.actor_label ?? null,
+  };
+}
+
+// Membership is resolved at dispatch so a removed collaborator stops hearing
+// about the task; the payload names the task only, never the body.
+function commentEvent(
+  eventType: SyncEventType,
+  userId: string,
+  comment: { id: string; taskId: string },
+  collectionId: string,
+): SyncEventInput {
+  const payload: CommentSyncPayload = { taskId: comment.taskId };
+  return {
+    entityType: "comment",
+    eventType,
+    entityId: comment.id,
+    userId,
+    collectionId,
+    payload,
+    audience: "current-collection-members",
   };
 }
 
@@ -32,9 +58,9 @@ function validateBody(body: unknown): string {
   return sanitizeHtml(body, SANITIZE_OPTIONS);
 }
 
-async function verifyTaskAccess(taskId: string, userId: string): Promise<{ user_id: string; collection_id: string }> {
+async function verifyTaskAccess(taskId: string, userId: string): Promise<{ user_id: string; collection_id: string; title: string }> {
   const result = await pool.query(
-    `SELECT t.user_id, t.collection_id FROM tasks t
+    `SELECT t.user_id, t.collection_id, t.title FROM tasks t
      WHERE t.id = $1
        AND (t.user_id = $2 OR t.collection_id IN (SELECT collection_id FROM collaborators WHERE user_id = $2))`,
     [taskId, userId],
@@ -48,7 +74,7 @@ async function verifyTaskAccess(taskId: string, userId: string): Promise<{ user_
     });
   }
 
-  return result.rows[0] as { user_id: string; collection_id: string };
+  return result.rows[0] as { user_id: string; collection_id: string; title: string };
 }
 
 async function loadComment(commentId: string): Promise<CommentRow> {
@@ -74,17 +100,28 @@ export async function listComments(taskId: string, userId: string) {
 
 export async function createComment(taskId: string, userId: string, body: string) {
   const validated = validateBody(body);
-  await verifyTaskAccess(taskId, userId);
+  const task = await verifyTaskAccess(taskId, userId);
 
   const id = uuidv4();
-  const result = await pool.query(
-    `INSERT INTO comments (id, task_id, user_id, body)
-     VALUES ($1, $2, $3, $4)
-     RETURNING *`,
-    [id, taskId, userId, validated],
-  );
-
-  return formatComment(result.rows[0] as CommentRow);
+  return runMutation(async (tx) => {
+    const result = await tx.client.query(
+      `INSERT INTO comments (id, task_id, user_id, body, actor_label)
+       VALUES ($1, $2, $3, $4, $5)
+       RETURNING *`,
+      [id, taskId, userId, validated, currentActor()?.label ?? null],
+    );
+    const comment = formatComment(result.rows[0] as CommentRow);
+    await tx.recordActivity({
+      userId,
+      collectionId: task.collection_id,
+      entityType: "task",
+      entityId: taskId,
+      eventType: "comment_created",
+      afterData: { title: task.title, commentId: comment.id },
+    });
+    tx.emit(commentEvent("created", userId, comment, task.collection_id));
+    return comment;
+  });
 }
 
 export async function updateComment(commentId: string, userId: string, body: string) {
@@ -92,7 +129,7 @@ export async function updateComment(commentId: string, userId: string, body: str
   const comment = await loadComment(commentId);
 
   // Verify task access (collaborator/owner)
-  await verifyTaskAccess(comment.task_id, userId);
+  const task = await verifyTaskAccess(comment.task_id, userId);
 
   // Only the author can edit
   if (comment.user_id !== userId) {
@@ -103,12 +140,23 @@ export async function updateComment(commentId: string, userId: string, body: str
     });
   }
 
-  const result = await pool.query(
-    `UPDATE comments SET body = $1, updated_at = NOW() WHERE id = $2 RETURNING *`,
-    [validated, commentId],
-  );
-
-  return formatComment(result.rows[0] as CommentRow);
+  return runMutation(async (tx) => {
+    const result = await tx.client.query(
+      `UPDATE comments SET body = $1, updated_at = NOW() WHERE id = $2 RETURNING *`,
+      [validated, commentId],
+    );
+    const updated = formatComment(result.rows[0] as CommentRow);
+    await tx.recordActivity({
+      userId,
+      collectionId: task.collection_id,
+      entityType: "task",
+      entityId: comment.task_id,
+      eventType: "comment_updated",
+      afterData: { title: task.title, commentId: updated.id },
+    });
+    tx.emit(commentEvent("updated", userId, updated, task.collection_id));
+    return updated;
+  });
 }
 
 export async function deleteComment(commentId: string, userId: string): Promise<{ success: true }> {
@@ -124,6 +172,17 @@ export async function deleteComment(commentId: string, userId: string): Promise<
     });
   }
 
-  await pool.query(`DELETE FROM comments WHERE id = $1`, [commentId]);
+  await runMutation(async (tx) => {
+    await tx.client.query(`DELETE FROM comments WHERE id = $1`, [commentId]);
+    await tx.recordActivity({
+      userId,
+      collectionId: task.collection_id,
+      entityType: "task",
+      entityId: comment.task_id,
+      eventType: "comment_deleted",
+      beforeData: { title: task.title, commentId },
+    });
+    tx.emit(commentEvent("deleted", userId, { id: commentId, taskId: comment.task_id }, task.collection_id));
+  });
   return { success: true };
 }

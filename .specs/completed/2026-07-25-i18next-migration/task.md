@@ -1,0 +1,22 @@
+# Remaining tasks
+
+- [x] Prepare the current catalogs for a future i18next migration
+  - [x] Move English and pt-BR translations into separate typed locale modules
+  - [x] Preserve the existing catalog exports and runtime behavior
+  - [x] Run focused and full app validation
+- [x] Add the i18next runtime
+  - [x] Install `i18next` and `react-i18next`
+  - [x] Register the static typed resources with English fallback
+  - [x] Add i18next TypeScript module augmentation
+- [x] Adapt the current application facade
+  - [x] Implement `I18nProvider` with `I18nextProvider`
+  - [x] Implement `useI18n()` through `useTranslation()` without changing its public shape
+  - [x] Preserve locale resolution, localStorage caching, preferences, and document language behavior
+- [x] Remove the custom translation runtime
+  - [x] Delete the custom interpolation and lookup implementation
+  - [x] Keep `Intl` date helpers, natural-language parsing, and structured help and legal content unchanged
+- [x] Verify behavior parity
+  - [x] Run focused i18n and settings tests
+  - [x] Run the complete app test, build, and lint gates
+  - [x] Browser-test language switching and reload persistence
+  - [x] Verify Docker and CI security checks

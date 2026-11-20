@@ -3,16 +3,18 @@ import type { TaskIndentMove } from '../types/taskIndent';
 import { flattenTasks, getSubtreeBlock, MAX_DEPTH } from './taskProjection';
 import type { Task } from '../types/task';
 
+export function shareTaskNestingScope(a: Task, b: Task, datedList: boolean): boolean {
+  return a.collectionId === b.collectionId &&
+    (a.sectionId ?? null) === (b.sectionId ?? null) &&
+    (!datedList || (a.dueDate?.slice(0, 10) ?? null) === (b.dueDate?.slice(0, 10) ?? null));
+}
+
 export function resolveTaskIndent(
   visibleTasks: Task[], id: string, direction: 1 | -1, scope: TaskOrderScope,
 ): TaskIndentMove | null {
   const task = visibleTasks.find((item) => item.id === id);
   if (!task) return null;
-  const sameList = visibleTasks.filter((item) =>
-    item.collectionId === task.collectionId &&
-    (item.sectionId ?? null) === (task.sectionId ?? null) &&
-    (item.dueDate?.slice(0, 10) ?? null) === (task.dueDate?.slice(0, 10) ?? null),
-  );
+  const sameList = visibleTasks.filter((item) => shareTaskNestingScope(item, task, scope.kind === 'day'));
   const rows = flattenTasks(sameList);
   const index = rows.findIndex((row) => row.id === id);
   if (index < 0) return null;

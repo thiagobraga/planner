@@ -2,7 +2,7 @@ import { expect, type Page } from '@playwright/test';
 import { mkdir } from 'node:fs/promises';
 import { test } from './coverage-fixture';
 
-/** Covers the page toolbar (View, Window, Group), the planner menu's Show section and the view shortcuts. */
+/** Covers the page toolbar (View, Group), the planner menu's Show section and full width, and the view shortcuts. */
 
 async function registerAndLogin(page: Page) {
   const timestamp = Date.now();
@@ -23,13 +23,22 @@ test.describe('Page toolbar', () => {
     await registerAndLogin(page);
   });
 
-  test('Daily keeps date navigation, View and Window on the title row', async ({ page }) => {
+  test('Daily keeps date navigation and View on the title row as one button family', async ({ page }) => {
     await page.goto('/daily');
     await expect(page).toHaveURL(/\/daily\/list$/);
 
-    for (const name of ['Today', 'Previous', 'Next', 'View', 'Window']) {
+    for (const name of ['Today', 'Previous', 'Next', 'View']) {
       await expect(row(page).getByRole('button', { name, exact: true })).toBeVisible();
     }
+    await expect(row(page).getByRole('button', { name: 'Window', exact: true })).toHaveCount(0);
+    const today = await row(page).getByRole('button', { name: 'Today', exact: true }).boundingBox();
+    const viewButton = row(page).getByRole('button', { name: 'View', exact: true });
+    expect((await viewButton.boundingBox())!.height).toBe(today!.height);
+    for (const property of ['font-size', 'border-top-width', 'border-radius']) {
+      const read = (selector: string) => row(page).getByRole('button', { name: selector, exact: true }).evaluate((el, p) => getComputedStyle(el).getPropertyValue(p), property);
+      expect(await read('View')).toBe(await read('Today'));
+    }
+    await expect(row(page).locator('.date-nav-trigger')).toHaveCSS('font-weight', '400');
     const title = await row(page).locator('h1').boundingBox();
     const view = await row(page).getByRole('button', { name: 'View', exact: true }).boundingBox();
     expect(Math.abs(title!.y + title!.height / 2 - (view!.y + view!.height / 2))).toBeLessThanOrEqual(2);
@@ -71,6 +80,17 @@ test.describe('Page toolbar', () => {
     await expect(page.locator('.app-shell')).toHaveClass(/full-width/);
     const main = await page.locator('.page-container').boundingBox();
     expect(main!.width).toBeGreaterThan(720);
+  });
+
+  test('full width is toggled from the planner menu', async ({ page }) => {
+    await page.goto('/daily');
+    await page.getByRole('button', { name: 'Planner menu', exact: true }).click();
+    const item = page.getByRole('menuitemradio', { name: /Full width/ });
+    await expect(item).toHaveAttribute('aria-checked', 'false');
+    await item.click();
+    await expect(page.locator('.app-shell')).toHaveClass(/full-width/);
+    await page.getByRole('button', { name: 'Planner menu', exact: true }).click();
+    await expect(page.getByRole('menuitemradio', { name: /Full width/ })).toHaveAttribute('aria-checked', 'true');
   });
 
   test('completed tasks and notes are toggled from the planner menu', async ({ page }) => {

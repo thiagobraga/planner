@@ -102,6 +102,8 @@ export interface PageHeaderProps {
   afterTitle?: ReactNode;
   /** Extra classes on the `<h1>` (e.g. CollectionsPage's breadcrumb-trail layout). */
   titleClassName?: string;
+  /** Accessible name for `<h1>` when `title` contains interactive controls like color dots. */
+  titleAriaLabel?: string;
   /** Extra classes on the outer `<header>`. */
   className?: string;
 }

@@ -40,7 +40,7 @@ export function SectionDeleteModal({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="border border-dot rounded-md py-6 px-8 max-w-[400px] w-full mx-4 shadow-overlay"
+        className="border border-border-subtle rounded-md py-6 px-8 max-w-[400px] w-full mx-4 shadow-overlay"
         style={{ backgroundColor: 'var(--planner-overlay-bg)' }}
       >
         <h2 id="section-delete-modal-title" className="text-base font-semibold text-ink mb-2">
@@ -53,7 +53,7 @@ export function SectionDeleteModal({
         </p>
         <div className="flex flex-col gap-2">
           {taskCount > 0 && (
-            <Button variant="secondary" onClick={onDeleteTasks} className="w-full text-accent">
+            <Button variant="destructive" onClick={onDeleteTasks} className="w-full">
               {t('page.deleteSectionAndTasks')}
             </Button>
           )}

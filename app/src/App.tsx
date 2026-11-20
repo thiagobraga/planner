@@ -10,8 +10,7 @@ import { RegisterPage } from './pages/RegisterPage';
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage';
 import { ResetPasswordPage } from './pages/ResetPasswordPage';
 import { InboxPage } from './pages/InboxPage';
-import { CollectionsPage } from './pages/CollectionsPage';
-import { CollectionsIndexPage } from './pages/CollectionsIndexPage';
+import { CollectionsDetailRoute, CollectionsLanding, CollectionsLayout } from './pages/CollectionsLayout';
 import { DailyIndexRedirect, DailyRoute } from './pages/DailyRoutes';
 import { HabitsPage } from './pages/HabitsPage';
 import { SettingsPage } from './pages/SettingsPage';
@@ -66,8 +65,10 @@ function AppRoutes() {
           <Route path="/styleguide" element={isAdmin ? <StyleguidePage /> : <Navigate to="/daily" replace />} />
           <Route path="/help" element={<HelpPage />} />
           <Route path="/changelog" element={<ChangelogPage />} />
-          <Route path="/collections" element={<CollectionsIndexPage />} />
-          <Route path="/collection/:id" element={<CollectionsPage />} />
+          <Route element={<CollectionsLayout />}>
+            <Route path="/collections" element={<CollectionsLanding />} />
+            <Route path="/collection/:id" element={<CollectionsDetailRoute />} />
+          </Route>
           <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
           <Route
             path="/admin/dashboard"

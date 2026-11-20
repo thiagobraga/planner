@@ -21,7 +21,7 @@ test('Kanban columns are flat and add a task in the selected status', async ({ a
 
     await expect(column).toHaveCSS('border-top-width', '0px');
     await expect(column.locator('.board-column-header')).toHaveCSS('border-bottom-width', '0px');
-    await expect(column.locator('.board-column-count')).toHaveCount(0);
+    await expect(column.locator('.board-column-count')).toHaveText('0');
     await expect(page.getByText('Drop work here', { exact: true })).toHaveCount(0);
     await column.getByRole('button', { name: 'New task…', exact: true }).click();
     await column.getByRole('textbox', { name: 'Task title' }).fill(title);
@@ -33,6 +33,7 @@ test('Kanban columns are flat and add a task in the selected status', async ({ a
     await column.getByRole('button', { name: 'Save', exact: true }).click();
     const created = await (await createdResponse).json() as ApiTask;
     await expect(column.getByRole('heading', { name: title, exact: true })).toBeVisible();
+    await expect(column.locator('.board-column-count')).toHaveText('1');
     await expect.poll(async () =>
       (await api.fetchCollectionView(collection.id)).tasks.find((task) => task.id === created.id)?.statusId,
     ).toBe(status.id);

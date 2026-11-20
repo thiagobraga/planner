@@ -1,6 +1,7 @@
 import { Router, type Request, type Response, type NextFunction } from "express";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { buildMcpServer } from "../mcp/server.js";
+import { currentActor } from "../middleware/requestContext.js";
 
 const router: ReturnType<typeof Router> = Router();
 
@@ -15,7 +16,12 @@ router.post("/", async (req: Request, res: Response, next: NextFunction) => {
   }
 
   try {
-    const server = buildMcpServer({ userId: req.userId!, scopes: req.tokenScopes ?? [], now: () => new Date() });
+    const server = buildMcpServer({
+      userId: req.userId!,
+      scopes: req.tokenScopes ?? [],
+      now: () => new Date(),
+      actor: currentActor(),
+    });
     // Stateless: no MCP sessions and no server-initiated stream, so each POST
     // is answered as a plain JSON response and nothing outlives the request.
     const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined, enableJsonResponse: true });

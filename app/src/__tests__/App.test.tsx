@@ -26,8 +26,14 @@ vi.mock('../pages/HabitsPage', () => ({ HabitsPage: () => <div>HabitsPage</div> 
 vi.mock('../pages/SettingsPage', () => ({ SettingsPage: () => <div>SettingsPage</div> }));
 vi.mock('../pages/StyleguidePage', () => ({ StyleguidePage: () => <div>StyleguidePage</div> }));
 vi.mock('../pages/HelpPage', () => ({ HelpPage: () => <div>HelpPage</div> }));
-vi.mock('../pages/CollectionsPage', () => ({ CollectionsPage: () => <div>CollectionsPage</div> }));
-vi.mock('../pages/CollectionsIndexPage', () => ({ CollectionsIndexPage: () => <div>CollectionsIndexPage</div> }));
+vi.mock('../pages/CollectionsLayout', async () => {
+  const { Outlet } = await import('react-router');
+  return {
+    CollectionsLayout: () => <Outlet />,
+    CollectionsLanding: () => <div>CollectionsLanding</div>,
+    CollectionsDetailRoute: () => <div>CollectionsDetailRoute</div>,
+  };
+});
 vi.mock('../pages/LoginPage', () => ({ LoginPage: () => <div>LoginPage</div> }));
 
 vi.mock('../components/AppShell', async () => {
@@ -85,11 +91,11 @@ describe('App', () => {
     expect(screen.getByText('redirect:/daily/list')).toBeInTheDocument();
   });
 
-  it('renders CollectionsIndexPage when authenticated on /collections', () => {
+  it('renders CollectionsLanding when authenticated on /collections', () => {
     authState.isAuthenticated = true;
     testRoute.current = '/collections';
     render(<App />);
-    expect(screen.getByText('CollectionsIndexPage')).toBeInTheDocument();
+    expect(screen.getByText('CollectionsLanding')).toBeInTheDocument();
   });
 
   it('renders StyleguidePage when an admin is authenticated on /styleguide', () => {

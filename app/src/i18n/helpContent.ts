@@ -1,4 +1,4 @@
-import type { Locale } from './catalogs';
+import type { Locale } from '../types/i18n';
 import type { HelpContent } from '../types/i18n';
 
 const english: HelpContent = {

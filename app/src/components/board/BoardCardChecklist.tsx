@@ -6,14 +6,20 @@ import type { ApiTask } from '../../types/api';
 import type { CardSubtasksDropData, TaskDragData } from '../../types/drag';
 import { NO_DRAG_ATTR } from '../dnd/sensors';
 import type { BoardCardChecklistProps } from '../../types/board';
+import { useI18n } from '../../i18n/I18nContext';
+import { openTaskDetails } from '../../stores/taskDetailStore';
+
+const PREVIEW_ROWS = 5;
 
 function SortableChecklistRow({
   task,
   parentTask,
+  childCount,
   onToggle,
 }: {
   task: ApiTask;
   parentTask: ApiTask;
+  childCount: number;
   onToggle?: (taskId: string, completed: boolean) => void;
 }) {
   const data: TaskDragData = {
@@ -35,7 +41,7 @@ function SortableChecklistRow({
   const isNote = task.type === 'note';
 
   return (
-    <label
+    <div
       ref={setNodeRef}
       {...attributes}
       {...listeners}
@@ -53,16 +59,21 @@ function SortableChecklistRow({
           aria-label={task.isCompleted ? 'Reopen task' : 'Complete task'}
           onClick={() => onToggle?.(task.id, !task.isCompleted)}
         >
-          {task.isCompleted && <Check size={10} strokeWidth={2} />}
+          {task.isCompleted && <Check size={9} strokeWidth={3} />}
         </button>
       )}
-      <span className={task.isCompleted ? 'line-through opacity-55' : ''}>{task.title}</span>
-    </label>
+      <span className={`board-card-checklist-title ${task.isCompleted ? 'line-through opacity-55' : ''}`} title={task.title}>{task.title}</span>
+      {childCount > 0 && <span className="board-card-checklist-meta">{childCount}</span>}
+    </div>
   );
 }
 
-export function BoardCardChecklist({ parentTask, tasks, onToggle }: BoardCardChecklistProps) {
+export function BoardCardChecklist({ parentTask, tasks, progress, childCounts, onToggle }: BoardCardChecklistProps) {
+  const { t } = useI18n();
   const completed = tasks.filter((task) => task.isCompleted).length;
+  const actionable = tasks.filter((task) => task.type !== 'note');
+  const { done, total } = progress ?? { done: actionable.filter((task) => task.isCompleted).length, total: actionable.length };
+  const preview = tasks.slice(0, PREVIEW_ROWS);
   const dropData: CardSubtasksDropData = {
     kind: 'card-subtasks',
     taskId: parentTask.id,
@@ -80,16 +91,45 @@ export function BoardCardChecklist({ parentTask, tasks, onToggle }: BoardCardChe
       aria-label={`${completed}/${tasks.length}`}
       data-testid={`card-subtasks-${parentTask.id}`}
     >
-      <SortableContext items={tasks.map((task) => task.id)} strategy={verticalListSortingStrategy}>
-        {tasks.map((task) => (
+      {total > 0 && (
+        <div className="board-card-progress">
+          <div
+            className="board-card-progress-bar"
+            role="progressbar"
+            aria-label={t('detail.progress')}
+            aria-valuemin={0}
+            aria-valuemax={total}
+            aria-valuenow={done}
+          >
+            <span style={{ width: `${Math.round((100 * done) / total)}%` }} />
+          </div>
+          <span>{t('board.progressCount', { done, total })}</span>
+        </div>
+      )}
+      <SortableContext items={preview.map((task) => task.id)} strategy={verticalListSortingStrategy}>
+        {preview.map((task) => (
           <SortableChecklistRow
             key={task.id}
             task={task}
             parentTask={parentTask}
+            childCount={childCounts?.get(task.id) ?? 0}
             onToggle={onToggle}
           />
         ))}
       </SortableContext>
+      {tasks.length > PREVIEW_ROWS && (
+        <button
+          type="button"
+          className="board-card-show-all"
+          {...{ [NO_DRAG_ATTR]: '' }}
+          onClick={(event) => {
+            event.stopPropagation();
+            openTaskDetails(parentTask.id, { origin: event.currentTarget, mode: 'tasks', focusPanel: true });
+          }}
+        >
+          {t('board.showAll', { count: tasks.length })}
+        </button>
+      )}
     </div>
   );
 }

@@ -18,7 +18,7 @@ export function TaskRowSpecimen({
   return (
     <div
       className={`flex items-center gap-2 h-10 px-2 rounded-[8px] transition-colors duration-[var(--motion-fast)] ${
-        selected ? 'bg-dot/50' : 'hover:bg-dot/30'
+        selected ? 'bg-border-subtle/50' : 'hover:bg-border-subtle/30'
       }`}
     >
       <Checkbox checked={completed} readOnly />
@@ -47,7 +47,7 @@ export function TaskRowSpecimen({
       <Flag
         size={14}
         strokeWidth={1.5}
-        className={`shrink-0 ${flagged ? 'text-accent fill-accent' : 'text-ink-light opacity-40'}`}
+        className={`shrink-0 ${flagged ? 'text-danger-text fill-danger-text' : 'text-ink-light opacity-40'}`}
       />
       <MoreHorizontal size={16} strokeWidth={1.5} className="text-ink-light shrink-0" />
     </div>

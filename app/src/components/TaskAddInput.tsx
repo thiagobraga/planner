@@ -44,7 +44,7 @@ export function TaskAddInput({ onCreate }: TaskAddInputProps) {
           spellCheck={false}
         />
       </div>
-      {failedTitle && <p role="alert" className="m-0 ml-6 text-sm leading-6 text-accent">{t('board.addTaskFailed')}: {failedTitle}</p>}
+      {failedTitle && <p role="alert" className="m-0 ml-6 text-sm leading-6 text-danger-text">{t('board.addTaskFailed')}: {failedTitle}</p>}
     </div>
   );
 }

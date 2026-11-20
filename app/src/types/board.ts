@@ -3,6 +3,7 @@ import type { ApiSection, ApiStatus, ApiTask, BoardOrder } from './api';
 import type { BoardGroupBy } from './drag';
 import type { Task, TaskListCallbacks } from './task';
 import type { TaskList } from '../components/TaskList';
+import type { LeafProgress } from './detail';
 
 /** Presentation is local to a page; `kanban` remains the legacy card-board value. */
 export type BoardViewMode = 'list' | 'kanban-list' | 'kanban' | 'calendar';
@@ -60,6 +61,8 @@ export interface BoardCardProps {
   subtasks: ApiTask[];
   containerId?: string;
   subtreeIds?: string[];
+  progress?: LeafProgress;
+  childCounts?: ReadonlyMap<string, number>;
   onToggle?: (taskId: string, completed: boolean) => void;
   hideDueDate?: boolean;
   onTaskContextMenu?: (taskId: string, position: { x: number; y: number }) => void;
@@ -87,6 +90,8 @@ export interface BoardColumnHeaderProps {
   columnId: string;
   groupBy: BoardGroupBy;
   title: string;
+  /** Top-level cards in the column, shown after the name. */
+  count?: number;
   color?: string;
   isCompletionStatus?: boolean;
   canEdit?: boolean;
@@ -121,6 +126,10 @@ export interface BoardColumnProps {
 export interface BoardCardChecklistProps {
   parentTask: ApiTask;
   tasks: ApiTask[];
+  /** Unique actionable leaves under the card; defaults to its direct tasks. */
+  progress?: LeafProgress;
+  /** Direct child counts by task id, shown on rows that have their own subtasks. */
+  childCounts?: ReadonlyMap<string, number>;
   onToggle?: (taskId: string, completed: boolean) => void;
 }
 

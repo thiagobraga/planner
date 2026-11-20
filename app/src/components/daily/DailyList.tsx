@@ -131,6 +131,7 @@ export function DailyList({
           <TaskList
             tasks={migrateTasks}
             containerId="migrate"
+            groupNestingByDueDate
             dimNotes
             onTaskToggle={onTaskToggle}
             {...taskListProps}

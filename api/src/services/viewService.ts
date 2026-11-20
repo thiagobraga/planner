@@ -4,31 +4,7 @@ import { listSections } from "./sectionService.js";
 import { attachLabels } from "./labelService.js";
 import type { Status } from "./statusService.js";
 import { formatTimeFields } from "../utils/taskTime.js";
-import type { TaskTimeRow } from "../types/task.js";
-
-export interface TaskRow extends TaskTimeRow {
-  id: string;
-  user_id: string;
-  collection_id: string;
-  section_id: string | null;
-  parent_task_id: string | null;
-  assignee_user_id: string | null;
-  title: string;
-  description: string | null;
-  priority: number;
-  due_date: string | Date | null;
-  due_timezone: string | null;
-  recurrence_rule: object | null;
-  is_completed: boolean;
-  completed_at: string | null;
-  order_value: number;
-  effective_order_value?: number;
-  depth: number;
-  type: string;
-  status_id: string | null;
-  created_at: string;
-  updated_at: string;
-}
+import type { ViewTaskRow as TaskRow } from "../types/task.js";
 
 interface PreferencesRow {
   time_zone: string;
@@ -80,6 +56,12 @@ export function formatTask(row: TaskRow) {
     statusId: row.status_id,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    ...(row.collection_name !== undefined && {
+      collectionName: row.collection_name,
+      collectionColor: row.collection_color,
+      collectionIsInbox: row.collection_is_inbox,
+    }),
+    ...(row.section_name != null && { sectionName: row.section_name }),
   };
 }
 

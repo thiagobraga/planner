@@ -275,8 +275,8 @@ function MenuPanel({
           if (item.disabled) {
             itemClass += `opacity-40 cursor-not-allowed text-ink-light `;
           } else if (item.destructive) {
-            itemClass += `text-accent `;
-            if (isHighlighted || isSubmenuOpen) itemClass += `bg-accent/10 `;
+            itemClass += `text-danger-text `;
+            if (isHighlighted || isSubmenuOpen) itemClass += `bg-danger/10 `;
           } else {
             itemClass += `text-ink-light `;
             if (isHighlighted || isSubmenuOpen) itemClass += `bg-[var(--planner-overlay-hover-bg)] `;

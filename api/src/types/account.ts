@@ -120,6 +120,17 @@ export interface ExportedReminder {
   createdAt: string;
 }
 
+export interface ExportedDocument {
+  taskId: string;
+  /** Lossless editor JSON, as stored. */
+  content: unknown;
+  schemaVersion: number;
+  revision: number;
+  /** The same document as readable Markdown, task blocks as checklist lines. */
+  markdown: string;
+  updatedAt: string;
+}
+
 export interface AccountExportData {
   user: ExportedUser;
   preferences: ExportedPreferences | null;
@@ -132,6 +143,7 @@ export interface AccountExportData {
   filters: ExportedFilter[];
   comments: ExportedComment[];
   reminders: ExportedReminder[];
+  documents: ExportedDocument[];
 }
 
 export interface AccountUserRow {

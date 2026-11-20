@@ -1,6 +1,7 @@
 import { Link, useNavigate } from 'react-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { fetchPreferences } from '../../api/client';
+import { useFullWidth } from '../../hooks/useFullWidth';
 import { useTaskVisibilityPreferences } from '../../hooks/useTaskVisibilityPreferences';
 import { ThemeSwitcher } from '../ui/ThemeSwitcher';
 import { HelpCircle, Keyboard, LogOut, RefreshCw, Search, Settings, ShieldCheck, Table2, Users } from 'lucide-react';
@@ -22,11 +23,14 @@ export function TopBarMenus({ menu, mobile, navStyle, saving, onStyleChange, pho
   const visibility = useTaskVisibilityPreferences(prefs, () => queryClient.invalidateQueries({ queryKey: ['daily'] }));
   const hideCompleted = prefs?.hideCompletedTasks ?? false;
   const showNotes = prefs?.showNotes ?? true;
+  const { fullWidth, setFullWidth } = useFullWidth();
   // What every task page shows, and the color theme; they used to live in each page's toolbar popover.
   const display: ContextMenuItem[] = [
     { type: 'header', label: <span className="topbar-menu-section">{t('menu.show')}</span> },
     { type: 'item', label: t('visibility.completedTasks'), checked: !hideCompleted, disabled: !prefs, onClick: () => visibility.setHideCompletedTasks(!hideCompleted) },
     { type: 'item', label: t('visibility.notes'), checked: showNotes, disabled: !prefs, onClick: () => visibility.setShowNotes(!showNotes) },
+    // Phones already use the whole width.
+    ...(!mobile ? [{ type: 'item' as const, label: t('view.fullWidth'), shortcut: 'v f', checked: fullWidth, onClick: () => setFullWidth(!fullWidth) }] : []),
     { type: 'separator' },
     { type: 'header', label: <span className="topbar-menu-theme"><ThemeSwitcher /></span> },
     { type: 'separator' },

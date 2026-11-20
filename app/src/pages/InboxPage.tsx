@@ -10,68 +10,40 @@ import { CollectionBoard } from '../components/board/CollectionBoard';
 import { BoardPageToolbar } from '../components/board/BoardPageToolbar';
 import { MonthlyView } from '../components/monthly/MonthlyView';
 import { PageHeader } from '../components/PageHeader';
-import { fetchInboxTasks, fetchCollectionView, fetchPreferences, apiCreateTask, apiUpdateTask, apiToggleTask, apiDeleteTask, apiMoveTask, fetchCollections, apiCreateSection, apiUpdateSection, apiDeleteSection } from '../api/client';
-import type { ApiTask } from '../types/api';
+import { fetchInboxTasks, fetchCollectionView, apiMoveTask, fetchCollections } from '../api/client';
 import { ContextMenu } from '../components/ui/ContextMenu';
-import type { ContextMenuItem } from '../types/contextMenu';
 import { SectionDeleteModal } from '../components/SectionDeleteModal';
-import { flattenCollections } from '../components/CollectionTreeNav';
 import { Folder, ArrowUp, ArrowDown, Trash2, Pencil } from 'lucide-react';
 import { useTaskDrag } from '../hooks/useTaskDrag';
 import { useSectionDrag } from '../hooks/useSectionDrag';
+import { usePreferences } from '../hooks/usePreferences';
 import { useBoardPreferences } from '../hooks/useBoardPreferences';
-import { nextOrderValue } from '../utils/order';
-import { extractNaturalDate } from '../utils/date';
-import { resolveTaskIndent } from '../utils/taskIndent';
-import { persistTaskIndent } from '../utils/persistTaskIndent';
 import { buildIndentMenuItems } from '../components/taskIndentMenu';
-import type { TaskIndentHandler, TaskIndentMenuContext, TaskListContextMenuHandler } from '../types/taskIndent';
+import type { TaskIndentMenuContext, TaskListContextMenuHandler } from '../types/taskIndent';
 import { useSync } from '../hooks/useSync';
 import { isEchoedMove } from '../utils/moveEcho';
 import { useI18n } from '../i18n/I18nContext';
-import { applySchedule, scheduleFieldsFromApi, withTimeZones } from '../utils/taskTime';
 import { buildSetDateMenuItem } from '../components/taskDateMenuItem';
-import type { StoreSection, Task, TaskSchedule } from '../types/task';
-import { blurOnEscape } from '../utils/editableText';
+import type { StoreSection, Task } from '../types/task';
 import { buildTaskMenuActions } from '../utils/taskMenuActions';
+import { apiToTask, useInboxTaskRows } from '../hooks/useInboxTaskRows';
+import { useInboxAdd } from '../hooks/useInboxAdd';
+import { useInboxSections } from '../hooks/useInboxSections';
+import { useCollectionSubmenu } from '../hooks/useCollectionSubmenu';
+import { useCoalescedInvalidate } from '../hooks/useCoalescedInvalidate';
 
-function apiToTask(t: ApiTask): Task {
-  return {
-    id: t.id,
-    title: t.title,
-    description: t.description,
-    priority: t.priority,
-    collectionId: t.collectionId,
-    sectionId: t.sectionId,
-    statusId: t.statusId,
-    parentTaskId: t.parentTaskId ?? undefined,
-    dueDate: t.dueDate ?? undefined,
-    ...scheduleFieldsFromApi(t),
-    isCompleted: t.isCompleted,
-    orderValue: t.orderValue,
-    labels: t.labels,
-    indent: t.depth,
-    type: t.type,
-    createdAt: t.createdAt,
-  };
-}
-
-let tempCounter = 0;
-function tempId() { return `temp-${++tempCounter}`; }
 
 function buildSectionGroups(tasks: Task[], sections: StoreSection[]) {
   const groups: Array<{ section: StoreSection | null; tasks: Task[] }> = [];
 
   groups.push({
     section: null,
-    tasks: tasks.filter((t) => !t.sectionId),
-  });
+    tasks: tasks.filter((t) => !t.sectionId) });
 
   for (const section of [...sections].sort((a, b) => a.orderValue - b.orderValue)) {
     groups.push({
       section,
-      tasks: tasks.filter((t) => t.sectionId === section.id),
-    });
+      tasks: tasks.filter((t) => t.sectionId === section.id) });
   }
 
   return groups;
@@ -102,10 +74,7 @@ export function InboxPage() {
     inputRef.current?.focus();
   }, []);
 
-  const { data: preferences } = useQuery({
-    queryKey: ['preferences'],
-    queryFn: fetchPreferences,
-  });
+  const { data: preferences } = usePreferences();
   // The board settings are keyed by the Inbox collection, known from the collection list before the view loads.
   const { data: allCollections } = useQuery({ queryKey: ['collections'], queryFn: fetchCollections });
   const [knownInboxId, setKnownInboxId] = useState(cachedInbox?.inboxCollectionId);
@@ -116,8 +85,7 @@ export function InboxPage() {
   const { data } = useQuery({
     queryKey: inboxKey,
     queryFn: () => fetchInboxTasks({ includeCompleted }),
-    staleTime: 30_000,
-  });
+    staleTime: 30_000 });
 
   const [syncedData, setSyncedData] = useState(data);
   if (data !== syncedData) {
@@ -132,6 +100,7 @@ export function InboxPage() {
   }
 
   const invalidate = useCallback(() => qc.invalidateQueries({ queryKey: ['inbox'] }), [qc]);
+  const refreshSoon = useCoalescedInvalidate(['inbox']);
 
   // Moves are addressed to the real Inbox collection, which the view resolves
   // for us rather than the client having to look it up.
@@ -142,8 +111,7 @@ export function InboxPage() {
     scope: { kind: 'collection', collectionId: data?.collectionId ?? '' },
     onError: () => { setIndentError(true); invalidate(); },
     // A task can be dropped onto a sidebar collection and leave Inbox entirely.
-    onMoved: () => qc.invalidateQueries({ queryKey: ['collection'] }),
-  });
+    onMoved: () => qc.invalidateQueries({ queryKey: ['collection'] }) });
 
   useSectionDrag({ sections, setSections, onError: invalidate });
 
@@ -157,374 +125,37 @@ export function InboxPage() {
     // Refetching mid-move would overwrite the optimistic state with the order the
     // server held before the request this session is still waiting on.
     if (isEchoedMove(event)) return;
-    invalidate();
-  }, [invalidate, qc]));
+    refreshSoon();
+  }, [refreshSoon, qc]));
 
-  const handleAddAtEnd = (text: string) => {
-    const trimmed = text.trim();
-    if (!trimmed) return;
-    const tid = tempId();
-    setInput('');
-    const extracted = extractNaturalDate(trimmed, undefined, locale);
+  const { handleAddAtEnd, handleAddSectionTask, handleAddNoteKeyDown } = useInboxAdd({
+    input, setInput, setSectionTaskInput, setTasks, setEditingId, invalidate, locale });
 
-    setTasks((prev) => [
-      ...prev,
-      { id: tid, title: extracted.title, priority: 4, isCompleted: false, orderValue: nextOrderValue(prev), type: 'task' },
-    ]);
-    apiCreateTask({
-      title: extracted.title,
-      priority: 4,
-      dueDate: extracted.dueDate,
-      recurrenceRule: extracted.recurrenceRule
-    })
-      .then((created) => {
-        setTasks((prev) => prev.map((t) => (t.id === tid ? apiToTask(created) : t)));
-      })
-      .catch(() => {
-        setTasks((prev) => prev.filter((t) => t.id !== tid));
-        invalidate();
-      });
-  };
-
-  const handleAddSectionTask = (sectionId: string, text: string) => {
-    const trimmed = text.trim();
-    if (!trimmed) return;
-    const tid = tempId();
-    setSectionTaskInput((prev) => ({ ...prev, [sectionId]: '' }));
-    const extracted = extractNaturalDate(trimmed, undefined, locale);
-
-    setTasks((prev) => [
-      ...prev,
-      { id: tid, title: extracted.title, priority: 4, isCompleted: false, orderValue: nextOrderValue(prev), type: 'task', sectionId },
-    ]);
-    apiCreateTask({
-      title: extracted.title,
-      priority: 4,
-      sectionId,
-      dueDate: extracted.dueDate,
-      recurrenceRule: extracted.recurrenceRule,
-    })
-      .then((created) => {
-        setTasks((prev) => prev.map((t) => (t.id === tid ? apiToTask(created) : t)));
-      })
-      .catch(() => {
-        setTasks((prev) => prev.filter((t) => t.id !== tid));
-        invalidate();
-      });
-  };
-
-  /** A leading '-' opens a note instead of a task, as it does on Daily. */
-  const handleAddNoteKeyDown = (e: React.KeyboardEvent<HTMLDivElement>): boolean => {
-    blurOnEscape(e);
-    if (e.key !== '-' || input !== '') return false;
-    e.preventDefault();
-
-    const tid = tempId();
-    setTasks((prev) => [
-      ...prev,
-      {
-        id: tid,
-        title: '',
-        priority: 4,
-        isCompleted: false,
-        orderValue: nextOrderValue(prev),
-        type: 'note',
-      },
-    ]);
-    setEditingId(tid);
-    return true;
-  };
-
-  const calculateMidpointOrder = (taskList: Task[], index: number, type: 'above' | 'below') => {
-    const current = taskList[index].orderValue;
-    if (type === 'below') {
-      const next = index < taskList.length - 1 ? taskList[index + 1].orderValue : current + 2000;
-      return Math.floor((current + next) / 2);
-    } else {
-      const prev = index > 0 ? taskList[index - 1].orderValue : current - 2000;
-      return Math.floor((prev + current) / 2);
-    }
-  };
-
-  const handleAddBelow = useCallback((afterId: string) => {
-    const tid = tempId();
-    setTasks((prev) => {
-      const idx = prev.findIndex((t) => t.id === afterId);
-      const computedOrderValue = calculateMidpointOrder(prev, idx, 'below');
-      const next = [...prev];
-      next.splice(idx + 1, 0, {
-        id: tid,
-        title: '',
-        priority: 4,
-        isCompleted: false,
-        orderValue: computedOrderValue,
-        indent: prev[idx]?.indent,
-        parentTaskId: prev[idx]?.parentTaskId,
-        sectionId: prev[idx]?.sectionId,
-        type: 'task',
-      });
-      return next;
-    });
-    setEditingId(tid);
-    setSelectedId(tid);
-  }, []);
-
-  const handleAddAbove = useCallback((beforeId: string) => {
-    const tid = tempId();
-    setTasks((prev) => {
-      const idx = prev.findIndex((t) => t.id === beforeId);
-      const computedOrderValue = calculateMidpointOrder(prev, idx, 'above');
-      const next = [...prev];
-      next.splice(idx, 0, {
-        id: tid,
-        title: '',
-        priority: 4,
-        isCompleted: false,
-        orderValue: computedOrderValue,
-        indent: prev[idx]?.indent,
-        parentTaskId: prev[idx]?.parentTaskId,
-        sectionId: prev[idx]?.sectionId,
-        type: 'task',
-      });
-      return next;
-    });
-    setEditingId(tid);
-    setSelectedId(tid);
-  }, []);
-
-  const handleStartEdit = useCallback((id: string) => {
-    setEditingId(id);
-  }, []);
-
-  const handleEditCommit = useCallback((id: string, title: string) => {
-    const trimmed = title.trim();
-    setEditingId(undefined);
-    if (!trimmed) {
-      setTasks((prev) => prev.filter((t) => t.id !== id));
-      if (!id.startsWith('temp-')) apiDeleteTask(id).catch(() => invalidate());
-      return;
-    }
-    setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, title: trimmed } : t)));
-    if (id.startsWith('temp-')) {
-      const currentTask = tasks.find((t) => t.id === id);
-      const parentTaskId = currentTask?.parentTaskId ?? undefined;
-      const currentIndent = currentTask?.indent ?? 0;
-
-      const extracted = extractNaturalDate(trimmed, undefined, locale);
-
-      // was a new row - create it, keeping whichever type it was opened as
-      apiCreateTask({
-        title: extracted.title,
-        priority: 4,
-        sectionId: currentTask?.sectionId,
-        parentTaskId,
-        depth: currentIndent,
-        type: currentTask?.type ?? 'task',
-        dueDate: extracted.dueDate,
-        recurrenceRule: extracted.recurrenceRule,
-        orderValue: currentTask?.orderValue ?? 0,
-      })
-        .then((created) => {
-          setTasks((prev) => prev.map((t) => (t.id === id ? { ...apiToTask(created), orderValue: t.orderValue } : t)));
-        })
-        .catch(() => {
-          setTasks((prev) => prev.filter((t) => t.id !== id));
-        });
-    } else {
-      apiUpdateTask(id, { title: trimmed }).catch(() => invalidate());
-    }
-  }, [tasks, invalidate, locale]);
-
-  const handleConvertType = useCallback((taskId: string, type: 'task' | 'note' | 'event') => {
-    setTasks((prev) => prev.map((t) => (t.id === taskId ? { ...t, type } : t)));
-    if (!taskId.startsWith('temp-')) {
-      apiUpdateTask(taskId, { type }).catch(() => invalidate());
-    }
-  }, [invalidate]);
-
-  const handleEditCancel = useCallback((id: string) => {
-    setEditingId(undefined);
-    if (id.startsWith('temp-')) {
-      setTasks((prev) => prev.filter((t) => t.id !== id));
-    }
-  }, []);
-
-  const handleSetSchedule = useCallback((id: string, schedule: TaskSchedule) => {
-    setTasks((prev) => prev.map((task) => (task.id === id ? applySchedule(task, schedule) : task)));
-    apiUpdateTask(id, withTimeZones(schedule))
-      .then((updated) => setTasks((prev) => prev.map((task) => (task.id === id ? { ...task, ...apiToTask(updated) } : task))))
-      .catch(() => invalidate());
-  }, [setTasks, invalidate]);
-
-  const handleDelete = useCallback((id: string) => {
-    setTasks((prev) => {
-      const idx = prev.findIndex((t) => t.id === id);
-      const next = prev.filter((t) => t.id !== id);
-      setTimeout(() => {
-        const items = document.querySelectorAll<HTMLElement>('[data-task-id]');
-        const target = items[Math.max(0, idx - 1)];
-        if (target) target.focus();
-        else document.querySelector<HTMLElement>('.task-add-input')?.focus();
-      }, 0);
-      return next;
-    });
-    setEditingId(undefined);
-    if (!id.startsWith('temp-')) apiDeleteTask(id).catch(() => invalidate());
-  }, [invalidate]);
-
-  const handleIndent: TaskIndentHandler = useCallback((id, dir, visibleTasks, scope) => {
-    const move = resolveTaskIndent(visibleTasks, id, dir, scope);
-    if (!move) return;
-    setIndentError(false);
-    persistTaskIndent(id, move, tasksRef.current, setTasks, invalidate, () => {
-      setIndentError(true);
-      invalidate();
-    });
-  }, [invalidate]);
-
-  const handleToggle = useCallback((id: string) => {
-    const prevTasks = tasksRef.current;
-    const task = prevTasks.find((t) => t.id === id);
-    const hideCompleted = preferences?.hideCompletedTasks ?? false;
-    const removeOnComplete = hideCompleted && !includeCompleted && task && !task.isCompleted;
-
-    setTasks((prev) =>
-      removeOnComplete
-        ? prev.filter((t) => t.id !== id)
-        : prev.map((t) => (t.id === id ? { ...t, isCompleted: !t.isCompleted } : t)),
-    );
-
-    if (task && !id.startsWith('temp-')) {
-      apiToggleTask(id, !task.isCompleted).catch(() => {
-        setTasks(prevTasks);
-        invalidate();
-      });
-    }
-  }, [invalidate, preferences?.hideCompletedTasks, includeCompleted]);
+  const {
+    handleAddBelow, handleAddAbove, handleStartEdit, handleEditCommit, handleConvertType,
+    handleEditCancel, handleSetSchedule, handleDelete, handleIndent, handleToggle } = useInboxTaskRows({
+    tasks, tasksRef, setTasks, setEditingId, setSelectedId, setIndentError, invalidate, locale,
+    hideCompletedTasks: preferences?.hideCompletedTasks ?? false, includeCompleted });
 
   const { data: collections = [] } = useQuery({ queryKey: ['collections'], queryFn: fetchCollections });
   const menuTask = tasks.find((task) => task.id === contextMenu?.taskId);
   const { data: menuCollection } = useQuery({
     queryKey: ['collection', menuTask?.collectionId],
     queryFn: () => fetchCollectionView(menuTask!.collectionId!),
-    enabled: Boolean(contextMenu && menuTask?.collectionId && menuTask.collectionId !== data?.collectionId),
-  });
+    enabled: Boolean(contextMenu && menuTask?.collectionId && menuTask.collectionId !== data?.collectionId) });
 
   const handleRightClick: TaskListContextMenuHandler = useCallback((taskId, position, visibleTasks, scope) => {
     setSelectedId(taskId);
     setContextMenu({ taskId, position, visibleTasks, scope });
   }, []);
 
-  const handleSectionRightClick = useCallback((sectionId: string, position: { x: number; y: number }) => {
-    setSectionContextMenu({ sectionId, position });
-  }, []);
+  const {
+    handleSectionRightClick, handleAddSection, handleDeleteSection, handleCommitSectionName,
+    handleCancelSectionEdit, handleConfirmDeleteSectionAndTasks, handleConfirmMoveTasksToTopLevel } = useInboxSections({
+    inboxCollectionId, sections, setSections, tasks, setTasks, setEditingSectionId, setSectionContextMenu,
+    deletingSection, setDeletingSection, invalidate });
 
-  const handleAddSection = useCallback(() => {
-    if (!inboxCollectionId) return;
-    const sectionId = tempId();
-    setSections((prev) => [
-      ...prev,
-      { id: sectionId, name: '', collectionId: inboxCollectionId, orderValue: prev.length * 1000 },
-    ]);
-    setEditingSectionId(sectionId);
-  }, [inboxCollectionId]);
-
-  const handleDeleteSection = useCallback((sectionId: string) => {
-    const section = sections.find((s) => s.id === sectionId)!;
-    const taskCount = tasks.filter((t) => t.sectionId === sectionId).length;
-    setDeletingSection({ id: sectionId, name: section.name, taskCount });
-  }, [sections, tasks]);
-
-  const handleCommitSectionName = useCallback(
-    (sectionId: string, name: string) => {
-      const trimmed = name.trim();
-      setEditingSectionId(null);
-      if (!trimmed) {
-        if (sectionId.startsWith('temp-')) {
-          setSections((prev) => prev.filter((s) => s.id !== sectionId));
-        } else {
-          handleDeleteSection(sectionId);
-        }
-        return;
-      }
-      setSections((prev) => prev.map((s) => (s.id === sectionId ? { ...s, name: trimmed } : s)));
-      if (sectionId.startsWith('temp-')) {
-        apiCreateSection(inboxCollectionId!, { name: trimmed })
-          .then((created) => {
-            setSections((prev) =>
-              prev.map((s) => (s.id === sectionId ? created : s))
-            );
-          })
-          .catch(() => {
-            setSections((prev) => prev.filter((s) => s.id !== sectionId));
-          });
-      } else {
-        apiUpdateSection(sectionId, { name: trimmed }).catch(() => { });
-      }
-    },
-    [handleDeleteSection, inboxCollectionId]
-  );
-
-  const handleCancelSectionEdit = useCallback((sectionId: string) => {
-    setEditingSectionId(null);
-    if (sectionId.startsWith('temp-')) {
-      setSections((prev) => prev.filter((s) => s.id !== sectionId));
-    }
-  }, []);
-
-  const handleConfirmDeleteSectionAndTasks = useCallback(() => {
-    const { id: sectionId } = deletingSection!;
-    const taskIds = tasks.filter((t) => t.sectionId === sectionId).map((t) => t.id);
-    setDeletingSection(null);
-    setTasks((prev) => prev.filter((t) => t.sectionId !== sectionId));
-    setSections((prev) => prev.filter((s) => s.id !== sectionId));
-    Promise.all(taskIds.map((taskId) => apiDeleteTask(taskId)))
-      .then(() => apiDeleteSection(sectionId))
-      .catch(() => invalidate());
-  }, [deletingSection, tasks, invalidate]);
-
-  const handleConfirmMoveTasksToTopLevel = useCallback(() => {
-    const { id: sectionId } = deletingSection!;
-    setDeletingSection(null);
-    setTasks((prev) => prev.map((t) => (t.sectionId === sectionId ? { ...t, sectionId: undefined } : t)));
-    setSections((prev) => prev.filter((s) => s.id !== sectionId));
-    apiDeleteSection(sectionId).catch(() => invalidate());
-  }, [deletingSection, invalidate]);
-
-  const contextMenuTaskId = contextMenu?.taskId;
-  const projectSubmenuItems = useMemo<ContextMenuItem[]>(() => {
-    const items: ContextMenuItem[] = flattenCollections(collections).map((c) => ({
-      type: 'item' as const,
-      label: c.name,
-      icon: (
-        <span
-          className="w-1.75 h-1.75 rounded-full inline-block filter-[saturate(0.55)]"
-          style={{ backgroundColor: c.color, marginLeft: c.depth * 12 }}
-        />
-      ),
-      onClick: () => {
-        if (contextMenuTaskId) apiUpdateTask(contextMenuTaskId, { collectionId: c.id }).catch(() => invalidate());
-      },
-    }));
-
-    items.push({
-      type: 'item' as const,
-      label: t('contextMenu.noCollection'),
-      icon: (
-        <span
-          className="w-1.75 h-1.75 rounded-full inline-block bg-transparent border border-ink/20"
-        />
-      ),
-      onClick: () => {
-        const inbox = collections.find((c) => c.isInbox);
-        if (inbox && contextMenuTaskId) {
-          apiUpdateTask(contextMenuTaskId, { collectionId: inbox.id }).catch(() => invalidate());
-        }
-      },
-    });
-
-    return items;
-  }, [collections, contextMenuTaskId, invalidate, t]);
+  const projectSubmenuItems = useCollectionSubmenu(collections, contextMenu?.taskId, invalidate, t);
 
   // A section being named for the first time renders as an inline input in the
   // "+ New section" row itself, rather than up in the grouped list, so the
@@ -573,8 +204,7 @@ export function InboxPage() {
               onAddBelow: handleAddBelow,
               onIndent: handleIndent,
               onConvertType: handleConvertType,
-              onRightClick: handleRightClick,
-            }}
+              onRightClick: handleRightClick }}
           />
         ) : boardPreferences.view === 'calendar' ? (
           <>
@@ -697,7 +327,7 @@ export function InboxPage() {
         )}
       </div>
 
-      {indentError && <div role="alert" className="text-accent text-sm mt-6">{t('task.moveFailed')}</div>}
+      {indentError && <div role="alert" className="text-danger-text text-sm mt-6">{t('task.moveFailed')}</div>}
       {contextMenu && (
         <ContextMenu
           caret
@@ -715,8 +345,7 @@ export function InboxPage() {
                 apiMoveTask(menuTask.id, { parentTaskId: null, collectionId: menuTask.collectionId, statusId, scope: { kind: 'status', collectionId: menuTask.collectionId, statusId }, position: Number.MAX_SAFE_INTEGER })
                   .then(() => { invalidate(); qc.invalidateQueries({ queryKey: ['collection', menuTask.collectionId] }); })
                   .catch(invalidate);
-              },
-            }),
+              } }),
             // { type: 'item', label: 'Date', icon: <Calendar size={14} />, disabled: true },
             // { type: 'item', label: 'Priority', icon: <Tag size={14} />, disabled: true },
             buildSetDateMenuItem(t, tasks.find((task) => task.id === contextMenu.taskId), handleSetSchedule),

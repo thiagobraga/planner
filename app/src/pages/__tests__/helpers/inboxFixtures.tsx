@@ -1,5 +1,5 @@
 import { vi } from 'vitest';
-import type { Preferences, ApiTask, ApiCollection, ApiSection, ApiStatus } from '../../types/api';
+import type { Preferences, ApiCollection, ApiSection, ApiStatus } from '../../types/api';
 import type { Task } from '../../../types/task';
 import type { TaskOrderScope } from '../../types/drag';
 
@@ -29,58 +29,6 @@ export const baseInboxData = {
   completionStatusId: null,
   boardOrder: { status: {}, priority: {} },
 };
-
-export const sampleTasks: ApiTask[] = [
-  {
-    id: 'task-1',
-    title: 'Buy groceries',
-    description: '',
-    priority: 4,
-    collectionId: 'col-1',
-    sectionId: undefined,
-    parentTaskId: undefined,
-    dueDate: undefined,
-    isCompleted: false,
-    orderValue: 1,
-    depth: 0,
-    type: 'task',
-    createdAt: '2026-01-01T00:00:00Z',
-  },
-  {
-    id: 'task-2',
-    title: 'Write tests',
-    description: '',
-    priority: 4,
-    collectionId: 'col-1',
-    sectionId: undefined,
-    parentTaskId: undefined,
-    dueDate: undefined,
-    isCompleted: true,
-    orderValue: 2,
-    depth: 0,
-    type: 'task',
-    createdAt: '2026-01-01T00:00:00Z',
-  },
-];
-
-export function createdTask(overrides: Partial<ApiTask> = {}): ApiTask {
-  return {
-    id: 'created-1',
-    title: 'Created',
-    description: '',
-    priority: 4,
-    collectionId: 'col-1',
-    sectionId: undefined,
-    parentTaskId: undefined,
-    dueDate: undefined,
-    isCompleted: false,
-    orderValue: 0,
-    depth: 0,
-    type: 'task',
-    createdAt: '2026-01-01T00:00:00Z',
-    ...overrides,
-  };
-}
 
 export function collection(overrides: Partial<ApiCollection> = {}): ApiCollection {
   return {

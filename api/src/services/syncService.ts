@@ -6,11 +6,16 @@ import { CORS_ORIGIN } from "../config.js";
 import { validateSession, buildCookieName, needsTouch, touchSession } from "./sessionService.js";
 import { currentActor, currentSourceId } from "../middleware/requestContext.js";
 import { LATEST_VERSION } from "../utils/buildInfo.js";
-import type { SocketData, SyncEvent } from "../types/sync.js";
+import type { SocketData } from "../types/sync.js";
+import type { SyncEvent } from "../contracts/sync.js";
 
 const SYNC_CHANNEL = "sync";
+// Older deploy colors must not forward events addressed to current members.
+const COLLECTION_MEMBERS_CHANNEL = "sync:collection-members";
 const VERSION_CHANNEL = "version";
 const SESSION_REVALIDATION_INTERVAL_MS = 60_000;
+
+export type { SyncEntityType, SyncEvent, SyncEventType } from "../contracts/sync.js";
 
 function userRoom(userId: string): string {
   return `user:${userId}`;
@@ -74,7 +79,8 @@ export function getIO(): IOServer | null {
 
 export async function publishEvent(event: SyncEvent): Promise<void> {
   try {
-    await redisPubClient.publish(SYNC_CHANNEL, JSON.stringify(event));
+    const channel = event.audience === "current-collection-members" ? COLLECTION_MEMBERS_CHANNEL : SYNC_CHANNEL;
+    await redisPubClient.publish(channel, JSON.stringify(event));
   } catch (err) {
     console.error("[sync] publishEvent failed:", err);
     throw err;
@@ -113,6 +119,17 @@ async function loadUserCollectionIds(userId: string): Promise<string[]> {
     [userId],
   );
   return result.rows.map((r: { collection_id: string }) => r.collection_id);
+}
+
+async function emitToCurrentCollectionMembers(io: IOServer, event: SyncEvent): Promise<void> {
+  const result = await pool.query<{ user_id: string }>(
+    `SELECT user_id FROM collections WHERE id = $1
+     UNION
+     SELECT user_id FROM collaborators WHERE collection_id = $1`,
+    [event.collectionId],
+  );
+  const rooms = result.rows.map(({ user_id }) => userRoom(user_id));
+  if (rooms.length > 0) io.to(rooms).emit("sync", event);
 }
 
 function parseCookies(cookieHeader: string | undefined): Record<string, string> {
@@ -217,6 +234,19 @@ export async function attachSyncServer(httpServer: HTTPServer): Promise<IOServer
     if (event.collectionId) {
       io.to(collectionRoom(event.collectionId)).emit("sync", event);
     }
+  });
+
+  await redisSubClient.subscribe(COLLECTION_MEMBERS_CHANNEL, (raw: string) => {
+    let event: SyncEvent;
+    try {
+      event = JSON.parse(raw) as SyncEvent;
+    } catch {
+      return;
+    }
+
+    void emitToCurrentCollectionMembers(io, event).catch((err) => {
+      console.error("[sync] collection dispatch failed:", err);
+    });
   });
 
   // The only global broadcast in this file - everything else above is

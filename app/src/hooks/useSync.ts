@@ -1,6 +1,8 @@
 import { useEffect, useRef } from 'react';
 import { getSocket, getSocketId } from '../utils/socket';
-import type { SyncEvent } from '../types/sync';
+import type { SyncEvent } from '../contracts/sync';
+
+export type { SyncEvent } from '../contracts/sync';
 
 const MAX_SEEN = 50;
 

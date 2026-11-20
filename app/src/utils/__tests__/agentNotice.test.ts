@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { describeAgentChange } from '../agentNotice';
 import { translate } from '../../i18n/I18nContext';
-import type { SyncEvent } from '../../types/sync';
+import type { SyncEvent } from '../../contracts/sync';
 import type { TranslationKey } from '../../i18n/catalogs';
 
 const t = (key: TranslationKey, values?: Record<string, string | number>) => translate('en', key, values);

@@ -1,7 +1,7 @@
 import { renderHook, act } from '@testing-library/react';
 import { useCallback } from 'react';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
-import type { SyncEvent } from '../../types/sync';
+import type { SyncEvent } from '../../contracts/sync';
 
 // Capture the registered sync handler so tests can fire it manually
 let capturedSyncHandler: ((event: SyncEvent) => void) | null = null;

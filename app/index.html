@@ -12,6 +12,21 @@
     document.head.appendChild(manifest);
   </script>
   <meta name="theme-color" content="#ebe6de">
+  <style>html{background:#f5f0e8}html[data-theme="white"]{background:#ffffff}html[data-theme="dark"]{background:#292219}html[data-theme="nord-light"]{background:#eceff4}html[data-theme="nord-dark"]{background:#2e3440}</style>
+  <script>
+    try {
+      const isPublicRoute = /^\/(login|register|forgot-password|reset-password|privacy|terms)(?:\/|$)/.test(location.pathname);
+      const saved = isPublicRoute ? null : localStorage.getItem('planner_background');
+      const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const resolved = saved === 'system' ? (prefersDark ? 'dark' : 'beige') : saved;
+      const chrome = { beige: '#ebe6de', white: '#f1f1f1', dark: '#292219', 'nord-light': '#eceff4', 'nord-dark': '#2e3440' };
+      if (resolved && Object.prototype.hasOwnProperty.call(chrome, resolved)) {
+        document.documentElement.dataset.theme = resolved;
+        const meta = document.querySelector('meta[name="theme-color"]');
+        if (meta) meta.setAttribute('content', chrome[resolved]);
+      }
+    } catch {}
+  </script>
   <link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48">
   <link rel="icon" href="/images/icons/icon-32x32.png" type="image/png" sizes="32x32">
   <link rel="apple-touch-icon" href="/images/icons/apple-touch-icon-180x180.png" sizes="180x180">

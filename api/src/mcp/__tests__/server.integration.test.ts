@@ -69,15 +69,108 @@ describe("Planner MCP server (real PostgreSQL + Redis)", () => {
     const writeNames = (await writer.listTools()).tools.map((t) => t.name).sort();
 
     expect(readNames).toEqual([
-      "filter_tasks", "get_collection", "get_inbox", "get_today", "get_upcoming",
-      "list_collections", "list_habits", "list_labels", "search",
+      "filter_tasks", "get_collection", "get_inbox", "get_task", "get_task_document", "get_today", "get_upcoming",
+      "list_activity", "list_collections", "list_habits", "list_labels", "list_statuses", "list_task_comments", "search",
     ]);
     expect(writeNames).toEqual(
-      [...readNames, "complete_task", "create_task", "delete_task", "log_habit", "move_task", "reopen_task", "reschedule_tasks", "update_task"].sort(),
+      [
+        ...readNames,
+        "add_comment", "claim_task", "complete_task", "create_task", "create_tasks_batch",
+        "delete_task", "import_markdown", "log_habit", "move_task", "release_task", "reopen_task",
+        "reschedule_tasks", "save_task_document", "undo_import", "update_task",
+      ].sort(),
     );
 
     const deleteTool = (await writer.listTools()).tools.find((t) => t.name === "delete_task")!;
     expect(deleteTool.annotations?.destructiveHint).toBe(true);
+  });
+
+  it("creates, moves and promotes a child with its subtree intact", async () => {
+    const client = await connect(["read", "write"]);
+    const parent = idOf((await call(client, "create_task", { title: "Parent", collection: "Work" })).text);
+    const child = idOf((await call(client, "create_task", { title: "Child", parent })).text);
+    const grandchild = idOf((await call(client, "create_task", { title: "Grandchild", parent: child })).text);
+    const destination = idOf((await call(client, "create_task", { title: "Inbox parent" })).text);
+
+    const taskRow = async (id: string) =>
+      (await pool.query("SELECT collection_id, parent_task_id, depth FROM tasks WHERE id = $1", [id])).rows[0];
+
+    expect(await taskRow(child)).toEqual({ collection_id: workId, parent_task_id: parent, depth: 1 });
+    expect((await call(client, "move_task", { id: child, parent: grandchild })).isError).toBe(true);
+    expect((await call(client, "move_task", { id: child, parent: destination })).text).toContain("#Inbox");
+    expect(await taskRow(child)).toEqual({ collection_id: inboxId, parent_task_id: destination, depth: 1 });
+    expect(await taskRow(grandchild)).toEqual({ collection_id: inboxId, parent_task_id: child, depth: 2 });
+
+    expect((await call(client, "move_task", { id: child, parent: null })).isError).toBe(false);
+    expect(await taskRow(child)).toEqual({ collection_id: inboxId, parent_task_id: null, depth: 0 });
+    expect(await taskRow(grandchild)).toEqual({ collection_id: inboxId, parent_task_id: child, depth: 1 });
+  });
+
+  it("lists collection statuses with read scope and updates a child's status by name or id", async () => {
+    const reader = await connect(["read"]);
+    const writer = await connect(["read", "write"]);
+    const status = crypto.randomUUID();
+    await pool.query("INSERT INTO task_statuses (id, collection_id, name, order_value) VALUES ($1, $2, 'Done', 0)", [status, workId]);
+    await pool.query("UPDATE collections SET completion_status_id = $1 WHERE id = $2", [status, workId]);
+
+    const listing = await call(reader, "list_statuses", { collection: "Work" });
+    expect(listing.text).toContain(`Done · id:${status}`);
+    const parent = idOf((await call(writer, "create_task", { title: "Parent", collection: "Work" })).text);
+    const id = idOf((await call(writer, "create_task", { title: "Child", parent })).text);
+    expect((await call(reader, "update_task", { id, status })).isError).toBe(true);
+    expect((await call(writer, "update_task", { id, title: "Edited", status: "Done" })).isError).toBe(true);
+    expect((await call(writer, "update_task", { id, status: "Done" })).text).toContain("[x] Child");
+
+    const assigned = await pool.query("SELECT status_id, is_completed, parent_task_id FROM tasks WHERE id = $1", [id]);
+    expect(assigned.rows[0]).toEqual({ status_id: status, is_completed: true, parent_task_id: parent });
+    const activity = await pool.query(
+      "SELECT after_data FROM activity_events WHERE entity_id = $1 AND event_type = 'task_updated'",
+      [id],
+    );
+    expect(activity.rows).toEqual([{ after_data: { title: "Child", fields: ["statusId"] } }]);
+    const doing = crypto.randomUUID();
+    await pool.query("INSERT INTO task_statuses (id, collection_id, name, order_value) VALUES ($1, $2, 'Doing', 1)", [doing, workId]);
+    expect((await call(writer, "update_task", { id, status: doing })).text).toContain("[ ] Child");
+    expect((await call(writer, "update_task", { id, status: null })).isError).toBe(false);
+    const cleared = await pool.query("SELECT status_id FROM tasks WHERE id = $1", [id]);
+    expect(cleared.rows[0].status_id).toBeNull();
+    expect((await call(writer, "update_task", { id, status })).isError).toBe(false);
+
+    const inboxTask = idOf((await call(writer, "create_task", { title: "Inbox task" })).text);
+    expect((await call(writer, "update_task", { id: inboxTask, status })).isError).toBe(true);
+  });
+
+  it("keeps a parent change committed while a status update waits for the task lock", async () => {
+    const writer = await connect(["read", "write"]);
+    const oldParent = idOf((await call(writer, "create_task", { title: "Old parent", collection: "Work" })).text);
+    const newParent = idOf((await call(writer, "create_task", { title: "New parent", collection: "Work" })).text);
+    const id = idOf((await call(writer, "create_task", { title: "Child", parent: oldParent })).text);
+    const status = crypto.randomUUID();
+    await pool.query("INSERT INTO task_statuses (id, collection_id, name, order_value) VALUES ($1, $2, 'Doing', 0)", [status, workId]);
+
+    const client = await pool.connect();
+    let change: ReturnType<typeof call> | undefined;
+    try {
+      await client.query("BEGIN");
+      await client.query("UPDATE tasks SET parent_task_id = $1 WHERE id = $2", [newParent, id]);
+      const { rows: [{ pid }] } = await client.query("SELECT pg_backend_pid() AS pid");
+      change = call(writer, "update_task", { id, status });
+      await expect.poll(async () => {
+        const { rows } = await pool.query(
+          "SELECT EXISTS (SELECT 1 FROM pg_stat_activity WHERE $1 = ANY(pg_blocking_pids(pid))) AS waiting",
+          [pid],
+        );
+        return rows[0].waiting;
+      }).toBe(true);
+      await client.query("COMMIT");
+    } finally {
+      await client.query("ROLLBACK");
+      client.release();
+      if (change) expect((await change).isError).toBe(false);
+    }
+
+    const { rows } = await pool.query("SELECT parent_task_id, status_id FROM tasks WHERE id = $1", [id]);
+    expect(rows[0]).toEqual({ parent_task_id: newParent, status_id: status });
   });
 
   it("refuses write tools a read-only token was never given", async () => {

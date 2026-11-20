@@ -1,4 +1,5 @@
 import { v4 as uuidv4 } from "uuid";
+import type { Pool, PoolClient } from "pg";
 import pool from "../db/pool.js";
 import { AppError } from "../utils/AppError.js";
 import { validateColor } from "../utils/color.js";
@@ -37,10 +38,13 @@ function publishLabelEvent(
 
 // A task carrying no labels must not need a round trip - callers pass every
 // task on a page (or view) through here in one shot.
-export async function attachLabels<T extends { id: string }>(items: T[]): Promise<(T & { labels: Label[] })[]> {
+export async function attachLabels<T extends { id: string }>(
+  items: T[],
+  db: Pool | PoolClient = pool,
+): Promise<(T & { labels: Label[] })[]> {
   if (items.length === 0) return items as (T & { labels: Label[] })[];
 
-  const result = await pool.query(
+  const result = await db.query(
     `SELECT tl.task_id, l.* FROM task_labels tl
      INNER JOIN labels l ON l.id = tl.label_id
      WHERE tl.task_id = ANY($1::uuid[])

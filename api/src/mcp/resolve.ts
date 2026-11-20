@@ -1,5 +1,6 @@
 import { parseDuePhrase } from "../services/dateService.js";
 import { listCollections } from "../services/collectionService.js";
+import { listStatuses } from "../services/statusService.js";
 import { listLabels } from "../services/labelService.js";
 import { listHabits } from "../services/habitService.js";
 import { localDateInTimezone } from "../services/viewService.js";
@@ -66,6 +67,10 @@ function pickByName<T extends NamedRef>(items: T[], ref: string, kind: string): 
 export async function resolveCollection(userId: string, ref: string): Promise<NamedRef> {
   const collections = (await listCollections(userId)).filter((c) => !c.isArchived);
   return pickByName(collections, ref, "collection");
+}
+
+export async function resolveStatus(userId: string, collectionId: string, ref: string): Promise<NamedRef> {
+  return pickByName(await listStatuses(collectionId, userId), ref, "status");
 }
 
 export async function resolveLabels(userId: string, refs: string[]): Promise<string[]> {

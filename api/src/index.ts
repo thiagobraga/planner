@@ -68,13 +68,23 @@ if (!DISABLE_RATE_LIMITS_IN_DEV) {
   app.use(globalLimiter);
 }
 
-app.use(express.json({ limit: "100kb" }));
+// Task documents carry up to 256 KB of editor JSON; every other body stays small.
+const DOCUMENT_PATH = /^\/api\/v1\/tasks\/[^/]+\/document\/?$/;
+const jsonBody = express.json({ limit: "100kb" });
+const documentBody = express.json({ limit: "320kb" });
+// Imports carry whole spec files (plan.md and task.md, up to 200k characters each).
+const IMPORT_PATH = /^\/api\/v1\/imports\/markdown(\/preview)?\/?$/;
+const importBody = express.json({ limit: "1mb" });
+app.use((req, res, next) => {
+  const parser = DOCUMENT_PATH.test(req.path) ? documentBody : IMPORT_PATH.test(req.path) ? importBody : jsonBody;
+  parser(req, res, next);
+});
 
 // OAuth for hosted MCP clients. Ahead of the app's CORS and /api/v1 chain: these
 // endpoints take form posts from other origins and set their own CORS policy.
 app.use(oauthRouter());
 
-// Reject non-JSON Content-Type on unsafe methods — prevents CSRF form-encoded bypass
+// Reject non-JSON Content-Type on unsafe methods - prevents CSRF form-encoded bypass
 app.use("/api/v1", (req, res, next) => {
   if (req.path.startsWith("/auth")) {
     next();
@@ -98,7 +108,7 @@ app.use("/api/v1", (req, res, next) => {
 // CORS
 app.use((_req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", CORS_ORIGIN);
-  res.setHeader("Access-Control-Allow-Methods", "GET,POST,PATCH,DELETE,OPTIONS");
+  res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type,Authorization,X-XSRF-TOKEN,X-Socket-Id");
   res.setHeader("Access-Control-Allow-Credentials", "true");
   if (_req.method === "OPTIONS") {
@@ -111,7 +121,7 @@ app.use((_req, res, next) => {
 // Binds the calling socket to the request so events can name their origin
 app.use("/api/v1", requestContext);
 
-// Liveness probe — must stay ahead of authMiddleware so container healthchecks
+// Liveness probe - must stay ahead of authMiddleware so container healthchecks
 // and the host reverse proxy can reach it without credentials
 app.get("/api/v1/health", (_req, res) => {
   res.json({ status: "ok" });
@@ -123,7 +133,7 @@ app.get("/api/v1/version", (_req, res) => {
   res.json({ current: BUILD_VERSION, latest: LATEST_VERSION });
 });
 
-// Auth routes (mounted before CSRF — login/register don't need tokens)
+// Auth routes (mounted before CSRF - login/register don't need tokens)
 // Each auth route handles its own IP + account-based rate limiting via rateLimitService
 app.use("/api/v1/auth", authRoutes);
 
@@ -142,7 +152,7 @@ app.use("/api/v1", async (req, res, next) => {
 // Read-only API tokens cannot write, whatever the route
 app.use("/api/v1", enforceTokenScope);
 
-// Global CSRF protection — safe methods set the cookie, unsafe methods validate
+// Global CSRF protection - safe methods set the cookie, unsafe methods validate
 app.use("/api/v1", csrfProtection);
 
 // Cache-Control for all API responses

@@ -5,6 +5,8 @@ import { registerViewTools } from "./tools/views.js";
 import { registerCollectionTools } from "./tools/collections.js";
 import { registerHabitReadTools, registerHabitWriteTools } from "./tools/habits.js";
 import { registerTaskTools } from "./tools/tasks.js";
+import { registerDocumentReadTools, registerDocumentWriteTools } from "./tools/documents.js";
+import { registerImportTools } from "./tools/imports.js";
 
 const INSTRUCTIONS = [
   "Planner is the user's task manager (a bullet journal).",
@@ -12,6 +14,7 @@ const INSTRUCTIONS = [
   "Dates are resolved by Planner in the user's own timezone, so pass phrases like \"tomorrow\" or \"next friday 3pm\" as-is instead of computing dates yourself.",
   "Every listing ends each line with id:<uuid>; pass that id to tools that act on a task.",
   "Use list_collections before filing a task into a specific collection.",
+  "Parent tasks may carry a revisioned rich document and subtasks: use get_task or get_task_document before save_task_document, claim_task before working on a subtask, add_comment to record evidence, and release_task when done.",
 ].join(" ");
 
 /**
@@ -24,10 +27,13 @@ export function buildMcpServer(ctx: McpAuthContext): McpServer {
   registerViewTools(server, ctx);
   registerCollectionTools(server, ctx);
   registerHabitReadTools(server, ctx);
+  registerDocumentReadTools(server, ctx);
 
   if (ctx.scopes.includes("write")) {
     registerTaskTools(server, ctx);
     registerHabitWriteTools(server, ctx);
+    registerDocumentWriteTools(server, ctx);
+    registerImportTools(server, ctx);
   }
 
   return server;

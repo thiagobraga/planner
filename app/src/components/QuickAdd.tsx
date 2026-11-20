@@ -63,9 +63,9 @@ export function QuickAdd({ isOpen, onClose, onSubmit }: QuickAddProps) {
       onClick={handleOverlayClick}
       className="fixed inset-0 z-[100] flex items-start justify-center pt-[120px]"
     >
-      <div className="rounded-md border border-dot w-[560px] max-w-[calc(100vw-48px)] shadow-overlay overflow-hidden" style={{ backgroundColor: 'var(--planner-overlay-bg)' }}>
+      <div className="rounded-md border border-border-subtle w-[560px] max-w-[calc(100vw-48px)] shadow-overlay overflow-hidden" style={{ backgroundColor: 'var(--planner-overlay-bg)' }}>
         {/* Header */}
-        <div className="px-5 pt-4 pb-2 border-b border-dot flex items-center justify-between">
+        <div className="px-5 pt-4 pb-2 border-b border-border-subtle flex items-center justify-between">
           <span className="text-xs tracking-[0.08em] uppercase text-ink-light font-medium">
             {t('quickAdd.title')}
           </span>
@@ -115,7 +115,7 @@ export function QuickAdd({ isOpen, onClose, onSubmit }: QuickAddProps) {
             <button
               type="submit"
               disabled={!value.trim()}
-              className={`py-1 px-4 border-0 rounded text-[13px] leading-6 transition-colors duration-[120ms] ${value.trim() ? 'bg-ink text-cream cursor-pointer' : 'bg-dot text-ink-light cursor-default'}`}
+              className={`py-1 px-4 border-0 rounded text-[13px] leading-6 transition-colors duration-[120ms] ${value.trim() ? 'bg-ink text-cream cursor-pointer' : 'bg-border-subtle text-ink-light cursor-default'}`}
             >
               {t('quickAdd.add')}
             </button>

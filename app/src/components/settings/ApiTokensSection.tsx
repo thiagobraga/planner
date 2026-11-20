@@ -86,7 +86,7 @@ function NewTokenForm({ onCreated, onCancel }: { onCreated: (created: CreatedApi
       </label>
 
       {create.isError && (
-        <p role="alert" className="m-0 text-[13px] leading-6 text-accent">
+        <p role="alert" className="m-0 text-[13px] leading-6 text-danger-text">
           {create.error instanceof Error ? create.error.message : t('settings.apiTokens.createError')}
         </p>
       )}

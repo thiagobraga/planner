@@ -1,6 +1,6 @@
 import { renderHook, act } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
-import type { SyncEvent } from '../../types/sync';
+import type { SyncEvent } from '../../contracts/sync';
 
 let capturedSyncHandler: ((event: SyncEvent) => void) | null = null;
 

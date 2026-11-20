@@ -2,10 +2,10 @@ import type { StatusPillProps, TaskStatus } from '../../types/ui';
 
 // Tinted pills, one per status. Distinct from priority bullets and label chips.
 const STATUS: Record<TaskStatus, { label: string; className: string }> = {
-  open: { label: 'Open', className: 'bg-dot text-ink' },
-  in_progress: { label: 'In progress', className: 'bg-priority-3/15 text-priority-3' },
-  done: { label: 'Done', className: 'bg-moss/20 text-moss' },
-  blocked: { label: 'Blocked', className: 'bg-accent/12 text-accent' },
+  open: { label: 'Open', className: 'bg-border-subtle text-ink' },
+  in_progress: { label: 'In progress', className: 'bg-info/15 text-info' },
+  done: { label: 'Done', className: 'bg-success/20 text-success' },
+  blocked: { label: 'Blocked', className: 'bg-danger/12 text-danger-text' },
 };
 
 export function StatusPill({ status, className = '' }: StatusPillProps) {

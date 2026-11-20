@@ -1,4 +1,4 @@
-import type { SyncEvent } from '../types/sync';
+import type { SyncEvent } from '../contracts/sync';
 import type { AgentTranslate } from '../types/utils';
 
 /** One line describing what an agent just did, or null for events that are not the agent's. */

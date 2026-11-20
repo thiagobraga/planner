@@ -38,6 +38,7 @@ export interface CommentRow {
   body: string;
   created_at: string;
   updated_at: string | null;
+  actor_label: string | null;
 }
 
 export interface ReminderRow {

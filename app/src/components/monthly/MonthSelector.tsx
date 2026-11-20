@@ -2,7 +2,7 @@ import { useEffect, useState, useRef, useLayoutEffect, useImperativeHandle, type
 import { Button } from '../ui/Button';
 import { StripNavigator } from '../ui/StripNavigator';
 import { useI18n } from '../../i18n/I18nContext';
-import type { Locale } from '../../i18n/catalogs';
+import type { Locale } from '../../types/i18n';
 import type { MonthSelectorHandle, MonthSelectorProps, MonthTile } from '../../types/widgets';
 
 const MONTH_WINDOW = 3;
@@ -160,7 +160,7 @@ export const MonthSelector = ({
                 className={`month-strip-card relative flex h-12 min-w-0 flex-col items-center justify-center border text-center cursor-pointer transition-colors duration-(--motion-fast) ${isCurrentMonth ? 'month-strip-card--current' : ''} ${
                   isSelected
                     ? 'border-ink-light text-ink'
-                    : 'border-border/80 text-ink-light hover:border-dot hover:text-ink'
+                    : 'border-border/80 text-ink-light hover:border-border-subtle hover:text-ink'
                 }`}
                 style={isSelected
                   ? { backgroundColor: 'var(--planner-monthly-strip-selected)' }
