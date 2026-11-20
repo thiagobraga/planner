@@ -10,6 +10,7 @@ import { DEPTH_PADDING_CLASSES } from '../../utils/collectionTree';
 import { buildCollectionMenuItems } from '../collectionMenuItems';
 import { ColorPickerPopover } from '../ui/ColorPickerPopover';
 import { ContextMenu } from '../ui/ContextMenu';
+import { isNativeContextMenu } from '../../utils/contextMenu';
 
 export function SortableCollectionRow({
   item,
@@ -62,6 +63,7 @@ export function SortableCollectionRow({
         data-drop-target={isTaskTarget ? 'true' : undefined}
         className={`collection-row flex items-center gap-1.75 h-6 pr-2 text-[13px] text-ink ${depthClass} ${isActive ? 'collection-row--active font-medium' : ''} ${isTaskTarget ? 'collection-row--drop-target rounded-xs bg-(--planner-hover) outline outline-border-subtle' : ''}`}
         onContextMenu={(e) => {
+          if (isNativeContextMenu(e)) return;
           e.preventDefault();
           setContextPos({ x: e.clientX, y: e.clientY });
         }}

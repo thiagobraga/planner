@@ -29,6 +29,7 @@ import { useDailyView } from '../hooks/useDailyView';
 import type { DaySection } from '../types/daily';
 import type { ViewLayout } from '../types/view';
 import type { Task } from '../types/task';
+import { isNativeContextMenu } from '../utils/contextMenu';
 
 export function DailyPage({ layout }: { layout: ViewLayout }) {
   const { locale, t } = useI18n();
@@ -281,6 +282,7 @@ export function DailyPage({ layout }: { layout: ViewLayout }) {
         inputRef.current?.focus();
       }}
       onContextMenu={(event) => {
+        if (isNativeContextMenu(event)) return;
         if (
           (event.target as HTMLElement).closest(
             'input, [contenteditable], button, [role="button"], [data-task-id], [data-card-id]',

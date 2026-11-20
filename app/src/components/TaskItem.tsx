@@ -20,6 +20,7 @@ import { useDebugStore } from '../stores/debugStore';
 import { formatDueDate } from '../utils/formatDueDate';
 import { isOpenDetailsClick, isOpenDetailsKey } from '../utils/detailOpen';
 import { cancelPendingOpen, openTaskDetails, scheduleOpenTaskDetails } from '../stores/taskDetailStore';
+import { isNativeContextMenu } from '../utils/contextMenu';
 
 /**
  * Markdown-style prefixes that switch a row's type when typed at the start of
@@ -250,6 +251,7 @@ export const TaskItem = memo(function TaskItem({
       }}
       onDoubleClick={isEditing ? undefined : () => { cancelPendingOpen(); onStartEdit?.(task.id); }}
       onContextMenu={(e) => {
+        if (isNativeContextMenu(e)) return;
         e.preventDefault();
         cancelPendingOpen();
         onRightClick?.(task.id, { x: e.clientX, y: e.clientY });

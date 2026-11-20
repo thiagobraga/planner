@@ -14,6 +14,7 @@ import { InboxTopBarItem, TopBarItem } from './TopBarItem';
 import { TopBarMenus } from './TopBarMenus';
 import type { PhoneLabels, TopBarMenuState, TopBarProps } from '../../types/navigation';
 import './TopBar.css';
+import { isNativeContextMenu } from '../../utils/contextMenu';
 
 const MENU_ROUTES = /^\/(settings|help|changelog|admin|styleguide)(\/|$)/;
 
@@ -62,7 +63,7 @@ export function TopBar({ onOpenSearch, onOpenShortcuts, updateAvailable = false 
       data-nav-style={navStyle}
       data-phone-labels={phoneLabels}
       onContextMenu={(event) => {
-        if (event.shiftKey) return;
+        if (isNativeContextMenu(event)) return;
         event.preventDefault();
         openStyleMenu(event.clientX, event.clientY);
       }}
