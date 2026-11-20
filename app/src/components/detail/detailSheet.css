@@ -28,7 +28,7 @@
 }
 
 .detail-panel--sheet .detail-row {
-  min-height: 44px;
+  min-height: 28px;
 }
 
 .detail-panel--sheet .detail-button {
@@ -54,16 +54,25 @@
   clip-path: inset(50%);
 }
 
-.detail-panel--sheet .detail-status-pill {
+.detail-panel--sheet .detail-properties dd {
+  padding: 1px 8px;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 8px;
+  font-size: 12px;
+}
+
+/* The status chip is its own tint, like the mock: no second outline around it. */
+.detail-panel--sheet .detail-properties dd:has(> .detail-status-pill) {
   padding: 0;
   border: 0;
 }
 
-.detail-panel--sheet .detail-properties dd {
-  padding: 0 10px;
-  border: 1px solid var(--color-border-subtle);
-  border-radius: 12px;
-  font-size: 12px;
+.detail-panel--sheet .detail-status-pill {
+  padding: 2px 8px;
+}
+
+.detail-panel--sheet .detail-properties > .detail-text-button {
+  margin-inline-start: 0;
 }
 
 @media (prefers-reduced-motion: no-preference) {

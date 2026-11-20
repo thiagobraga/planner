@@ -30,18 +30,24 @@
   outline-offset: 4px;
 }
 
+/* One 12px step between blocks, headings included; :where keeps the resets
+   below the step in specificity. */
+.detail-prose :where(p, h1, h2, h3, ul, ol, blockquote, pre) {
+  margin: 0;
+}
+
 .detail-prose > * + * {
   margin-top: 12px;
 }
 
-.detail-prose p {
-  margin: 0;
+/* Consecutive task blocks read as one list. */
+.detail-prose > .node-taskReference + .node-taskReference {
+  margin-top: 0;
 }
 
 .detail-prose h1,
 .detail-prose h2,
 .detail-prose h3 {
-  margin: 24px 0 0;
   font-size: 15px;
   font-weight: 600;
   line-height: 1.6;

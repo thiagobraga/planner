@@ -1,4 +1,4 @@
-import { useId, useState } from 'react';
+import { useId, useState, type CSSProperties } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { fetchCollections, fetchStatuses } from '../../api/client';
 import { useI18n } from '../../i18n/I18nContext';
@@ -26,7 +26,7 @@ export function DetailProperties({ task, progress }: { task: TaskDetailItem; pro
         {status && (
           <>
             <dt>{t('detail.status')}</dt>
-            <dd><span className="detail-status-pill"><span aria-hidden="true" style={{ backgroundColor: status.color }} />{status.name}</span></dd>
+            <dd><span className="detail-status-pill" style={{ '--status-color': status.color } as CSSProperties}>{status.name}</span></dd>
           </>
         )}
         <dt>{t('detail.collection')}</dt>

@@ -31,7 +31,7 @@ export function DetailActivity({ taskId }: { taskId: string }) {
   };
 
   return (
-    <section className="detail-section" aria-labelledby={headingId}>
+    <section className="detail-section detail-section--ruled" aria-labelledby={headingId}>
       <h3 id={headingId} className="detail-section-label">{t('detail.activity')}</h3>
       {comments.length === 0 ? (
         <p className="detail-muted detail-empty">{t('detail.commentsEmpty')}</p>
