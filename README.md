@@ -207,6 +207,19 @@ claude mcp add --transport http planner https://planner.local/api/v1/mcp \
 - Full list and ready-to-paste setups: **Settings > Integrations** and `api/src/mcp/tools/`.
 - Dates like "next friday 3pm" are resolved in your timezone.
 
+### Agent workflow
+
+Plans and progress live in Planner, not in private agent todo lists. One loop per task:
+
+1. **Read the plan.** `get_task` on the parent card returns its document (with `revision`), subtasks, active claim and comments.
+2. **Claim a Ready subtask.** `claim_task` succeeds for one caller only; anyone else gets `TASK_CLAIMED` with the holder and expiry. Claims expire (default 30 min) so a crashed agent never blocks the task; `force: true` recovers one on purpose.
+3. **Set the status.** `update_task` with the collection's in-progress status (`list_statuses` names them).
+4. **Report evidence.** `add_comment` with what changed, test results and the PR link. Comments show the token's name and links open from the task panel.
+5. **Edit the plan, never overwrite it.** `save_task_document` takes the `revision` you read; a newer human edit makes it fail instead of being replaced. Re-read and retry.
+6. **Release and hand off.** `release_task`, then move the subtask to the review status.
+
+`create_tasks_batch` with an `idempotency_key` creates subtasks once, however often a retry repeats the call. `import_markdown` turns a spec folder into one parent card, with a dry-run preview and `undo_import`.
+
 ### Hosted clients (claude.ai, ChatGPT)
 
 - Add `https://<your-planner>/api/v1/mcp` as a custom connector, then approve on the Planner consent screen (read & write or read only).
