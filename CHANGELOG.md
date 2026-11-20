@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.32.0](https://github.com/thiagobraga/planner/compare/v0.31.1...v0.32.0) (2026-11-20)
+
+
+### Added
+
+* **app:** open tasks in a detail panel with rich descriptions ([47005d3](https://github.com/thiagobraga/planner/commit/47005d36089da822ac9c607646f02bbced2255af))
+
 ## [0.31.1](https://github.com/thiagobraga/planner/compare/v0.31.0...v0.31.1) (2026-11-20)
 
 
