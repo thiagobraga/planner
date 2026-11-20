@@ -276,6 +276,24 @@ describe('TaskDetailPanel', () => {
     invalidate.mockRestore();
   });
 
+  it('hands focus back to the editor at once, so keys typed right after Enter are not lost', async () => {
+    renderAt(EMBED);
+    const panel = await loadedPanel();
+    const editor = await screen.findByRole('textbox', { name: 'Description' });
+    fireEvent.click(within(panel).getByRole('button', { name: 'Add task to text' }));
+    const input = await within(panel).findByRole('textbox', { name: 'New task title' });
+    // Tiptap's focus() waits a frame; block frames so only a synchronous hand-off passes.
+    const raf = vi.spyOn(window, 'requestAnimationFrame').mockImplementation(() => 0);
+    try {
+      fireEvent.change(input, { target: { value: 'Fast typist' } });
+      fireEvent.keyDown(input, { key: 'Enter' });
+      await within(editor).findByRole('button', { name: 'Open Fast typist' });
+      expect(editor).toHaveFocus();
+    } finally {
+      raf.mockRestore();
+    }
+  });
+
   it('leaves the caret in a paragraph after an inserted task so the next keystroke cannot replace it', async () => {
     renderAt(EMBED);
     const panel = await loadedPanel();
