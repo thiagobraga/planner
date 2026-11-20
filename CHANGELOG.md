@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.31.0](https://github.com/thiagobraga/planner/compare/v0.30.0...v0.31.0) (2026-11-20)
+
+
+### Added
+
+* **collections:** add split panes, dot color picker, header menu and inline inputs ([64bb73c](https://github.com/thiagobraga/planner/commit/64bb73c4974cc5ab87c83a5ac3d22554c645e80a))
+* **collections:** refine tree sidebar, split panes, dot color picker and PWA theme-color ([c68c3d4](https://github.com/thiagobraga/planner/commit/c68c3d4d737592b4f9e8b361f67f4e60cc99d4e0))
+
+
+### Fixed
+
+* **collections:** harden split panes, a11y, mobile layout and theme isolation ([bea0456](https://github.com/thiagobraga/planner/commit/bea0456c3f2b5dba9f5a54dc605541df0ee80cac))
+* **pwa:** sync theme-color meta pre-paint and on theme switches ([886a020](https://github.com/thiagobraga/planner/commit/886a020f68817994f805a1b53cf20ace0aab411c))
+
+
+### Style
+
+* **collections:** refine tree sidebar width, border and floating toggles ([7b12274](https://github.com/thiagobraga/planner/commit/7b1227415efc4f7fc72938e364abc54c1453a5c3))
+
 ## [0.30.0](https://github.com/thiagobraga/planner/compare/v0.29.1...v0.30.0) (2026-11-19)
 
 
