@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.37.0](https://github.com/thiagobraga/planner/compare/v0.36.0...v0.37.0) (2026-11-20)
+
+
+### Added
+
+* **account:** include task documents in the data export ([c73b69d](https://github.com/thiagobraga/planner/commit/c73b69d31aa982a19e2bfd334a8dbc4ab271e96b))
+* **account:** include task documents in the data export ([065a23b](https://github.com/thiagobraga/planner/commit/065a23bb6104b5636d0734863e0ee22b40612a62))
+* **documents:** render a document as readable markdown ([7e2b1a8](https://github.com/thiagobraga/planner/commit/7e2b1a8a0cde1599e4b3535fc551d600bf352fed))
+
 ## [0.36.0](https://github.com/thiagobraga/planner/compare/v0.35.0...v0.36.0) (2026-11-20)
 
 
