@@ -25,14 +25,24 @@ cd "$ROOT_DIR"
 exec 9>"$DEPLOY_DIR/.deploy.lock"
 flock -n 9 || { echo "Another deployment is running" >&2; exit 1; }
 
-shared_project=planner
-existing_project=$(docker inspect -f '{{ index .Config.Labels "com.docker.compose.project" }}' planner-prod-postgres 2>/dev/null || true)
-if [[ $existing_project =~ ^[a-z0-9][a-z0-9_-]*$ ]]; then
-  shared_project=$existing_project
+# shellcheck source=scripts/prod-postgres.sh
+source scripts/prod-postgres.sh
+shared_project=$(prod_shared_project planner-prod-postgres)
+postgres_major=16
+if [[ -f $DEPLOY_DIR/.postgres-18-ready ]]; then postgres_major=18; fi
+existing_image=$(docker inspect -f '{{.Config.Image}}' planner-prod-postgres 2>/dev/null || true)
+if [[ -n $existing_image && $existing_image != "postgres:$postgres_major-alpine" ]]; then
+  echo "Postgres image $existing_image disagrees with deploy state (expected major $postgres_major)" >&2
+  exit 1
+fi
+if [[ -z $existing_image && $postgres_major == 16 ]] &&
+   docker volume inspect "${shared_project}_pgdata18" >/dev/null 2>&1; then
+  echo "Postgres container is missing and a PostgreSQL 18 volume exists. Inspect cutover state before deploying." >&2
+  exit 1
 fi
 
 shared_compose() {
-  docker compose --project-name "$shared_project" -f compose.prod.yml "$@"
+  prod_shared_compose "$shared_project" "$postgres_major" "$@"
 }
 
 color_compose() {
