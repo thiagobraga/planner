@@ -82,6 +82,21 @@ test.describe('Page toolbar', () => {
     expect(main!.width).toBeGreaterThan(720);
   });
 
+  test('view shortcuts work immediately after pointer navigation', async ({ page }) => {
+    await page.getByRole('link', { name: 'Inbox', exact: true }).click();
+    const daily = page.getByRole('link', { name: 'Daily', exact: true });
+    await daily.click();
+    await expect(page).toHaveURL(/\/daily\/list$/);
+    await expect(daily).not.toBeFocused();
+    await page.keyboard.press('v');
+    await expect(daily).not.toBeFocused();
+    await page.keyboard.press('f');
+    await expect(page.locator('.app-shell')).toHaveClass(/full-width/);
+    await page.keyboard.press('v');
+    await page.keyboard.press('f');
+    await expect(page.locator('.app-shell')).not.toHaveClass(/full-width/);
+  });
+
   test('full width is toggled from the planner menu', async ({ page }) => {
     await page.goto('/daily');
     await page.getByRole('button', { name: 'Planner menu', exact: true }).click();
