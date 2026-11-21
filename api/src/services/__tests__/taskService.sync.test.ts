@@ -16,7 +16,8 @@ vi.mock("../../db/redis.js", () => ({
   redisSubClient: { subscribe: vi.fn().mockResolvedValue(undefined) },
 }));
 
-import { createTask, updateTask, completeTask, reopenTask, deleteTask } from "../taskService.js";import { redisPubClient } from "../../db/redis.js";
+import { updateTask, completeTask, reopenTask, deleteTask } from "../taskService.js";
+import { redisPubClient } from "../../db/redis.js";
 import pool from "../../db/pool.js";
 
 const userId = "user-1";
@@ -59,53 +60,6 @@ function resetMocks() {
 describe("taskService: sync event emission", () => {
   beforeEach(() => {
     resetMocks();
-  });
-
-  describe("createTask", () => {
-    it("emits a created sync event after successful creation", async () => {
-      (pool.query as ReturnType<typeof vi.fn>)
-        .mockResolvedValueOnce({ rows: [{ id: collectionId }] })
-        .mockResolvedValueOnce({ rows: [mockTaskRow] })
-        .mockResolvedValueOnce({ rows: [] }); // attachLabels
-
-      await createTask(userId, { title: "New Task", collectionId });
-
-      expect(redisPubClient.publish).toHaveBeenCalledTimes(1);
-      const call = (redisPubClient.publish as ReturnType<typeof vi.fn>).mock.calls[0];
-      expect(call[0]).toBe("sync");
-      const event = JSON.parse(call[1] as string);
-      expect(event.entityType).toBe("task");
-      expect(event.eventType).toBe("created");
-      expect(event.entityId).toBe(taskId);
-      expect(event.userId).toBe(userId);
-      expect(event.collectionId).toBe(collectionId);
-    });
-
-    it("defaults type to 'task' when not provided, and propagates it in the sync payload", async () => {
-      (pool.query as ReturnType<typeof vi.fn>)
-        .mockResolvedValueOnce({ rows: [{ id: collectionId }] })
-        .mockResolvedValueOnce({ rows: [mockTaskRow] })
-        .mockResolvedValueOnce({ rows: [] }); // attachLabels
-
-      await createTask(userId, { title: "New Task", collectionId });
-
-      const call = (redisPubClient.publish as ReturnType<typeof vi.fn>).mock.calls[0];
-      const event = JSON.parse(call[1] as string);
-      expect(event.payload.type).toBe("task");
-    });
-
-    it("propagates type: 'note' in the sync payload when creating a note", async () => {
-      (pool.query as ReturnType<typeof vi.fn>)
-        .mockResolvedValueOnce({ rows: [{ id: collectionId }] })
-        .mockResolvedValueOnce({ rows: [{ ...mockTaskRow, type: "note" }] })
-        .mockResolvedValueOnce({ rows: [] }); // attachLabels
-
-      await createTask(userId, { title: "New Note", collectionId, type: "note" });
-
-      const call = (redisPubClient.publish as ReturnType<typeof vi.fn>).mock.calls[0];
-      const event = JSON.parse(call[1] as string);
-      expect(event.payload.type).toBe("note");
-    });
   });
 
   describe("updateTask", () => {

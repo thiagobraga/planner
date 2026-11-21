@@ -29,11 +29,34 @@ describe('optimistic pure helpers', () => {
     expect(op.snapshot).toBe(state);
   });
 
-  it('revertOptimistic returns the snapshot', () => {
+  it('revertOptimistic puts back a removed entity at its old position', () => {
+    const state: Task[] = [
+      { id: 'a', title: 'x', isCompleted: false },
+      { id: 'b', title: 'y', isCompleted: false },
+    ];
+    const { next, op } = applyOptimistic(state, (s) => removeById(s, 'a'));
+    expect(revertOptimistic(op, next)).toEqual(state);
+  });
+
+  it('revertOptimistic keeps newer edits to other entities and to the same entity', () => {
+    const state: Task[] = [
+      { id: 'a', title: 'x', isCompleted: false },
+      { id: 'b', title: 'y', isCompleted: false },
+    ];
+    const { next, op } = applyOptimistic(state, (s) => patchById(s, 'a', { isCompleted: true }));
+    const otherEdited = patchById(next, 'b', { title: 'renamed' });
+    expect(revertOptimistic(op, otherEdited)).toEqual([
+      { id: 'a', title: 'x', isCompleted: false },
+      { id: 'b', title: 'renamed', isCompleted: false },
+    ]);
+    const sameEdited = patchById(next, 'a', { title: 'newer' });
+    expect(revertOptimistic(op, sameEdited)).toEqual(sameEdited);
+  });
+
+  it('revertOptimistic matches by value, so a cache that copied the entity still reverts', () => {
     const state: Task[] = [{ id: 'a', title: 'x', isCompleted: false }];
-    const { op } = applyOptimistic(state, (s) => removeById(s, 'a'));
-    const reverted = revertOptimistic(op);
-    expect(reverted).toBe(state);
+    const { next, op } = applyOptimistic(state, (s) => patchById(s, 'a', { isCompleted: true }));
+    expect(revertOptimistic(op, next.map((t) => ({ ...t })))).toEqual(state);
   });
 
   it('upsertById updates in place when id matches', () => {
@@ -64,7 +87,6 @@ describe('Property 27: Optimistic update revert on API failure (Requirements 28.
           call: () => Promise.resolve(),
           onApply: (next) => { onApply(next); final = next; },
           onRevert,
-          revertTimeoutMs: 500,
         });
 
         expect(onApply).toHaveBeenCalledTimes(1);
@@ -77,9 +99,10 @@ describe('Property 27: Optimistic update revert on API failure (Requirements 28.
     );
   });
 
-  it('on failure: revert is invoked with the original snapshot (reference-equal)', async () => {
+  it('on failure: reverting the untouched optimistic state restores the original', async () => {
     await fc.assert(
-      fc.asyncProperty(fc.array(arbTask, { maxLength: 20 }), async (state) => {
+      fc.asyncProperty(fc.uniqueArray(arbTask, { selector: (t) => t.id, maxLength: 20 }), async (state) => {
+        let applied: Task[] = state;
         let reverted: Task[] | undefined;
         const apiError = new Error('boom');
 
@@ -88,38 +111,37 @@ describe('Property 27: Optimistic update revert on API failure (Requirements 28.
             state,
             apply: (s) => removeById(s, s[0]?.id ?? 'noop'),
             call: () => Promise.reject(apiError),
-            onRevert: (snapshot) => { reverted = snapshot; },
-            revertTimeoutMs: 500,
+            onApply: (next) => { applied = next; },
+            onRevert: (revert) => { reverted = revert(applied); },
           });
           expect.fail('should reject');
         } catch (e) {
           expect(e).toBe(apiError);
         }
-        expect(reverted).toBe(state);
+        expect(reverted).toEqual(state);
       }),
       { numRuns: 100 },
     );
   });
 
-  it('on timeout: reverts within the configured budget', async () => {
-    let reverted = false;
-    const start = Date.now();
-
+  it('never rolls back a slow call that succeeds', async () => {
+    vi.useFakeTimers();
     try {
-      await runOptimistic<Task, void>({
+      const onRevert = vi.fn();
+      const onSuccess = vi.fn();
+      const pending = runOptimistic<Task, string>({
         state: [],
         apply: (s) => s,
-        call: () => new Promise(() => { /* never resolves */ }),
-        onRevert: () => { reverted = true; },
-        revertTimeoutMs: 100,
+        call: () => new Promise((resolve) => setTimeout(() => resolve('saved'), 10_000)),
+        onRevert,
+        onSuccess,
       });
-      expect.fail('should reject');
-    } catch (e) {
-      const elapsed = Date.now() - start;
-      expect((e as Error).message).toBe('OPTIMISTIC_TIMEOUT');
-      expect(elapsed).toBeGreaterThanOrEqual(90);
-      expect(elapsed).toBeLessThan(2000);
+      await vi.advanceTimersByTimeAsync(10_000);
+      await expect(pending).resolves.toBe('saved');
+      expect(onRevert).not.toHaveBeenCalled();
+      expect(onSuccess).toHaveBeenCalledWith('saved');
+    } finally {
+      vi.useRealTimers();
     }
-    expect(reverted).toBe(true);
   });
 });

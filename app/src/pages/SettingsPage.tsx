@@ -1,304 +1,27 @@
-import { useEffect, useLayoutEffect, useId, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react';
-import { PageHeader } from '../components/PageHeader';
-import { createPortal } from 'react-dom';
+import { useEffect, useLayoutEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router';
-import { Check, Palette, PlugZap, Search, Settings2 } from 'lucide-react';
-import { Toggle } from '../components/ui/Toggle';
+import { PageHeader } from '../components/PageHeader';
 import { Radio } from '../components/ui/Radio';
-import { Input } from '../components/ui/Input';
 import { fetchPreferences } from '../api/client';
 import { useUpdatePreferences } from '../hooks/useUpdatePreferences';
 import { NavStyleField } from '../components/settings/NavStyleField';
-import type { Preferences } from '../types/api';
-import { ensureFontLoaded, type FontOption } from '../utils/fontLoader';
+import { SettingsCard, PreferenceToggle } from '../components/settings/SettingsFields';
+import { SettingsTabList } from '../components/settings/SettingsTabList';
+import { SettingsAppearance } from '../components/settings/SettingsAppearance';
+import { SettingsTimeZone, buildTimeZoneOptions } from '../components/settings/SettingsTimeZone';
+import { DATE_FORMAT_OPTIONS, WEEK_START_OPTIONS } from '../components/settings/settingsOptions';
 import { getDetectedTimeZone } from '../utils/date';
-import { handleRadioNavigation } from '../utils/radioNavigation';
-import { THEME_SWATCHES } from '../utils/theme';
 import { useFloatingPosition } from '../hooks/useFloatingPosition';
 import { useI18n } from '../i18n/I18nContext';
 import { ApiTokensSection } from '../components/settings/ApiTokensSection';
 import { ConnectedAppsSection } from '../components/settings/ConnectedAppsSection';
 import { AccountDataSection } from '../components/settings/AccountDataSection';
-import type { TranslationKey } from '../i18n/catalogs';
-
-type SettingsSection = 'general' | 'appearance' | 'integrations';
+import type { Preferences } from '../types/api';
+import type { SettingsSection } from '../types/settings';
 
 function isSettingsSection(value: string | undefined): value is SettingsSection {
   return value === 'general' || value === 'appearance' || value === 'integrations';
-}
-
-const SETTINGS_SECTIONS: Array<{
-  key: SettingsSection;
-  icon: typeof Settings2;
-}> = [
-  { key: 'general', icon: Settings2 },
-  { key: 'appearance', icon: Palette },
-  { key: 'integrations', icon: PlugZap },
-];
-
-const FONT_OPTIONS: Array<{
-  value: FontOption;
-  label: string;
-  previewClass: string;
-}> = [
-  {
-    value: 'lora',
-    label: 'Lora',
-    previewClass: 'font-journal text-[14px] sm:text-[16px]',
-  },
-  {
-    value: 'playpen',
-    label: 'Playpen Sans',
-    previewClass: 'font-playpen text-[14px] sm:text-[16px] leading-none',
-  },
-  {
-    value: 'hubballi',
-    label: 'Hubballi',
-    previewClass: 'font-hubballi text-[14px] sm:text-[16px] leading-none',
-  },
-];
-
-const BACKGROUND_OPTIONS: Array<{ value: Preferences['background']; labelKey: TranslationKey }> = [
-  { value: 'beige', labelKey: 'settings.beige' },
-  { value: 'white', labelKey: 'settings.white' },
-  { value: 'dark', labelKey: 'settings.dark' },
-  { value: 'nord-light', labelKey: 'settings.nordLight' },
-  { value: 'nord-dark', labelKey: 'settings.nordDark' },
-  { value: 'system', labelKey: 'settings.system' },
-];
-
-function backgroundPreviewStyle(paper: string, dot: string, showDots: boolean): CSSProperties {
-  if (!showDots) return { backgroundImage: paper };
-  return {
-    backgroundImage: `radial-gradient(circle, ${dot} 1px, transparent 1px), ${paper}`,
-    backgroundSize: 'var(--dot-grid) var(--dot-grid), auto',
-    backgroundPosition: 'calc(var(--dot-grid) / 2) calc(var(--dot-grid) / 2), 0 0',
-  };
-}
-
-const WEEK_START_OPTIONS: Array<{
-  value: Preferences['weekStart'];
-  label: string;
-}> = [
-  { value: 'sunday', label: 'Sunday' },
-  { value: 'monday', label: 'Monday' },
-];
-
-const DATE_FORMAT_OPTIONS: Array<{
-  value: string;
-  label: string;
-  example: string;
-}> = [
-  { value: 'MMM DD ddd', label: 'Month Day Weekday', example: 'AUG 05 WED' },
-  { value: 'DD/MM ddd', label: 'Day/Month Weekday', example: '05/08 QUA' },
-  { value: 'DD-MM-YYYY ddd', label: 'Full Date Weekday', example: '05-08-2026 WED' },
-  { value: 'ddd MMM DD', label: 'Weekday Month Day', example: 'WED AUG 05' },
-  { value: 'YYYY-MM-DD', label: 'ISO Standard', example: '2026-08-05' },
-];
-
-function getBrowserSupportedTimeZones() {
-  try {
-    const supportedValuesOf = (Intl as typeof Intl & {
-      supportedValuesOf?: (key: 'timeZone') => string[];
-    }).supportedValuesOf;
-
-    return typeof supportedValuesOf === 'function' ? supportedValuesOf.call(Intl, 'timeZone') : [];
-  } catch {
-    return [];
-  }
-}
-
-function buildTimeZoneOptions(savedTimeZone: string | undefined, detectedTimeZone: string) {
-  const preferred = ['UTC', detectedTimeZone, savedTimeZone].filter((zone): zone is string => Boolean(zone));
-  const ordered = new Set<string>();
-
-  for (const zone of preferred) {
-    ordered.add(zone);
-  }
-
-  const browserZones = [...getBrowserSupportedTimeZones()].sort((a, b) => a.localeCompare(b));
-  for (const zone of browserZones) {
-    ordered.add(zone);
-  }
-
-  return [...ordered];
-}
-
-function SettingsCard({
-  title,
-  headingId,
-  children,
-}: {
-  title: string;
-  headingId: string;
-  children: ReactNode;
-}) {
-  return (
-    <section className="min-w-0">
-      <div className="min-w-0 border-b border-[var(--planner-settings-separator)] pb-6">
-        <h2 id={headingId} className="text-lg leading-6 font-semibold text-ink">
-          {title}
-        </h2>
-      </div>
-      <div className="pt-8">{children}</div>
-    </section>
-  );
-}
-
-function PreferenceToggle({
-  checked,
-  onChange,
-  disabled,
-  title,
-  description,
-  id,
-}: {
-  checked: boolean;
-  onChange: (checked: boolean) => void;
-  disabled: boolean;
-  title: string;
-  description: string;
-  id: string;
-}) {
-  return (
-    <Toggle
-      id={id}
-      checked={checked}
-      onChange={onChange}
-      disabled={disabled}
-      className="items-start"
-      label={
-        <span className="flex flex-col gap-0.5">
-          <span className="text-sm leading-5 text-ink">{title}</span>
-          <span className="text-[12px] leading-5 text-ink-light opacity-70">{description}</span>
-        </span>
-      }
-    />
-  );
-}
-
-function selectedFrame(selected: boolean) {
-  return selected
-    ? 'border-ink-light bg-[var(--planner-control-bg-hover)] text-ink'
-    : 'border-border bg-[var(--planner-control-bg)] text-ink hover:bg-[var(--planner-control-bg-hover)]';
-}
-
-function selectedBorder(selected: boolean) {
-  return selected ? 'border-ink-light' : 'border-border group-hover:border-dot';
-}
-
-function SelectionMark({ selected }: { selected: boolean }) {
-  return (
-    <span
-      className={`absolute left-3 top-1/2 flex h-5 w-5 -translate-y-1/2 items-center justify-center rounded-full border ${
-        selected ? 'border-ink bg-ink text-cream' : 'border-ink-light bg-transparent'
-      }`}
-      aria-hidden="true"
-    >
-      {selected && <Check size={12} strokeWidth={3} />}
-    </span>
-  );
-}
-
-function SettingsTabList({
-  activeSection,
-  compact,
-  idPrefix,
-  inverted = false,
-  onChange,
-}: {
-  activeSection: SettingsSection;
-  compact: boolean;
-  idPrefix: string;
-  inverted?: boolean;
-  onChange: (section: SettingsSection) => void;
-}) {
-  const { t } = useI18n();
-  const tabRefs = useRef<Record<SettingsSection, HTMLButtonElement | null>>({
-    general: null,
-    appearance: null,
-    integrations: null,
-  });
-
-  const handleKeyDown = (event: KeyboardEvent<HTMLButtonElement>, index: number) => {
-    const direction =
-      event.key === 'ArrowRight' || event.key === 'ArrowDown'
-        ? 1
-        : event.key === 'ArrowLeft' || event.key === 'ArrowUp'
-          ? -1
-          : 0;
-
-    if (!direction && event.key !== 'Home' && event.key !== 'End') {
-      return;
-    }
-
-    event.preventDefault();
-
-    const nextIndex =
-      event.key === 'Home'
-        ? 0
-        : event.key === 'End'
-          ? SETTINGS_SECTIONS.length - 1
-          : (index + direction + SETTINGS_SECTIONS.length) % SETTINGS_SECTIONS.length;
-
-    const nextSection = SETTINGS_SECTIONS[nextIndex]?.key ?? activeSection;
-    onChange(nextSection);
-    tabRefs.current[nextSection]?.focus();
-  };
-
-  return (
-    <div
-      role="tablist"
-      aria-orientation={compact ? 'horizontal' : 'vertical'}
-      aria-label={t('settings.sections')}
-      className={compact ? 'grid grid-cols-3 gap-2' : 'flex flex-col gap-1'}
-    >
-      {SETTINGS_SECTIONS.map(({ key, icon: Icon }, index) => {
-        const selected = activeSection === key;
-        const label = t(`settings.${key}`);
-        const panelId = `settings-panel-${key}`;
-        const tabId = `${idPrefix}-settings-tab-${key}`;
-
-        return (
-          <button
-            key={key}
-            ref={(node) => {
-              tabRefs.current[key] = node;
-            }}
-            id={tabId}
-            type="button"
-            role="tab"
-            aria-selected={selected}
-            aria-controls={panelId}
-            title={label}
-            aria-label={label}
-            tabIndex={selected ? 0 : -1}
-            onClick={() => onChange(key)}
-            onKeyDown={(event) => handleKeyDown(event, index)}
-            className={
-              inverted
-                ? `group flex h-8 w-full items-center justify-start gap-2 rounded-[4px] border-transparent px-2 py-0 text-xs leading-6 transition-colors duration-[var(--motion-fast)] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-on-aside/70 ${
-                    selected
-                      ? 'bg-on-aside/20 font-medium text-on-aside'
-                      : 'bg-transparent text-on-aside/90 hover:bg-on-aside/5 hover:text-on-aside'
-                  }`
-                : `group flex min-h-10 items-center gap-2 rounded-[6px] border px-3 py-2 text-sm leading-6 transition-colors duration-[var(--motion-fast)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink focus-visible:ring-offset-2 focus-visible:ring-offset-transparent ${
-                    compact ? 'flex-1 justify-center' : 'w-full justify-start'
-                  } ${
-                    selected
-                      ? 'border-transparent bg-[var(--planner-sidebar-active-bg)] font-medium text-ink'
-                      : 'border-transparent bg-transparent text-ink-light hover:bg-[var(--planner-sidebar-hover-bg)] hover:text-ink'
-                  }`
-            }
-          >
-            <Icon size={16} strokeWidth={1.5} className="shrink-0" />
-            <span className={compact ? 'sr-only' : 'leading-none'}>{label}</span>
-          </button>
-        );
-      })}
-    </div>
-  );
 }
 
 export function SettingsPage() {
@@ -357,15 +80,10 @@ export function SettingsPage() {
 
   const updateMutation = useUpdatePreferences();
 
-  const font = preferences?.font ?? 'lora';
   const locale = preferences?.locale ?? 'en';
-  const showDots = preferences?.showDots ?? true;
-  const background = preferences?.background ?? 'beige';
-  const smallCaps = preferences?.smallCaps ?? false;
   const weekStart = preferences?.weekStart ?? 'sunday';
   const hideCompletedTasks = preferences?.hideCompletedTasks ?? false;
   const showNotes = preferences?.showNotes ?? true;
-  const showCheckboxes = preferences?.showCheckboxes ?? false;
   const agentChangeNotices = preferences?.agentChangeNotices ?? false;
   const dateFormat = preferences?.dateFormat ?? 'MMM DD ddd';
   const savedTimeZone = preferences?.timeZone ?? detectedTimeZone;
@@ -375,25 +93,8 @@ export function SettingsPage() {
     updateMutation.mutate({ dateFormat: nextFormat });
   };
 
-  const handleFontChange = (nextFont: FontOption) => {
-    ensureFontLoaded(nextFont);
-    updateMutation.mutate({ font: nextFont });
-  };
-
   const handleLocaleChange = (nextLocale: Preferences['locale']) => {
     updateMutation.mutate({ locale: nextLocale });
-  };
-
-  const handleDotsChange = (nextShowDots: boolean) => {
-    updateMutation.mutate({ showDots: nextShowDots });
-  };
-
-  const handleBackgroundChange = (nextBackground: Preferences['background']) => {
-    updateMutation.mutate({ background: nextBackground });
-  };
-
-  const handleSmallCapsChange = (next: boolean) => {
-    updateMutation.mutate({ smallCaps: next });
   };
 
   const commitTimeZoneSelection = (nextTimeZone: string) => {
@@ -495,10 +196,6 @@ export function SettingsPage() {
     updateMutation.mutate({ showNotes: nextShowNotes });
   };
 
-  const handleShowCheckboxesChange = (nextShowCheckboxes: boolean) => {
-    updateMutation.mutate({ showCheckboxes: nextShowCheckboxes });
-  };
-
   const handleSectionChange = (nextSection: SettingsSection) => {
     navigate(`/settings/${nextSection}`);
   };
@@ -530,7 +227,7 @@ export function SettingsPage() {
               <p className="px-1 pb-2 text-[10px] leading-5 tracking-[0.12em] uppercase text-ink-light font-medium">
                 {t('settings.title').toUpperCase()}
               </p>
-              <div className="rounded-[8px] border border-dot bg-[var(--planner-sidebar-bg)] p-3 shadow-subtle">
+              <div className="rounded-[8px] border border-border-subtle bg-[var(--planner-sidebar-bg)] p-3 shadow-subtle">
                 <SettingsTabList activeSection={activeSection} compact idPrefix="mobile" onChange={handleSectionChange} />
               </div>
             </div>
@@ -581,96 +278,28 @@ export function SettingsPage() {
                       </div>
                     </section>
 
-                    <section className="space-y-3 border-t border-[var(--planner-settings-separator)] pt-8">
-                      <div className="flex items-baseline justify-between gap-3">
-                        <label
-                          htmlFor={timeZoneInputId}
-                          className="text-[10px] leading-5 tracking-[0.12em] uppercase text-ink-light font-medium"
-                        >
-                          {t('settings.timeZone')}
-                        </label>
-                        <p className="text-[11px] leading-5 text-ink-light opacity-70">
-                          {t('settings.detected', { zone: detectedTimeZone })}
-                        </p>
-                      </div>
-                      <div ref={timeZoneTriggerRef} className="relative">
-                        <Input
-                          id={timeZoneInputId}
-                          icon={<Search size={16} />}
-                          value={timeZoneDraft}
-                          onChange={(event) => handleTimeZoneInputChange(event.target.value)}
-                          onFocus={handleTimeZoneFocus}
-                          onKeyDown={handleTimeZoneKeyDown}
-                          onBlur={closeTimeZoneDropdown}
-                          disabled={disabled}
-                          placeholder={t('settings.searchTimeZones')}
-                          role="combobox"
-                          aria-autocomplete="list"
-                          aria-expanded={isTimeZoneOpen}
-                          aria-controls={`${timeZoneInputId}-listbox`}
-                          aria-activedescendant={
-                            isTimeZoneOpen && filteredTimeZones[timeZoneHighlight]
-                              ? `${timeZoneInputId}-option-${timeZoneHighlight}`
-                              : undefined
-                          }
-                          autoComplete="off"
-                        />
-                        {isTimeZoneOpen &&
-                          createPortal(
-                            <div
-                              ref={timeZoneFloatingRef}
-                              className="ui-custom-select-dropdown fixed z-50 p-1 bg-[var(--planner-card-bg)] border border-border rounded-md shadow-medium"
-                              style={{
-                                top: timeZoneTop,
-                                left: timeZoneLeft,
-                                width: timeZoneTriggerWidth,
-                              }}
-                            >
-                              {filteredTimeZones.length > 0 ? (
-                                <ul
-                                  id={`${timeZoneInputId}-listbox`}
-                                  role="listbox"
-                                  ref={timeZoneListboxRef}
-                                  className="max-h-[240px] overflow-y-auto"
-                                  aria-label={t('settings.timeZone')}
-                                >
-                                  {filteredTimeZones.map((zone, index) => {
-                                    const isSelected = zone === savedTimeZone;
-                                    const isHighlighted = index === timeZoneHighlight;
-
-                                    let itemClass = 'flex items-center h-9 px-2 rounded-[4px] text-sm cursor-pointer select-none ';
-                                    if (isSelected) {
-                                      itemClass += 'bg-dot/60 text-ink ';
-                                    } else if (isHighlighted) {
-                                      itemClass += 'bg-dot/40 text-ink ';
-                                    } else {
-                                      itemClass += 'text-ink hover:bg-dot/40 ';
-                                    }
-
-                                    return (
-                                      <li
-                                        key={zone}
-                                        id={`${timeZoneInputId}-option-${index}`}
-                                        role="option"
-                                        aria-selected={isSelected}
-                                        className={itemClass}
-                                        onMouseDown={(event) => event.preventDefault()}
-                                        onClick={() => commitTimeZoneSelection(zone)}
-                                        onMouseEnter={() => setTimeZoneHighlight(index)}
-                                      >
-                                        {zone}
-                                      </li>
-                                    );
-                                  })}
-                                </ul>
-                              ) : (
-                                <p className="px-2 py-2 text-sm text-ink-light">{t('settings.noTimeZonesFound')}</p>
-                              )}
-                            </div>,
-                            document.body,
-                          )}
-                      </div>
-                    </section>
+                    <SettingsTimeZone
+                      timeZoneInputId={timeZoneInputId}
+                      detectedTimeZone={detectedTimeZone}
+                      savedTimeZone={savedTimeZone}
+                      timeZoneDraft={timeZoneDraft}
+                      timeZoneHighlight={timeZoneHighlight}
+                      timeZoneTriggerWidth={timeZoneTriggerWidth}
+                      timeZoneTriggerRef={timeZoneTriggerRef}
+                      timeZoneFloatingRef={timeZoneFloatingRef}
+                      timeZoneListboxRef={timeZoneListboxRef}
+                      timeZoneTop={timeZoneTop}
+                      timeZoneLeft={timeZoneLeft}
+                      disabled={disabled}
+                      isTimeZoneOpen={isTimeZoneOpen}
+                      filteredTimeZones={filteredTimeZones}
+                      handleTimeZoneInputChange={handleTimeZoneInputChange}
+                      handleTimeZoneFocus={handleTimeZoneFocus}
+                      handleTimeZoneKeyDown={handleTimeZoneKeyDown}
+                      closeTimeZoneDropdown={closeTimeZoneDropdown}
+                      commitTimeZoneSelection={commitTimeZoneSelection}
+                      setTimeZoneHighlight={setTimeZoneHighlight}
+                    />
 
                     <section className="space-y-3 border-t border-[var(--planner-settings-separator)] pt-8">
                       <h3 className="text-[10px] leading-5 tracking-[0.12em] uppercase text-ink-light font-medium">
@@ -765,99 +394,12 @@ export function SettingsPage() {
                   </div>
                 </SettingsCard>
               ) : (
-                <SettingsCard
-                  title={t('settings.appearance')}
-                  headingId={panelHeadingId}
-                >
-                  <div className="flex flex-col gap-10">
-                    <section className="space-y-4">
-                      <h3 className="text-[10px] leading-5 tracking-[0.12em] uppercase text-ink-light font-medium">
-                        {t('settings.typography')}
-                      </h3>
-                      <div className="grid max-w-[420px] grid-cols-1 gap-3" role="radiogroup" aria-label={t('settings.font')}>
-                        {FONT_OPTIONS.map(({ value, label, previewClass }) => {
-                          const selected = font === value;
-                          return (
-                            <button
-                              key={value}
-                              type="button"
-                              role="radio"
-                              aria-checked={selected}
-                              disabled={disabled}
-                              onClick={() => handleFontChange(value)}
-                              className={`relative flex min-h-12 w-full items-center justify-start rounded-[6px] border py-3 pl-12 pr-4 text-left transition-colors duration-[var(--motion-fast)] disabled:cursor-not-allowed disabled:opacity-50 ${selectedFrame(selected)}`}
-                            >
-                              <SelectionMark selected={selected} />
-                              <span className={`${previewClass} leading-none`}>{label}</span>
-                            </button>
-                          );
-                        })}
-                      </div>
-                      <Toggle
-                        checked={smallCaps}
-                        onChange={handleSmallCapsChange}
-                        disabled={disabled}
-                        label={<span className="text-sm leading-6 text-ink">{t('settings.smallCaps')}</span>}
-                        className="[&_button]:!p-0"
-                      />
-                    </section>
-
-                    <section className="space-y-4 border-t border-[var(--planner-settings-separator)] pt-8">
-                      <h3 className="text-[10px] leading-5 tracking-[0.12em] uppercase text-ink-light font-medium">
-                        {t('settings.theme')}
-                      </h3>
-                      <div className="grid max-w-[584px] grid-cols-2 gap-6 sm:grid-cols-3" role="radiogroup" aria-label={t('settings.theme')} onKeyDown={handleRadioNavigation}>
-                        {BACKGROUND_OPTIONS.map(({ value, labelKey }) => {
-                          const selected = background === value;
-                          return (
-                            <button
-                              key={value}
-                              type="button"
-                              role="radio"
-                              aria-checked={selected}
-                              disabled={disabled}
-                              tabIndex={selected ? 0 : -1}
-                              title={t(labelKey)}
-                              onClick={() => handleBackgroundChange(value)}
-                              className="group flex flex-col items-center gap-2 disabled:cursor-not-allowed disabled:opacity-50"
-                            >
-                              <span
-                                className={`relative block h-[60px] w-full rounded-[6px] border transition-colors duration-[var(--motion-fast)] ${selectedBorder(selected)}`}
-                                style={backgroundPreviewStyle(THEME_SWATCHES[value].paper, THEME_SWATCHES[value].dot, showDots)}
-                              >
-                                <SelectionMark selected={selected} />
-                              </span>
-                              <span className="text-base leading-6 text-ink opacity-80">
-                                {t(labelKey)}
-                              </span>
-                            </button>
-                          );
-                        })}
-                      </div>
-                      <div className="flex flex-col items-start gap-3">
-                        <Toggle
-                          checked={showDots}
-                          onChange={handleDotsChange}
-                          disabled={disabled}
-                          label={<span className="text-sm leading-6 text-ink">{t('settings.showDots')}</span>}
-                          className="[&_button]:!p-0"
-                        />
-                        <Toggle
-                          checked={showCheckboxes}
-                          onChange={handleShowCheckboxesChange}
-                          disabled={disabled}
-                          label={<span className="text-sm leading-6 text-ink">{t('settings.showCheckboxes')}</span>}
-                          className="[&_button]:!p-0"
-                        />
-                      </div>
-                    </section>
-                  </div>
-                </SettingsCard>
+                <SettingsAppearance preferences={preferences} updateMutation={updateMutation} panelHeadingId={panelHeadingId} />
               )}
             </div>
           </div>
 
-          <aside className="hidden border-l border-black/10 bg-settings-aside p-4 font-journal text-on-aside md:block">
+          <aside className="hidden border-l border-border/10 bg-settings-aside p-4 font-journal text-on-aside md:block">
             <SettingsTabList
               activeSection={activeSection}
               compact={false}

@@ -1,0 +1,113 @@
+name: 6. Rollback
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'app: redeploy a previous image (no data change). db-restore: DATA-LOSING, replaces the live database with a dump; every write since that dump is lost'
+        type: choice
+        options: [app, db-restore]
+        required: true
+        default: app
+      sha:
+        description: 'app mode: 40-character image SHA to redeploy; empty uses deploy/.previous-image'
+        type: string
+        required: false
+      confirm:
+        description: 'db-restore mode: exact dump file name from deploy/backups (e.g. 20261118T033000Z-daily.dump). DATA-LOSING'
+        type: string
+        required: false
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  approve_db_restore:
+    name: Approve database restore
+    if: github.ref == 'refs/heads/main' && inputs.mode == 'db-restore'
+    runs-on: ubuntu-24.04
+    environment: production-db-restore
+    steps:
+      - run: echo 'Database restore approved'
+
+  rollback:
+    name: 6a. Roll back production (${{ inputs.mode }})
+    needs: approve_db_restore
+    if: always() && github.ref == 'refs/heads/main' && (inputs.mode == 'app' || needs.approve_db_restore.result == 'success')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    environment: production
+    permissions:
+      contents: read
+    steps:
+      # Inputs reach the remote shell only after these regex checks, and only through %q.
+      - name: Validate inputs
+        env:
+          MODE: ${{ inputs.mode }}
+          SHA: ${{ inputs.sha }}
+          CONFIRM: ${{ inputs.confirm }}
+        run: |
+          case "$MODE" in
+            app)
+              [[ -z $SHA || $SHA =~ ^[0-9a-f]{40}$ ]] || { echo "sha must be 40 lowercase hex characters"; exit 1; }
+              ;;
+            db-restore)
+              [[ $CONFIRM =~ ^[0-9]{8}T[0-9]{6}Z-[0-9A-Za-z]{1,40}\.dump$ ]] || { echo "confirm must be a dump file name"; exit 1; }
+              ;;
+            *) echo "Unknown mode"; exit 1 ;;
+          esac
+
+      - name: Configure SSH
+        env:
+          SSH_KEY: ${{ secrets.SSH_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Roll back
+        env:
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          MODE: ${{ inputs.mode }}
+          SHA: ${{ inputs.sha }}
+          CONFIRM: ${{ inputs.confirm }}
+        # The previous-image fallback is expanded on the server, hence single quotes.
+        run: |
+          # shellcheck disable=SC2016
+          if [ "$MODE" = app ]; then
+            if [ -n "$SHA" ]; then target=$(printf %q "$SHA"); else target='"$(cat deploy/.previous-image)"'; fi
+            remote="export CORS_ORIGIN=https://planner.thiagobraga.dev && bash scripts/blue-green-deploy.sh $target"
+          else
+            remote="bash scripts/db-restore.sh $(printf %q "$CONFIRM")"
+          fi
+          ssh -i ~/.ssh/deploy_key \
+            -o UserKnownHostsFile=~/.ssh/known_hosts \
+            -o StrictHostKeyChecking=yes \
+            "$SSH_USER@$SSH_HOST" \
+            "set -euo pipefail && cd /p/projects/planner && $remote"
+
+      - name: Verify app and API through public router
+        run: |
+          for i in $(seq 1 10); do
+            app_code=$(curl -s -o /dev/null -w '%{http_code}' https://planner.thiagobraga.dev/ || true)
+            api_code=$(curl -s -o /dev/null -w '%{http_code}' https://planner.thiagobraga.dev/api/v1/health || true)
+            if [ "$app_code" = "200" ] && [ "$api_code" = "200" ]; then
+              echo "Rollback verified (app and API HTTP 200)" >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+            echo "Attempt $i: app HTTP $app_code, API HTTP $api_code; retrying in 10s"
+            sleep 10
+          done
+          exit 1
+
+      - name: Clean up SSH key
+        if: always()
+        run: rm -f ~/.ssh/deploy_key

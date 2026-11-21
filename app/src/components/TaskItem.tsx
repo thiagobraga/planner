@@ -1,4 +1,4 @@
-import { useId, useRef, useEffect, memo, type ReactNode } from 'react';
+import { useId, useRef, useEffect, memo } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { AlarmClock, Repeat } from 'lucide-react';
@@ -8,8 +8,7 @@ import { useI18n } from '../i18n/I18nContext';
 import { useTaskSelectionStore } from '../stores/taskSelectionStore';
 import { usePlannerDrag } from '../contexts/usePlannerDrag';
 import { priorityClasses } from './taskPriorityClasses';
-import type { LabelSummary } from '../types/api';
-import type { RecurrenceRule } from '../types/task';
+import type { TaskItemProps } from '../types/task';
 import { recurrenceSummary } from '../utils/recurrenceSummary';
 import { formatDuration, formatTimeWindow } from '../utils/taskTime';
 import { getCaret, getText, setCaret } from '../utils/editableText';
@@ -18,86 +17,10 @@ import { DebugCard } from './DebugCard';
 import { useCheckboxStore } from '../stores/checkboxStore';
 import { Checkbox } from './ui/Checkbox';
 import { useDebugStore } from '../stores/debugStore';
-
-export interface Task {
-  id: string;
-  title: string;
-  description?: string;
-  priority: number;
-  collectionId?: string;
-  sectionId?: string;
-  statusId?: string | null;
-  parentTaskId?: string;
-  dueDate?: string;
-  /** HH:MM wall-clock time; `endTime` is derived by the API from the duration. */
-  dueTime?: string | null;
-  endTime?: string | null;
-  deadlineDate?: string | null;
-  deadlineTime?: string | null;
-  durationMinutes?: number | null;
-  recurrenceRule?: RecurrenceRule | null;
-  isCompleted: boolean;
-  orderValue: number;
-  labels?: LabelSummary[];
-  indent?: number;
-  type: 'task' | 'note' | 'event';
-  createdAt?: string;
-  /** Set on Reorganize preview rows whose due date would change, for a highlight. */
-  moved?: boolean;
-}
-
-export interface TaskItemProps {
-  task: Task;
-  isEditing?: boolean;
-  dimmed?: boolean;
-  hideDueDate?: boolean;
-  dimNotes?: boolean;
-  /** The list this row renders in - a collection list, or one Daily date section. */
-  containerId?: string;
-  /** `[task.id, ...descendantIds]`, so a drop inside the dragged block is detectable. */
-  subtreeIds?: string[];
-  /**
-   * Depth this row would land at, set only on the row being dragged. It renders
-   * as the insertion indicator, so horizontal drag previews the nesting level
-   * before the drop rather than only after it.
-   */
-  projectedDepth?: number;
-  /**
-   * Depth within the list actually being rendered. Falls back to the task's
-   * stored tree depth when a caller does not flatten its own rows.
-   */
-  renderedDepth?: number;
-  /**
-   * The block has left this list: the drop is heading somewhere else. The row
-   * gives up its space rather than holding a slot the drop will not use.
-   */
-  departed?: boolean;
-  /** Rendered beside the title - used on Daily, where rows span collections. */
-  collectionBadge?: ReactNode;
-  onToggle?: (id: string) => void;
-  onStartEdit?: (id: string) => void;
-  onEditCommit?: (id: string, title: string) => void;
-  onEditCancel?: (id: string) => void;
-  onDelete?: (id: string) => void;
-  onAddBelow?: (id: string) => void;
-  onIndent?: (id: string, dir: 1 | -1) => void;
-  onConvertType?: (id: string, type: 'task' | 'note' | 'event') => void;
-  onRightClick?: (id: string, position: { x: number; y: number }) => void;
-}
-
-function formatDueDate(value: string, locale: 'en' | 'pt-BR'): string {
-  const match = value.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if (!match) return value;
-
-  const [, year, month, day] = match;
-  const date = new Date(Number(year), Number(month) - 1, Number(day));
-  const currentYear = new Date().getFullYear();
-  return date.toLocaleDateString(locale, {
-    month: 'short',
-    day: 'numeric',
-    ...(Number(year) !== currentYear ? { year: 'numeric' } : {}),
-  });
-}
+import { formatDueDate } from '../utils/formatDueDate';
+import { isOpenDetailsClick, isOpenDetailsKey } from '../utils/detailOpen';
+import { cancelPendingOpen, openTaskDetails, scheduleOpenTaskDetails } from '../stores/taskDetailStore';
+import { isNativeContextMenu } from '../utils/contextMenu';
 
 /**
  * Markdown-style prefixes that switch a row's type when typed at the start of
@@ -183,20 +106,28 @@ export const TaskItem = memo(function TaskItem({
 
   const handleRowKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
     if (isEditing || e.target !== e.currentTarget) return;
-    if (e.key === 'Enter' && e.shiftKey) {
+    if (isOpenDetailsKey(e)) {
       e.preventDefault();
+      openTaskDetails(task.id, { origin: e.currentTarget, focusPanel: true });
+    } else if (e.key === 'Enter' && e.shiftKey) {
+      e.preventDefault();
+      cancelPendingOpen();
       onStartEdit?.(task.id);
     } else if (e.key === 'Enter') {
       e.preventDefault();
+      cancelPendingOpen();
       onAddBelow?.(task.id);
     } else if (e.key === 'Tab' || (e.key === '[' && !e.ctrlKey && !e.metaKey && !e.altKey) || (e.key === ']' && !e.ctrlKey && !e.metaKey && !e.altKey)) {
       e.preventDefault();
+      cancelPendingOpen();
       onIndent?.(task.id, e.key === ']' || (e.key === 'Tab' && e.shiftKey) ? -1 : 1);
     } else if (e.key === 'Delete' || (e.key === 'Backspace' && !e.shiftKey)) {
       e.preventDefault();
+      cancelPendingOpen();
       onDelete?.(task.id);
     } else if (e.key === ' ') {
       e.preventDefault();
+      cancelPendingOpen();
       onToggle?.(task.id);
     }
   };
@@ -291,6 +222,8 @@ export const TaskItem = memo(function TaskItem({
         if ((e.target as HTMLElement).closest(`[${NO_DRAG_ATTR}]`)) return;
         selectTask(task.id, e.ctrlKey || e.metaKey);
         e.currentTarget.focus();
+        if (e.detail > 1) cancelPendingOpen();
+        else if (isOpenDetailsClick(e)) scheduleOpenTaskDetails(task.id, e.currentTarget);
       }}
       onPointerUp={(e) => {
         // Activation is distance-based (see PRESS_ACTIVATION in dnd/sensors.ts),
@@ -316,9 +249,11 @@ export const TaskItem = memo(function TaskItem({
           e.currentTarget.focus();
         }
       }}
-      onDoubleClick={isEditing ? undefined : () => onStartEdit?.(task.id)}
+      onDoubleClick={isEditing ? undefined : () => { cancelPendingOpen(); onStartEdit?.(task.id); }}
       onContextMenu={(e) => {
+        if (isNativeContextMenu(e)) return;
         e.preventDefault();
+        cancelPendingOpen();
         onRightClick?.(task.id, { x: e.clientX, y: e.clientY });
       }}
       onTouchStart={(e) => {
@@ -326,6 +261,7 @@ export const TaskItem = memo(function TaskItem({
         if (!touch) return;
         const pos = { x: touch.clientX, y: touch.clientY };
         touchTimerRef.current = setTimeout(() => {
+          cancelPendingOpen();
           onRightClick?.(task.id, pos);
         }, 400);
       }}
@@ -428,7 +364,7 @@ export const TaskItem = memo(function TaskItem({
 
             {task.recurrenceRule && (
               <span className="task-item-repeat h-6 flex items-center ml-1.5 shrink-0">
-                <span className="inline-flex items-center gap-1.5 px-1 rounded-xs bg-dot/30 border border-dot/50 text-[11px] leading-4.5 text-ink/65 whitespace-nowrap">
+                <span className="inline-flex items-center gap-1.5 px-1 rounded-xs bg-border-subtle/30 border border-border-subtle/50 text-[11px] leading-4.5 text-ink/65 whitespace-nowrap">
                   <Repeat className="w-3 h-3" aria-hidden="true" />
                   {recurrenceSummary(task.recurrenceRule, locale)}
                 </span>
@@ -449,7 +385,7 @@ export const TaskItem = memo(function TaskItem({
 
             {task.deadlineDate && (
               <span
-                className="task-item-deadline h-6 inline-flex items-center gap-1 text-xs text-accent ml-1.5 whitespace-nowrap"
+                className="task-item-deadline h-6 inline-flex items-center gap-1 text-xs text-danger-text ml-1.5 whitespace-nowrap"
                 title={t('task.deadline')}
               >
                 <AlarmClock className="w-3 h-3" aria-hidden="true" />

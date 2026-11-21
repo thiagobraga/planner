@@ -1,5 +1,7 @@
-import type { ReactNode } from 'react';
+import { useLayoutEffect, type ReactNode } from 'react';
 import { Link } from 'react-router';
+import type { AuthShellProps } from '../types/widgets';
+import { updateDocumentThemeColor } from '../utils/theme';
 
 const PlannerIcon64 = () => (
   <img
@@ -12,15 +14,14 @@ const PlannerIcon64 = () => (
   />
 );
 
-export interface AuthShellProps {
-  children: ReactNode;
-  title?: string;
-  subtitle?: string;
-}
-
 // Shared frame for the four logged-out screens: login, register, forgot
 // password, reset password.
 export function AuthShell({ children, title = 'BulletPlanner', subtitle }: AuthShellProps) {
+  useLayoutEffect(() => {
+    delete document.documentElement.dataset.theme;
+    updateDocumentThemeColor('beige');
+  }, []);
+
   return (
     <div className="flex min-h-dvh items-center justify-center px-4 py-6">
       <div className="w-full max-w-80">
@@ -48,7 +49,7 @@ export function AuthLink({ to, children }: { to: string; children: ReactNode }) 
 
 export function AuthFormError({ children }: { children: ReactNode }) {
   return (
-    <p role="alert" className="text-[13px] leading-6 text-accent">
+    <p role="alert" className="text-[13px] leading-6 text-danger-text">
       {children}
     </p>
   );

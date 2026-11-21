@@ -3,6 +3,7 @@ import crypto from "node:crypto";
 import pool from "../../db/pool.js";
 import { AppError } from "../../utils/AppError.js";
 import { getDailyView } from "../dailyService.js";
+import { findDailyTasks } from "../../repositories/dailyRepository.js";
 
 const NOON_UTC = new Date("2026-10-07T12:00:00Z");
 
@@ -160,6 +161,44 @@ describe("getDailyView (real PostgreSQL)", () => {
     const view = await getDailyView(userId, "2026-10-07", "2026-10-07", NOON_UTC);
 
     expect(titles(view.days[0].tasks)).toEqual(["b", "a", "c"]);
+  });
+
+  it("returns collection and section names with each task, reflecting renames", async () => {
+    const col = await pool.query("INSERT INTO collections (user_id, name, color) VALUES ($1, 'finance', '#c9483b') RETURNING id", [userId]);
+    const sec = await pool.query("INSERT INTO sections (collection_id, name) VALUES ($1, 'Bills') RETURNING id", [col.rows[0].id]);
+    const sectioned = await addTask("pay rent", "2026-10-07", { collection: col.rows[0].id });
+    await pool.query("UPDATE tasks SET section_id = $1 WHERE id = $2", [sec.rows[0].id, sectioned]);
+    await addTask("loose", "2026-10-07");
+
+    const view = await getDailyView(userId, "2026-10-07", "2026-10-07", NOON_UTC);
+    const [first, second] = view.days[0].tasks;
+
+    expect(first).toMatchObject({ title: "pay rent", collectionName: "finance", collectionColor: "#c9483b", collectionIsInbox: false, sectionName: "Bills" });
+    expect(second).toMatchObject({ title: "loose", collectionName: "Inbox", collectionColor: "#bababa", collectionIsInbox: true });
+    expect(second).not.toHaveProperty("sectionName");
+
+    await pool.query("UPDATE collections SET name = 'money' WHERE id = $1", [col.rows[0].id]);
+    await pool.query("UPDATE sections SET name = 'Rent' WHERE id = $1", [sec.rows[0].id]);
+    const renamed = await getDailyView(userId, "2026-10-07", "2026-10-07", NOON_UTC);
+
+    expect(renamed.days[0].tasks[0]).toMatchObject({ collectionName: "money", sectionName: "Rent" });
+  });
+
+  it("retrieves overdue and in-range rows in daily order", async () => {
+    await addTask("overdue", "2026-10-06");
+    const later = await addTask("later", "2026-10-07", { orderValue: 20 });
+    await addTask("fallback", "2026-10-07", { orderValue: 5 });
+    await addTask("outside", "2026-10-09");
+    await pool.query(
+      "INSERT INTO task_order (user_id, task_id, scope_type, scope_id, position) VALUES ($1, $2, 'day', '2026-10-07', 2)",
+      [userId, later],
+    );
+
+    const rows = await findDailyTasks(userId, "2026-10-07", "2026-10-07", "2026-10-08", false, true);
+
+    expect(titles(rows)).toEqual(["overdue", "later", "fallback"]);
+    expect(Number(rows[1].effective_order_value)).toBe(2);
+    expect(Number(rows[2].effective_order_value)).toBe(5);
   });
 
   it("only sees the caller's tasks", async () => {

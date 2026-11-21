@@ -17,6 +17,9 @@ export function TopBarItem({ item, ...linkProps }: TopBarItemProps) {
   return (
     <NavigationLink
       {...linkProps}
+      onClick={(event) => {
+        if (event.detail > 0) event.currentTarget.blur();
+      }}
       to={item.to}
       aria-current={inCollection ? 'page' : undefined}
       className={`topbar-item${active ? ' topbar-item--active' : ''}`}
@@ -28,13 +31,20 @@ export function TopBarItem({ item, ...linkProps }: TopBarItemProps) {
 }
 
 export function InboxTopBarItem({ item }: TopBarItemProps) {
-  const { data: collections = [] } = useQuery({ queryKey: ['collections'], queryFn: fetchCollections });
-  const inboxId = collections.find((collection) => collection.isInbox)?.id;
   const { activeDrag, overId } = usePlannerDrag();
+  const { data: collections = [] } = useQuery({
+    queryKey: ['collections'],
+    queryFn: fetchCollections,
+    enabled: activeDrag?.kind === 'task',
+  });
+  const inboxId = collections.find((collection) => collection.isInbox)?.id;
   const data: CollectionDropData | undefined = inboxId
     ? { kind: 'collection', collectionId: inboxId, isInbox: true, parentId: null }
     : undefined;
-  const { setNodeRef } = useDroppable({ id: 'topbar-inbox', data, disabled: !inboxId });
+  // Always enabled: drop targets are measured before a drag starts, and the
+  // collections that name the Inbox only load once one does. Until then the
+  // target has no data, which drop handlers treat as no target.
+  const { setNodeRef } = useDroppable({ id: 'topbar-inbox', data });
   return (
     <TopBarItem
       item={item}

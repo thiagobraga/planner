@@ -1,5 +1,467 @@
 # Changelog
 
+## [0.39.4](https://github.com/thiagobraga/planner/compare/v0.39.3...v0.39.4) (2026-11-21)
+
+
+### Fixed
+
+* **ui:** close popovers on any outside press ([fdc004d](https://github.com/thiagobraga/planner/commit/fdc004d249c20b3a255bdb06f66ded572596aeb7))
+
+## [0.39.3](https://github.com/thiagobraga/planner/compare/v0.39.2...v0.39.3) (2026-11-21)
+
+
+### Fixed
+
+* **menu:** close context menus on any outside press ([dc1504b](https://github.com/thiagobraga/planner/commit/dc1504bc7df0ba3090e64ae620a6385a9a0728d6))
+
+## [0.39.2](https://github.com/thiagobraga/planner/compare/v0.39.1...v0.39.2) (2026-11-21)
+
+
+### Changed
+
+* **api:** extract view service types ([3e3b1be](https://github.com/thiagobraga/planner/commit/3e3b1be4bb605758e03f260302ed0b8b6753f596))
+* finish dedicated type files ([6bfcc56](https://github.com/thiagobraga/planner/commit/6bfcc5613f0b03c36c87574034221d1aeffeb731))
+
+## [0.39.1](https://github.com/thiagobraga/planner/compare/v0.39.0...v0.39.1) (2026-11-21)
+
+
+### Fixed
+
+* **navigation:** release tab focus after pointer clicks ([5868ba7](https://github.com/thiagobraga/planner/commit/5868ba7f52fe25058f81565e9859a506eb37df07))
+
+## [0.39.0](https://github.com/thiagobraga/planner/compare/v0.38.8...v0.39.0) (2026-11-21)
+
+
+### Added
+
+* **postgres:** rehearse and gate the PostgreSQL 18 cutover ([1371c36](https://github.com/thiagobraga/planner/commit/1371c3664761a2094809d4dfe135f1af24631406))
+
+
+### Fixed
+
+* **postgres:** bind the cutover to the production database service ([57adb81](https://github.com/thiagobraga/planner/commit/57adb81dd5683792c81dff3c6e8b4d099711be2c))
+* **postgres:** keep backup parent directories private ([964e55e](https://github.com/thiagobraga/planner/commit/964e55e3ad9fa6d98b34245e487dc349e28ec5e6))
+
+## [0.38.8](https://github.com/thiagobraga/planner/compare/v0.38.7...v0.38.8) (2026-11-20)
+
+
+### Fixed
+
+* resolve main conflicts and restore ci checks ([e880367](https://github.com/thiagobraga/planner/commit/e880367343d33bc1e62591927feda6bc5dfca6ca))
+
+
+### Changed
+
+* extract hook and api types ([ba0ebcc](https://github.com/thiagobraga/planner/commit/ba0ebcc225fe69db1b057d0b293379b44cf590f6))
+
+## [0.38.7](https://github.com/thiagobraga/planner/compare/v0.38.6...v0.38.7) (2026-11-20)
+
+
+### Fixed
+
+* **app:** reveal scrollbar thumbs on hover and focus ([7963a59](https://github.com/thiagobraga/planner/commit/7963a59ed29346b1b411f2d0123c55c0300d109e))
+
+
+### Style
+
+* **app:** show subtle scrollbars only on hover ([60ddec6](https://github.com/thiagobraga/planner/commit/60ddec643086067cd630d7981fa8bba66580adfe))
+
+## [0.38.6](https://github.com/thiagobraga/planner/compare/v0.38.5...v0.38.6) (2026-11-20)
+
+
+### Fixed
+
+* **collections:** list subcollections in the title menu in sidebar order ([8409a3a](https://github.com/thiagobraga/planner/commit/8409a3aca5485d3d6f5ed6bda6fb54b36b7cd8f3))
+
+
+### Changed
+
+* **habits:** refetch once per burst of remote habit changes ([e426de5](https://github.com/thiagobraga/planner/commit/e426de5b1039b2a05545aa45a3d1ece624d113d2))
+* **sync:** refetch collection and inbox views once per burst of changes ([19f1e11](https://github.com/thiagobraga/planner/commit/19f1e11e7a0cb7b4bea6432d766b1573b26d9dc6))
+
+## [0.38.5](https://github.com/thiagobraga/planner/compare/v0.38.4...v0.38.5) (2026-11-20)
+
+
+### Fixed
+
+* **detail:** return focus to the editor at once after adding a subtask ([6cbc780](https://github.com/thiagobraga/planner/commit/6cbc780477d6d5ea241eb3e8fae4d4741eddaade))
+* **detail:** return focus to the editor at once after adding a subtask ([d66c694](https://github.com/thiagobraga/planner/commit/d66c694f5147c501fa68da4f767f9a2b15bf7c98))
+
+## [0.38.4](https://github.com/thiagobraga/planner/compare/v0.38.3...v0.38.4) (2026-11-20)
+
+
+### Fixed
+
+* **tasks:** move subtasks with their parent when its date changes ([9a97db8](https://github.com/thiagobraga/planner/commit/9a97db8af0f997c96822644a1aee42ed076cb6d6))
+
+
+### Changed
+
+* **board:** one view request and no status seed per board load ([c0d1f86](https://github.com/thiagobraga/planner/commit/c0d1f86f62ca28591e84a478b467d462635f7486))
+
+## [0.38.3](https://github.com/thiagobraga/planner/compare/v0.38.2...v0.38.3) (2026-11-20)
+
+
+### Fixed
+
+* **app:** let shift right click open the browser menu everywhere ([6468a90](https://github.com/thiagobraga/planner/commit/6468a900f71f2e4a740e941db78576c684a4c860))
+
+
+### Style
+
+* **board:** set card titles to weight 500 ([52dd103](https://github.com/thiagobraga/planner/commit/52dd103f5d95bee4e1b27ae1e324343236787481))
+* **board:** set card titles to weight 500 ([e449e5a](https://github.com/thiagobraga/planner/commit/e449e5a3f27129a6bf407f2780221f3046a66315))
+
+## [0.38.2](https://github.com/thiagobraga/planner/compare/v0.38.1...v0.38.2) (2026-11-20)
+
+
+### Fixed
+
+* **detail:** keep inserted subtask blocks and refresh lists behind the panel ([c20e4d5](https://github.com/thiagobraga/planner/commit/c20e4d50b2a7e9599eac96d328ef6e46bc1a39b6))
+
+## [0.38.1](https://github.com/thiagobraga/planner/compare/v0.38.0...v0.38.1) (2026-11-20)
+
+
+### Fixed
+
+* **optimistic:** roll back only on real failure and keep newer edits ([f091d4e](https://github.com/thiagobraga/planner/commit/f091d4e146861944309643068e21df6d14404336))
+* **optimistic:** roll back only on real failure and keep newer edits ([7339814](https://github.com/thiagobraga/planner/commit/7339814212925631a5a6092bd54d6af9fa667f03))
+
+## [0.38.0](https://github.com/thiagobraga/planner/compare/v0.37.3...v0.38.0) (2026-11-20)
+
+
+### Added
+
+* **comments:** record which token or app wrote a comment ([ca975dc](https://github.com/thiagobraga/planner/commit/ca975dce4e8fbd49e488b0d2ce682bcc93f8989c))
+* **detail:** show agent claim, comment author and comment links ([37e9713](https://github.com/thiagobraga/planner/commit/37e971327c51366d89b907993d36920e1f9f1766))
+* **detail:** show agent claim, comment author and links ([2a99d97](https://github.com/thiagobraga/planner/commit/2a99d978c80dd53ba530b588b402be2712c51efd))
+* **tasks:** return the active agent claim with task details ([a01abc7](https://github.com/thiagobraga/planner/commit/a01abc7ec664e7694125d3454133ad8cb549cc22))
+
+## [0.37.3](https://github.com/thiagobraga/planner/compare/v0.37.2...v0.37.3) (2026-11-20)
+
+
+### Fixed
+
+* **inbox:** never delete subtasks or notes as a side effect ([adac005](https://github.com/thiagobraga/planner/commit/adac00517365684ed5a7e88487a603c96eca11ea))
+* **inbox:** split InboxPage and guard deletes of subtasks and notes ([4e9df15](https://github.com/thiagobraga/planner/commit/4e9df158a067bf2f743bee302fe0c4a5ef2ab294))
+
+
+### Changed
+
+* **inbox:** move task, capture and section handlers into hooks ([3aaa6b1](https://github.com/thiagobraga/planner/commit/3aaa6b171071449a7ea0de76ae70c02e3666c184))
+
+## [0.37.2](https://github.com/thiagobraga/planner/compare/v0.37.1...v0.37.2) (2026-11-20)
+
+
+### Fixed
+
+* **tasks:** never delete subtasks or notes as a side effect ([3e80478](https://github.com/thiagobraga/planner/commit/3e804789bb15ad11463b116a400ed2c6bf79cb83))
+* **tasks:** never delete subtasks or notes as a side effect ([0aecd47](https://github.com/thiagobraga/planner/commit/0aecd47098c688a2241fc16020257ec943692850))
+
+## [0.37.1](https://github.com/thiagobraga/planner/compare/v0.37.0...v0.37.1) (2026-11-20)
+
+
+### Fixed
+
+* **import:** file imported tasks in a status column ([30a1482](https://github.com/thiagobraga/planner/commit/30a1482b138e82bf8e0aee2ad3375bcec69fd62c))
+
+## [0.37.0](https://github.com/thiagobraga/planner/compare/v0.36.0...v0.37.0) (2026-11-20)
+
+
+### Added
+
+* **account:** include task documents in the data export ([c73b69d](https://github.com/thiagobraga/planner/commit/c73b69d31aa982a19e2bfd334a8dbc4ab271e96b))
+* **account:** include task documents in the data export ([065a23b](https://github.com/thiagobraga/planner/commit/065a23bb6104b5636d0734863e0ee22b40612a62))
+* **documents:** render a document as readable markdown ([7e2b1a8](https://github.com/thiagobraga/planner/commit/7e2b1a8a0cde1599e4b3535fc551d600bf352fed))
+
+## [0.36.0](https://github.com/thiagobraga/planner/compare/v0.35.0...v0.36.0) (2026-11-20)
+
+
+### Added
+
+* **import:** markdown spec import with dry run, manifest and undo ([15ed492](https://github.com/thiagobraga/planner/commit/15ed4926153ccf6fc744c0a5e1388451872f8f21))
+
+## [0.35.0](https://github.com/thiagobraga/planner/compare/v0.34.0...v0.35.0) (2026-11-20)
+
+
+### Added
+
+* **detail:** nest an embedded task's subtasks under its block ([cc63dfd](https://github.com/thiagobraga/planner/commit/cc63dfdd41c6e38e46aaa86382e2bf01ab016876))
+
+
+### Fixed
+
+* **collections:** line the tree heading up with the brand in full width ([1dae073](https://github.com/thiagobraga/planner/commit/1dae073331b7b33ae21f93a786fdf3f581f3d17b))
+
+
+### Style
+
+* **board:** card tint, quiet border and one-line preview rows ([3b707df](https://github.com/thiagobraga/planner/commit/3b707dffbbfbb70cfc20d13c28354d4cfe2f7de3))
+* **board:** fill the collection pane and count cards per column ([8b5c8f8](https://github.com/thiagobraga/planner/commit/8b5c8f87a455c095c07aa14032145d2321f21356))
+* **collections:** match the collection page to the approved design ([eb5784b](https://github.com/thiagobraga/planner/commit/eb5784b7f6919117ffee65d2c146354b58210b11))
+* **detail:** match the panel to the approved mock ([2961728](https://github.com/thiagobraga/planner/commit/29617284d361b3d083c58bbda93eabe66a0e4a99))
+
+## [0.34.0](https://github.com/thiagobraga/planner/compare/v0.33.0...v0.34.0) (2026-11-20)
+
+
+### Added
+
+* **mcp:** add document, comment, claim and batch task tools (S7) ([35f575e](https://github.com/thiagobraga/planner/commit/35f575e35d977dc1bd9d4990f6f4f687e61130fe))
+
+## [0.33.0](https://github.com/thiagobraga/planner/compare/v0.32.0...v0.33.0) (2026-11-20)
+
+
+### Added
+
+* **board:** compact parent cards and embedded task blocks (S6) ([c24ac84](https://github.com/thiagobraga/planner/commit/c24ac84530e5ba720ccc223de3fd545a7e7c2814))
+* **board:** compact parent cards with a five-row preview ([4a481c2](https://github.com/thiagobraga/planner/commit/4a481c27b20e79213347f0dba3add726395cbb38))
+* **detail:** embed real task blocks in the description ([074e64e](https://github.com/thiagobraga/planner/commit/074e64e137505d21b511121e9e904430c6e6b727))
+
+
+### Changed
+
+* **detail:** keep the panel mode in the store and share subtree helpers ([83f1788](https://github.com/thiagobraga/planner/commit/83f178820be951da2f4941bbe756c66b90f88b35))
+
+## [0.32.0](https://github.com/thiagobraga/planner/compare/v0.31.1...v0.32.0) (2026-11-20)
+
+
+### Added
+
+* **app:** open tasks in a detail panel with rich descriptions ([47005d3](https://github.com/thiagobraga/planner/commit/47005d36089da822ac9c607646f02bbced2255af))
+
+## [0.31.1](https://github.com/thiagobraga/planner/compare/v0.31.0...v0.31.1) (2026-11-20)
+
+
+### Fixed
+
+* **api:** harden task document access, concurrency and validation ([2dfde0d](https://github.com/thiagobraga/planner/commit/2dfde0d8b012fda4b06cd7631daf6272d587569b))
+* **api:** harden task document access, concurrency and validation ([3e8be4a](https://github.com/thiagobraga/planner/commit/3e8be4a81d5e9f17931f42613241242cb46bc282))
+
+## [0.31.0](https://github.com/thiagobraga/planner/compare/v0.30.0...v0.31.0) (2026-11-20)
+
+
+### Added
+
+* **collections:** add split panes, dot color picker, header menu and inline inputs ([64bb73c](https://github.com/thiagobraga/planner/commit/64bb73c4974cc5ab87c83a5ac3d22554c645e80a))
+* **collections:** refine tree sidebar, split panes, dot color picker and PWA theme-color ([c68c3d4](https://github.com/thiagobraga/planner/commit/c68c3d4d737592b4f9e8b361f67f4e60cc99d4e0))
+
+
+### Fixed
+
+* **collections:** harden split panes, a11y, mobile layout and theme isolation ([bea0456](https://github.com/thiagobraga/planner/commit/bea0456c3f2b5dba9f5a54dc605541df0ee80cac))
+* **pwa:** sync theme-color meta pre-paint and on theme switches ([886a020](https://github.com/thiagobraga/planner/commit/886a020f68817994f805a1b53cf20ace0aab411c))
+
+
+### Style
+
+* **collections:** refine tree sidebar width, border and floating toggles ([7b12274](https://github.com/thiagobraga/planner/commit/7b1227415efc4f7fc72938e364abc54c1453a5c3))
+
+## [0.30.0](https://github.com/thiagobraga/planner/compare/v0.29.1...v0.30.0) (2026-11-19)
+
+
+### Added
+
+* **api:** store rich task documents with revisions ([a59019b](https://github.com/thiagobraga/planner/commit/a59019ba84d9128be92f925c5c616a77c0cd0d7e))
+
+
+### Fixed
+
+* **api:** refuse NUL characters in document text ([7ba8908](https://github.com/thiagobraga/planner/commit/7ba89087be9c00feadb695288e0e486ca273c555))
+
+## [0.29.1](https://github.com/thiagobraga/planner/compare/v0.29.0...v0.29.1) (2026-11-19)
+
+
+### Fixed
+
+* **toolbar:** improve phone calendar, view sheet and reorganize button ([8ff3b39](https://github.com/thiagobraga/planner/commit/8ff3b39f55f1ff7b8050aa37081110b03a3c9757))
+* **toolbar:** omit desktop menu action on phones ([c565855](https://github.com/thiagobraga/planner/commit/c5658555c3c7fa45ab65b706c289b7b88bd6c8f1))
+
+## [0.29.0](https://github.com/thiagobraga/planner/compare/v0.28.2...v0.29.0) (2026-11-19)
+
+
+### Added
+
+* **api:** add scoped mutation runner ([259090e](https://github.com/thiagobraga/planner/commit/259090e613829c79c0bbd6bc03592e35b4e708ae))
+* **api:** publish comment sync events ([4d1b224](https://github.com/thiagobraga/planner/commit/4d1b224bb0437032a75e32b032e9225b690f8842))
+* **app:** refresh comment threads on comment sync events ([73617e2](https://github.com/thiagobraga/planner/commit/73617e2b0fe8bfe3ee8425747bdecba6b1d44d24))
+
+
+### Fixed
+
+* **api:** keep a stalled redis from holding committed mutations ([2808f58](https://github.com/thiagobraga/planner/commit/2808f58a78d743a2cb9a2fe98506c536756bbe89))
+* **collections:** follow the page column and quiet the tree pane ([96b005a](https://github.com/thiagobraga/planner/commit/96b005af8e927c507b0b9bc09f25545d837aecac))
+* **collections:** restore collapsing tree rows at every level ([9c41284](https://github.com/thiagobraga/planner/commit/9c41284662ff219f12f8c72cb5bd017d4f0307de))
+* **collections:** restore tree collapse and follow page width ([38c8cee](https://github.com/thiagobraga/planner/commit/38c8ceedcf186cbd2a2155458cfc086843ca9a43))
+
+
+### Changed
+
+* **api:** add scoped mutation runner and comment sync ([c0f0231](https://github.com/thiagobraga/planner/commit/c0f0231683ddf678a0d30751be7ecc4a4b616008))
+* **api:** run createTask and deleteTask through the mutation runner ([d671e64](https://github.com/thiagobraga/planner/commit/d671e6460e1d7713e2def5914da1a99b2c53cf61))
+* **contracts:** share sync and comment wire types ([0830b9d](https://github.com/thiagobraga/planner/commit/0830b9d335b8f269a8b7f5e3bf8f176005032c85))
+
+## [0.28.2](https://github.com/thiagobraga/planner/compare/v0.28.1...v0.28.2) (2026-11-19)
+
+
+### Fixed
+
+* **i18n:** move error boundary strings to their own catalog ([dad2d26](https://github.com/thiagobraga/planner/commit/dad2d26958f78dd12ab61cd39d6820f6ff9dc696))
+* **pwa:** recover from blank screen with error boundary and chunk reload ([f57a7ae](https://github.com/thiagobraga/planner/commit/f57a7ae0f17163a272749016a16fec5f4db594b2))
+* **pwa:** recover from blank screen with error boundary and chunk reload ([06ec855](https://github.com/thiagobraga/planner/commit/06ec85537769450087c5acc901a338e338cccc87))
+
+## [0.28.1](https://github.com/thiagobraga/planner/compare/v0.28.0...v0.28.1) (2026-11-19)
+
+
+### Style
+
+* **toolbar:** make menu triggers small buttons like today ([cc92c5e](https://github.com/thiagobraga/planner/commit/cc92c5eebd99470b27d81da0a537b14d8ee4d401))
+* **toolbar:** make menu triggers small buttons like today ([de20c5c](https://github.com/thiagobraga/planner/commit/de20c5cb02b3e286d4b204dcdc9f1f60775bd077))
+
+## [0.28.0](https://github.com/thiagobraga/planner/compare/v0.27.2...v0.28.0) (2026-11-19)
+
+
+### Added
+
+* **collections:** keep the tree alongside collection details ([b410d76](https://github.com/thiagobraga/planner/commit/b410d7693523f6a096f12e17349bf3330793d60e))
+* **collections:** keep the tree alongside collection details ([113b38b](https://github.com/thiagobraga/planner/commit/113b38bb45498d8bf8200fbec255f17951ffc796))
+
+
+### Fixed
+
+* **sync:** notify current collection members of source changes ([dbf553b](https://github.com/thiagobraga/planner/commit/dbf553bcf3c2f0ee3217ec8a9fc6c84e1491a57a))
+
+## [0.27.2](https://github.com/thiagobraga/planner/compare/v0.27.1...v0.27.2) (2026-11-18)
+
+
+### Fixed
+
+* **tasks:** allow nesting across due dates in collection lists ([a8f5bfa](https://github.com/thiagobraga/planner/commit/a8f5bfaf553938e1a73fe7b95b23e4028ace372e))
+
+## [0.27.1](https://github.com/thiagobraga/planner/compare/v0.27.0...v0.27.1) (2026-11-18)
+
+
+### Changed
+
+* **theme:** isolate --color-dot to the dot grid background ([a7e28d3](https://github.com/thiagobraga/planner/commit/a7e28d3da0dc3256172da04824dc54bcceaa5109))
+
+## [0.27.0](https://github.com/thiagobraga/planner/compare/v0.26.0...v0.27.0) (2026-11-18)
+
+
+### Added
+
+* **mcp:** support task parent and status changes ([ee8c9d3](https://github.com/thiagobraga/planner/commit/ee8c9d3d874c87059d250ed88cfb1ada6fca81e0))
+* **mcp:** support task parent and status changes ([cd79de3](https://github.com/thiagobraga/planner/commit/cd79de3df43509a455e50cd1aa4d2dcc6072658e))
+
+
+### Fixed
+
+* **mcp:** scope locked task reread to status changes ([5097a4b](https://github.com/thiagobraga/planner/commit/5097a4be5ee392e163befdc9253ff9ae31d5eb1b))
+
+## [0.26.0](https://github.com/thiagobraga/planner/compare/v0.25.0...v0.26.0) (2026-11-18)
+
+
+### Added
+
+* **deploy:** add live database restore for rollback ([9746ce9](https://github.com/thiagobraga/planner/commit/9746ce933d0eebc950cb0642f41ebe54fb8d8ba9))
+* **deploy:** backup, restore check and rollback ([4bf6795](https://github.com/thiagobraga/planner/commit/4bf679570e995dfff94b76bf157a17365e280adc))
+
+
+### Fixed
+
+* **deploy:** protect backups and restore targets ([0783de4](https://github.com/thiagobraga/planner/commit/0783de445f081a99549eab2c87711b6533b25ed0))
+* **deploy:** retain fresh same-second dump ([4cf2148](https://github.com/thiagobraga/planner/commit/4cf2148a6f52915fc148fe67988ccdcc6758c78e))
+* **deploy:** verify checksums on GNU and BusyBox ([8d563f1](https://github.com/thiagobraga/planner/commit/8d563f1a329edb5c0f1a606958b9cbd3b256eb2b))
+
+
+### Changed
+
+* **daily:** return collection and section names with daily tasks ([ee79f69](https://github.com/thiagobraga/planner/commit/ee79f696c516287c779cca2517d11fa198a0363d))
+
+## [0.25.0](https://github.com/thiagobraga/planner/compare/v0.24.3...v0.25.0) (2026-11-18)
+
+
+### Added
+
+* **theme:** add theme color scales and palette reference ([c1ab013](https://github.com/thiagobraga/planner/commit/c1ab013d8c774d9e0ed5e8314f0acc84e5ab2d04))
+
+## [0.24.3](https://github.com/thiagobraga/planner/compare/v0.24.2...v0.24.3) (2026-11-18)
+
+
+### Changed
+
+* **daily:** move task query to repository ([83f5d14](https://github.com/thiagobraga/planner/commit/83f5d148d83593d93fed8d5f6cdb8ed22910b8f2))
+
+## [0.24.2](https://github.com/thiagobraga/planner/compare/v0.24.1...v0.24.2) (2026-11-16)
+
+
+### Fixed
+
+* **deps:** override minimatch to ^11.0.1 for dependabot alerts ([d3d9a5b](https://github.com/thiagobraga/planner/commit/d3d9a5b2791d55f6bfc46510bc58afeb533a183a))
+
+## [0.24.1](https://github.com/thiagobraga/planner/compare/v0.24.0...v0.24.1) (2026-11-16)
+
+
+### Fixed
+
+* **tasks:** rename task lookup helpers to avoid CodeQL false positive ([647e183](https://github.com/thiagobraga/planner/commit/647e18368b3e3bb543030172fcac775e79d726fc))
+
+
+### Changed
+
+* clarify core module boundaries ([990b231](https://github.com/thiagobraga/planner/commit/990b2311647500c4c5c9e466bba0e5dba811f9d4))
+* **collections:** extract breadcrumb, section, and task hooks ([3f5dfa6](https://github.com/thiagobraga/planner/commit/3f5dfa6d9512acd1b3f81a3c5f88b3b674d8f470))
+* **daily:** extract sync, task actions, and overlay modules ([2c2e689](https://github.com/thiagobraga/planner/commit/2c2e689e715a0af85897799f51a863c86b969b76))
+* **daily:** split useDailyTaskActions into create hook and mutation helpers ([8a2df5d](https://github.com/thiagobraga/planner/commit/8a2df5d7ebfc11f0455b30bccbe5d8ac1174b98c))
+* extract collectionTree utils, SortableCollectionRow, and habit service types ([4be0c08](https://github.com/thiagobraga/planner/commit/4be0c08e02227ede2c6a37e088bf27ae0e761fac))
+* **preferences:** use shared usePreferences hook across remaining consumers ([4a25a66](https://github.com/thiagobraga/planner/commit/4a25a665943dff1d581653355614bd639ea9a2b7))
+* **tasks:** split move.ts into moveDestination, moveSubtree, and reorganize ([f459383](https://github.com/thiagobraga/planner/commit/f4593838a2a84cc1756f8a10c9234c12082d2f4c))
+* **tasks:** split taskService into focused domain modules ([78a85b7](https://github.com/thiagobraga/planner/commit/78a85b7e33539e73bfb6d142a38faa4570bbffa6))
+
+## [0.24.0](https://github.com/thiagobraga/planner/compare/v0.23.1...v0.24.0) (2026-11-16)
+
+
+### Added
+
+* **i18n:** migrate translation runtime to i18next ([ec37f5f](https://github.com/thiagobraga/planner/commit/ec37f5f413991f6ac58b57b5a2cc2c2850e7d584))
+
+
+### Fixed
+
+* **daily:** stop old daily links from losing the saved view ([0b16e00](https://github.com/thiagobraga/planner/commit/0b16e009624b1615697417a2e0e26c337ce1f4b9))
+
+## [0.23.1](https://github.com/thiagobraga/planner/compare/v0.23.0...v0.23.1) (2026-11-16)
+
+
+### Fixed
+
+* **nav:** stop focusing topbar header on style menu close ([5d81834](https://github.com/thiagobraga/planner/commit/5d818345dd7082bf5e6b1606d24b0fc13c39f7dd))
+
+## [0.23.0](https://github.com/thiagobraga/planner/compare/v0.22.0...v0.23.0) (2026-11-16)
+
+
+### Added
+
+* **habits:** full week timeline with navigation in the page toolbar ([7b32f6e](https://github.com/thiagobraga/planner/commit/7b32f6e2f8a7150aa60da984aed38269eb938f7f))
+* **habits:** move week navigation and view switch into the page toolbar ([f5eb906](https://github.com/thiagobraga/planner/commit/f5eb906b9d5f63f2e48133fca49ef728ee6499d4))
+* **habits:** show the whole week in the timeline without day paging ([3c159b2](https://github.com/thiagobraga/planner/commit/3c159b202c98e615a84d95f697f8fdc33ce3fd83))
+
+
+### Changed
+
+* **app:** extract collection and nav types to src/types/collections.ts ([8efa72d](https://github.com/thiagobraga/planner/commit/8efa72d024ea16cbd62f887924f715286e19be4a))
+* **app:** extract habit domain types to src/types/habits.ts ([e5c77de](https://github.com/thiagobraga/planner/commit/e5c77dee7ad435b8096168f9312db0d88bf62c12))
+* **app:** extract task domain types to src/types/task.ts ([e57099e](https://github.com/thiagobraga/planner/commit/e57099e8090bd09a032c97ec9bfee00edf2c81da))
+* **app:** extract UI, widget, and board prop types ([957cd78](https://github.com/thiagobraga/planner/commit/957cd784417dd6335a7c042301dd6afe5bab4504))
+* extract inline types into dedicated type files ([14bf042](https://github.com/thiagobraga/planner/commit/14bf0425c7958c8dfdef0b8f75d2dabdde14b01f))
+* **habits:** split the timeline into focused modules ([a850b4b](https://github.com/thiagobraga/planner/commit/a850b4b142391fc8386df9958d77dbabc33c3813))
+
+
+### Style
+
+* **app:** drop stray blank lines left by type extraction ([5699509](https://github.com/thiagobraga/planner/commit/5699509649528f887f8d661297520c6de9e147d5))
+* **app:** tidy merged habit imports ([fbadf6c](https://github.com/thiagobraga/planner/commit/fbadf6c7a5bea90ac0c71dbd7a9b7f29dd020a66))
+* **habits:** give the name column one more cell on phones ([a1303ff](https://github.com/thiagobraga/planner/commit/a1303ff4805153d71abac54b30825302b3140690))
+
 ## [0.22.0](https://github.com/thiagobraga/planner/compare/v0.21.0...v0.22.0) (2026-11-14)
 
 

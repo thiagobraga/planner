@@ -1,8 +1,15 @@
 import React, { useEffect, useRef, useState, KeyboardEvent, useLayoutEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Check, ChevronRight } from 'lucide-react';
-import type { ContextMenuItem, ContextMenuProps } from '../../types/contextMenu';
-export type { ContextMenuItem, ContextMenuProps } from '../../types/contextMenu';
+import type {
+  ContextMenuItem,
+  ContextMenuProps,
+  ContextMenuRootProps,
+  InlinePanelProps,
+  MenuPanelProps,
+  SubMenuWrapperProps,
+} from '../../types/contextMenu';
+import { useOutsidePress } from '../../hooks/useOutsidePress';
 
 function opensChild(item: ContextMenuItem): boolean {
   return Boolean(item.panel || (item.submenu && item.submenu.length > 0));
@@ -19,28 +26,11 @@ export function ContextMenu({ items, position, onClose, caret = true, align = 's
   );
 }
 
-interface ContextMenuRootProps {
-  items: ContextMenuItem[];
-  position: { x: number; y: number };
-  onClose: () => void;
-  caret: boolean;
-  align: 'start' | 'end';
-}
-
 function ContextMenuRoot({ items, position, onClose, caret, align }: ContextMenuRootProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const [activePath, setActivePath] = useState<number[]>([]);
 
-  // Handle clicking outside to close
-  useEffect(() => {
-    function handleMouseDown(e: MouseEvent) {
-      if (rootRef.current && !rootRef.current.contains(e.target as Node)) {
-        onClose();
-      }
-    }
-    document.addEventListener('mousedown', handleMouseDown);
-    return () => document.removeEventListener('mousedown', handleMouseDown);
-  }, [onClose]);
+  useOutsidePress(rootRef, onClose);
 
   // Handle keyboard navigation at the root level
   const handleKeyDown = (e: KeyboardEvent) => {
@@ -82,18 +72,6 @@ function ContextMenuRoot({ items, position, onClose, caret, align }: ContextMenu
     </div>,
     document.querySelector('.app-shell') ?? document.body
   );
-}
-
-interface MenuPanelProps {
-  items: ContextMenuItem[];
-  position: { x: number; y: number };
-  level: number;
-  activePath: number[];
-  setActivePath: React.Dispatch<React.SetStateAction<number[]>>;
-  onClose: () => void;
-  isRoot?: boolean;
-  caret?: boolean;
-  align?: 'start' | 'end';
 }
 
 function MenuPanel({
@@ -289,8 +267,8 @@ function MenuPanel({
           if (item.disabled) {
             itemClass += `opacity-40 cursor-not-allowed text-ink-light `;
           } else if (item.destructive) {
-            itemClass += `text-accent `;
-            if (isHighlighted || isSubmenuOpen) itemClass += `bg-accent/10 `;
+            itemClass += `text-danger-text `;
+            if (isHighlighted || isSubmenuOpen) itemClass += `bg-danger/10 `;
           } else {
             itemClass += `text-ink-light `;
             if (isHighlighted || isSubmenuOpen) itemClass += `bg-[var(--planner-overlay-hover-bg)] `;
@@ -364,16 +342,6 @@ function MenuPanel({
   );
 }
 
-interface SubMenuWrapperProps {
-  parentItem: ContextMenuItem;
-  parentRef: React.RefObject<HTMLDivElement | null>;
-  itemIndex: number;
-  level: number;
-  activePath: number[];
-  setActivePath: React.Dispatch<React.SetStateAction<number[]>>;
-  onClose: () => void;
-}
-
 function SubMenuWrapper({
   parentItem,
   parentRef,
@@ -422,7 +390,7 @@ function SubMenuWrapper({
   );
 }
 
-function InlinePanel({ position, children }: { position: { x: number; y: number }; children: React.ReactNode }) {
+function InlinePanel({ position, children }: InlinePanelProps) {
   const panelRef = useRef<HTMLDivElement>(null);
   const [coords, setCoords] = useState({ top: position.y, left: position.x });
 

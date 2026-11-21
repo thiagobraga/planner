@@ -30,10 +30,10 @@ export function WeekSelector({ weekAnchor, today, weekStart, onWeekChange, onTod
       if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
     };
     document.addEventListener('keydown', onKeyDown);
-    document.addEventListener('mousedown', onPointerDown);
+    document.addEventListener('pointerdown', onPointerDown, true);
     return () => {
       document.removeEventListener('keydown', onKeyDown);
-      document.removeEventListener('mousedown', onPointerDown);
+      document.removeEventListener('pointerdown', onPointerDown, true);
     };
   }, [open]);
 
@@ -92,7 +92,7 @@ export function WeekSelector({ weekAnchor, today, weekStart, onWeekChange, onTod
         aria-expanded={open}
         aria-label={rangeLabel}
         onClick={toggle}
-        className="week-selector-trigger !gap-1 font-semibold uppercase tracking-[0.08em]"
+        className="week-selector-trigger !gap-1 uppercase tracking-[0.08em]"
       >
         <span className="inline-block w-[3.25em] text-center">{rangeStart}</span>{' '}
         <span className="inline-block w-[2em] text-center normal-case">{rangeJoiner}</span>{' '}
@@ -114,7 +114,7 @@ export function WeekSelector({ weekAnchor, today, weekStart, onWeekChange, onTod
           role="dialog"
           aria-label={t('page.selectWeek')}
           className="week-selector-popover absolute left-0 top-full z-30 mt-1 w-72 border border-border bg-cream p-3"
-          style={{ boxShadow: '0 8px 32px rgba(44,44,44,0.15)' }}
+          style={{ boxShadow: 'var(--shadow-overlay)' }}
         >
           <div className="mb-3 flex items-center justify-between gap-2">
             <Button
@@ -153,8 +153,8 @@ export function WeekSelector({ weekAnchor, today, weekStart, onWeekChange, onTod
                   aria-current={iso === todayKey ? 'date' : undefined}
                   data-in-week={inWeek ? 'true' : undefined}
                   onClick={() => pick(date)}
-                  className={`h-6 text-[13px] leading-6 text-ink transition-colors duration-[var(--motion-fast)] hover:bg-dot/35 ${
-                    inWeek ? 'bg-dot/35' : ''
+                  className={`h-6 text-[13px] leading-6 text-ink transition-colors duration-[var(--motion-fast)] hover:bg-border-subtle/35 ${
+                    inWeek ? 'bg-border-subtle/35' : ''
                   } ${iso === todayKey ? 'font-semibold' : ''}`}
                 >
                   {date.getDate()}

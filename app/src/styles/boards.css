@@ -1,3 +1,6 @@
+@import "./boardCards.css";
+@import "./boardFill.css";
+
 .board-scroll {
   width: 100%;
   max-width: 100%;
@@ -36,7 +39,7 @@
 }
 
 .board-column.is-over .board-column-cards {
-  background: color-mix(in srgb, var(--color-dot) 14%, transparent);
+  background: color-mix(in srgb, var(--color-border-subtle) 14%, transparent);
 }
 
 .board-column-header {
@@ -102,155 +105,6 @@
   margin-bottom: 0;
 }
 
-.board-card {
-  position: relative;
-  display: grid;
-  gap: 0;
-  min-height: 48px;
-  padding: 12px;
-  border: 0;
-  border-radius: 8px;
-  background: var(--planner-board-card-bg);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-ink-lighter) 68%, transparent);
-  box-sizing: border-box;
-}
-
-.board-card.is-dragging {
-  opacity: 0.4;
-}
-
-.board-card-topline {
-  display: grid;
-  grid-template-columns: 18px minmax(0, 1fr) 24px;
-  gap: 6px;
-  align-items: start;
-}
-
-.board-card-menu {
-  display: grid;
-  place-items: center;
-  width: 24px;
-  height: 24px;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: var(--color-ink-light);
-  cursor: pointer;
-}
-
-.board-card-topline h3 {
-  overflow-wrap: anywhere;
-  font-size: 13px;
-  font-weight: 500;
-  line-height: 24px;
-}
-
-.board-card-check {
-  display: grid;
-  width: 16px;
-  height: 16px;
-  margin-top: 4px;
-  place-items: center;
-  border: 1px solid var(--color-ink-lighter);
-  border-radius: 2px;
-  background: transparent;
-  color: var(--color-cream);
-}
-
-.board-card-check.is-complete {
-  border-color: var(--color-accent);
-  background: var(--color-accent);
-}
-
-.board-card-labels {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.board-card-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  min-height: 24px;
-  padding: 0 8px;
-  border: 1px solid;
-  border-radius: 999px;
-  font-size: 10px;
-  line-height: 22px;
-}
-
-.board-card-chip > span {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-}
-
-.board-card-description {
-  display: -webkit-box;
-  overflow: hidden;
-  color: var(--color-ink-light);
-  font-size: 11px;
-  line-height: 24px;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-}
-
-.board-card-checklist {
-  display: grid;
-  gap: 6px;
-  padding-top: 6px;
-}
-
-.board-card-checklist.is-empty {
-  min-height: 0;
-  padding-top: 0;
-  border-top-color: transparent;
-}
-
-.board-card-checklist.is-over {
-  background: color-mix(in srgb, var(--color-dot) 18%, transparent);
-}
-
-.board-card-checklist-count,
-.board-card-date {
-  color: var(--color-ink-light);
-  font-size: 10px;
-  line-height: 24px;
-}
-
-.board-card-checklist-row {
-  display: grid;
-  grid-template-columns: 16px minmax(0, 1fr);
-  gap: 6px;
-  align-items: start;
-  font-size: 11px;
-  line-height: 24px;
-}
-
-.board-card-checklist-row.is-dragging {
-  opacity: 0.4;
-}
-
-.board-card-checklist-row .board-card-check {
-  margin-top: 2px;
-}
-
-.board-card-checklist-dash {
-  display: grid;
-  width: 16px;
-  height: 16px;
-  margin-top: 2px;
-  place-items: center;
-  color: var(--color-ink-lighter);
-}
-
-.board-card-date {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-}
-
 .daily-week-board .board-column {
   overflow: visible;
   border: 0;
@@ -297,7 +151,7 @@
 }
 
 .daily-week-board .daily-board-column-title span {
-  color: var(--color-accent-light);
+  color: var(--color-accent-text);
 }
 
 .daily-week-board [data-column-id='migrate'] .board-column-header h2 {
@@ -397,7 +251,7 @@
 .daily-board-editor-save {
   border: 1px solid var(--color-accent);
   background: var(--color-accent);
-  color: var(--color-cream);
+  color: var(--color-on-accent);
 }
 
 .daily-board-editor-cancel {
@@ -411,7 +265,7 @@
 }
 
 .daily-board-editor [role='alert'] {
-  color: var(--color-accent);
+  color: var(--color-danger-text);
 }
 
 .status-task-groups {
@@ -475,7 +329,7 @@
 .board-error {
   min-height: 24px;
   margin-bottom: 12px;
-  color: var(--color-accent);
+  color: var(--color-danger-text);
   font-size: 12px;
   line-height: 24px;
 }

@@ -4,7 +4,7 @@
   flex-shrink: 0;
   height: 48px;
   padding: 0 24px;
-  border-bottom: 1px solid var(--color-dot);
+  border-bottom: 1px solid var(--color-border-subtle);
   background: var(--planner-sidebar-bg);
   color: var(--color-ink);
   position: relative;
@@ -30,7 +30,7 @@
 :root[data-theme='dark'] .planner-icon-dark { display: block; }
 .topbar-brand-name { min-width: 0; overflow: hidden; font-size: 18px; font-weight: 400; white-space: nowrap; text-overflow: ellipsis; }
 .topbar-brand-name > b { font-weight: 600; }
-.topbar-brand-name em { font-size: 12px; font-weight: 500; color: var(--color-accent); }
+.topbar-brand-name em { font-size: 12px; font-weight: 500; color: var(--color-accent-text); }
 
 /* Folder tabs sit on the bar's bottom edge */
 .topbar-nav { display: flex; align-items: flex-end; align-self: end; gap: 2px; min-width: 0; }
@@ -64,7 +64,7 @@
   margin-bottom: -1px;
   padding-bottom: 1px;
   height: calc(var(--topbar-tab-height) + 1px);
-  border-color: var(--color-dot);
+  border-color: var(--color-border-subtle);
   background: var(--planner-page-bg);
   font-weight: 500;
 }
@@ -91,7 +91,7 @@
 
 .topbar-actions { display: flex; align-items: center; gap: 8px; height: var(--topbar-tab-height); min-width: 0; justify-self: end; }
 .topbar-version-cluster { display: flex; align-items: center; gap: 8px; min-width: 0; }
-.topbar-version { color: var(--color-ink-light); font-size: 11px; white-space: nowrap; text-decoration: none; cursor: pointer; transition: color var(--motion-fast) var(--topbar-ease); }
+.topbar-version { font-size: 11px; white-space: nowrap; text-decoration: none; cursor: pointer; transition: color var(--motion-fast) var(--topbar-ease); }
 .topbar-version:hover, .topbar-version:focus-visible, .topbar-version[aria-current='page'] { color: var(--color-ink); text-decoration: underline; text-underline-offset: 2px; }
 .topbar-version:focus-visible { outline: 2px solid var(--color-ink); outline-offset: 2px; border-radius: 2px; }
 .topbar-icon-button {
@@ -113,7 +113,8 @@
 }
 .topbar-icon-button--active, .topbar-menu-button[aria-expanded='true'] { background: var(--planner-sidebar-active-bg); }
 .topbar-menu-icon { width: 20px; height: 20px; }
-.topbar-item:focus-visible, .topbar-icon-button:focus-visible, .topbar:focus-visible { outline: 2px solid var(--color-ink); outline-offset: 2px; }
+.topbar-item:focus-visible, .topbar-icon-button:focus-visible { outline: 2px solid var(--color-ink); outline-offset: 2px; }
+.topbar:focus, .topbar:focus-visible { outline: none; }
 
 .topbar-menu-brand { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; width: 100%; color: var(--color-ink); font-size: 15px; }
 .topbar-menu-brand b { font-weight: 600; }
@@ -126,7 +127,7 @@
 .topbar-account-identity strong, .topbar-account-identity span { overflow: hidden; text-overflow: ellipsis; }
 .ui-context-menu-item:has(.topbar-account-identity), .ui-context-menu-item:has(.topbar-menu-brand) { height: auto; opacity: 1; cursor: default; }
 .topbar-update-dot { position: absolute; top: 2px; right: 2px; width: 8px; height: 8px; border-radius: 50%; background: var(--color-moss); }
-.topbar-error { position: absolute; top: 100%; right: 8px; z-index: 60; padding: 8px 12px; border: 1px solid var(--color-accent); border-radius: 4px; color: var(--color-accent); background: var(--planner-overlay-bg); font-size: 12px; }
+.topbar-error { position: absolute; top: 100%; right: 8px; z-index: 60; padding: 8px 12px; border: 1px solid var(--color-danger); border-radius: 4px; color: var(--color-danger-text); background: var(--planner-overlay-bg); font-size: 12px; }
 
 /* Below the full 720px row: drop the version and tighten tabs so the wordmark keeps its room */
 @container topbar-row (max-width: 719px) {
@@ -145,7 +146,7 @@
     order: 1;
     height: calc(64px + env(safe-area-inset-bottom));
     padding: 0 8px calc(8px + env(safe-area-inset-bottom));
-    border-top: 1px solid var(--color-dot);
+    border-top: 1px solid var(--color-border-subtle);
     border-bottom: 0;
   }
   .topbar-brand, .topbar-search, .topbar-version-cluster { display: none; }
@@ -187,7 +188,7 @@
   /* Mirrors the desktop folder tab: hangs from the top edge and overlaps the bar border so it opens upward */
   .topbar[data-nav-style] .topbar-item--active {
     margin-top: -1px;
-    border-color: var(--color-dot);
+    border-color: var(--color-border-subtle);
     background: var(--planner-page-bg);
   }
   /* Phones always show icons; the bar's menu only decides whether labels show under them */

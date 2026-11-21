@@ -2,6 +2,7 @@
 @import "./styles/theme.css";
 @import "./styles/boards.css";
 @import "./styles/toolbar.css";
+@import "./styles/scrollbars.css";
 
 @theme {
   --dot-grid: 24px;
@@ -15,9 +16,9 @@
   --radius-xl: 16px;
 
   /* Shadow scale → shadow-* utilities. Tint + stroke remain primary; these are subtle. */
-  --shadow-subtle: 0 1px 2px rgba(68, 68, 61, 0.06), 0 1px 3px rgba(68, 68, 61, 0.08);
-  --shadow-medium: 0 4px 12px rgba(68, 68, 61, 0.1);
-  --shadow-overlay: 0 8px 32px rgba(44, 44, 44, 0.15);
+  --shadow-subtle: 0 1px 2px color-mix(in srgb, var(--palette-neutral-800) 6%, transparent), 0 1px 3px color-mix(in srgb, var(--palette-neutral-800) 8%, transparent);
+  --shadow-medium: 0 4px 12px color-mix(in srgb, var(--palette-neutral-800) 10%, transparent);
+  --shadow-overlay: 0 8px 32px color-mix(in srgb, var(--palette-neutral-950) 15%, transparent);
 
   --motion-fast: 150ms;
   --motion-default: 200ms;
@@ -31,15 +32,16 @@
 }
 
 :root {
-  --planner-drag-shadow: 0 4px 16px rgba(44, 44, 44, 0.18);
-  --planner-menu-disabled-shadow: 0 1px 0 rgba(255, 255, 255, 0.7);
+  --planner-drag-shadow: 0 4px 16px color-mix(in srgb, var(--palette-neutral-950) 18%, transparent);
+  --planner-menu-disabled-shadow: 0 1px 0 color-mix(in srgb, var(--palette-neutral-50) 70%, transparent);
 }
 
-:root[data-theme="dark"] {
-  --shadow-subtle: 0 1px 2px rgba(10, 8, 6, 0.3), 0 1px 3px rgba(10, 8, 6, 0.35);
-  --shadow-medium: 0 4px 12px rgba(10, 8, 6, 0.4);
-  --shadow-overlay: 0 8px 32px rgba(10, 8, 6, 0.5);
-  --planner-drag-shadow: 0 4px 16px rgba(10, 8, 6, 0.45);
+:root[data-theme="dark"],
+:root[data-theme="nord-dark"] {
+  --shadow-subtle: 0 1px 2px color-mix(in srgb, var(--palette-neutral-950) 30%, transparent), 0 1px 3px color-mix(in srgb, var(--palette-neutral-950) 35%, transparent);
+  --shadow-medium: 0 4px 12px color-mix(in srgb, var(--palette-neutral-950) 40%, transparent);
+  --shadow-overlay: 0 8px 32px color-mix(in srgb, var(--palette-neutral-950) 50%, transparent);
+  --planner-drag-shadow: 0 4px 16px color-mix(in srgb, var(--palette-neutral-950) 45%, transparent);
   --planner-menu-disabled-shadow: none;
 }
 
@@ -147,7 +149,7 @@ kbd {
   display: inline-block;
   min-width: 18px;
   padding: 0 5px;
-  background: var(--color-dot);
+  background: var(--color-border-subtle);
   border-radius: 3px;
   font-family: monospace;
   font-size: 10px;
@@ -158,33 +160,6 @@ kbd {
 button,
 [role="button"] {
   cursor: pointer;
-}
-
-/* Thin, quiet scrollbars for app scroll surfaces */
-* {
-  scrollbar-width: thin;
-  scrollbar-color: var(--planner-scrollbar-thumb) transparent;
-
-  &::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-  }
-  &::-webkit-scrollbar-track {
-    background: transparent;
-  }
-  &::-webkit-scrollbar-thumb {
-    background-color: var(--planner-scrollbar-thumb);
-    border-radius: 999px;
-
-    &:hover {
-      background-color: var(--planner-scrollbar-thumb-hover);
-    }
-  }
-  &::-webkit-scrollbar-button {
-    display: none;
-    width: 0;
-    height: 0;
-  }
 }
 
 /* both-edges keeps the page column centered under the topbar row */
@@ -274,19 +249,12 @@ button,
   background: transparent;
 }
 
-.habit-timeline-days-viewport {
-  scrollbar-width: none;
-  touch-action: pan-x;
-
-  &::-webkit-scrollbar {
-    display: none;
-  }
-}
-
+/* The scroller's 24px top padding counts toward sticky offsets, so 24px here
+   lands the selector right under the stuck page header. */
 .habit-timeline-selectors-sticky,
 .habit-calendar-selector-sticky {
   position: sticky;
-  top: 48px;
+  top: 24px;
   z-index: 21;
   padding-top: 24px;
   background-color: var(--planner-page-bg);
@@ -429,7 +397,7 @@ button,
   top: 0;
   bottom: 0;
   border-radius: 3px;
-  border: 1px dashed var(--color-dot);
+  border: 1px dashed var(--color-border-subtle);
   background: color-mix(in srgb, var(--color-ink-light) 4%, transparent);
 }
 
@@ -450,7 +418,7 @@ button,
 .habit-calendar-section--drop-target {
   background: color-mix(in srgb, var(--color-ink-light) 6%, transparent);
   border-radius: 4px;
-  box-shadow: inset 0 0 0 1px var(--color-dot);
+  box-shadow: inset 0 0 0 1px var(--color-border-subtle);
 }
 
 /* The block travelling under the pointer: the rows themselves, lifted. */
@@ -467,7 +435,7 @@ button,
     in particular painted the overlay's own cream past the end of the rows,
     leaving a strip that the translucency never appeared to reach.
   */
-  outline: 1px solid var(--color-dot);
+  outline: 1px solid var(--color-border-subtle);
   background: var(--color-cream);
   padding: 0;
   box-shadow: var(--planner-drag-shadow);
@@ -535,13 +503,13 @@ button,
 .task-list-slot {
   height: 24px;
   border-radius: 3px;
-  border: 1px dashed var(--color-dot);
+  border: 1px dashed var(--color-border-subtle);
   background: color-mix(in srgb, var(--color-ink-light) 4%, transparent);
 }
 
 /* A row Reorganize would move to a new date, while the user reviews the preview. */
 .task-list-item--moved {
-  background: color-mix(in srgb, var(--color-ink-light, #8b867e) 14%, var(--color-cream));
+  background: color-mix(in srgb, var(--color-ink-light) 14%, var(--color-cream));
   border-radius: 3px;
   transition: background 150ms ease;
 }
@@ -555,7 +523,7 @@ button,
 .reorganize-confirm button {
   background: none;
   border: none;
-  color: var(--color-accent, #c9483b);
+  color: var(--color-accent-text);
   cursor: pointer;
   text-decoration: underline;
   text-underline-offset: 2px;
@@ -605,9 +573,9 @@ select {
   }
 
   option:checked {
-    background: linear-gradient(var(--color-accent-light), var(--color-accent-light));
-    background-color: var(--color-accent-light);
-    color: var(--color-cream);
+    background: linear-gradient(var(--color-accent), var(--color-accent));
+    background-color: var(--color-accent);
+    color: var(--color-on-accent);
   }
 
   option:disabled {
@@ -683,7 +651,7 @@ textarea:focus-visible {
   z-index: 40;
   min-width: 160px;
   background: var(--planner-page-bg, var(--color-cream));
-  border: 1px solid var(--color-dot);
+  border: 1px solid var(--color-border-subtle);
   border-radius: 6px;
   padding: 4px 0;
   box-shadow: var(--shadow-overlay);
@@ -708,7 +676,7 @@ textarea:focus-visible {
   }
 }
 .collections-index-menu button[data-destructive] {
-  color: var(--color-accent);
+  color: var(--color-danger-text);
 }
 
 @media (max-width: 640px) {
@@ -721,6 +689,11 @@ textarea:focus-visible {
   }
   .habits-page {
     --page-header-toolbar-space: 120px;
+  }
+  /* Reach into the main column's 12px right padding so the name column gets one
+     more 24px cell next to the full week. */
+  .habit-timeline {
+    margin-right: -12px;
   }
   .page-header-copy {
     width: 100%;

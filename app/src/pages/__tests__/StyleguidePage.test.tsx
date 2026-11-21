@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, within, fireEvent } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { StyleguidePage } from '../StyleguidePage';
 import { MemoryRouter } from 'react-router';
 import { fetchPreferences } from '../../api/client';
@@ -31,6 +31,10 @@ const basePreferences: Preferences = {
 beforeEach(() => {
   mockFetchPreferences.mockReset();
   mockFetchPreferences.mockResolvedValue(basePreferences);
+});
+
+afterEach(() => {
+  delete document.documentElement.dataset.theme;
 });
 
 function renderPage() {
@@ -84,14 +88,23 @@ describe('StyleguidePage (smoke)', () => {
     expect(within(indicators!).getByText("Offline. Changes sync automatically when you're back online.")).toBeInTheDocument();
   });
 
-  it('renders color swatches', async () => {
+  it('renders every theme, shade and semantic usage without switching the saved theme', async () => {
+    document.documentElement.dataset.theme = 'nord-dark';
     renderPage();
 
     expect(await screen.findByText('Colors')).toBeInTheDocument();
-    expect(screen.getByText('Primary Palette')).toBeInTheDocument();
-    expect(screen.getByText('Secondary Palette')).toBeInTheDocument();
-    expect(screen.getByText('--color-ink')).toBeInTheDocument();
-    expect(screen.getByText('--color-cream')).toBeInTheDocument();
+    for (const name of ['White', 'Beige', 'Dark', 'Nord Light', 'Nord Dark']) {
+      const palette = screen.getByRole('region', { name: `${name} palette` });
+      expect(within(palette).getAllByRole('list')).toHaveLength(6);
+      expect(within(palette).getAllByRole('listitem')).toHaveLength(66);
+      expect(within(palette).getByText('--color-ink')).toBeInTheDocument();
+      expect(within(palette).getByText('--color-cream')).toBeInTheDocument();
+      expect(within(palette).getByText('--color-danger')).toBeInTheDocument();
+      expect(within(palette).getAllByText('50')).toHaveLength(6);
+      expect(within(palette).getAllByText('950')).toHaveLength(6);
+      expect(within(palette).getAllByText(/^#[\da-f]{6}$/i)).toHaveLength(66);
+    }
+    expect(document.documentElement).toHaveAttribute('data-theme', 'nord-dark');
   });
 
   it('renders interactive form elements', async () => {

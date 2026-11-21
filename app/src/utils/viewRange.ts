@@ -1,5 +1,6 @@
 import type { RangePreset, RangeSpan, ResolvedRange, ViewLayout, ViewRange } from '../types/view';
-import { fmtISO, startOfWeek, type WeekStart } from './date';
+import { fmtISO, startOfWeek } from './date';
+import type { WeekStart } from '../types/utils';
 
 const PRESETS: readonly RangePreset[] = ['today', 'tomorrow', 'week', 'next7', 'upcoming', 'month'];
 const SPANS: readonly RangeSpan[] = ['d1', 'd2', 'd3', 'd4', 'd5', 'd6', 'w1', 'w2', 'w3'];

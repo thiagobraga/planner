@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { resolveTaskIndent } from '../taskIndent';
-import type { Task } from '../../components/TaskItem';
+import type { Task } from '../../types/task';
 
 const row = (id: string, orderValue: number, extra: Partial<Task> = {}): Task => ({
   id, title: id, orderValue, priority: 4, isCompleted: false, type: 'task',
@@ -24,10 +24,27 @@ describe('resolveTaskIndent', () => {
     expect(unindent.input).toMatchObject({ parentTaskId: null, position: 1, scope });
   });
 
-  it('does not cross section, day, or collection boundaries', () => {
-    for (const extra of [{ sectionId: 's2' }, { dueDate: '2026-11-07' }, { collectionId: 'c2' }]) {
+  it('does not cross section or collection boundaries', () => {
+    for (const extra of [{ sectionId: 's2' }, { collectionId: 'c2' }]) {
       expect(resolveTaskIndent([row('a', 0, extra), row('b', 1000)], 'b', 1, scope)).toBeNull();
     }
+  });
+
+  it.each([
+    { kind: 'collection', collectionId: 'c1' },
+    scope,
+    { kind: 'status', collectionId: 'c1', statusId: 'ready' },
+    { kind: 'priority', collectionId: 'c1', priority: 4 },
+  ] as const)('indents and unindents across due dates in $kind lists', (orderScope) => {
+    const tasks = [row('a', 0), row('b', 1000, { dueDate: undefined })];
+    const indent = resolveTaskIndent(tasks, 'b', 1, orderScope);
+    expect(indent?.input.parentTaskId).toBe('a');
+    expect(resolveTaskIndent(indent?.tasks ?? [], 'b', -1, orderScope)?.input.parentTaskId).toBeNull();
+  });
+
+  it('keeps tasks on separate days in Daily', () => {
+    const tasks = [row('a', 0, { dueDate: '2026-11-07' }), row('b', 1000)];
+    expect(resolveTaskIndent(tasks, 'b', 1, { kind: 'day', dueDate: '2026-11-06' })).toBeNull();
   });
 
   it('rejects a move that would put a descendant past depth five', () => {

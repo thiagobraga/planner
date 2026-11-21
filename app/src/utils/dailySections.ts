@@ -1,8 +1,8 @@
 import type { ApiTask } from '../types/api';
-import type { Task } from '../components/TaskItem';
 import type { ApiDailyView, DaySection } from '../types/daily';
 import { fmtISO, fmtISOInTimeZone } from './date';
 import { scheduleFieldsFromApi } from './taskTime';
+import type { Task } from '../types/task';
 
 export function dayLabel(d: Date, locale: 'en' | 'pt-BR', format: string = 'MMM DD ddd'): string {
   const clean = locale === 'pt-BR' ? (val: string) => val.replace(/\./g, '') : (val: string) => val;
@@ -47,6 +47,44 @@ export function apiToTask(t: ApiTask): Task {
     ...scheduleFieldsFromApi(t),
     type: t.type,
     createdAt: t.createdAt,
+    collectionName: t.collectionName,
+    collectionColor: t.collectionColor,
+    collectionIsInbox: t.collectionIsInbox,
+    sectionName: t.sectionName,
+  };
+}
+
+/** Optimistic move to another collection; the API clears the section on such a move. */
+export function movedToCollection(task: Task, to: { id: string; name: string; color: string; isInbox?: boolean }): Task {
+  if (task.collectionId === to.id) return task;
+  return {
+    ...task,
+    collectionId: to.id,
+    collectionName: to.name,
+    collectionColor: to.color,
+    collectionIsInbox: to.isInbox ?? false,
+    sectionId: undefined,
+    sectionName: undefined,
+  };
+}
+
+/**
+ * Sync payloads leave out the names Daily joins in. Keep the row's own names
+ * while it stays in the same collection and section; otherwise the caller
+ * refetches, so `needsNames` says whether the names are now unknown.
+ */
+export function withJoinedNames(next: Task, prev: Task): { task: Task; needsNames: boolean } {
+  if (next.collectionName !== undefined) return { task: next, needsNames: false };
+  if (next.collectionId !== prev.collectionId || next.sectionId !== prev.sectionId) return { task: next, needsNames: true };
+  return {
+    task: {
+      ...next,
+      collectionName: prev.collectionName,
+      collectionColor: prev.collectionColor,
+      collectionIsInbox: prev.collectionIsInbox,
+      sectionName: prev.sectionName,
+    },
+    needsNames: false,
   };
 }
 

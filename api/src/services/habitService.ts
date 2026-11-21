@@ -2,41 +2,34 @@ import type { PoolClient } from "pg";
 import pool from "../db/pool.js";
 import { AppError } from "../utils/AppError.js";
 import { buildEvent, publishEvent } from "./syncService.js";
+import type {
+  CompletionResult,
+  CreateHabitInput,
+  Habit,
+  HabitEntityType,
+  HabitGroup,
+  HabitGroupRow,
+  HabitRow,
+  MoveHabitGroupInput,
+  MoveHabitGroupResult,
+  MoveHabitInput,
+  MoveHabitResult,
+  UpdateHabitGroupInput,
+  UpdateHabitInput,
+} from "../types/habit.js";
 
-interface HabitRow {
-  id: string;
-  user_id: string;
-  name: string;
-  parent_id: string | null;
-  group_id: string | null;
-  order_value: number;
-  created_at: string;
-}
-
-interface HabitGroupRow {
-  id: string;
-  user_id: string;
-  name: string;
-  icon: string | null;
-  order_value: number;
-}
-
-export interface Habit {
-  id: string;
-  name: string;
-  parentId: string | null;
-  groupId: string | null;
-  orderValue: number;
-  createdAt: string;
-  completions: string[];
-}
-
-export interface HabitGroup {
-  id: string;
-  name: string;
-  icon: string | null;
-  orderValue: number;
-}
+export type {
+  CompletionResult,
+  CreateHabitInput,
+  Habit,
+  HabitGroup,
+  MoveHabitGroupInput,
+  MoveHabitGroupResult,
+  MoveHabitInput,
+  MoveHabitResult,
+  UpdateHabitGroupInput,
+  UpdateHabitInput,
+};
 
 function formatHabit(row: HabitRow, completions: string[] = []): Habit {
   return {
@@ -58,8 +51,6 @@ function formatGroup(row: HabitGroupRow): HabitGroup {
     orderValue: row.order_value,
   };
 }
-
-type HabitEntityType = "habit" | "habit_completion" | "habit_group";
 
 function emit(userId: string, entityType: HabitEntityType, eventType: "created" | "updated" | "deleted", entityId: string, payload?: unknown) {
   publishEvent(
@@ -167,12 +158,6 @@ async function completionsFor(habitIds: string[]): Promise<Map<string, string[]>
   return byHabit;
 }
 
-export interface CreateHabitInput {
-  name: string;
-  parentId?: string | null;
-  groupId?: string | null;
-}
-
 export async function createHabit(userId: string, input: CreateHabitInput): Promise<Habit> {
   const validName = validateName(input.name);
   const parentId = input.parentId ?? null;
@@ -213,13 +198,6 @@ export async function createHabit(userId: string, input: CreateHabitInput): Prom
   const habit = formatHabit(row, completions);
   emit(userId, "habit", "created", habit.id, habit);
   return habit;
-}
-
-export interface UpdateHabitInput {
-  name?: string;
-  parentId?: string | null;
-  groupId?: string | null;
-  orderValue?: number;
 }
 
 export async function updateHabit(userId: string, habitId: string, updates: UpdateHabitInput): Promise<Habit> {
@@ -326,12 +304,6 @@ export async function archiveHabit(userId: string, habitId: string): Promise<voi
   }
 }
 
-export interface CompletionResult {
-  habitId: string;
-  date: string;
-  isCompleted: boolean;
-}
-
 export async function toggleCompletion(
   userId: string,
   habitId: string,
@@ -401,12 +373,6 @@ export async function createGroup(userId: string, name: string): Promise<HabitGr
   const group = formatGroup(result.rows[0] as HabitGroupRow);
   emit(userId, "habit_group", "created", group.id, group);
   return group;
-}
-
-export interface UpdateHabitGroupInput {
-  name?: string;
-  icon?: string | null;
-  orderValue?: number;
 }
 
 export async function updateGroup(userId: string, groupId: string, updates: UpdateHabitGroupInput): Promise<HabitGroup> {
@@ -482,17 +448,6 @@ export async function archiveHabitGroup(userId: string, groupId: string): Promis
   for (const row of habitsResult.rows as { id: string }[]) {
     emit(userId, "habit", "deleted", row.id);
   }
-}
-
-export interface MoveHabitInput {
-  parentId: string | null;
-  groupId: string | null;
-  position: number;
-}
-
-export interface MoveHabitResult {
-  moved: Habit[];
-  reordered: Habit[];
 }
 
 function validateMoveHabitInput(input: MoveHabitInput): void {
@@ -668,14 +623,6 @@ export async function moveHabit(userId: string, habitId: string, input: MoveHabi
   });
 
   return { moved, reordered };
-}
-
-export interface MoveHabitGroupInput {
-  position: number;
-}
-
-export interface MoveHabitGroupResult {
-  reordered: HabitGroup[];
 }
 
 function validateMoveGroupInput(input: MoveHabitGroupInput): void {

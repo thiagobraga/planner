@@ -7,6 +7,7 @@ import { dailyView } from '../../test/dailyFixtures';
 import type { ApiDailyView } from '../../types/daily';
 import { PlannerDragProvider } from '../../contexts/PlannerDragContext';
 import {
+  apiDeleteTask,
   apiToggleTask,
   apiUpdatePreferences,
   fetchCollections,
@@ -28,6 +29,7 @@ vi.mock('../../api/client', async (importOriginal) => ({
   fetchCollections: vi.fn(),
   fetchPreferences: vi.fn(),
   apiToggleTask: vi.fn(),
+  apiDeleteTask: vi.fn(),
   apiUpdatePreferences: vi.fn(),
 }));
 
@@ -35,6 +37,7 @@ const mockFetchDaily = vi.mocked(fetchDaily);
 const mockFetchCollections = vi.mocked(fetchCollections);
 const mockFetchPreferences = vi.mocked(fetchPreferences);
 const mockApiToggleTask = vi.mocked(apiToggleTask);
+const mockApiDeleteTask = vi.mocked(apiDeleteTask);
 const mockApiUpdatePreferences = vi.mocked(apiUpdatePreferences);
 const scrollIntoView = vi.fn();
 
@@ -72,6 +75,7 @@ beforeEach(() => {
   mockFetchCollections.mockReset();
   mockFetchPreferences.mockReset();
   mockApiToggleTask.mockReset();
+  mockApiDeleteTask.mockReset();
   mockApiUpdatePreferences.mockReset();
   scrollIntoView.mockReset();
 
@@ -207,5 +211,29 @@ describe('DailyPage behavior visibility', () => {
       () => expect(screen.getByRole('button', { name: 'Complete: Visible task' })).toBeInTheDocument(),
       { timeout: 4000 },
     );
+  });
+
+  it('refetches daily tasks when a task-created window event fires', async () => {
+    renderPage();
+
+    await screen.findByRole('button', { name: 'Complete: Visible task' });
+    const initialCalls = mockFetchDaily.mock.calls.length;
+
+    fireEvent(window, new Event('task-created'));
+
+    await waitFor(() => expect(mockFetchDaily.mock.calls.length).toBeGreaterThan(initialCalls));
+  });
+
+  it('deletes a task via its context menu and refetches if deletion fails', async () => {
+    mockApiDeleteTask.mockRejectedValueOnce(new Error('delete failed'));
+    renderPage();
+
+    const row = await screen.findByText('Visible task');
+    fireEvent.contextMenu(row, { clientX: 50, clientY: 50 });
+
+    const deleteItem = await screen.findByRole('menuitem', { name: 'Delete' });
+    fireEvent.click(deleteItem);
+
+    await waitFor(() => expect(mockApiDeleteTask).toHaveBeenCalledWith('task-1'));
   });
 });

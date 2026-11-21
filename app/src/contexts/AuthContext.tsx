@@ -6,16 +6,11 @@ import { queryClient } from '../api/queryClient';
 import { connectSocket, disconnectSocket } from '../utils/socket';
 import { useOfflineQueueReplay } from '../hooks/useOfflineQueueReplay';
 import { clearUserMutations } from '../utils/offlineQueue';
+import { BACKGROUND_CACHE_KEY } from '../utils/theme';
+import { clearDocumentDrafts } from '../hooks/useDocumentDraft';
 import { useI18n } from '../i18n/I18nContext';
 import { setUnauthorizedHandler } from '../utils/authEvents';
-
-interface AuthContextValue {
-  user: AuthUser | null;
-  isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, displayName?: string) => Promise<void>;
-  logout: () => void;
-}
+import type { AuthContextValue } from '../types/hooks';
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
@@ -100,6 +95,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsAuthenticated(false);
     setCurrentUserId(null);
     queryClient.clear();
+    try {
+      localStorage.removeItem(BACKGROUND_CACHE_KEY);
+    } catch {
+      // Ignore storage access errors (private browsing).
+    }
+    clearDocumentDrafts();
     clearUserMutations(uid).catch(() => {});
   }, []);
 

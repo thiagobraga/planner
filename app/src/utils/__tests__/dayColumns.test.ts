@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { buildDayColumns, slotTaskIntoColumn } from '../dayColumns';
-import type { Task } from '../../components/TaskItem';
+import type { Task } from '../../types/task';
 
 function task(overrides: Partial<Task> = {}): Task {
   return {

@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { fmtISO, startOfDay, type WeekStart } from '../../utils/date';
+import { fmtISO, startOfDay } from '../../utils/date';
+import type { WeekStart } from '../../types/utils';
 import { MonthCalendar } from '../ui/MonthCalendar';
 
 export function DatePickerSpecimen({ weekStart }: { weekStart: WeekStart }) {

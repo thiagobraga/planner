@@ -1,5 +1,8 @@
 import { Router, type Request, type Response, type NextFunction } from "express";
 import { createTask, updateTask, completeTask, reopenTask, reorderTask, moveTask, deleteTask, reorganizeTasks, type ReorganizeMove } from "../services/taskService.js";
+import { getTaskDetail } from "../services/task/detail.js";
+import { UUID_RE } from "../services/document/schema.js";
+import { AppError } from "../utils/AppError.js";
 import { validateCreateTask, validateUpdateTask, validateReorderPosition } from "../utils/taskValidation.js";
 
 const router: ReturnType<typeof Router> = Router();
@@ -19,6 +22,16 @@ router.post("/", async (req: Request, res: Response, next: NextFunction) => {
     validateCreateTask(req.body);
     const task = await createTask(req.userId!, req.body);
     res.status(201).json(task);
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.get("/:id", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const id = req.params.id as string;
+    if (!UUID_RE.test(id)) throw new AppError({ code: "NOT_FOUND", message: "Task not found", statusCode: 404 });
+    res.json(await getTaskDetail(id, req.userId!));
   } catch (err) {
     next(err);
   }

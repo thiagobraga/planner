@@ -1,9 +1,8 @@
 import type { ApiTask } from './api';
-import type { Task } from '../components/TaskItem';
-import type { TaskListCallbacks } from '../components/TaskList';
+import type { Task } from './task';
+import type { TaskListCallbacks } from './task';
 import type { BoardViewMode } from './board';
-import type { DayColumn } from '../utils/dayColumns';
-import type { WeekStart } from '../utils/date';
+import type { DayColumn, WeekStart } from './utils';
 
 export interface DailyBoardColumnProps {
   column: DayColumn;

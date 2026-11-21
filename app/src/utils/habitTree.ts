@@ -1,29 +1,5 @@
 import type { ApiHabit, ApiHabitGroup } from '../types/api';
-
-// A parent habit is never "half done" in the database - it has no completion rows
-// at all. This is the derived state the UI renders in its place.
-export type DayState = 'empty' | 'half' | 'full';
-
-export interface HabitNode {
-  id: string;
-  name: string;
-  parentId: string | null;
-  groupId: string | null;
-  orderValue: number;
-  createdAt?: string;
-  completions: Set<string>;
-  children: HabitNode[];
-}
-
-export interface HabitGroupSection {
-  group: ApiHabitGroup;
-  habits: HabitNode[];
-}
-
-export interface HabitSections {
-  ungrouped: HabitNode[];
-  groups: HabitGroupSection[];
-}
+import type { DayState, HabitGroupSection, HabitNode, HabitSections } from '../types/habits';
 
 function toNode(habit: ApiHabit): HabitNode {
   return {

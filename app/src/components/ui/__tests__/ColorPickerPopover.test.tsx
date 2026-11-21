@@ -371,7 +371,7 @@ describe('ColorPickerPopover', () => {
 
   it('closes when clicking outside the panel', () => {
     const { onClose } = renderPicker();
-    fireEvent.mouseDown(document.body);
+    fireEvent.pointerDown(document.body);
     expect(onClose).toHaveBeenCalled();
   });
 

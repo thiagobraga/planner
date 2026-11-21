@@ -1,4 +1,7 @@
 import { expect, type Page } from '@playwright/test';
+import type { AuthedApi } from './api';
+import type { Preferences } from '../../src/types/api';
+import type { DailyViewSettings } from '../../src/types/view';
 
 interface ViewChoice {
   layout?: 'List' | 'Columns';
@@ -27,4 +30,17 @@ export async function chooseView(page: Page, { layout, style, range }: ViewChoic
 export async function chooseTheme(page: Page, name: RegExp | string): Promise<void> {
   await page.getByRole('button', { name: 'Planner menu', exact: true }).click();
   await page.getByRole('radiogroup', { name: 'Theme' }).getByRole('radio', { name }).click();
+}
+
+/**
+ * Waits until the server holds the Daily view the page just picked. A save still in flight
+ * when the test navigates or reloads can land after the next page's own save and undo it.
+ */
+export async function expectSavedDailyView(
+  api: Pick<AuthedApi, 'get'>,
+  expected: Partial<DailyViewSettings>,
+): Promise<void> {
+  await expect
+    .poll(async () => (await api.get<Preferences>('/preferences')).dailyView)
+    .toMatchObject(expected);
 }

@@ -1,5 +1,6 @@
-import { weekdayColumnIndex, weekdayShortNames, type WeekStart } from '../../utils/date';
+import { weekdayColumnIndex, weekdayShortNames } from '../../utils/date';
 import { useI18n } from '../../i18n/I18nContext';
+import type { MonthlyCalendarSpecimenProps } from '../../types/widgets';
 
 const DAYS = Array.from({ length: 31 }, (_, i) => i + 1);
 const MONTH_START_DAY = 5;
@@ -13,23 +14,18 @@ const MONTH_TASKS: Record<number, string[]> = {
   28: ['Plan June'],
 };
 
-interface MonthlyCalendarSpecimenProps {
-  compact?: boolean;
-  weekStart: WeekStart;
-}
-
 export function MonthlyCalendarSpecimen({ compact = false, weekStart }: MonthlyCalendarSpecimenProps) {
   const { locale } = useI18n();
   const weekdays = weekdayShortNames(weekStart, locale);
   const startOffset = weekdayColumnIndex(MONTH_START_DAY, weekStart);
 
   return (
-    <div className="grid grid-cols-7 border-t border-l border-dot">
+    <div className="grid grid-cols-7 border-t border-l border-border-subtle">
       {weekdays.map((day) => (
         <div
           key={day}
           data-weekday-label
-          className={`h-6 leading-6 ${compact ? 'px-1' : 'px-2'} text-[10px] tracking-[0.08em] uppercase text-ink-light border-r border-b border-dot font-medium`}
+          className={`h-6 leading-6 ${compact ? 'px-1' : 'px-2'} text-[10px] tracking-[0.08em] uppercase text-ink-light border-r border-b border-border-subtle font-medium`}
         >
           {day}
         </div>
@@ -39,7 +35,7 @@ export function MonthlyCalendarSpecimen({ compact = false, weekStart }: MonthlyC
         <div
           key={`blank-${i}`}
           data-calendar-blank
-          className={`${compact ? 'min-h-14' : 'min-h-[72px]'} border-r border-b border-dot bg-(--planner-monthly-ledger-bg)`}
+          className={`${compact ? 'min-h-14' : 'min-h-[72px]'} border-r border-b border-border-subtle bg-(--planner-monthly-ledger-bg)`}
         />
       ))}
 
@@ -48,7 +44,7 @@ export function MonthlyCalendarSpecimen({ compact = false, weekStart }: MonthlyC
         return (
           <div
             key={day}
-            className={`${compact ? 'min-h-14 p-1' : 'min-h-[72px] py-1 px-2'} border-r border-b border-dot`}
+            className={`${compact ? 'min-h-14 p-1' : 'min-h-[72px] py-1 px-2'} border-r border-b border-border-subtle`}
           >
             <div
               className={`text-xs leading-5 text-ink ${day === 16 ? 'font-semibold' : 'font-normal'}`}

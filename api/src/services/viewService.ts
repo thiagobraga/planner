@@ -2,60 +2,10 @@ import pool from "../db/pool.js";
 import { AppError } from "../utils/AppError.js";
 import { listSections } from "./sectionService.js";
 import { attachLabels } from "./labelService.js";
-import type { Status } from "./statusService.js";
+import type { Status } from "../types/status.js";
 import { formatTimeFields } from "../utils/taskTime.js";
-import type { TaskTimeRow } from "../types/task.js";
-
-export interface TaskRow extends TaskTimeRow {
-  id: string;
-  user_id: string;
-  collection_id: string;
-  section_id: string | null;
-  parent_task_id: string | null;
-  assignee_user_id: string | null;
-  title: string;
-  description: string | null;
-  priority: number;
-  due_date: string | Date | null;
-  due_timezone: string | null;
-  recurrence_rule: object | null;
-  is_completed: boolean;
-  completed_at: string | null;
-  order_value: number;
-  effective_order_value?: number;
-  depth: number;
-  type: string;
-  status_id: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-interface PreferencesRow {
-  time_zone: string;
-  hide_completed_tasks: boolean;
-  show_notes: boolean;
-}
-
-interface StatusRow {
-  id: string;
-  collection_id: string;
-  name: string;
-  color: string;
-  completion_status_id: string | null;
-  order_value: number;
-  next_status_mode: "default" | "custom" | "disabled";
-  next_status_id: string | null;
-  accept_status_id: string | null;
-  reject_status_id: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-interface BoardOrderRow {
-  task_id: string;
-  scope_type: "status" | "priority";
-  position: number;
-}
+import type { ViewTaskRow as TaskRow } from "../types/task.js";
+import type { BoardOrderRow, ViewOptions, ViewPreferencesRow, ViewStatusRow } from "../types/daily.js";
 
 export function formatTask(row: TaskRow) {
   return {
@@ -80,6 +30,12 @@ export function formatTask(row: TaskRow) {
     statusId: row.status_id,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    ...(row.collection_name !== undefined && {
+      collectionName: row.collection_name,
+      collectionColor: row.collection_color,
+      collectionIsInbox: row.collection_is_inbox,
+    }),
+    ...(row.section_name != null && { sectionName: row.section_name }),
   };
 }
 
@@ -110,7 +66,7 @@ async function getBoardMetadata(collectionId: string, userId: string) {
     boardOrder[row.scope_type][row.task_id] = Number(row.position);
   }
 
-  const statuses: Status[] = (statusesResult.rows as StatusRow[]).map((row) => ({
+  const statuses: Status[] = (statusesResult.rows as ViewStatusRow[]).map((row) => ({
     id: row.id,
     collectionId: row.collection_id,
     name: row.name,
@@ -124,7 +80,7 @@ async function getBoardMetadata(collectionId: string, userId: string) {
     updatedAt: row.updated_at,
   }));
 
-  const completionStatusId = (statusesResult.rows[0] as StatusRow | undefined)?.completion_status_id ?? null;
+  const completionStatusId = (statusesResult.rows[0] as ViewStatusRow | undefined)?.completion_status_id ?? null;
   return { statuses, completionStatusId, boardOrder };
 }
 
@@ -144,7 +100,7 @@ export async function getViewPreferences(userId: string, now: Date = new Date())
     [userId],
   );
 
-  const row = result.rows[0] as PreferencesRow | undefined;
+  const row = result.rows[0] as ViewPreferencesRow | undefined;
   const timeZone = row?.time_zone ?? "UTC";
   return {
     timeZone,
@@ -173,11 +129,6 @@ export function addDaysISO(date: string, days: number): string {
   const dt = new Date(Date.UTC(y, m - 1, d));
   dt.setUTCDate(dt.getUTCDate() + days);
   return dt.toISOString().slice(0, 10);
-}
-
-export interface ViewOptions {
-  /** A board grouped by status shows its completion column even when completed tasks are hidden. */
-  includeCompleted?: boolean;
 }
 
 export async function getInboxView(userId: string, now: Date = new Date(), options: ViewOptions = {}) {

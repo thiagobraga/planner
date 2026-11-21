@@ -26,6 +26,7 @@ describe('WeekSelector', () => {
   it('shows the week range and shifts a week with the arrows', () => {
     const { onWeekChange } = setup();
     expect(screen.getByRole('button', { name: RANGE })).toHaveClass('ui-button');
+    expect(screen.getByRole('button', { name: RANGE })).not.toHaveClass('font-semibold');
     expect(screen.getByRole('button', { name: 'Previous week' })).toHaveClass('ui-button');
     expect(screen.getByRole('button', { name: 'Next week' })).toHaveClass('ui-button');
 
@@ -96,7 +97,7 @@ describe('WeekSelector', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
 
     fireEvent.click(trigger);
-    fireEvent.mouseDown(document.body);
+    fireEvent.pointerDown(document.body);
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 });

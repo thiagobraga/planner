@@ -88,7 +88,7 @@ describe('FilterBar', () => {
 
   it('syntax-highlights tokens with keyword class', () => {
     const { container } = render(<FilterBar value="#work" />);
-    const keywordSpan = container.querySelector('.text-accent');
+    const keywordSpan = container.querySelector('.text-accent-text');
     expect(keywordSpan).toBeInTheDocument();
     expect(keywordSpan).toHaveTextContent('#work');
   });

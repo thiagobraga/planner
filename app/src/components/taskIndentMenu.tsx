@@ -1,5 +1,5 @@
 import { IndentIncrease, IndentDecrease } from 'lucide-react';
-import type { ContextMenuItem } from './ui/ContextMenu';
+import type { ContextMenuItem } from '../types/contextMenu';
 import type { TaskIndentMenuContext, TaskIndentHandler } from '../types/taskIndent';
 import type { TranslationKey } from '../i18n/catalogs';
 import { resolveTaskIndent } from '../utils/taskIndent';

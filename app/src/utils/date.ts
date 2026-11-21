@@ -89,7 +89,7 @@ export function startOfDay(d: Date): Date {
   return x;
 }
 
-export type WeekStart = 'sunday' | 'monday';
+import type { MonthDay, ParsedDate, WeekDay, WeekStart } from '../types/utils';
 
 const SUNDAY_FIRST_INITIALS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'] as const;
 const MONDAY_FIRST_INITIALS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'] as const;
@@ -131,14 +131,6 @@ export function shiftWeek(date: Date, deltaWeeks: number): Date {
   return d;
 }
 
-export interface WeekDay {
-  iso: string;
-  dayOfMonth: number;
-  /** Native Date.getDay() (0 = Sunday), for weekend shading independent of weekStart. */
-  weekday: number;
-  future: boolean;
-}
-
 export function buildWeekDays(
   anchor: Date,
   today: Date,
@@ -172,14 +164,6 @@ export function formatWeekRangeNumeric(start: Date, end: Date, locale: 'en' | 'p
   return `${short(start)} ${locale === 'pt-BR' ? 'à' : 'to'} ${short(end)}/${end.getFullYear()}`;
 }
 
-export interface MonthDay {
-  iso: string;
-  dayOfMonth: number;
-  /** Zero-based column in the configured weekday order. */
-  dow: number;
-  future: boolean;
-}
-
 export function buildMonthDays(
   year: number,
   month: number,
@@ -196,13 +180,6 @@ export function buildMonthDays(
       future: date.getTime() > today.getTime(),
     };
   });
-}
-
-export interface ParsedDate {
-  text: string;
-  preview: string;
-  isoDate: string;
-  recurrenceRule?: object | null;
 }
 
 export function parseNaturalDate(input: string, locale: 'en' | 'pt-BR' = 'en'): ParsedDate | null {

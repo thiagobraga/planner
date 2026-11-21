@@ -67,6 +67,16 @@ describe('api client unit tests', () => {
     expect(offlineMocks.enqueue.mock.calls[0][0]).toMatchObject({ method: 'DELETE', path: '/tasks/t-9', ownerUserId: 'u-9' });
   });
 
+  it('never queues a document save offline: it needs the real revision back', async () => {
+    const fetchMock = vi.fn().mockRejectedValue(new TypeError('Failed to fetch'));
+    vi.stubGlobal('fetch', fetchMock);
+    const { setCurrentUserId, apiSaveTaskDocument } = await import('../client');
+    setCurrentUserId('u-11');
+
+    await expect(apiSaveTaskDocument('t-1', { type: 'doc' }, 3)).rejects.toThrow('Failed to fetch');
+    expect(offlineMocks.enqueue).not.toHaveBeenCalled();
+  });
+
   it('returns client-provided id for offline POST create', async () => {
     const { setCurrentUserId, apiCreateTask } = await import('../client');
     setCurrentUserId('u-10');

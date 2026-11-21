@@ -1,15 +1,5 @@
 import { fmtISO } from './date';
-
-export type DayColumnId = 'migrate' | `day:${string}`;
-
-export interface DayColumn {
-  id: DayColumnId;
-  /** ISO YYYY-MM-DD for a day column, null for Migrate. */
-  iso: string | null;
-  /** Native Date.getDay() (0 = Sunday), only set for day columns. */
-  weekday: number | null;
-  droppable: boolean;
-}
+import type { DayColumn, DayColumnId } from '../types/utils';
 
 /** Every day from `from` to `to` (inclusive), then Migrate (overdue + undated tasks, Bullet-Journal style). */
 export function buildDayColumns(from: string, to: string): DayColumn[] {

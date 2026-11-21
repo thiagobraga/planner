@@ -19,7 +19,7 @@ export function ScreenHeader({ title, icon, onBack, onClose }: {
 }) {
   const { t } = useI18n();
   const iconButton =
-    'flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-xs border-none bg-transparent text-ink-light transition-colors duration-(--motion-fast) hover:bg-dot/30 hover:text-ink';
+    'flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-xs border-none bg-transparent text-ink-light transition-colors duration-(--motion-fast) hover:bg-border-subtle/30 hover:text-ink';
   return (
     <div className="flex h-12 items-center gap-2 px-3">
       {onBack ? (

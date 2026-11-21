@@ -3,38 +3,20 @@ import { useDroppable } from '@dnd-kit/core';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { ApiTask } from '../../types/api';
-import type { BoardGroupBy } from '../../types/drag';
-import { TaskList, type TaskListCallbacks } from '../TaskList';
-import type { Task } from '../TaskItem';
+import { TaskList } from '../TaskList';
 import type {
   BoardColumnDragData,
   BoardColumnDropData,
   BoardColumnHeaderDropData,
 } from '../../types/drag';
-import type { BoardColumn as BoardColumnModel } from '../../utils/boardColumns';
 import { buildSubtreeIndex, flattenTasks } from '../../utils/taskProjection';
 import { BoardCard } from './BoardCard';
 import { BoardColumnHeader } from './BoardColumnHeader';
 import { TaskAddInput } from '../TaskAddInput';
 import { useI18n } from '../../i18n/I18nContext';
-import type { ApiStatus } from '../../types/api';
-
-interface BoardColumnProps {
-  collectionId: string;
-  groupBy: BoardGroupBy;
-  column: BoardColumnModel;
-  allTasks: ApiTask[];
-  onToggle?: (taskId: string, completed: boolean) => void;
-  onRename?: (columnId: string, name: string) => void;
-  onRecolor?: (columnId: string, color: string) => void;
-  onMarkCompletion?: (columnId: string) => void;
-  onDelete?: (columnId: string) => void;
-  statuses?: ApiStatus[];
-  onUpdateStatusRoute?: (statusId: string, patch: Partial<Pick<ApiStatus, 'nextStatusMode' | 'nextStatusId' | 'acceptStatusId' | 'rejectStatusId'>>) => void;
-  onCreate?: (title: string, column: BoardColumnModel) => Promise<void>;
-  presentation?: 'kanban-list' | 'kanban';
-  taskListProps?: TaskListCallbacks & { editingId?: string; activeDragId?: string | null };
-}
+import type { Task } from '../../types/task';
+import { countChildren, leafProgress } from '../../utils/subtree';
+import type { BoardColumnProps } from '../../types/board';
 
 function asJournalTask(task: ApiTask): Task {
   return {
@@ -78,6 +60,7 @@ export function BoardColumn({
 }: BoardColumnProps) {
   const { t } = useI18n();
   const subtreeIndex = useMemo(() => buildSubtreeIndex(flattenTasks(allTasks)), [allTasks]);
+  const childCounts = useMemo(() => countChildren(allTasks), [allTasks]);
   const journalTasks = useMemo(() => columnTaskTree(column.tasks, allTasks), [allTasks, column.tasks]);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState('');
@@ -164,6 +147,7 @@ export function BoardColumn({
         columnId={column.id}
         groupBy={groupBy}
         title={column.title}
+        count={column.tasks.length}
         color={column.color}
         isCompletionStatus={column.isCompletionStatus}
         canEdit={canEdit}
@@ -198,6 +182,8 @@ export function BoardColumn({
               subtasks={allTasks.filter((candidate) => candidate.parentTaskId === task.id)}
               containerId={column.id}
               subtreeIds={subtreeIndex.get(task.id)}
+              progress={leafProgress(task.id, allTasks)}
+              childCounts={childCounts}
               onToggle={onToggle}
               onTaskContextMenu={taskListProps?.onRightClick}
             />

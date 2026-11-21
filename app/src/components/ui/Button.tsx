@@ -1,14 +1,4 @@
-import type { ButtonHTMLAttributes, ReactNode } from 'react';
-
-export type ButtonVariant = 'primary' | 'secondary' | 'tertiary' | 'destructive';
-export type ButtonSize = 'lg' | 'md' | 'sm' | 'xs';
-
-export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: ButtonVariant;
-  size?: ButtonSize;
-  leftIcon?: ReactNode;
-  children: ReactNode;
-}
+import type { ButtonProps, ButtonSize, ButtonVariant } from '../../types/ui';
 
 // Base styles shared by all sizes — height, padding, and radius are size-specific below.
 const base =
@@ -31,7 +21,7 @@ const variants: Record<ButtonVariant, string> = {
   tertiary:
     'bg-transparent text-ink border border-transparent disabled:opacity-40',
   destructive:
-    'bg-transparent text-accent border border-accent hover:bg-accent/10 disabled:opacity-40',
+    'bg-transparent text-danger-text border border-danger hover:bg-danger/10 disabled:opacity-40',
 };
 
 export function Button({

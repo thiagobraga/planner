@@ -1,13 +1,14 @@
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useDroppable } from '@dnd-kit/core';
 import type { DailyBoardColumnProps } from '../../types/dailyBoard';
 import type { DayDropData, NoDateDropData } from '../../types/drag';
 import { TaskList } from '../TaskList';
-import type { Task } from '../TaskItem';
 import { BoardCard } from './BoardCard';
 import { Button } from '../ui/Button';
 import { TaskAddInput } from '../TaskAddInput';
 import { useI18n } from '../../i18n/I18nContext';
+import type { Task } from '../../types/task';
+import { countChildren, leafProgress } from '../../utils/subtree';
 
 function asJournalTask(task: DailyBoardColumnProps['allTasks'][number]): Task {
   return {
@@ -82,6 +83,7 @@ export function DailyBoardColumn({ column, title, isToday, tasks, allTasks, onTo
   });
   const visibleTasks = column.id === 'migrate' ? tasks.filter((task) => !task.isCompleted) : tasks;
   const visibleAllTasks = column.id === 'migrate' ? allTasks.filter((task) => !task.isCompleted) : allTasks;
+  const childCounts = useMemo(() => countChildren(visibleAllTasks), [visibleAllTasks]);
   const journalTasks = columnTaskTree(visibleTasks, visibleAllTasks);
   // The column header already states the day; Migrate keeps dates since its tasks span days.
   const hideDueDate = Boolean(column.iso);
@@ -125,6 +127,8 @@ export function DailyBoardColumn({ column, title, isToday, tasks, allTasks, onTo
               key={task.id}
               task={task}
               subtasks={visibleAllTasks.filter((candidate) => candidate.parentTaskId === task.id)}
+              progress={leafProgress(task.id, visibleAllTasks)}
+              childCounts={childCounts}
               containerId={column.id}
               onToggle={onToggle}
               onTaskContextMenu={taskListProps?.onRightClick}

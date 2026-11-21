@@ -13,6 +13,7 @@ export default defineProject({
   plugins: [changelogPlugin()],
   test: {
     name: "app",
+    css: { include: [/styles\/(?:palettes|theme)\.css/] },
     environment: "happy-dom",
     environmentOptions: {
       happyDOM: {

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
-import { evaluateFilter, type EvalTask, type EvalContext } from '../filterEvaluator.js';
-import type { FilterExpr } from '../../parsers/filterParser.js';
+import { evaluateFilter } from '../filterEvaluator.js';
+import type { EvalTask, EvalContext, FilterExpr } from '../../types/filters.js';
 
 const COLLECTION_NAMES = ['work', 'home', 'misc'];
 const LABEL_NAMES = ['urgent', 'review', 'later'];

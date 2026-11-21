@@ -14,3 +14,7 @@ export interface DueDate {
   timezone?: string; // IANA timezone
   recurrence?: RecurrenceRule;
 }
+
+export interface RecurrenceDueDate extends Omit<DueDate, 'date'> {
+  date: string | Date; // YYYY-MM-DD or Date object
+}

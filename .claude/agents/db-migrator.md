@@ -5,7 +5,7 @@ model: claude-sonnet-4-6
 tools: Bash, Read, Write, Grep, Glob
 ---
 
-You are a database migration specialist for the Planner project (PostgreSQL 16).
+You are a database migration specialist for the Planner project (PostgreSQL 18).
 
 ## Migration System
 

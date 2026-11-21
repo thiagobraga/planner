@@ -15,6 +15,11 @@ vi.mock("../../db/pool.js", () => ({
   },
 }));
 
+vi.mock("../syncService.js", () => ({
+  buildEvent: vi.fn((event: unknown) => event),
+  publishEvent: vi.fn().mockResolvedValue(undefined),
+}));
+
 vi.mock("uuid", () => ({
   v4: () => "fixed-uuid-for-test",
 }));
@@ -35,6 +40,8 @@ function makeSectionRow(overrides: Record<string, unknown> = {}) {
 
 describe("sectionService", () => {
   beforeEach(() => {
+    mockQuery.mockReset();
+    mockClientQuery.mockReset();
     vi.clearAllMocks();
   });
 
@@ -61,7 +68,8 @@ describe("sectionService", () => {
     it("inserts with auto-computed order_value", async () => {
       mockQuery.mockResolvedValueOnce({ rows: [{ id: "col-1" }] }); // access check
       mockQuery.mockResolvedValueOnce({ rows: [{ next_order: 5 }] }); // max order
-      mockQuery.mockResolvedValueOnce({ rows: [makeSectionRow({ id: "fixed-uuid-for-test", order_value: 5 })] });
+      mockClientQuery.mockResolvedValueOnce(undefined); // BEGIN
+      mockClientQuery.mockResolvedValueOnce({ rows: [makeSectionRow({ id: "fixed-uuid-for-test", order_value: 5 })] });
 
       const section = await createSection("col-1", "user-1", { name: "New Section" });
 
@@ -89,7 +97,9 @@ describe("sectionService", () => {
         query: mockClientQuery,
         release: mockRelease,
       });
-      mockQuery.mockResolvedValueOnce({ rows: [makeSectionRow({ name: "Renamed" })] }); // final fetch
+      mockClientQuery.mockResolvedValueOnce(undefined); // BEGIN
+      mockClientQuery.mockResolvedValueOnce(undefined); // update
+      mockClientQuery.mockResolvedValueOnce({ rows: [makeSectionRow({ name: "Renamed" })] });
 
       const section = await updateSection("section-1", "user-1", { name: "Renamed" });
 
@@ -111,8 +121,7 @@ describe("sectionService", () => {
       mockClientQuery.mockResolvedValueOnce({ rows: [{ id: "s2", order_value: 1000 }] }); // siblings
       mockClientQuery.mockResolvedValueOnce(undefined); // update s2
       mockClientQuery.mockResolvedValueOnce(undefined); // update s1
-      mockClientQuery.mockResolvedValueOnce(undefined); // COMMIT
-      mockQuery.mockResolvedValueOnce({ rows: [makeSectionRow({ order_value: 0 })] }); // final fetch
+      mockClientQuery.mockResolvedValueOnce({ rows: [makeSectionRow({ order_value: 0 })] });
 
       const section = await updateSection("section-1", "user-1", { position: 0 });
 

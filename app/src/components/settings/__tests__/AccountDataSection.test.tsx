@@ -37,6 +37,7 @@ const sampleExport: AccountExportData = {
   filters: [],
   comments: [],
   reminders: [],
+  documents: [],
 };
 
 function LocationDisplay() {

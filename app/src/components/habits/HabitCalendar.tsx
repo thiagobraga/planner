@@ -7,32 +7,20 @@ import { InlineNameInput } from '../ui/InlineNameInput';
 import { HabitDragHandle } from './HabitDragHandle';
 import { HabitBlockPreview } from './HabitBlockPreview';
 import { usePlannerDrag } from '../../contexts/usePlannerDrag';
-import { dayState, type HabitNode, type HabitSections } from '../../utils/habitTree';
+import { dayState } from '../../utils/habitTree';
 import { containerForGroup } from '../../utils/habitProjection';
 import type { HabitDragData, HabitGroupDragData, HabitSectionDropData } from '../../types/drag';
-import type { HabitEditTarget } from './HabitTimeline';
+import type {
+  HabitCalendarGridProps,
+  HabitCalendarProps,
+  HabitNode,
+} from '../../types/habits';
 import type { ApiHabitGroup } from '../../types/api';
-import type { WeekStart } from '../../utils/date';
+import type { WeekStart } from '../../types/utils';
 import { useI18n } from '../../i18n/I18nContext';
 
 /** One card column, which the grid and the drag preview both size from. */
 const CARD_W = 192;
-
-export interface HabitCalendarProps {
-  sections: HabitSections;
-  today: Date;
-  year: number;
-  month: number;
-  weekStart: WeekStart;
-  onMonthChange: (year: number, month: number) => void;
-  onToggleDay: (node: HabitNode, iso: string) => void;
-  editing?: HabitEditTarget;
-  /** The habit or group currently being dragged, so its card can dim. */
-  activeDragId?: string | null;
-  onStartEdit?: (target: HabitEditTarget) => void;
-  onCommitEdit?: (target: HabitEditTarget, name: string) => void;
-  onCancelEdit?: (target: HabitEditTarget) => void;
-}
 
 // Month-at-a-glance view: one dot grid per habit, as many across as the viewport
 // fits, collapsing to a single column when narrow. Ungrouped habits first, then
@@ -201,7 +189,7 @@ function CalendarSectionDrop({
     <div
       ref={setNodeRef}
       data-drop-target={isOver ? 'true' : undefined}
-      className={`habit-calendar-section min-h-6 ${isOver ? 'habit-calendar-section--drop-target rounded-[6px] outline outline-1 outline-dot' : ''}`}
+      className={`habit-calendar-section min-h-6 ${isOver ? 'habit-calendar-section--drop-target rounded-[6px] outline outline-1 outline-border-subtle' : ''}`}
     >
       {children}
     </div>
@@ -242,21 +230,6 @@ function SortableGroupHeading({
       {children}
     </h2>
   );
-}
-
-interface HabitCalendarGridProps {
-  habits: HabitNode[];
-  groupId: string | null;
-  today: Date;
-  year: number;
-  month: number;
-  weekStart: WeekStart;
-  onToggleDay: (node: HabitNode, iso: string) => void;
-  editing?: HabitEditTarget;
-  activeDragId?: string | null;
-  onStartEdit?: (target: HabitEditTarget) => void;
-  onCommitEdit?: (target: HabitEditTarget, name: string) => void;
-  onCancelEdit?: (target: HabitEditTarget) => void;
 }
 
 function HabitCalendarGrid({

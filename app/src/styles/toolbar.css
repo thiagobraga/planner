@@ -28,26 +28,20 @@
   background: var(--color-border);
 }
 
-.page-menu-trigger {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  height: 24px;
-  padding: 0 6px;
-  border-radius: var(--radius-xs);
-  font-size: 14px;
-  color: var(--color-ink);
-  white-space: nowrap;
-  cursor: pointer;
-  transition: background-color var(--motion-fast);
-}
-.page-menu-trigger:hover,
 .page-menu-trigger.is-open {
-  background: var(--planner-overlay-hover-bg);
+  /* Button sets its background inline. */
+  background-color: var(--planner-control-bg-hover) !important;
 }
-.page-menu-trigger:focus-visible {
-  outline: 2px solid var(--color-ink);
-  outline-offset: 1px;
+/* Keep the 20px look but give fingers a 44px target. */
+@media (pointer: coarse) {
+  .page-toolbar .ui-button {
+    position: relative;
+  }
+  .page-toolbar .ui-button::after {
+    content: "";
+    position: absolute;
+    inset: -12px -2px;
+  }
 }
 
 .page-menu-panel,
@@ -223,7 +217,7 @@
 @media (max-width: 640px) {
   .page-toolbar-mobile-slot:not(:empty) {
     display: block;
-    border-top: 1px solid var(--color-dot);
+    border-top: 1px solid var(--color-border-subtle);
     background: var(--planner-page-bg);
   }
   .page-toolbar--mobile {
@@ -236,6 +230,35 @@
 /* Full width: the page column and the top bar row span the window. */
 .app-shell.full-width {
   --container-page: 100%;
+}
+
+/* Phone sheet: dim backdrop that closes on tap, compact content. */
+.page-menu-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 59;
+  background: rgba(68, 68, 61, 0.2);
+}
+.page-menu-sheet {
+  max-height: 60dvh;
+}
+.page-menu-sheet .page-menu-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 0 12px;
+}
+.page-menu-sheet .page-menu-presets .page-menu-item {
+  width: auto;
+  margin: 0;
+  padding: 0 12px;
+  border: 1px solid var(--color-border);
+}
+.page-menu-sheet .page-menu-presets .page-menu-item[aria-checked='true'] {
+  border-color: var(--color-ink);
+}
+.page-menu-sheet .page-menu-presets .page-menu-item-check {
+  display: none;
 }
 
 /* No keyboard on a phone sheet. */

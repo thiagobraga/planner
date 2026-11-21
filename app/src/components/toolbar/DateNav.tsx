@@ -21,7 +21,7 @@ function addDays(date: Date, days: number): Date {
 }
 
 /** Today, previous, the shown range with a day picker, and next. */
-export function DateNav({ from, to, today, weekStart, onPrevious, onNext, onToday, onPick, compact = false, hideToday = false, defaultOpen = false }: DateNavProps) {
+export function DateNav({ from, to, today, weekStart, onPrevious, onNext, onToday, onPick, compact = false, hideToday = false, defaultOpen = false, openUp = false }: DateNavProps) {
   const { locale, t } = useI18n();
   const [open, setOpen] = useState(defaultOpen);
   const [viewMonth, setViewMonth] = useState(() => {
@@ -39,10 +39,10 @@ export function DateNav({ from, to, today, weekStart, onPrevious, onNext, onToda
       if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
     };
     document.addEventListener('keydown', onKeyDown);
-    document.addEventListener('mousedown', onPointerDown);
+    document.addEventListener('pointerdown', onPointerDown, true);
     return () => {
       document.removeEventListener('keydown', onKeyDown);
-      document.removeEventListener('mousedown', onPointerDown);
+      document.removeEventListener('pointerdown', onPointerDown, true);
     };
   }, [open]);
 
@@ -85,7 +85,7 @@ export function DateNav({ from, to, today, weekStart, onPrevious, onNext, onToda
         aria-expanded={open}
         title={fullLabel}
         onClick={toggle}
-        className="date-nav-trigger !gap-1 font-semibold tracking-[0.04em] whitespace-nowrap"
+        className="date-nav-trigger !gap-1 tracking-[0.04em] whitespace-nowrap"
       >
         {label}
         <ChevronDown className="ml-1" size={12} strokeWidth={1.8} />
@@ -98,7 +98,9 @@ export function DateNav({ from, to, today, weekStart, onPrevious, onNext, onToda
         <div
           role="dialog"
           aria-label={t('page.selectWeek')}
-          className="date-nav-popover absolute left-0 top-full z-30 mt-1 w-72 border border-border bg-cream p-3"
+          className={`date-nav-popover absolute left-0 z-30 w-72 border border-border bg-cream p-3 ${
+            openUp ? 'bottom-full mb-1' : 'top-full mt-1'
+          }`}
           style={{ boxShadow: 'var(--shadow-overlay)' }}
         >
           <div className="mb-3 flex items-center justify-between gap-2">
@@ -129,8 +131,8 @@ export function DateNav({ from, to, today, weekStart, onPrevious, onNext, onToda
                     onPick(iso);
                     setOpen(false);
                   }}
-                  className={`h-6 text-[13px] leading-6 text-ink transition-colors duration-[var(--motion-fast)] hover:bg-dot/35 ${
-                    inRange ? 'bg-dot/35' : ''
+                  className={`h-6 text-[13px] leading-6 text-ink transition-colors duration-[var(--motion-fast)] hover:bg-border-subtle/35 ${
+                    inRange ? 'bg-border-subtle/35' : ''
                   } ${iso === today ? 'font-semibold' : ''} ${inMonth ? '' : 'opacity-50'}`}
                 >
                   {date.getDate()}

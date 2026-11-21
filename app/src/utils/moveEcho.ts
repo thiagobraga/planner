@@ -1,3 +1,5 @@
+import type { EchoableEvent, MovePayload } from '../types/utils';
+
 // Bookkeeping for structural moves that are still in flight.
 //
 // A move is broadcast to every session, including the one that made it. That
@@ -11,16 +13,6 @@
 
 /** Ids currently being moved, ref-counted so overlapping moves cannot untrack early. */
 const pending = new Map<string, number>();
-
-/** An `updated` payload for a structural move carries the ids it disturbed. */
-interface MovePayload {
-  affectedIds?: string[];
-}
-
-export interface EchoableEvent {
-  entityId: string;
-  payload?: unknown;
-}
 
 /**
  * Register a move as in flight. Returns the function that clears it, which the

@@ -1,4 +1,6 @@
 import pool from "../db/pool.js";
+import type { DocumentNode } from "../contracts/document.js";
+import { documentToMarkdown } from "./document/markdown.js";
 import { AppError } from "../utils/AppError.js";
 import { securityLog } from "../utils/securityLogger.js";
 import { revokeAllUserSessions } from "./sessionService.js";
@@ -63,6 +65,7 @@ export async function exportUserData(userId: string): Promise<AccountExportData>
     filtersResult,
     commentsResult,
     remindersResult,
+    documentsResult,
   ] = await Promise.all([
     pool.query(
       `SELECT time_zone, week_start, theme, notifications_enabled, font, show_dots,
@@ -140,7 +143,15 @@ export async function exportUserData(userId: string): Promise<AccountExportData>
        ORDER BY remind_at ASC`,
       [userId],
     ),
+    pool.query<{ task_id: string; content: DocumentNode; schema_version: number; revision: string; updated_at: Date | string }>(
+      `SELECT d.task_id, d.content, d.schema_version, d.revision, d.updated_at
+       FROM task_documents d JOIN tasks t ON t.id = d.task_id
+       WHERE t.user_id = $1
+       ORDER BY t.created_at ASC`,
+      [userId],
+    ),
   ]);
+  const taskState = new Map((tasksResult.rows as AccountTaskRow[]).map((row) => [row.id, { title: row.title, isCompleted: row.is_completed }]));
 
   const prefRow = preferencesResult.rows[0] as AccountPreferencesRow | undefined;
 
@@ -255,6 +266,14 @@ export async function exportUserData(userId: string): Promise<AccountExportData>
       remindAt: toIso(row.remind_at),
       isFired: row.is_fired,
       createdAt: toIso(row.created_at),
+    })),
+    documents: documentsResult.rows.map((row) => ({
+      taskId: row.task_id,
+      content: row.content,
+      schemaVersion: row.schema_version,
+      revision: Number(row.revision),
+      markdown: documentToMarkdown(row.content, taskState),
+      updatedAt: toIso(row.updated_at),
     })),
   };
 }

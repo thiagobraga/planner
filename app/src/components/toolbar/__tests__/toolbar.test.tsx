@@ -3,9 +3,8 @@ import { describe, expect, it, vi } from 'vitest';
 import { Folder } from 'lucide-react';
 import { ViewMenu } from '../ViewMenu';
 import { GroupByMenu } from '../GroupByMenu';
-import { WindowMenu } from '../WindowMenu';
 import { DateNav } from '../DateNav';
-import { densityForWidth } from '../PageToolbar';
+import { PageToolbar, densityForWidth } from '../PageToolbar';
 import type { ViewMenuProps } from '../../../types/toolbar';
 
 function renderViewMenu(props: Partial<ViewMenuProps> = {}) {
@@ -93,13 +92,47 @@ describe('GroupByMenu', () => {
   });
 });
 
-describe('WindowMenu', () => {
-  it('toggles full width', () => {
-    const onFullWidthChange = vi.fn();
-    render(<WindowMenu fullWidth={false} onFullWidthChange={onFullWidthChange} />);
-    fireEvent.click(screen.getByRole('button', { name: 'Window' }));
-    fireEvent.click(screen.getByRole('menuitemradio', { name: /Full width/ }));
-    expect(onFullWidthChange).toHaveBeenCalledWith(true);
+describe('toolbar triggers', () => {
+  const dateNav = { from: '2026-11-13', to: '2026-11-15', today: '2026-11-14', weekStart: 'sunday' as const, onPrevious: vi.fn(), onNext: vi.fn(), onToday: vi.fn(), onPick: vi.fn() };
+
+  it('render View and Group as the same small button as Today', () => {
+    render(
+      <>
+        <DateNav {...dateNav} />
+        <ViewMenu layouts={['list', 'columns']} layout="list" style="notebook" onLayoutChange={vi.fn()} onStyleChange={vi.fn()} />
+        <GroupByMenu value="status" onChange={vi.fn()} options={[{ value: 'status', label: 'Status', icon: <Folder /> }]} />
+      </>,
+    );
+    const todayClasses = screen.getByRole('button', { name: 'Today' }).className.split(/\s+/).filter(Boolean);
+    for (const name of ['View', 'Group: Status']) {
+      const trigger = screen.getByRole('button', { name });
+      expect(trigger.className.split(/\s+/)).toEqual(expect.arrayContaining(todayClasses));
+      expect(trigger).toHaveAttribute('aria-haspopup', 'menu');
+      expect(trigger).toHaveAttribute('aria-expanded', 'false');
+      fireEvent.click(trigger);
+      expect(trigger).toHaveAttribute('aria-expanded', 'true');
+      expect(trigger).toHaveClass('is-open');
+      fireEvent.keyDown(screen.getByRole('menu'), { key: 'Escape' });
+    }
+  });
+
+  it('does not bold the range picker', () => {
+    render(<DateNav {...dateNav} />);
+    expect(screen.getByRole('button', { name: '11/13 to 11/15/2026' })).not.toHaveClass('font-semibold');
+  });
+
+  it('closes the range picker on a press outside, even one whose mousedown is cancelled', () => {
+    render(<><div data-testid="row" onPointerDown={(event) => event.preventDefault()} /><DateNav {...dateNav} /></>);
+    const trigger = screen.getByRole('button', { name: '11/13 to 11/15/2026' });
+    fireEvent.click(trigger);
+    expect(trigger).toHaveAttribute('aria-expanded', 'true');
+    fireEvent.pointerDown(screen.getByTestId('row'), { button: 2 });
+    expect(trigger).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  it('leaves full width to the Planner menu', () => {
+    render(<PageToolbar view={() => <span>view</span>} />);
+    expect(screen.queryByRole('button', { name: 'Window' })).toBeNull();
   });
 });
 
@@ -136,6 +169,6 @@ describe('densityForWidth', () => {
     expect(densityForWidth(720)).toBe(0);
     expect(densityForWidth(600)).toBe(1);
     expect(densityForWidth(500)).toBe(2);
-    expect(densityForWidth(400)).toBe(3);
+    expect(densityForWidth(300)).toBe(2);
   });
 });
