@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.39.3](https://github.com/thiagobraga/planner/compare/v0.39.2...v0.39.3) (2026-11-21)
+
+
+### Fixed
+
+* **menu:** close context menus on any outside press ([dc1504b](https://github.com/thiagobraga/planner/commit/dc1504bc7df0ba3090e64ae620a6385a9a0728d6))
+
 ## [0.39.2](https://github.com/thiagobraga/planner/compare/v0.39.1...v0.39.2) (2026-11-21)
 
 
