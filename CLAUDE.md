@@ -45,6 +45,10 @@ Required `.env` vars: `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `CORS
 
 `compose.prod.yml` owns shared PostgreSQL, Redis, and the stable router on `127.0.0.1:8080`. `compose.prod.color.yml` owns per-color app, API, and migration projects on the shared external networks. GitHub Actions calls `scripts/blue-green-deploy.sh <sha>`; it verifies the inactive color and public router before stopping the old color. Runtime files in `deploy/` are ignored by Git. Roll back with `CORS_ORIGIN=https://planner.thiagobraga.dev bash scripts/blue-green-deploy.sh "$(cat deploy/.previous-image)"`. The first router bootstrap has a brief port-8080 handoff gap while host nginx remains unchanged. Keep production migrations backward-compatible.
 
+Every deploy runs `scripts/db-backup.sh --docker` (pg_dump with sha256 and row-count sidecars in `deploy/backups/`) and `scripts/db-restore-check.sh --docker` (restore into a unique scratch database, compare, drop) before migrations; either failing aborts the deploy. `5. Backup` repeats both daily and posts only metadata. `6. Rollback` redeploys a previous image (`app`) or, data-losing, restores a named dump over the live database after a safety backup (`db-restore` via `scripts/db-restore.sh`). Database restore waits for a required reviewer on the `production-db-restore` GitHub environment.
+
+Production deploys use `compose.prod.pg16.yml` until `scripts/postgres-upgrade.sh` records `deploy/.postgres-18-ready`. Schedule the cutover separately and keep that marker with production deployment state.
+
 ### Git Hooks
 
 `core.hooksPath` is local git config and does not carry over automatically on fresh clones or new worktrees. Run `bash .hooks/setup-hooks.sh` before your first commit:
@@ -97,6 +101,8 @@ Add to `/etc/hosts`: `planner.local`, `api.planner.local`, `db.planner.local`, `
 - `middleware/requireScope.ts` - `enforceTokenScope` (read-only tokens cannot write), `requireSession` (keeps tokens and OAuth off `/api-tokens`, `/oauth` and `/admin`)
 - `middleware/errorHandler.ts` - `AppError` vs generic; returns `{ error: { code, message, details? } }`
 - `services/syncService.ts` - `publishEvent(event)` is the single broadcast entry point
+- `services/mutationRunner.ts` - `runMutation(tx => ...)`: one transaction for the write and `tx.recordActivity()`; `tx.emit()` events publish only after COMMIT, and a publish failure is logged while the write stands. Used by `createTask`, `deleteTask`, comment writes and document saves
+- `contracts/*.ts` (api and app) - byte-identical, type-only wire contracts (`SyncEvent`, comments, task documents), checked by `scripts/check-contracts.sh`
 - `services/authService.ts` - register/login (Redis rate-limit: 10 attempts/15 min)
 - `services/sessionService.ts` - opaque session tokens (SHA-256 hashed), idle + absolute expiry
 - `services/apiTokenService.ts` - personal API tokens: create/list/validate/revoke, max 20 active per user
@@ -106,6 +112,7 @@ Add to `/etc/hosts`: `planner.local`, `api.planner.local`, `db.planner.local`, `
 - `services/taskService.ts` - CRUD, completion, recurrence
 - `services/viewService.ts` - inbox and collection views
 - `services/dailyService.ts` - `getDailyView(userId, from, to)`: the one range query behind every Daily view and the MCP `get_today` / `get_upcoming` tools
+- `repositories/dailyRepository.ts` - PostgreSQL query for Daily tasks; validation and view assembly stay in `dailyService.ts`
 - `services/filterService.ts` - saved filter CRUD + evaluation via Peggy DSL parser
 - `services/collectionService.ts` - collection (project) CRUD
 - `services/habitService.ts` - habit tracking, completions, streaks
@@ -113,6 +120,8 @@ Add to `/etc/hosts`: `planner.local`, `api.planner.local`, `db.planner.local`, `
 - `services/labelService.ts` - label CRUD
 - `services/sectionService.ts` - section CRUD
 - `services/commentService.ts` - comment CRUD
+- `services/documentService.ts` - rich task documents (`task_documents`): read (stored, or a revision 0 seed from the plain description) and compare-and-swap save that re-derives `tasks.description` as plain text in the same transaction. `services/document/` holds the node/mark allowlist validator (`validate.ts`, `schema.ts`), the plain-text projection (`plainText.ts`) and SQL (`store.ts`, including the `DOCUMENT_EXISTS` guard on legacy description writes)
+- `services/import/` - Markdown spec import: `markdownParse.ts` (bounded line parser; checklist items become task placeholders, unsupported constructs stay as text with warnings), `importBuild.ts` (validation, hash, plan.md + task.md into one document), `importService.ts` (dry-run preview, apply in one transaction with an `import_manifests` row, exact retry returns the earlier import, undo deletes only unchanged created tasks)
 - `services/reminderService.ts` - reminder CRUD
 - `services/searchService.ts` - full-text search
 - `services/activityService.ts` - activity feed; `recordActivity()` is the only writer to `activity_events` and stamps the acting token or OAuth grant (`actor_type`, `api_token_id` / `oauth_grant_id`, `actor_label`) from the request context
@@ -129,7 +138,7 @@ Add to `/etc/hosts`: `planner.local`, `api.planner.local`, `db.planner.local`, `
 - `mcp/` - MCP server for AI agents: `server.ts` builds a per-request `McpServer` (write tools only for write tokens), `tools/*` call services directly, `resolve.ts` maps names/natural dates to ids/ISO in the user's timezone, `format.ts` renders compact task lines ending in `id:<uuid>`
 - `routes/index.ts` - Aggregates all routes under `/api/v1/`
 
-All routes under `/api/v1/`. Route files: `auth`, `apiTokens`, `mcp`, `oauth`, `tasks`, `collections`, `labels`, `sections`, `views`, `filters`, `search`, `reminders`, `comments`, `preferences`, `activity`, `collaboration`, `daily`, `habits`, `habitGroups`, `statuses`, `savedColors`, `adminUsers`, `adminStats`.
+All routes under `/api/v1/`. Route files: `auth`, `apiTokens`, `mcp`, `oauth`, `tasks`, `collections`, `labels`, `sections`, `views`, `filters`, `search`, `reminders`, `comments`, `documents`, `imports`, `preferences`, `activity`, `collaboration`, `daily`, `habits`, `habitGroups`, `statuses`, `savedColors`, `adminUsers`, `adminStats`.
 
 ### Frontend (`app/src/`)
 
@@ -137,7 +146,7 @@ All routes under `/api/v1/`. Route files: `auth`, `apiTokens`, `mcp`, `oauth`, `
 - `utils/socket.ts` - Socket.IO singleton; authenticates with the session cookie (`withCredentials`)
 - `hooks/useDailyTasks.ts` - React Query hook for one Daily range (`['daily', from, to]`); `refresh()` debounces invalidation
 - `utils/viewRange.ts` - `resolveRange`, `shiftAnchor`, `coerceRange` for the Layout × Style × Range model (`types/view.ts`); `utils/dailyRange.ts` maps `/daily/<layout>` and redirects the old `kanban|cards|monthly` slugs
-- `components/toolbar/` - `PageToolbar` (title row on desktop, bar above the navbar on phones), `ViewMenu`, `WindowMenu`, `GroupByMenu`, `DateNav`; `hooks/useDailyView.ts` and `hooks/useBoardPreferences.ts` hold the per-page view state saved in preferences (`dailyView`, `boardViewModes`, `fullWidth`)
+- `components/toolbar/` - `PageToolbar` (title row on desktop, bar above the navbar on phones), `ViewMenu`, `GroupByMenu`, `DateNav`, all small secondary buttons; full width lives in the Planner menu (`TopBarMenus`); `hooks/useDailyView.ts` and `hooks/useBoardPreferences.ts` hold the per-page view state saved in preferences (`dailyView`, `boardViewModes`, `fullWidth`)
 - `hooks/usePageShortcuts.ts` + `stores/pageShortcutsStore.ts` - the page on screen answers the `view:*` shortcuts (`v l`, `v k`, `v s`, `v 1-6`, `v w`, `v m`, `v f`, `t`, `[`, `]`)
 - `hooks/useSync.ts` - subscribes to `"sync"` events; handler receives `SyncEvent`
 - `hooks/shortcuts.ts` - pure chord-aware keyboard matcher; `DEFAULT_BINDINGS` for `q /  ? Enter Delete Escape g+i g+t g+u`
@@ -146,12 +155,13 @@ All routes under `/api/v1/`. Route files: `auth`, `apiTokens`, `mcp`, `oauth`, `
 - `hooks/useBoard*.ts`, `useTaskDrag.ts`, `useSectionDrag.ts`, `useHabitDrag.ts` - board preferences and drag-and-drop
 - `api/client.ts` - Fetch wrapper; base `/api/v1`; auto-logout on 401
 - `api/queryClient.ts` - React Query config (staleTime 60s, 1 retry)
-- `stores/taskStore.ts` - Zustand store; `setTasks / addTask / updateTask / removeTask`
 - `stores/collectionStore.ts` - Zustand store for collections
 - `stores/authStore.ts` - Zustand store for auth state
 - `stores/taskSelectionStore.ts` - Zustand store for multi-task selection
 - `stores/debugStore.ts` - debug mode flag (persisted in localStorage); when on, `DebugCard` shows id, order and created date on task and habit rows
-- `stores/optimistic.ts` - optimistic helpers: `runOptimistic`, `applyOptimistic`, `revertOptimistic` (2s auto-revert)
+- `stores/optimistic.ts` - optimistic helpers: `runOptimistic`, `applyOptimistic`, `revertOptimistic` (undoes only its own change, on real failure; no timer)
+- `components/detail/` - the task detail panel. `TaskDetailHost` (in `AppShell`) reads `?task=<id>` through `hooks/useTaskDetailController.ts` and lazy-loads `TaskDetailPanel` with the Tiptap editor (the first lazy chunk). `stores/taskDetailStore.ts` is the imperative bridge (`openTaskDetails`, `scheduleOpenTaskDetails`, `closeTaskDetails`, origin focus, unsaved-draft guard); `utils/detailOpen.ts` decides which clicks and keys open it (plain click on a noninteractive row or card area, `o` on a focused row or card)
+- `hooks/useDocumentDraft.ts` - description save loop: 800ms debounced PUT on `baseRevision`, 409 keeps the draft with reload / keep mine, remote updates never replace a dirty draft, failed drafts stay in memory only; `utils/documentContent.ts` trims editor JSON to the server allowlist and renders the Markdown draft download
 
 ### Pages & Routes
 
@@ -160,7 +170,7 @@ All routes under `/api/v1/`. Route files: `auth`, `apiTokens`, `mcp`, `oauth`, `
 | `/daily` (default)                    | `DailyIndexRedirect`                   | Redirects to the last used layout (default `list`); `/` and `/today` redirect here |
 | `/daily/list\|columns`                | `DailyRoute` -> `DailyPage`            | The URL picks the layout; style and range come from preferences. Old `kanban\|cards\|monthly` links redirect |
 | `/inbox`                              | `InboxPage`                            | Unprocessed tasks                                                                |
-| `/habits`                             | `HabitsPage`                           | Habit streaks (12-week grid)                                                     |
+| `/habits`                             | `HabitsPage`                           | Habit timeline (one full week, picked in the page toolbar) and month calendar   |
 | `/collections`                        | `CollectionsIndexPage`                 | Collection/project list                                                          |
 | `/collection/:id`                     | `CollectionsPage`                      | Single collection                                                                |
 | `/settings/:section`                  | `SettingsPage`                         | Font, theme, preferences; `/settings` -> `/settings/general`                     |
@@ -182,7 +192,7 @@ api/src/services/syncService.ts      publishEvent() - real-time broadcast
 api/src/services/taskService.ts      Task CRUD + recurrence
 api/src/db/pool.ts                   PostgreSQL pool
 api/src/db/redis.ts                  Redis clients (pub/sub)
-api/src/db/migrations/               SQL migration files (001-048)
+api/src/db/migrations/               SQL migration files (001-055)
 api/src/parsers/filterParser.ts      Peggy filter DSL parser
 api/src/engines/recurrenceEngine.ts  Recurrence rule engine
 api/src/mcp/server.ts                MCP server (AI agent tools)
@@ -215,6 +225,10 @@ GET/POST          /tasks
 PATCH/DELETE      /tasks/:id
 POST              /tasks/:id/complete   POST /tasks/:id/reopen
 PATCH             /tasks/:id/reorder
+GET               /tasks/:id  (task, ancestors root first, every descendant incl. completed; detail panel)
+GET/PUT           /tasks/:id/document  (PUT { content, baseRevision }; 409 DOCUMENT_CONFLICT with details[0].current; 400 VALIDATION_ERROR with the offending path)
+                  PATCH /tasks/:id or MCP update_task notes on a task with a document -> 409 DOCUMENT_EXISTS
+POST              /imports/markdown/preview   POST /imports/markdown (201, or 200 for an identical retry; 409 IMPORT_SOURCE_CHANGED)   DELETE /imports/:manifestId (undo)
 
 GET               /daily/:from/:to  (YYYY-MM-DD, max 42 days; overdue + one entry per day)
 GET               /views/inbox     GET /views/collection/:id
@@ -257,8 +271,8 @@ Rooms: `user:{userId}` (all sessions) and `collection:{collectionId}` (collabora
 
 ## Database
 
-PostgreSQL 16. Pool max 20 connections. Migrations run at startup from `api/src/db/migrations/`.  
-Schema tables: `users`, `sessions`, `api_tokens`, `oauth_clients`, `oauth_authorization_requests`, `oauth_grants`, `oauth_codes`, `oauth_tokens`, `preferences`, `password_reset_tokens`, `collections`, `collaborators`, `project_invitations`, `sections`, `tasks`, `labels`, `task_labels`, `filters`, `comments`, `reminders`, `activity_events`, `habits`, `habit_completions`, `habit_groups`, `task_statuses`, `user_saved_colors`.
+PostgreSQL 18. Pool max 20 connections. Migrations run at startup from `api/src/db/migrations/`.
+Schema tables: `users`, `sessions`, `api_tokens`, `oauth_clients`, `oauth_authorization_requests`, `oauth_grants`, `oauth_codes`, `oauth_tokens`, `preferences`, `password_reset_tokens`, `collections`, `collaborators`, `project_invitations`, `sections`, `tasks`, `labels`, `task_labels`, `filters`, `comments`, `task_documents`, `import_manifests`, `reminders`, `activity_events`, `habits`, `habit_completions`, `habit_groups`, `task_statuses`, `user_saved_colors`.
 
 Redis: three clients from `db/redis.ts` - `redisClient` (general), `redisPubClient` (publish), `redisSubClient` (subscribe). Auth rate-limiting uses `redisClient`.
 
@@ -270,9 +284,9 @@ Three layers, each with a distinct role:
 | ---------------- | ------------------------------ | ------------------------------- |
 | Server cache     | React Query (`queryClient.ts`) | API data, staleTime 60s         |
 | Optimistic local | `stores/optimistic.ts`         | Mutations before server confirm |
-| Global client    | Zustand `taskStore.ts`         | Cross-component task list       |
+| Global client    | Zustand stores (`stores/`)     | Selection, detail panel, UI     |
 
-Pattern for mutations: `runOptimistic({ apply, revert })` → fire API call → on error, auto-revert after 2s.
+Pattern for mutations: `runOptimistic({ apply, onRevert })` → fire API call → on a real failure, revert only the entities that still match the optimistic change; slow successes are never rolled back.
 
 ## Design System
 

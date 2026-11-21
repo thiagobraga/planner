@@ -1,15 +1,7 @@
 import { v4 as uuidv4 } from "uuid";
 import pool from "../db/pool.js";
 import { AppError } from "../utils/AppError.js";
-
-interface ReminderRow {
-  id: string;
-  task_id: string;
-  user_id: string;
-  remind_at: string;
-  is_fired: boolean;
-  created_at: string;
-}
+import type { ReminderRow } from "../types/activity.js";
 
 function formatReminder(row: ReminderRow) {
   return {

@@ -1,0 +1,61 @@
+name: 5. Backup
+
+# Daily pg_dump on the VPS plus a restore check into a scratch database.
+# The dump never leaves the server; only its metadata reaches the job summary.
+on:
+  schedule:
+    - cron: '30 3 * * *' # every day 03:30 UTC
+  workflow_dispatch:
+
+# Shares the deploy group: a deploy also backs up and uses the same scratch database.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  backup:
+    name: 5a. Back up and restore-check production
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    environment: production
+    permissions:
+      contents: read
+    steps:
+      - name: Configure SSH
+        env:
+          SSH_KEY: ${{ secrets.SSH_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "$SSH_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Back up and restore-check
+        env:
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+        run: |
+          ssh -i ~/.ssh/deploy_key \
+            -o UserKnownHostsFile=~/.ssh/known_hosts \
+            -o StrictHostKeyChecking=yes \
+            "$SSH_USER@$SSH_HOST" \
+            'set -euo pipefail && \
+             cd /p/projects/planner && \
+             dump=$(BACKUP_SHA=daily bash scripts/db-backup.sh --docker) && \
+             bash scripts/db-restore-check.sh --docker "$dump" >&2 && \
+             cat "$dump.json"' > metadata.json
+          # Only the sidecar's known metadata fields reach the summary.
+          {
+            echo "### Production backup"
+            jq -r '"- File: \(.file)\n- Size: \(.size_bytes) bytes\n- SHA-256: \(.sha256)\n- Migration: \(.migration)\n- Rows: users \(.counts.users), tasks \(.counts.tasks), collections \(.counts.collections)\n- Restore check: passed"' metadata.json
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Clean up SSH key
+        if: always()
+        run: rm -f ~/.ssh/deploy_key

@@ -5,9 +5,11 @@ import { AppShell } from '../AppShell';
 import { QuickAdd } from '../QuickAdd';
 import { apiCreateTask } from '../../api/client';
 import { updateDocumentThemeColor } from '../../utils/theme';
+import { useSync } from '../../hooks/useSync';
 
 const mockUseQuery = vi.hoisted(() => vi.fn());
 const mockInvalidateQueries = vi.hoisted(() => vi.fn());
+const mockRemoveQueries = vi.hoisted(() => vi.fn());
 
 vi.mock('react-router', () => ({
   Outlet: vi.fn(() => <div data-testid="outlet-content">Outlet content</div>),
@@ -19,6 +21,7 @@ vi.mock('@tanstack/react-query', () => ({
   useQuery: mockUseQuery,
   useQueryClient: vi.fn(() => ({
     invalidateQueries: mockInvalidateQueries,
+    removeQueries: mockRemoveQueries,
     setQueryData: vi.fn(),
   })),
   QueryClient: vi.fn(),
@@ -48,6 +51,8 @@ vi.mock('../nav/TopBar', () => ({
 vi.mock('../QuickAdd', () => ({
   QuickAdd: vi.fn(() => null),
 }));
+
+vi.mock('../detail/TaskDetailHost', () => ({ TaskDetailHost: () => null }));
 
 vi.mock('../SearchOverlay', () => ({
   SearchOverlay: vi.fn(() => null),
@@ -156,6 +161,64 @@ describe('AppShell', () => {
     expect(screen.getByTestId('outlet-content')).toBeInTheDocument();
   });
 
+  it("refreshes a task's comment thread when another session comments on it", async () => {
+    render(<AppShell />);
+    const handler = vi.mocked(useSync).mock.lastCall?.[0];
+
+    await act(async () => {
+      handler?.({
+        id: 'e1',
+        entityType: 'comment',
+        eventType: 'created',
+        entityId: 'c1',
+        userId: 'user-2',
+        collectionId: 'col-1',
+        payload: { taskId: 'task-9' },
+        emittedAt: '2026-11-19T00:00:00.000Z',
+      });
+    });
+
+    expect(mockInvalidateQueries).toHaveBeenCalledWith({ queryKey: ['comments', 'task-9'] });
+  });
+
+  it("refreshes a task's document when another session updates the task", async () => {
+    render(<AppShell />);
+    const handler = vi.mocked(useSync).mock.lastCall?.[0];
+
+    await act(async () => {
+      handler?.({
+        id: 'e2',
+        entityType: 'task',
+        eventType: 'updated',
+        entityId: 'task-9',
+        userId: 'user-2',
+        collectionId: 'col-1',
+        emittedAt: '2026-11-19T00:00:00.000Z',
+      });
+    });
+
+    expect(mockInvalidateQueries).toHaveBeenCalledWith({ queryKey: ['document', 'task-9'] });
+  });
+
+  it("drops a task's cached document when the task is deleted", async () => {
+    render(<AppShell />);
+    const handler = vi.mocked(useSync).mock.lastCall?.[0];
+
+    await act(async () => {
+      handler?.({
+        id: 'e3',
+        entityType: 'task',
+        eventType: 'deleted',
+        entityId: 'task-9',
+        userId: 'user-2',
+        collectionId: 'col-1',
+        emittedAt: '2026-11-19T00:00:00.000Z',
+      });
+    });
+
+    expect(mockRemoveQueries).toHaveBeenCalledWith({ queryKey: ['document', 'task-9'] });
+  });
+
   it('pins the shell to the viewport so the mobile bottom bar stays visible', () => {
     const { container } = render(<AppShell />);
     const shell = container.querySelector('.app-shell');
@@ -229,6 +292,19 @@ describe('AppShell', () => {
       render(<AppShell />);
 
       expect(localStorage.getItem('planner_background')).toBe('white');
+    });
+
+    it('switches themes without flashing beige in between', () => {
+      mockUseQuery.mockReturnValue({ data: { ...defaultPreferences, background: 'dark' } });
+      const { rerender } = render(<AppShell />);
+      vi.mocked(updateDocumentThemeColor).mockClear();
+
+      mockUseQuery.mockReturnValue({ data: { ...defaultPreferences, background: 'nord-dark' } });
+      rerender(<AppShell />);
+
+      expect(updateDocumentThemeColor).toHaveBeenCalledTimes(1);
+      expect(updateDocumentThemeColor).toHaveBeenCalledWith('nord-dark');
+      expect(document.documentElement).toHaveAttribute('data-theme', 'nord-dark');
     });
   });
 });

@@ -1,42 +1,28 @@
-import type { ReactNode } from 'react';
-
-export interface ChipProps {
-  children: ReactNode;
-  className?: string;
-}
+import type { ChipProps, CollectionChipProps } from '../../types/ui';
 
 // Generic tag/label chip: dot-grey pill, ink text.
 export function Chip({ children, className = '' }: ChipProps) {
   return (
     <span
-      className={`ui-chip inline-flex items-center text-[11px] leading-5 px-2 rounded-sm bg-dot/40 text-ink whitespace-nowrap ${className}`}
+      className={`ui-chip inline-flex items-center text-[11px] leading-5 px-2 rounded-sm bg-border-subtle/40 text-ink whitespace-nowrap ${className}`}
     >
       {children}
     </span>
   );
 }
 
-export interface CollectionChipProps {
-  name: string;
-  /** Literal CSS color value (hex/rgb(a)/hsl(a)); falls back to ink-light. */
-  color?: string;
-  /** Section of the task, attached to the chip on a transparent background. */
-  section?: string;
-  className?: string;
-}
-
 // Collection chip: quiet dot-grey pill with a colored dot + name.
 export function CollectionChip({ name, color, section, className = '' }: CollectionChipProps) {
   return (
     <span className={`ui-collection-chip inline-flex items-center text-[11px] leading-4.5 text-ink/65 whitespace-nowrap ${className}`}>
-      <span className={`inline-flex items-center gap-1.5 px-1 bg-dot/30 border border-dot/50 ${section ? 'rounded-l-xs' : 'rounded-xs'}`}>
+      <span className={`inline-flex items-center gap-1.5 px-1 bg-border-subtle/30 border border-border-subtle/50 ${section ? 'rounded-l-xs' : 'rounded-xs'}`}>
         <span
           className="ui-collection-chip-dot w-1.75 h-1.75 rounded-full shrink-0 filter-[saturate(0.55)]"
           style={{ backgroundColor: color || 'var(--color-ink-light)' }}
         />
         {name}
       </span>
-      {section && <span className="ui-collection-chip-section px-1 bg-transparent border border-l-0 border-dot/50 rounded-r-xs">{section}</span>}
+      {section && <span className="ui-collection-chip-section px-1 bg-transparent border border-l-0 border-border-subtle/50 rounded-r-xs">{section}</span>}
     </span>
   );
 }

@@ -4,16 +4,26 @@ type PageShortcutHandler = (action: string) => void;
 
 interface PageShortcutsState {
   handler: PageShortcutHandler | null;
-  /** Makes `handler` the page's; returns a release that only clears it if still current. */
+  stack: PageShortcutHandler[];
+  /** Pushes `handler` onto the active stack; releasing restores the previous handler if any. */
   register: (handler: PageShortcutHandler) => () => void;
 }
 
-export const usePageShortcutsStore = create<PageShortcutsState>((set, get) => ({
+export const usePageShortcutsStore = create<PageShortcutsState>((set) => ({
   handler: null,
+  stack: [],
   register: (handler) => {
-    set({ handler });
+    set((state) => {
+      const stack = [...state.stack, handler];
+      return { stack, handler };
+    });
     return () => {
-      if (get().handler === handler) set({ handler: null });
+      set((state) => {
+        const idx = state.stack.lastIndexOf(handler);
+        if (idx === -1) return state;
+        const stack = [...state.stack.slice(0, idx), ...state.stack.slice(idx + 1)];
+        return { stack, handler: stack[stack.length - 1] ?? null };
+      });
     };
   },
 }));

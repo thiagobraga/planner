@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { buildTaskMenuActions, resolveStageActions } from './taskMenuActions';
 import type { ApiStatus } from '../types/api';
-import type { Task } from '../components/TaskItem';
+import type { Task } from '../types/task';
 
 const status = (id: string, orderValue: number, changes: Partial<ApiStatus> = {}): ApiStatus => ({
   id, collectionId: 'collection', name: id, color: '#44443d', orderValue,
@@ -22,7 +22,8 @@ describe('task menu stage actions', () => {
   it('does not offer outgoing actions on the completion column or for notes', () => {
     const statuses = [status('a', 1), status('b', 2)];
     expect(resolveStageActions({ ...task, statusId: 'b' }, statuses, 'b')).toEqual({ next: null, accept: null, reject: null });
-    expect(buildTaskMenuActions({ task: { ...task, type: 'note' }, statuses, completionStatusId: 'b', t: translate, onToggle: vi.fn(), onMove: vi.fn() })).toEqual([]);
+    const noteItems = buildTaskMenuActions({ task: { ...task, type: 'note' }, statuses, completionStatusId: 'b', t: translate, onToggle: vi.fn(), onMove: vi.fn() });
+    expect(noteItems.map((item) => item.type === 'item' ? item.label : item.type)).toEqual(['detail.open', 'separator']);
   });
 
   it('uses the board default for tasks without an assigned status', () => {
@@ -34,11 +35,12 @@ describe('task menu stage actions', () => {
     const onToggle = vi.fn();
     const onMove = vi.fn();
     const items = buildTaskMenuActions({ task, statuses: [status('a', 1), status('b', 2)], completionStatusId: 'b', t: translate, onToggle, onMove });
-    expect(items[0]?.label).toBe('contextMenu.complete');
-    items[0]?.onClick?.();
-    expect(onToggle).toHaveBeenCalledOnce();
-    expect(items[1]?.label).toBe('contextMenu.moveToStageb');
+    expect(items[0]?.label).toBe('detail.open');
+    expect(items[1]?.label).toBe('contextMenu.complete');
     items[1]?.onClick?.();
+    expect(onToggle).toHaveBeenCalledOnce();
+    expect(items[2]?.label).toBe('contextMenu.moveToStageb');
+    items[2]?.onClick?.();
     expect(onMove).toHaveBeenCalledWith('b');
   });
 });

@@ -1,13 +1,7 @@
-import { Palette, Pencil, FolderPlus, Trash2 } from 'lucide-react';
-import type { ContextMenuItem } from './ui/ContextMenu';
+import { Columns2, FolderPlus, Palette, Pencil, Rows2, Trash2 } from 'lucide-react';
+import type { ContextMenuItem } from '../types/contextMenu';
 import type { TranslationKey } from '../i18n/catalogs';
-
-export interface CollectionMenuHandlers {
-  onChangeColor: () => void;
-  onStartRename: () => void;
-  onAddSub: () => void;
-  onDelete: () => void;
-}
+import type { CollectionMenuHandlers } from '../types/collections';
 
 // The sidebar rows and the collection page breadcrumb offer the same actions;
 // building the array here keeps the two call sites from drifting apart.
@@ -15,6 +9,24 @@ export function buildCollectionMenuItems(
   t: (key: TranslationKey, values?: Record<string, string | number>) => string,
   handlers: CollectionMenuHandlers,
 ): ContextMenuItem[] {
+  const splitItems: ContextMenuItem[] = [];
+  if (handlers.onSplitVertically) {
+    splitItems.push({
+      type: 'item',
+      label: t('collections.splitVertically'),
+      icon: <Columns2 size={14} />,
+      onClick: handlers.onSplitVertically,
+    });
+  }
+  if (handlers.onSplitHorizontally) {
+    splitItems.push({
+      type: 'item',
+      label: t('collections.splitHorizontally'),
+      icon: <Rows2 size={14} />,
+      onClick: handlers.onSplitHorizontally,
+    });
+  }
+
   return [
     {
       type: 'item',
@@ -34,6 +46,7 @@ export function buildCollectionMenuItems(
       icon: <FolderPlus size={14} />,
       onClick: handlers.onAddSub,
     },
+    ...(splitItems.length > 0 ? [{ type: 'separator' as const }, ...splitItems] : []),
     { type: 'separator' },
     {
       type: 'item',

@@ -10,14 +10,16 @@ import { QuickAdd } from './QuickAdd';
 import { SearchOverlay } from './SearchOverlay';
 import { Button } from './ui/Button';
 import { matchKey, createMatcherState, DEFAULT_BINDINGS } from '../hooks/shortcuts';
-import type { MatcherState } from '../hooks/shortcuts';
+import type { MatcherState } from '../types/hooks';
 import { matchSequence, createSequenceState } from '../hooks/keySequence';
 import type { SequenceState } from '../types/keySequence';
 import { useSync } from '../hooks/useSync';
+import { invalidateCommentQueries } from '../utils/commentSync';
 import { fetchPreferences, apiCreateTask } from '../api/client';
 import type { Preferences } from '../types/api';
-import { ensureFontLoaded, type FontOption } from '../utils/fontLoader';
-import { updateDocumentThemeColor } from '../utils/theme';
+import { ensureFontLoaded } from '../utils/fontLoader';
+import type { FontOption } from '../types/utils';
+import { BACKGROUND_CACHE_KEY, updateDocumentThemeColor } from '../utils/theme';
 import { useResolvedTheme } from '../hooks/useResolvedTheme';
 import type { BackgroundPreference } from '../types/theme';
 import { PlannerDragProvider } from '../contexts/PlannerDragContext';
@@ -27,9 +29,10 @@ import { useTaskSelectionStore } from '../stores/taskSelectionStore';
 import { useDebugStore } from '../stores/debugStore';
 import { AgentNotice } from './AgentNotice';
 import { describeAgentChange } from '../utils/agentNotice';
+import { TaskDetailHost } from './detail/TaskDetailHost';
+import { closeTaskDetails } from '../stores/taskDetailStore';
 
 const DEBUG_SEQUENCE = 'wasd';
-const BACKGROUND_CACHE_KEY = 'planner_background';
 const BACKGROUND_PREFERENCES: readonly BackgroundPreference[] = ['beige', 'white', 'dark', 'nord-light', 'nord-dark', 'system'];
 
 /** Last saved background, so a reload paints the right palette before preferences load. */
@@ -91,6 +94,13 @@ export function AppShell() {
       }
       qc.invalidateQueries({ queryKey: ['inbox'] });
       qc.invalidateQueries({ queryKey: ['collection'] });
+    } else if (event.entityType === 'comment') {
+      void invalidateCommentQueries(qc, event);
+    } else if (event.entityType === 'task' && event.eventType === 'updated') {
+      // A document save arrives as a task update; lists refresh in their pages.
+      void qc.invalidateQueries({ queryKey: ['document', event.entityId] });
+    } else if (event.entityType === 'task' && event.eventType === 'deleted') {
+      qc.removeQueries({ queryKey: ['document', event.entityId] });
     }
   }, [qc, agentNoticesOn, t]));
   const [quickAddOpen, setQuickAddOpen] = useState(false);
@@ -118,17 +128,19 @@ export function AppShell() {
     }
   }, [preferences?.locale, setLocale]);
 
-  // Layout effect so the palette is on <html> before the first paint; the
-  // cleanup hands logged-out screens back their default beige.
+  // Layout effect so the palette is on <html> before the first paint; only
+  // reset back to default beige on unmount so theme switches do not flash beige.
   useLayoutEffect(() => {
-    const root = document.documentElement;
-    root.dataset.theme = theme;
+    document.documentElement.dataset.theme = theme;
     updateDocumentThemeColor(theme);
+  }, [theme]);
+
+  useLayoutEffect(() => {
     return () => {
-      delete root.dataset.theme;
+      delete document.documentElement.dataset.theme;
       updateDocumentThemeColor('beige');
     };
-  }, [theme]);
+  }, []);
 
   useEffect(() => {
     if (!preferences?.background) return;
@@ -154,7 +166,7 @@ export function AppShell() {
   }, []);
 
   const handleAction = useCallback(
-    (action: string | null) => {
+    (action: string | null, consumed = false) => {
       if (!action) return;
       switch (action) {
         case 'quickAdd:open':
@@ -166,11 +178,15 @@ export function AppShell() {
         case 'help:open':
           setHelpOpen((v) => !v);
           break;
-        case 'dialog:close':
+        case 'dialog:close': {
+          // The active overlay closes first; the detail panel only when nothing else did.
+          const hasOtherOverlay = Boolean(document.querySelector('[role="dialog"]:not(.detail-panel), [role="menu"]'));
+          if (!consumed && !quickAddOpen && !searchOpen && !helpOpen && !hasOtherOverlay) closeTaskDetails();
           setQuickAddOpen(false);
           setSearchOpen(false);
           setHelpOpen(false);
           break;
+        }
         case 'navigate:inbox':
           navigate('/inbox');
           break;
@@ -190,11 +206,12 @@ export function AppShell() {
           if (action.startsWith('view:')) runPageShortcut(action);
       }
     },
-    [navigate, toggleFullWidth],
+    [navigate, toggleFullWidth, quickAddOpen, searchOpen, helpOpen],
   );
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
+      const consumed = e.defaultPrevented;
       const event = {
         key: e.key,
         isTextInputFocused: isTextInputFocused(),
@@ -204,7 +221,7 @@ export function AppShell() {
       matcherStateRef.current = nextState;
       if (action) {
         e.preventDefault();
-        handleAction(action);
+        handleAction(action, consumed);
       }
     };
     window.addEventListener('keydown', handler);
@@ -252,8 +269,9 @@ export function AppShell() {
             updateAvailable={updateAvailable}
           />
 
+          <div className="app-shell-body">
           <main
-            className="app-shell-main-content main-content min-h-0 flex-1 overflow-y-auto p-6"
+            className="app-shell-main-content main-content min-h-0 min-w-0 flex-1 overflow-y-auto p-6"
             style={{
               backgroundColor: 'var(--planner-page-bg)',
               backgroundImage: preferences?.showDots === false ? 'none' : 'radial-gradient(circle, var(--color-dot) 1px, transparent 1px)',
@@ -266,6 +284,8 @@ export function AppShell() {
               <Outlet />
             </div>
           </main>
+          <TaskDetailHost />
+          </div>
 
           <div id={MOBILE_TOOLBAR_SLOT_ID} className="page-toolbar-mobile-slot" />
 
@@ -312,7 +332,7 @@ export function AppShell() {
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="app-shell-help-dialog-content border border-dot rounded-md py-6 px-8 min-w-[320px] shadow-overlay"
+            className="app-shell-help-dialog-content border border-border-subtle rounded-md py-6 px-8 min-w-[320px] shadow-overlay"
             style={{ backgroundColor: 'var(--planner-overlay-bg)' }}
           >
             <h2 className="app-shell-help-title text-base font-semibold text-ink mb-4">
@@ -339,6 +359,7 @@ export function AppShell() {
                   ['[', t('view.previous')],
                   [']', t('view.next')],
                   ['Enter', t('shell.editSelected')],
+                  ['o', t('detail.open')],
                   ['Delete', t('shell.deleteSelected')],
                   ['Esc', t('shell.closeDialog')],
                 ].map(([key, desc]) => (

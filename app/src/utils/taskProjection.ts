@@ -1,3 +1,5 @@
+import type { FlatRow, Projection, TaskLike } from '../types/task';
+
 // Tree-aware drag projection.
 //
 // The older helpers in `taskTree.ts` treat the tree as *implied* by a flat list
@@ -14,20 +16,6 @@ export const MAX_DEPTH = 5;
 
 /** The page grid. One indent step of horizontal drag is one nesting level. */
 export const INDENT_WIDTH = 24;
-
-export interface TaskLike {
-  id: string;
-  parentTaskId?: string | null;
-  orderValue?: number;
-  createdAt?: string;
-}
-
-export interface FlatRow<T extends TaskLike = TaskLike> {
-  task: T;
-  id: string;
-  parentId: string | null;
-  depth: number;
-}
 
 /** Siblings order by their stored position; `createdAt` only breaks exact ties. */
 function compareSiblings<T extends TaskLike>(a: T, b: T): number {
@@ -170,15 +158,6 @@ export function insertBlock<T extends TaskLike>(
   }));
   const at = Math.max(0, Math.min(index, rows.length));
   return [...rows.slice(0, at), ...rebased, ...rows.slice(at)];
-}
-
-export interface Projection {
-  /** Parent the dragged task would take. */
-  parentId: string | null;
-  /** Depth it would render at. */
-  depth: number;
-  /** Zero-based index among its new siblings - not the flat render index. */
-  position: number;
 }
 
 /**

@@ -1,4 +1,4 @@
-import { renderHook, waitFor } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { usePreferences } from '../usePreferences';
@@ -72,5 +72,27 @@ describe('usePreferences', () => {
     });
 
     expect(result.current.data).toBeUndefined();
+  });
+
+  it('shares cached preferences and updates all subscribers after invalidation', async () => {
+    const updated = { ...defaultPreferences, weekStart: 'sunday' as const };
+    mockFetchPreferences.mockResolvedValueOnce(defaultPreferences).mockResolvedValueOnce(updated);
+    const queryClient = createQueryClient();
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    );
+    const first = renderHook(() => usePreferences(), { wrapper });
+    const second = renderHook(() => usePreferences(), { wrapper });
+
+    await waitFor(() => expect(second.result.current.data).toEqual(defaultPreferences));
+    expect(mockFetchPreferences).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      await queryClient.invalidateQueries({ queryKey: ['preferences'] });
+    });
+
+    await waitFor(() => expect(first.result.current.data).toEqual(updated));
+    expect(second.result.current.data).toEqual(updated);
+    expect(mockFetchPreferences).toHaveBeenCalledTimes(2);
   });
 });

@@ -1,12 +1,13 @@
 import { mkdir } from 'node:fs/promises';
 import { expect, STORAGE_STATE_PATH, test } from './fixtures/api';
 import { chooseView } from './fixtures/view';
+import type { ApiTask } from '../src/api/client';
 
 test.use({ storageState: STORAGE_STATE_PATH });
 
 test('task row shortcuts and menu persist structural indentation', async ({ api, page }) => {
   const collection = await api.createCollection({ name: `indent-${Date.now()}`, color: '#c9483b' });
-  const parent = await api.createTask({ title: 'Indent parent', collectionId: collection.id, orderValue: 1000 });
+  const parent = await api.createTask({ title: 'Indent parent', collectionId: collection.id, dueDate: '2026-11-12', orderValue: 1000 });
   const child = await api.createTask({ title: 'Indent child', collectionId: collection.id, orderValue: 2000 });
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
@@ -21,7 +22,7 @@ test('task row shortcuts and menu persist structural indentation', async ({ api,
     await expect(page.getByRole('menuitem', { name: 'Unindent', exact: true })).toHaveAttribute('aria-disabled', 'true');
     await page.keyboard.press('Escape');
 
-    await row.click();
+    await row.focus();
     await expect(row).toBeFocused();
     await page.keyboard.press('Tab');
     await expect.poll(async () => (await parentOf())?.parentTaskId).toBe(parent.id);
@@ -29,10 +30,10 @@ test('task row shortcuts and menu persist structural indentation', async ({ api,
     await page.reload();
     await expect(row).toHaveCSS('padding-left', '24px');
 
-    await row.click();
+    await row.focus();
     await page.keyboard.press(']');
     await expect.poll(async () => (await parentOf())?.parentTaskId ?? null).toBeNull();
-    await row.click();
+    await row.focus();
     await page.keyboard.press('[');
     await expect.poll(async () => (await parentOf())?.parentTaskId).toBe(parent.id);
 
@@ -71,6 +72,34 @@ test('task row shortcuts and menu persist structural indentation', async ({ api,
   }
 });
 
+test('Inbox can indent an undated row under its dated sibling', async ({ api, page }) => {
+  const parent = await api.createTask({ title: 'Dated Inbox parent', dueDate: '2026-11-12', orderValue: 1000 });
+  const child = await api.createTask({ title: 'Undated Inbox child', orderValue: 2000 });
+  try {
+    await page.goto('/inbox');
+    const row = page.locator(`[data-task-id="${child.id}"]`);
+    await expect(row).toBeVisible();
+    await row.click({ button: 'right' });
+    const indent = page.getByRole('menuitem', { name: 'Indent', exact: true });
+    await expect(indent).toHaveAttribute('aria-disabled', 'false');
+    await indent.click();
+    await expect.poll(async () => {
+      const inbox = await api.get<{ tasks: ApiTask[] }>('/views/inbox');
+      return inbox.tasks.find((task) => task.id === child.id)?.parentTaskId;
+    }).toBe(parent.id);
+    await page.reload();
+    await expect(row).toHaveCSS('padding-left', '24px');
+    await mkdir('dist/screenshots', { recursive: true });
+    await page.screenshot({ path: 'dist/screenshots/inbox-indentation-desktop.png' });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await expect(row).toHaveCSS('padding-left', '24px');
+    await page.screenshot({ path: 'dist/screenshots/inbox-indentation-mobile.png' });
+  } finally {
+    await api.delete(`/tasks/${child.id}`);
+    await api.delete(`/tasks/${parent.id}`);
+  }
+});
+
 test('rightward drag released over its own row persists nesting', async ({ api, page }) => {
   const collection = await api.createCollection({ name: `self-indent-${Date.now()}`, color: '#c9483b' });
   const parent = await api.createTask({ title: 'Self parent', collectionId: collection.id, orderValue: 1000 });
@@ -98,7 +127,7 @@ test('rightward drag released over its own row persists nesting', async ({ api, 
 
 test('rightward drag over the parent row persists the first child position', async ({ api, page }) => {
   const collection = await api.createCollection({ name: `drag-indent-${Date.now()}`, color: '#c9483b' });
-  const parent = await api.createTask({ title: 'Drag parent', collectionId: collection.id, orderValue: 1000 });
+  const parent = await api.createTask({ title: 'Drag parent', collectionId: collection.id, dueDate: '2026-11-12', orderValue: 1000 });
   const child = await api.createTask({ title: 'Drag child', collectionId: collection.id, orderValue: 2000 });
   try {
     await page.goto(`/collection/${collection.id}`);

@@ -1,14 +1,23 @@
 import { v4 as uuidv4 } from "uuid";
 import pool from "../db/pool.js";
 import { AppError } from "../utils/AppError.js";
+import type { CreateSectionInput, SectionRow, UpdateSectionInput } from "../types/collections.js";
+import { recordActivity } from "./activityService.js";
+import { buildEvent, publishEvent } from "./syncService.js";
 
-interface SectionRow {
-  id: string;
-  collection_id: string;
-  name: string;
-  order_value: number;
-  created_at: string;
-  updated_at: string;
+function publishSectionChange(
+  eventType: "created" | "updated" | "deleted",
+  userId: string,
+  section: ReturnType<typeof formatSection>,
+) {
+  void publishEvent(buildEvent({
+    entityType: "section",
+    eventType,
+    entityId: section.id,
+    userId,
+    collectionId: section.collectionId,
+    audience: "current-collection-members",
+  })).catch(() => {});
 }
 
 function formatSection(row: SectionRow) {
@@ -70,10 +79,6 @@ export async function listSections(collectionId: string, userId: string) {
   return result.rows.map((row) => formatSection(row as SectionRow));
 }
 
-export interface CreateSectionInput {
-  name: string;
-}
-
 export async function createSection(collectionId: string, userId: string, input: CreateSectionInput) {
   // Validate name (1-120 chars)
   if (!input.name || input.name.length === 0 || input.name.length > 120) {
@@ -95,19 +100,29 @@ export async function createSection(collectionId: string, userId: string, input:
   const orderValue = maxOrder.rows[0].next_order;
 
   const id = uuidv4();
-  const result = await pool.query(
-    `INSERT INTO sections (id, collection_id, name, order_value)
-     VALUES ($1, $2, $3, $4)
-     RETURNING *`,
-    [id, collectionId, input.name, orderValue]
-  );
-
-  return formatSection(result.rows[0] as SectionRow);
-}
-
-export interface UpdateSectionInput {
-  name?: string;
-  position?: number;
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const result = await client.query(
+      `INSERT INTO sections (id, collection_id, name, order_value)
+       VALUES ($1, $2, $3, $4)
+       RETURNING *`,
+      [id, collectionId, input.name, orderValue],
+    );
+    const section = formatSection(result.rows[0] as SectionRow);
+    await recordActivity(client, {
+      userId, collectionId, entityType: "section", entityId: section.id,
+      eventType: "section_created", afterData: { title: section.name },
+    });
+    await client.query("COMMIT");
+    publishSectionChange("created", userId, section);
+    return section;
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
 }
 
 export async function updateSection(sectionId: string, userId: string, input: UpdateSectionInput) {
@@ -172,10 +187,15 @@ export async function updateSection(sectionId: string, userId: string, input: Up
       }
     }
 
+    const updated = await client.query("SELECT * FROM sections WHERE id = $1", [sectionId]);
+    const next = formatSection(updated.rows[0] as SectionRow);
+    await recordActivity(client, {
+      userId, collectionId: next.collectionId, entityType: "section", entityId: next.id,
+      eventType: "section_updated", beforeData: { title: section.name }, afterData: { title: next.name },
+    });
     await client.query("COMMIT");
-
-    const updated = await pool.query("SELECT * FROM sections WHERE id = $1", [sectionId]);
-    return formatSection(updated.rows[0] as SectionRow);
+    publishSectionChange("updated", userId, next);
+    return next;
   } catch (err) {
     await client.query("ROLLBACK");
     throw err;
@@ -214,7 +234,10 @@ export async function deleteSection(sectionId: string, userId: string): Promise<
 
     // Delete the section
     await client.query(`DELETE FROM sections WHERE id = $1`, [sectionId]);
-
+    await recordActivity(client, {
+      userId, collectionId: section.collection_id, entityType: "section", entityId: sectionId,
+      eventType: "section_deleted", beforeData: { title: section.name },
+    });
     await client.query("COMMIT");
   } catch (err) {
     await client.query("ROLLBACK");
@@ -223,5 +246,6 @@ export async function deleteSection(sectionId: string, userId: string): Promise<
     client.release();
   }
 
+  publishSectionChange("deleted", userId, formatSection(section));
   return { success: true };
 }

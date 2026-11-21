@@ -25,6 +25,9 @@ case "$1" in
   inspect)
     if [[ $3 == *com.docker.compose.project* ]]; then
       if [[ -n ${MOCK_SHARED_PROJECT:-} ]]; then echo "$MOCK_SHARED_PROJECT"; else exit 1; fi
+    elif [[ $3 == '{{.Config.Image}}' ]]; then
+      [[ -n ${MOCK_POSTGRES_IMAGE:-} ]] || exit 1
+      echo "$MOCK_POSTGRES_IMAGE"
     elif [[ $3 == '{{.State.Health.Status}}' ]]; then
       if [[ ${MOCK_FAIL_SHARED:-0} == 1 && ${*: -1} == planner-prod-redis ]]; then
         echo unhealthy
@@ -38,6 +41,9 @@ case "$1" in
     else
       exit 1
     fi
+    ;;
+  volume)
+    [[ ${MOCK_TARGET_VOLUME:-0} == 1 ]] || exit 1
     ;;
   wait)
     if [[ ${MOCK_FAIL_MIGRATION:-0} == 1 ]]; then echo 1; else echo 0; fi
@@ -68,13 +74,23 @@ chmod +x "$TEMP_ROOT/bin/"*
 setup_case() {
   CASE_ROOT="$TEMP_ROOT/$1"
   mkdir -p "$CASE_ROOT/scripts" "$CASE_ROOT/deploy"
-  cp "$SCRIPT_DIR/blue-green-deploy.sh" "$CASE_ROOT/scripts/"
-  touch "$CASE_ROOT/compose.prod.yml" "$CASE_ROOT/compose.prod.color.yml"
+  cp "$SCRIPT_DIR/"{blue-green-deploy,prod-postgres}.sh "$CASE_ROOT/scripts/"
+  # The real db scripts have their own tests against postgres; here they only record calls.
+  cat > "$CASE_ROOT/scripts/db-backup.sh" <<'STUB'
+printf 'db-backup %s\n' "$*" >> "$MOCK_LOG"
+[[ ${MOCK_FAIL_BACKUP:-0} != 1 ]] || exit 1
+echo "$CASE_ROOT/deploy/backups/20260101T000000Z-$BACKUP_SHA.dump"
+STUB
+  cat > "$CASE_ROOT/scripts/db-restore-check.sh" <<'STUB'
+printf 'db-restore-check %s\n' "$*" >> "$MOCK_LOG"
+[[ ${MOCK_FAIL_RESTORE_CHECK:-0} != 1 ]] || exit 1
+STUB
+  touch "$CASE_ROOT/"compose.prod{,.pg16,.color}.yml
   printf 'server {}\n' > "$CASE_ROOT/deploy/10-router.conf"
   export MOCK_LOG="$CASE_ROOT/commands.log"
   export CASE_ROOT
   : > "$MOCK_LOG"
-  unset MOCK_LEGACY MOCK_FAIL_HEALTH MOCK_FAIL_PUBLIC MOCK_STALE_COLOR MOCK_FAIL_SHARED MOCK_FAIL_MIGRATION MOCK_SHARED_PROJECT MOCK_REQUIRE_NETWORKS PUBLIC_URL || true
+  unset MOCK_LEGACY MOCK_FAIL_HEALTH MOCK_FAIL_PUBLIC MOCK_STALE_COLOR MOCK_FAIL_SHARED MOCK_FAIL_MIGRATION MOCK_SHARED_PROJECT MOCK_REQUIRE_NETWORKS MOCK_FAIL_BACKUP MOCK_FAIL_RESTORE_CHECK MOCK_POSTGRES_IMAGE MOCK_TARGET_VOLUME PUBLIC_URL || true
 }
 
 run_deploy() {
@@ -88,7 +104,7 @@ echo aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa > "$CASE_ROOT/deploy/.active-image
 export MOCK_SHARED_PROJECT=planner-production
 printf 'upstream app_active { server planner-blue-app:80; }\n' > "$CASE_ROOT/deploy/00-upstreams.conf"
 run_deploy || fail "Normal deployment failed"
-assert_contains 'docker compose --project-name planner-production -f compose.prod.yml up -d --no-recreate postgres redis' "$MOCK_LOG"
+assert_contains 'docker compose --project-name planner-production -f compose.prod.yml -f compose.prod.pg16.yml up -d --no-recreate postgres redis' "$MOCK_LOG"
 [[ $(<"$CASE_ROOT/deploy/.active-color") == green ]] || fail "Active color was not committed"
 [[ $(<"$CASE_ROOT/deploy/.previous-image") == aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa ]] || fail "Previous image was not recorded"
 [[ $(<"$CASE_ROOT/deploy/.active-image") == 0123456789abcdef0123456789abcdef01234567 ]] || fail "Active image was not recorded"
@@ -104,6 +120,23 @@ app_start=$(grep -n 'up -d --no-deps app$' "$MOCK_LOG" | head -1 | cut -d: -f1)
 verify_line=$(grep -n 'curl .*api/v1/health' "$MOCK_LOG" | tail -1 | cut -d: -f1)
 stop_line=$(grep -n 'docker stop -t 15 planner-blue-app' "$MOCK_LOG" | head -1 | cut -d: -f1)
 (( verify_line < stop_line )) || fail "Old color stopped before public verification"
+assert_contains 'db-backup --docker' "$MOCK_LOG"
+assert_contains "db-restore-check --docker $CASE_ROOT/deploy/backups/20260101T000000Z-0123456789ab.dump" "$MOCK_LOG"
+check_line=$(grep -n '^db-restore-check' "$MOCK_LOG" | head -1 | cut -d: -f1)
+migrate_line=$(grep -n 'force-recreate migrate' "$MOCK_LOG" | head -1 | cut -d: -f1)
+(( check_line < migrate_line )) || fail "Migrations ran before the restore check"
+
+for failing in MOCK_FAIL_BACKUP MOCK_FAIL_RESTORE_CHECK; do
+  setup_case "abort_$failing"
+  echo blue > "$CASE_ROOT/deploy/.active-color"
+  printf 'upstream app_active { server planner-blue-app:80; }\n' > "$CASE_ROOT/deploy/00-upstreams.conf"
+  export "$failing=1"
+  if run_deploy; then fail "$failing was accepted"; fi
+  assert_not_contains 'force-recreate migrate' "$MOCK_LOG"
+  assert_not_contains 'nginx -s reload' "$MOCK_LOG"
+  [[ $(<"$CASE_ROOT/deploy/.active-color") == blue ]] || fail "$failing changed active color"
+done
+assert_contains 'Pre-deploy database backup:' "$CASE_ROOT/output.log"
 
 setup_case health_failure
 echo blue > "$CASE_ROOT/deploy/.active-color"
@@ -135,7 +168,7 @@ echo blue > "$CASE_ROOT/deploy/.active-color"
 printf 'upstream app_active { server planner-blue-app:80; }\n' > "$CASE_ROOT/deploy/00-upstreams.conf"
 export MOCK_SHARED_PROJECT='not a project'
 run_deploy || fail "Fallback shared project failed"
-assert_contains 'docker compose --project-name planner -f compose.prod.yml up -d --no-recreate postgres redis' "$MOCK_LOG"
+assert_contains 'docker compose --project-name planner -f compose.prod.yml -f compose.prod.pg16.yml up -d --no-recreate postgres redis' "$MOCK_LOG"
 
 setup_case switch_failure
 echo blue > "$CASE_ROOT/deploy/.active-color"
@@ -163,7 +196,7 @@ if run_deploy; then fail "Failed bootstrap was accepted"; fi
 [[ ! -e "$CASE_ROOT/deploy/.active-color" ]] || fail "Failed bootstrap committed active color"
 assert_contains 'docker stop -t 15 planner-prod-app' "$MOCK_LOG"
 assert_contains 'docker start planner-prod-app' "$MOCK_LOG"
-assert_contains 'docker compose --project-name planner -f compose.prod.yml stop router' "$MOCK_LOG"
+assert_contains 'docker compose --project-name planner -f compose.prod.yml -f compose.prod.pg16.yml stop router' "$MOCK_LOG"
 
 setup_case bootstrap_success
 export MOCK_LEGACY=1
@@ -176,7 +209,7 @@ assert_contains 'docker rm planner-prod-api' "$MOCK_LOG"
 setup_case fresh_host
 export MOCK_REQUIRE_NETWORKS=1
 run_deploy || fail "Fresh host could not start a color with its required networks"
-assert_contains 'docker compose --project-name planner -f compose.prod.yml run --rm --no-deps -T network-init' "$MOCK_LOG"
+assert_contains 'docker compose --project-name planner -f compose.prod.yml -f compose.prod.pg16.yml run --rm --no-deps -T network-init' "$MOCK_LOG"
 network_init=$(grep -n 'run --rm --no-deps -T network-init' "$MOCK_LOG" | head -1 | cut -d: -f1)
 api_start=$(grep -n 'up -d --no-deps api$' "$MOCK_LOG" | head -1 | cut -d: -f1)
 (( network_init < api_start )) || fail "Networks were initialized after API startup"
@@ -190,4 +223,23 @@ fi
 assert_contains 'Set PUBLIC_URL or CORS_ORIGIN' "$CASE_ROOT/output.log"
 [[ ! -s "$MOCK_LOG" ]] || fail "Deploy without a verification origin touched Docker"
 
-echo 'blue-green-deploy: 11 scenarios passed'
+setup_case upgraded
+printf '18\n' > "$CASE_ROOT/deploy/.postgres-18-ready"
+export MOCK_POSTGRES_IMAGE=postgres:18-alpine
+run_deploy || fail "PG18 deployment failed"
+assert_contains '-f compose.prod.yml up -d --no-recreate postgres redis' "$MOCK_LOG"
+assert_not_contains 'compose.prod.pg16.yml' "$MOCK_LOG"
+
+setup_case interrupted_cutover
+export MOCK_POSTGRES_IMAGE=postgres:18-alpine
+if run_deploy; then fail "Unrecorded PG18 replacement was accepted"; fi
+assert_contains 'disagrees with deploy state' "$CASE_ROOT/output.log"
+assert_not_contains 'docker compose' "$MOCK_LOG"
+
+setup_case missing_database_with_pg18_data
+export MOCK_TARGET_VOLUME=1
+if run_deploy; then fail "Missing database with PG18 data was accepted"; fi
+assert_contains 'Inspect cutover state before deploying' "$CASE_ROOT/output.log"
+assert_not_contains 'docker compose' "$MOCK_LOG"
+
+echo 'blue-green-deploy: 16 scenarios passed'

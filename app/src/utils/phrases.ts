@@ -1,4 +1,4 @@
-export type PhraseSection = 'daily' | 'inbox' | 'habits' | 'upcoming' | 'monthly';
+import type { PhraseSection } from '../types/utils';
 
 const PHRASES: Record<PhraseSection, string[]> = {
   daily: [

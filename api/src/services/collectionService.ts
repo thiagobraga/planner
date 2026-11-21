@@ -4,6 +4,7 @@ import { AppError } from '../utils/AppError.js';
 import { validate, type ValidationError } from '../utils/validate.js';
 import { validateColor } from '../utils/color.js';
 import { buildEvent, publishEvent } from './syncService.js';
+import type { CollectionRow, CreateCollectionInput, UpdateCollectionInput } from '../types/collections.js';
 
 function publishCollectionEvent(
   eventType: 'created' | 'updated' | 'deleted',
@@ -21,19 +22,6 @@ function publishCollectionEvent(
       payload,
     }),
   ).catch((err) => console.error('[sync] publish failed', err));
-}
-
-interface CollectionRow {
-  id: string;
-  user_id: string;
-  parent_id: string | null;
-  name: string;
-  color: string;
-  is_inbox: boolean;
-  is_archived: boolean;
-  order_value: number;
-  created_at: string;
-  updated_at: string;
 }
 
 function formatCollection(row: CollectionRow) {
@@ -133,12 +121,6 @@ export async function listCollections(userId: string) {
   return result.rows.map((row) => formatCollection(row as CollectionRow));
 }
 
-export interface CreateCollectionInput {
-  name: string;
-  color: string;
-  parentId?: string | null;
-}
-
 export async function createCollection(userId: string, input: CreateCollectionInput) {
   const errors: ValidationError[] = [];
 
@@ -188,13 +170,6 @@ export async function createCollection(userId: string, input: CreateCollectionIn
   const created = formatCollection(result.rows[0] as CollectionRow);
   publishCollectionEvent('created', created.id, userId, created);
   return created;
-}
-
-export interface UpdateCollectionInput {
-  name?: string;
-  color?: string;
-  parentId?: string | null;
-  orderValue?: number;
 }
 
 export async function updateCollection(collectionId: string, userId: string, input: UpdateCollectionInput) {

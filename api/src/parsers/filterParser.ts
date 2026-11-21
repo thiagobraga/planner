@@ -2,28 +2,8 @@ import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import peggy from 'peggy';
-
-export type FilterExpr =
-  | { type: 'and'; left: FilterExpr; right: FilterExpr }
-  | { type: 'or'; left: FilterExpr; right: FilterExpr }
-  | { type: 'not'; expr: FilterExpr }
-  | { type: 'collection'; name: string }
-  | { type: 'label'; name: string }
-  | { type: 'priority'; level: 1 | 2 | 3 | 4 }
-  | { type: 'today' }
-  | { type: 'overdue' }
-  | { type: 'noDate' }
-  | { type: 'dueOn'; date: string }
-  | { type: 'dueBefore'; date: string }
-  | { type: 'dueAfter'; date: string }
-  | { type: 'assignedTo'; user: string }
-  | { type: 'text'; value: string };
-
-export interface FilterParseError extends Error {
-  position: number;
-}
-
-type PeggyParser = { parse: (input: string) => unknown };
+import type { FilterExpr, FilterParseError } from '../types/filters.js';
+import type { PeggyParser } from '../types/parsers.js';
 
 let cachedParser: PeggyParser | null = null;
 

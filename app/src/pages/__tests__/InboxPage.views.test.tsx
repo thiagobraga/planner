@@ -3,12 +3,11 @@ import { typeText } from '../../test/editableText';
 import { describe, it, expect, vi } from 'vitest';
 import {
   baseInboxData,
-  sampleTasks,
-  createdTask,
   status,
   taskListMock,
   collectionBoardMock,
 } from './helpers/inboxFixtures';
+import { sampleTasks, createdTask } from '../../test/render';
 import { basePreferences } from './helpers/inboxFixtures';
 import { renderPage, createInboxHarness, inboxBeforeEach } from './helpers/inboxHarness';
 import { trackMove, resetTrackedMoves } from '../../utils/moveEcho';

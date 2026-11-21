@@ -1,4 +1,4 @@
-import type { Task } from '../components/TaskItem';
+import type { Task } from './task';
 import type { TaskOrderScope } from './drag';
 import type { TaskMoveInput } from './api';
 

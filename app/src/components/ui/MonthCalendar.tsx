@@ -1,19 +1,9 @@
 import { useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { fmtISO, startOfDay, weekdayColumnIndex, weekdayInitials, type WeekStart } from '../../utils/date';
+import { fmtISO, startOfDay, weekdayColumnIndex, weekdayInitials } from '../../utils/date';
 import { parseISODate } from '../../utils/dateQuickOptions';
 import { useI18n } from '../../i18n/I18nContext';
-
-export interface MonthCalendarProps {
-  /** Selected day as YYYY-MM-DD. */
-  value: string | null;
-  onSelect: (iso: string) => void;
-  weekStart: WeekStart;
-  /** Days after this YYYY-MM-DD are disabled. */
-  maxDate?: string;
-  /** `compact` is the 24px Styleguide grid; `comfortable` the date picker's. */
-  density?: 'compact' | 'comfortable';
-}
+import type { MonthCalendarProps } from '../../types/ui';
 
 /** One month at a time: today ringed, the selected day filled with ink. */
 export function MonthCalendar({ value, onSelect, weekStart, maxDate, density = 'comfortable' }: MonthCalendarProps) {
@@ -33,7 +23,7 @@ export function MonthCalendar({ value, onSelect, weekStart, maxDate, density = '
 
   const cell = compact ? 'h-6 w-6 text-[11px]' : 'h-8 w-8 text-[13px]';
   const navButton = compact
-    ? 'h-6 w-6 rounded-[4px] border-none bg-transparent text-ink-light hover:bg-dot/30 hover:text-ink'
+    ? 'h-6 w-6 rounded-[4px] border-none bg-transparent text-ink-light hover:bg-border-subtle/30 hover:text-ink'
     : 'h-7 w-7 rounded-xs border border-border bg-(--planner-control-bg) text-ink-light hover:border-ink-lighter hover:text-ink';
 
   return (
@@ -99,7 +89,7 @@ export function MonthCalendar({ value, onSelect, weekStart, maxDate, density = '
                     ? 'border border-ink bg-ink font-semibold text-cream'
                     : isToday
                       ? 'border border-ink bg-transparent font-semibold text-ink'
-                      : `border border-transparent bg-transparent hover:bg-dot/40 hover:text-ink ${compact ? 'text-ink-light' : 'text-ink'}`
+                      : `border border-transparent bg-transparent hover:bg-border-subtle/40 hover:text-ink ${compact ? 'text-ink-light' : 'text-ink'}`
                 }`}
               >
                 {index + 1}

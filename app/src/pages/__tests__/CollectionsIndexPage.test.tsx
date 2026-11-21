@@ -2,7 +2,9 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { CollectionsIndexPage } from '../CollectionsIndexPage';
+import { CollectionsLanding, CollectionsLayout } from '../CollectionsLayout';
+
+vi.mock('../../hooks/useSync', () => ({ useSync: vi.fn() }));
 import {
   fetchCollections,
   apiCreateCollection,
@@ -100,8 +102,10 @@ function renderPage(initialPath = '/collections') {
     <QueryClientProvider client={client}>
       <MemoryRouter initialEntries={[initialPath]}>
         <Routes>
-          <Route path="/collections" element={<CollectionsIndexPage />} />
-          <Route path="/collection/:id" element={<div>CollectionDetail</div>} />
+          <Route element={<CollectionsLayout />}>
+            <Route path="/collections" element={<CollectionsLanding />} />
+            <Route path="/collection/:id" element={<div>CollectionDetail</div>} />
+          </Route>
         </Routes>
       </MemoryRouter>
     </QueryClientProvider>,
@@ -121,7 +125,7 @@ beforeEach(() => {
   mockApiAddSavedColor.mockResolvedValue([]);
 });
 
-describe('CollectionsIndexPage', () => {
+describe('CollectionsLayout', () => {
   it('renders the page title', async () => {
     renderPage();
 
@@ -179,17 +183,18 @@ describe('CollectionsIndexPage', () => {
     renderPage();
 
     const workLink = await screen.findByText('Work');
-    fireEvent.click(workLink.closest('.collections-index-row')!);
+    fireEvent.click(workLink.closest('a')!);
 
     expect(await screen.findByText('CollectionDetail')).toBeInTheDocument();
   });
 
-  it('does not render chevron icons on collection rows', async () => {
+  it('renders a chevron only on collections with children', async () => {
     renderPage();
 
     await screen.findByText('Work');
     const chevrons = document.querySelectorAll('.collections-index-row svg.lucide-chevron-right');
-    expect(chevrons.length).toBe(0);
+    expect(chevrons.length).toBe(1);
+    expect(chevrons[0].closest('.collections-index-row')).toHaveTextContent('Work');
   });
 
   it('keeps collection rows on the 24px grid step', async () => {
@@ -244,7 +249,14 @@ describe('CollectionsIndexPage', () => {
         .getAllByRole('menuitem')
         .map((item) => item.textContent);
 
-      expect(labels).toEqual(['Change color…', 'Rename', 'Add sub-collection', 'Delete']);
+      expect(labels).toEqual([
+        'Change color…',
+        'Rename',
+        'Add sub-collection',
+        'Split vertically',
+        'Split horizontally',
+        'Delete',
+      ]);
     });
 
     it('opens the picker seeded with the row colour and recolors only that row', async () => {

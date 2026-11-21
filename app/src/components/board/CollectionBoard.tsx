@@ -1,32 +1,24 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { ApiError, apiCreateTask, apiCreateStatus, apiMoveTask, apiSetCollectionCompletionStatus, apiSeedStatuses, apiUpdateSection, apiUpdateStatus } from '../../api/client';
-import type { ApiSection, ApiStatus, ApiTask, BoardOrder } from '../../types/api';
-import type { BoardGroupBy } from '../../types/drag';
+import {
+  ApiError,
+  apiCreateTask,
+  apiCreateStatus,
+  apiMoveTask,
+  apiSetCollectionCompletionStatus,
+  apiSeedStatuses,
+  apiUpdateSection,
+  apiUpdateStatus,
+} from '../../api/client';
 import { useI18n } from '../../i18n/I18nContext';
 import { buildColumns } from '../../utils/boardColumns';
-import type { BoardColumn as BoardColumnModel } from '../../utils/boardColumns';
-import type { BoardViewMode } from '../../types/board';
-import type { TaskListCallbacks } from '../TaskList';
+import type { BoardColumn as BoardColumnModel } from '../../types/board';
 import { useBoardColumnDrag } from '../../hooks/useBoardColumnDrag';
 import { useBoardDrag } from '../../hooks/useBoardDrag';
 import { ConfirmModal } from '../ConfirmModal';
 import { ColumnDeleteModal } from './ColumnDeleteModal';
 import { BoardView } from './BoardView';
-
-interface CollectionBoardProps {
-  collectionId: string;
-  queryKey: readonly unknown[];
-  groupBy: BoardGroupBy;
-  tasks: ApiTask[];
-  statuses: ApiStatus[];
-  completionStatusId: string | null;
-  sections: ApiSection[];
-  boardOrder: BoardOrder;
-  onToggle?: (taskId: string, completed: boolean) => void;
-  presentation?: Exclude<BoardViewMode, 'list' | 'calendar'>;
-  taskListProps?: TaskListCallbacks & { editingId?: string; activeDragId?: string | null };
-}
+import type { CollectionBoardProps } from '../../types/board';
 
 export function CollectionBoard(props: CollectionBoardProps) {
   const { t } = useI18n();
@@ -48,14 +40,17 @@ export function CollectionBoard(props: CollectionBoardProps) {
   );
 
   useEffect(() => {
-    if (props.groupBy !== 'status' || seedRequested.current) return;
+    // The seed creates default statuses and files status-less tasks; once both are done it is a
+    // no-op, and posting anyway costs a write and a view refetch on every load.
+    const filed = props.statuses.length > 0 && props.tasks.every((task) => task.statusId);
+    if (props.groupBy !== 'status' || filed || seedRequested.current) return;
     seedRequested.current = true;
     apiSeedStatuses(props.collectionId)
       .then(() => queryClient.invalidateQueries({ queryKey: props.queryKey }))
       .catch(() => {
         seedRequested.current = false;
       });
-  }, [props.collectionId, props.groupBy, props.queryKey, props.statuses.length, queryClient]);
+  }, [props.collectionId, props.groupBy, props.queryKey, props.statuses.length, props.tasks, queryClient]);
 
   const projectedColumns = useMemo(() => buildColumns({
     groupBy: props.groupBy,

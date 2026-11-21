@@ -1,8 +1,9 @@
-import { Check, RotateCcw } from 'lucide-react';
-import type { Task } from '../components/TaskItem';
-import type { ContextMenuItem } from '../components/ui/ContextMenu';
+import { Check, PanelRight, RotateCcw } from 'lucide-react';
+import { openTaskDetails } from '../stores/taskDetailStore';
+import type { ContextMenuItem } from '../types/contextMenu';
 import type { TranslationKey } from '../i18n/catalogs';
 import type { ApiStatus } from '../types/api';
+import type { Task } from '../types/task';
 
 export function resolveStageActions(task: Task, statuses: ApiStatus[], completionStatusId: string | null) {
   const none = { next: null, accept: null, reject: null };
@@ -26,9 +27,12 @@ export function buildTaskMenuActions({ task, statuses, completionStatusId, t, on
   onToggle: () => void;
   onMove: (statusId: string) => void;
 }): ContextMenuItem[] {
-  if (!task || task.type === 'note' || task.type === 'event') return [];
+  if (!task) return [];
+  const openItem: ContextMenuItem = { type: 'item', label: t('detail.open'), icon: <PanelRight size={14} />, onClick: () => openDetailsFromMenu(task.id) };
+  if (task.type === 'note' || task.type === 'event') return [openItem, { type: 'separator' }];
   const actions = resolveStageActions(task, statuses, completionStatusId);
   const items: ContextMenuItem[] = [
+    openItem,
     { type: 'item', label: task.isCompleted ? t('contextMenu.reopen') : t('contextMenu.complete'), icon: task.isCompleted ? <RotateCcw size={14} /> : <Check size={14} />, onClick: onToggle },
   ];
   if (actions.next) items.push({ type: 'item', label: t('contextMenu.moveToStage', { stage: actions.next.name }), onClick: () => onMove(actions.next!.id) });
@@ -36,4 +40,9 @@ export function buildTaskMenuActions({ task, statuses, completionStatusId, t, on
   if (actions.reject) items.push({ type: 'item', label: t('contextMenu.reject'), onClick: () => onMove(actions.reject!.id) });
   items.push({ type: 'separator' });
   return items;
+}
+
+function openDetailsFromMenu(taskId: string): void {
+  const origin = document.querySelector<HTMLElement>(`[data-task-id="${CSS.escape(taskId)}"], [data-card-id="${CSS.escape(taskId)}"]`);
+  openTaskDetails(taskId, { origin, focusPanel: true });
 }

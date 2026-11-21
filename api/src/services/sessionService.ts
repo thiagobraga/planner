@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import pool from "../db/pool.js";
 import { securityLog } from "../utils/securityLogger.js";
+import type { SessionContext, SessionCookieOptions, SessionRow } from "../types/auth.js";
 import {
   SESSION_IDLE_TTL_MINUTES,
   SESSION_ABSOLUTE_TTL_HOURS,
@@ -8,19 +9,6 @@ import {
 } from "../config.js";
 
 const RAW_TOKEN_BYTES = 32;
-
-export interface SessionContext {
-  userId: string;
-  sessionId: number;
-  /** Null only on rows written before migration 027 added the column. */
-  lastSeenAt: Date | null;
-}
-
-interface SessionRow {
-  id: number;
-  user_id: string;
-  last_seen_at: Date | null;
-}
 
 export function generateRawToken(): string {
   return crypto.randomBytes(RAW_TOKEN_BYTES).toString("base64url");
@@ -39,14 +27,6 @@ export function buildCookieName(): string {
   return process.env.NODE_ENV === "production"
     ? "__Host-planner_session"
     : "planner_session";
-}
-
-export interface SessionCookieOptions {
-  httpOnly: boolean;
-  secure: boolean;
-  sameSite: "lax";
-  path: string;
-  maxAge: number;
 }
 
 export function buildCookieOptions(): SessionCookieOptions {

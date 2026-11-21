@@ -41,6 +41,17 @@ services:
   postgres:
     container_name: planner-prod-postgres
     image: postgres:18-alpine
+    entrypoint:
+      - sh
+      - -ec
+      - |
+        test -f "$$PGDATA/.planner-upgrade-ready" || {
+          echo "PostgreSQL 18 data volume has not been prepared by postgres-upgrade.sh" >&2
+          exit 1
+        }
+        exec docker-entrypoint.sh "$$@"
+      - --
+    command: [postgres]
     networks: [data]
     environment:
       POSTGRES_USER_FILE: /run/secrets/postgres_user
@@ -51,7 +62,7 @@ services:
       - postgres_password
       - postgres_db
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - pgdata18:/var/lib/postgresql
     cap_drop: [ALL]
     cap_add: [CHOWN, SETUID, SETGID, DAC_OVERRIDE, NET_BIND_SERVICE]
     security_opt: [no-new-privileges:true]
@@ -106,7 +117,9 @@ secrets:
     file: ${REDIS_PASSWORD_FILE:-./secrets/redis_password}
 
 volumes:
-  pgdata:
+  pgdata18:
+    external: true
+    name: ${PLANNER_POSTGRES_VOLUME:-planner_pgdata18}
   redisdata:
 
 networks:

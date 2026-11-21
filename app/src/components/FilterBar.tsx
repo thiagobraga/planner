@@ -1,15 +1,9 @@
 import { useState, useCallback, useRef } from 'react';
 import { useI18n } from '../i18n/I18nContext';
 import type { TranslationKey } from '../i18n/catalogs';
+import type { FilterBarProps, Token, TokenType } from '../types/widgets';
 
 // Simple syntax highlighting token types
-type TokenType = 'keyword' | 'operator' | 'string' | 'error' | 'text';
-
-interface Token {
-  text: string;
-  type: TokenType;
-}
-
 const KEYWORDS = ['today', 'overdue', 'no date', 'p1', 'p2', 'p3', 'p4', 'assigned to: me'];
 const COLLECTION_RE = /^#\S+/;
 const LABEL_RE = /^@\S+/;
@@ -116,18 +110,12 @@ function validateFilter(input: string): TranslationKey | null {
 
 // Syntax-highlight colors for query tokens; each theme defines its own so they stay legible.
 const tokenClassNames: Record<TokenType, string> = {
-  keyword: 'text-accent',
+  keyword: 'text-accent-text',
   operator: 'text-syntax-operator',
   string: 'text-syntax-string',
   error: 'text-syntax-error',
   text: 'text-ink',
 };
-
-interface FilterBarProps {
-  value?: string;
-  onChange?: (value: string) => void;
-  onApply?: (value: string) => void;
-}
 
 export function FilterBar({ value: externalValue, onChange, onApply }: FilterBarProps) {
   const { t } = useI18n();
@@ -164,7 +152,7 @@ export function FilterBar({ value: externalValue, onChange, onApply }: FilterBar
   return (
     <div className="relative flex flex-col gap-1">
       <div
-        className={`flex items-center gap-2 py-1.5 px-3 border rounded bg-[var(--planner-control-bg)] transition-[border-color] duration-[120ms] ${errorKey ? 'border-accent' : isFocused ? 'border-ink' : 'border-dot'}`}
+        className={`flex items-center gap-2 py-1.5 px-3 border rounded bg-[var(--planner-control-bg)] transition-[border-color] duration-[120ms] ${errorKey ? 'border-danger' : isFocused ? 'border-ink' : 'border-border-subtle'}`}
       >
         {/* Filter icon */}
         <span className="text-xs text-ink-light shrink-0">⊟</span>
@@ -214,7 +202,7 @@ export function FilterBar({ value: externalValue, onChange, onApply }: FilterBar
         <div
           id="filter-error"
           role="alert"
-          className="text-[11px] text-accent pl-3 leading-4"
+          className="text-[11px] text-danger-text pl-3 leading-4"
         >
           {t(errorKey)}
         </div>

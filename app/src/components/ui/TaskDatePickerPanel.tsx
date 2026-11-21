@@ -1,18 +1,12 @@
 import { useRef, useState } from 'react';
 import type { RecurrenceRule, TaskSchedule } from '../../types/task';
-import { fmtISO, type WeekStart } from '../../utils/date';
+import { fmtISO } from '../../utils/date';
+import type { WeekStart } from '../../types/utils';
 import { usePreferences } from '../../hooks/usePreferences';
 import { DateScreen } from './datePicker/DateScreen';
 import { TimeScreen } from './datePicker/TimeScreen';
 import { RepeatScreen } from './datePicker/RepeatScreen';
-
-interface TaskDatePickerPanelProps {
-  value: TaskSchedule;
-  onSave: (value: TaskSchedule) => void;
-  onClose: () => void;
-}
-
-type Screen = 'date' | 'time' | 'repeat';
+import type { DatePickerScreen, TaskDatePickerPanelProps } from '../../types/ui';
 
 const EMPTY: TaskSchedule = {
   dueDate: null,
@@ -38,14 +32,14 @@ export function TaskDatePickerPanel({ value, onSave, onClose }: TaskDatePickerPa
   const { data: prefs } = usePreferences();
   const weekStart: WeekStart = prefs?.weekStart ?? 'sunday';
   const [draft, setDraft] = useState<TaskSchedule>(value);
-  const [stack, setStack] = useState<Screen[]>(['date']);
+  const [stack, setStack] = useState<DatePickerScreen[]>(['date']);
   const [direction, setDirection] = useState<'forward' | 'back'>('forward');
   const timeSnapshot = useRef<TaskSchedule>(value);
 
   const screen = stack[stack.length - 1];
   const patch = (changes: Partial<TaskSchedule>) => setDraft((d) => ({ ...d, ...changes }));
 
-  const open = (next: Screen) => {
+  const open = (next: DatePickerScreen) => {
     setDirection('forward');
     setStack((s) => [...s, next]);
   };

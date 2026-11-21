@@ -26,14 +26,14 @@ import {
 } from '../components/dnd/sensors';
 import { plannerCollisionDetection } from '../components/dnd/collision';
 import { createIndentTracker } from '../utils/dragIndent';
-import type { DragData, DragKind } from '../types/drag';
-import {
-  PlannerDragContext,
-  INDENT_PX,
-  type DragHandlers,
-  type DragOverlayInfo,
-  type PlannerDragContextValue,
-} from './usePlannerDrag';
+import type {
+  DragData,
+  DragHandlers,
+  DragKind,
+  DragOverlayInfo,
+  PlannerDragContextValue,
+} from '../types/drag';
+import { PlannerDragContext, INDENT_PX } from './usePlannerDrag';
 
 /**
  * The app's single DndContext, wrapping both the Sidebar and the routed page.
@@ -309,7 +309,7 @@ export function PlannerDragProvider({ children }: { children: ReactNode }) {
           {overlayNode ? (
             <div className="planner-drag-overlay planner-drag-overlay--block">{overlayNode}</div>
           ) : overlay ? (
-            <div className="planner-drag-overlay flex items-center gap-2 rounded-[8px] border border-dot px-2 py-1 text-[13px] text-ink shadow-(--planner-drag-shadow)" style={{ backgroundColor: 'var(--planner-overlay-bg)' }}>
+            <div className="planner-drag-overlay flex items-center gap-2 rounded-[8px] border border-border-subtle px-2 py-1 text-[13px] text-ink shadow-(--planner-drag-shadow)" style={{ backgroundColor: 'var(--planner-overlay-bg)' }}>
               <span className="planner-drag-overlay-title truncate max-w-[280px]">
                 {overlay.title}
               </span>

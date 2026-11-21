@@ -1,23 +1,15 @@
-export type Priority = 1 | 2 | 3 | 4;
-
-export interface PriorityDotProps {
-  /** 1–4; omit or pass undefined for the default (grey) dot. */
-  priority?: Priority;
-  /** Render the "P1"…"P4" label after the dot. */
-  showLabel?: boolean;
-  className?: string;
-}
+import type { Priority, PriorityDotProps } from '../../types/ui';
 
 // Priority bullet colors - mirrors TaskItem's priorityClasses mapping.
 const DOT_COLOR: Record<Priority, string> = {
-  1: 'bg-accent',
+  1: 'bg-danger',
   2: 'bg-priority-2',
   3: 'bg-priority-3',
   4: 'bg-ink',
 };
 
 export function PriorityDot({ priority, showLabel = false, className = '' }: PriorityDotProps) {
-  const dot = priority ? DOT_COLOR[priority] : 'bg-dot';
+  const dot = priority ? DOT_COLOR[priority] : 'bg-border-subtle';
   return (
     <span className={`ui-priority-dot inline-flex items-center gap-1.5 whitespace-nowrap ${className}`}>
       <span className={`ui-priority-dot-circle w-2 h-2 rounded-full shrink-0 ${dot}`} />

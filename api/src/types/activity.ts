@@ -1,5 +1,55 @@
 export type ActorType = "session" | "token" | "oauth";
 
+export interface ActivityRow {
+  id: string;
+  user_id: string;
+  collection_id: string | null;
+  entity_type: string;
+  entity_id: string;
+  event_type: string;
+  before_data: unknown | null;
+  after_data: unknown | null;
+  created_at: string;
+  actor_type: ActorType;
+  api_token_id: string | null;
+  oauth_grant_id: string | null;
+  actor_label: string | null;
+  title: string | null;
+}
+
+export interface SearchableEntity {
+  id: string;
+  type: "task" | "collection" | "label";
+  text: string;
+  updatedAt: string;
+  description?: string | null;
+}
+
+export interface SearchResults {
+  tasks: SearchableEntity[];
+  collections: SearchableEntity[];
+  labels: SearchableEntity[];
+}
+
+export interface CommentRow {
+  id: string;
+  task_id: string;
+  user_id: string;
+  body: string;
+  created_at: string;
+  updated_at: string | null;
+  actor_label: string | null;
+}
+
+export interface ReminderRow {
+  id: string;
+  task_id: string;
+  user_id: string;
+  remind_at: string;
+  is_fired: boolean;
+  created_at: string;
+}
+
 /** The non-browser caller behind a request, when there is one. */
 export interface RequestActor {
   type: Exclude<ActorType, "session">;

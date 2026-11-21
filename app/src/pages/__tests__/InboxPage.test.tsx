@@ -5,12 +5,11 @@ import { describe, it, expect, vi } from 'vitest';
 import {
   basePreferences,
   baseInboxData,
-  sampleTasks,
-  createdTask,
   section,
   taskListMock,
   collectionBoardMock,
 } from './helpers/inboxFixtures';
+import { sampleTasks, createdTask } from '../../test/render';
 import { renderPage, inboxList, inboxBeforeEach } from './helpers/inboxHarness';
 import {
   fetchInboxTasks,
@@ -112,7 +111,7 @@ describe('InboxPage', () => {
 
     const row = (await screen.findByText('Inbox')).closest('.page-header-row');
     expect(row).toContainElement(screen.getByRole('button', { name: 'View' }));
-    expect(row).toContainElement(screen.getByRole('button', { name: 'Window' }));
+    expect(screen.queryByRole('button', { name: 'Window' })).not.toBeInTheDocument();
     expect(screen.queryByRole('checkbox', { name: 'Notes' })).not.toBeInTheDocument();
   });
 

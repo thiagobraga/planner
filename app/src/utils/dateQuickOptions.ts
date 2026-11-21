@@ -1,11 +1,5 @@
-import { fmtISO, startOfDay, type WeekStart } from './date';
-
-export type DateQuickOptionKey = 'today' | 'tomorrow' | 'weekend' | 'nextWeek';
-
-export interface DateQuickOption {
-  key: DateQuickOptionKey;
-  date: string;
-}
+import { fmtISO, startOfDay } from './date';
+import type { DateQuickOption, WeekStart } from '../types/utils';
 
 function plusDays(d: Date, n: number): Date {
   const next = new Date(d);

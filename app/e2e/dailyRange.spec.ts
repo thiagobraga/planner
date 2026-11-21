@@ -1,7 +1,7 @@
 import { mkdir } from 'node:fs/promises';
 import { test, expect, STORAGE_STATE_PATH } from './fixtures/api';
 import type { ApiTask } from '../src/api/client';
-import { chooseView } from './fixtures/view';
+import { chooseView, expectSavedDailyView } from './fixtures/view';
 
 const WEEK_NOTEBOOK = { style: 'notebook', range: 'week' };
 
@@ -52,6 +52,7 @@ test('each Daily layout shows its view and loads it with one range request', asy
     dailyCalls.length = 0;
     await chooseView(page, { layout: 'Columns', style: 'Cards' });
     await expect(page).toHaveURL(/\/daily\/columns$/);
+    await expectSavedDailyView(api, { style: 'cards' });
     await expect(page.getByTestId('daily-week-board')).toBeVisible();
     await expect(page.getByRole('heading', { name: title, exact: true })).toBeVisible();
     const sameRange = new Date(`${today}T12:00:00Z`).getUTCDay() === 0;
@@ -70,6 +71,7 @@ test('each Daily layout shows its view and loads it with one range request', asy
     await page.goto('/daily/monthly');
     await expect(page).toHaveURL(/\/daily\/list$/);
     await expect(page.locator('.monthly-ledger').first()).toBeVisible();
+    await expectSavedDailyView(api, { style: 'cards', range: 'month' });
     await page.reload();
     await expect(page.locator('.monthly-ledger').first()).toBeVisible();
 

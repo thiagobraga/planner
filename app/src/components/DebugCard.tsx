@@ -10,7 +10,7 @@ function formatCreated(iso?: string): string {
 }
 
 export function DebugCard({ id, orderValue, createdAt, level = 0, parentId }: DebugCardProps) {
-  const chip = 'inline-flex h-5 items-center rounded-sm border border-dot px-1.5';
+  const chip = 'inline-flex h-5 items-center rounded-sm border border-border-subtle px-1.5';
   const chipStyle = { backgroundColor: 'var(--planner-control-bg)' };
   return (
     <span

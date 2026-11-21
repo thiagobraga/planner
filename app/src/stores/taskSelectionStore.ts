@@ -1,12 +1,5 @@
 import { create } from 'zustand';
-
-interface TaskSelectionState {
-  selectedTaskIds: Set<string>;
-  selectTask: (id: string, isMulti: boolean) => void;
-  toggleTask: (id: string) => void;
-  clearSelection: () => void;
-  isSelected: (id: string) => boolean;
-}
+import type { TaskSelectionState } from '../types/task';
 
 export const useTaskSelectionStore = create<TaskSelectionState>((set, get) => ({
   selectedTaskIds: new Set<string>(),

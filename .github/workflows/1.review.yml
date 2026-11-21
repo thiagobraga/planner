@@ -4,7 +4,7 @@ on:
   workflow_call:
     inputs:
       workflows_changed:
-        description: 'Run the workflow lint (the PR touches .github/)'
+        description: 'Run workflow lint and ops tests for workflow, script or Compose changes'
         type: boolean
         default: true
 
@@ -20,7 +20,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
-      - uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5
+      - uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
         with:
           fail-on-severity: high
 
@@ -28,7 +28,21 @@ jobs:
     name: 1b. Workflow lint
     if: inputs.workflows_changed
     runs-on: ubuntu-24.04
-    timeout-minutes: 10
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: planner
+          POSTGRES_PASSWORD: planner-test
+          POSTGRES_DB: planner_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -37,6 +51,28 @@ jobs:
         run: bash scripts/ci-changes.test.sh
       - name: Hook package routing tests
         run: bash scripts/hooks.test.sh
+      - name: Line limit and contract check tests
+        run: |
+          bash scripts/check-line-limits.test.sh
+          bash scripts/check-contracts.test.sh
+      - name: Backup and restore check against PostgreSQL 18
+        env:
+          PGHOST: localhost
+          PGPORT: 5432
+          PGUSER: planner
+          PGPASSWORD: planner-test
+          PGDATABASE: planner_test
+        run: |
+          docker run --rm --network host --volume "$PWD:/repo:ro" --workdir /repo \
+            --env PGHOST --env PGPORT --env PGUSER --env PGPASSWORD --env PGDATABASE \
+            postgres:18 bash -ec 'bash scripts/db-backup.test.sh; bash scripts/db-restore-check.test.sh'
+      - name: Deploy and rollback script tests
+        run: |
+          bash scripts/blue-green-deploy.test.sh
+          bash scripts/db-restore.test.sh
+          bash scripts/db-docker.test.sh
+      - name: Rehearse PostgreSQL 16 to 18 upgrade and rollback
+        run: bash scripts/postgres-upgrade.test.sh
       - name: actionlint
         run: docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:1.7.12 -color
       - name: zizmor

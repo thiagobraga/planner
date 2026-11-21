@@ -1,6 +1,5 @@
 import { CalendarDays, ChevronRight, Clock, Flag, Repeat } from 'lucide-react';
 import { useI18n } from '../../../i18n/I18nContext';
-import type { TaskSchedule } from '../../../types/task';
 import { fmtISO } from '../../../utils/date';
 import { parseISODate } from '../../../utils/dateQuickOptions';
 import { recurrenceSummary } from '../../../utils/recurrenceSummary';
@@ -9,16 +8,7 @@ import { Button } from '../Button';
 import { Toggle } from '../Toggle';
 import { DURATION_OPTIONS, DURATION_PRESETS, formatDurationLabel } from './durations';
 import { Divider, ICON, ScreenHeader, SectionLabel, bareInput, fieldShell } from './parts';
-
-interface TimeScreenProps {
-  draft: TaskSchedule;
-  onChange: (patch: Partial<TaskSchedule>) => void;
-  onBack: () => void;
-  onCancel: () => void;
-  onSave: () => void;
-  onOpenRepeat: () => void;
-  onClose: () => void;
-}
+import type { TimeScreenProps } from '../../../types/ui';
 
 export function TimeScreen({ draft, onChange, onBack, onCancel, onSave, onOpenRepeat, onClose }: TimeScreenProps) {
   const { t, locale } = useI18n();
@@ -103,7 +93,7 @@ export function TimeScreen({ draft, onChange, onBack, onCancel, onSave, onOpenRe
                 aria-pressed={active}
                 onClick={() => onChange({ durationMinutes: active ? null : minutes })}
                 className={`h-8 cursor-pointer rounded-xs border text-[13px] text-ink transition-colors duration-(--motion-fast) active:scale-[0.98] ${
-                  active ? 'border-ink bg-dot/40' : 'border-border bg-(--planner-control-bg) hover:border-ink-lighter'
+                  active ? 'border-ink bg-border-subtle/40' : 'border-border bg-(--planner-control-bg) hover:border-ink-lighter'
                 }`}
               >
                 {formatDurationLabel(minutes)}
@@ -175,7 +165,7 @@ export function TimeScreen({ draft, onChange, onBack, onCancel, onSave, onOpenRe
       <button
         type="button"
         onClick={onOpenRepeat}
-        className="mx-3 my-2 flex h-8 cursor-pointer items-center gap-3 rounded-xs border-none bg-transparent px-0 text-left text-[14px] text-ink transition-colors duration-(--motion-fast) hover:bg-dot/30"
+        className="mx-3 my-2 flex h-8 cursor-pointer items-center gap-3 rounded-xs border-none bg-transparent px-0 text-left text-[14px] text-ink transition-colors duration-(--motion-fast) hover:bg-border-subtle/30"
         style={{ width: 'calc(100% - 24px)' }}
       >
         <Repeat {...ICON} className="shrink-0 text-ink-light" />

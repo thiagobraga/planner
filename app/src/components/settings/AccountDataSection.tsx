@@ -97,7 +97,7 @@ export function AccountDataSection() {
       </div>
 
       {exportMutation.isError && (
-        <p role="alert" className="text-[13px] leading-6 text-accent">
+        <p role="alert" className="text-[13px] leading-6 text-danger-text">
           {exportMutation.error instanceof Error
             ? exportMutation.error.message
             : t('settings.accountData.exportError')}
@@ -105,7 +105,7 @@ export function AccountDataSection() {
       )}
 
       {deleteMutation.isError && (
-        <p role="alert" className="text-[13px] leading-6 text-accent">
+        <p role="alert" className="text-[13px] leading-6 text-danger-text">
           {deleteMutation.error instanceof Error
             ? deleteMutation.error.message
             : t('settings.accountData.deleteError')}
