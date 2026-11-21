@@ -9,6 +9,7 @@ import type {
   MenuPanelProps,
   SubMenuWrapperProps,
 } from '../../types/contextMenu';
+import { useOutsidePress } from '../../hooks/useOutsidePress';
 
 function opensChild(item: ContextMenuItem): boolean {
   return Boolean(item.panel || (item.submenu && item.submenu.length > 0));
@@ -29,16 +30,7 @@ function ContextMenuRoot({ items, position, onClose, caret, align }: ContextMenu
   const rootRef = useRef<HTMLDivElement>(null);
   const [activePath, setActivePath] = useState<number[]>([]);
 
-  // Handle clicking outside to close
-  useEffect(() => {
-    function handleMouseDown(e: MouseEvent) {
-      if (rootRef.current && !rootRef.current.contains(e.target as Node)) {
-        onClose();
-      }
-    }
-    document.addEventListener('mousedown', handleMouseDown);
-    return () => document.removeEventListener('mousedown', handleMouseDown);
-  }, [onClose]);
+  useOutsidePress(rootRef, onClose);
 
   // Handle keyboard navigation at the root level
   const handleKeyDown = (e: KeyboardEvent) => {
