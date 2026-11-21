@@ -148,8 +148,9 @@ Naming rule: rename narrower shape with domain prefix (`ViewTaskRow`,
       `Create/UpdateCollectionInput`; `SectionRow`,
       `Create/UpdateSectionInput`; `InvitationRow`, `CollaboratorRow`;
       `LabelRow`, `Label`, `Create/UpdateLabelInput`
-- [ ] Extend `api/src/types/daily.ts`: add `ViewTaskRow`,
-      `ViewPreferencesRow`, `ViewStatusRow`, `BoardOrderRow`
+- [x] Move view types: `ViewTaskRow` in `api/src/types/task.ts`;
+      `ViewPreferencesRow`, `ViewStatusRow`, `BoardOrderRow` and `ViewOptions`
+      in `api/src/types/daily.ts`
 - [x] Create `api/src/types/filters.ts`: `FilterExpr`, `FilterParseError`,
       `FilterRow`, `Create/UpdateFilterInput`, `EvalTask`, `EvalContext`
 - [x] Create `api/src/types/sync.ts`: `SocketData`, `SyncEntityType`,
