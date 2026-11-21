@@ -47,14 +47,15 @@ test('keeps the desktop tree and rename draft across navigation and history', as
     await page.goForward();
     await expect(tree.getByRole('link', { name: 'Split view 6' })).toHaveAttribute('aria-current', 'page');
     await draft.press('Escape');
+    // Any press outside an open menu closes it, on another tree row or on the pane.
+    const last = tree.getByRole('link', { name: 'Split view 6' });
     await first.click({ button: 'right' });
     await expect(page.getByRole('menu')).toBeVisible();
-    const last = tree.getByRole('link', { name: 'Split view 6' });
-    await last.click({ position: { x: 8, y: 12 } });
-    await expect(page.getByRole('menu')).toBeVisible();
     await tree.getByRole('link', { name: 'Split view 5' }).click({ position: { x: 8, y: 12 } });
-    await expect(page.getByRole('menu')).toBeVisible();
+    await expect(page.getByRole('menu')).toHaveCount(0);
     await expect(pane.getByRole('heading', { name: 'Split view 5' })).toBeVisible();
+    await first.click({ button: 'right' });
+    await expect(page.getByRole('menu')).toBeVisible();
     await pane.click({ position: { x: 260, y: 200 } });
     await expect(page.getByRole('menu')).toHaveCount(0);
 

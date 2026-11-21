@@ -108,7 +108,7 @@ export function TopBar({ onOpenSearch, onOpenShortcuts, updateAvailable = false 
             aria-haspopup="menu"
             aria-current={menuRouteActive ? 'page' : undefined}
             aria-expanded={menu?.kind === 'menu'}
-            onMouseDown={(event) => event.stopPropagation()}
+            onPointerDown={(event) => event.stopPropagation()}
             onClick={(event) => toggleMenu(event.currentTarget)}
           >
             <PlannerIcon width={16} height={16} className="topbar-menu-icon" />
