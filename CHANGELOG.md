@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.39.5](https://github.com/thiagobraga/planner/compare/v0.39.4...v0.39.5) (2026-11-21)
+
+
+### Fixed
+
+* **tests:** compare font URL hosts exactly ([644bf9e](https://github.com/thiagobraga/planner/commit/644bf9edd56008ccd78fa3a27eee42113cdf2dfd))
+
+
+### Changed
+
+* **app:** reduce startup bundle and harden production edge ([7c1f2ab](https://github.com/thiagobraga/planner/commit/7c1f2ab60de2fbe98ee9019f3a09fafa14eecdbc))
+
 ## [0.39.4](https://github.com/thiagobraga/planner/compare/v0.39.3...v0.39.4) (2026-11-21)
 
 
