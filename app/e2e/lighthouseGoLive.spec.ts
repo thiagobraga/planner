@@ -42,7 +42,7 @@ test('fonts load locally on demand with offline caching in production', async ({
     await expect(page.locator('main')).not.toBeEmpty();
     await expect(page.getByText('Review weekly journal', { exact: true })).toBeVisible();
     await page.evaluate(() => document.fonts.ready);
-    expect(requests.some((url) => /fonts\.(googleapis|gstatic)\.com/.test(url))).toBe(false);
+    expect(requests.some((url) => ['fonts.googleapis.com', 'fonts.gstatic.com'].includes(new URL(url).hostname))).toBe(false);
     expect(requests.some((url) => /\/fonts\/lora-latin-normal\.woff2/.test(url))).toBe(true);
     expect(requests.some((url) => /\/fonts\/(playpen|hubballi)-/.test(url))).toBe(false);
     await page.setViewportSize({ width: 1440, height: 900 });

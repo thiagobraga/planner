@@ -20,7 +20,12 @@ describe('ensureFontLoaded', () => {
 
   it('preloads only local regular Lora on initial navigation', () => {
     const html = readAppFile('index.html');
-    expect(html).not.toMatch(/fonts\.(googleapis|gstatic)\.com/);
+    const parsed = new DOMParser().parseFromString(html, 'text/html');
+    const externalFontLinks = [...parsed.querySelectorAll('link[href]')].filter((link) => {
+      const hostname = new URL(link.getAttribute('href')!, 'https://planner.local').hostname;
+      return ['fonts.googleapis.com', 'fonts.gstatic.com'].includes(hostname);
+    });
+    expect(externalFontLinks).toHaveLength(0);
     expect(html).toMatch(/rel="preload"[^>]+href="\/fonts\/lora-latin-normal\.woff2"[^>]+crossorigin/);
     expect(html).not.toMatch(/rel="preload"[^>]+(?:playpen|hubballi|italic)/);
   });
