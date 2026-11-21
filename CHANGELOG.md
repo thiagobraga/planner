@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.39.2](https://github.com/thiagobraga/planner/compare/v0.39.1...v0.39.2) (2026-11-21)
+
+
+### Changed
+
+* **api:** extract view service types ([3e3b1be](https://github.com/thiagobraga/planner/commit/3e3b1be4bb605758e03f260302ed0b8b6753f596))
+* finish dedicated type files ([6bfcc56](https://github.com/thiagobraga/planner/commit/6bfcc5613f0b03c36c87574034221d1aeffeb731))
+
 ## [0.39.1](https://github.com/thiagobraga/planner/compare/v0.39.0...v0.39.1) (2026-11-21)
 
 
