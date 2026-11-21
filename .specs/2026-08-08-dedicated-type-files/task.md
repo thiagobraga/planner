@@ -7,10 +7,9 @@ dedicated per-domain type files. No behaviour change, no re-export shims.
 Tests keep local mocks. `.d.ts`, `test/setup.ts`, `i18n/types.ts` stay
 (see plan Exceptions).
 
-Branch state: `refactor/dedicated-type-files`, branched from `main` at
-`fc5918c4`. M1 (`types/api.ts`) is on `main`. An earlier M2 attempt created
-`types/tasks.ts` but never updated importers, so it was deleted as unused;
-M2 below was redone against the current tree.
+M1 through M6 and part of M7 are on `main` through PRs #428 and #435.
+Continue M7 and M8 on `refactor/dedicated-types-remaining`, based on `main`
+at `2cd2038f`. Recheck the inventory against newer changes before extraction.
 
 Naming rule: rename narrower shape with domain prefix (`ViewTaskRow`,
 `TaskComment`, `StoreTask`) - never merge different shapes.
@@ -149,8 +148,9 @@ Naming rule: rename narrower shape with domain prefix (`ViewTaskRow`,
       `Create/UpdateCollectionInput`; `SectionRow`,
       `Create/UpdateSectionInput`; `InvitationRow`, `CollaboratorRow`;
       `LabelRow`, `Label`, `Create/UpdateLabelInput`
-- [ ] Extend `api/src/types/daily.ts`: add `ViewTaskRow`,
-      `ViewPreferencesRow`, `ViewStatusRow`, `BoardOrderRow`
+- [x] Move view types: `ViewTaskRow` in `api/src/types/task.ts`;
+      `ViewPreferencesRow`, `ViewStatusRow`, `BoardOrderRow` and `ViewOptions`
+      in `api/src/types/daily.ts`
 - [x] Create `api/src/types/filters.ts`: `FilterExpr`, `FilterParseError`,
       `FilterRow`, `Create/UpdateFilterInput`, `EvalTask`, `EvalContext`
 - [x] Create `api/src/types/sync.ts`: `SocketData`, `SyncEntityType`,
