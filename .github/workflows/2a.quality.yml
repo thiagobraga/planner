@@ -98,6 +98,9 @@ jobs:
       - run: npm run lint
       - run: npm run coverage
       - run: npm run build
+      - name: Verify production edge headers and crawler responses
+        working-directory: .
+        run: bash scripts/production-edge.test.sh
 
   site:
     name: 'Site: lint, typecheck, test, build, E2E'

@@ -91,7 +91,7 @@
 
 .topbar-actions { display: flex; align-items: center; gap: 8px; height: var(--topbar-tab-height); min-width: 0; justify-self: end; }
 .topbar-version-cluster { display: flex; align-items: center; gap: 8px; min-width: 0; }
-.topbar-version { color: var(--color-ink-light); font-size: 11px; white-space: nowrap; text-decoration: none; cursor: pointer; transition: color var(--motion-fast) var(--topbar-ease); }
+.topbar-version { font-size: 11px; white-space: nowrap; text-decoration: none; cursor: pointer; transition: color var(--motion-fast) var(--topbar-ease); }
 .topbar-version:hover, .topbar-version:focus-visible, .topbar-version[aria-current='page'] { color: var(--color-ink); text-decoration: underline; text-underline-offset: 2px; }
 .topbar-version:focus-visible { outline: 2px solid var(--color-ink); outline-offset: 2px; border-radius: 2px; }
 .topbar-icon-button {

@@ -5,6 +5,7 @@ import App from "./App";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { installPreloadRecovery } from "./utils/preloadRecovery";
 import "./index.css";
+import "./styles/fonts/lora.css";
 
 installPreloadRecovery();
 registerSW({ immediate: true });

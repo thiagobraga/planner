@@ -75,20 +75,15 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,svg,png,ico,woff2}'],
         // iOS fetches only the launch image matching its own screen, so
         // precaching all of them would cost every visitor ~4 MB for nothing.
-        globIgnores: ['**/images/splash/**'],
+        globIgnores: ['**/images/splash/**', '**/fonts/playpen-*.woff2', '**/fonts/hubballi-*.woff2'],
         navigateFallback: null,
         runtimeCaching: [
           {
-            urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
-            handler: 'CacheFirst',
-            options: { cacheName: 'google-fonts-stylesheets' },
-          },
-          {
-            urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
+            urlPattern: ({ url, sameOrigin }) => sameOrigin && /^\/fonts\/(?:playpen|hubballi)-.*\.woff2$/.test(url.pathname),
             handler: 'CacheFirst',
             options: {
-              cacheName: 'google-fonts-webfonts',
-              cacheableResponse: { statuses: [0, 200] },
+              cacheName: 'optional-fonts',
+              cacheableResponse: { statuses: [200] },
               expiration: { maxAgeSeconds: 60 * 60 * 24 * 365 },
             },
           },

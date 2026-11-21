@@ -60,6 +60,11 @@ App
 - `app/public/robots.txt` (new)
 - `vite.config.ts` (PWA precache for fonts)
 - `README.md` (host nginx HSTS note)
+- `deploy/10-router.conf`, `.docker/app/nginx.conf` (production headers and crawler responses)
+- `scripts/production-edge.test.sh`, `.github/workflows/2a.quality.yml` (real nginx regression in CI)
+- `app/src/styles/fonts/`, `app/public/fonts/`, `app/src/utils/fontLoader.ts`, `app/src/components/settings/SettingsAppearance.tsx`, `app/src/main.tsx` (local font delivery)
+- `app/package.json`, `app/package-lock.json`, `app/src/test/fontPrecache.test.ts` (glob compatibility and precache regression)
+- `app/src/__tests__/App.test.tsx`, `app/src/pages/__tests__/SettingsPage.test.tsx`, `app/src/utils/__tests__/fontLoader.test.ts`, `app/e2e/lighthouseGoLive.spec.ts` (route, font and browser regressions)
 
 Evidence: `/home/thiago/Downloads/performance-planner` (DevTools trace), Lighthouse report from `planner.thiagobraga.dev/daily/list`.
 
@@ -100,36 +105,42 @@ Legend: `[ ]` not started, `[~]` in progress, `[x]` completed.
 ### 2. PR `perf/lighthouse-go-live`
 
 #### 2.1 Contrast
-- [ ] 2.1.1 Remove `color` from `.topbar-version` in `app/src/index.css` (or topbar CSS) so it inherits the parent
-- [ ] 2.1.2 Verify contrast >= 4.5:1 for the label
-- [ ] 2.1.3 Dot color: do not edit shared `--color-dot` for one component. Add a semantic dot token where a component needs a different dot color; verify each consumer above (AppShell grid, HabitDot, TopBar, index.css) renders unchanged in light and dark
+- [x] 2.1.1 Remove `color` from `.topbar-version` in `app/src/index.css` (or topbar CSS) so it inherits the parent
+- [x] 2.1.2 Verify contrast >= 4.5:1 for the label
+- [x] 2.1.3 Dot color: do not edit shared `--color-dot` for one component. Add a semantic dot token where a component needs a different dot color; verify each consumer above (AppShell grid, HabitDot, TopBar, index.css) renders unchanged in light and dark
 
 #### 2.2 Fonts
-- [ ] 2.2.1 Add Lora (latin subset, woff2) via `@fontsource-variable/lora` or `app/public/fonts`
-- [ ] 2.2.2 Preload the regular Lora file in `app/index.html`
-- [ ] 2.2.3 Remove Google Fonts `<link>` and preconnects from `app/index.html`
-- [ ] 2.2.4 Playpen Sans and Hubballi: no preload; `@font-face` loaded via dynamic import only when the saved font preference uses them, or when Settings > Appearance opens
-- [ ] 2.2.5 Add woff2 to PWA precache in `vite.config.ts`; runtime-cache lazy fonts
-- [ ] 2.2.6 Verify offline load in the PWA
+- [x] 2.2.1 Add Lora (latin subset, woff2) via `@fontsource-variable/lora` or `app/public/fonts`
+- [x] 2.2.2 Preload the regular Lora file in `app/index.html`
+- [x] 2.2.3 Remove Google Fonts `<link>` and preconnects from `app/index.html`
+- [x] 2.2.4 Playpen Sans and Hubballi: no preload; `@font-face` loaded via dynamic import only when the saved font preference uses them, or when Settings > Appearance opens
+- [x] 2.2.5 Add woff2 to PWA precache in `vite.config.ts`; runtime-cache lazy fonts
+- [x] 2.2.6 Verify offline load in the PWA
 
 #### 2.3 Code splitting
-- [ ] 2.3.1 `App.tsx`: `React.lazy` for Settings, Admin, Styleguide, Changelog, Help, Habits, Collections; Suspense fallback
-- [ ] 2.3.2 Compare `vite build` chunk sizes before and after (baseline ~1MB JS)
+- [x] 2.3.1 `App.tsx`: `React.lazy` for Settings, Admin, Styleguide, Changelog, Help, Habits, Collections; Suspense fallback
+- [x] 2.3.2 Compare `vite build` chunk sizes before and after (baseline ~1MB JS)
 
 #### 2.4 SEO and crawlers
-- [ ] 2.4.1 `app/index.html`: `<meta name="description">`
-- [ ] 2.4.2 `app/public/robots.txt` (valid syntax; no `<html>` body)
-- [ ] 2.4.3 Return 404 for `/llms.txt` and `/ai-catalog.json` instead of the SPA shell (router or static file rule)
+- [x] 2.4.1 `app/index.html`: `<meta name="description">`
+- [x] 2.4.2 `app/public/robots.txt` (valid syntax; no `<html>` body)
+- [x] 2.4.3 Return 404 for `/llms.txt` and `/ai-catalog.json` instead of the SPA shell (router or static file rule)
 
 #### 2.5 Security headers
-- [ ] 2.5.1 `compose.prod.yml` router: CSP (report-only first), HSTS, COOP, `X-Content-Type-Options`, `frame-ancestors`
-- [ ] 2.5.2 Verify app still loads with CSP (Socket.IO, fonts, inline manifest script in `index.html`)
-- [ ] 2.5.3 `README.md`: document HSTS line for host nginx (host nginx unchanged)
+- [x] 2.5.1 `compose.prod.yml` router: CSP (report-only first), HSTS, COOP, `X-Content-Type-Options`, `frame-ancestors`
+- [x] 2.5.2 Verify app still loads with CSP (Socket.IO, fonts, inline manifest script in `index.html`)
+- [x] 2.5.3 `README.md`: document HSTS line for host nginx (host nginx unchanged)
 
 #### 2.6 Verification
-- [ ] 2.6.1 Lighthouse desktop and mobile, incognito, against worktree prod build: CLS 0, contrast pass, no render-blocking Google CSS, SEO and Agentic scores up
-- [ ] 2.6.2 Tests, lint, build; Playwright for fonts and 404 paths
-- [ ] 2.6.3 Screenshots desktop and 390px
+- [~] 2.6.1 Lighthouse desktop and mobile, incognito, against worktree prod build: CLS 0, contrast pass, no render-blocking Google CSS, SEO and Agentic scores up
+- [x] 2.6.2 Tests, lint, build; Playwright for fonts and 404 paths
+- [x] 2.6.3 Screenshots desktop and 390px
+
+Verification evidence (2026-11-20): 1,685 app tests pass; lint has 0 errors and 37 existing warnings; production build passes. Initial JS: 1,140.39 kB -> 517.64 kB (gzip 339.41 -> 157.28 kB). Playwright against the local production nginx verifies both theme contrasts, metadata, Changelog navigation, deferred local fonts and offline font bytes. Real nginx integration tests cover API/OAuth/socket/assets/service-worker headers, private robots and crawler 404s; CI runs this test. No shared dot tokens changed.
+
+Lighthouse desktop/mobile on the authenticated test account: Performance 100, Accessibility 100, Best Practices 100, SEO 66, CLS 0. SEO is intentionally penalized by private robots blocking indexing; Agentic score was not measured, so 2.6.1 stays partial. These local scores do not establish production performance with a populated account.
+
+The existing global minimatch 11 override broke glob 11 and silently produced an empty PWA precache. A scoped glob 11 override restores compatible minimatch 10.2.6; a Workbox regression test now verifies Lora/assets discovery and optional-font exclusion. Final production precache contains 48 entries. Production validation uses the worktree Docker stack (Node 26); all 25 emitted JavaScript chunks pass syntax parsing. Running the host against Alpine-installed node_modules loaded an incompatible GNU Rolldown binding, so hooks remain on the Docker runtime. Screenshots: `app/dist/screenshots/lighthouse-desktop.png`, `app/dist/screenshots/lighthouse-mobile.png`.
 
 ### 3. PR `perf/runtime-hotspots`
 

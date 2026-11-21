@@ -6,23 +6,14 @@ export const FONT_SMALL_CAPS: Record<FontOption, boolean> = {
   hubballi: false,
 };
 
-export function ensureFontLoaded(font: FontOption): void {
-  if (font === 'lora') {
-    return;
+export async function ensureFontLoaded(font: FontOption): Promise<void> {
+  try {
+    if (font === 'playpen') {
+      await import('../styles/fonts/playpen.css');
+    } else if (font === 'hubballi') {
+      await import('../styles/fonts/hubballi.css');
+    }
+  } catch {
+    // Keep the fallback font usable when an optional font cannot load offline.
   }
-
-  const elementId = `font-${font}`;
-  if (document.getElementById(elementId)) {
-    return;
-  }
-
-  const link = document.createElement('link');
-  link.id = elementId;
-  link.rel = 'stylesheet';
-  if (font === 'playpen') {
-    link.href = 'https://fonts.googleapis.com/css2?family=Playpen+Sans:wght@300..700&display=swap';
-  } else if (font === 'hubballi') {
-    link.href = 'https://fonts.googleapis.com/css2?family=Hubballi&display=swap';
-  }
-  document.head.appendChild(link);
 }
