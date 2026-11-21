@@ -179,7 +179,7 @@ describe('CustomSelect', () => {
     fireEvent.click(trigger);
     expect(trigger).toHaveAttribute('aria-expanded', 'true');
 
-    fireEvent.mouseDown(document.body);
+    fireEvent.pointerDown(document.body);
     expect(trigger).toHaveAttribute('aria-expanded', 'false');
   });
 });

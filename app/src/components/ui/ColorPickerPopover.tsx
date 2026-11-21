@@ -17,6 +17,7 @@ import { PALETTE_COLORS, fetchSavedColors, apiAddSavedColor } from '../../api/cl
 import { useI18n } from '../../i18n/I18nContext';
 import type { TranslationKey } from '../../i18n/catalogs';
 import type { ChannelKey, ColorPickerPopoverProps, PickerState } from '../../types/ui';
+import { useOutsidePress } from '../../hooks/useOutsidePress';
 
 const PANEL_WIDTH = 248;
 const VIEWPORT_PADDING = 8;
@@ -134,13 +135,7 @@ export function ColorPickerPopover({ position, value, onCommit, onClose }: Color
     panelRef.current?.focus();
   }, []);
 
-  useEffect(() => {
-    function handleMouseDown(e: MouseEvent) {
-      if (panelRef.current && !panelRef.current.contains(e.target as Node)) onClose();
-    }
-    document.addEventListener('mousedown', handleMouseDown);
-    return () => document.removeEventListener('mousedown', handleMouseDown);
-  }, [onClose]);
+  useOutsidePress(panelRef, onClose);
 
   const handlePanelKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Escape') {

@@ -39,10 +39,10 @@ export function DateNav({ from, to, today, weekStart, onPrevious, onNext, onToda
       if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
     };
     document.addEventListener('keydown', onKeyDown);
-    document.addEventListener('mousedown', onPointerDown);
+    document.addEventListener('pointerdown', onPointerDown, true);
     return () => {
       document.removeEventListener('keydown', onKeyDown);
-      document.removeEventListener('mousedown', onPointerDown);
+      document.removeEventListener('pointerdown', onPointerDown, true);
     };
   }, [open]);
 

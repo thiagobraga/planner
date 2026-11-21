@@ -97,7 +97,7 @@ describe('WeekSelector', () => {
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
 
     fireEvent.click(trigger);
-    fireEvent.mouseDown(document.body);
+    fireEvent.pointerDown(document.body);
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 });
