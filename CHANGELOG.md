@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.39.0](https://github.com/thiagobraga/planner/compare/v0.38.8...v0.39.0) (2026-11-21)
+
+
+### Added
+
+* **postgres:** rehearse and gate the PostgreSQL 18 cutover ([1371c36](https://github.com/thiagobraga/planner/commit/1371c3664761a2094809d4dfe135f1af24631406))
+
+
+### Fixed
+
+* **postgres:** bind the cutover to the production database service ([57adb81](https://github.com/thiagobraga/planner/commit/57adb81dd5683792c81dff3c6e8b4d099711be2c))
+* **postgres:** keep backup parent directories private ([964e55e](https://github.com/thiagobraga/planner/commit/964e55e3ad9fa6d98b34245e487dc349e28ec5e6))
+
 ## [0.38.8](https://github.com/thiagobraga/planner/compare/v0.38.7...v0.38.8) (2026-11-20)
 
 
