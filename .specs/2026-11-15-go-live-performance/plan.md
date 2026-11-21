@@ -140,7 +140,7 @@ Verification evidence (2026-11-20): 1,685 app tests pass; lint has 0 errors and 
 
 Lighthouse desktop/mobile on the authenticated test account: Performance 100, Accessibility 100, Best Practices 100, SEO 66, CLS 0. SEO is intentionally penalized by private robots blocking indexing; Agentic score was not measured, so 2.6.1 stays partial. These local scores do not establish production performance with a populated account.
 
-The existing global minimatch 11 override broke glob 11 and silently produced an empty PWA precache. A scoped glob 11 override restores compatible minimatch 10.2.6; a Workbox regression test now verifies Lora/assets discovery and optional-font exclusion. Final production precache contains 48 entries. Screenshots: `app/dist/screenshots/lighthouse-desktop.png`, `app/dist/screenshots/lighthouse-mobile.png`.
+The existing global minimatch 11 override broke glob 11 and silently produced an empty PWA precache. A scoped glob 11 override restores compatible minimatch 10.2.6; a Workbox regression test now verifies Lora/assets discovery and optional-font exclusion. Final production precache contains 48 entries. Production validation uses the worktree Docker stack (Node 26); all 25 emitted JavaScript chunks pass syntax parsing. Running the host against Alpine-installed node_modules loaded an incompatible GNU Rolldown binding, so hooks remain on the Docker runtime. Screenshots: `app/dist/screenshots/lighthouse-desktop.png`, `app/dist/screenshots/lighthouse-mobile.png`.
 
 ### 3. PR `perf/runtime-hotspots`
 
