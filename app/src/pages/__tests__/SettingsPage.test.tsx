@@ -113,6 +113,16 @@ afterEach(() => {
 });
 
 describe('SettingsPage', () => {
+  it('loads optional font previews only after Appearance opens', async () => {
+    renderPage('/settings/general');
+    const [appearanceTab] = await screen.findAllByRole('tab', { name: 'Appearance' });
+    expect(mockEnsureFontLoaded).not.toHaveBeenCalled();
+    fireEvent.click(appearanceTab);
+    await screen.findByRole('heading', { name: 'Appearance' });
+    await waitFor(() => expect(mockEnsureFontLoaded).toHaveBeenCalledWith('playpen'));
+    expect(mockEnsureFontLoaded).toHaveBeenCalledWith('hubballi');
+  });
+
   it('saves the selected navigation style from General', async () => {
     renderPage('/settings/general');
 

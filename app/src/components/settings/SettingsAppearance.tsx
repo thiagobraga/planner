@@ -1,4 +1,4 @@
-import type { CSSProperties } from 'react';
+import { useEffect, type CSSProperties } from 'react';
 import { Check } from 'lucide-react';
 import { Toggle } from '../ui/Toggle';
 import { SettingsCard } from './SettingsFields';
@@ -76,6 +76,10 @@ function SelectionMark({ selected }: { selected: boolean }) {
 
 export function SettingsAppearance({ preferences, updateMutation, panelHeadingId }: SettingsAppearanceProps) {
   const { t } = useI18n();
+  useEffect(() => {
+    void ensureFontLoaded('playpen');
+    void ensureFontLoaded('hubballi');
+  }, []);
   const font = preferences?.font ?? 'lora';
   const showDots = preferences?.showDots ?? true;
   const background = preferences?.background ?? 'beige';

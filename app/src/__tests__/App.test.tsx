@@ -1,6 +1,7 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
+const loadedModules = vi.hoisted(() => [] as string[]);
 const testRoute = vi.hoisted(() => ({ current: '/daily' }));
 const authState = vi.hoisted(() => ({
   isAuthenticated: false,
@@ -22,11 +23,24 @@ vi.mock('react-router', async (importOriginal) => {
 vi.mock('../pages/DailyPage', () => ({ DailyPage: () => <div>DailyPage</div> }));
 vi.mock('../pages/InboxPage', () => ({ InboxPage: () => <div>InboxPage</div> }));
 vi.mock('../pages/MonthlyPage', () => ({ MonthlyPage: () => <div>MonthlyPage</div> }));
-vi.mock('../pages/HabitsPage', () => ({ HabitsPage: () => <div>HabitsPage</div> }));
-vi.mock('../pages/SettingsPage', () => ({ SettingsPage: () => <div>SettingsPage</div> }));
-vi.mock('../pages/StyleguidePage', () => ({ StyleguidePage: () => <div>StyleguidePage</div> }));
-vi.mock('../pages/HelpPage', () => ({ HelpPage: () => <div>HelpPage</div> }));
+vi.mock('../pages/HabitsPage', () => {
+  loadedModules.push('habits');
+  return { HabitsPage: () => <div>HabitsPage</div> };
+});
+vi.mock('../pages/SettingsPage', () => {
+  loadedModules.push('settings');
+  return { SettingsPage: () => <div>SettingsPage</div> };
+});
+vi.mock('../pages/StyleguidePage', () => {
+  loadedModules.push('styleguide');
+  return { StyleguidePage: () => <div>StyleguidePage</div> };
+});
+vi.mock('../pages/HelpPage', () => {
+  loadedModules.push('help');
+  return { HelpPage: () => <div>HelpPage</div> };
+});
 vi.mock('../pages/CollectionsLayout', async () => {
+  loadedModules.push('collections');
   const { Outlet } = await import('react-router');
   return {
     CollectionsLayout: () => <Outlet />,
@@ -37,9 +51,9 @@ vi.mock('../pages/CollectionsLayout', async () => {
 vi.mock('../pages/LoginPage', () => ({ LoginPage: () => <div>LoginPage</div> }));
 
 vi.mock('../components/AppShell', async () => {
-  const { Outlet } = await import('react-router');
+  const { Link, Outlet } = await import('react-router');
   return {
-    AppShell: () => <div data-testid="app-shell"><Outlet /></div>,
+    AppShell: () => <div data-testid="app-shell"><Link to="/settings/general">Open settings</Link><Outlet /></div>,
   };
 });
 
@@ -77,6 +91,14 @@ describe('App', () => {
     testRoute.current = '/daily';
   });
 
+  it('does not load secondary route modules on the Daily screen', () => {
+    authState.isAuthenticated = true;
+    testRoute.current = '/daily/list';
+    render(<App />);
+    expect(screen.getByText('DailyPage')).toBeInTheDocument();
+    expect(loadedModules).toEqual([]);
+  });
+
   it('renders DailyPage when authenticated on /daily/list', () => {
     authState.isAuthenticated = true;
     testRoute.current = '/daily/list';
@@ -91,19 +113,41 @@ describe('App', () => {
     expect(screen.getByText('redirect:/daily/list')).toBeInTheDocument();
   });
 
-  it('renders CollectionsLanding when authenticated on /collections', () => {
+  it('keeps the shell visible while loading a route selected from navigation', async () => {
+    authState.isAuthenticated = true;
+    testRoute.current = '/daily/list';
+    render(<App />);
+    const shell = screen.getByTestId('app-shell');
+    fireEvent.click(screen.getByRole('link', { name: 'Open settings' }));
+    expect(screen.getByTestId('app-shell')).toBe(shell);
+    expect(await screen.findByText('SettingsPage')).toBeInTheDocument();
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
+    expect(screen.getByTestId('app-shell')).toBe(shell);
+  });
+
+  it('announces loading for a direct visit to an unloaded route', async () => {
+    authState.isAuthenticated = true;
+    testRoute.current = '/habits';
+    render(<App />);
+    expect(screen.getByRole('status')).toHaveTextContent('Loading');
+    expect(screen.getByTestId('app-shell')).toBeVisible();
+    expect(await screen.findByText('HabitsPage')).toBeInTheDocument();
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
+  });
+
+  it('renders CollectionsLanding when authenticated on /collections', async () => {
     authState.isAuthenticated = true;
     testRoute.current = '/collections';
     render(<App />);
-    expect(screen.getByText('CollectionsLanding')).toBeInTheDocument();
+    expect(await screen.findByText('CollectionsLanding')).toBeInTheDocument();
   });
 
-  it('renders StyleguidePage when an admin is authenticated on /styleguide', () => {
+  it('renders StyleguidePage when an admin is authenticated on /styleguide', async () => {
     authState.isAuthenticated = true;
     authState.user = { role: 'admin' };
     testRoute.current = '/styleguide';
     render(<App />);
-    expect(screen.getByText('StyleguidePage')).toBeInTheDocument();
+    expect(await screen.findByText('StyleguidePage')).toBeInTheDocument();
   });
 
   it('redirects a non-admin away from /styleguide', () => {
