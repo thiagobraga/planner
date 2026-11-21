@@ -24,7 +24,7 @@ jobs:
         working-directory: api
     services:
       postgres:
-        image: postgres:16-alpine
+        image: postgres:18-alpine
         env:
           POSTGRES_USER: planner
           POSTGRES_PASSWORD: planner-test
@@ -138,7 +138,7 @@ jobs:
     timeout-minutes: 30
     services:
       postgres:
-        image: postgres:16-alpine
+        image: postgres:18-alpine
         env:
           POSTGRES_USER: planner
           POSTGRES_PASSWORD: planner-test

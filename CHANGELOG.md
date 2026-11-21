@@ -1,5 +1,45 @@
 # Changelog
 
+## [0.39.2](https://github.com/thiagobraga/planner/compare/v0.39.1...v0.39.2) (2026-11-21)
+
+
+### Changed
+
+* **api:** extract view service types ([3e3b1be](https://github.com/thiagobraga/planner/commit/3e3b1be4bb605758e03f260302ed0b8b6753f596))
+* finish dedicated type files ([6bfcc56](https://github.com/thiagobraga/planner/commit/6bfcc5613f0b03c36c87574034221d1aeffeb731))
+
+## [0.39.1](https://github.com/thiagobraga/planner/compare/v0.39.0...v0.39.1) (2026-11-21)
+
+
+### Fixed
+
+* **navigation:** release tab focus after pointer clicks ([5868ba7](https://github.com/thiagobraga/planner/commit/5868ba7f52fe25058f81565e9859a506eb37df07))
+
+## [0.39.0](https://github.com/thiagobraga/planner/compare/v0.38.8...v0.39.0) (2026-11-21)
+
+
+### Added
+
+* **postgres:** rehearse and gate the PostgreSQL 18 cutover ([1371c36](https://github.com/thiagobraga/planner/commit/1371c3664761a2094809d4dfe135f1af24631406))
+
+
+### Fixed
+
+* **postgres:** bind the cutover to the production database service ([57adb81](https://github.com/thiagobraga/planner/commit/57adb81dd5683792c81dff3c6e8b4d099711be2c))
+* **postgres:** keep backup parent directories private ([964e55e](https://github.com/thiagobraga/planner/commit/964e55e3ad9fa6d98b34245e487dc349e28ec5e6))
+
+## [0.38.8](https://github.com/thiagobraga/planner/compare/v0.38.7...v0.38.8) (2026-11-20)
+
+
+### Fixed
+
+* resolve main conflicts and restore ci checks ([e880367](https://github.com/thiagobraga/planner/commit/e880367343d33bc1e62591927feda6bc5dfca6ca))
+
+
+### Changed
+
+* extract hook and api types ([ba0ebcc](https://github.com/thiagobraga/planner/commit/ba0ebcc225fe69db1b057d0b293379b44cf590f6))
+
 ## [0.38.7](https://github.com/thiagobraga/planner/compare/v0.38.6...v0.38.7) (2026-11-20)
 
 

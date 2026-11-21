@@ -17,6 +17,9 @@ export function TopBarItem({ item, ...linkProps }: TopBarItemProps) {
   return (
     <NavigationLink
       {...linkProps}
+      onClick={(event) => {
+        if (event.detail > 0) event.currentTarget.blur();
+      }}
       to={item.to}
       aria-current={inCollection ? 'page' : undefined}
       className={`topbar-item${active ? ' topbar-item--active' : ''}`}

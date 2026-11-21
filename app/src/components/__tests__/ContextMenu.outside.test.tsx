@@ -26,4 +26,16 @@ describe('ContextMenu outside presses', () => {
     fireEvent.pointerDown(screen.getByRole('menuitem', { name: 'Rename' }), { button: 0 });
     expect(onClose).not.toHaveBeenCalled();
   });
+
+  it('leaves the press alone when its trigger stops propagation', () => {
+    const onClose = vi.fn();
+    render(
+      <>
+        <button type="button" onPointerDown={(event) => event.stopPropagation()}>Planner menu</button>
+        <ContextMenu items={items} position={{ x: 10, y: 10 }} onClose={onClose} />
+      </>,
+    );
+    fireEvent.pointerDown(screen.getByRole('button', { name: 'Planner menu' }), { button: 0 });
+    expect(onClose).not.toHaveBeenCalled();
+  });
 });

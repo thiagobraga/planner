@@ -47,6 +47,8 @@ Required `.env` vars: `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `CORS
 
 Every deploy runs `scripts/db-backup.sh --docker` (pg_dump with sha256 and row-count sidecars in `deploy/backups/`) and `scripts/db-restore-check.sh --docker` (restore into a unique scratch database, compare, drop) before migrations; either failing aborts the deploy. `5. Backup` repeats both daily and posts only metadata. `6. Rollback` redeploys a previous image (`app`) or, data-losing, restores a named dump over the live database after a safety backup (`db-restore` via `scripts/db-restore.sh`). Database restore waits for a required reviewer on the `production-db-restore` GitHub environment.
 
+Production deploys use `compose.prod.pg16.yml` until `scripts/postgres-upgrade.sh` records `deploy/.postgres-18-ready`. Schedule the cutover separately and keep that marker with production deployment state.
+
 ### Git Hooks
 
 `core.hooksPath` is local git config and does not carry over automatically on fresh clones or new worktrees. Run `bash .hooks/setup-hooks.sh` before your first commit:
@@ -269,7 +271,7 @@ Rooms: `user:{userId}` (all sessions) and `collection:{collectionId}` (collabora
 
 ## Database
 
-PostgreSQL 16. Pool max 20 connections. Migrations run at startup from `api/src/db/migrations/`.  
+PostgreSQL 18. Pool max 20 connections. Migrations run at startup from `api/src/db/migrations/`.
 Schema tables: `users`, `sessions`, `api_tokens`, `oauth_clients`, `oauth_authorization_requests`, `oauth_grants`, `oauth_codes`, `oauth_tokens`, `preferences`, `password_reset_tokens`, `collections`, `collaborators`, `project_invitations`, `sections`, `tasks`, `labels`, `task_labels`, `filters`, `comments`, `task_documents`, `import_manifests`, `reminders`, `activity_events`, `habits`, `habit_completions`, `habit_groups`, `task_statuses`, `user_saved_colors`.
 
 Redis: three clients from `db/redis.ts` - `redisClient` (general), `redisPubClient` (publish), `redisSubClient` (subscribe). Auth rate-limiting uses `redisClient`.
