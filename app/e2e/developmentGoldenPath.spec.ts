@@ -28,6 +28,7 @@ test('a note and a parent plan with six subtasks among paragraphs', async ({ api
   const captured = unique('Daily capture');
   try {
     await page.goto('/daily/list');
+    await expect(page.locator('.page-toolbar')).toBeVisible();
     await page.locator('body').press('q');
     const quickAdd = page.getByRole('textbox', { name: 'Task title', exact: true });
     await quickAdd.fill(`${captured} today`);

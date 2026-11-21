@@ -126,9 +126,11 @@ test('the split view follows the page column and the tree stays flat and quiet',
 
     await api.patch('/preferences', { fullWidth: true });
     await page.reload();
-    const main = await page.locator('.main-content').evaluate((el) => el.clientWidth);
-    await expect.poll(async () => (await layout.boundingBox())!.width).toBeGreaterThan(720);
-    expect((await layout.boundingBox())!.width).toBe(main - 48);
+    await expect.poll(async () => (await layout.boundingBox())?.width ?? 0).toBeGreaterThan(720);
+    await expect.poll(() => layout.evaluate((el) => {
+      const main = el.closest('.main-content')!;
+      return main.clientWidth - el.getBoundingClientRect().width;
+    })).toBe(48);
   } finally {
     await api.patch('/preferences', { fullWidth: false });
     for (const collection of collections) await api.deleteCollection(collection.id);
