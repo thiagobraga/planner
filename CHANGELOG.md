@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.39.1](https://github.com/thiagobraga/planner/compare/v0.39.0...v0.39.1) (2026-11-21)
+
+
+### Fixed
+
+* **navigation:** release tab focus after pointer clicks ([5868ba7](https://github.com/thiagobraga/planner/commit/5868ba7f52fe25058f81565e9859a506eb37df07))
+
 ## [0.39.0](https://github.com/thiagobraga/planner/compare/v0.38.8...v0.39.0) (2026-11-21)
 
 
