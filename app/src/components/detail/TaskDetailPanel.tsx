@@ -38,8 +38,8 @@ function useDetailRefresh() {
         const selfId = getSocketId();
         if (selfId && event.sourceId === selfId && event.eventType === 'updated') return;
         void qc.invalidateQueries({ queryKey: ['task-detail'] });
-      } else if (event.entityType === 'status') {
-        void qc.invalidateQueries({ queryKey: ['statuses'] });
+      } else if (event.entityType === 'status' || event.entityType === 'collection') {
+        void qc.invalidateQueries({ queryKey: ['task-detail'] });
       }
     };
     socket.on('sync', onSync);
@@ -134,7 +134,7 @@ function DetailBody({ taskId, layout, mode, onModeChange }: { taskId: string; la
           </section>
         ) : (
           <>
-            <DetailProperties task={detail.task} progress={progress} claim={detail.claim} />
+            <DetailProperties task={detail.task} collection={detail.collection} status={detail.status} progress={progress} claim={detail.claim} />
             <DetailDocument draft={draft} title={detail.task.title} references={references} onCreateTask={createTask} />
             {otherRows.length > 0 && (
               <section className="detail-section detail-section--compact" aria-labelledby="detail-other-subtasks">

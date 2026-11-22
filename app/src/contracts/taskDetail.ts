@@ -18,6 +18,19 @@ export interface TaskDetailItem {
   depth: number;
 }
 
+/** Collection label for the task in the detail panel. */
+export interface TaskDetailCollection {
+  id: string;
+  name: string;
+}
+
+/** Status badge for the task in the detail panel. */
+export interface TaskDetailStatus {
+  id: string;
+  name: string;
+  color: string;
+}
+
 /** An agent's active claim on a task; the credential id stays server side. */
 export interface TaskDetailClaim {
   label: string;
@@ -29,6 +42,8 @@ export interface TaskDetailClaim {
 /** GET /tasks/:id: the entry, its ancestors root first, and every descendant in order. */
 export interface TaskDetailDto {
   task: TaskDetailItem;
+  collection: TaskDetailCollection;
+  status: TaskDetailStatus | null;
   ancestors: Array<{ id: string; title: string }>;
   descendants: TaskDetailItem[];
   claim: TaskDetailClaim | null;

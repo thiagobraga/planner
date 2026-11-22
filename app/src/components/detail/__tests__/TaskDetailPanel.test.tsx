@@ -26,9 +26,13 @@ const item = (id: string, title: string, parentTaskId: string | null, extra: Par
   priority: 4, dueDate: null, deadlineDate: null, orderValue: 0, depth: 0, ...extra,
 });
 
+const COLLECTION = { id: 'col', name: 'Work' };
+const STATUS = { id: 'st1', name: 'In progress', color: '#7ea2d6' };
+
 const details: Record<string, TaskDetailDto> = {
   [ROOT]: {
-    task: item(ROOT, 'Plan the slice', null),
+    task: item(ROOT, 'Plan the slice', null, { statusId: STATUS.id }),
+    collection: COLLECTION, status: STATUS,
     ancestors: [], claim: null,
     descendants: [
       item(CHILD, 'Write tests', ROOT, { orderValue: 1 }),
@@ -37,15 +41,15 @@ const details: Record<string, TaskDetailDto> = {
       item('n1', 'Context note', ROOT, { orderValue: 3, type: 'note' }),
     ],
   },
-  [CHILD]: { task: item(CHILD, 'Write tests', ROOT), ancestors: [{ id: ROOT, title: 'Plan the slice' }], claim: null, descendants: [item('c3', 'Unit level', CHILD)] },
+  [CHILD]: { task: item(CHILD, 'Write tests', ROOT), collection: COLLECTION, status: null, ancestors: [{ id: ROOT, title: 'Plan the slice' }], claim: null, descendants: [item('c3', 'Unit level', CHILD)] },
   [CLAIMED]: {
-    task: item(CLAIMED, 'Agent work', null), ancestors: [], descendants: [],
+    task: item(CLAIMED, 'Agent work', null), collection: COLLECTION, status: null, ancestors: [], descendants: [],
     claim: { label: 'Agent Alpha', actorType: 'token', claimedAt: '2026-11-20T12:00:00Z', expiresAt: '2099-01-01T12:30:00Z' },
   },
-  [EMPTY]: { task: item(EMPTY, 'Lonely task', null), ancestors: [], claim: null, descendants: [] },
-  [UNSUPPORTED]: { task: item(UNSUPPORTED, 'Future doc', null), ancestors: [], claim: null, descendants: [] },
+  [EMPTY]: { task: item(EMPTY, 'Lonely task', null), collection: COLLECTION, status: null, ancestors: [], claim: null, descendants: [] },
+  [UNSUPPORTED]: { task: item(UNSUPPORTED, 'Future doc', null), collection: COLLECTION, status: null, ancestors: [], claim: null, descendants: [] },
   [EMBED]: {
-    task: item(EMBED, 'Embedded plan', null),
+    task: item(EMBED, 'Embedded plan', null), collection: COLLECTION, status: null,
     ancestors: [], claim: null,
     descendants: [item(LINKED, 'Linked in prose', EMBED, { orderValue: 1 }), item(LOOSE, 'Loose subtask', EMBED, { orderValue: 2 })],
   },
@@ -127,8 +131,6 @@ beforeEach(() => {
         { id: 'k2', taskId: id, userId: 'u1', body: 'Thanks', createdAt: '2026-11-20T12:06:00Z', updatedAt: null, actorLabel: null },
       ]);
     }
-    if (path.startsWith('/collections')) return respond(200, []);
-    if (path.includes('/statuses')) return respond(200, []);
     if (path.startsWith('/tasks/') && details[id]) return respond(200, details[id]);
     return respond(404, { error: { code: 'NOT_FOUND', message: 'Task not found' } });
   }));
@@ -347,6 +349,21 @@ describe('TaskDetailPanel', () => {
   it('explains a missing or forbidden item instead of rendering an empty panel', async () => {
     renderAt(MISSING);
     expect(await screen.findByRole('alert')).toHaveTextContent('does not exist or you do not have access');
+  });
+
+  it('does not fetch collections or statuses when opening or switching cards', async () => {
+    renderAt(ROOT);
+    const panel = await loadedPanel();
+    await screen.findByRole('textbox', { name: 'Description' });
+    expect(within(panel).getByText('Work')).toBeInTheDocument();
+    expect(within(panel).getByText('In progress')).toBeInTheDocument();
+
+    fireEvent.click(within(panel).getByRole('button', { name: 'Open Write tests' }));
+    await waitFor(() => expect(within(panel).getByRole('textbox', { name: 'Title' })).toHaveValue('Write tests'));
+    await screen.findByRole('textbox', { name: 'Description' });
+
+    const requestedUrls = vi.mocked(fetch).mock.calls.map(([url]) => String(url));
+    expect(requestedUrls.filter((url) => url.includes('/collections') || url.includes('/statuses'))).toEqual([]);
   });
 
   it('is a modal sheet on phones that wraps Tab and Shift+Tab between first and last focusable controls', async () => {
