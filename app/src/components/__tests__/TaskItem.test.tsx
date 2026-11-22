@@ -4,6 +4,7 @@ import { getCaret, setCaret } from '../../utils/editableText';
 import { typeText } from '../../test/editableText';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { TaskItem } from '../TaskItem';
+import { CollectionChip } from '../ui/Chip';
 import { PlannerDragProvider } from '../../contexts/PlannerDragContext';
 import { useDebugStore } from '../../stores/debugStore';
 import type { Task } from '../../types/task';
@@ -314,7 +315,7 @@ describe('TaskItem - task/note conversion', () => {
     });
   });
 
-  it('renders structured label chips', () => {
+  it('renders structured label chips using the shared task-row chip style', () => {
     renderTaskItem(
       {
         ...baseTask,
@@ -326,20 +327,24 @@ describe('TaskItem - task/note conversion', () => {
       { isEditing: false },
     );
 
-    const featureChip = screen.getByText('feature');
-    expect(featureChip.closest('.board-card-chip')).toBeInTheDocument();
-    expect(screen.getByText('bug').closest('.board-card-chip')).toBeInTheDocument();
+    const featureChip = screen.getByText('feature').closest('.task-item-label-chip');
+    expect(featureChip).toBeInTheDocument();
+    expect(featureChip).toHaveClass('ui-meta-chip');
+    expect(screen.getByText('bug').closest('.task-item-label-chip')).toHaveClass('ui-meta-chip');
     expect(screen.queryByText('@feature')).not.toBeInTheDocument();
     expect(screen.queryByText('@bug')).not.toBeInTheDocument();
   });
 });
 
-describe('TaskItem - time, deadline and duration', () => {
+describe('TaskItem - time, deadline, priority, order and uniform chips', () => {
   const timed: Task = { ...baseTask, title: 'Write report', dueDate: '2026-08-14' };
 
-  it('shows the due time beside the date', () => {
-    renderTaskItem({ ...timed, dueTime: '14:30' }, { isEditing: false });
-    expect(screen.getByText('14:30')).toBeInTheDocument();
+  it('pairs due date and due time in one split meta chip', () => {
+    const { container } = renderTaskItem({ ...timed, dueTime: '14:30' }, { isEditing: false });
+    const schedule = container.querySelector('.task-item-schedule .ui-meta-chip');
+    expect(schedule).toBeInTheDocument();
+    expect(schedule?.querySelector('.task-item-due-date')).toBeInTheDocument();
+    expect(schedule?.querySelector('.task-item-time')).toHaveTextContent('14:30');
   });
 
   it('shows the time window when start and end are known', () => {
@@ -347,25 +352,78 @@ describe('TaskItem - time, deadline and duration', () => {
     expect(screen.getByText('14:30-16:00')).toBeInTheDocument();
   });
 
-  it('keeps the time visible when the date chip is hidden', () => {
-    renderTaskItem({ ...timed, dueTime: '09:00' }, { isEditing: false, hideDueDate: true });
-    expect(screen.getByText('09:00')).toBeInTheDocument();
+  it('keeps the time visible as a single meta chip when the date is hidden', () => {
+    const { container } = renderTaskItem({ ...timed, dueTime: '09:00' }, { isEditing: false, hideDueDate: true });
+    expect(container.querySelector('.task-item-due-date')).toBeNull();
+    expect(container.querySelector('.task-item-time')).toHaveTextContent('09:00');
+    expect(container.querySelector('.task-item-schedule .ui-meta-chip')).toBeInTheDocument();
   });
 
-  it('shows a duration chip when no start time is set', () => {
-    renderTaskItem({ ...timed, durationMinutes: 90 }, { isEditing: false });
-    expect(screen.getByText('1h 30m')).toBeInTheDocument();
+  it('shows a duration segment when no start time is set', () => {
+    const { container } = renderTaskItem({ ...timed, durationMinutes: 90 }, { isEditing: false });
+    expect(container.querySelector('.task-item-duration')).toHaveTextContent('1h 30m');
   });
 
-  it('shows a deadline chip with an alarm icon', () => {
+  it('shows a deadline chip with an alarm icon using the shared meta chip style', () => {
     const { container } = renderTaskItem(
       { ...timed, deadlineDate: '2026-08-20', deadlineTime: '18:00' },
       { isEditing: false },
     );
     const chip = container.querySelector('.task-item-deadline');
     expect(chip).toBeInTheDocument();
+    expect(chip?.querySelector('.ui-meta-chip')).toBeInTheDocument();
     expect(chip?.querySelector('svg')).toBeInTheDocument();
     expect(chip).toHaveTextContent('18:00');
+  });
+
+  it('shows a priority chip for priorities 1 to 3 and omits it for priority 4', () => {
+    const { container, rerender } = renderTaskItem({ ...timed, priority: 1 }, { isEditing: false });
+    const priority = container.querySelector('.task-item-priority');
+    expect(priority).toHaveTextContent('!1');
+    expect(priority?.querySelector('.ui-meta-chip')).toHaveClass('text-danger-text');
+
+    rerender(
+      <PlannerDragProvider>
+        <SortableContext items={[timed.id]}>
+          <TaskItem task={{ ...timed, priority: 4 }} isEditing={false} />
+        </SortableContext>
+      </PlannerDragProvider>,
+    );
+    expect(container.querySelector('.task-item-priority')).toBeNull();
+  });
+
+  it('renders task row items in canonical order: title, date/hour, repeat, deadline, priority, collection, tags', () => {
+    const { container } = renderTaskItem(
+      {
+        ...timed,
+        priority: 1,
+        dueTime: '17:30',
+        recurrenceRule: { type: 'daily', interval: 1 },
+        deadlineDate: '2026-08-23',
+        deadlineTime: '23:59',
+        labels: [{ id: 'l1', name: 'urgent', color: '#c9483b' }],
+      },
+      {
+        isEditing: false,
+        collectionBadge: <CollectionChip name="pets" color="#eab308" />,
+      },
+    );
+
+    const area = container.querySelector('.task-item-title-area')!;
+    expect([...area.children].map((el) => el.className.split(' ')[0])).toEqual([
+      'task-item-title-text',
+      'task-item-meta',
+    ]);
+    const meta = area.querySelector('.task-item-meta')!;
+    const classes = [...meta.children].map((el) => el.className.split(' ')[0]);
+    expect(classes).toEqual([
+      'task-item-schedule',
+      'task-item-repeat',
+      'task-item-deadline',
+      'task-item-priority',
+      'task-item-collection',
+      'task-item-labels',
+    ]);
   });
 
   it('renders no time chips for a plain task', () => {

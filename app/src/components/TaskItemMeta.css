@@ -1,0 +1,5 @@
+.app-shell.align-task-items-right .task-item-meta {
+  margin-left: auto;
+  padding-left: 8px;
+  justify-content: flex-end;
+}

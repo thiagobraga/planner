@@ -67,12 +67,14 @@ export function scheduleOpenTaskDetails(taskId: string, origin: HTMLElement): vo
   }, OPEN_DELAY_MS);
 }
 
-export function closeTaskDetails(): void {
+export function closeTaskDetails(options: { restoreFocus?: boolean } = {}): void {
   cancelPendingOpen();
   const state = useTaskDetailStore.getState();
   if (!state.taskId || !state.navigator || !canLeaveDetails()) return;
   const origin = state.origin;
   state.navigator.close();
   useTaskDetailStore.setState({ origin: null });
-  if (origin?.isConnected) requestAnimationFrame(() => origin.focus({ preventScroll: true }));
+  if (options.restoreFocus !== false && origin?.isConnected) {
+    requestAnimationFrame(() => origin.focus({ preventScroll: true }));
+  }
 }

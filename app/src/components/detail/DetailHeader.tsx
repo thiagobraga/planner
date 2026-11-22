@@ -82,7 +82,7 @@ export function DetailHeader({ detail, layout, mode, onModeChange, saveState, pr
             if (event.key === 'Enter') {
               event.preventDefault();
               event.currentTarget.blur();
-            } else if (event.key === 'Escape') {
+            } else if (event.key === 'Escape' && draftTitle !== null) {
               event.preventDefault();
               event.stopPropagation();
               skipCommitRef.current = true;

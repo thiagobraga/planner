@@ -11,13 +11,14 @@
 }
 .topbar[data-nav-style='icon-top'] { --topbar-tab-height: 52px; height: 64px; }
 
-/* Same 720px column as .page-container so the bar lines up with the page */
+/* Same 720px column as .page-container so the bar lines up with the page;
+   tabs follow the wordmark on the left so full-width mode keeps them paired. */
 .topbar-row {
   container: topbar-row / inline-size;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  grid-template-columns: minmax(0, auto) auto minmax(0, 1fr);
   align-items: end;
-  gap: 12px;
+  gap: 16px;
   width: 100%;
   max-width: var(--container-page);
   height: 100%;

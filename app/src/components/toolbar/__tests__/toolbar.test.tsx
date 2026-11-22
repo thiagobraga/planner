@@ -57,6 +57,15 @@ describe('ViewMenu', () => {
     expect(within(menu).queryByRole('group', { name: 'Range' })).toBeNull();
   });
 
+  it('toggles aligning task items to the right when wired', () => {
+    const onAlignTaskItemsRightChange = vi.fn();
+    const { menu } = renderViewMenu({ alignTaskItemsRight: false, onAlignTaskItemsRightChange });
+    const item = within(menu).getByRole('menuitemradio', { name: 'Align items right' });
+    expect(item).toHaveAttribute('aria-checked', 'false');
+    fireEvent.click(item);
+    expect(onAlignTaskItemsRightChange).toHaveBeenCalledWith(true);
+  });
+
   it('closes on Escape and returns focus to the trigger', () => {
     renderViewMenu();
     fireEvent.keyDown(screen.getByRole('menu'), { key: 'Escape' });

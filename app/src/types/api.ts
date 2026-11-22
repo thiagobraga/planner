@@ -96,6 +96,7 @@ export interface Preferences {
   boardViewModes: BoardViewModes;
   dailyView?: DailyViewSettings;
   fullWidth?: boolean;
+  alignTaskItemsRight?: boolean;
   dateFormat?: string;
 }
 
