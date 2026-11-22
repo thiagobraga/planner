@@ -2,6 +2,7 @@ import { CircleDot, Flag, FolderOpen } from 'lucide-react';
 import type { useBoardPreferences } from '../../hooks/useBoardPreferences';
 import { BOARD_LAYOUTS } from '../../hooks/useBoardPreferences';
 import { usePageShortcuts } from '../../hooks/usePageShortcuts';
+import { useTaskMetaAlign } from '../../hooks/useTaskMetaAlign';
 import type { ViewLayout } from '../../types/view';
 import { useI18n } from '../../i18n/I18nContext';
 import type { GroupByOption } from '../../types/toolbar';
@@ -19,6 +20,7 @@ export function BoardPageToolbar({
   registerShortcuts?: boolean;
 }) {
   const { t } = useI18n();
+  const { alignRight, setAlignRight } = useTaskMetaAlign();
 
   usePageShortcuts((action) => {
     const [, kind, value] = action.split(':');
@@ -45,6 +47,8 @@ export function BoardPageToolbar({
           onLayoutChange={board.setLayout}
           style={board.style}
           onStyleChange={board.setStyle}
+          alignTaskItemsRight={alignRight}
+          onAlignTaskItemsRightChange={setAlignRight}
         />
       )}
     />

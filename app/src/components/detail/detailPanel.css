@@ -34,6 +34,7 @@
   background: inherit;
 }
 
+.detail-panel--overlay .detail-header,
 .detail-panel--sheet .detail-header {
   background: var(--planner-overlay-bg);
 }

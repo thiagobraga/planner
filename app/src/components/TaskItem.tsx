@@ -1,7 +1,6 @@
 import { useId, useRef, useEffect, memo } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { AlarmClock, Repeat } from 'lucide-react';
 import { NO_DRAG_ATTR } from './dnd/sensors';
 import { isTaskDrag, type TaskDragData } from '../types/drag';
 import { useI18n } from '../i18n/I18nContext';
@@ -9,15 +8,13 @@ import { useTaskSelectionStore } from '../stores/taskSelectionStore';
 import { usePlannerDrag } from '../contexts/usePlannerDrag';
 import { priorityClasses } from './taskPriorityClasses';
 import type { TaskItemProps } from '../types/task';
-import { recurrenceSummary } from '../utils/recurrenceSummary';
-import { formatDuration, formatTimeWindow } from '../utils/taskTime';
 import { getCaret, getText, setCaret } from '../utils/editableText';
 import { EditableText } from './ui/EditableText';
 import { DebugCard } from './DebugCard';
 import { useCheckboxStore } from '../stores/checkboxStore';
 import { Checkbox } from './ui/Checkbox';
+import { TaskItemMeta } from './TaskItemMeta';
 import { useDebugStore } from '../stores/debugStore';
-import { formatDueDate } from '../utils/formatDueDate';
 import { isOpenDetailsClick, isOpenDetailsKey } from '../utils/detailOpen';
 import { cancelPendingOpen, openTaskDetails, scheduleOpenTaskDetails } from '../stores/taskDetailStore';
 import { isNativeContextMenu } from '../utils/contextMenu';
@@ -56,7 +53,7 @@ export const TaskItem = memo(function TaskItem({
   onConvertType,
   onRightClick,
 }: TaskItemProps) {
-  const { locale, t } = useI18n();
+  const { t } = useI18n();
   const labelId = useId();
   const showCheckboxes = useCheckboxStore((s) => s.enabled);
   const isSelected = useTaskSelectionStore((s) => s.selectedTaskIds.has(task.id));
@@ -352,62 +349,11 @@ export const TaskItem = memo(function TaskItem({
               {task.title}
             </span>
 
-            {collectionBadge && (
-              <span className="task-item-collection h-6 flex items-center ml-1.5 shrink-0">{collectionBadge}</span>
-            )}
-
-            {task.dueDate && !hideDueDate && (
-              <span className="task-item-due-date h-6 inline-flex items-center gap-1 text-xs text-ink-light ml-1.5 whitespace-nowrap">
-                {formatDueDate(task.dueDate, locale)}
-              </span>
-            )}
-
-            {task.recurrenceRule && (
-              <span className="task-item-repeat h-6 flex items-center ml-1.5 shrink-0">
-                <span className="inline-flex items-center gap-1.5 px-1 rounded-xs bg-border-subtle/30 border border-border-subtle/50 text-[11px] leading-4.5 text-ink/65 whitespace-nowrap">
-                  <Repeat className="w-3 h-3" aria-hidden="true" />
-                  {recurrenceSummary(task.recurrenceRule, locale)}
-                </span>
-              </span>
-            )}
-
-            {task.dueTime && (
-              <span className="task-item-time h-6 inline-flex items-center text-xs text-ink-light ml-1.5 whitespace-nowrap">
-                {formatTimeWindow(task.dueTime, task.endTime)}
-              </span>
-            )}
-
-            {task.durationMinutes && !task.dueTime && (
-              <span className="task-item-duration h-6 inline-flex items-center text-xs text-ink-light ml-1.5 whitespace-nowrap">
-                {formatDuration(task.durationMinutes)}
-              </span>
-            )}
-
-            {task.deadlineDate && (
-              <span
-                className="task-item-deadline h-6 inline-flex items-center gap-1 text-xs text-danger-text ml-1.5 whitespace-nowrap"
-                title={t('task.deadline')}
-              >
-                <AlarmClock className="w-3 h-3" aria-hidden="true" />
-                {formatDueDate(task.deadlineDate, locale)}
-                {task.deadlineTime && ` ${task.deadlineTime}`}
-              </span>
-            )}
-
-            {task.labels && task.labels.length > 0 && (
-              <span className="task-item-labels ml-1.5 flex flex-wrap gap-1.5">
-                {task.labels.map((label) => (
-                  <span
-                    key={label.id}
-                    className="board-card-chip task-item-label-chip"
-                    style={{ borderColor: label.color }}
-                  >
-                    <span aria-hidden="true" style={{ backgroundColor: label.color }} />
-                    {label.name}
-                  </span>
-                ))}
-              </span>
-            )}
+            <TaskItemMeta
+              task={task}
+              hideDueDate={hideDueDate}
+              collectionBadge={collectionBadge}
+            />
           </>
         )}
         {debug && <DebugCard id={task.id} orderValue={task.orderValue} createdAt={task.createdAt} level={renderedDepth ?? task.indent ?? 0} parentId={task.parentTaskId} />}

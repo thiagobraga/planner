@@ -1,5 +1,6 @@
 import { ArrowUpDown } from 'lucide-react';
 import { usePageShortcuts } from '../../hooks/usePageShortcuts';
+import { useTaskMetaAlign } from '../../hooks/useTaskMetaAlign';
 import type { ViewLayout } from '../../types/view';
 import { useI18n } from '../../i18n/I18nContext';
 import { DAILY_LAYOUTS } from '../../utils/dailyRange';
@@ -12,6 +13,7 @@ import type { DailyToolbarProps } from '../../types/daily';
 
 export function DailyToolbar({ view, todayKey, weekStart, onReorganize, onToday }: DailyToolbarProps) {
   const { t } = useI18n();
+  const { alignRight, setAlignRight } = useTaskMetaAlign();
 
   usePageShortcuts((action) => {
     const [, kind, value] = action.split(':');
@@ -57,6 +59,8 @@ export function DailyToolbar({ view, todayKey, weekStart, onReorganize, onToday 
           onStyleChange={view.setStyle}
           range={view.range}
           onRangeChange={view.setRange}
+          alignTaskItemsRight={alignRight}
+          onAlignTaskItemsRightChange={setAlignRight}
           extra={onReorganize && !sheet ? (close) => (
             <MenuSection label={t('view.actions')}>
               <MenuItem
