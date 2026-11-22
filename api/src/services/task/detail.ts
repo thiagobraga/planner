@@ -82,9 +82,27 @@ export async function getTaskDetail(taskId: string, userId: string): Promise<Tas
     [row.id, row.collection_id, MAX_HOPS],
   );
 
-  const [ancestors, descendants, claim] = await Promise.all([ancestorsPromise, descendantsPromise, readTaskClaim(row.id)]);
+  const metaPromise = pool.query<{ collection_name: string; status_name: string | null; status_color: string | null }>(
+    `SELECT c.name AS collection_name, s.name AS status_name, s.color AS status_color
+     FROM collections c
+     LEFT JOIN task_statuses s ON s.id = $2 AND s.collection_id = c.id
+     WHERE c.id = $1`,
+    [row.collection_id, row.status_id],
+  );
+
+  const [ancestors, descendants, claim, metaResult] = await Promise.all([
+    ancestorsPromise,
+    descendantsPromise,
+    readTaskClaim(row.id),
+    metaPromise,
+  ]);
+  const meta = metaResult.rows[0];
   return {
     task: formatDetailItem(row),
+    collection: { id: row.collection_id, name: meta?.collection_name ?? '' },
+    status: row.status_id && meta?.status_name && meta?.status_color
+      ? { id: row.status_id, name: meta.status_name, color: meta.status_color }
+      : null,
     ancestors: ancestors.rows,
     descendants: descendants.rows.map(formatDetailItem),
     claim: claim && { label: claim.label, actorType: claim.actorType, claimedAt: claim.claimedAt, expiresAt: claim.expiresAt },

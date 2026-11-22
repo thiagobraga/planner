@@ -1,22 +1,28 @@
 import { useId, useState, type CSSProperties } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { fetchCollections, fetchStatuses } from '../../api/client';
 import { useI18n } from '../../i18n/I18nContext';
 import { formatDueDate } from '../../utils/formatDueDate';
-import type { TaskDetailClaim, TaskDetailItem } from '../../contracts/taskDetail';
+import type { TaskDetailClaim, TaskDetailCollection, TaskDetailItem, TaskDetailStatus } from '../../contracts/taskDetail';
 import type { TranslationKey } from '../../i18n/catalogs';
 
 const TYPE_LABEL: Record<TaskDetailItem['type'], TranslationKey> = { task: 'detail.typeTask', note: 'detail.typeNote', event: 'detail.typeEvent' };
 
 /** Status, collection and progress up front; the rest waits behind "More properties". */
-export function DetailProperties({ task, progress, claim }: { task: TaskDetailItem; progress: { done: number; total: number }; claim: TaskDetailClaim | null }) {
+export function DetailProperties({
+  task,
+  collection,
+  status,
+  progress,
+  claim,
+}: {
+  task: TaskDetailItem;
+  collection: TaskDetailCollection;
+  status: TaskDetailStatus | null;
+  progress: { done: number; total: number };
+  claim: TaskDetailClaim | null;
+}) {
   const { t, locale } = useI18n();
   const [expanded, setExpanded] = useState(false);
   const moreId = useId();
-  const { data: collections } = useQuery({ queryKey: ['collections'], queryFn: fetchCollections });
-  const { data: statuses } = useQuery({ queryKey: ['statuses', task.collectionId], queryFn: () => fetchStatuses(task.collectionId) });
-  const collection = collections?.find((item) => item.id === task.collectionId);
-  const status = statuses?.find((item) => item.id === task.statusId);
   const percent = progress.total ? Math.round((progress.done / progress.total) * 100) : 0;
   const date = (value: string | null) => (value ? formatDueDate(value, locale) : <span className="detail-muted">{t('detail.notSet')}</span>);
 
@@ -30,7 +36,7 @@ export function DetailProperties({ task, progress, claim }: { task: TaskDetailIt
           </>
         )}
         <dt>{t('detail.collection')}</dt>
-        <dd>{collection?.name ?? <span className="detail-muted">…</span>}</dd>
+        <dd>{collection.name || <span className="detail-muted">…</span>}</dd>
         <dt>{t('detail.progress')}</dt>
         <dd>{progress.total === 0
           ? <span className="detail-muted">{t('detail.noSubtasks')}</span>
