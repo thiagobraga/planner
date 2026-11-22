@@ -1,31 +1,12 @@
-import pool from '../../db/pool.js';
 import type { TaskDetailDto, TaskDetailItem } from '../../contracts/taskDetail.js';
-import type { TaskRow } from '../../types/task.js';
+import {
+  findTaskAncestors,
+  findTaskDescendants,
+  findTaskDetailMeta,
+  type DetailItemRow,
+} from '../../repositories/taskDetailRepository.js';
 import { getAccessibleTask } from './access.js';
 import { readTaskClaim } from './claim.js';
-
-// Guards both walks against a corrupt parent cycle; real nesting is far shallower.
-const MAX_HOPS = 16;
-
-type DetailItemRow = Pick<
-  TaskRow,
-  | 'id'
-  | 'parent_task_id'
-  | 'collection_id'
-  | 'section_id'
-  | 'title'
-  | 'type'
-  | 'is_completed'
-  | 'status_id'
-  | 'priority'
-  | 'due_date'
-  | 'deadline_date'
-  | 'order_value'
-  | 'depth'
->;
-
-const DETAIL_COLUMNS =
-  't.id, t.parent_task_id, t.collection_id, t.section_id, t.title, t.type, t.is_completed, t.status_id, t.priority, t.due_date, t.deadline_date, t.order_value, t.depth, t.created_at';
 
 function formatDetailItem(row: DetailItemRow): TaskDetailItem {
   return {
@@ -52,59 +33,20 @@ function formatDetailItem(row: DetailItemRow): TaskDetailItem {
  */
 export async function getTaskDetail(taskId: string, userId: string): Promise<TaskDetailDto> {
   const row = await getAccessibleTask(taskId, userId);
-  const ancestorsPromise = row.parent_task_id
-    ? pool.query<{ id: string; title: string }>(
-        `WITH RECURSIVE chain AS (
-           SELECT t.id, t.title, t.parent_task_id, 1 AS hops, ARRAY[$1::uuid, t.id] AS visited
-           FROM tasks t
-           WHERE t.id = $2 AND t.collection_id = $3
-           UNION ALL
-           SELECT t.id, t.title, t.parent_task_id, chain.hops + 1, chain.visited || t.id
-           FROM tasks t JOIN chain ON t.id = chain.parent_task_id
-           WHERE t.collection_id = $3 AND chain.hops < $4 AND NOT (t.id = ANY(chain.visited))
-         )
-         SELECT id, title FROM chain ORDER BY hops DESC`,
-        [row.id, row.parent_task_id, row.collection_id, MAX_HOPS],
-      )
-    : Promise.resolve({ rows: [] as Array<{ id: string; title: string }> });
-
-  const descendantsPromise = pool.query<DetailItemRow>(
-    `WITH RECURSIVE tree AS (
-       SELECT ${DETAIL_COLUMNS}, 1 AS hops, ARRAY[$1::uuid, t.id] AS visited
-       FROM tasks t
-       WHERE t.parent_task_id = $1 AND t.collection_id = $2
-       UNION ALL
-       SELECT ${DETAIL_COLUMNS}, tree.hops + 1, tree.visited || t.id
-       FROM tasks t JOIN tree ON t.parent_task_id = tree.id
-       WHERE t.collection_id = $2 AND tree.hops < $3 AND NOT (t.id = ANY(tree.visited))
-     )
-     SELECT * FROM tree ORDER BY hops, order_value, created_at, id`,
-    [row.id, row.collection_id, MAX_HOPS],
-  );
-
-  const metaPromise = pool.query<{ collection_name: string; status_name: string | null; status_color: string | null }>(
-    `SELECT c.name AS collection_name, s.name AS status_name, s.color AS status_color
-     FROM collections c
-     LEFT JOIN task_statuses s ON s.id = $2 AND s.collection_id = c.id
-     WHERE c.id = $1`,
-    [row.collection_id, row.status_id],
-  );
-
-  const [ancestors, descendants, claim, metaResult] = await Promise.all([
-    ancestorsPromise,
-    descendantsPromise,
+  const [ancestors, descendants, claim, meta] = await Promise.all([
+    row.parent_task_id ? findTaskAncestors(row.id, row.parent_task_id, row.collection_id) : Promise.resolve([]),
+    findTaskDescendants(row.id, row.collection_id),
     readTaskClaim(row.id),
-    metaPromise,
+    findTaskDetailMeta(row.collection_id, row.status_id),
   ]);
-  const meta = metaResult.rows[0];
   return {
     task: formatDetailItem(row),
     collection: { id: row.collection_id, name: meta?.collection_name ?? '' },
     status: row.status_id && meta?.status_name && meta?.status_color
       ? { id: row.status_id, name: meta.status_name, color: meta.status_color }
       : null,
-    ancestors: ancestors.rows,
-    descendants: descendants.rows.map(formatDetailItem),
+    ancestors,
+    descendants: descendants.map(formatDetailItem),
     claim: claim && { label: claim.label, actorType: claim.actorType, claimedAt: claim.claimedAt, expiresAt: claim.expiresAt },
   };
 }
