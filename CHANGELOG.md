@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.39.6](https://github.com/thiagobraga/planner/compare/v0.39.5...v0.39.6) (2026-11-22)
+
+
+### Fixed
+
+* **detail:** return collection and status in task detail response ([c1e6071](https://github.com/thiagobraga/planner/commit/c1e6071cd6b6721aa0b0b05da75e82fcf8c5281c))
+* **detail:** return collection and status in task detail response ([94ce2f3](https://github.com/thiagobraga/planner/commit/94ce2f3467e0c921d60a88f81a38cce2b18e1d9d))
+
+
+### Changed
+
+* **api:** move task detail queries to repository ([d7788c9](https://github.com/thiagobraga/planner/commit/d7788c9bba01e6d1f21503d4e0098820311a67fa))
+* **app:** cache Intl formatters and trim toolbar resize work ([98c586e](https://github.com/thiagobraga/planner/commit/98c586e3807cf21dd9961c1bac0a3abddf4c1315))
+
 ## [0.39.5](https://github.com/thiagobraga/planner/compare/v0.39.4...v0.39.5) (2026-11-21)
 
 
