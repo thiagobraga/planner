@@ -1,4 +1,4 @@
-import { CalendarDays, Columns3, FileText, LayoutList, List, Table } from 'lucide-react';
+import { AlignRight, CalendarDays, Columns3, FileText, LayoutList, List, Table } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { useI18n } from '../../i18n/I18nContext';
 import type { ViewMenuProps } from '../../types/toolbar';
@@ -28,7 +28,19 @@ function keys(key: string | null): string | null {
 }
 
 /** Layout, style and range of a page, in one menu-bar style dropdown. */
-export function ViewMenu({ layouts, layout, onLayoutChange, style, onStyleChange, range, onRangeChange, extra, sheet }: ViewMenuProps) {
+export function ViewMenu({
+  layouts,
+  layout,
+  onLayoutChange,
+  style,
+  onStyleChange,
+  range,
+  onRangeChange,
+  alignTaskItemsRight,
+  onAlignTaskItemsRightChange,
+  extra,
+  sheet,
+}: ViewMenuProps) {
   const { t } = useI18n();
   const showsPresets = layout === 'list' || layout === 'table';
 
@@ -116,6 +128,17 @@ export function ViewMenu({ layouts, layout, onLayoutChange, style, onStyleChange
                   </div>
                 </>
               )}
+            </MenuSection>
+          )}
+
+          {onAlignTaskItemsRightChange && (
+            <MenuSection label={t('view.options')}>
+              <MenuItem
+                label={t('view.alignTaskItemsRight')}
+                icon={<AlignRight size={14} strokeWidth={1.6} />}
+                checked={Boolean(alignTaskItemsRight)}
+                onSelect={() => onAlignTaskItemsRightChange(!alignTaskItemsRight)}
+              />
             </MenuSection>
           )}
 

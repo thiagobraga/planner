@@ -25,6 +25,7 @@ import {
   replaceTempRowWithCreated,
 } from '../utils/dailyTaskMutations';
 import { useDailyTaskCreate } from './useDailyTaskCreate';
+import { runOptimistic } from '../stores/optimistic';
 
 export function useDailyTaskActions(opts: {
   locale: 'en' | 'pt-BR';
@@ -176,11 +177,16 @@ export function useDailyTaskActions(opts: {
     (id: string) => {
       const all = sectionsRef.current.flatMap((s) => s.tasks);
       if (!confirmTaskDelete(all.find((task) => task.id === id), all, t)) return;
-      updateSections((prev) => removeDailyTask(prev, id));
       setEditingId(undefined);
-      if (!id.startsWith('temp-')) apiDeleteTask(id).catch(() => refreshDaily());
+      void runOptimistic({
+        state: all,
+        apply: (tasks) => tasks.filter((task) => task.id !== id),
+        call: () => id.startsWith('temp-') ? Promise.resolve() : apiDeleteTask(id),
+        onApply: (tasks) => setAllTasks(() => tasks),
+        onRevert: setAllTasks,
+      }).catch(() => refreshDaily());
     },
-    [refreshDaily, updateSections, t],
+    [refreshDaily, setAllTasks, t],
   );
 
   const handleConvertType = useCallback(

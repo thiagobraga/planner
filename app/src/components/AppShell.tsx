@@ -30,7 +30,7 @@ import { useDebugStore } from '../stores/debugStore';
 import { AgentNotice } from './AgentNotice';
 import { describeAgentChange } from '../utils/agentNotice';
 import { TaskDetailHost } from './detail/TaskDetailHost';
-import { closeTaskDetails } from '../stores/taskDetailStore';
+import { cancelPendingOpen, closeTaskDetails } from '../stores/taskDetailStore';
 
 const DEBUG_SEQUENCE = 'wasd';
 const BACKGROUND_PREFERENCES: readonly BackgroundPreference[] = ['beige', 'white', 'dark', 'nord-light', 'nord-dark', 'system'];
@@ -179,9 +179,12 @@ export function AppShell() {
           setHelpOpen((v) => !v);
           break;
         case 'dialog:close': {
-          // The active overlay closes first; the detail panel only when nothing else did.
+          // The active overlay closes first; the detail panel and selection only when nothing else did.
           const hasOtherOverlay = Boolean(document.querySelector('[role="dialog"]:not(.detail-panel), [role="menu"]'));
-          if (!consumed && !quickAddOpen && !searchOpen && !helpOpen && !hasOtherOverlay) closeTaskDetails();
+          if (!consumed && !quickAddOpen && !searchOpen && !helpOpen && !hasOtherOverlay) {
+            useTaskSelectionStore.getState().clearSelection();
+            closeTaskDetails();
+          }
           setQuickAddOpen(false);
           setSearchOpen(false);
           setHelpOpen(false);
@@ -246,8 +249,12 @@ export function AppShell() {
     // TaskItem's onPointerUp), which would otherwise make an outside click
     // silently fail to deselect too.
     const handler = (e: PointerEvent) => {
-      if ((e.target as HTMLElement).closest('[data-task-id]')) return;
+      const target = e.target as HTMLElement | null;
+      if (!target) return;
+      if (target.closest('[data-task-id], [data-card-id], .detail-panel, [role="menu"], [role="dialog"]:not(.detail-panel)')) return;
       useTaskSelectionStore.getState().clearSelection();
+      cancelPendingOpen();
+      if (e.button === 0) closeTaskDetails({ restoreFocus: false });
     };
     document.addEventListener('pointerdown', handler);
     return () => document.removeEventListener('pointerdown', handler);
@@ -255,7 +262,7 @@ export function AppShell() {
 
   return (
     <div
-      className={`app-shell fixed inset-0 flex flex-col bg-(--planner-page-bg) overflow-hidden${preferences?.smallCaps ? ' small-caps' : ''}${preferences?.fullWidth ? ' full-width' : ''}`}
+      className={`app-shell fixed inset-0 flex flex-col bg-(--planner-page-bg) overflow-hidden${preferences?.smallCaps ? ' small-caps' : ''}${preferences?.fullWidth ? ' full-width' : ''}${preferences?.alignTaskItemsRight ? ' align-task-items-right' : ''}`}
     >
       {preferencesLoading ? (
         <div className="flex-1 flex items-center justify-center text-ink-light">

@@ -1,139 +1,207 @@
-import { describe, it, expect } from 'vitest';
+import { act, cleanup, renderHook } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { apiReorganizeTasks } from '../../api/client';
+import type { ApiTask } from '../../types/api';
+import type { Section } from '../../types/hooks';
+import { useReorganize } from '../useReorganize';
 
-describe('useReorganize hook — redistribution algorithm', () => {
-  // Test the redistribution algorithm logic independently
-  // Full hook testing with React would require @testing-library/react + renderHook
+vi.mock('../../api/client', () => ({ apiReorganizeTasks: vi.fn() }));
 
-  it('detects ≥8 uncompleted root tasks shows button', () => {
-    const tasks = Array.from({ length: 8 }, (_, i) => ({
-      id: `t${i}`,
-      parentTaskId: undefined,
-      type: 'task' as const,
-      isCompleted: false,
-      dueDate: '2026-08-13',
-    }));
+const today = '2026-08-13';
+const tomorrow = '2026-08-14';
+const overdue = '2026-08-12';
 
-    const rootTasks = tasks.filter((t) => !t.parentTaskId && t.type === 'task' && !t.isCompleted);
-    expect(rootTasks.length).toBe(8);
-    expect(rootTasks.length >= 8).toBe(true);
+function task(id: string, overrides: Partial<ApiTask> = {}): ApiTask {
+  return {
+    id,
+    title: id,
+    priority: 0,
+    collectionId: 'collection-1',
+    dueDate: today,
+    isCompleted: false,
+    orderValue: 0,
+    depth: 0,
+    type: 'task',
+    ...overrides,
+  };
+}
+
+function tasks(count: number, dueDate = today): ApiTask[] {
+  return Array.from({ length: count }, (_, i) => task(`t${i}`, { dueDate }));
+}
+
+function section(date: string, items: ApiTask[], label = date): Section {
+  return { date, label, tasks: items };
+}
+
+beforeEach(() => {
+  vi.mocked(apiReorganizeTasks).mockReset();
+  vi.mocked(apiReorganizeTasks).mockResolvedValue({ updated: 0 });
+});
+
+afterEach(cleanup);
+
+describe('useReorganize', () => {
+  it.each([0, 7, 8, 9])('checks eligibility with %i uncompleted root tasks', (count) => {
+    const { result } = renderHook(() => useReorganize(today, [section(today, tasks(count))]));
+    expect(result.current.showButton).toBe(count >= 8);
+    expect(result.current.state).toBe('idle');
+    expect(result.current.previewSections).toBeNull();
   });
 
-  it('hides button with <8 uncompleted root tasks', () => {
-    const tasks = Array.from({ length: 7 }, (_, i) => ({
-      id: `t${i}`,
-      parentTaskId: undefined,
-      type: 'task' as const,
-      isCompleted: false,
-      dueDate: '2026-08-13',
-    }));
+  it('updates eligibility as sections arrive and includes overdue tasks', () => {
+    const { result, rerender } = renderHook(
+      ({ sections }: { sections: Section[] | null }) => useReorganize(today, sections),
+      { initialProps: { sections: null } as { sections: Section[] | null } },
+    );
+    expect(result.current.showButton).toBe(false);
+    act(() => result.current.startPreview());
+    expect(result.current.state).toBe('idle');
 
-    const rootTasks = tasks.filter((t) => !t.parentTaskId && t.type === 'task' && !t.isCompleted);
-    expect(rootTasks.length).toBe(7);
-    expect(rootTasks.length >= 8).toBe(false);
+    rerender({ sections: [section(overdue, [task('overdue', { dueDate: overdue })]), section(today, tasks(7))] });
+    expect(result.current.showButton).toBe(true);
+    rerender({ sections: [section(today, tasks(7))] });
+    expect(result.current.showButton).toBe(false);
   });
 
-  it('filters out completed tasks', () => {
-    const tasks = [
-      { id: 't1', parentTaskId: undefined, type: 'task' as const, isCompleted: false },
-      { id: 't2', parentTaskId: undefined, type: 'task' as const, isCompleted: true },
-      { id: 't3', parentTaskId: undefined, type: 'task' as const, isCompleted: false },
-    ];
-
-    const eligible = tasks.filter((t) => !t.parentTaskId && t.type === 'task' && !t.isCompleted);
-    expect(eligible.length).toBe(2);
-    expect(eligible.map((t) => t.id)).toEqual(['t1', 't3']);
+  it.each([
+    ['completed', { isCompleted: true }],
+    ['subtask', { parentTaskId: 'parent' }],
+    ['note', { type: 'note' }],
+    ['event', { type: 'event' }],
+  ] satisfies [string, Partial<ApiTask>][])('excludes a %s from eligibility and redistribution', (_, overrides) => {
+    const excluded = task('excluded', overrides);
+    const { result } = renderHook(() =>
+      useReorganize(today, [section(today, [...tasks(7), excluded])]),
+    );
+    expect(result.current.showButton).toBe(false);
+    act(() => result.current.startPreview());
+    expect(result.current.previewSections?.[0].tasks).toContainEqual(excluded);
+    expect(result.current.previewSections?.[1].tasks.map((item: ApiTask) => item.id)).toEqual(['t5', 't6']);
   });
 
-  it('excludes subtasks from redistribution', () => {
-    const tasks = [
-      { id: 't1', parentTaskId: undefined, type: 'task' as const, isCompleted: false },
-      { id: 't2', parentTaskId: 't1', type: 'task' as const, isCompleted: false },
-      { id: 't3', parentTaskId: undefined, type: 'task' as const, isCompleted: false },
-    ];
-
-    const rootOnly = tasks.filter((t) => !t.parentTaskId && t.type === 'task');
-    expect(rootOnly.length).toBe(2);
-    expect(rootOnly.every((t) => !t.parentTaskId)).toBe(true);
+  it('does not count or reschedule future tasks', () => {
+    const future = task('future', { dueDate: tomorrow });
+    const { result } = renderHook(() =>
+      useReorganize(today, [section(today, tasks(7)), section(tomorrow, [future])]),
+    );
+    expect(result.current.showButton).toBe(false);
+    act(() => result.current.startPreview());
+    expect(result.current.previewSections?.[1].tasks).toEqual([
+      future,
+      { ...task('t5', { dueDate: tomorrow }), moved: true },
+      { ...task('t6', { dueDate: tomorrow }), moved: true },
+    ]);
   });
 
-  it('excludes notes from redistribution', () => {
-    const tasks = [
-      { id: 't1', parentTaskId: undefined, type: 'task' as const, isCompleted: false },
-      { id: 't2', parentTaskId: undefined, type: 'note' as const, isCompleted: false },
-      { id: 't3', parentTaskId: undefined, type: 'task' as const, isCompleted: false },
-    ];
-
-    const tasksOnly = tasks.filter((t) => t.type === 'task');
-    expect(tasksOnly.length).toBe(2);
-    expect(tasksOnly.every((t) => t.type === 'task')).toBe(true);
-  });
-
-  it('distributes ≤5 tasks per day', () => {
+  it('distributes ≤5 tasks per day without mutating the source', () => {
     // Simulate: 10 tasks → 5 on day 1, 5 on day 2
-    const taskCount = 10;
-    const tasksPerDay = 5;
-    const daysNeeded = Math.ceil(taskCount / tasksPerDay);
-
-    expect(daysNeeded).toBe(2);
+    const sections = [section(overdue, tasks(10, overdue))];
+    const original = structuredClone(sections);
+    const onPreview = vi.fn();
+    const { result } = renderHook(() => useReorganize(today, sections, onPreview));
 
     // Simulate distribution
-    const distribution = [];
-    for (let i = 0; i < taskCount; i++) {
-      const dayIndex = Math.floor(i / tasksPerDay);
-      const taskInDay = i % tasksPerDay;
-      distribution.push({ dayIndex, taskInDay });
-    }
+    act(() => result.current.startPreview());
 
-    const byDay = distribution.reduce(
-      (acc, d) => {
-        if (!acc[d.dayIndex]) acc[d.dayIndex] = [];
-        acc[d.dayIndex].push(d);
-        return acc;
+    expect(result.current.state).toBe('preview');
+    expect(result.current.previewSections).toEqual([
+      { date: today, label: 'Today', tasks: tasks(5).map((item) => ({ ...item, moved: true })) },
+      {
+        date: tomorrow,
+        label: 'Tomorrow',
+        tasks: tasks(10, tomorrow).slice(5).map((item) => ({ ...item, moved: true })),
       },
-      {} as Record<number, { dayIndex: number; taskInDay: number }[]>,
-    );
-
-    expect(Object.keys(byDay).length).toBe(2);
-    expect(byDay[0].length).toBe(5);
-    expect(byDay[1].length).toBe(5);
+    ]);
+    expect(sections).toEqual(original);
+    expect(onPreview).toHaveBeenCalledOnce();
+    expect(apiReorganizeTasks).not.toHaveBeenCalled();
   });
 
-  it('only records moves where date actually changed', () => {
-    const moves = [
-      { taskId: 't1', oldDate: '2026-08-13', newDate: '2026-08-14', changed: true },
-      { taskId: 't2', oldDate: '2026-08-13', newDate: '2026-08-13', changed: false },
-      { taskId: 't3', oldDate: '2026-08-14', newDate: '2026-08-15', changed: true },
+  it('keeps display order across overdue and today and uses custom labels for new dates', () => {
+    const formatLabel = vi.fn((date: string) => `Label ${date}`);
+    const sections = [
+      section(overdue, [task('overdue', { dueDate: overdue })]),
+      section(today, tasks(10), 'Existing today'),
     ];
-
-    const actualMoves = moves.filter((m) => m.changed);
-    expect(actualMoves.length).toBe(2);
-    expect(actualMoves.map((m) => m.taskId)).toEqual(['t1', 't3']);
+    const { result } = renderHook(() => useReorganize(today, sections, undefined, undefined, formatLabel));
+    act(() => result.current.startPreview());
+    expect(result.current.previewSections?.map((item) => [item.date, item.label, item.tasks.map((t: ApiTask) => t.id)]))
+      .toEqual([
+        [today, 'Existing today', ['overdue', 't0', 't1', 't2', 't3']],
+        [tomorrow, `Label ${tomorrow}`, ['t4', 't5', 't6', 't7', 't8']],
+        ['2026-08-15', 'Label 2026-08-15', ['t9']],
+      ]);
   });
 
-  it('generates consecutive dates for redistribution', () => {
-    const today = new Date('2026-08-13');
-    const days = [0, 1, 2, 3, 4]; // day offsets
+  it('cancels preview without persisting and can start again', () => {
+    const onRevert = vi.fn();
+    const { result } = renderHook(() => useReorganize(today, [section(today, tasks(8))], undefined, onRevert));
+    act(() => result.current.cancelReorganize());
+    expect(onRevert).not.toHaveBeenCalled();
+    act(() => result.current.startPreview());
+    act(() => result.current.cancelReorganize());
+    expect(result.current.state).toBe('idle');
+    expect(result.current.previewSections).toBeNull();
+    expect(onRevert).toHaveBeenCalledOnce();
+    expect(apiReorganizeTasks).not.toHaveBeenCalled();
+    act(() => result.current.startPreview());
+    expect(result.current.state).toBe('preview');
+  });
 
-    const dates = days.map((offset) => {
-      const d = new Date(today);
-      d.setDate(d.getDate() + offset);
-      return d.toISOString().split('T')[0];
+  it('persists only changed dates and waits for confirmation before clearing the preview', async () => {
+    const onConfirmed = vi.fn();
+    const { result } = renderHook(() =>
+      useReorganize(today, [section(today, tasks(8))], undefined, undefined, undefined, onConfirmed),
+    );
+    await act(async () => { await result.current.confirmReorganize(); });
+    expect(apiReorganizeTasks).not.toHaveBeenCalled();
+    act(() => result.current.startPreview());
+    const preview = result.current.previewSections;
+    let resolve!: (value: Awaited<ReturnType<typeof apiReorganizeTasks>>) => void;
+    const promise = new Promise<Awaited<ReturnType<typeof apiReorganizeTasks>>>((done) => {
+      resolve = done;
     });
-
-    expect(dates).toEqual(['2026-08-13', '2026-08-14', '2026-08-15', '2026-08-16', '2026-08-17']);
+    vi.mocked(apiReorganizeTasks).mockReturnValueOnce(promise);
+    let confirmation!: Promise<void>;
+    act(() => { confirmation = result.current.confirmReorganize(); });
+    expect(result.current.state).toBe('persisting');
+    expect(result.current.previewSections).toBe(preview);
+    expect(onConfirmed).not.toHaveBeenCalled();
+    expect(apiReorganizeTasks).toHaveBeenCalledExactlyOnceWith([
+      { taskId: 't5', dueDate: tomorrow },
+      { taskId: 't6', dueDate: tomorrow },
+      { taskId: 't7', dueDate: tomorrow },
+    ]);
+    await act(async () => {
+      resolve({ updated: 3 });
+      await confirmation;
+    });
+    expect(result.current.state).toBe('idle');
+    expect(result.current.previewSections).toBeNull();
+    expect(onConfirmed).toHaveBeenCalledOnce();
   });
 
-  it('state machine: idle → preview → idle (cancel)', () => {
-    const states = ['idle' as const, 'preview' as const, 'idle' as const];
-    expect(states[0]).toBe('idle');
-    expect(states[1]).toBe('preview');
-    expect(states[2]).toBe('idle');
-  });
-
-  it('state machine: idle → preview → persisting → idle (confirm)', () => {
-    const states = ['idle' as const, 'preview' as const, 'persisting' as const, 'idle' as const];
-    expect(states).toHaveLength(4);
-    expect(states[0]).toBe('idle');
-    expect(states[3]).toBe('idle');
+  it('retains the preview after a persistence error and allows retry', async () => {
+    const error = new Error('Offline');
+    vi.mocked(apiReorganizeTasks).mockRejectedValueOnce(error);
+    const onConfirmed = vi.fn();
+    const { result } = renderHook(() =>
+      useReorganize(today, [section(today, tasks(8))], undefined, undefined, undefined, onConfirmed),
+    );
+    act(() => result.current.startPreview());
+    const preview = result.current.previewSections;
+    await act(async () => {
+      await expect(result.current.confirmReorganize()).rejects.toBe(error);
+    });
+    expect(result.current.state).toBe('preview');
+    expect(result.current.previewSections).toBe(preview);
+    expect(onConfirmed).not.toHaveBeenCalled();
+    await act(async () => { await result.current.confirmReorganize(); });
+    expect(apiReorganizeTasks).toHaveBeenCalledTimes(2);
+    expect(apiReorganizeTasks).toHaveBeenNthCalledWith(2, vi.mocked(apiReorganizeTasks).mock.calls[0][0]);
+    expect(result.current.state).toBe('idle');
+    expect(result.current.previewSections).toBeNull();
+    expect(onConfirmed).toHaveBeenCalledOnce();
   });
 });

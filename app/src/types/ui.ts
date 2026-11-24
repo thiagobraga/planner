@@ -48,6 +48,18 @@ export interface ChipProps {
   className?: string;
 }
 
+export interface TaskMetaChipProps {
+  children: ReactNode;
+  /** Optional trailing segment rendered beside the tinted main segment on a transparent background. */
+  secondary?: ReactNode;
+  className?: string;
+  /** Text color utility class; defaults to `text-ink/65`. */
+  textClassName?: string;
+  primaryClassName?: string;
+  secondaryClassName?: string;
+  title?: string;
+}
+
 export interface CollectionChipProps {
   name: string;
   /** Literal CSS color value (hex/rgb(a)/hsl(a)); falls back to ink-light. */

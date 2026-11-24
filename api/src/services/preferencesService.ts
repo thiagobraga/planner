@@ -25,6 +25,7 @@ interface PreferencesRow {
   board_view_modes: BoardViewModes;
   daily_view: DailyView;
   full_width: boolean;
+  align_task_items_right: boolean;
 }
 
 function formatPreferences(row: PreferencesRow) {
@@ -49,6 +50,7 @@ function formatPreferences(row: PreferencesRow) {
     boardViewModes: row.board_view_modes ?? {},
     dailyView: row.daily_view,
     fullWidth: row.full_width,
+    alignTaskItemsRight: row.align_task_items_right,
   };
 }
 
@@ -123,6 +125,7 @@ export interface UpdatePreferencesInput {
   boardViewModes?: BoardViewModes;
   dailyView?: DailyView;
   fullWidth?: boolean;
+  alignTaskItemsRight?: boolean;
 }
 
 export function validatePreferences(input: UpdatePreferencesInput): UpdatePreferencesInput {
@@ -221,6 +224,10 @@ export function validatePreferences(input: UpdatePreferencesInput): UpdatePrefer
 
   if (input.fullWidth !== undefined && typeof input.fullWidth !== "boolean") {
     errors.push({ field: "fullWidth", message: "fullWidth must be a boolean" });
+  }
+
+  if (input.alignTaskItemsRight !== undefined && typeof input.alignTaskItemsRight !== "boolean") {
+    errors.push({ field: "alignTaskItemsRight", message: "alignTaskItemsRight must be a boolean" });
   }
 
   if (errors.length > 0) {
@@ -339,6 +346,10 @@ export async function updatePreferences(userId: string, input: UpdatePreferences
   if (input.fullWidth !== undefined) {
     setClauses.push(`full_width = $${paramIndex++}`);
     values.push(input.fullWidth);
+  }
+  if (input.alignTaskItemsRight !== undefined) {
+    setClauses.push(`align_task_items_right = $${paramIndex++}`);
+    values.push(input.alignTaskItemsRight);
   }
 
   if (setClauses.length === 0) {

@@ -76,14 +76,8 @@ export function useTaskDetailController(): string | null {
   return taskId;
 }
 
-/** Docked beside the page on wide screens, an overlay sheet when the page needs the room, a bottom sheet on phones. */
+/** Floating overlay card on desktop so the page grid never shifts; bottom sheet on phones. */
 export function useDetailLayout(): DetailLayout {
   const phone = useMediaQuery(PHONE_QUERY);
-  const wide = useMediaQuery('(min-width: 1024px)');
-  const extraWide = useMediaQuery('(min-width: 1280px)');
-  const { pathname } = useLocation();
-  if (phone) return 'sheet';
-  // The collections split view already spends 264px on its tree.
-  if (pathname.startsWith('/collection')) return extraWide ? 'dock' : 'overlay';
-  return wide ? 'dock' : 'overlay';
+  return phone ? 'sheet' : 'overlay';
 }

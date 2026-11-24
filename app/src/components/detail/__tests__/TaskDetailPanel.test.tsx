@@ -366,6 +366,13 @@ describe('TaskDetailPanel', () => {
     expect(requestedUrls.filter((url) => url.includes('/collections') || url.includes('/statuses'))).toEqual([]);
   });
 
+  it('opens as a floating overlay panel on desktop so it never pushes the page grid', async () => {
+    setPhone(false);
+    renderAt(EMPTY);
+    const panel = await loadedPanel();
+    expect(panel).toHaveClass('detail-panel--overlay');
+    expect(panel).not.toHaveClass('detail-panel--dock');
+  });
   it('is a modal sheet on phones that wraps Tab and Shift+Tab between first and last focusable controls', async () => {
     setPhone(true);
     renderAt(EMPTY);

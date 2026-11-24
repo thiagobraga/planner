@@ -33,6 +33,9 @@ export interface ViewMenuProps {
   /** Omit on pages without dates (Collections, Inbox). */
   range?: ViewRange;
   onRangeChange?: (range: ViewRange) => void;
+  /** Align task row metadata chips to the right edge of each row. */
+  alignTaskItemsRight?: boolean;
+  onAlignTaskItemsRightChange?: (value: boolean) => void;
   /** Extra items at the end, such as Reorganize. */
   extra?: (close: () => void) => ReactNode;
   sheet?: boolean;

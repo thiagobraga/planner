@@ -1,11 +1,14 @@
-import { act, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeAll, beforeEach } from 'vitest';
 import { useLocation } from 'react-router';
 import { AppShell } from '../AppShell';
+import { useTaskDetailStore } from '../../stores/taskDetailStore';
+import { useTaskSelectionStore } from '../../stores/taskSelectionStore';
 import { QuickAdd } from '../QuickAdd';
 import { apiCreateTask } from '../../api/client';
 import { updateDocumentThemeColor } from '../../utils/theme';
 import { useSync } from '../../hooks/useSync';
+import { matchKey } from '../../hooks/shortcuts';
 
 const mockUseQuery = vi.hoisted(() => vi.fn());
 const mockInvalidateQueries = vi.hoisted(() => vi.fn());
@@ -251,6 +254,62 @@ describe('AppShell', () => {
   it('renders TopBar', () => {
     render(<AppShell />);
     expect(screen.getByTestId('topbar')).toBeInTheDocument();
+  });
+
+  it('closes task details and clears selection on outside click and Escape, but ignores clicks inside the panel or card', () => {
+    const close = vi.fn();
+    useTaskDetailStore.setState({ taskId: 'task-1', navigator: { open: vi.fn(), close }, origin: null, leaveGuard: null });
+    useTaskSelectionStore.getState().selectTask('task-1', false);
+
+    render(<AppShell />);
+
+    const card = document.createElement('div');
+    card.dataset.cardId = 'task-1';
+    document.body.appendChild(card);
+    const panel = document.createElement('aside');
+    panel.className = 'detail-panel';
+    document.body.appendChild(panel);
+    try {
+      fireEvent.pointerDown(card, { button: 0 });
+      fireEvent.pointerDown(panel, { button: 0 });
+      expect(close).not.toHaveBeenCalled();
+      expect(useTaskSelectionStore.getState().selectedTaskIds.has('task-1')).toBe(true);
+
+      fireEvent.pointerDown(screen.getByTestId('outlet-content'), { button: 0 });
+      expect(close).toHaveBeenCalledTimes(1);
+      expect(useTaskSelectionStore.getState().selectedTaskIds.size).toBe(0);
+
+      useTaskSelectionStore.getState().selectTask('task-1', false);
+      vi.mocked(matchKey).mockReturnValueOnce({ action: 'dialog:close', nextState: { pendingChord: null } });
+      fireEvent.keyDown(window, { key: 'Escape' });
+      expect(close).toHaveBeenCalledTimes(2);
+      expect(useTaskSelectionStore.getState().selectedTaskIds.size).toBe(0);
+    } finally {
+      card.remove();
+      panel.remove();
+      useTaskDetailStore.setState({ taskId: null, navigator: null, origin: null, leaveGuard: null });
+      useTaskSelectionStore.getState().clearSelection();
+    }
+  });
+
+  it('returns keyboard focus to the origin after Escape closes details', async () => {
+    const origin = document.createElement('button');
+    document.body.appendChild(origin);
+    useTaskDetailStore.setState({
+      taskId: 'task-1',
+      navigator: { open: vi.fn(), close: vi.fn() },
+      origin,
+      leaveGuard: null,
+    });
+    render(<AppShell />);
+    try {
+      vi.mocked(matchKey).mockReturnValueOnce({ action: 'dialog:close', nextState: { pendingChord: null } });
+      fireEvent.keyDown(window, { key: 'Escape' });
+      await waitFor(() => expect(origin).toHaveFocus());
+    } finally {
+      origin.remove();
+      useTaskDetailStore.setState({ taskId: null, navigator: null, origin: null, leaveGuard: null });
+    }
   });
 
   describe('theme', () => {

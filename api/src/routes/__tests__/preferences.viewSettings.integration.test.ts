@@ -35,17 +35,20 @@ describe("view settings preferences (real PostgreSQL and Redis)", () => {
     const { body } = await request(app).get("/preferences");
     expect(body.dailyView).toEqual({ style: "notebook", range: "week" });
     expect(body.fullWidth).toBe(false);
+    expect(body.alignTaskItemsRight).toBe(false);
   });
 
-  it("persists the Daily view and full width", async () => {
+  it("persists the Daily view, full width and task item alignment", async () => {
     const response = await request(app).patch("/preferences").send({
       dailyView: { style: "cards", range: "d3" },
       fullWidth: true,
+      alignTaskItemsRight: true,
     });
     expect(response.status).toBe(200);
     const { body } = await request(app).get("/preferences");
     expect(body.dailyView).toEqual({ style: "cards", range: "d3" });
     expect(body.fullWidth).toBe(true);
+    expect(body.alignTaskItemsRight).toBe(true);
   });
 
   it("rejects unknown styles and ranges", async () => {
@@ -54,6 +57,7 @@ describe("view settings preferences (real PostgreSQL and Redis)", () => {
       expect(response.status).toBe(400);
     }
     expect((await request(app).patch("/preferences").send({ fullWidth: "yes" })).status).toBe(400);
+    expect((await request(app).patch("/preferences").send({ alignTaskItemsRight: "yes" })).status).toBe(400);
   });
 
   it("merges a board entry instead of replacing it or its siblings", async () => {
