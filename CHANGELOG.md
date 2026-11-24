@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.40.0](https://github.com/thiagobraga/planner/compare/v0.39.8...v0.40.0) (2026-11-24)
+
+
+### Added
+
+* **ui:** unify task row chips, right alignment, topbar tabs, and floating detail panel ([d55f2bb](https://github.com/thiagobraga/planner/commit/d55f2bb05f45073e4c096399ce21fd84eda91119))
+
+
+### Fixed
+
+* **daily:** restore rows after rejected deletion ([16e5660](https://github.com/thiagobraga/planner/commit/16e56607e477bd984bc347fce288fcd166d729d7))
+
 ## [0.39.8](https://github.com/thiagobraga/planner/compare/v0.39.7...v0.39.8) (2026-11-24)
 
 
