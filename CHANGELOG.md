@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.39.8](https://github.com/thiagobraga/planner/compare/v0.39.7...v0.39.8) (2026-11-24)
+
+
+### Fixed
+
+* **deps:** resolve minimatch dependabot alert 94 ([1b8b94d](https://github.com/thiagobraga/planner/commit/1b8b94d168b37a632c21abbc4e8fd4c96c19e9a8))
+
 ## [0.39.7](https://github.com/thiagobraga/planner/compare/v0.39.6...v0.39.7) (2026-11-24)
 
 
