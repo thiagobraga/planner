@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Both deploy and upgrade resolve the same Compose project and volume names.
+# Preserve the existing Compose project and PostgreSQL volume names.
 prod_shared_project() {
   local project
   project=$(docker inspect -f '{{ index .Config.Labels "com.docker.compose.project" }}' "$1" 2>/dev/null || true)
@@ -12,9 +12,7 @@ prod_shared_project() {
 }
 
 prod_shared_compose() {
-  local project=$1 major=$2
-  shift 2
-  local -a files=(-f compose.prod.yml)
-  if [[ $major == 16 ]]; then files+=(-f compose.prod.pg16.yml); fi
-  PLANNER_POSTGRES_VOLUME="${project}_pgdata18" docker compose --project-name "$project" "${files[@]}" "$@"
+  local project=$1
+  shift
+  PLANNER_POSTGRES_VOLUME="${project}_pgdata18" docker compose --project-name "$project" -f compose.prod.yml "$@"
 }

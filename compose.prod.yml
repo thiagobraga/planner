@@ -46,7 +46,7 @@ services:
       - -ec
       - |
         test -f "$$PGDATA/.planner-upgrade-ready" || {
-          echo "PostgreSQL 18 data volume has not been prepared by postgres-upgrade.sh" >&2
+          echo "PostgreSQL 18 data volume is not marked as prepared; verify the restored cluster before starting" >&2
           exit 1
         }
         exec docker-entrypoint.sh "$$@"
