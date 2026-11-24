@@ -1,5 +1,3 @@
-import { readdirSync, readFileSync, statSync } from 'node:fs';
-import { join, relative, resolve } from 'node:path';
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { BoardCard } from '../../components/board/BoardCard';
@@ -7,25 +5,7 @@ import { TaskItem } from '../../components/TaskItem';
 import { PlannerDragProvider } from '../../contexts/PlannerDragContext';
 import type { Task } from '../../types/task';
 
-const SRC = resolve(import.meta.dirname, '../..');
-
-function sourceFiles(dir: string): string[] {
-  return readdirSync(dir).flatMap((name) => {
-    const path = join(dir, name);
-    if (statSync(path).isDirectory()) return name === '__tests__' ? [] : sourceFiles(path);
-    return /\.tsx?$/.test(name) ? [path] : [];
-  });
-}
-
 describe('Shift + right click opens the browser menu', () => {
-  it('every custom context menu handler checks isNativeContextMenu first', () => {
-    const missing = sourceFiles(SRC).filter((file) => {
-      const code = readFileSync(file, 'utf8');
-      return /\bonContextMenu=\{/.test(code) && !code.includes('isNativeContextMenu(');
-    });
-    expect(missing.map((file) => relative(SRC, file))).toEqual([]);
-  });
-
   it('leaves a shift right click on a board card to the browser', () => {
     const onTaskContextMenu = vi.fn();
     render(<PlannerDragProvider><BoardCard

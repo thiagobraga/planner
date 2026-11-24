@@ -5,9 +5,15 @@ import type { ApiTask } from '../src/api/client';
 test.use({ storageState: STORAGE_STATE_PATH });
 
 test('Daily list keeps the earlier days of the week visible', async ({ page, api }) => {
-  await api.patch('/preferences', { locale: 'en', timeZone: 'UTC', weekStart: 'sunday', hideCompletedTasks: false });
-  const now = new Date();
-  test.skip(now.getUTCDay() === 0, 'Sunday is the first day of the week, so no earlier day exists');
+  await api.patch('/preferences', {
+    locale: 'en',
+    timeZone: 'UTC',
+    weekStart: 'sunday',
+    hideCompletedTasks: false,
+    dailyView: { style: 'notebook', range: 'week' },
+  });
+  const now = new Date('2026-11-18T12:00:00Z');
+  await page.clock.setFixedTime(now);
 
   const yesterday = new Date(now.getTime() - 86_400_000).toISOString().slice(0, 10);
   const title = `Yesterday task ${Date.now()}`;

@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { act, render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { DailyRoute } from '../DailyRoutes';
@@ -187,6 +187,18 @@ describe('DailyPage behavior visibility', () => {
           dueDate: '2026-07-20',
           createdAt: '2026-07-20T12:00:00Z',
         },
+        {
+          id: 'task-completed',
+          title: 'Hidden completed task',
+          priority: 4,
+          collectionId: 'collection-1',
+          isCompleted: true,
+          orderValue: 2,
+          depth: 0,
+          type: 'task',
+          dueDate: '2026-07-20',
+          createdAt: '2026-07-20T12:00:00Z',
+        },
       ],
     }));
 
@@ -225,15 +237,25 @@ describe('DailyPage behavior visibility', () => {
   });
 
   it('deletes a task via its context menu and refetches if deletion fails', async () => {
-    mockApiDeleteTask.mockRejectedValueOnce(new Error('delete failed'));
+    const deletion = deferred<void>();
+    mockApiDeleteTask.mockReturnValueOnce(deletion.promise);
     renderPage();
 
     const row = await screen.findByText('Visible task');
+    const initialCalls = mockFetchDaily.mock.calls.length;
     fireEvent.contextMenu(row, { clientX: 50, clientY: 50 });
 
     const deleteItem = await screen.findByRole('menuitem', { name: 'Delete' });
     fireEvent.click(deleteItem);
 
     await waitFor(() => expect(mockApiDeleteTask).toHaveBeenCalledWith('task-1'));
+    expect(screen.queryByText('Visible task')).not.toBeInTheDocument();
+
+    await act(async () => {
+      deletion.reject(new Error('delete failed'));
+    });
+
+    await waitFor(() => expect(mockFetchDaily.mock.calls.length).toBeGreaterThan(initialCalls));
+    expect(await screen.findByRole('button', { name: 'Complete: Visible task' })).toBeInTheDocument();
   });
 });

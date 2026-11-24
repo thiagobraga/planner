@@ -1,7 +1,10 @@
-import { renderHook, act } from '@testing-library/react';
-import { useCallback } from 'react';
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { render, act, cleanup, waitFor } from '@testing-library/react';
+import { createElement } from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { MemoryRouter } from 'react-router';
+import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import type { SyncEvent } from '../../contracts/sync';
+import { AppShell } from '../AppShell';
 
 // Capture the registered sync handler so tests can fire it manually
 let capturedSyncHandler: ((event: SyncEvent) => void) | null = null;
@@ -14,46 +17,28 @@ vi.mock('../../utils/socket', () => ({
     off: vi.fn(),
     connected: true,
   }),
+  getSocketId: () => 'local-session',
 }));
 
-import { useSync } from '../../hooks/useSync';
+vi.mock('../nav/TopBar', () => ({ TopBar: () => null }));
+vi.mock('../QuickAdd', () => ({ QuickAdd: () => null }));
+vi.mock('../SearchOverlay', () => ({ SearchOverlay: () => null }));
+vi.mock('../detail/TaskDetailHost', () => ({ TaskDetailHost: () => null }));
+vi.mock('../AgentNotice', () => ({ AgentNotice: () => null }));
+vi.mock('../../contexts/PlannerDragContext', () => ({
+  PlannerDragProvider: ({ children }: { children: React.ReactNode }) => children,
+}));
+vi.mock('../../hooks/useVersionCheck', () => ({ useVersionCheck: () => false }));
+vi.mock('../../hooks/useFullWidth', () => ({
+  useFullWidth: () => ({ toggleFullWidth: vi.fn() }),
+}));
+vi.mock('../../utils/fontLoader', () => ({ ensureFontLoaded: vi.fn() }));
+vi.mock('../../api/client', () => ({
+  fetchPreferences: vi.fn(() => new Promise(() => {})),
+  apiCreateTask: vi.fn(),
+}));
 
 // Mirrors the AppShell callback for sync events handled at the shell level.
-function useAppShellSync({
-  invalidateCollections,
-  invalidateInbox,
-  invalidateToday,
-  invalidateUpcoming,
-  invalidatePreferences,
-  setPreferences,
-}: {
-  invalidateCollections: () => void;
-  invalidateInbox: () => void;
-  invalidateToday: () => void;
-  invalidateUpcoming: () => void;
-  invalidatePreferences: () => void;
-  setPreferences: (payload: unknown) => void;
-}) {
-  useSync(useCallback((event: SyncEvent) => {
-    if (event.entityType === 'collection') {
-      invalidateCollections();
-    } else if (event.entityType === 'status' || event.entityType === 'label') {
-      invalidateCollections();
-      invalidateInbox();
-      invalidateToday();
-      invalidateUpcoming();
-    } else if (event.entityType === 'preferences') {
-      if (event.payload && typeof event.payload === 'object') {
-        setPreferences(event.payload);
-      } else {
-        invalidatePreferences();
-      }
-      invalidateInbox();
-      invalidateCollections();
-    }
-  }, [invalidateCollections, invalidateInbox, invalidatePreferences, invalidateToday, invalidateUpcoming, setPreferences]));
-}
-
 function makeEvent(overrides: Partial<SyncEvent> = {}): SyncEvent {
   return {
     id: '1',
@@ -66,129 +51,119 @@ function makeEvent(overrides: Partial<SyncEvent> = {}): SyncEvent {
   };
 }
 
+const queryKeys = [
+  ['collections'],
+  ['collection', 'collection-1'],
+  ['collection', 'collection-2'],
+  ['inbox'],
+  ['today'],
+  ['upcoming'],
+  ['preferences'],
+  ['document', 'task-abc'],
+  ['document', 'other-task'],
+] as const;
+
 describe('AppShell: sync event invalidation', () => {
-  let mockInvalidate: ReturnType<typeof vi.fn>;
-  let mockInvalidateInbox: ReturnType<typeof vi.fn>;
-  let mockInvalidateToday: ReturnType<typeof vi.fn>;
-  let mockInvalidateUpcoming: ReturnType<typeof vi.fn>;
-  let mockInvalidatePreferences: ReturnType<typeof vi.fn>;
-  let mockSetPreferences: ReturnType<typeof vi.fn>;
+  let client: QueryClient;
 
   beforeEach(() => {
     capturedSyncHandler = null;
-    mockInvalidate = vi.fn();
-    mockInvalidateInbox = vi.fn();
-    mockInvalidateToday = vi.fn();
-    mockInvalidateUpcoming = vi.fn();
-    mockInvalidatePreferences = vi.fn();
-    mockSetPreferences = vi.fn();
-  });
-
-  it('does not invalidate when a task sync event fires', () => {
-    renderHook(() => useAppShellSync({
-      invalidateCollections: mockInvalidate,
-      invalidateInbox: mockInvalidateInbox,
-      invalidateToday: mockInvalidateToday,
-      invalidateUpcoming: mockInvalidateUpcoming,
-      invalidatePreferences: mockInvalidatePreferences,
-      setPreferences: mockSetPreferences,
-    }));
-    act(() => { capturedSyncHandler?.(makeEvent()); });
-    expect(mockInvalidate).not.toHaveBeenCalled();
-    expect(mockInvalidatePreferences).not.toHaveBeenCalled();
-    expect(mockSetPreferences).not.toHaveBeenCalled();
-  });
-
-  it('does not invalidate for all task event types', () => {
-    renderHook(() => useAppShellSync({
-      invalidateCollections: mockInvalidate,
-      invalidateInbox: mockInvalidateInbox,
-      invalidateToday: mockInvalidateToday,
-      invalidateUpcoming: mockInvalidateUpcoming,
-      invalidatePreferences: mockInvalidatePreferences,
-      setPreferences: mockSetPreferences,
-    }));
-    const types: SyncEvent['eventType'][] = ['created', 'updated', 'deleted', 'completed', 'uncompleted'];
-    for (const eventType of types) {
-      act(() => { capturedSyncHandler?.(makeEvent({ eventType })); });
-    }
-    expect(mockInvalidate).not.toHaveBeenCalled();
-  });
-
-  it('invalidates for collection entity types', () => {
-    renderHook(() => useAppShellSync({
-      invalidateCollections: mockInvalidate,
-      invalidateInbox: mockInvalidateInbox,
-      invalidateToday: mockInvalidateToday,
-      invalidateUpcoming: mockInvalidateUpcoming,
-      invalidatePreferences: mockInvalidatePreferences,
-      setPreferences: mockSetPreferences,
-    }));
-    act(() => {
-      capturedSyncHandler?.(makeEvent({ entityType: 'collection' }));
+    client = new QueryClient({
+      defaultOptions: { queries: { retry: false, staleTime: Infinity } },
     });
-    expect(mockInvalidate).toHaveBeenCalledTimes(1);
-  });
-
-  it.each(['status', 'label'] as const)('invalidates every task-facing query for %s events', (entityType) => {
-    renderHook(() => useAppShellSync({
-      invalidateCollections: mockInvalidate,
-      invalidateInbox: mockInvalidateInbox,
-      invalidateToday: mockInvalidateToday,
-      invalidateUpcoming: mockInvalidateUpcoming,
-      invalidatePreferences: mockInvalidatePreferences,
-      setPreferences: mockSetPreferences,
-    }));
-
-    act(() => {
-      capturedSyncHandler?.(makeEvent({ entityType }));
-    });
-
-    expect(mockInvalidate).toHaveBeenCalledTimes(1);
-    expect(mockInvalidateInbox).toHaveBeenCalledTimes(1);
-    expect(mockInvalidateToday).toHaveBeenCalledTimes(1);
-    expect(mockInvalidateUpcoming).toHaveBeenCalledTimes(1);
-  });
-
-  it('sets preferences from preferences sync payload', () => {
-    renderHook(() => useAppShellSync({
-      invalidateCollections: mockInvalidate,
-      invalidateInbox: mockInvalidateInbox,
-      invalidateToday: mockInvalidateToday,
-      invalidateUpcoming: mockInvalidateUpcoming,
-      invalidatePreferences: mockInvalidatePreferences,
-      setPreferences: mockSetPreferences,
-    }));
-    const payload = {
+    for (const key of queryKeys) client.setQueryData(key, { cached: true });
+    client.setQueryData(['preferences'], {
       font: 'lora',
-      showDots: false,
-      background: 'white',
-      collapsedCollectionIds: ['11111111-1111-4111-8111-111111111111'],
-    };
-    act(() => {
-      capturedSyncHandler?.(makeEvent({ entityType: 'preferences', eventType: 'updated', entityId: 'user-1', payload }));
+      background: 'beige',
+      showDots: true,
     });
-    expect(mockSetPreferences).toHaveBeenCalledWith(payload);
-    expect(mockInvalidateInbox).toHaveBeenCalledTimes(1);
-    expect(mockInvalidate).toHaveBeenCalledTimes(1);
-    expect(mockInvalidatePreferences).not.toHaveBeenCalled();
   });
 
-  it('invalidates preferences when preferences sync has no payload', () => {
-    renderHook(() => useAppShellSync({
-      invalidateCollections: mockInvalidate,
-      invalidateInbox: mockInvalidateInbox,
-      invalidateToday: mockInvalidateToday,
-      invalidateUpcoming: mockInvalidateUpcoming,
-      invalidatePreferences: mockInvalidatePreferences,
-      setPreferences: mockSetPreferences,
-    }));
-    act(() => {
-      capturedSyncHandler?.(makeEvent({ entityType: 'preferences', eventType: 'updated', entityId: 'user-1' }));
+  afterEach(() => {
+    cleanup();
+    client.clear();
+  });
+
+  function renderShell() {
+    render(createElement(QueryClientProvider, { client },
+      createElement(MemoryRouter, { initialEntries: ['/inbox'] },
+        createElement(AppShell))));
+    expect(capturedSyncHandler).toBeTypeOf('function');
+  }
+
+  async function emit(overrides: Partial<SyncEvent> = {}) {
+    await act(async () => {
+      capturedSyncHandler!(makeEvent(overrides));
     });
-    expect(mockInvalidatePreferences).toHaveBeenCalledTimes(1);
-    expect(mockInvalidateInbox).toHaveBeenCalledTimes(1);
-    expect(mockInvalidate).toHaveBeenCalledTimes(1);
-    expect(mockSetPreferences).not.toHaveBeenCalled();
+  }
+
+  function expectInvalidated(expected: readonly (readonly string[])[]) {
+    for (const key of queryKeys) {
+      expect(client.getQueryState(key)?.isInvalidated, JSON.stringify(key))
+        .toBe(expected.some((candidate) => JSON.stringify(candidate) === JSON.stringify(key)));
+    }
+  }
+
+  it.each(['created', 'completed', 'uncompleted'] as const)(
+    'leaves shell caches unchanged for task %s events',
+    async (eventType) => {
+      renderShell();
+      await emit({ eventType });
+      expectInvalidated([]);
+    },
+  );
+
+  it('invalidates the collection index and every cached collection view', async () => {
+    renderShell();
+    await emit({ entityType: 'collection' });
+    expectInvalidated([['collections'], ['collection', 'collection-1'], ['collection', 'collection-2']]);
+  });
+
+  it.each(['status', 'label'] as const)(
+    'invalidates task-facing caches for %s events without invalidating the collection index',
+    async (entityType) => {
+      renderShell();
+      await emit({ entityType });
+      expectInvalidated([
+        ['collection', 'collection-1'], ['collection', 'collection-2'],
+        ['inbox'], ['today'], ['upcoming'],
+      ]);
+    },
+  );
+
+  it('replaces cached preferences with the sync payload and applies it to the shell', async () => {
+    renderShell();
+    const payload = { font: 'hubballi', showDots: false, background: 'white' };
+    await emit({ entityType: 'preferences', eventType: 'updated', payload });
+    expect(client.getQueryData(['preferences'])).toEqual(payload);
+    await waitFor(() => expect(document.body).toHaveClass('font-hubballi'));
+    expect(document.documentElement).toHaveAttribute('data-theme', 'white');
+    expectInvalidated([['inbox'], ['collection', 'collection-1'], ['collection', 'collection-2']]);
+  });
+
+  it('invalidates preferences without a payload while retaining cached data', async () => {
+    renderShell();
+    const previous = client.getQueryData(['preferences']);
+    await emit({ entityType: 'preferences', eventType: 'updated' });
+    expect(client.getQueryData(['preferences'])).toEqual(previous);
+    expectInvalidated([
+      ['preferences'], ['inbox'], ['collection', 'collection-1'], ['collection', 'collection-2'],
+    ]);
+  });
+
+  it('invalidates only the updated task document', async () => {
+    renderShell();
+    await emit({ eventType: 'updated' });
+    expectInvalidated([['document', 'task-abc']]);
+  });
+
+  it('removes only the deleted task document', async () => {
+    renderShell();
+    await emit({ eventType: 'deleted' });
+    expect(client.getQueryState(['document', 'task-abc'])).toBeUndefined();
+    expect(client.getQueryData(['document', 'other-task'])).toEqual({ cached: true });
+    for (const key of queryKeys.filter((key) => key[1] !== 'task-abc')) {
+      expect(client.getQueryState(key)?.isInvalidated).toBe(false);
+    }
   });
 });

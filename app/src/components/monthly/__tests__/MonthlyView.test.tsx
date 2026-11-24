@@ -110,13 +110,15 @@ describe('MonthlyView', () => {
 
   it('calls onToggle when task checkbox button is clicked', () => {
     const onToggle = vi.fn();
-    render(<MonthlyView tasks={sampleTasks} onToggle={onToggle} />);
+    const onTaskContextMenu = vi.fn();
+    render(<MonthlyView tasks={sampleTasks} onToggle={onToggle} onTaskContextMenu={onTaskContextMenu} />);
 
-    const toggleBtn = screen.getByRole('button', { name: /Buy groceries/ });
+    const toggleBtn = screen.getByRole('button', { name: 'Complete: Buy groceries', exact: true });
     fireEvent.click(toggleBtn);
 
     expect(onToggle).toHaveBeenCalledTimes(1);
     expect(onToggle).toHaveBeenCalledWith('task-1');
+    expect(onTaskContextMenu).not.toHaveBeenCalled();
   });
 
   it('navigates months when MonthSelector buttons are clicked', () => {

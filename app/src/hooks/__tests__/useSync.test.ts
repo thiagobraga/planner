@@ -191,4 +191,47 @@ describe('useSync', () => {
     expect(mockOff).toHaveBeenCalledWith('sync', firstRegisteredHandler);
     expect(mockOn).toHaveBeenLastCalledWith('sync', expect.any(Function));
   });
+
+  it('delivers a burst in order without redelivering duplicate event IDs', () => {
+    const handler = vi.fn();
+    renderHook(() => useSync(handler));
+    const fire = mockOn.mock.calls[0][1] as (e: SyncEvent) => void;
+    const events = [
+      event({ id: 'create', eventType: 'created', payload: { title: 'New task' } }),
+      event({ id: 'edit', eventType: 'updated', payload: { title: 'Edited task' } }),
+      event({ id: 'complete', eventType: 'completed' }),
+      event({ id: 'delete', eventType: 'deleted' }),
+    ];
+
+    act(() => {
+      for (const change of events) {
+        fire(change);
+        fire(change);
+      }
+    });
+
+    expect(handler.mock.calls).toEqual(events.map((change) => [change]));
+  });
+
+  it('keeps duplicate protection when the consumer callback changes', () => {
+    const first = vi.fn();
+    const second = vi.fn();
+    const change = event();
+    const next = event({ id: 'next' });
+    const { rerender } = renderHook(({ handler }) => useSync(handler), {
+      initialProps: { handler: first },
+    });
+    const fireFirst = mockOn.mock.calls[0][1] as (e: SyncEvent) => void;
+    act(() => fireFirst(change));
+
+    rerender({ handler: second });
+    const fireSecond = mockOn.mock.calls.at(-1)![1] as (e: SyncEvent) => void;
+    act(() => {
+      fireSecond(change);
+      fireSecond(next);
+    });
+
+    expect(first).toHaveBeenCalledExactlyOnceWith(change);
+    expect(second).toHaveBeenCalledExactlyOnceWith(next);
+  });
 });
