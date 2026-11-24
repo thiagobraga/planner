@@ -210,19 +210,19 @@ describe('DailyPage behavior visibility', () => {
   });
 
   it('restores the task when the completion request fails', async () => {
-    mockApiToggleTask.mockRejectedValueOnce(new Error('nope'));
+    const completion = deferred<Awaited<ReturnType<typeof apiToggleTask>>>();
+    mockApiToggleTask.mockReturnValueOnce(completion.promise);
     renderPage();
 
     const completeButton = await screen.findByRole('button', { name: 'Complete: Visible task' });
     fireEvent.click(completeButton);
 
     await waitFor(() => expect(mockApiToggleTask).toHaveBeenCalledWith('task-1', true));
-    // The restore is a catch -> setState round trip through RTL's act queue; a
-    // loaded machine can stretch that past the default 1s poll window.
-    await waitFor(
-      () => expect(screen.getByRole('button', { name: 'Complete: Visible task' })).toBeInTheDocument(),
-      { timeout: 4000 },
-    );
+    expect(screen.queryByRole('button', { name: 'Complete: Visible task' })).not.toBeInTheDocument();
+    await act(async () => {
+      completion.reject(new Error('nope'));
+    });
+    expect(await screen.findByRole('button', { name: 'Complete: Visible task' })).toBeInTheDocument();
   });
 
   it('refetches daily tasks when a task-created window event fires', async () => {

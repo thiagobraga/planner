@@ -37,3 +37,30 @@ test('Daily list keeps the earlier days of the week visible', async ({ page, api
     await api.delete(`/tasks/${task.id}`);
   }
 });
+
+test('a rejected deletion restores the Daily row when the refetch is unchanged', async ({ page, api }) => {
+  await api.patch('/preferences', {
+    dailyView: { style: 'notebook', range: 'week' },
+    hideCompletedTasks: false,
+  });
+  await page.clock.setFixedTime(new Date('2026-11-18T12:00:00Z'));
+  const task = await api.createTask({ title: `Rejected delete ${Date.now()}`, dueDate: '2026-11-18' });
+  try {
+    await page.route(`**/api/v1/tasks/${task.id}`, (route) =>
+      route.request().method() === 'DELETE'
+        ? route.fulfill({ status: 500, json: { error: { code: 'INTERNAL_ERROR', message: 'Delete failed' } } })
+        : route.continue(),
+    );
+    await page.goto('/daily/list');
+    const row = page.locator(`[data-task-id="${task.id}"]`);
+    await row.click({ button: 'right' });
+    const failedDelete = page.waitForResponse((response) =>
+      response.request().method() === 'DELETE' && response.url().endsWith(`/tasks/${task.id}`),
+    );
+    await page.getByRole('menuitem', { name: 'Delete', exact: true }).click();
+    await failedDelete;
+    await expect(row).toBeVisible();
+  } finally {
+    await api.delete(`/tasks/${task.id}`);
+  }
+});
