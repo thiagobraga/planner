@@ -183,10 +183,7 @@ export function AppShell() {
           const hasOtherOverlay = Boolean(document.querySelector('[role="dialog"]:not(.detail-panel), [role="menu"]'));
           if (!consumed && !quickAddOpen && !searchOpen && !helpOpen && !hasOtherOverlay) {
             useTaskSelectionStore.getState().clearSelection();
-            closeTaskDetails({ restoreFocus: false });
-            if (document.activeElement instanceof HTMLElement && document.activeElement.closest('[data-card-id], [data-task-id]')) {
-              document.activeElement.blur();
-            }
+            closeTaskDetails();
           }
           setQuickAddOpen(false);
           setSearchOpen(false);

@@ -17,7 +17,7 @@ const today = () => {
 const panel = (page: Page) => page.getByRole('complementary', { name: 'Task details' });
 const editor = (page: Page) => panel(page).getByRole('textbox', { name: 'Description' });
 
-test('opens a Daily row in the docked panel, Escape closes it and focus returns to the row', async ({ api, page }) => {
+test('opens a Daily row in the floating panel, Escape closes it and focus returns to the row', async ({ api, page }) => {
   const task = await api.createTask({ title: unique('Daily detail'), dueDate: today() });
   try {
     await page.setViewportSize({ width: 1440, height: 900 });

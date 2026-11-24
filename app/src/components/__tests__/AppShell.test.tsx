@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeAll, beforeEach } from 'vitest';
 import { useLocation } from 'react-router';
 import { AppShell } from '../AppShell';
@@ -289,6 +289,26 @@ describe('AppShell', () => {
       panel.remove();
       useTaskDetailStore.setState({ taskId: null, navigator: null, origin: null, leaveGuard: null });
       useTaskSelectionStore.getState().clearSelection();
+    }
+  });
+
+  it('returns keyboard focus to the origin after Escape closes details', async () => {
+    const origin = document.createElement('button');
+    document.body.appendChild(origin);
+    useTaskDetailStore.setState({
+      taskId: 'task-1',
+      navigator: { open: vi.fn(), close: vi.fn() },
+      origin,
+      leaveGuard: null,
+    });
+    render(<AppShell />);
+    try {
+      vi.mocked(matchKey).mockReturnValueOnce({ action: 'dialog:close', nextState: { pendingChord: null } });
+      fireEvent.keyDown(window, { key: 'Escape' });
+      await waitFor(() => expect(origin).toHaveFocus());
+    } finally {
+      origin.remove();
+      useTaskDetailStore.setState({ taskId: null, navigator: null, origin: null, leaveGuard: null });
     }
   });
 
