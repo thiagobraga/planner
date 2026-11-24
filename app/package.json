@@ -64,6 +64,9 @@
   "overrides": {
     "esbuild": "$esbuild",
     "fast-uri": "^3.1.7",
+    "workbox-build": {
+      "glob": "^14.0.6"
+    },
     "js-yaml": {
       ".": "^3.15.2",
       "argparse": "^2.0.1"
