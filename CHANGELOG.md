@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.39.7](https://github.com/thiagobraga/planner/compare/v0.39.6...v0.39.7) (2026-11-24)
+
+
+### Changed
+
+* **deploy:** retire postgres 16 cutover tooling ([e869690](https://github.com/thiagobraga/planner/commit/e8696909b246ad4513c3f2ac3378583e66e0abe8))
+
 ## [0.39.6](https://github.com/thiagobraga/planner/compare/v0.39.5...v0.39.6) (2026-11-22)
 
 
