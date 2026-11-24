@@ -47,7 +47,7 @@ Required `.env` vars: `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `CORS
 
 Every deploy runs `scripts/db-backup.sh --docker` (pg_dump with sha256 and row-count sidecars in `deploy/backups/`) and `scripts/db-restore-check.sh --docker` (restore into a unique scratch database, compare, drop) before migrations; either failing aborts the deploy. `5. Backup` repeats both daily and posts only metadata. `6. Rollback` redeploys a previous image (`app`) or, data-losing, restores a named dump over the live database after a safety backup (`db-restore` via `scripts/db-restore.sh`). Database restore waits for a required reviewer on the `production-db-restore` GitHub environment.
 
-Production deploys use `compose.prod.pg16.yml` until `scripts/postgres-upgrade.sh` records `deploy/.postgres-18-ready`. Schedule the cutover separately and keep that marker with production deployment state.
+Production deploys use PostgreSQL 18 directly with the existing external `<shared-project>_pgdata18` volume. The cluster's `.planner-upgrade-ready` guard remains required; `deploy/.postgres-18-ready` is no longer used. Never recreate or rename the data volume during deployment.
 
 ### Git Hooks
 
