@@ -85,7 +85,7 @@ STUB
 printf 'db-restore-check %s\n' "$*" >> "$MOCK_LOG"
 [[ ${MOCK_FAIL_RESTORE_CHECK:-0} != 1 ]] || exit 1
 STUB
-  touch "$CASE_ROOT/"compose.prod{,.pg16,.color}.yml
+  touch "$CASE_ROOT/"compose.prod{,.color}.yml
   printf 'server {}\n' > "$CASE_ROOT/deploy/10-router.conf"
   export MOCK_LOG="$CASE_ROOT/commands.log"
   export CASE_ROOT
@@ -104,7 +104,7 @@ echo aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa > "$CASE_ROOT/deploy/.active-image
 export MOCK_SHARED_PROJECT=planner-production
 printf 'upstream app_active { server planner-blue-app:80; }\n' > "$CASE_ROOT/deploy/00-upstreams.conf"
 run_deploy || fail "Normal deployment failed"
-assert_contains 'docker compose --project-name planner-production -f compose.prod.yml -f compose.prod.pg16.yml up -d --no-recreate postgres redis' "$MOCK_LOG"
+assert_contains 'docker compose --project-name planner-production -f compose.prod.yml up -d --no-recreate postgres redis' "$MOCK_LOG"
 [[ $(<"$CASE_ROOT/deploy/.active-color") == green ]] || fail "Active color was not committed"
 [[ $(<"$CASE_ROOT/deploy/.previous-image") == aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa ]] || fail "Previous image was not recorded"
 [[ $(<"$CASE_ROOT/deploy/.active-image") == 0123456789abcdef0123456789abcdef01234567 ]] || fail "Active image was not recorded"
@@ -168,7 +168,7 @@ echo blue > "$CASE_ROOT/deploy/.active-color"
 printf 'upstream app_active { server planner-blue-app:80; }\n' > "$CASE_ROOT/deploy/00-upstreams.conf"
 export MOCK_SHARED_PROJECT='not a project'
 run_deploy || fail "Fallback shared project failed"
-assert_contains 'docker compose --project-name planner -f compose.prod.yml -f compose.prod.pg16.yml up -d --no-recreate postgres redis' "$MOCK_LOG"
+assert_contains 'docker compose --project-name planner -f compose.prod.yml up -d --no-recreate postgres redis' "$MOCK_LOG"
 
 setup_case switch_failure
 echo blue > "$CASE_ROOT/deploy/.active-color"
@@ -196,7 +196,7 @@ if run_deploy; then fail "Failed bootstrap was accepted"; fi
 [[ ! -e "$CASE_ROOT/deploy/.active-color" ]] || fail "Failed bootstrap committed active color"
 assert_contains 'docker stop -t 15 planner-prod-app' "$MOCK_LOG"
 assert_contains 'docker start planner-prod-app' "$MOCK_LOG"
-assert_contains 'docker compose --project-name planner -f compose.prod.yml -f compose.prod.pg16.yml stop router' "$MOCK_LOG"
+assert_contains 'docker compose --project-name planner -f compose.prod.yml stop router' "$MOCK_LOG"
 
 setup_case bootstrap_success
 export MOCK_LEGACY=1
@@ -209,7 +209,7 @@ assert_contains 'docker rm planner-prod-api' "$MOCK_LOG"
 setup_case fresh_host
 export MOCK_REQUIRE_NETWORKS=1
 run_deploy || fail "Fresh host could not start a color with its required networks"
-assert_contains 'docker compose --project-name planner -f compose.prod.yml -f compose.prod.pg16.yml run --rm --no-deps -T network-init' "$MOCK_LOG"
+assert_contains 'docker compose --project-name planner -f compose.prod.yml run --rm --no-deps -T network-init' "$MOCK_LOG"
 network_init=$(grep -n 'run --rm --no-deps -T network-init' "$MOCK_LOG" | head -1 | cut -d: -f1)
 api_start=$(grep -n 'up -d --no-deps api$' "$MOCK_LOG" | head -1 | cut -d: -f1)
 (( network_init < api_start )) || fail "Networks were initialized after API startup"
@@ -224,22 +224,20 @@ assert_contains 'Set PUBLIC_URL or CORS_ORIGIN' "$CASE_ROOT/output.log"
 [[ ! -s "$MOCK_LOG" ]] || fail "Deploy without a verification origin touched Docker"
 
 setup_case upgraded
-printf '18\n' > "$CASE_ROOT/deploy/.postgres-18-ready"
 export MOCK_POSTGRES_IMAGE=postgres:18-alpine
 run_deploy || fail "PG18 deployment failed"
 assert_contains '-f compose.prod.yml up -d --no-recreate postgres redis' "$MOCK_LOG"
 assert_not_contains 'compose.prod.pg16.yml' "$MOCK_LOG"
 
-setup_case interrupted_cutover
-export MOCK_POSTGRES_IMAGE=postgres:18-alpine
-if run_deploy; then fail "Unrecorded PG18 replacement was accepted"; fi
+setup_case legacy_database
+export MOCK_POSTGRES_IMAGE=postgres:16-alpine
+if run_deploy; then fail "PG16 container was accepted"; fi
 assert_contains 'disagrees with deploy state' "$CASE_ROOT/output.log"
 assert_not_contains 'docker compose' "$MOCK_LOG"
 
 setup_case missing_database_with_pg18_data
 export MOCK_TARGET_VOLUME=1
-if run_deploy; then fail "Missing database with PG18 data was accepted"; fi
-assert_contains 'Inspect cutover state before deploying' "$CASE_ROOT/output.log"
-assert_not_contains 'docker compose' "$MOCK_LOG"
+run_deploy || fail "Existing PG18 volume without a container was rejected"
+assert_contains '-f compose.prod.yml up -d --no-recreate postgres redis' "$MOCK_LOG"
 
 echo 'blue-green-deploy: 16 scenarios passed'

@@ -146,19 +146,11 @@ bash scripts/blue-green-deploy.sh "$(cat deploy/.previous-image)"
 
 The first rollout from the legacy single-app stack briefly releases port 8080 before the router can bind it, so a short 502 window is unavoidable on that bootstrap with the host nginx configuration unchanged. Later rollouts keep the router bound. Migrations must remain backward-compatible because the old API serves while the new color migrates and starts. A failed switch restores the old router target before the old color is stopped. Do not use `docker compose down -v` for deployment or rollback.
 
-### Production PostgreSQL 18 cutover
+### Production PostgreSQL 18
 
-Schedule a maintenance window. Deploys use the PostgreSQL 16 Compose override until the cutover records `deploy/.postgres-18-ready`. Preserve that file with the other deploy state. The PostgreSQL 18 service requires a prepared data volume.
+The production upgrade is complete. Deployments use `compose.prod.yml` directly with PostgreSQL 18 and the existing external `<shared-project>_pgdata18` volume. The deploy script preserves the running container's Compose project name and rejects non-PG18 images before changing services.
 
-Run from the production checkout after the upgrade PR is deployed:
-
-```bash
-CORS_ORIGIN=https://planner.thiagobraga.dev bash scripts/postgres-upgrade.sh
-```
-
-The script locks deployments, backs up PostgreSQL 16 and rehearses recovery on PostgreSQL 18 before stopping API writers. It takes a second backup with writers stopped, loads the new volume, checks table counts, and verifies API health after switching. Backups and their verification sidecars stay on the server under `deploy/backups/postgres18/`.
-
-A failure before writers resume triggers rollback to the retained PostgreSQL 16 volume. If the script reports that PostgreSQL 18 is selected, preserve it and investigate API health there. Switching back to the PostgreSQL 16 volume at that point would discard any writes made on PostgreSQL 18. If a process is interrupted and the DB container disagrees with the deploy marker, inspect the active DB and confirm where the last writes landed before resuming deployment. Keep the old volume and final dump for at least 14 days.
+The cluster's `.planner-upgrade-ready` guard remains required to prevent startup on an unprepared volume. The old `deploy/.postgres-18-ready` marker is no longer used. Do not rename or recreate the data volume. Retain the old PostgreSQL 16 volume and final cutover dump for at least 14 days after the upgrade; never switch back to that stale volume after new writes.
 
 ## Project Structure
 

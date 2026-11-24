@@ -28,21 +28,15 @@ flock -n 9 || { echo "Another deployment is running" >&2; exit 1; }
 # shellcheck source=scripts/prod-postgres.sh
 source scripts/prod-postgres.sh
 shared_project=$(prod_shared_project planner-prod-postgres)
-postgres_major=16
-if [[ -f $DEPLOY_DIR/.postgres-18-ready ]]; then postgres_major=18; fi
+postgres_major=18
 existing_image=$(docker inspect -f '{{.Config.Image}}' planner-prod-postgres 2>/dev/null || true)
 if [[ -n $existing_image && $existing_image != "postgres:$postgres_major-alpine" ]]; then
   echo "Postgres image $existing_image disagrees with deploy state (expected major $postgres_major)" >&2
   exit 1
 fi
-if [[ -z $existing_image && $postgres_major == 16 ]] &&
-   docker volume inspect "${shared_project}_pgdata18" >/dev/null 2>&1; then
-  echo "Postgres container is missing and a PostgreSQL 18 volume exists. Inspect cutover state before deploying." >&2
-  exit 1
-fi
 
 shared_compose() {
-  prod_shared_compose "$shared_project" "$postgres_major" "$@"
+  prod_shared_compose "$shared_project" "$@"
 }
 
 color_compose() {
